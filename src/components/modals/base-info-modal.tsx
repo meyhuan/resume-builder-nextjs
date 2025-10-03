@@ -1,6 +1,12 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import type { ReactElement } from 'react';
 import type { BaseInfo } from '@/entities/user/base-info';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ChevronDown } from 'lucide-react';
 
 /**
  * Modal for editing base info fields.
@@ -50,233 +56,198 @@ export default function BaseInfoModal(props: BaseInfoModalProps): ReactElement {
   }
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center z-50 print:hidden" style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between">
-          <h2 className="text-lg font-bold">基本信息</h2>
-          <button
-            type="button"
-            onClick={props.onClose}
-            className="text-gray-400 hover:text-gray-600"
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path d="M18 6L6 18M6 6l12 12" strokeWidth="2" strokeLinecap="round" />
-            </svg>
-          </button>
-        </div>
+    <Dialog open={true} onOpenChange={(open) => !open && props.onClose()}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>基本信息</DialogTitle>
+        </DialogHeader>
 
-        <div className="p-6 space-y-4">
+        <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm text-gray-700 mb-1">姓名</label>
-              <input
-                type="text"
+            <div className="space-y-2">
+              <Label htmlFor="name">姓名</Label>
+              <Input
+                id="name"
                 value={name}
-                onChange={(e): void => setName(e.target.value)}
-                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 hover:border-gray-400 transition-colors"
+                onChange={(e) => setName(e.target.value)}
               />
             </div>
-            <div>
-              <label className="block text-sm text-gray-700 mb-1">意向岗位</label>
-              <input
-                type="text"
+            <div className="space-y-2">
+              <Label htmlFor="title">意向岗位</Label>
+              <Input
+                id="title"
                 value={title}
-                onChange={(e): void => setTitle(e.target.value)}
+                onChange={(e) => setTitle(e.target.value)}
                 placeholder="移动端开发工程师"
-                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 hover:border-gray-400 transition-colors"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm text-gray-700 mb-1">性别</label>
-              <select
-                value={gender}
-                onChange={(e): void => setGender(e.target.value)}
-                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 hover:border-gray-400 transition-colors"
-              >
-                <option value="">请选择</option>
-                <option value="男">男</option>
-                <option value="女">女</option>
-              </select>
+            <div className="space-y-2">
+              <Label htmlFor="gender">性别</Label>
+              <Select value={gender} onValueChange={setGender}>
+                <SelectTrigger id="gender">
+                  <SelectValue placeholder="请选择" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="男">男</SelectItem>
+                  <SelectItem value="女">女</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            <div>
-              <label className="block text-sm text-gray-700 mb-1">头像</label>
-              <select
-                value={avatarUrl ? 'show' : ''}
-                onChange={(e): void => {
-                  if (e.target.value === '') {
-                    setAvatarUrl('');
-                  }
-                }}
-                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 hover:border-gray-400 transition-colors"
+            <div className="space-y-2">
+              <Label htmlFor="avatar">头像</Label>
+              <Select 
+                value={avatarUrl ? 'show' : 'hide'} 
+                onValueChange={(val) => setAvatarUrl(val === 'show' ? 'default' : '')}
               >
-                <option value="show">显示</option>
-                <option value="">隐藏</option>
-              </select>
+                <SelectTrigger id="avatar">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="show">显示</SelectItem>
+                  <SelectItem value="hide">隐藏</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm text-gray-700 mb-1">邮箱</label>
-              <input
+            <div className="space-y-2">
+              <Label htmlFor="email">邮箱</Label>
+              <Input
+                id="email"
                 type="email"
                 value={email}
-                onChange={(e): void => setEmail(e.target.value)}
-                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 hover:border-gray-400 transition-colors"
+                onChange={(e) => setEmail(e.target.value)}
               />
             </div>
-            <div>
-              <label className="block text-sm text-gray-700 mb-1">电话</label>
-              <input
+            <div className="space-y-2">
+              <Label htmlFor="phone">电话</Label>
+              <Input
+                id="phone"
                 type="tel"
                 value={phone}
-                onChange={(e): void => setPhone(e.target.value)}
-                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 hover:border-gray-400 transition-colors"
+                onChange={(e) => setPhone(e.target.value)}
               />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm text-gray-700 mb-1">年龄</label>
-              <input
+            <div className="space-y-2">
+              <Label htmlFor="age">年龄</Label>
+              <Input
+                id="age"
                 type="number"
                 value={age}
-                onChange={(e): void => setAge(e.target.value)}
+                onChange={(e) => setAge(e.target.value)}
                 placeholder="33"
-                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 hover:border-gray-400 transition-colors"
               />
             </div>
           </div>
 
-          <button
+          <Button
             type="button"
-            onClick={(): void => setShowMoreFields(!showMoreFields)}
-            className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-800 transition-colors"
+            variant="ghost"
+            onClick={() => setShowMoreFields(!showMoreFields)}
+            className="w-full justify-start gap-2"
           >
             <span>更多信息（选填）</span>
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              style={{ transform: showMoreFields ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}
-            >
-              <polyline points="6 9 12 15 18 9" />
-            </svg>
-          </button>
+            <ChevronDown 
+              className={`h-4 w-4 transition-transform ${showMoreFields ? 'rotate-180' : ''}`}
+            />
+          </Button>
 
-          {showMoreFields ? (
+          {showMoreFields && (
             <div className="space-y-4 pt-2 border-t">
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm text-gray-700 mb-1">民族</label>
-                  <input
-                    type="text"
+                <div className="space-y-2">
+                  <Label htmlFor="nation">民族</Label>
+                  <Input
+                    id="nation"
                     value={nation}
-                    onChange={(e): void => setNation(e.target.value)}
+                    onChange={(e) => setNation(e.target.value)}
                     placeholder="请输入"
-                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 hover:border-gray-400 transition-colors"
                   />
                 </div>
-                <div>
-                  <label className="block text-sm text-gray-700 mb-1">户籍</label>
-                  <input
-                    type="text"
+                <div className="space-y-2">
+                  <Label htmlFor="household">户籍</Label>
+                  <Input
+                    id="household"
                     value={household}
-                    onChange={(e): void => setHousehold(e.target.value)}
+                    onChange={(e) => setHousehold(e.target.value)}
                     placeholder="请输入"
-                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 hover:border-gray-400 transition-colors"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm text-gray-700 mb-1">现所在地</label>
-                  <input
-                    type="text"
+                <div className="space-y-2">
+                  <Label htmlFor="currentLocation">现所在地</Label>
+                  <Input
+                    id="currentLocation"
                     value={currentLocation}
-                    onChange={(e): void => setCurrentLocation(e.target.value)}
+                    onChange={(e) => setCurrentLocation(e.target.value)}
                     placeholder="请输入"
-                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 hover:border-gray-400 transition-colors"
                   />
                 </div>
-                <div>
-                  <label className="block text-sm text-gray-700 mb-1">开始工作时间</label>
-                  <input
-                    type="text"
+                <div className="space-y-2">
+                  <Label htmlFor="workStartTime">开始工作时间</Label>
+                  <Input
+                    id="workStartTime"
                     value={workStartTime}
-                    onChange={(e): void => setWorkStartTime(e.target.value)}
+                    onChange={(e) => setWorkStartTime(e.target.value)}
                     placeholder="请输入"
-                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 hover:border-gray-400 transition-colors"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm text-gray-700 mb-1">政治面貌</label>
-                  <input
-                    type="text"
+                <div className="space-y-2">
+                  <Label htmlFor="politicalStatus">政治面貌</Label>
+                  <Input
+                    id="politicalStatus"
                     value={politicalStatus}
-                    onChange={(e): void => setPoliticalStatus(e.target.value)}
+                    onChange={(e) => setPoliticalStatus(e.target.value)}
                     placeholder="请输入"
-                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 hover:border-gray-400 transition-colors"
                   />
                 </div>
-                <div>
-                  <label className="block text-sm text-gray-700 mb-1">身高</label>
-                  <input
-                    type="text"
+                <div className="space-y-2">
+                  <Label htmlFor="height">身高</Label>
+                  <Input
+                    id="height"
                     value={height}
-                    onChange={(e): void => setHeight(e.target.value)}
+                    onChange={(e) => setHeight(e.target.value)}
                     placeholder="身高(cm)"
-                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 hover:border-gray-400 transition-colors"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm text-gray-700 mb-1">体重</label>
-                  <input
-                    type="text"
+                <div className="space-y-2">
+                  <Label htmlFor="weight">体重</Label>
+                  <Input
+                    id="weight"
                     value={weight}
-                    onChange={(e): void => setWeight(e.target.value)}
+                    onChange={(e) => setWeight(e.target.value)}
                     placeholder="体重(kg)"
-                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 hover:border-gray-400 transition-colors"
                   />
                 </div>
               </div>
             </div>
-          ) : null}
+          )}
         </div>
 
-        <div className="sticky bottom-0 bg-white border-t px-6 py-4 flex justify-end gap-3">
-          <button
-            type="button"
-            onClick={props.onClose}
-            className="px-4 py-2 border rounded-md hover:bg-gray-50"
-          >
+        <DialogFooter>
+          <Button variant="outline" onClick={props.onClose}>
             取消
-          </button>
-          <button
-            type="button"
-            onClick={handleSave}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-          >
+          </Button>
+          <Button onClick={handleSave}>
             确定
-          </button>
-        </div>
-      </div>
-    </div>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

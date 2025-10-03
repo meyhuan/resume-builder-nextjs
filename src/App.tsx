@@ -10,6 +10,8 @@ import { useExportPdf } from '@/io/export-pdf'
 import { exportImage } from '@/io/export-image'
 import RightSidebar from '@/ui/right-sidebar'
 import type { ThemeTokens } from '@/entities/theme/theme-tokens'
+import { Button } from '@/components/ui/button'
+import { FileDown, Image } from 'lucide-react'
 
 export default function App(): ReactElement {
   const resume = useAppStore((s) => s.resume)
@@ -78,20 +80,22 @@ export default function App(): ReactElement {
             </span>
           </div>
           <div className="ml-auto flex gap-2">
-            <button
-              type="button"
+            <Button
+              variant="outline"
+              size="sm"
               onClick={handlePrint}
-              className="px-3 py-1.5 text-sm rounded border bg-white hover:bg-gray-50"
             >
+              <FileDown className="h-4 w-4" />
               Export PDF
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
               onClick={handleExportPng}
-              className="px-3 py-1.5 text-sm rounded border bg-white hover:bg-gray-50"
             >
+              <Image className="h-4 w-4" />
               Export PNG
-            </button>
+            </Button>
           </div>
         </div>
       </header>

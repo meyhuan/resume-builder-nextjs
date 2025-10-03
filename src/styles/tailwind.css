@@ -1,1 +1,58 @@
 @import "tailwindcss";
+
+@theme {
+  /* Purple + Green Theme (Fresh & Professional) */
+  --color-background: #ffffff;
+  --color-foreground: #0f172a;            /* slate-900 */
+  --color-card: #ffffff;
+  --color-card-foreground: #0f172a;
+  --color-popover: #ffffff;
+  --color-popover-foreground: #0f172a;
+  --color-primary: #8b5cf6;               /* purple-500 */
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #10b981;             /* green-500 */
+  --color-secondary-foreground: #ffffff;
+  --color-muted: #f0fdf4;                 /* green-50 */
+  --color-muted-foreground: #6b7280;      /* gray-500 */
+  --color-accent: #22c55e;                /* green-400 */
+  --color-accent-foreground: #ffffff;
+  --color-destructive: #ef4444;           /* red-500 */
+  --color-destructive-foreground: #ffffff;
+  --color-border: #e5e7eb;                /* gray-200 */
+  --color-input: #e5e7eb;                 /* gray-200 */
+  --color-ring: #8b5cf6;                  /* purple-500 */
+  --radius: 0.5rem;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Ensure runtime variables are defined for browsers */
+:root {
+  --color-background: #ffffff;
+  --color-foreground: #0f172a;
+  --color-card: #ffffff;
+  --color-card-foreground: #0f172a;
+  --color-popover: #ffffff;
+  --color-popover-foreground: #0f172a;
+  --color-primary: #8b5cf6;
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #10b981;
+  --color-secondary-foreground: #ffffff;
+  --color-muted: #f0fdf4;
+  --color-muted-foreground: #6b7280;
+  --color-accent: #22c55e;
+  --color-accent-foreground: #ffffff;
+  --color-destructive: #ef4444;
+  --color-destructive-foreground: #ffffff;
+  --color-border: #e5e7eb;
+  --color-input: #e5e7eb;
+  --color-ring: #8b5cf6;
+  --radius: 0.5rem;
+}
