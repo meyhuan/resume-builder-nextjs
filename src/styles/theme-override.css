@@ -1,0 +1,39 @@
+/**
+ * Theme Override Styles
+ * 让 Tailwind 字号类相对于父元素的 fontSize 设置
+ */
+
+/* 简历容器使用自定义字号，基础字号由 theme.fontSize 设置 */
+
+/* 覆盖 Tailwind 固定字号类，改为相对单位 */
+.resume-container .text-xs {
+  font-size: 0.75em !important;
+}
+
+.resume-container .text-sm {
+  font-size: 0.875em !important;
+}
+
+.resume-container .text-base {
+  font-size: 1em !important;
+}
+
+.resume-container .text-lg {
+  font-size: 1.125em !important;
+}
+
+.resume-container .text-xl {
+  font-size: 1.25em !important;
+}
+
+.resume-container .text-2xl {
+  font-size: 1.5em !important;
+}
+
+.resume-container .text-3xl {
+  font-size: 1.875em !important;
+}
+
+.resume-container .text-4xl {
+  font-size: 2.25em !important;
+}

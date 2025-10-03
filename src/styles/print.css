@@ -1,0 +1,48 @@
+/* Print styles for resume export */
+/* A4 page container for screen preview */
+.page {
+  width: 210mm;
+  min-height: 297mm;
+  margin: 0 auto;
+  background: white;
+}
+
+/* Optional: fix the page height to exactly A4 on screen */
+.page-fixed {
+  height: 297mm;
+  overflow: hidden;
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
+  html, body, #root {
+    background: white !important;
+  }
+  /* The page container should fit the printable area */
+  .page {
+    width: auto !important;
+    min-height: auto !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+  /* Hide interactive UI elements when printing */
+  .no-print {
+    display: none !important;
+  }
+  /* Avoid breaking blocks across pages */
+  .avoid-break,
+  section,
+  article,
+  .resume-block {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  /* Remove app default paddings/margins if any */
+  body {
+    margin: 0;
+  }
+}
