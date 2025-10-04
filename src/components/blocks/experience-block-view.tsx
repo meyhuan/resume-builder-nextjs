@@ -218,6 +218,7 @@ export default function ExperienceBlockView(props: ExperienceBlockViewProps): Re
         ) : (
           <div
             className={CONTENT_DISPLAY_STYLES_XS}
+            onClick={(): void => setIsEditingContent(true)}
             
             dangerouslySetInnerHTML={{ __html: block.contentHtml }}
           />

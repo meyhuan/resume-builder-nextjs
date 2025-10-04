@@ -19,9 +19,10 @@ export const LIST_STYLES = '[&_ul]:list-disc [&_ul]:pl-5 [&_ul]:space-y-1 [&_ol]
 export const INTERACTIVE_STYLES = 'cursor-text hover:bg-gray-50 rounded p-1 transition-colors'
 
 /**
- * Editing state styles (border, background).
+ * Editing state styles (non-intrusive highlight).
+ * Use ring instead of border to avoid layout shift when toggling edit mode.
  */
-export const EDITING_STYLES = 'relative rounded p-1 border border-blue-500 bg-white'
+export const EDITING_STYLES = 'relative rounded p-1 ring-1 ring-[var(--color-ring)] bg-white rb-editing'
 
 /**
  * Complete style for content display mode (inherits parent font size).
