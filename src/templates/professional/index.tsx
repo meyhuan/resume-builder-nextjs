@@ -11,6 +11,7 @@ import type { BaseInfo } from '@/entities/user/base-info'
 import type { ResumeBlock } from '@/entities/blocks/resume-block'
 import EditableBlockWrapper from '@/editor/editable-block-wrapper'
 import EditableFieldWrapper from '@/editor/editable-field-wrapper'
+import EditableDateField from '@/editor/editable-date-field'
 import BaseInfoModal from '@/components/modals/base-info-modal'
 import SectionHeader from '@/components/sections/section-header'
 import BlockWrapper from '@/components/blocks/block-wrapper'
@@ -94,19 +95,9 @@ function BlockRenderer(props: {
               </p>
             </div>
             <div className="text-xs text-gray-500 text-right ml-4 shrink-0">
-              <EditableFieldWrapper
-                blockId={block.id}
-                fieldName="startDate"
-                value={block.startDate}
-                onUpdate={() => {}}
-              />
+              <EditableDateField blockId={block.id} fieldName="startDate" value={block.startDate} />
               {' - '}
-              <EditableFieldWrapper
-                blockId={block.id}
-                fieldName="endDate"
-                value={block.endDate}
-                onUpdate={() => {}}
-              />
+              <EditableDateField blockId={block.id} fieldName="endDate" value={block.endDate} />
             </div>
           </div>
           <div className="mt-2">
@@ -146,19 +137,9 @@ function BlockRenderer(props: {
               ) : null}
             </div>
             <div className="text-xs text-gray-500 text-right ml-4 shrink-0">
-              <EditableFieldWrapper
-                blockId={block.id}
-                fieldName="startDate"
-                value={block.startDate}
-                onUpdate={() => {}}
-              />
+              <EditableDateField blockId={block.id} fieldName="startDate" value={block.startDate} />
               {' - '}
-              <EditableFieldWrapper
-                blockId={block.id}
-                fieldName="endDate"
-                value={block.endDate}
-                onUpdate={() => {}}
-              />
+              <EditableDateField blockId={block.id} fieldName="endDate" value={block.endDate} />
             </div>
           </div>
           <div className="mt-2">
@@ -203,19 +184,9 @@ function BlockRenderer(props: {
               </p>
             </div>
             <div className="text-xs text-gray-500 text-right ml-4 shrink-0">
-              <EditableFieldWrapper
-                blockId={block.id}
-                fieldName="startDate"
-                value={block.startDate}
-                onUpdate={() => {}}
-              />
+              <EditableDateField blockId={block.id} fieldName="startDate" value={block.startDate} />
               {' - '}
-              <EditableFieldWrapper
-                blockId={block.id}
-                fieldName="endDate"
-                value={block.endDate}
-                onUpdate={() => {}}
-              />
+              <EditableDateField blockId={block.id} fieldName="endDate" value={block.endDate} />
             </div>
           </div>
           {block.courseHtml ? (
@@ -255,19 +226,9 @@ function BlockRenderer(props: {
               </p>
             </div>
             <div className="text-xs text-gray-500 text-right ml-4 shrink-0">
-              <EditableFieldWrapper
-                blockId={block.id}
-                fieldName="startDate"
-                value={block.startDate}
-                onUpdate={() => {}}
-              />
+              <EditableDateField blockId={block.id} fieldName="startDate" value={block.startDate} />
               {' - '}
-              <EditableFieldWrapper
-                blockId={block.id}
-                fieldName="endDate"
-                value={block.endDate}
-                onUpdate={() => {}}
-              />
+              <EditableDateField blockId={block.id} fieldName="endDate" value={block.endDate} />
             </div>
           </div>
           <div className="mt-2">

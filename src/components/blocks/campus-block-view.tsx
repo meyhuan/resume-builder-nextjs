@@ -4,6 +4,7 @@ import InlineEditor from '@/editor/inline-editor';
 import { useAppStore } from '@/state/store';
 import type { CampusBlock } from '@/entities/blocks/campus-block';
 import { CONTENT_DISPLAY_STYLES_XS, CONTENT_EDITING_STYLES_XS } from '@/editor/editor-styles';
+import EditableDateField from '@/editor/editable-date-field';
 
 /**
  * Renders a single CampusBlock with inline editing for all fields.
@@ -17,7 +18,7 @@ export interface CampusBlockViewProps {
 export default function CampusBlockView(props: CampusBlockViewProps): ReactElement {
   const { block, onEditingChange } = props;
   const [isEditingContent, setIsEditingContent] = useState(false);
-  const [editingField, setEditingField] = useState<'organization' | 'position' | 'startDate' | 'endDate' | null>(null);
+  const [editingField, setEditingField] = useState<'organization' | 'position' | null>(null);
   const [tempValue, setTempValue] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
   const setResume = useAppStore((s) => s.setResume);
@@ -46,7 +47,7 @@ export default function CampusBlockView(props: CampusBlockViewProps): ReactEleme
     });
   }
 
-  function startEditing(field: 'organization' | 'position' | 'startDate' | 'endDate'): void {
+  function startEditing(field: 'organization' | 'position'): void {
     setEditingField(field);
     setTempValue(block[field] || '');
   }
@@ -61,10 +62,6 @@ export default function CampusBlockView(props: CampusBlockViewProps): ReactEleme
             foundBlock.organization = tempValue || '社团/活动名称';
           } else if (editingField === 'position') {
             foundBlock.position = tempValue || '职位';
-          } else if (editingField === 'startDate') {
-            foundBlock.startDate = tempValue || '开始';
-          } else if (editingField === 'endDate') {
-            foundBlock.endDate = tempValue || '结束';
           }
           break;
         }
@@ -90,49 +87,9 @@ export default function CampusBlockView(props: CampusBlockViewProps): ReactEleme
     <div>
       <div className="flex items-baseline justify-between mb-1.5 gap-2">
         <div className="flex items-center gap-1 text-sm font-bold shrink-0">
-          {editingField === 'startDate' ? (
-            <input
-              ref={inputRef}
-              type="text"
-              value={tempValue}
-              onChange={(e): void => setTempValue(e.target.value)}
-              onBlur={saveField}
-              onKeyDown={handleKeyDown}
-              className="px-1 py-0.5 border border-blue-500 rounded outline-none w-20 text-sm"
-              placeholder="2020.09"
-            />
-          ) : (
-            <span
-              className="cursor-pointer hover:underline rounded px-1 py-0.5"
-              onClick={(): void => startEditing('startDate')}
-              title="点击编辑开始时间"
-            >
-              {block.startDate || '开始时间'}
-            </span>
-          )}
-          
+          <EditableDateField blockId={block.id} fieldName="startDate" value={block.startDate} />
           <span>-</span>
-          
-          {editingField === 'endDate' ? (
-            <input
-              ref={inputRef}
-              type="text"
-              value={tempValue}
-              onChange={(e): void => setTempValue(e.target.value)}
-              onBlur={saveField}
-              onKeyDown={handleKeyDown}
-              className="px-1 py-0.5 border border-blue-500 rounded outline-none w-20 text-sm"
-              placeholder="2024.06"
-            />
-          ) : (
-            <span
-              className="cursor-pointer hover:underline rounded px-1 py-0.5"
-              onClick={(): void => startEditing('endDate')}
-              title="点击编辑结束时间"
-            >
-              {block.endDate || '结束时间'}
-            </span>
-          )}
+          <EditableDateField blockId={block.id} fieldName="endDate" value={block.endDate} />
         </div>
 
         <div className="flex-1 min-w-0 text-right">

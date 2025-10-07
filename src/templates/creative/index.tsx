@@ -11,6 +11,7 @@ import type { BaseInfo } from '@/entities/user/base-info'
 import type { ResumeBlock } from '@/entities/blocks/resume-block'
 import EditableBlockWrapper from '@/editor/editable-block-wrapper'
 import EditableFieldWrapper from '@/editor/editable-field-wrapper'
+import EditableDateField from '@/editor/editable-date-field'
 import BaseInfoModal from '@/components/modals/base-info-modal'
 import SectionHeader from '@/components/sections/section-header'
 import BlockWrapper from '@/components/blocks/block-wrapper'
@@ -38,6 +39,7 @@ function BlockRenderer(props: {
   const deleteBlock = useAppStore((s) => s.deleteBlock)
   const moveBlockUp = useAppStore((s) => s.moveBlockUp)
   const moveBlockDown = useAppStore((s) => s.moveBlockDown)
+  const [isEditing, setIsEditing] = useState(false)
 
   function handleMoveUp(): void {
     moveBlockUp(sectionId, block.id)
@@ -87,9 +89,9 @@ function BlockRenderer(props: {
               className="text-xs px-3 py-1 rounded-full ml-4 shrink-0"
               style={{ backgroundColor: `${themeColor}15`, color: themeColor }}
             >
-              <EditableFieldWrapper blockId={block.id} fieldName="startDate" value={block.startDate} onUpdate={() => {}} />
+              <EditableDateField blockId={block.id} fieldName="startDate" value={block.startDate} />
               {' - '}
-              <EditableFieldWrapper blockId={block.id} fieldName="endDate" value={block.endDate} onUpdate={() => {}} />
+              <EditableDateField blockId={block.id} fieldName="endDate" value={block.endDate} />
             </div>
           </div>
           <div className="mt-3 ml-4 bg-gray-50 rounded-lg p-3">
@@ -118,9 +120,9 @@ function BlockRenderer(props: {
               className="text-xs px-3 py-1 rounded-full ml-4 shrink-0"
               style={{ backgroundColor: `${themeColor}15`, color: themeColor }}
             >
-              <EditableFieldWrapper blockId={block.id} fieldName="startDate" value={block.startDate} onUpdate={() => {}} />
+              <EditableDateField blockId={block.id} fieldName="startDate" value={block.startDate} />
               {' - '}
-              <EditableFieldWrapper blockId={block.id} fieldName="endDate" value={block.endDate} onUpdate={() => {}} />
+              <EditableDateField blockId={block.id} fieldName="endDate" value={block.endDate} />
             </div>
           </div>
           <div className="mt-3 ml-4 bg-gray-50 rounded-lg p-3">
@@ -151,9 +153,9 @@ function BlockRenderer(props: {
               className="text-xs px-3 py-1 rounded-full ml-4 shrink-0"
               style={{ backgroundColor: `${themeColor}15`, color: themeColor }}
             >
-              <EditableFieldWrapper blockId={block.id} fieldName="startDate" value={block.startDate} onUpdate={() => {}} />
+              <EditableDateField blockId={block.id} fieldName="startDate" value={block.startDate} />
               {' - '}
-              <EditableFieldWrapper blockId={block.id} fieldName="endDate" value={block.endDate} onUpdate={() => {}} />
+              <EditableDateField blockId={block.id} fieldName="endDate" value={block.endDate} />
             </div>
           </div>
           {block.courseHtml ? (
@@ -214,8 +216,11 @@ function BlockRenderer(props: {
       onMoveUp={blockIndex > 0 ? handleMoveUp : undefined}
       onMoveDown={blockIndex < totalBlocks - 1 ? handleMoveDown : undefined}
       showDragHandle={false}
+      disableHover={isEditing}
     >
-      {content}
+      <div onFocusCapture={(): void => setIsEditing(true)} onBlurCapture={(): void => setIsEditing(false)}>
+        {content}
+      </div>
     </BlockWrapper>
   )
 }

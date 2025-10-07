@@ -4,6 +4,7 @@ import InlineEditor from '@/editor/inline-editor';
 import { useAppStore } from '@/state/store';
 import type { ProjectBlock } from '@/entities/blocks/project-block';
 import { CONTENT_DISPLAY_STYLES_XS, CONTENT_EDITING_STYLES_XS } from '@/editor/editor-styles';
+import EditableDateField from '@/editor/editable-date-field';
 
 /**
  * Renders a single ProjectBlock with inline editing for all fields.
@@ -17,7 +18,7 @@ export interface ProjectBlockViewProps {
 export default function ProjectBlockView(props: ProjectBlockViewProps): ReactElement {
   const { block, onEditingChange } = props;
   const [isEditingContent, setIsEditingContent] = useState(false);
-  const [editingField, setEditingField] = useState<'name' | 'role' | 'startDate' | 'endDate' | null>(null);
+  const [editingField, setEditingField] = useState<'name' | 'role' | null>(null);
   const [tempValue, setTempValue] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
   const setResume = useAppStore((s) => s.setResume);
@@ -46,7 +47,7 @@ export default function ProjectBlockView(props: ProjectBlockViewProps): ReactEle
     });
   }
 
-  function startEditing(field: 'name' | 'role' | 'startDate' | 'endDate'): void {
+  function startEditing(field: 'name' | 'role'): void {
     setEditingField(field);
     setTempValue(block[field] || '');
   }
@@ -61,10 +62,6 @@ export default function ProjectBlockView(props: ProjectBlockViewProps): ReactEle
             foundBlock.name = tempValue || '未命名项目';
           } else if (editingField === 'role') {
             foundBlock.role = tempValue || undefined;
-          } else if (editingField === 'startDate') {
-            foundBlock.startDate = tempValue || '开始';
-          } else if (editingField === 'endDate') {
-            foundBlock.endDate = tempValue || '至今';
           }
           break;
         }
@@ -113,49 +110,9 @@ export default function ProjectBlockView(props: ProjectBlockViewProps): ReactEle
         </div>
 
         <div className="flex items-center gap-1 text-xs text-gray-600 shrink-0">
-          {editingField === 'startDate' ? (
-            <input
-              ref={inputRef}
-              type="text"
-              value={tempValue}
-              onChange={(e): void => setTempValue(e.target.value)}
-              onBlur={saveField}
-              onKeyDown={handleKeyDown}
-              className="px-1 py-0.5 border border-blue-500 rounded outline-none w-20 text-xs"
-              placeholder="2020.09"
-            />
-          ) : (
-            <span
-              className="cursor-pointer hover:underline rounded px-1 py-0.5"
-              onClick={(): void => startEditing('startDate')}
-              title="点击编辑开始时间"
-            >
-              {block.startDate || '开始'}
-            </span>
-          )}
-          
+          <EditableDateField blockId={block.id} fieldName="startDate" value={block.startDate} />
           <span>-</span>
-          
-          {editingField === 'endDate' ? (
-            <input
-              ref={inputRef}
-              type="text"
-              value={tempValue}
-              onChange={(e): void => setTempValue(e.target.value)}
-              onBlur={saveField}
-              onKeyDown={handleKeyDown}
-              className="px-1 py-0.5 border border-blue-500 rounded outline-none w-20 text-xs"
-              placeholder="至今"
-            />
-          ) : (
-            <span
-              className="cursor-pointer hover:underline rounded px-1 py-0.5"
-              onClick={(): void => startEditing('endDate')}
-              title="点击编辑结束时间"
-            >
-              {block.endDate || '至今'}
-            </span>
-          )}
+          <EditableDateField blockId={block.id} fieldName="endDate" value={block.endDate} />
         </div>
       </div>
 
