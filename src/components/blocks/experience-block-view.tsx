@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import type { ReactElement } from 'react';
+import type { ReactElement, KeyboardEvent } from 'react';
 import InlineEditor from '@/editor/inline-editor';
 import { useAppStore } from '@/state/store';
 import type { ExperienceBlock } from '@/entities/blocks/experience-block';
@@ -10,10 +10,11 @@ import { CONTENT_DISPLAY_STYLES_XS, CONTENT_EDITING_STYLES_XS } from '@/editor/e
 export interface ExperienceBlockViewProps {
   readonly block: ExperienceBlock;
   readonly themeColor?: string;
+  readonly onEditingChange?: (isEditing: boolean) => void;
 }
 
 export default function ExperienceBlockView(props: ExperienceBlockViewProps): ReactElement {
-  const { block } = props;
+  const { block, onEditingChange } = props;
   const [isEditingContent, setIsEditingContent] = useState(false);
   const [editingField, setEditingField] = useState<'company' | 'position' | 'industry' | 'startDate' | 'endDate' | null>(null);
   const [tempValue, setTempValue] = useState('');
@@ -26,6 +27,11 @@ export default function ExperienceBlockView(props: ExperienceBlockViewProps): Re
       inputRef.current.select();
     }
   }, [editingField]);
+
+  useEffect(() => {
+    const isEditing = isEditingContent || editingField !== null;
+    onEditingChange?.(isEditing);
+  }, [isEditingContent, editingField, onEditingChange]);
 
   function handleContentChange(html: string): void {
     setResume((draft) => {

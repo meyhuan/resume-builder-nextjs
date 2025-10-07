@@ -1,4 +1,4 @@
-﻿/**
+/**
  * EditableFieldWrapper - A reusable wrapper for inline text field editing.
  * Handles field-level editing like company name, position, dates, etc.
  */
@@ -14,6 +14,7 @@ interface EditableFieldWrapperProps {
   readonly placeholder?: string
   readonly title?: string
   readonly onUpdate: (value: string) => void
+  readonly onEditingChange?: (isEditing: boolean) => void
 }
 
 /**
@@ -33,6 +34,7 @@ interface EditableFieldWrapperProps {
  * </EditableFieldWrapper>
  */
 export default function EditableFieldWrapper(props: EditableFieldWrapperProps): ReactElement {
+  const { onEditingChange } = props
   const [isEditing, setIsEditing] = useState(false)
   const [tempValue, setTempValue] = useState(props.value || '')
   const inputRef = useRef<HTMLInputElement>(null)
@@ -44,6 +46,10 @@ export default function EditableFieldWrapper(props: EditableFieldWrapperProps): 
       inputRef.current.select()
     }
   }, [isEditing])
+
+  useEffect(() => {
+    onEditingChange?.(isEditing)
+  }, [isEditing, onEditingChange])
 
   useEffect(() => {
     setTempValue(props.value || '')

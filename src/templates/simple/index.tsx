@@ -38,6 +38,7 @@ function BlockRenderer(props: {
   const deleteBlock = useAppStore((s) => s.deleteBlock)
   const moveBlockUp = useAppStore((s) => s.moveBlockUp)
   const moveBlockDown = useAppStore((s) => s.moveBlockDown)
+  const [isEditing, setIsEditing] = useState(false)
   
   function handleMoveUp(): void {
     moveBlockUp(sectionId, block.id)
@@ -61,15 +62,15 @@ function BlockRenderer(props: {
   const content = ((): ReactElement => {
     switch (block.type) {
       case 'text':
-        return <EditableTextBlock blockId={block.id} />
+        return <EditableTextBlock blockId={block.id} onEditingChange={setIsEditing} />
       case 'experience':
-        return <ExperienceBlockView block={block} themeColor={themeColor} />
+        return <ExperienceBlockView block={block} themeColor={themeColor} onEditingChange={setIsEditing} />
       case 'project':
-        return <ProjectBlockView block={block} themeColor={themeColor} />
+        return <ProjectBlockView block={block} themeColor={themeColor} onEditingChange={setIsEditing} />
       case 'education':
-        return <EducationBlockView block={block} themeColor={themeColor} />
+        return <EducationBlockView block={block} themeColor={themeColor} onEditingChange={setIsEditing} />
       case 'campus':
-        return <CampusBlockView block={block} themeColor={themeColor} />
+        return <CampusBlockView block={block} themeColor={themeColor} onEditingChange={setIsEditing} />
       default:
         return <div className="text-gray-500" style={{ fontSize: '0.875em' }}>Unsupported block type</div>
     }
@@ -84,6 +85,7 @@ function BlockRenderer(props: {
       onMoveUp={blockIndex > 0 ? handleMoveUp : undefined}
       onMoveDown={blockIndex < totalBlocks - 1 ? handleMoveDown : undefined}
       showDragHandle={false}
+      disableHover={isEditing}
     >
       {content}
     </BlockWrapper>

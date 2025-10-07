@@ -1,5 +1,5 @@
-﻿import { useState, useRef, useEffect } from 'react';
-import type { ReactElement } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import type { ReactElement, KeyboardEvent } from 'react';
 import InlineEditor from '@/editor/inline-editor';
 import { useAppStore } from '@/state/store';
 import type { CampusBlock } from '@/entities/blocks/campus-block';
@@ -11,10 +11,11 @@ import { CONTENT_DISPLAY_STYLES_XS, CONTENT_EDITING_STYLES_XS } from '@/editor/e
 export interface CampusBlockViewProps {
   readonly block: CampusBlock;
   readonly themeColor?: string;
+  readonly onEditingChange?: (isEditing: boolean) => void;
 }
 
 export default function CampusBlockView(props: CampusBlockViewProps): ReactElement {
-  const { block } = props;
+  const { block, onEditingChange } = props;
   const [isEditingContent, setIsEditingContent] = useState(false);
   const [editingField, setEditingField] = useState<'organization' | 'position' | 'startDate' | 'endDate' | null>(null);
   const [tempValue, setTempValue] = useState('');
@@ -27,6 +28,11 @@ export default function CampusBlockView(props: CampusBlockViewProps): ReactEleme
       inputRef.current.select();
     }
   }, [editingField]);
+
+  useEffect(() => {
+    const isEditing = isEditingContent || editingField !== null;
+    onEditingChange?.(isEditing);
+  }, [isEditingContent, editingField, onEditingChange]);
 
   function handleContentChange(html: string): void {
     setResume((draft) => {

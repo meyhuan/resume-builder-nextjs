@@ -33,13 +33,6 @@ export const TEMPLATE_REGISTRY: Record<string, TemplateConfig> = {
     tags: ['通用', '简洁'],
     component: lazy(() => import('@/templates/simple')),
   },
-  modern: {
-    id: 'modern',
-    name: '现代',
-    description: '现代卡片式设计',
-    tags: ['现代', '卡片'],
-    component: lazy(() => import('@/templates/modern')),
-  },
   professional: {
     id: 'professional',
     name: '专业商务',

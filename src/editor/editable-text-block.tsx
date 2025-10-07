@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { ReactElement } from 'react'
 import InlineEditor from '@/editor/inline-editor'
 import { useAppStore } from '@/state/store'
@@ -9,6 +9,7 @@ import { CONTENT_DISPLAY_STYLES_SM, CONTENT_EDITING_STYLES_SM } from '@/editor/e
 interface EditableTextBlockProps {
   readonly blockId: string
   readonly className?: string
+  readonly onEditingChange?: (isEditing: boolean) => void
 }
 
 function findTextHtml(resume: ResumeData, blockId: string): string {
@@ -23,9 +24,14 @@ function findTextHtml(resume: ResumeData, blockId: string): string {
 }
 
 export default function EditableTextBlock(props: EditableTextBlockProps): ReactElement {
+  const { onEditingChange } = props
   const resume = useAppStore((s) => s.resume)
   const setResume = useAppStore((s) => s.setResume)
   const [isEditing, setIsEditing] = useState(false)
+
+  useEffect(() => {
+    onEditingChange?.(isEditing)
+  }, [isEditing, onEditingChange])
 
   const html: string = findTextHtml(resume, props.blockId)
 

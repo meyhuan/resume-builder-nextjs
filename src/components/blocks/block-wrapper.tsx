@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import type { ReactElement, ReactNode } from 'react';
 import BlockActions from './block-actions';
 
@@ -17,16 +17,24 @@ export interface BlockWrapperProps {
   readonly dragHandleProps?: Record<string, unknown>;
   readonly dragHandleRef?: (element: HTMLElement | null) => void;
   readonly showDragHandle?: boolean;
+  readonly disableHover?: boolean;
 }
 
 const HOVER_DELAY_MS = 200;
 
 export default function BlockWrapper(props: BlockWrapperProps): ReactElement {
-  const { children, blockType, onAdd, onPolish, onDelete, onMoveUp, onMoveDown, dragHandleProps, dragHandleRef, showDragHandle = true } = props;
+  const { children, blockType, onAdd, onPolish, onDelete, onMoveUp, onMoveDown, dragHandleProps, dragHandleRef, showDragHandle = true, disableHover = false } = props;
   const [isHovered, setIsHovered] = useState(false);
   const hideTimerRef = useRef<number | null>(null);
 
+  useEffect(() => {
+    if (disableHover && isHovered) {
+      setIsHovered(false);
+    }
+  }, [disableHover, isHovered]);
+
   function handleMouseEnter(): void {
+    if (disableHover) return;
     if (hideTimerRef.current) {
       clearTimeout(hideTimerRef.current);
       hideTimerRef.current = null;
@@ -49,7 +57,7 @@ export default function BlockWrapper(props: BlockWrapperProps): ReactElement {
       {children}
 
       {/* DnD Drag Handle - top right corner */}
-      {showDragHandle && dragHandleProps && dragHandleRef && isHovered ? (
+      {showDragHandle && dragHandleProps && dragHandleRef && isHovered && !disableHover ? (
         <button
           type="button"
           ref={dragHandleRef}

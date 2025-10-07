@@ -37,6 +37,7 @@ function BlockRenderer(props: {
   const deleteBlock = useAppStore((s) => s.deleteBlock)
   const moveBlockUp = useAppStore((s) => s.moveBlockUp)
   const moveBlockDown = useAppStore((s) => s.moveBlockDown)
+  const [isEditing, setIsEditing] = useState(false)
 
   function handleMoveUp(): void {
     moveBlockUp(sectionId, block.id)
@@ -68,6 +69,7 @@ function BlockRenderer(props: {
                   fieldName="company"
                   value={block.company}
                   onUpdate={() => {}}
+                  onEditingChange={setIsEditing}
                   className="font-semibold"
                 />
               </h3>
@@ -303,8 +305,11 @@ function BlockRenderer(props: {
       onMoveUp={blockIndex > 0 ? handleMoveUp : undefined}
       onMoveDown={blockIndex < totalBlocks - 1 ? handleMoveDown : undefined}
       showDragHandle={false}
+      disableHover={isEditing}
     >
-      {content}
+      <div onFocusCapture={(): void => setIsEditing(true)} onBlurCapture={(): void => setIsEditing(false)}>
+        {content}
+      </div>
     </BlockWrapper>
   )
 }

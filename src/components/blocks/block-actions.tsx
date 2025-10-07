@@ -65,31 +65,29 @@ export default function BlockActions(props: BlockActionsProps): ReactElement {
         </Button>
       ) : null}
 
-      {onMoveUp ? (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onMoveUp}
-          className="h-7 text-xs gap-1"
-          title="上移"
-        >
-          <ArrowUp className="h-3 w-3" />
-          <span>上移</span>
-        </Button>
-      ) : null}
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={onMoveUp}
+        disabled={!onMoveUp}
+        className="h-7 text-xs gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+        title="上移"
+      >
+        <ArrowUp className="h-3 w-3" />
+        <span>上移</span>
+      </Button>
 
-      {onMoveDown ? (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onMoveDown}
-          className="h-7 text-xs gap-1"
-          title="下移"
-        >
-          <ArrowDown className="h-3 w-3" />
-          <span>下移</span>
-        </Button>
-      ) : null}
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={onMoveDown}
+        disabled={!onMoveDown}
+        className="h-7 text-xs gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+        title="下移"
+      >
+        <ArrowDown className="h-3 w-3" />
+        <span>下移</span>
+      </Button>
     </div>
   );
 }

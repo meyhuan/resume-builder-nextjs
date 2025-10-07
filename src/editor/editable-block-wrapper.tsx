@@ -2,7 +2,7 @@
  * EditableBlockWrapper - A reusable wrapper that adds editing capabilities to any block component.
  * This separates editing logic from display logic, making it easy to create multiple templates.
  */
-import { useState, type ReactElement, type ReactNode } from 'react'
+import { useState, useEffect, type ReactElement, type ReactNode } from 'react'
 import InlineEditor from '@/editor/inline-editor'
 import { useAppStore } from '@/state/store'
 import { CONTENT_DISPLAY_STYLES_XS, CONTENT_EDITING_STYLES_XS } from '@/editor/editor-styles'
@@ -12,6 +12,7 @@ interface EditableBlockWrapperProps {
   readonly blockId: string
   readonly contentField: 'contentHtml' | 'courseHtml' | 'html'
   readonly contentSize?: 'xs' | 'sm'
+  readonly onEditingChange?: (isEditing: boolean) => void
   readonly children?: (props: {
     isEditing: boolean
     onStartEdit: () => void
@@ -30,9 +31,14 @@ interface EditableBlockWrapperProps {
  * </EditableBlockWrapper>
  */
 export default function EditableBlockWrapper(props: EditableBlockWrapperProps): ReactElement {
+  const { onEditingChange } = props
   const [isEditing, setIsEditing] = useState(false)
   const setResume = useAppStore((s) => s.setResume)
   const resume = useAppStore((s) => s.resume)
+
+  useEffect(() => {
+    onEditingChange?.(isEditing)
+  }, [isEditing, onEditingChange])
 
   const contentSize = props.contentSize || 'xs'
   const displayStyles = contentSize === 'xs' ? CONTENT_DISPLAY_STYLES_XS : CONTENT_DISPLAY_STYLES_XS

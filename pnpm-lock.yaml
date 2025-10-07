@@ -32,6 +32,9 @@ importers:
       '@lexical/react':
         specifier: ^0.36.1
         version: 0.36.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(yjs@13.6.27)
+      '@lexical/utils':
+        specifier: ^0.36.1
+        version: 0.36.1
       '@radix-ui/react-dialog':
         specifier: ^1.1.15
         version: 1.1.15(@types/react-dom@19.1.9(@types/react@19.1.15))(@types/react@19.1.15)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
