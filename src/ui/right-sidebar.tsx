@@ -161,6 +161,8 @@ export default function RightSidebar(props: RightSidebarProps): ReactElement {
             onClose={() => {
               // No close action needed with tabs
             }}
+            onePage={props.onePage}
+            onOnePageChange={props.onOnePageChange}
           />
         </TabsContent>
       </Tabs>
