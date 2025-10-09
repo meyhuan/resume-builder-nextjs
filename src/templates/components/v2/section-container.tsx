@@ -19,8 +19,8 @@ export default function SectionContainer(props: SectionContainerProps): ReactEle
   const [isHovered, setIsHovered] = useState(false)
 
   const baseClassName = [
-    'mb-5',
-    'p-4',
+    'mb-1',
+    'p-1',
     'rounded-lg',
     'transition-all duration-200 group',
     isHovered ? 'shadow-sm' : '',

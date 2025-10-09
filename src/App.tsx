@@ -15,24 +15,30 @@ import { FileDown, Image } from 'lucide-react'
 
 export default function App(): ReactElement {
   const resume = useAppStore((s) => s.resume)
-  const theme = useAppStore((s) => s.theme)
-  const setTheme = useAppStore((s) => s.setTheme)
+  const setThemeForTemplate = useAppStore((s) => s.setThemeForTemplate)
+  const getThemeForTemplate = useAppStore((s) => s.getThemeForTemplate)
   const printRef = useRef<HTMLDivElement>(null)
   const handlePrint = useExportPdf<HTMLDivElement>(printRef, { documentTitle: 'resume' })
   const [tpl, setTpl] = useState<string>('simple')
+  
+  // Subscribe to theme changes for current template
+  const themes = useAppStore((s) => s.themes)
+  const theme = themes[tpl] || getThemeForTemplate(tpl)
 
   async function handleExportPng(): Promise<void> {
     await exportImage<HTMLDivElement>(printRef, { fileName: 'resume', pixelRatio: 2 })
   }
 
-  // Restore theme from localStorage on mount
+  // Restore themes from localStorage on mount
   useEffect(() => {
     try {
-      const raw = localStorage.getItem('rb.theme')
+      const raw = localStorage.getItem('rb.themes')
       if (raw) {
-        const saved: Partial<ThemeTokens> = JSON.parse(raw)
-        setTheme((draft) => {
-          Object.assign(draft, saved)
+        const saved: Record<string, ThemeTokens> = JSON.parse(raw)
+        Object.entries(saved).forEach(([templateId, themeData]) => {
+          setThemeForTemplate(templateId, (draft) => {
+            Object.assign(draft, themeData)
+          })
         })
       }
     } catch {
@@ -51,9 +57,10 @@ export default function App(): ReactElement {
     }
   }, [])
 
-  // Persist theme to localStorage when it changes
+  // Persist all themes to localStorage when they change
   useEffect(() => {
-    localStorage.setItem('rb.theme', JSON.stringify(theme))
+    const allThemes = useAppStore.getState().themes
+    localStorage.setItem('rb.themes', JSON.stringify(allThemes))
   }, [theme])
 
   // Persist template when it changes
@@ -139,7 +146,7 @@ export default function App(): ReactElement {
               templates={getAllTemplates()}
               onTplChange={(next): void => setTpl(next)}
               onThemePatch={(patch): void => {
-                setTheme((draft) => {
+                setThemeForTemplate(tpl, (draft) => {
                   Object.assign(draft, patch)
                 })
               }}

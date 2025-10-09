@@ -64,7 +64,7 @@ export const PROFESSIONAL_TEMPLATE_STYLES: TemplateStylesConfig = {
   blockRenderer: {
     container: 'relative pl-4 border-l-2 border-gray-200',
     layout: 'timeline',
-    spacing: 'mb-4',
+    spacing: 'mb-0',
     border: 'border-l-2 border-gray-200',
     shadow: '',
     hover: '',

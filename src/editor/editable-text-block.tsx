@@ -59,7 +59,7 @@ export default function EditableTextBlock(props: EditableTextBlockProps): ReactE
           onChange={handleChange}
           onClickOutside={(): void => setIsEditing(false)}
           floatingToolbar={true}
-          className="leading-relaxed outline-none"
+          className="outline-none"
         />
       </div>
     )

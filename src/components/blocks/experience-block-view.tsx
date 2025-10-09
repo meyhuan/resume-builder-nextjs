@@ -175,7 +175,7 @@ export default function ExperienceBlockView(props: ExperienceBlockViewProps): Re
               onChange={handleContentChange}
               onClickOutside={(): void => setIsEditingContent(false)}
               floatingToolbar={true}
-              className="leading-relaxed outline-none"
+              className="outline-none"
             />
           </div>
         ) : (

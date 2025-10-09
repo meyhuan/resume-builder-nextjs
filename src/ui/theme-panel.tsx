@@ -179,8 +179,8 @@ export default function ThemePanel(props: {
             </div>
             <Slider
               id="spacing-scale"
-              min={0.8}
-              max={1.6}
+              min={0.1}
+              max={2.0}
               step={0.1}
               value={[theme.spacingScale]}
               onValueChange={handleSpacing}

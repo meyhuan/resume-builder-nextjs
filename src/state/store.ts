@@ -208,17 +208,27 @@ const DEFAULT_NEW_TEXT_HTML: string = '<p>New text block. Click to edit.</p>'
  * Create app store.
  */
 export const useAppStore = create<AppState>()(
-  devtools((set) => ({
+  devtools((set, get) => ({
     resume: defaultResume,
-    theme: defaultTheme,
+    themes: {},
     setResume: (updater) =>
       set((state) => ({
         resume: produce(state.resume, updater),
       }), false, 'resume/set'),
-    setTheme: (updater) =>
-      set((state) => ({
-        theme: produce(state.theme, updater),
-      }), false, 'theme/set'),
+    getThemeForTemplate: (templateId) => {
+      const state = get()
+      return state.themes[templateId] || defaultTheme
+    },
+    setThemeForTemplate: (templateId, updater) =>
+      set((state) => {
+        const currentTheme = state.themes[templateId] || defaultTheme
+        return {
+          themes: {
+            ...state.themes,
+            [templateId]: produce(currentTheme, updater),
+          },
+        }
+      }, false, `theme/set/${templateId}`),
     moveBlockInSection: (sectionId, activeId, overId) =>
       set((state) => ({
         resume: produce(state.resume, (draft) => {

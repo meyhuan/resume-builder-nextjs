@@ -71,7 +71,7 @@ export const SIMPLE_TEMPLATE_STYLES: TemplateStylesConfig = {
   blockRenderer: {
     container: 'relative',
     layout: 'default',
-    spacing: 'mb-4',
+    spacing: 'mb-0',
     border: '',
     shadow: '',
     hover: 'hover:shadow-sm',

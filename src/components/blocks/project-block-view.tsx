@@ -149,7 +149,7 @@ export default function ProjectBlockView(props: ProjectBlockViewProps): ReactEle
               onChange={handleContentChange}
               onClickOutside={(): void => setIsEditingContent(false)}
               floatingToolbar={true}
-              className="text-xs leading-relaxed outline-none"
+              className="text-xs outline-none"
             />
           </div>
         ) : (

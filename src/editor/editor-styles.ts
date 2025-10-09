@@ -5,8 +5,9 @@
 /**
  * Base content styles for editable content blocks.
  * Includes text styling, list styling, and interaction states.
+ * Note: line-height is inherited from parent theme settings.
  */
-export const CONTENT_BASE_STYLES = 'leading-relaxed text-gray-800'
+export const CONTENT_BASE_STYLES = 'text-gray-800'
 
 /**
  * List styles for ul/ol elements.

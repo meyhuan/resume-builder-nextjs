@@ -64,7 +64,7 @@ export const CLEAN_PROFESSIONAL_STYLES: TemplateStylesConfig = {
     // 卡片式布局，浅灰背景，添加 hover 效果
     container: 'bg-gray-50 rounded-lg p-5 relative transition-all duration-150 hover:bg-gray-100 hover:shadow-sm',
     layout: 'card',
-    spacing: 'mb-4',
+    spacing: 'mb-0',
     border: '',
     shadow: '',
     hover: 'hover:bg-gray-100',
@@ -89,7 +89,7 @@ export const CLEAN_PROFESSIONAL_STYLES: TemplateStylesConfig = {
     dateRange: 'text-sm text-blue-600 font-medium shrink-0',
     
     // 内容区域
-    content: 'mt-3 text-sm text-gray-700 leading-relaxed',
+    content: 'mt-3 text-sm text-gray-700',
   },
 }
 

@@ -184,7 +184,7 @@ export default function CleanProfessionalTemplate(props: CleanProfessionalTempla
           )
         }}
       >
-        <main className="mt-6 space-y-5">
+        <main className="mt-6" style={{ display: 'flex', flexDirection: 'column', gap: `${24 * theme.spacingScale}px` }}>
           {resume.sections.map((section) => (
             <SortableSectionWrapper key={section.id} sectionId={section.id}>
               {(sectionDragProps) => (

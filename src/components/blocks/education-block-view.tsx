@@ -177,7 +177,7 @@ export default function EducationBlockView(props: EducationBlockViewProps): Reac
               onChange={handleContentChange}
               onClickOutside={(): void => setIsEditingContent(false)}
               floatingToolbar={true}
-              className="text-xs leading-relaxed outline-none"
+              className="text-xs outline-none"
             />
           </div>
         ) : (

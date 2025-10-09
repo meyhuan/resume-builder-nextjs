@@ -11,9 +11,10 @@ import type { ExternalResume } from '@/io/external-resume-types'
 
 export interface AppState {
   readonly resume: ResumeData
-  readonly theme: ThemeTokens
+  readonly themes: Record<string, ThemeTokens>
   setResume: (updater: (draft: Draft<ResumeData>) => void) => void
-  setTheme: (updater: (draft: Draft<ThemeTokens>) => void) => void
+  getThemeForTemplate: (templateId: string) => ThemeTokens
+  setThemeForTemplate: (templateId: string, updater: (draft: Draft<ThemeTokens>) => void) => void
   /** Move a block inside a section by swapping positions based on ids. */
   moveBlockInSection: (sectionId: UUID, activeId: UUID, overId: UUID) => void
   /** Move a block from one section to another at a specific index. */

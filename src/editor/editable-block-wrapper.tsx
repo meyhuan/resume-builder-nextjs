@@ -97,7 +97,7 @@ export default function EditableBlockWrapper(props: EditableBlockWrapperProps): 
           onChange={handleContentChange}
           onClickOutside={(): void => setIsEditing(false)}
           floatingToolbar={true}
-          className="leading-relaxed outline-none"
+          className="outline-none"
         />
       </div>
     )
