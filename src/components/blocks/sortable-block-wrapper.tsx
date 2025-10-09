@@ -23,17 +23,22 @@ export default function SortableBlockWrapper(props: SortableBlockWrapperProps): 
   
   const style: CSSProperties = {
     transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.6 : 1,
+    transition: isDragging ? undefined : transition,
   };
 
   return (
     <div ref={setNodeRef} style={style}>
-      {children({
-        attributes: attributes as unknown,
-        listeners: listeners as unknown,
-        ref: setActivatorNodeRef,
-      })}
+      {isDragging ? (
+        <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded p-4 flex items-center justify-center min-h-[60px]">
+          <span className="text-gray-400 font-medium text-xs">移动到此处</span>
+        </div>
+      ) : (
+        children({
+          attributes: attributes as unknown,
+          listeners: listeners as unknown,
+          ref: setActivatorNodeRef,
+        })
+      )}
     </div>
   );
 }

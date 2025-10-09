@@ -24,17 +24,22 @@ export default function SortableSectionWrapper(props: SortableSectionWrapperProp
   
   const style: CSSProperties = {
     transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
+    transition: isDragging ? undefined : transition,
   };
 
   return (
     <div ref={setNodeRef} style={style} className="relative">
-      {children({
-        attributes: attributes as unknown,
-        listeners: listeners as unknown,
-        ref: setActivatorNodeRef,
-      })}
+      {isDragging ? (
+        <div className="bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg p-8 flex items-center justify-center">
+          <span className="text-gray-500 font-medium text-sm">移动到此处</span>
+        </div>
+      ) : (
+        children({
+          attributes: attributes as unknown,
+          listeners: listeners as unknown,
+          ref: setActivatorNodeRef,
+        })
+      )}
     </div>
   );
 }
