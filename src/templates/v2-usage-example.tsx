@@ -11,7 +11,7 @@ import {
   JobIntentionSection,
   BlockRenderer,
 } from '@/templates/components/v2'
-import { SIMPLE_TEMPLATE_STYLES } from '@/templates/styles/simple-styles'
+import { SIMPLE_TEMPLATE_STYLES } from '@/templates/simple/styles'
 
 interface TemplateProps {
   readonly resume: ResumeData

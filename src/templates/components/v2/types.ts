@@ -103,25 +103,6 @@ export interface BlockRendererStyles {
 }
 
 /**
- * SectionContainer 样式配置
- */
-export interface SectionContainerStyles {
-  readonly container?: string
-  readonly spacing?: string
-  readonly border?: string
-  readonly borderRadius?: string
-  readonly padding?: string
-  readonly background?: string
-  readonly hover?: {
-    enabled?: boolean
-    shadow?: string
-    borderColor?: string
-    backgroundColor?: string
-    scale?: string
-  }
-}
-
-/**
  * 自定义渲染函数类型
  */
 export interface BaseInfoRenderProps {
@@ -177,5 +158,4 @@ export interface TemplateStylesConfig {
   readonly baseInfo?: BaseInfoSectionStyles
   readonly jobIntention?: JobIntentionSectionStyles
   readonly blockRenderer?: BlockRendererStyles
-  readonly sectionContainer?: SectionContainerStyles
 }

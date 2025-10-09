@@ -11,19 +11,6 @@ export const SIMPLE_TEMPLATE_STYLES: TemplateStylesConfig = {
   name: 'simple',
   description: '简约风格 - 传统布局，清晰层次',
   
-  sectionContainer: {
-    spacing: 'mb-5',
-    padding: '',
-    borderRadius: '',
-    border: '',
-    hover: {
-      enabled: true,
-      shadow: 'shadow-sm',
-      borderColor: '{{themeColor}}15',
-      backgroundColor: 'rgba(249, 250, 251, 0.3)',
-    },
-  },
-  
   baseInfo: {
     container: 'mb-5 flex items-start gap-4 relative group cursor-pointer print:cursor-default',
     header: 'flex-1 min-w-0',

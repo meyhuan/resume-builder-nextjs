@@ -24,7 +24,7 @@ import type { ResumeData } from '@/entities/resume/resume-data'
 import type { ThemeTokens } from '@/entities/theme/theme-tokens'
 import type { ResumeBlock } from '@/entities/blocks/resume-block'
 import { BaseInfoSection, BlockRenderer, SectionContainer } from '@/templates/components/v2'
-import { CLEAN_PROFESSIONAL_STYLES } from '@/templates/styles/clean-professional-styles'
+import { CLEAN_PROFESSIONAL_STYLES } from './styles'
 import BlockWrapper from '@/components/blocks/block-wrapper'
 import SectionHeader from '@/components/sections/section-header'
 import DeleteSectionDialog from '@/components/sections/delete-section-dialog'
@@ -275,7 +275,7 @@ function CleanProfessionalSection(props: {
   )
 
   return (
-    <SectionContainer themeColor={themeColor} styles={CLEAN_PROFESSIONAL_STYLES.sectionContainer}>
+    <SectionContainer themeColor={themeColor}>
       {/* 使用 SectionHeader 组件 - 复用逻辑 */}
       <SectionHeader
         sectionId={sectionId}

@@ -11,21 +11,6 @@ export const CLEAN_PROFESSIONAL_STYLES: TemplateStylesConfig = {
   name: 'clean-professional',
   description: '现代简洁专业风格 - 清新配色，圆形图标',
   
-  sectionContainer: {
-    container: '',
-    spacing: 'mb-6',
-    padding: 'p-4',
-    borderRadius: 'rounded-lg',
-    border: '2px solid transparent',
-    background: 'transparent',
-    hover: {
-      enabled: true,
-      shadow: 'shadow-sm',
-      borderColor: '{{themeColor}}20',
-      backgroundColor: 'rgba(249, 250, 251, 0.5)',
-    },
-  },
-  
   baseInfo: {
     // 大头像配置
     avatar: {

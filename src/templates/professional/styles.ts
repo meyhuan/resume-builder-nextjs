@@ -10,19 +10,6 @@ export const PROFESSIONAL_TEMPLATE_STYLES: TemplateStylesConfig = {
   name: 'professional',
   description: '专业商务风格 - 传统商务风格、清晰层次、正式感',
   
-  sectionContainer: {
-    spacing: '',
-    padding: '',
-    borderRadius: '',
-    border: '',
-    hover: {
-      enabled: true,
-      shadow: 'shadow-sm',
-      borderColor: '{{themeColor}}15',
-      backgroundColor: 'rgba(249, 250, 251, 0.3)',
-    },
-  },
-  
   baseInfo: {
     container: 'relative group cursor-pointer',
     header: 'text-center pb-4 border-b-2',

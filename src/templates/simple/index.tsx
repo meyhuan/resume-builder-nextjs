@@ -14,7 +14,7 @@ import { useAppStore } from '@/state/store'
 import DragDropProvider from '@/dnd/drag-drop-provider'
 import { DndIds } from '@/dnd/ids'
 import { BaseInfoSection, JobIntentionSection, BlockRenderer, SectionContainer } from '@/templates/components/v2'
-import { SIMPLE_TEMPLATE_STYLES } from '@/templates/styles/simple-styles'
+import { SIMPLE_TEMPLATE_STYLES } from './styles'
 
 interface SimpleTemplateProps {
   readonly resume: ResumeData
@@ -174,7 +174,7 @@ function SectionView(props: SectionViewProps): ReactElement {
   }
   
   return (
-    <SectionContainer themeColor={themeColor} styles={SIMPLE_TEMPLATE_STYLES.sectionContainer}>
+    <SectionContainer themeColor={themeColor}>
       <SectionHeader
         sectionId={sectionId}
         title={title}

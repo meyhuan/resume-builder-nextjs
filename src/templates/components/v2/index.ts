@@ -16,7 +16,6 @@ export type {
   BaseInfoSectionStyles,
   JobIntentionSectionStyles,
   BlockRendererStyles,
-  SectionContainerStyles,
   TemplateStylesConfig,
   AvatarStyles,
   TextFieldStyles,

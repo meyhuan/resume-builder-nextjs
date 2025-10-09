@@ -17,7 +17,7 @@ import DragDropProvider from '@/dnd/drag-drop-provider'
 import { DndIds } from '@/dnd/ids'
 import { useAppStore } from '@/state/store'
 import { BaseInfoSection, JobIntentionSection, BlockRenderer, SectionContainer } from '@/templates/components/v2'
-import { PROFESSIONAL_TEMPLATE_STYLES } from '@/templates/styles/professional-styles'
+import { PROFESSIONAL_TEMPLATE_STYLES } from './styles'
 
 interface ProfessionalTemplateProps {
   readonly resume: ResumeData
@@ -186,7 +186,7 @@ function SectionView(props: SectionViewProps): ReactElement {
   }
 
   return (
-    <SectionContainer themeColor={themeColor} styles={PROFESSIONAL_TEMPLATE_STYLES.sectionContainer}>
+    <SectionContainer themeColor={themeColor}>
       <div className="mb-4">
         <SectionHeader
           sectionId={sectionId}
