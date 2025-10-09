@@ -1,4 +1,4 @@
-﻿import type { ReactElement, ReactNode } from 'react'
+import type { ReactElement, ReactNode } from 'react'
 import { useState } from 'react'
 import { DndContext, MouseSensor, TouchSensor, DragOverlay, closestCenter, useSensor, useSensors } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
@@ -15,6 +15,7 @@ interface DragDropProviderProps {
   readonly onMoveSection: (activeSectionId: string, overSectionId: string) => void
   readonly onMoveWithinSection: (sectionId: string, activeId: string, overId: string) => void
   readonly onMoveToSection: (fromSectionId: string, blockId: string, toSectionId: string, toIndex: number) => void
+  readonly renderSectionOverlay?: (sectionId: string) => ReactNode
 }
 
 /**
@@ -101,6 +102,13 @@ export default function DragDropProvider(props: DragDropProviderProps): ReactEle
         {(() => {
           if (!active) return null
           if (active.kind === 'section') {
+            if (props.renderSectionOverlay) {
+              return (
+                <div className="cursor-grabbing bg-white shadow-2xl rounded-lg">
+                  {props.renderSectionOverlay(active.id)}
+                </div>
+              )
+            }
             const title: string = props.resume.sections.find((s) => s.id === active.id)?.title ?? ''
             return <OverlaySection title={title} themeColor={props.theme.primaryColor} />
           }

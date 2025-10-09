@@ -142,6 +142,47 @@ export default function CleanProfessionalTemplate(props: CleanProfessionalTempla
         onMoveSection={useAppStore((s) => s.moveSection)}
         onMoveWithinSection={useAppStore((s) => s.moveBlockInSection)}
         onMoveToSection={useAppStore((s) => s.moveBlockToSection)}
+        renderSectionOverlay={(sectionId: string) => {
+          const section = resume.sections.find((s) => s.id === sectionId)
+          if (!section) return null
+          return (
+            <SectionContainer themeColor={theme.primaryColor}>
+              <SectionHeader
+                sectionId={section.id}
+                title={section.title}
+                icon={
+                  <div
+                    className="w-10 h-10 rounded-full flex items-center justify-center text-white shrink-0"
+                    style={{ backgroundColor: theme.primaryColor }}
+                  >
+                    {(() => {
+                      const iconMap: Record<string, ReactElement> = {
+                        教育经历: <GraduationCap size={20} />,
+                        工作经历: <Briefcase size={20} />,
+                        项目经历: <FolderKanban size={20} />,
+                        实习经历: <FlaskConical size={20} />,
+                        社团经历: <Users size={20} />,
+                        自我评价: <User size={20} />,
+                      }
+                      return iconMap[section.title] || <Briefcase size={20} />
+                    })()}
+                  </div>
+                }
+                themeColor={theme.primaryColor}
+              />
+              <div className="space-y-4">
+                {section.blocks.map((block) => (
+                  <BlockRenderer
+                    key={block.id}
+                    block={block}
+                    themeColor={theme.primaryColor}
+                    styles={CLEAN_PROFESSIONAL_STYLES.blockRenderer}
+                  />
+                ))}
+              </div>
+            </SectionContainer>
+          )
+        }}
       >
         <main className="mt-6 space-y-5">
           {resume.sections.map((section) => (

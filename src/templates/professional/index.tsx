@@ -120,6 +120,32 @@ export default function ProfessionalTemplate(props: ProfessionalTemplateProps): 
           onMoveSection={useAppStore((s) => s.moveSection)}
           onMoveWithinSection={useAppStore((s) => s.moveBlockInSection)}
           onMoveToSection={useAppStore((s) => s.moveBlockToSection)}
+          renderSectionOverlay={(sectionId: string) => {
+            const section = resume.sections.find((s) => s.id === sectionId)
+            if (!section) return null
+            return (
+              <SectionContainer themeColor={theme.primaryColor}>
+                <div className="mb-4">
+                  <SectionHeader
+                    sectionId={section.id}
+                    title={section.title}
+                    icon={getSectionIcon(section.title) ? <span style={{ color: theme.primaryColor }}>{getSectionIcon(section.title)}</span> : undefined}
+                    themeColor={theme.primaryColor}
+                  />
+                </div>
+                <div className="space-y-3">
+                  {section.blocks.map((block) => (
+                    <BlockRenderer
+                      key={block.id}
+                      block={block}
+                      themeColor={theme.primaryColor}
+                      styles={PROFESSIONAL_TEMPLATE_STYLES.blockRenderer}
+                    />
+                  ))}
+                </div>
+              </SectionContainer>
+            )
+          }}
         >
           <main className="mt-6" style={{ display: 'flex', flexDirection: 'column', gap: `${24 * theme.spacingScale}px` }}>
             {resume.sections.map((section) => (

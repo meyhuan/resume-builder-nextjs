@@ -27,7 +27,10 @@ export default function SectionHeader(props: SectionHeaderProps): ReactElement {
   const [isHovered, setIsHovered] = useState(false);
   const hideTimerRef = useRef<number | null>(null);
 
+  const hasActions = Boolean(onAdd || onDelete || (dragHandleAttributes && dragHandleListeners && dragHandleRef));
+
   function handleMouseEnter(): void {
+    if (!hasActions) return;
     if (hideTimerRef.current) {
       clearTimeout(hideTimerRef.current);
       hideTimerRef.current = null;
@@ -36,6 +39,7 @@ export default function SectionHeader(props: SectionHeaderProps): ReactElement {
   }
 
   function handleMouseLeave(): void {
+    if (!hasActions) return;
     hideTimerRef.current = setTimeout(() => {
       setIsHovered(false);
     }, HOVER_DELAY_MS);
@@ -54,7 +58,7 @@ export default function SectionHeader(props: SectionHeaderProps): ReactElement {
         {title}
       </h2>
 
-      {isHovered ? (
+      {isHovered && hasActions ? (
         <div 
           className="absolute top-1 right-2 flex items-center gap-1 print:hidden bg-white shadow-md rounded px-1.5 py-1 border z-10"
           onMouseEnter={handleMouseEnter}
