@@ -40,20 +40,6 @@ export const TEMPLATE_REGISTRY: Record<string, TemplateConfig> = {
     tags: ['商务', '正式', '传统'],
     component: lazy(() => import('@/templates/professional')),
   },
-  creative: {
-    id: 'creative',
-    name: '创意风格',
-    description: '卡片式现代设计，适合互联网、设计类岗位',
-    tags: ['创意', '设计', '互联网'],
-    component: lazy(() => import('@/templates/creative')),
-  },
-  elegant: {
-    id: 'elegant',
-    name: '优雅简约',
-    description: '优雅简约设计，清晰层次，适合各类专业人士',
-    tags: ['优雅', '简约', '通用'],
-    component: lazy(() => import('@/templates/elegant')),
-  },
   'clean-professional': {
     id: 'clean-professional',
     name: '清爽专业',

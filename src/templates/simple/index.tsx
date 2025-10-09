@@ -13,8 +13,8 @@ import { getSectionIcon } from '@/utils/get-section-icon'
 import { useAppStore } from '@/state/store'
 import DragDropProvider from '@/dnd/drag-drop-provider'
 import { DndIds } from '@/dnd/ids'
-import { BlockRenderer as SharedBlockRenderer } from '@/templates/components/block-renderers'
-import { BaseInfoSection, JobIntentionSection } from '@/templates/components/sections'
+import { BaseInfoSection, JobIntentionSection, BlockRenderer, SectionContainer } from '@/templates/components/v2'
+import { SIMPLE_TEMPLATE_STYLES } from '@/templates/styles/simple-styles'
 
 interface SimpleTemplateProps {
   readonly resume: ResumeData
@@ -67,10 +67,10 @@ function BlockRendererWrapper(props: {
       showDragHandle={false}
       disableHover={isEditing}
     >
-      <SharedBlockRenderer
+      <BlockRenderer
         block={block}
-        variant="simple"
         themeColor={themeColor}
+        styles={SIMPLE_TEMPLATE_STYLES.blockRenderer}
         onEditingChange={setIsEditing}
       />
     </BlockWrapper>
@@ -94,13 +94,13 @@ export default function SimpleTemplate(props: SimpleTemplateProps): ReactElement
         name={resume.name}
         baseInfo={resume.baseInfo ?? null}
         themeColor={theme.primaryColor}
-        variant="simple"
+        styles={SIMPLE_TEMPLATE_STYLES.baseInfo}
       />
 
       <JobIntentionSection
         jobIntention={resume.jobIntention ?? null}
         themeColor={theme.primaryColor}
-        variant="simple"
+        styles={SIMPLE_TEMPLATE_STYLES.jobIntention}
       />
 
       <DragDropProvider
@@ -174,7 +174,7 @@ function SectionView(props: SectionViewProps): ReactElement {
   }
   
   return (
-    <section className="resume-section mb-5">
+    <SectionContainer themeColor={themeColor} styles={SIMPLE_TEMPLATE_STYLES.sectionContainer}>
       <SectionHeader
         sectionId={sectionId}
         title={title}
@@ -200,6 +200,6 @@ function SectionView(props: SectionViewProps): ReactElement {
         onOpenChange={setShowDeleteDialog}
         onConfirm={confirmDelete}
       />
-    </section>
+    </SectionContainer>
   )
 }

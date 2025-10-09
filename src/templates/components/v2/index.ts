@@ -8,6 +8,7 @@
 export { default as BaseInfoSection } from './base-info-section'
 export { default as JobIntentionSection } from './job-intention-section'
 export { default as BlockRenderer } from './block-renderer'
+export { default as SectionContainer } from './section-container'
 
 // 类型导出
 export type {
@@ -15,6 +16,7 @@ export type {
   BaseInfoSectionStyles,
   JobIntentionSectionStyles,
   BlockRendererStyles,
+  SectionContainerStyles,
   TemplateStylesConfig,
   AvatarStyles,
   TextFieldStyles,

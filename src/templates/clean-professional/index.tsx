@@ -23,7 +23,7 @@ import {
 import type { ResumeData } from '@/entities/resume/resume-data'
 import type { ThemeTokens } from '@/entities/theme/theme-tokens'
 import type { ResumeBlock } from '@/entities/blocks/resume-block'
-import { BaseInfoSection, BlockRenderer } from '@/templates/components/v2'
+import { BaseInfoSection, BlockRenderer, SectionContainer } from '@/templates/components/v2'
 import { CLEAN_PROFESSIONAL_STYLES } from '@/templates/styles/clean-professional-styles'
 import BlockWrapper from '@/components/blocks/block-wrapper'
 import SectionHeader from '@/components/sections/section-header'
@@ -275,20 +275,7 @@ function CleanProfessionalSection(props: {
   )
 
   return (
-    <section 
-      className="mb-6 p-4 rounded-lg transition-all duration-200 hover:shadow-sm group"
-      style={{
-        border: '2px solid transparent',
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.borderColor = `${themeColor}20`
-        e.currentTarget.style.backgroundColor = 'rgba(249, 250, 251, 0.5)'
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.borderColor = 'transparent'
-        e.currentTarget.style.backgroundColor = 'transparent'
-      }}
-    >
+    <SectionContainer themeColor={themeColor} styles={CLEAN_PROFESSIONAL_STYLES.sectionContainer}>
       {/* 使用 SectionHeader 组件 - 复用逻辑 */}
       <SectionHeader
         sectionId={sectionId}
@@ -314,6 +301,6 @@ function CleanProfessionalSection(props: {
         onOpenChange={setShowDeleteDialog}
         onConfirm={confirmDelete}
       />
-    </section>
+    </SectionContainer>
   )
 }

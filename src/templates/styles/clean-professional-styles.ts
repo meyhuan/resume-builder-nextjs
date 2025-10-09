@@ -9,13 +9,24 @@ import type { TemplateStylesConfig } from '@/templates/components/v2/types'
 
 export const CLEAN_PROFESSIONAL_STYLES: TemplateStylesConfig = {
   name: 'clean-professional',
-  description: '清爽专业风格 - 大头像、横向信息密集布局、圆形图标',
+  description: '现代简洁专业风格 - 清新配色，圆形图标',
+  
+  sectionContainer: {
+    container: '',
+    spacing: 'mb-6',
+    padding: 'p-4',
+    borderRadius: 'rounded-lg',
+    border: '2px solid transparent',
+    background: 'transparent',
+    hover: {
+      enabled: true,
+      shadow: 'shadow-sm',
+      borderColor: '{{themeColor}}20',
+      backgroundColor: 'rgba(249, 250, 251, 0.5)',
+    },
+  },
   
   baseInfo: {
-    // 整体布局：左侧大头像 + 右侧信息
-    container: 'mb-8 flex items-start gap-6 relative group cursor-pointer print:cursor-default bg-white p-6 rounded-lg',
-    header: 'flex-1 min-w-0',
-    
     // 大头像配置
     avatar: {
       size: 'w-28 h-36',
