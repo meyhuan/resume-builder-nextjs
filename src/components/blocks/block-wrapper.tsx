@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import type { ReactElement, ReactNode } from 'react';
+import { GripHorizontal } from 'lucide-react';
 import BlockActions from './block-actions';
 
 /**
@@ -65,11 +66,7 @@ export default function BlockWrapper(props: BlockWrapperProps): ReactElement {
           className="absolute top-2 right-2 z-20 print:hidden cursor-grab active:cursor-grabbing p-1 h-7 w-7 border rounded bg-white shadow-sm hover:shadow-md flex items-center justify-center transition-all"
           title="拖动"
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <line x1="3" y1="12" x2="21" y2="12" />
-            <line x1="3" y1="6" x2="21" y2="6" />
-            <line x1="3" y1="18" x2="21" y2="18" />
-          </svg>
+          <GripHorizontal size={14} strokeWidth={2} />
         </button>
       ) : null}
 

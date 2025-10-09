@@ -54,6 +54,13 @@ export const TEMPLATE_REGISTRY: Record<string, TemplateConfig> = {
     tags: ['优雅', '简约', '通用'],
     component: lazy(() => import('@/templates/elegant')),
   },
+  'clean-professional': {
+    id: 'clean-professional',
+    name: '清爽专业',
+    description: '大头像、信息密集布局、圆形图标，适合应届生和信息丰富的简历',
+    tags: ['清爽', '专业', '应届生', '信息密集'],
+    component: lazy(() => import('@/templates/clean-professional')),
+  },
 }
 
 /**

@@ -7,33 +7,33 @@ import { useDroppable } from '@dnd-kit/core'
 import { SortableContext, rectSortingStrategy } from '@dnd-kit/sortable'
 import type { ResumeData } from '@/entities/resume/resume-data'
 import type { ThemeTokens } from '@/entities/theme/theme-tokens'
-import type { BaseInfo } from '@/entities/user/base-info'
 import type { ResumeBlock } from '@/entities/blocks/resume-block'
-import EditableBlockWrapper from '@/editor/editable-block-wrapper'
-import EditableFieldWrapper from '@/editor/editable-field-wrapper'
-import EditableDateField from '@/editor/editable-date-field'
-import BaseInfoModal from '@/components/modals/base-info-modal'
 import SectionHeader from '@/components/sections/section-header'
 import BlockWrapper from '@/components/blocks/block-wrapper'
 import SortableSectionWrapper from '@/components/sections/sortable-section-wrapper'
-import JobIntentionView from '@/components/resume/job-intention-view'
 import { getSectionIcon } from '@/utils/get-section-icon'
 import DragDropProvider from '@/dnd/drag-drop-provider'
 import { DndIds } from '@/dnd/ids'
 import { useAppStore } from '@/state/store'
+import { BlockRenderer as SharedBlockRenderer } from '@/templates/components/block-renderers'
+import { BaseInfoSection, JobIntentionSection } from '@/templates/components/sections'
 
 interface ProfessionalTemplateProps {
   readonly resume: ResumeData
   readonly theme: ThemeTokens
 }
 
-function BlockRenderer(props: {
+/**
+ * Block 渲染包装器 - 添加操作按钮和拖拽功能
+ */
+function BlockRendererWrapper(props: {
   block: ResumeBlock
   sectionId: string
   blockIndex: number
   totalBlocks: number
+  themeColor: string
 }): ReactElement {
-  const { block, sectionId, blockIndex, totalBlocks } = props
+  const { block, sectionId, blockIndex, totalBlocks, themeColor } = props
   const addBlock = useAppStore((s) => s.addBlockByType)
   const deleteBlock = useAppStore((s) => s.deleteBlock)
   const moveBlockUp = useAppStore((s) => s.moveBlockUp)
@@ -58,205 +58,6 @@ function BlockRenderer(props: {
   if (block.type === 'education') blockTypeLabel = '教育经历'
   if (block.type === 'campus') blockTypeLabel = '校园经历'
 
-  const content = ((): ReactElement => {
-    if (block.type === 'experience') {
-      return (
-        <div className="relative pl-4 border-l-2 border-gray-200">
-          <div className="flex justify-between items-start mb-1">
-            <div className="flex-1">
-              <h3 className="text-base font-semibold">
-                <EditableFieldWrapper
-                  blockId={block.id}
-                  fieldName="company"
-                  value={block.company}
-                  onUpdate={() => {}}
-                  onEditingChange={setIsEditing}
-                  className="font-semibold"
-                />
-              </h3>
-              <p className="text-sm text-gray-600 mt-0.5">
-                <EditableFieldWrapper
-                  blockId={block.id}
-                  fieldName="position"
-                  value={block.position}
-                  onUpdate={() => {}}
-                />
-                {block.industry ? (
-                  <>
-                    {' | '}
-                    <EditableFieldWrapper
-                      blockId={block.id}
-                      fieldName="industry"
-                      value={block.industry}
-                      onUpdate={() => {}}
-                    />
-                  </>
-                ) : null}
-              </p>
-            </div>
-            <div className="text-xs text-gray-500 text-right ml-4 shrink-0">
-              <EditableDateField blockId={block.id} fieldName="startDate" value={block.startDate} />
-              {' - '}
-              <EditableDateField blockId={block.id} fieldName="endDate" value={block.endDate} />
-            </div>
-          </div>
-          <div className="mt-2">
-            <EditableBlockWrapper
-              blockId={block.id}
-              contentField="contentHtml"
-              contentSize="xs"
-            />
-          </div>
-        </div>
-      )
-    }
-
-    if (block.type === 'project') {
-      return (
-        <div className="relative pl-4 border-l-2 border-gray-200">
-          <div className="flex justify-between items-start mb-1">
-            <div className="flex-1">
-              <h3 className="text-base font-semibold">
-                <EditableFieldWrapper
-                  blockId={block.id}
-                  fieldName="name"
-                  value={block.name}
-                  onUpdate={() => {}}
-                  className="font-semibold"
-                />
-              </h3>
-              {block.role ? (
-                <p className="text-sm text-gray-600 mt-0.5">
-                  <EditableFieldWrapper
-                    blockId={block.id}
-                    fieldName="role"
-                    value={block.role}
-                    onUpdate={() => {}}
-                  />
-                </p>
-              ) : null}
-            </div>
-            <div className="text-xs text-gray-500 text-right ml-4 shrink-0">
-              <EditableDateField blockId={block.id} fieldName="startDate" value={block.startDate} />
-              {' - '}
-              <EditableDateField blockId={block.id} fieldName="endDate" value={block.endDate} />
-            </div>
-          </div>
-          <div className="mt-2">
-            <EditableBlockWrapper
-              blockId={block.id}
-              contentField="contentHtml"
-              contentSize="xs"
-            />
-          </div>
-        </div>
-      )
-    }
-
-    if (block.type === 'education') {
-      return (
-        <div className="relative pl-4 border-l-2 border-gray-200">
-          <div className="flex justify-between items-start mb-1">
-            <div className="flex-1">
-              <h3 className="text-base font-semibold">
-                <EditableFieldWrapper
-                  blockId={block.id}
-                  fieldName="school"
-                  value={block.school}
-                  onUpdate={() => {}}
-                  className="font-semibold"
-                />
-              </h3>
-              <p className="text-sm text-gray-600 mt-0.5">
-                <EditableFieldWrapper
-                  blockId={block.id}
-                  fieldName="major"
-                  value={block.major}
-                  onUpdate={() => {}}
-                />
-                {' | '}
-                <EditableFieldWrapper
-                  blockId={block.id}
-                  fieldName="degree"
-                  value={block.degree}
-                  onUpdate={() => {}}
-                />
-              </p>
-            </div>
-            <div className="text-xs text-gray-500 text-right ml-4 shrink-0">
-              <EditableDateField blockId={block.id} fieldName="startDate" value={block.startDate} />
-              {' - '}
-              <EditableDateField blockId={block.id} fieldName="endDate" value={block.endDate} />
-            </div>
-          </div>
-          {block.courseHtml ? (
-            <div className="mt-2">
-              <EditableBlockWrapper
-                blockId={block.id}
-                contentField="courseHtml"
-                contentSize="xs"
-              />
-            </div>
-          ) : null}
-        </div>
-      )
-    }
-
-    if (block.type === 'campus') {
-      return (
-        <div className="relative pl-4 border-l-2 border-gray-200">
-          <div className="flex justify-between items-start mb-1">
-            <div className="flex-1">
-              <h3 className="text-base font-semibold">
-                <EditableFieldWrapper
-                  blockId={block.id}
-                  fieldName="organization"
-                  value={block.organization}
-                  onUpdate={() => {}}
-                  className="font-semibold"
-                />
-              </h3>
-              <p className="text-sm text-gray-600 mt-0.5">
-                <EditableFieldWrapper
-                  blockId={block.id}
-                  fieldName="position"
-                  value={block.position}
-                  onUpdate={() => {}}
-                />
-              </p>
-            </div>
-            <div className="text-xs text-gray-500 text-right ml-4 shrink-0">
-              <EditableDateField blockId={block.id} fieldName="startDate" value={block.startDate} />
-              {' - '}
-              <EditableDateField blockId={block.id} fieldName="endDate" value={block.endDate} />
-            </div>
-          </div>
-          <div className="mt-2">
-            <EditableBlockWrapper
-              blockId={block.id}
-              contentField="contentHtml"
-              contentSize="xs"
-            />
-          </div>
-        </div>
-      )
-    }
-
-    if (block.type === 'text') {
-      return (
-        <div>
-          <EditableBlockWrapper
-            blockId={block.id}
-            contentField="html"
-            contentSize="sm"
-          />
-        </div>
-      )
-    }
-
-    return <div className="text-gray-500 text-sm">Unsupported block type</div>
-  })()
-
   return (
     <BlockWrapper
       blockType={blockTypeLabel}
@@ -268,9 +69,12 @@ function BlockRenderer(props: {
       showDragHandle={false}
       disableHover={isEditing}
     >
-      <div onFocusCapture={(): void => setIsEditing(true)} onBlurCapture={(): void => setIsEditing(false)}>
-        {content}
-      </div>
+      <SharedBlockRenderer
+        block={block}
+        variant="professional"
+        themeColor={themeColor}
+        onEditingChange={setIsEditing}
+      />
     </BlockWrapper>
   )
 }
@@ -294,14 +98,19 @@ export default function ProfessionalTemplate(props: ProfessionalTemplateProps): 
 
       <div className="p-8">
         {/* 头部信息 */}
-        <ProfessionalHeader
+        <BaseInfoSection
           name={resume.name}
           baseInfo={resume.baseInfo ?? null}
           themeColor={theme.primaryColor}
+          variant="professional"
         />
 
         {/* 求职意向 */}
-        <JobIntentionView jobIntention={resume.jobIntention ?? null} themeColor={theme.primaryColor} />
+        <JobIntentionSection
+          jobIntention={resume.jobIntention ?? null}
+          themeColor={theme.primaryColor}
+          variant="professional"
+        />
 
         {/* 拖拽容器 */}
         <DragDropProvider
@@ -326,12 +135,13 @@ export default function ProfessionalTemplate(props: ProfessionalTemplateProps): 
                     dragHandleRef={sectionDragProps.ref}
                   >
                     {section.blocks.map((block, index) => (
-                      <BlockRenderer
+                      <BlockRendererWrapper
                         key={block.id}
                         block={block}
                         sectionId={section.id}
                         blockIndex={index}
                         totalBlocks={section.blocks.length}
+                        themeColor={theme.primaryColor}
                       />
                     ))}
                   </SectionView>
@@ -355,6 +165,193 @@ interface SectionViewProps {
   readonly dragHandleAttributes?: unknown
   readonly dragHandleListeners?: unknown
   readonly dragHandleRef?: (element: HTMLElement | null) => void
+}
+
+// ProfessionalJobIntentionSection removed - now using shared JobIntentionSection component
+
+function DELETED_ProfessionalJobIntentionSection_DO_NOT_USE(props: any): ReactElement | null {
+  const { jobIntention, themeColor } = props
+  const [showModal, setShowModal] = useState(false)
+  const [hoveredField, setHoveredField] = useState<string | null>(null)
+  const updateJobIntention = useAppStore((s) => s.updateJobIntention)
+
+  if (!jobIntention) return null
+
+  function handleDeleteField(field: string): void {
+    if (!jobIntention) return
+    const updated = { ...jobIntention }
+    if (field === 'position') updated.position = undefined
+    if (field === 'city') updated.city = undefined
+    if (field === 'salary') updated.salary = undefined
+    if (field === 'type') updated.type = undefined
+    if (field === 'industry') updated.industry = undefined
+    if (field === 'currentStatus') updated.currentStatus = undefined
+    updateJobIntention(updated)
+  }
+
+  return (
+    <>
+      <section className="mb-5 relative group cursor-pointer print:cursor-default" onClick={() => setShowModal(true)}>
+        <div className="flex items-center justify-center gap-2 mb-3 pb-3 border-b-2 relative" style={{ borderColor: themeColor }}>
+          <Briefcase size={18} color={themeColor} strokeWidth={2} />
+          <h2 className="text-base font-bold" style={{ color: themeColor }}>求职意向</h2>
+          <button
+            type="button"
+            className="absolute right-0 opacity-0 group-hover:opacity-100 transition-opacity print:hidden text-gray-400 hover:text-gray-600"
+            onClick={(e) => {
+              e.stopPropagation()
+              setShowModal(true)
+            }}
+          >
+            <Pencil size={18} />
+          </button>
+        </div>
+
+        <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-gray-700">
+          {jobIntention.position ? (
+            <div
+              className="hover:bg-gray-50 rounded px-2 py-1 transition-colors relative"
+              onMouseEnter={() => setHoveredField('position')}
+              onMouseLeave={() => setHoveredField(null)}
+            >
+              <span className="text-gray-500">意向岗位：</span>
+              <span>{jobIntention.position}</span>
+              {hoveredField === 'position' ? (
+                <button
+                  type="button"
+                  className="ml-2 print:hidden text-red-500 hover:text-red-700"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleDeleteField('position')
+                  }}
+                >
+                  <XCircle size={14} />
+                </button>
+              ) : null}
+            </div>
+          ) : null}
+          {jobIntention.city ? (
+            <div
+              className="hover:bg-gray-50 rounded px-2 py-1 transition-colors relative"
+              onMouseEnter={() => setHoveredField('city')}
+              onMouseLeave={() => setHoveredField(null)}
+            >
+              <span className="text-gray-500">意向城市：</span>
+              <span>{jobIntention.city}</span>
+              {hoveredField === 'city' ? (
+                <button
+                  type="button"
+                  className="ml-2 print:hidden text-red-500 hover:text-red-700"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleDeleteField('city')
+                  }}
+                >
+                  <XCircle size={14} />
+                </button>
+              ) : null}
+            </div>
+          ) : null}
+          {jobIntention.salary ? (
+            <div
+              className="hover:bg-gray-50 rounded px-2 py-1 transition-colors relative"
+              onMouseEnter={() => setHoveredField('salary')}
+              onMouseLeave={() => setHoveredField(null)}
+            >
+              <span className="text-gray-500">期望薪资：</span>
+              <span>{jobIntention.salary}</span>
+              {hoveredField === 'salary' ? (
+                <button
+                  type="button"
+                  className="ml-2 print:hidden text-red-500 hover:text-red-700"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleDeleteField('salary')
+                  }}
+                >
+                  <XCircle size={14} />
+                </button>
+              ) : null}
+            </div>
+          ) : null}
+          {jobIntention.type ? (
+            <div
+              className="hover:bg-gray-50 rounded px-2 py-1 transition-colors relative"
+              onMouseEnter={() => setHoveredField('type')}
+              onMouseLeave={() => setHoveredField(null)}
+            >
+              <span className="text-gray-500">求职类型：</span>
+              <span>{jobIntention.type}</span>
+              {hoveredField === 'type' ? (
+                <button
+                  type="button"
+                  className="ml-2 print:hidden text-red-500 hover:text-red-700"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleDeleteField('type')
+                  }}
+                >
+                  <XCircle size={14} />
+                </button>
+              ) : null}
+            </div>
+          ) : null}
+          {jobIntention.industry ? (
+            <div
+              className="hover:bg-gray-50 rounded px-2 py-1 transition-colors relative"
+              onMouseEnter={() => setHoveredField('industry')}
+              onMouseLeave={() => setHoveredField(null)}
+            >
+              <span className="text-gray-500">期望行业：</span>
+              <span>{jobIntention.industry}</span>
+              {hoveredField === 'industry' ? (
+                <button
+                  type="button"
+                  className="ml-2 print:hidden text-red-500 hover:text-red-700"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleDeleteField('industry')
+                  }}
+                >
+                  <XCircle size={14} />
+                </button>
+              ) : null}
+            </div>
+          ) : null}
+          {jobIntention.currentStatus ? (
+            <div
+              className="hover:bg-gray-50 rounded px-2 py-1 transition-colors relative"
+              onMouseEnter={() => setHoveredField('currentStatus')}
+              onMouseLeave={() => setHoveredField(null)}
+            >
+              <span className="text-gray-500">当前状态：</span>
+              <span>{jobIntention.currentStatus}</span>
+              {hoveredField === 'currentStatus' ? (
+                <button
+                  type="button"
+                  className="ml-2 print:hidden text-red-500 hover:text-red-700"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleDeleteField('currentStatus')
+                  }}
+                >
+                  <XCircle size={14} />
+                </button>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+      </section>
+
+      {showModal ? (
+        <JobIntentionModal
+          jobIntention={jobIntention}
+          onClose={() => setShowModal(false)}
+          onSave={updateJobIntention}
+        />
+      ) : null}
+    </>
+  )
 }
 
 function SectionView(props: SectionViewProps): ReactElement {
@@ -409,20 +406,7 @@ function ProfessionalHeader(props: ProfessionalHeaderProps): ReactElement {
             setShowModal(true)
           }}
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path
-              d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-            <path
-              d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
+          <Pencil size={18} />
         </button>
 
         <div className="text-center pb-4 border-b-2" style={{ borderColor: themeColor }}>
@@ -437,19 +421,14 @@ function ProfessionalHeader(props: ProfessionalHeaderProps): ReactElement {
           <div className="flex flex-wrap justify-center gap-x-6 gap-y-1 text-sm text-gray-700">
             {baseInfo?.phone ? (
               <div className="flex items-center gap-1.5">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.08 4.18 2 2 0 0 1 4.06 2h3a2 2 0 0 1 2 1.72c.12.9.33 1.77.63 2.6a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.48-1.15a2 2 0 0 1 2.11-.45c.83.3 1.7.51 2.6.63A2 2 0 0 1 22 16.92z" />
-                </svg>
+                <Phone size={14} strokeWidth={2} />
                 <span>{baseInfo.phone}</span>
               </div>
             ) : null}
 
             {baseInfo?.email ? (
               <div className="flex items-center gap-1.5">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" />
-                  <polyline points="22,6 12,13 2,6" />
-                </svg>
+                <Mail size={14} strokeWidth={2} />
                 <span>{baseInfo.email}</span>
               </div>
             ) : null}
@@ -470,10 +449,7 @@ function ProfessionalHeader(props: ProfessionalHeaderProps): ReactElement {
 
             {baseInfo?.currentLocation ? (
               <div className="flex items-center gap-1.5">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                  <circle cx="12" cy="10" r="3" />
-                </svg>
+                <MapPin size={14} strokeWidth={2} />
                 <span>{baseInfo.currentLocation}</span>
               </div>
             ) : null}

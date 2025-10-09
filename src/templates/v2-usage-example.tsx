@@ -1,0 +1,225 @@
+/**
+ * V2 组件使用示例
+ * 
+ * 演示如何使用 V2 样式配置驱动架构创建模板
+ */
+
+import type { ReactElement } from 'react'
+import type { ResumeData, ThemeTokens } from '@/entities'
+import {
+  BaseInfoSection,
+  JobIntentionSection,
+  BlockRenderer,
+} from '@/templates/components/v2'
+import { SIMPLE_TEMPLATE_STYLES } from '@/templates/styles/simple-styles'
+
+interface TemplateProps {
+  readonly resume: ResumeData
+  readonly theme: ThemeTokens
+}
+
+// ============================================
+// 示例 1: 使用样式配置（最常用）
+// ============================================
+export function ExampleWithStyles(props: TemplateProps): ReactElement {
+  const { resume, theme } = props
+
+  return (
+    <div className="resume-container">
+      {/* 基础信息 - 使用配置 */}
+      <BaseInfoSection
+        name={resume.name}
+        baseInfo={resume.baseInfo ?? null}
+        themeColor={theme.primaryColor}
+        styles={SIMPLE_TEMPLATE_STYLES.baseInfo}
+      />
+
+      {/* 求职意向 - 使用配置 */}
+      <JobIntentionSection
+        jobIntention={resume.jobIntention ?? null}
+        themeColor={theme.primaryColor}
+        styles={SIMPLE_TEMPLATE_STYLES.jobIntention}
+      />
+
+      {/* Block 渲染 - 使用配置 */}
+      {resume.sections.map((section) =>
+        section.blocks.map((block) => (
+          <BlockRenderer
+            key={block.id}
+            block={block}
+            themeColor={theme.primaryColor}
+            styles={SIMPLE_TEMPLATE_STYLES.blockRenderer}
+          />
+        ))
+      )}
+    </div>
+  )
+}
+
+// ============================================
+// 示例 2: 自定义样式配置
+// ============================================
+export function ExampleWithCustomStyles(props: TemplateProps): ReactElement {
+  const { resume, theme } = props
+
+  // 自定义样式配置
+  const customStyles = {
+    baseInfo: {
+      container: 'bg-gradient-to-r from-purple-500 to-pink-500 p-10 rounded-3xl',
+      avatar: {
+        containerClassName: 'w-32 h-32 rounded-full border-4 border-white shadow-2xl',
+        showFallbackText: true,
+      },
+      name: {
+        className: 'text-5xl font-black text-white drop-shadow-lg',
+      },
+      infoLayout: {
+        type: 'horizontal' as const,
+        gap: '8',
+      },
+      fieldItem: 'bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full text-white',
+    },
+  }
+
+  return (
+    <div className="resume-container">
+      <BaseInfoSection
+        name={resume.name}
+        baseInfo={resume.baseInfo ?? null}
+        themeColor={theme.primaryColor}
+        styles={customStyles.baseInfo}
+      />
+    </div>
+  )
+}
+
+// ============================================
+// 示例 3: 完全自定义渲染
+// ============================================
+export function ExampleWithCustomRender(props: TemplateProps): ReactElement {
+  const { resume, theme } = props
+
+  return (
+    <div className="resume-container">
+      <BaseInfoSection
+        name={resume.name}
+        baseInfo={resume.baseInfo ?? null}
+        themeColor={theme.primaryColor}
+        renderCustom={(renderProps) => (
+          <header className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 flex items-center justify-center">
+            <div className="text-center">
+              {/* 3D 头像 */}
+              <div className="w-48 h-48 mx-auto rounded-full border-8 border-white/30 shadow-2xl transform hover:scale-110 transition-transform mb-8">
+                {renderProps.baseInfo?.avatarUrl && (
+                  <img
+                    src={renderProps.baseInfo.avatarUrl}
+                    alt="avatar"
+                    className="w-full h-full object-cover rounded-full"
+                  />
+                )}
+              </div>
+
+              {/* 动画文字 */}
+              <h1 className="text-7xl font-black text-white tracking-wider mb-4">
+                {renderProps.name}
+              </h1>
+
+              {renderProps.baseInfo?.title && (
+                <div className="text-2xl text-white/80 animate-pulse">
+                  {renderProps.baseInfo.title}
+                </div>
+              )}
+
+              {/* 编辑按钮 */}
+              <button
+                onClick={renderProps.onEdit}
+                className="mt-8 px-6 py-3 bg-white/20 backdrop-blur-md rounded-full text-white hover:bg-white/30 transition-colors"
+              >
+                编辑信息
+              </button>
+            </div>
+          </header>
+        )}
+      />
+    </div>
+  )
+}
+
+// ============================================
+// 示例 4: 插槽模式（部分自定义）
+// ============================================
+export function ExampleWithSlots(props: TemplateProps): ReactElement {
+  const { resume, theme } = props
+
+  return (
+    <div className="resume-container">
+      <BaseInfoSection
+        name={resume.name}
+        baseInfo={resume.baseInfo ?? null}
+        themeColor={theme.primaryColor}
+        styles={SIMPLE_TEMPLATE_STYLES.baseInfo}
+        slots={{
+          // 只自定义头像
+          avatar: (baseInfo, themeColor) => (
+            <div className="relative">
+              <div
+                className="w-32 h-32 rounded-full border-4 animate-spin-slow"
+                style={{ borderColor: themeColor }}
+              >
+                {baseInfo?.avatarUrl && (
+                  <img
+                    src={baseInfo.avatarUrl}
+                    alt="avatar"
+                    className="rounded-full w-full h-full object-cover"
+                  />
+                )}
+              </div>
+              <div className="absolute -bottom-2 -right-2 bg-green-500 w-8 h-8 rounded-full border-4 border-white" />
+            </div>
+          ),
+
+          // 只自定义姓名
+          name: (name, themeColor) => (
+            <h1
+              className="text-6xl font-black bg-clip-text text-transparent bg-gradient-to-r"
+              style={{
+                backgroundImage: `linear-gradient(to right, ${themeColor}, #ff00ff)`,
+              }}
+            >
+              {name}
+            </h1>
+          ),
+        }}
+      />
+    </div>
+  )
+}
+
+// ============================================
+// 示例 5: 运行时动态样式
+// ============================================
+export function ExampleWithDynamicStyles(props: TemplateProps): ReactElement {
+  const { resume, theme } = props
+  const isDarkMode = theme.textColor === '#ffffff'
+
+  const dynamicStyles = {
+    baseInfo: {
+      ...SIMPLE_TEMPLATE_STYLES.baseInfo,
+      container: isDarkMode
+        ? 'bg-gray-900 text-white p-8 rounded-lg'
+        : 'bg-white text-black p-8 rounded-lg',
+      fieldItem: isDarkMode ? 'text-gray-300 hover:bg-gray-800' : 'hover:bg-gray-50',
+    },
+  }
+
+  return (
+    <div className="resume-container">
+      <BaseInfoSection
+        name={resume.name}
+        baseInfo={resume.baseInfo ?? null}
+        themeColor={theme.primaryColor}
+        styles={dynamicStyles.baseInfo}
+      />
+    </div>
+  )
+}

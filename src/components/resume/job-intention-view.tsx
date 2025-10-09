@@ -1,5 +1,6 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import type { ReactElement } from 'react';
+import { Briefcase, Pencil, XCircle } from 'lucide-react';
 import type { JobIntention } from '@/entities/user/job-intention';
 import JobIntentionModal from '@/components/modals/job-intention-modal';
 import { useAppStore } from '@/state/store';
@@ -39,10 +40,7 @@ export default function JobIntentionView(props: JobIntentionViewProps): ReactEle
         onClick={(): void => setShowModal(true)}
       >
         <div className="flex items-center gap-2 mb-3 relative">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={themeColor} strokeWidth="2">
-            <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
-            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
-          </svg>
+          <Briefcase size={20} color={themeColor} strokeWidth={2} />
           <h2 className="text-base font-bold" style={{ color: themeColor }}>求职意向</h2>
           <button
             type="button"
@@ -52,10 +50,7 @@ export default function JobIntentionView(props: JobIntentionViewProps): ReactEle
               setShowModal(true);
             }}
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
+            <Pencil size={18} />
           </button>
         </div>
 
@@ -77,10 +72,7 @@ export default function JobIntentionView(props: JobIntentionViewProps): ReactEle
                     handleDeleteField('position');
                   }}
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                    <circle cx="12" cy="12" r="10" fill="currentColor" opacity="0.1"/>
-                    <path d="M15 9l-6 6m0-6l6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                  </svg>
+                  <XCircle size={14} />
                 </button>
               ) : null}
             </div>
@@ -102,10 +94,7 @@ export default function JobIntentionView(props: JobIntentionViewProps): ReactEle
                     handleDeleteField('city');
                   }}
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                    <circle cx="12" cy="12" r="10" fill="currentColor" opacity="0.1"/>
-                    <path d="M15 9l-6 6m0-6l6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                  </svg>
+                  <XCircle size={14} />
                 </button>
               ) : null}
             </div>
@@ -127,10 +116,7 @@ export default function JobIntentionView(props: JobIntentionViewProps): ReactEle
                     handleDeleteField('salary');
                   }}
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                    <circle cx="12" cy="12" r="10" fill="currentColor" opacity="0.1"/>
-                    <path d="M15 9l-6 6m0-6l6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                  </svg>
+                  <XCircle size={14} />
                 </button>
               ) : null}
             </div>
@@ -152,10 +138,7 @@ export default function JobIntentionView(props: JobIntentionViewProps): ReactEle
                     handleDeleteField('type');
                   }}
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                    <circle cx="12" cy="12" r="10" fill="currentColor" opacity="0.1"/>
-                    <path d="M15 9l-6 6m0-6l6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                  </svg>
+                  <XCircle size={14} />
                 </button>
               ) : null}
             </div>
@@ -177,10 +160,7 @@ export default function JobIntentionView(props: JobIntentionViewProps): ReactEle
                     handleDeleteField('industry');
                   }}
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                    <circle cx="12" cy="12" r="10" fill="currentColor" opacity="0.1"/>
-                    <path d="M15 9l-6 6m0-6l6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                  </svg>
+                  <XCircle size={14} />
                 </button>
               ) : null}
             </div>
@@ -202,10 +182,7 @@ export default function JobIntentionView(props: JobIntentionViewProps): ReactEle
                     handleDeleteField('currentStatus');
                   }}
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                    <circle cx="12" cy="12" r="10" fill="currentColor" opacity="0.1"/>
-                    <path d="M15 9l-6 6m0-6l6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                  </svg>
+                  <XCircle size={14} />
                 </button>
               ) : null}
             </div>

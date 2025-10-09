@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import * as Popover from '@radix-ui/react-popover'
-import { Palette, ChevronDown } from 'lucide-react'
+import { Palette, ChevronDown, FileText } from 'lucide-react'
 
 /**
  * ThemePanel renders controls to customize ThemeTokens.
@@ -145,20 +145,11 @@ export default function ThemePanel(props: {
             backgroundColor: props.onePage ? `${theme.primaryColor}10` : 'transparent'
           }}
         >
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+          <FileText
+            size={16}
+            strokeWidth={2}
             style={{ color: props.onePage ? theme.primaryColor : '#6b7280' }}
-          >
-            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-            <line x1="9" y1="3" x2="9" y2="21" />
-          </svg>
+          />
           <span
             className="text-sm font-medium"
             style={{ color: props.onePage ? theme.primaryColor : '#374151' }}
