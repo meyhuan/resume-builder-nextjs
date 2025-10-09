@@ -8,7 +8,7 @@
  * - 信息密集，适合内容较多的简历
  */
 
-import type { ReactElement } from 'react'
+import { useState, type ReactElement } from 'react'
 import { 
   User, 
   GraduationCap, 
@@ -26,6 +26,8 @@ import type { ResumeBlock } from '@/entities/blocks/resume-block'
 import { BaseInfoSection, BlockRenderer } from '@/templates/components/v2'
 import { CLEAN_PROFESSIONAL_STYLES } from '@/templates/styles/clean-professional-styles'
 import BlockWrapper from '@/components/blocks/block-wrapper'
+import SectionHeader from '@/components/sections/section-header'
+import DeleteSectionDialog from '@/components/sections/delete-section-dialog'
 import { useAppStore } from '@/state/store'
 import DragDropProvider from '@/dnd/drag-drop-provider'
 import SortableSectionWrapper from '@/components/sections/sortable-section-wrapper'
@@ -189,6 +191,7 @@ function BlockRendererWrapper(props: {
   const deleteBlock = useAppStore((s) => s.deleteBlock)
   const moveBlockUp = useAppStore((s) => s.moveBlockUp)
   const moveBlockDown = useAppStore((s) => s.moveBlockDown)
+  const [isEditing, setIsEditing] = useState(false)
 
   let blockTypeLabel = '内容'
   if (block.type === 'experience') blockTypeLabel = '工作经历'
@@ -205,18 +208,20 @@ function BlockRendererWrapper(props: {
       onMoveUp={blockIndex > 0 ? () => moveBlockUp(sectionId, block.id) : undefined}
       onMoveDown={blockIndex < totalBlocks - 1 ? () => moveBlockDown(sectionId, block.id) : undefined}
       showDragHandle={false}
+      disableHover={isEditing}
     >
       <BlockRenderer
         block={block}
         themeColor={themeColor}
         styles={CLEAN_PROFESSIONAL_STYLES.blockRenderer}
+        onEditingChange={setIsEditing}
       />
     </BlockWrapper>
   )
 }
 
 /**
- * 带圆形图标的区块组件
+ * 带圆形图标的区块组件 - 使用 SectionHeader 复用逻辑
  */
 function CleanProfessionalSection(props: {
   readonly sectionId: string
@@ -228,10 +233,28 @@ function CleanProfessionalSection(props: {
   readonly dragHandleListeners?: unknown
   readonly dragHandleRef?: (element: HTMLElement | null) => void
 }): ReactElement {
-  const { title, themeColor, children } = props
+  const { sectionId, title, themeColor, children, dragHandleAttributes, dragHandleListeners, dragHandleRef } = props
+  const addBlock = useAppStore((s) => s.addBlockByType)
+  const deleteSection = useAppStore((s) => s.deleteSection)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+
+  /**
+   * Handle section deletion confirmation
+   */
+  const handleDeleteSection = (): void => {
+    setShowDeleteDialog(true)
+  }
+
+  /**
+   * Confirm and delete section
+   */
+  const confirmDelete = (): void => {
+    deleteSection(sectionId)
+    setShowDeleteDialog(false)
+  }
 
   // 根据标题选择图标
-  const getSectionIcon = (title: string) => {
+  const getSectionIcon = (title: string): ReactElement => {
     if (title.includes('总结') || title.includes('自我')) return <User size={20} />
     if (title.includes('教育')) return <GraduationCap size={20} />
     if (title.includes('工作') || title.includes('实习')) return <Briefcase size={20} />
@@ -241,23 +264,56 @@ function CleanProfessionalSection(props: {
     return <User size={20} />
   }
 
+  // 创建圆形彩色图标
+  const circularIcon = (
+    <div
+      className="w-10 h-10 rounded-full flex items-center justify-center text-white shrink-0"
+      style={{ backgroundColor: themeColor }}
+    >
+      {getSectionIcon(title)}
+    </div>
+  )
+
   return (
-    <section className="mb-6">
-      {/* 带圆形图标的标题 */}
-      <div className="flex items-center gap-3 mb-4">
-        <div
-          className="w-10 h-10 rounded-full flex items-center justify-center text-white shrink-0"
-          style={{ backgroundColor: themeColor }}
-        >
-          {getSectionIcon(title)}
-        </div>
-        <h2 className="text-lg font-bold text-gray-900">{title}</h2>
-      </div>
+    <section 
+      className="mb-6 p-4 rounded-lg transition-all duration-200 hover:shadow-sm group"
+      style={{
+        border: '2px solid transparent',
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.borderColor = `${themeColor}20`
+        e.currentTarget.style.backgroundColor = 'rgba(249, 250, 251, 0.5)'
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.borderColor = 'transparent'
+        e.currentTarget.style.backgroundColor = 'transparent'
+      }}
+    >
+      {/* 使用 SectionHeader 组件 - 复用逻辑 */}
+      <SectionHeader
+        sectionId={sectionId}
+        title={title}
+        icon={circularIcon}
+        themeColor={themeColor}
+        onAdd={() => addBlock(sectionId)}
+        onDelete={handleDeleteSection}
+        dragHandleAttributes={dragHandleAttributes}
+        dragHandleListeners={dragHandleListeners}
+        dragHandleRef={dragHandleRef}
+      />
 
       {/* 内容区域 */}
       <div className="space-y-3 pl-[52px]">
         {children}
       </div>
+
+      {/* 删除确认对话框 - 使用可复用组件 */}
+      <DeleteSectionDialog
+        open={showDeleteDialog}
+        sectionTitle={title}
+        onOpenChange={setShowDeleteDialog}
+        onConfirm={confirmDelete}
+      />
     </section>
   )
 }

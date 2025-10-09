@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Global app store using Zustand with Immer.
  * Holds resume data and theme tokens, and exposes minimal actions.
  */
@@ -352,6 +352,15 @@ export const useAppStore = create<AppState>()(
           draft.sections.splice(to, 0, moved)
         }),
       }), false, 'section/moveSection'),
+    deleteSection: (sectionId) =>
+      set((state) => ({
+        resume: produce(state.resume, (draft) => {
+          const idx: number = draft.sections.findIndex((s) => s.id === sectionId)
+          if (idx >= 0) {
+            draft.sections.splice(idx, 1)
+          }
+        }),
+      }), false, 'section/deleteSection'),
     importExternalResume: (external: ExternalResume) =>
       set(() => ({
         resume: mapExternalResume(external),

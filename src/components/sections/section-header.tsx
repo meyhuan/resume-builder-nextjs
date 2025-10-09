@@ -43,7 +43,9 @@ export default function SectionHeader(props: SectionHeaderProps): ReactElement {
 
   return (
     <div
-      className="flex items-center gap-2 mb-3 relative py-1 px-2 rounded"
+      className={`flex items-center gap-2 mb-3 relative py-1 px-2 rounded transition-all duration-200 ${
+        isHovered ? 'bg-gray-50 border border-gray-200' : 'border border-transparent'
+      }`}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >

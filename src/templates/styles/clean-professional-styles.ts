@@ -65,13 +65,13 @@ export const CLEAN_PROFESSIONAL_STYLES: TemplateStylesConfig = {
   },
   
   blockRenderer: {
-    // 卡片式布局，浅灰背景
-    container: 'bg-gray-50 rounded-lg p-5 relative',
+    // 卡片式布局，浅灰背景，添加 hover 效果
+    container: 'bg-gray-50 rounded-lg p-5 relative transition-all duration-150 hover:bg-gray-100 hover:shadow-sm',
     layout: 'card',
     spacing: 'mb-4',
     border: '',
     shadow: '',
-    hover: '',
+    hover: 'hover:bg-gray-100',
     
     // 头部信息：时间在右侧
     header: 'flex justify-between items-start mb-3',

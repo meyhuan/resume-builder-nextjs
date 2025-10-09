@@ -6,6 +6,7 @@ import type { ResumeData } from '@/entities/resume/resume-data'
 import type { ThemeTokens } from '@/entities/theme/theme-tokens'
 import type { ResumeBlock } from '@/entities/blocks/resume-block'
 import SectionHeader from '@/components/sections/section-header'
+import DeleteSectionDialog from '@/components/sections/delete-section-dialog'
 import BlockWrapper from '@/components/blocks/block-wrapper'
 import SortableSectionWrapper from '@/components/sections/sortable-section-wrapper'
 import { getSectionIcon } from '@/utils/get-section-icon'
@@ -158,8 +159,19 @@ interface SectionViewProps {
 function SectionView(props: SectionViewProps): ReactElement {
   const { sectionId, title, columns, themeColor, blockIds, children, dragHandleAttributes, dragHandleListeners, dragHandleRef } = props
   const addBlock = useAppStore((s) => s.addBlockByType)
+  const deleteSection = useAppStore((s) => s.deleteSection)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const { setNodeRef } = useDroppable({ id: `${DndIds.SECTION_DROP_ID_PREFIX}${sectionId}` })
   const icon = getSectionIcon(title)
+
+  const handleDeleteSection = (): void => {
+    setShowDeleteDialog(true)
+  }
+
+  const confirmDelete = (): void => {
+    deleteSection(sectionId)
+    setShowDeleteDialog(false)
+  }
   
   return (
     <section className="resume-section mb-5">
@@ -169,6 +181,7 @@ function SectionView(props: SectionViewProps): ReactElement {
         icon={icon ? <span style={{ color: themeColor }}>{icon}</span> : undefined}
         themeColor={themeColor}
         onAdd={(): void => addBlock(sectionId)}
+        onDelete={handleDeleteSection}
         dragHandleAttributes={dragHandleAttributes}
         dragHandleListeners={dragHandleListeners}
         dragHandleRef={dragHandleRef}
@@ -180,6 +193,13 @@ function SectionView(props: SectionViewProps): ReactElement {
           <div ref={setNodeRef} className="flex flex-col">{children}</div>
         )}
       </SortableContext>
+      
+      <DeleteSectionDialog
+        open={showDeleteDialog}
+        sectionTitle={title}
+        onOpenChange={setShowDeleteDialog}
+        onConfirm={confirmDelete}
+      />
     </section>
   )
 }

@@ -22,7 +22,7 @@ export default function BlockActions(props: BlockActionsProps): ReactElement {
   return (
     <div 
       className="absolute bottom-0 right-0 flex items-center gap-1 print:hidden bg-white shadow-md rounded px-1.5 py-1 border z-10"
-      style={{ transform: 'translateY(calc(100% + 4px))' }}
+      style={{ transform: 'translateY(calc(100% - 14px))' }}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >

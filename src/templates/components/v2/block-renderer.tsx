@@ -68,7 +68,7 @@ export default function BlockRenderer(props: BlockRendererProps): ReactElement {
       {slots?.content ? (
         slots.content(block)
       ) : (
-        renderBlockContent(block, styles)
+        renderBlockContent(block, styles, onEditingChange)
       )}
       
       {slots?.footer && slots.footer(block)}
@@ -295,7 +295,8 @@ function renderMinimalHeader(
  */
 function renderBlockContent(
   block: ResumeBlock,
-  styles: BlockRendererStyles
+  styles: BlockRendererStyles,
+  onEditingChange?: (isEditing: boolean) => void
 ): ReactElement {
   const contentClassName = styles.content || 'mt-2'
 
@@ -306,6 +307,7 @@ function renderBlockContent(
           blockId={block.id}
           contentField="html"
           contentSize="sm"
+          onEditingChange={onEditingChange}
         />
       </div>
     )
@@ -318,6 +320,7 @@ function renderBlockContent(
           blockId={block.id}
           contentField="contentHtml"
           contentSize="xs"
+          onEditingChange={onEditingChange}
         />
       </div>
     )
@@ -330,6 +333,7 @@ function renderBlockContent(
           blockId={block.id}
           contentField="courseHtml"
           contentSize="xs"
+          onEditingChange={onEditingChange}
         />
       </div>
     ) : <></>
