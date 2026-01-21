@@ -47,6 +47,13 @@ export const TEMPLATE_REGISTRY: Record<string, TemplateConfig> = {
     tags: ['清爽', '专业', '应届生', '信息密集'],
     component: lazy(() => import('@/templates/clean-professional')),
   },
+  creative: {
+    id: 'creative',
+    name: '创意时间轴',
+    description: '清新简约，左图右文布局，强调时间轴，适合展示型简历',
+    tags: ['创意', '简约', '时间轴', '设计'],
+    component: lazy(() => import('@/templates/creative')),
+  },
 }
 
 /**

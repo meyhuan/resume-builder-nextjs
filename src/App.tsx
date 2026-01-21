@@ -8,10 +8,11 @@ import { useAppStore } from '@/state/store'
 import { getTemplate, getAllTemplates } from '@/templates/template-loader'
 import { useExportPdf } from '@/io/export-pdf'
 import { exportImage } from '@/io/export-image'
+import { createResumeHtmlBlob } from '@/io/html-export'
 import RightSidebar from '@/ui/right-sidebar'
 import type { ThemeTokens } from '@/entities/theme/theme-tokens'
 import { Button } from '@/components/ui/button'
-import { FileDown, Image } from 'lucide-react'
+import { FileDown, FileText, Image } from 'lucide-react'
 
 export default function App(): ReactElement {
   const resume = useAppStore((s) => s.resume)
@@ -24,6 +25,19 @@ export default function App(): ReactElement {
   // Subscribe to theme changes for current template
   const themes = useAppStore((s) => s.themes)
   const theme = themes[tpl] || getThemeForTemplate(tpl)
+
+  function handleExportHtml(): void {
+    if (!printRef.current) return
+    const blob: Blob = createResumeHtmlBlob(printRef.current, { title: 'Resume' })
+    const url: string = URL.createObjectURL(blob)
+    const anchor: HTMLAnchorElement = document.createElement('a')
+    anchor.href = url
+    anchor.download = 'resume.html'
+    document.body.appendChild(anchor)
+    anchor.click()
+    document.body.removeChild(anchor)
+    URL.revokeObjectURL(url)
+  }
 
   async function handleExportPng(): Promise<void> {
     await exportImage<HTMLDivElement>(printRef, { fileName: 'resume', pixelRatio: 2 })
@@ -87,6 +101,14 @@ export default function App(): ReactElement {
             </span>
           </div>
           <div className="ml-auto flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExportHtml}
+            >
+              <FileText className="h-4 w-4" />
+              Export HTML
+            </Button>
             <Button
               variant="outline"
               size="sm"
