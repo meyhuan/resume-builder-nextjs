@@ -8,9 +8,19 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
+.next/
+out/
+build
 dist
-dist-ssr
-*.local
+
+# env files
+.env
+.env*.local
+
+# Prisma
+/prisma/migrations/
+/prisma/*.db
+/prisma/*.db-journal
 
 # Editor directories and files
 .vscode/*
