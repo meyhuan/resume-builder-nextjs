@@ -13,36 +13,69 @@
   overflow: hidden;
 }
 
-@media print {
-  @page {
-    size: A4;
-    margin: 12mm;
+  @media print {
+    @page {
+      size: A4;
+      margin: 10mm 10mm 10mm 10mm; /* Uniform margins on all pages */
+    }
+    html, body {
+      background: white !important;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    /* The page container should fit the printable area */
+    .page {
+      width: 100% !important;
+      min-height: 100% !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      box-shadow: none !important;
+      border: none !important;
+    }
+    /* Hide interactive UI elements when printing */
+    .no-print {
+      display: none !important;
+    }
+    /* Granular break control for sections */
+    .resume-section {
+      break-inside: auto; /* Allow sections to break */
+      page-break-inside: auto;
+    }
+    
+    /* Section headers should stay with content */
+    .resume-section-header,
+    .section-title,
+    h2, h3 {
+      break-after: avoid;
+      page-break-after: avoid;
+      orphans: 2;
+      widows: 2;
+    }
+    
+    /* Individual items should NOT break */
+    .resume-item,
+    .experience-item,
+    .education-item,
+    .project-item,
+    .skill-item,
+    .avoid-break {
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+    
+    /* Force page break utility class */
+    .page-break-before {
+      break-before: page;
+      page-break-before: always;
+    }
+    
+    /* Prevent orphan headers at bottom of page */
+    .resume-section-header + * {
+      break-before: auto;
+    }
+    
+    /* Ensure links don't show URLs */
+    a:after {
+      content: none !important;
+    }
   }
-  html, body, #root {
-    background: white !important;
-  }
-  /* The page container should fit the printable area */
-  .page {
-    width: auto !important;
-    min-height: auto !important;
-    margin: 0 !important;
-    box-shadow: none !important;
-    border: none !important;
-  }
-  /* Hide interactive UI elements when printing */
-  .no-print {
-    display: none !important;
-  }
-  /* Avoid breaking blocks across pages */
-  .avoid-break,
-  section,
-  article,
-  .resume-block {
-    break-inside: avoid;
-    page-break-inside: avoid;
-  }
-  /* Remove app default paddings/margins if any */
-  body {
-    margin: 0;
-  }
-}

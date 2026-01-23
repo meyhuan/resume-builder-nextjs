@@ -106,9 +106,10 @@ export default function ResumeEditor({ resumeId, initialData }: ResumeEditorProp
   async function handleExportPdf() {
     if (!printRef.current) return
     
+    setIsSaving(true); // Re-using isSaving for export state or we could add isExporting
     try {
       // 1. Get HTML content
-      const html = buildResumeHtml(printRef.current, { title: 'Resume' })
+      const html = buildResumeHtml(printRef.current, { title: resume.name || 'Resume' })
       
       // 2. Call API
       const response = await fetch('/api/generate-pdf', {
@@ -117,7 +118,10 @@ export default function ResumeEditor({ resumeId, initialData }: ResumeEditorProp
         body: JSON.stringify({ html }),
       })
       
-      if (!response.ok) throw new Error('PDF generation failed')
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.details || 'PDF generation failed');
+      }
       
       // 3. Download
       const blob = await response.blob()
@@ -128,9 +132,12 @@ export default function ResumeEditor({ resumeId, initialData }: ResumeEditorProp
       a.click()
       window.URL.revokeObjectURL(url)
     } catch (e) {
-      console.error(e)
+      console.error('Export failed:', e)
+      alert(e instanceof Error ? `Export failed: ${e.message}` : 'Export failed. Falling back to browser print.')
       // Fallback to client-side print if API fails
       handlePrint()
+    } finally {
+      setIsSaving(false);
     }
   }
 
