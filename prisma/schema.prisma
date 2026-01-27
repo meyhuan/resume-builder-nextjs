@@ -9,8 +9,11 @@ generator client {
 
 model User {
   id        String   @id @default(cuid())
-  clerkId   String   @unique
-  email     String   @unique
+  clerkId   String?  @unique
+  wxId      String?  @unique
+  email     String?  @unique
+  name      String?
+  avatar    String?
   resumes   Resume[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
