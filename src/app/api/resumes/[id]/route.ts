@@ -1,18 +1,29 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { cookies } from 'next/headers'
 
 interface RouteParams {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
 // GET /api/resumes/[id] - Get a single resume
 export async function GET(req: Request, { params }: RouteParams) {
   try {
     const { id } = await params
+    const cookieStore = await cookies();
+    const userId = cookieStore.get("auth_uid")?.value;
+
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const resume = await prisma.resume.findUnique({
-      where: { id }
+      where: { 
+        id,
+        user: { wxId: userId }
+      }
     })
     
     if (!resume) {
@@ -29,11 +40,21 @@ export async function GET(req: Request, { params }: RouteParams) {
 export async function PUT(req: Request, { params }: RouteParams) {
   try {
     const { id } = await params
+    const cookieStore = await cookies();
+    const userId = cookieStore.get("auth_uid")?.value;
+
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await req.json()
     const { title, content, template, thumbnail } = body
     
     const resume = await prisma.resume.update({
-      where: { id },
+      where: { 
+        id,
+        user: { wxId: userId }
+      },
       data: {
         title,
         content,
@@ -52,8 +73,18 @@ export async function PUT(req: Request, { params }: RouteParams) {
 export async function DELETE(req: Request, { params }: RouteParams) {
   try {
     const { id } = await params
+    const cookieStore = await cookies();
+    const userId = cookieStore.get("auth_uid")?.value;
+
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     await prisma.resume.delete({
-      where: { id }
+      where: { 
+        id,
+        user: { wxId: userId }
+      }
     })
     
     return NextResponse.json({ success: true })

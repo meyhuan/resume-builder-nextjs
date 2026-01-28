@@ -53,7 +53,7 @@ export const LandingFooter = () => {
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 border-t border-gray-100 flex flex-col md:flex-row justify-between items-center gap-4">
         <p className="text-gray-400 text-xs">
-          © {new Date().getFullYear()} 智简简历. All rights reserved.
+          © {new Date().getFullYear()} 智简简历 版权所有
         </p>
         <div className="flex gap-6 text-xs text-gray-400">
           <Link href="#" className="hover:text-gray-600">隐私政策</Link>

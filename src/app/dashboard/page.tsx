@@ -3,24 +3,25 @@ import { Button } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
 import { FileText, Plus, Trash2 } from "lucide-react";
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
+import Image from "next/image";
 
 // Server Action for creating a new resume
 async function createResume() {
   "use server";
   
-  // Demo user ID
-  const userId = "demo-user-id";
+  const cookieStore = await cookies();
+  const userId = cookieStore.get("auth_uid")?.value;
+
+  if (!userId) throw new Error("Unauthorized");
   
   const resume = await prisma.resume.create({
     data: {
-      title: "Untitled Resume",
-      content: {}, // Should initialize with default template data ideally
+      title: "未命名简历",
+      content: {}, 
       template: "simple",
       user: {
-        connectOrCreate: {
-          where: { clerkId: userId },
-          create: { clerkId: userId, email: "demo@example.com" },
-        },
+        connect: { wxId: userId }
       },
     },
   });
@@ -31,19 +32,40 @@ async function createResume() {
 // Server Action for deleting
 async function deleteResume(id: string) {
   "use server";
-  await prisma.resume.delete({ where: { id } });
+  const cookieStore = await cookies();
+  const userId = cookieStore.get("auth_uid")?.value;
+  if (!userId) throw new Error("Unauthorized");
+
+  await prisma.resume.delete({ 
+    where: { 
+      id,
+      user: { wxId: userId }
+    } 
+  });
   revalidatePath("/dashboard");
 }
 
 export default async function DashboardPage() {
-  // Demo user fetch
-  const userId = "demo-user-id";
+  const cookieStore = await cookies();
+  const userId = cookieStore.get("auth_uid")?.value;
+
+  if (!userId) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold mb-4">请登录后查看您的简历</h2>
+          <Link href="/">
+            <Button>返回首页</Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
   
-  // Ensure user exists for demo purposes
   try {
-     // Fetch resumes
+     // Fetch resumes for the logged-in user
     const resumes = await prisma.resume.findMany({
-        where: { user: { clerkId: userId } },
+        where: { user: { wxId: userId } },
         orderBy: { updatedAt: "desc" },
     });
 
@@ -51,7 +73,7 @@ export default async function DashboardPage() {
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-6xl mx-auto">
         <header className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">My Resumes</h1>
+          <h1 className="text-3xl font-bold text-gray-900">我的简历</h1>
           <form action={async () => {
             "use server"
             const id = await createResume();
@@ -63,14 +85,14 @@ export default async function DashboardPage() {
           }}>
             <Button size="lg">
               <Plus className="w-4 h-4 mr-2" />
-              New Resume
+              新建简历
             </Button>
           </form>
         </header>
 
         {resumes.length === 0 ? (
           <div className="text-center py-20 bg-white rounded-lg border border-dashed">
-            <p className="text-gray-500 mb-4">No resumes found. Create your first one!</p>
+            <p className="text-gray-500 mb-4">暂无简历，创建您的第一份简历吧！</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -79,16 +101,25 @@ export default async function DashboardPage() {
                 key={resume.id}
                 className="bg-white border rounded-lg overflow-hidden hover:shadow-lg transition-shadow group relative"
               >
-                <Link href={`/editor/${resume.id}`} className="block h-48 bg-gray-100 relative">
-                  {/* Thumbnail placeholder */}
-                  <div className="absolute inset-0 flex items-center justify-center text-gray-400">
-                     <FileText className="w-12 h-12" />
-                  </div>
+                <Link href={`/editor/${resume.id}`} className="block h-48 bg-gray-100 relative group">
+                  {resume.thumbnail ? (
+                    <Image 
+                      src={resume.thumbnail} 
+                      alt={resume.title} 
+                      fill 
+                      className="object-cover object-top transition-transform group-hover:scale-105"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center text-gray-400">
+                      <FileText className="w-12 h-12" />
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors" />
                 </Link>
                 <div className="p-4">
                   <h3 className="font-semibold text-lg mb-1 truncate">{resume.title}</h3>
                   <p className="text-sm text-gray-500">
-                    Updated {new Date(resume.updatedAt).toLocaleDateString()}
+                    更新于 {new Date(resume.updatedAt).toLocaleDateString('zh-CN')}
                   </p>
                   <div className="mt-4 flex justify-between items-center">
                     <span className="text-xs bg-gray-100 px-2 py-1 rounded capitalize">
@@ -111,7 +142,7 @@ export default async function DashboardPage() {
   } catch (e) {
       return (
           <div className="p-8 text-center text-red-500">
-              Error connecting to database. Please make sure DATABASE_URL is set and migrations are run.
+              数据库连接失败，请确保数据库配置正确并已运行迁移。
           </div>
       )
   }

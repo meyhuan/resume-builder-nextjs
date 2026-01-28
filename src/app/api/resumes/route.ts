@@ -1,12 +1,19 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { cookies } from 'next/headers'
 
 // GET /api/resumes - List all resumes for current user
 export async function GET() {
-  // TODO: Get user ID from session/auth
-  // For now, we'll fetch all resumes (demo mode) or handle auth later
   try {
+    const cookieStore = await cookies();
+    const userId = cookieStore.get("auth_uid")?.value;
+
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const resumes = await prisma.resume.findMany({
+      where: { user: { wxId: userId } },
       orderBy: { updatedAt: 'desc' },
       select: {
         id: true,
@@ -28,13 +35,13 @@ export async function POST(req: Request) {
     const body = await req.json()
     const { title, content, template } = body
     
-    // Demo user ID
-    const userId = 'demo-user-id' 
+    const cookieStore = await cookies();
+    const userId = cookieStore.get("auth_uid")?.value;
 
-    // Ensure user exists (demo only)
-    let user = await prisma.user.findUnique({ where: { clerkId: userId } })
-    // Wait, let's check schema.
-    
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     // Creating resume
     const resume = await prisma.resume.create({
       data: {
@@ -42,10 +49,7 @@ export async function POST(req: Request) {
         content: content || {},
         template: template || 'simple',
         user: {
-          connectOrCreate: {
-            where: { clerkId: userId },
-            create: { clerkId: userId, email: 'demo@example.com' }
-          }
+          connect: { wxId: userId }
         }
       }
     })

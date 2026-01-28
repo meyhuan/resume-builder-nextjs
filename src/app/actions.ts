@@ -3,6 +3,8 @@
 import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
 
+import { revalidatePath } from 'next/cache'
+
 export async function syncUserAction(userData: {
   wxId: string;
   name?: string;
@@ -36,6 +38,10 @@ export async function syncUserAction(userData: {
     console.error('Server Action Error (syncUserAction):', error);
     return { success: false, error: error.message || 'Internal Server Error' };
   }
+}
+
+export async function revalidateDashboard() {
+  revalidatePath('/dashboard')
 }
 
 export async function createResume() {

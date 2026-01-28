@@ -5,7 +5,7 @@
  * App with Dynamic Template Loading
  * 使用 Suspense + lazy 实现模板按需加载
  */
-import { useEffect, useRef, useState, Suspense, useCallback } from 'react'
+import { useEffect, useRef, useState, Suspense, useCallback, useMemo } from 'react'
 import type { ReactElement } from 'react'
 import { useAppStore } from '@/state/store'
 import { getTemplate, getAllTemplates } from '@/templates/template-loader'
@@ -15,7 +15,14 @@ import { createResumeHtmlBlob, buildResumeHtml } from '@/io/html-export'
 import RightSidebar from '@/ui/right-sidebar'
 import type { ThemeTokens } from '@/entities/theme/theme-tokens'
 import { Button } from '@/components/ui/button'
-import { FileDown, FileText, Image, Save, Loader2 } from 'lucide-react'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
+import { X, Loader2, RefreshCw, AlertCircle, ArrowLeft, Save, FileDown, FileText, Image as ImageIcon } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { revalidateDashboard } from '@/app/actions'
+import { logger } from '@/utils/logger'
+import { authApi } from '@/lib/api'
+import { useAuthStore } from '@/store/use-auth-store'
+import NextImage from 'next/image'
 
 interface ResumeData {
   id: string
@@ -31,6 +38,7 @@ interface ResumeEditorProps {
 }
 
 export default function ResumeEditor({ resumeId, initialData }: ResumeEditorProps): ReactElement {
+  const router = useRouter()
   const resume = useAppStore((s) => s.resume)
   const setResume = useAppStore((s) => s.setResume)
   const setThemeForTemplate = useAppStore((s) => s.setThemeForTemplate)
@@ -40,12 +48,18 @@ export default function ResumeEditor({ resumeId, initialData }: ResumeEditorProp
   const [tpl, setTpl] = useState<string>('simple')
   const [isSaving, setIsSaving] = useState(false)
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
+  const [savedSnapshot, setSavedSnapshot] = useState<string>('')
+  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const AUTO_SAVE_DELAY = 30000 // 30 seconds
+  const [showLeaveDialog, setShowLeaveDialog] = useState(false)
 
   // Initialize from DB data if provided
   useEffect(() => {
     if (initialData) {
       if (initialData.content && Object.keys(initialData.content).length > 0) {
         setResume(() => initialData.content)
+        // Store initial snapshot for dirty checking
+        setSavedSnapshot(JSON.stringify(initialData.content))
       }
       if (initialData.template) {
         setTpl(initialData.template)
@@ -53,10 +67,24 @@ export default function ResumeEditor({ resumeId, initialData }: ResumeEditorProp
     }
   }, [initialData, setResume])
 
+  // Check if there are unsaved changes
+  const hasUnsavedChanges = useMemo(() => {
+    if (!savedSnapshot) return false
+    return JSON.stringify(resume) !== savedSnapshot
+  }, [resume, savedSnapshot])
+
   const handleSave = useCallback(async () => {
     if (!resumeId) return
     setIsSaving(true)
     try {
+      // 1. Generate thumbnail (Base64)
+      const thumbnail = await exportImage(printRef, {
+        pixelRatio: 1, // Lower resolution for thumbnail
+        returnBase64: true,
+        backgroundColor: '#ffffff'
+      }) as string
+
+      // 2. Save to DB
       const res = await fetch(`/api/resumes/${resumeId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -64,23 +92,69 @@ export default function ResumeEditor({ resumeId, initialData }: ResumeEditorProp
           title: resume.name || 'Untitled Resume',
           content: resume,
           template: tpl,
+          thumbnail,
         }),
       })
       if (!res.ok) throw new Error('Failed to save')
       setLastSaved(new Date())
+      // Update saved snapshot after successful save
+      setSavedSnapshot(JSON.stringify(resume))
+      // Invalidate dashboard cache to show new thumbnail
+      await revalidateDashboard()
     } catch (e) {
       console.error(e)
       alert('Save failed')
+      await revalidateDashboard()
     } finally {
       setIsSaving(false)
     }
   }, [resumeId, resume, tpl])
 
-  // Auto-save (optional, can be enabled later)
-  // useEffect(() => {
-  //   const timer = setTimeout(handleSave, 30000)
-  //   return () => clearTimeout(timer)
-  // }, [handleSave])
+  // Auto-save: debounced save after changes
+  useEffect(() => {
+    if (!resumeId || !hasUnsavedChanges || isSaving) return
+    // Clear existing timer
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current)
+    }
+    // Set new timer for auto-save
+    autoSaveTimerRef.current = setTimeout(() => {
+      handleSave()
+    }, AUTO_SAVE_DELAY)
+    return () => {
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current)
+      }
+    }
+  }, [resume, resumeId, hasUnsavedChanges, isSaving, handleSave])
+
+  // Warn user when closing browser tab with unsaved changes
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault()
+        e.returnValue = ''
+        return ''
+      }
+    }
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [hasUnsavedChanges])
+
+  // Handle back navigation with unsaved changes warning
+  const handleBack = useCallback(() => {
+    if (hasUnsavedChanges) {
+      setShowLeaveDialog(true)
+      return
+    }
+    router.push('/dashboard')
+  }, [hasUnsavedChanges, router])
+
+  // Confirm leave action
+  const confirmLeave = useCallback(() => {
+    setShowLeaveDialog(false)
+    router.push('/dashboard')
+  }, [router])
   
   // Subscribe to theme changes for current template
   const themes = useAppStore((s) => s.themes)
@@ -192,16 +266,31 @@ export default function ResumeEditor({ resumeId, initialData }: ResumeEditorProp
     <div className="min-h-screen bg-gray-50 text-gray-900">
       <header className="sticky top-0 z-10 bg-white/80 backdrop-blur border-b">
         <div className="mx-auto max-w-5xl px-4 py-3 flex items-center gap-3">
-          <h1 className="text-lg font-semibold">Resume Builder</h1>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={handleBack}
+            className="mr-2"
+          >
+            <ArrowLeft className="h-4 w-4 mr-1" />
+            返回
+          </Button>
+          <h1 className="text-lg font-semibold">简历编辑器</h1>
           <div className="ml-4 flex items-center gap-2">
             <span className="text-xs text-gray-500">
               当前模板: <span className="font-medium text-gray-700">{templateConfig?.name || tpl}</span>
             </span>
           </div>
           <div className="ml-auto flex items-center gap-2">
-            {lastSaved && (
-              <span className="text-xs text-gray-400 mr-2">
-                Saved {lastSaved.toLocaleTimeString()}
+            {hasUnsavedChanges && (
+              <span className="text-xs text-orange-500 mr-2 flex items-center gap-1">
+                <span className="w-2 h-2 bg-orange-500 rounded-full animate-pulse" />
+                未保存
+              </span>
+            )}
+            {lastSaved && !hasUnsavedChanges && (
+              <span className="text-xs text-green-600 mr-2">
+                ✓ 已保存 {lastSaved.toLocaleTimeString()}
               </span>
             )}
             {resumeId && (
@@ -216,7 +305,7 @@ export default function ResumeEditor({ resumeId, initialData }: ResumeEditorProp
                 ) : (
                   <Save className="h-4 w-4" />
                 )}
-                {isSaving ? 'Saving...' : 'Save'}
+                {isSaving ? '保存中...' : '保存'}
               </Button>
             )}
             <Button
@@ -225,7 +314,7 @@ export default function ResumeEditor({ resumeId, initialData }: ResumeEditorProp
               onClick={handleExportHtml}
             >
               <FileText className="h-4 w-4" />
-              Export HTML
+              导出 HTML
             </Button>
             <Button
               variant="outline"
@@ -233,15 +322,15 @@ export default function ResumeEditor({ resumeId, initialData }: ResumeEditorProp
               onClick={handleExportPdf}
             >
               <FileDown className="h-4 w-4" />
-              Export PDF
+              导出 PDF
             </Button>
             <Button
               variant="outline"
               size="sm"
               onClick={handleExportPng}
             >
-              <Image className="h-4 w-4" />
-              Export PNG
+              <ImageIcon className="h-4 w-4" />
+              导出 PNG
             </Button>
           </div>
         </div>
@@ -302,6 +391,17 @@ export default function ResumeEditor({ resumeId, initialData }: ResumeEditorProp
           </aside>
         </div>
       </main>
+      {/* 离开确认弹窗 */}
+      <ConfirmDialog
+        open={showLeaveDialog}
+        onOpenChange={setShowLeaveDialog}
+        title="确认离开"
+        description="您有未保存的更改，确定要离开吗？离开后未保存的内容将会丢失。"
+        confirmText="不保存并离开"
+        cancelText="继续编辑"
+        variant="destructive"
+        onConfirm={confirmLeave}
+      />
     </div>
   )
 }

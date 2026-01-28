@@ -1,6 +1,7 @@
 import ResumeEditor from "@/components/ResumeEditor";
 import { prisma } from "@/lib/prisma";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { cookies } from "next/headers";
 
 interface PageParams {
   params: Promise<{
@@ -10,9 +11,18 @@ interface PageParams {
 
 export default async function EditorPage({ params }: PageParams) {
   const { id } = await params;
+  const cookieStore = await cookies();
+  const userId = cookieStore.get("auth_uid")?.value;
+
+  if (!userId) {
+    redirect("/");
+  }
   
   const resume = await prisma.resume.findUnique({
-    where: { id },
+    where: { 
+      id,
+      user: { wxId: userId }
+    },
   });
 
   if (!resume) {
