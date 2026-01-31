@@ -13,6 +13,8 @@ export const metadata: Metadata = {
   description: "Professional Resume Builder",
 };
 
+import { Toaster } from 'sonner';
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -22,6 +24,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${inter.className} ${notoSansSC.className} antialiased`}>
         {children}
+        <Toaster position="top-center" richColors />
       </body>
     </html>
   );

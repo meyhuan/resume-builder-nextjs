@@ -30,3 +30,13 @@ model Resume {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+model Template {
+  id          String   @id
+  name        String
+  description String?
+  thumbnail   String?  // Base64 or URL for the template snapshot
+  config      Json?    // Optional extra configuration for the template
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

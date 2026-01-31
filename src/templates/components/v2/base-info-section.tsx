@@ -298,7 +298,7 @@ function renderInfoFields(
     )
   }
 
-  if (typeof baseInfo?.age === 'number') {
+  if (baseInfo?.age !== undefined && baseInfo?.age !== null) {
     fields.push(
       <div 
         key="age"
@@ -308,7 +308,7 @@ function renderInfoFields(
       >
         <Calendar size={iconSize} strokeWidth={1.8} />
         <span className="text-gray-500">年龄：</span>
-        <span>{baseInfo.age}</span>
+        <span>{String(baseInfo.age)}</span>
         {hoveredField === 'age' && (
           <button
             type="button"

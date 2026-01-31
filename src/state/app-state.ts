@@ -39,4 +39,6 @@ export interface AppState {
   updateBaseInfo: (baseInfo: BaseInfo, name: string) => void
   /** Update job intention. */
   updateJobIntention: (jobIntention: JobIntention) => void
+  /** Load test data into the editor. */
+  loadTestData: () => void
 }

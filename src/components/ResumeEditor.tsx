@@ -263,8 +263,8 @@ export default function ResumeEditor({ resumeId, initialData }: ResumeEditorProp
   const TemplateComponent = templateConfig?.component
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900">
-      <header className="sticky top-0 z-10 bg-white/80 backdrop-blur border-b">
+    <div className="h-screen bg-gray-50 text-gray-900 flex flex-col overflow-hidden">
+      <header className="z-20 bg-white/80 backdrop-blur border-b shrink-0">
         <div className="mx-auto max-w-5xl px-4 py-3 flex items-center gap-3">
           <Button 
             variant="ghost" 
@@ -336,12 +336,12 @@ export default function ResumeEditor({ resumeId, initialData }: ResumeEditorProp
         </div>
       </header>
 
-      <main className="p-6 md:p-8">
-        <div className="mx-auto max-w-7xl flex items-start gap-6">
-          <div className="flex-1">
+      <main className="flex-1 flex overflow-hidden relative">
+        <div className="flex-1 overflow-auto p-6 md:p-8 custom-scrollbar">
+          <div className="mx-auto max-w-[210mm]">
             <div
               ref={printRef}
-              className="page w-full max-w-[210mm] mx-auto bg-white shadow-md rounded-md print:shadow-none"
+              className="page w-full bg-white shadow-md rounded-md print:shadow-none"
             >
               {/* Suspense 包裹动态加载的模板 */}
               <Suspense
@@ -368,28 +368,28 @@ export default function ResumeEditor({ resumeId, initialData }: ResumeEditorProp
               </Suspense>
             </div>
           </div>
-          <aside className="print:hidden sticky top-20 w-[320px] shrink-0">
-            <RightSidebar
-              theme={theme}
-              tpl={tpl}
-              templates={getAllTemplates()}
-              onTplChange={(next): void => setTpl(next)}
-              onThemePatch={(patch): void => {
-                setThemeForTemplate(tpl, (draft) => {
-                  Object.assign(draft, patch)
-                })
-              }}
-              onImportJson={(json): void => {
-                try {
-                  const parsed = JSON.parse(json)
-                  useAppStore.getState().importExternalResume(parsed)
-                } catch (e) {
-                  alert(`解析失败: ${e}`)
-                }
-              }}
-            />
-          </aside>
         </div>
+        <aside className="print:hidden w-[360px] border-l bg-white shrink-0 h-full overflow-y-auto custom-scrollbar shadow-sm">
+          <RightSidebar
+            theme={theme}
+            tpl={tpl}
+            templates={getAllTemplates()}
+            onTplChange={(next): void => setTpl(next)}
+            onThemePatch={(patch): void => {
+              setThemeForTemplate(tpl, (draft) => {
+                Object.assign(draft, patch)
+              })
+            }}
+            onImportJson={(json): void => {
+              try {
+                const parsed = JSON.parse(json)
+                useAppStore.getState().importExternalResume(parsed)
+              } catch (e) {
+                alert(`解析失败: ${e}`)
+              }
+            }}
+          />
+        </aside>
       </main>
       {/* 离开确认弹窗 */}
       <ConfirmDialog

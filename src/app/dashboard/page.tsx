@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { FileText, Plus, Trash2 } from "lucide-react";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import Image from "next/image";
 
 // Server Action for creating a new resume
@@ -50,16 +51,7 @@ export default async function DashboardPage() {
   const userId = cookieStore.get("auth_uid")?.value;
 
   if (!userId) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold mb-4">请登录后查看您的简历</h2>
-          <Link href="/">
-            <Button>返回首页</Button>
-          </Link>
-        </div>
-      </div>
-    );
+    redirect('/login?redirect=/dashboard');
   }
   
   try {

@@ -1,0 +1,60 @@
+'use client';
+
+import { useEffect, useState, type ReactNode } from 'react';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+import { getCookie } from 'cookies-next';
+import { Loader2 } from 'lucide-react';
+
+interface AuthGuardProps {
+  children: ReactNode;
+  fallback?: ReactNode;
+}
+
+/**
+ * AuthGuard - Client-side authentication guard component
+ * Wraps protected pages to ensure user is authenticated
+ * Redirects to login page if not authenticated
+ */
+export default function AuthGuard({ children, fallback }: AuthGuardProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const [isChecking, setIsChecking] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    const checkAuth = () => {
+      const authToken = getCookie('auth_uid');
+      
+      if (!authToken) {
+        // Not authenticated, redirect to login with current path
+        const loginUrl = `/login?redirect=${encodeURIComponent(pathname + (searchParams.toString() ? `?${searchParams.toString()}` : ''))}`;
+        router.push(loginUrl);
+        return;
+      }
+
+      // Authenticated
+      setIsAuthenticated(true);
+      setIsChecking(false);
+    };
+
+    checkAuth();
+  }, [pathname, searchParams, router]);
+
+  // Show loading state while checking authentication
+  if (isChecking) {
+    return (
+      fallback || (
+        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+          <div className="text-center">
+            <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
+            <p className="text-gray-600">验证登录状态...</p>
+          </div>
+        </div>
+      )
+    );
+  }
+
+  // Only render children if authenticated
+  return isAuthenticated ? <>{children}</> : null;
+}

@@ -15,7 +15,7 @@ export default async function EditorPage({ params }: PageParams) {
   const userId = cookieStore.get("auth_uid")?.value;
 
   if (!userId) {
-    redirect("/");
+    redirect(`/login?redirect=/editor/${id}`);
   }
   
   const resume = await prisma.resume.findUnique({
