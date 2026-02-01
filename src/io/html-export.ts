@@ -58,7 +58,7 @@ function collectStyleContent(): string {
     try {
       const rules: CSSRuleList = sheet.cssRules
       for (const rule of Array.from(rules)) cssTexts.push(rule.cssText)
-    } catch (_error) {
+    } catch {
       continue
     }
   }

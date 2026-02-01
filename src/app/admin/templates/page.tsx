@@ -22,10 +22,16 @@ const DEFAULT_THEME = {
   spacingScale: 1,
 }
 
+interface DbTemplate {
+  id: string
+  thumbnail?: string | null
+  [key: string]: unknown
+}
+
 const testResumeData = mapExternalResume(TEST_RESUME_JSON)
 
 export default function TemplateAdminPage() {
-  const [dbTemplates, setDbTemplates] = useState<Record<string, any>>({})
+  const [dbTemplates, setDbTemplates] = useState<Record<string, DbTemplate>>({})
   const [loading, setLoading] = useState<string | null>(null)
   const previewRefs = useRef<Record<string, HTMLDivElement | null>>({})
 
@@ -34,7 +40,7 @@ export default function TemplateAdminPage() {
     async function load() {
       const res = await getTemplatesAction()
       if (res.success && res.data) {
-        const map = res.data.reduce((acc: any, t: any) => {
+        const map = res.data.reduce((acc: Record<string, DbTemplate>, t: DbTemplate) => {
           acc[t.id] = t
           return acc
         }, {})
@@ -67,7 +73,7 @@ export default function TemplateAdminPage() {
       })
 
       if (res.success) {
-        setDbTemplates(prev => ({ ...prev, [template.id]: res.data }))
+        setDbTemplates(prev => ({ ...prev, [template.id]: res.data as DbTemplate }))
         toast.success(`${template.name} 快照已更新`)
       } else {
         toast.error('保存失败: ' + res.error)

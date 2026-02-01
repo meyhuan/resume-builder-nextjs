@@ -1,34 +1,34 @@
 /**
  * Constants for A4 page dimensions in pixels at 96 DPI
  */
-const A4_HEIGHT_PX = 1123; // ~297mm at 96 DPI
-const PAGE_MARGIN_PX = 38; // ~10mm margin
-const USABLE_HEIGHT_PX = A4_HEIGHT_PX - PAGE_MARGIN_PX * 2;
-const HEADER_SAFETY_MARGIN_PX = 100; // Don't allow headers in last 100px of page
+// const A4_HEIGHT_PX = 1123; // ~297mm at 96 DPI
+// const PAGE_MARGIN_PX = 38; // ~10mm margin
+// const USABLE_HEIGHT_PX = A4_HEIGHT_PX - PAGE_MARGIN_PX * 2;
+// const HEADER_SAFETY_MARGIN_PX = 100; // Don't allow headers in last 100px of page
 
 /**
  * Element height estimation for server-side processing
  */
-interface ElementMeasurement {
-  selector: string;
-  estimatedHeight: number;
-}
+// interface ElementMeasurement {
+//   selector: string;
+//   estimatedHeight: number;
+// }
 
 /**
  * Estimated heights for common resume elements (in pixels)
  */
-const ELEMENT_HEIGHTS: Record<string, number> = {
-  'h1': 48,
-  'h2': 36,
-  'h3': 28,
-  'p': 24,
-  'li': 22,
-  'section-header': 50,
-  'experience-item': 120,
-  'education-item': 100,
-  'project-item': 100,
-  'skill-group': 60,
-};
+// const ELEMENT_HEIGHTS: Record<string, number> = {
+//   'h1': 48,
+//   'h2': 36,
+//   'h3': 28,
+//   'p': 24,
+//   'li': 22,
+//   'section-header': 50,
+//   'experience-item': 120,
+//   'education-item': 100,
+//   'project-item': 100,
+//   'skill-group': 60,
+// };
 
 /**
  * Injects page-break-before style to elements that would otherwise

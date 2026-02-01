@@ -11,8 +11,15 @@ interface TemplatesSectionProps {
   id?: string;
 }
 
+interface TemplateItem {
+  id: string;
+  name: string;
+  thumbnail?: string | null;
+  [key: string]: unknown;
+}
+
 export const LandingTemplates = ({ id }: TemplatesSectionProps) => {
-  const [templates, setTemplates] = useState<any[]>([]);
+  const [templates, setTemplates] = useState<TemplateItem[]>([]);
 
   useEffect(() => {
     async function fetchTemplates() {

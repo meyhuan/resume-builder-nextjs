@@ -52,6 +52,7 @@ export default function EditableFieldWrapper(props: EditableFieldWrapperProps): 
   }, [isEditing, onEditingChange])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setTempValue(props.value || '')
   }, [props.value])
 

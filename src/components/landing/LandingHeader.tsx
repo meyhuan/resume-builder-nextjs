@@ -66,7 +66,7 @@ export const LandingHeader = () => {
                     <ChevronDown className={cn("w-4 h-4 transition-transform", activeDropdown === item.id && "rotate-180")} />
                   </button>
                 ) : (
-                  <Link href={item.href} className="text-gray-600 font-medium hover:text-[#a855f7] transition-colors relative after:absolute after:bottom-[-4px] after:left-0 after:w-0 after:height-[2px] after:bg-gradient-to-r after:from-[#a855f7] after:to-[#f23a70] hover:after:w-full after:transition-all">
+                  <Link href={item.href!} className="text-gray-600 font-medium hover:text-[#a855f7] transition-colors relative after:absolute after:bottom-[-4px] after:left-0 after:w-0 after:height-[2px] after:bg-gradient-to-r after:from-[#a855f7] after:to-[#f23a70] hover:after:w-full after:transition-all">
                     {item.label}
                   </Link>
                 )}
@@ -139,7 +139,7 @@ export const LandingHeader = () => {
           <div className="md:hidden bg-white border-b border-[#a855f7]/10 px-4 py-6 space-y-4 animate-in slide-in-from-top duration-300">
             {menuItems.map((item) => (
               <div key={item.id} className="space-y-2 border-b border-gray-100 pb-2">
-                <Link href={item.href} className="block text-gray-600 font-medium" onClick={() => setMobileMenuOpen(false)}>
+                <Link href={item.href!} className="block text-gray-600 font-medium" onClick={() => setMobileMenuOpen(false)}>
                   {item.label}
                 </Link>
                 {item.items?.map((sub) => (

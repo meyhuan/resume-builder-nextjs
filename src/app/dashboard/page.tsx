@@ -131,7 +131,7 @@ export default async function DashboardPage() {
       </div>
     </div>
   );
-  } catch (e) {
+  } catch {
       return (
           <div className="p-8 text-center text-red-500">
               数据库连接失败，请确保数据库配置正确并已运行迁移。

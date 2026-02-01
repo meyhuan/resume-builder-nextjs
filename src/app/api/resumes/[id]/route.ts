@@ -31,7 +31,7 @@ export async function GET(req: Request, { params }: RouteParams) {
     }
     
     return NextResponse.json(resume)
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Failed to fetch resume' }, { status: 500 })
   }
 }
@@ -64,7 +64,7 @@ export async function PUT(req: Request, { params }: RouteParams) {
     })
     
     return NextResponse.json(resume)
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Failed to update resume' }, { status: 500 })
   }
 }
@@ -88,7 +88,7 @@ export async function DELETE(req: Request, { params }: RouteParams) {
     })
     
     return NextResponse.json({ success: true })
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Failed to delete resume' }, { status: 500 })
   }
 }

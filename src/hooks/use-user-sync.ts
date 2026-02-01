@@ -16,7 +16,7 @@ export const useUserSync = () => {
         logger.error('Sync', `Failed to sync user: ${result.error}`);
         return null;
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       logger.error('Sync', 'Error in syncUser', error);
       return null;
     }

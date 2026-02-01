@@ -25,6 +25,37 @@ interface InlineEditorProps {
   readonly onClickOutside?: () => void
 }
 
+interface ErrorBoundaryProps {
+  children: ReactElement
+  onError: (error: Error) => void
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean
+}
+
+class RichTextErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  public constructor(props: ErrorBoundaryProps) {
+    super(props)
+    this.state = { hasError: false }
+  }
+
+  public static getDerivedStateFromError(): ErrorBoundaryState {
+    return { hasError: true }
+  }
+
+  public componentDidCatch(error: Error): void {
+    this.props.onError(error)
+  }
+
+  public render(): ReactNode {
+    if (this.state.hasError) {
+      return <div className="text-red-600 text-sm">Editor crashed. Please reload.</div>
+    }
+    return this.props.children
+  }
+}
+
 export default function InlineEditor(props: InlineEditorProps): ReactElement {
   const editorRef = useRef<HTMLDivElement>(null)
   
@@ -90,35 +121,13 @@ export default function InlineEditor(props: InlineEditorProps): ReactElement {
   return (
     <LexicalComposer initialConfig={initialConfig}>
       <div ref={editorRef} className={props.className ?? ''}>
-        {(() => {
-          class RichTextErrorBoundary extends React.Component<{ children: ReactElement; onError: (error: Error) => void }, { hasError: boolean }> {
-            public constructor(props: { children: ReactElement; onError: (error: Error) => void }) {
-              super(props)
-              this.state = { hasError: false }
-            }
-            public static getDerivedStateFromError(): { hasError: boolean } {
-              return { hasError: true }
-            }
-            public componentDidCatch(error: Error): void {
-              this.props.onError(error)
-            }
-            public render(): ReactNode {
-              if (this.state.hasError) {
-                return <div className="text-red-600 text-sm">Editor crashed. Please reload.</div>
-              }
-              return this.props.children
-            }
+        <RichTextPlugin
+          contentEditable={
+            <ContentEditable className="outline-none min-h-[20px] [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:space-y-1 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:space-y-1 [&_li]:ml-0" />
           }
-          return (
-            <RichTextPlugin
-              contentEditable={
-                <ContentEditable className="outline-none min-h-[20px] [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:space-y-1 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:space-y-1 [&_li]:ml-0" />
-              }
-              placeholder={<div className="text-gray-400">Start typing…</div>}
-              ErrorBoundary={RichTextErrorBoundary as unknown as never}
-            />
-          )
-        })()}
+          placeholder={<div className="text-gray-400">Start typing…</div>}
+          ErrorBoundary={RichTextErrorBoundary}
+        />
         <HistoryPlugin />
         <ListPlugin />
         <OnChangePlugin onChange={handleChange} />

@@ -25,8 +25,9 @@ export interface SectionHeaderProps {
 export default function SectionHeader(props: SectionHeaderProps): ReactElement {
   const { title, icon, themeColor, onAdd, onDelete, dragHandleAttributes, dragHandleListeners, dragHandleRef } = props;
   const [isHovered, setIsHovered] = useState(false);
-  const hideTimerRef = useRef<number | null>(null);
+  const hideTimerRef = useRef<NodeJS.Timeout | number | null>(null);
 
+  // eslint-disable-next-line react-hooks/refs
   const hasActions = Boolean(onAdd || onDelete || (dragHandleAttributes && dragHandleListeners && dragHandleRef));
 
   function handleMouseEnter(): void {

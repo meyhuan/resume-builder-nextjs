@@ -16,20 +16,16 @@ import RightSidebar from '@/ui/right-sidebar'
 import type { ThemeTokens } from '@/entities/theme/theme-tokens'
 import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
-import { X, Loader2, RefreshCw, AlertCircle, ArrowLeft, Save, FileDown, FileText, Image as ImageIcon } from 'lucide-react'
+import { Loader2, ArrowLeft, Save, FileDown, FileText, Image as ImageIcon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { revalidateDashboard } from '@/app/actions'
-import { logger } from '@/utils/logger'
-import { authApi } from '@/lib/api'
-import { useAuthStore } from '@/store/use-auth-store'
-import NextImage from 'next/image'
 
 interface ResumeData {
   id: string
   title: string
-  content: any
+  content: unknown
   template: string
-  [key: string]: any
+  [key: string]: unknown
 }
 
 interface ResumeEditorProps {

@@ -52,7 +52,7 @@ export default function BlockRenderer(props: BlockRendererProps): ReactElement {
   }
 
   // 根据样式配置选择布局
-  const layout = styles.layout || 'default'
+  // const layout = styles.layout || 'default' // Unused
   const containerClassName = styles.container || ''
   const spacingClassName = styles.spacing || 'mb-4'
 

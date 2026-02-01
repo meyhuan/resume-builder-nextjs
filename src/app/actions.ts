@@ -34,9 +34,9 @@ export async function syncUserAction(userData: {
     });
 
     return { success: true, user };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Server Action Error (syncUserAction):', error);
-    return { success: false, error: error.message || 'Internal Server Error' };
+    return { success: false, error: error instanceof Error ? error.message : 'Internal Server Error' };
   }
 }
 

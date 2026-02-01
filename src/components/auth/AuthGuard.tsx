@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode, Suspense } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { getCookie } from 'cookies-next';
 import { Loader2 } from 'lucide-react';
@@ -10,12 +10,7 @@ interface AuthGuardProps {
   fallback?: ReactNode;
 }
 
-/**
- * AuthGuard - Client-side authentication guard component
- * Wraps protected pages to ensure user is authenticated
- * Redirects to login page if not authenticated
- */
-export default function AuthGuard({ children, fallback }: AuthGuardProps) {
+function AuthGuardContent({ children, fallback }: AuthGuardProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -57,4 +52,24 @@ export default function AuthGuard({ children, fallback }: AuthGuardProps) {
 
   // Only render children if authenticated
   return isAuthenticated ? <>{children}</> : null;
+}
+
+/**
+ * AuthGuard - Client-side authentication guard component
+ * Wraps protected pages to ensure user is authenticated
+ * Redirects to login page if not authenticated
+ */
+export default function AuthGuard(props: AuthGuardProps) {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
+          <p className="text-gray-600">加载中...</p>
+        </div>
+      </div>
+    }>
+      <AuthGuardContent {...props} />
+    </Suspense>
+  );
 }

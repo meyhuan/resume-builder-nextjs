@@ -8,12 +8,10 @@ import type { ThemeTokens } from '@/entities/theme/theme-tokens'
 import type { TemplateConfig } from '@/templates/template-loader'
 import ThemePanel from '@/ui/theme-panel'
 import { useAppStore } from '@/state/store'
-import { Card, CardContent } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Separator } from '@/components/ui/separator'
-import { Palette, Layout, Settings, Upload, Search, Database } from 'lucide-react'
+import { Palette, Layout, Upload, Search, Database } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 
 export interface RightSidebarProps {

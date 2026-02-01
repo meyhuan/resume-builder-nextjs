@@ -26,10 +26,11 @@ const HOVER_DELAY_MS = 200;
 export default function BlockWrapper(props: BlockWrapperProps): ReactElement {
   const { children, blockType, onAdd, onPolish, onDelete, onMoveUp, onMoveDown, dragHandleProps, dragHandleRef, showDragHandle = true, disableHover = false } = props;
   const [isHovered, setIsHovered] = useState(false);
-  const hideTimerRef = useRef<number | null>(null);
+  const hideTimerRef = useRef<NodeJS.Timeout | number | null>(null);
 
   useEffect(() => {
     if (disableHover && isHovered) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsHovered(false);
     }
   }, [disableHover, isHovered]);

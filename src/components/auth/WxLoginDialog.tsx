@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { authApi } from '@/lib/api';
 import { useAuthStore } from '@/store/use-auth-store';
 import { logger } from '@/utils/logger';
@@ -85,9 +85,10 @@ export const WxLoginDialog: React.FC<WxLoginDialogProps> = ({ isOpen, onClose, o
       setExpireIn(qrData?.expire_seconds || 120);
       startExpireCountdown();
       startPolling();
-    } catch (error: any) {
+    } catch (error: unknown) {
       logger.error('WxLogin', 'Failed to get QR code', error);
-      setErrorMessage(error.message || '获取二维码失败，请检查网络或稍后重试');
+      const msg = error instanceof Error ? error.message : '获取二维码失败，请检查网络或稍后重试';
+      setErrorMessage(msg);
     } finally {
       setLoading(false);
     }
@@ -151,7 +152,7 @@ export const WxLoginDialog: React.FC<WxLoginDialogProps> = ({ isOpen, onClose, o
           onSuccess?.();
           onClose();
         }
-      } catch (error) {
+      } catch {
         // Continue polling on 404/403 while waiting for scan
       }
     }, 2000);
@@ -168,6 +169,7 @@ export const WxLoginDialog: React.FC<WxLoginDialogProps> = ({ isOpen, onClose, o
       stopPolling();
       stopExpireCountdown();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
   const handleRefresh = () => {
