@@ -1,4 +1,5 @@
 /* Screen base styles (non-print). Keep background outside the resume page. */
 html, body, #root {
-  background-color: #f9fafb; /* Tailwind bg-gray-50 */
+  /* Default background, can be overridden by page specific styles */
+  background-color: var(--color-background);
 }

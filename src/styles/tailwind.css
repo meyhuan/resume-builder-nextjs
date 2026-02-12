@@ -1,27 +1,27 @@
 @import "tailwindcss";
 
 @theme {
-  /* Purple + Green Theme (Fresh & Professional) */
+  /* AI/Cyberpunk Theme (Electric Violet + Fuchsia) */
   --color-background: #ffffff;
   --color-foreground: #0f172a;            /* slate-900 */
   --color-card: #ffffff;
   --color-card-foreground: #0f172a;
   --color-popover: #ffffff;
   --color-popover-foreground: #0f172a;
-  --color-primary: #8b5cf6;               /* purple-500 */
+  --color-primary: #7c3aed;               /* violet-600 */
   --color-primary-foreground: #ffffff;
-  --color-secondary: #10b981;             /* green-500 */
+  --color-secondary: #d946ef;             /* fuchsia-500 */
   --color-secondary-foreground: #ffffff;
-  --color-muted: #f0fdf4;                 /* green-50 */
+  --color-muted: #f5f3ff;                 /* violet-50 */
   --color-muted-foreground: #6b7280;      /* gray-500 */
-  --color-accent: #22c55e;                /* green-400 */
+  --color-accent: #06b6d4;                /* cyan-500 */
   --color-accent-foreground: #ffffff;
   --color-destructive: #ef4444;           /* red-500 */
   --color-destructive-foreground: #ffffff;
   --color-border: #e5e7eb;                /* gray-200 */
   --color-input: #e5e7eb;                 /* gray-200 */
-  --color-ring: #8b5cf6;                  /* purple-500 */
-  --radius: 0.5rem;
+  --color-ring: #7c3aed;                  /* violet-600 */
+  --radius: 0.75rem;                      /* rounded-xl for modern feel */
 }
 
 @layer base {
@@ -41,18 +41,18 @@
   --color-card-foreground: #0f172a;
   --color-popover: #ffffff;
   --color-popover-foreground: #0f172a;
-  --color-primary: #8b5cf6;
+  --color-primary: #7c3aed;
   --color-primary-foreground: #ffffff;
-  --color-secondary: #10b981;
+  --color-secondary: #d946ef;
   --color-secondary-foreground: #ffffff;
-  --color-muted: #f0fdf4;
+  --color-muted: #f5f3ff;
   --color-muted-foreground: #6b7280;
-  --color-accent: #22c55e;
+  --color-accent: #06b6d4;
   --color-accent-foreground: #ffffff;
   --color-destructive: #ef4444;
   --color-destructive-foreground: #ffffff;
   --color-border: #e5e7eb;
   --color-input: #e5e7eb;
-  --color-ring: #8b5cf6;
-  --radius: 0.5rem;
+  --color-ring: #7c3aed;
+  --radius: 0.75rem;
 }

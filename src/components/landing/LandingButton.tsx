@@ -2,7 +2,7 @@ import React from 'react';
 import { cn } from '@/lib/utils';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost';
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'glass';
   size?: 'sm' | 'md' | 'lg';
   loading?: boolean;
 }
@@ -10,10 +10,11 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 export const LandingButton = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = 'primary', size = 'md', loading, disabled, children, ...props }, ref) => {
     const variants = {
-      primary: 'bg-gradient-to-r from-[#a855f7] to-[#f23a70] text-white shadow-[0_10px_15px_rgba(168,85,247,0.25)] hover:brightness-105 hover:scale-105 hover:shadow-[0_15px_25px_rgba(168,85,247,0.35)]',
-      secondary: 'bg-gradient-to-r from-[#22c55e] to-[#16a34a] text-white shadow-[0_10px_15px_rgba(34,197,94,0.25)] hover:brightness-105 hover:scale-105 hover:shadow-[0_15px_25px_rgba(34,197,94,0.35)]',
-      outline: 'border-2 border-[#a855f7] text-[#a855f7] bg-transparent hover:bg-[#a855f7]/10',
-      ghost: 'text-[#9333ea] bg-transparent hover:bg-[#a855f7]/10',
+      primary: 'bg-gradient-to-r from-violet-600 to-fuchsia-500 text-white shadow-[0_0_20px_rgba(124,58,237,0.3)] hover:shadow-[0_0_30px_rgba(124,58,237,0.5)] hover:scale-105 border border-white/10',
+      secondary: 'bg-white/10 backdrop-blur-md border border-white/20 text-gray-900 dark:text-white hover:bg-white/20 hover:scale-105',
+      outline: 'border-2 border-violet-500 text-violet-600 hover:bg-violet-50',
+      ghost: 'text-gray-600 hover:bg-violet-50 hover:text-violet-600',
+      glass: 'bg-white/70 backdrop-blur-lg border border-white/50 text-violet-900 shadow-lg hover:bg-white/90 hover:scale-105',
     };
 
     const sizes = {

@@ -1,6 +1,8 @@
 'use client';
 
 import React from 'react';
+import { cn } from '@/lib/utils';
+import { Wand2, LayoutTemplate, Download, Zap, Award } from 'lucide-react';
 
 interface FeaturesSectionProps {
   id?: string;
@@ -9,119 +11,83 @@ interface FeaturesSectionProps {
 const features = [
   {
     title: '完全免费',
-    description: '所有功能免费使用，无任何隐藏费用，随时随地制作专业简历',
-    metricLabel: '节省费用',
-    metricValue: '100%',
-    icon: (
-      <svg width="32" height="32" viewBox="0 0 40 40" fill="none">
-        <rect x="7" y="14" width="26" height="18" rx="2" stroke="#9333EA" strokeWidth="2.5" fill="none" />
-        <path d="M7 14h26 M20 14v18 M20 14l-5-6h-5l5 6 M20 14l5-6h5l-5 6" stroke="#9333EA" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-      </svg>
-    )
+    description: '100% Free。导出无水印，功能无限制。',
+    icon: <Award className="w-6 h-6 text-fuchsia-500" />,
+    className: 'md:col-span-2 md:row-span-2 bg-gradient-to-br from-violet-500/5 to-fuchsia-500/5',
+    gradient: 'from-violet-500 to-fuchsia-500'
   },
   {
-    title: '智能排版',
-    description: 'AI自动优化排版布局，无需设计经验，专业效果立现',
-    metricLabel: '设计时间',
-    metricValue: '0分钟',
-    icon: (
-      <svg width="32" height="32" viewBox="0 0 40 40" fill="none">
-        <rect x="8" y="8" width="24" height="24" rx="2" stroke="#9333EA" strokeWidth="2.5" fill="none" />
-        <path d="M14 16h12 M14 24h8" stroke="#9333EA" strokeWidth="2.5" strokeLinecap="round" />
-        <path d="M34 6l2 2-2 2-2-2z M32 32l3 3-3 3-3-3z" fill="#9333EA" stroke="none"/>
-      </svg>
-    )
+    title: 'AI 智能排版',
+    description: '无需调整格式，内容自动适配 A4 纸张。',
+    icon: <Wand2 className="w-6 h-6 text-violet-500" />,
+    className: 'md:col-span-1 md:row-span-1',
+    gradient: 'from-violet-400 to-violet-600'
   },
   {
-    title: '免费导出',
-    description: '支持 PDF、图片、Markdown 等格式，完全免费导出高清简历',
-    metricLabel: '导出速度',
-    metricValue: '3秒',
-    icon: (
-      <svg width="32" height="32" viewBox="0 0 40 40" fill="none">
-        <path d="M12 18l8 8 8-8 M20 6v20" stroke="#9333EA" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-        <path d="M8 30h24" stroke="#9333EA" strokeWidth="2.5" strokeLinecap="round"/>
-      </svg>
-    )
+    title: 'ATS 友好',
+    description: '生成的 PDF 可被大厂筛选系统完美识别。',
+    icon: <Zap className="w-6 h-6 text-amber-500" />,
+    className: 'md:col-span-1 md:row-span-1',
+    gradient: 'from-amber-400 to-orange-500'
   },
   {
-    title: '极速生成',
-    description: '填写基本信息，5分钟内完成简历制作，求职快人一步',
-    metricLabel: '制作时间',
-    metricValue: '5分钟',
-    icon: (
-      <svg width="32" height="32" viewBox="0 0 40 40" fill="none">
-        <path d="M22 4L10 22h8l-2 14 12-18h-8l2-14z" stroke="#9333EA" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-      </svg>
-    )
+    title: '极速导出',
+    description: '支持高清 PDF、图片、Markdown 多格式。',
+    icon: <Download className="w-6 h-6 text-cyan-500" />,
+    className: 'md:col-span-1 md:row-span-1',
+    gradient: 'from-cyan-400 to-blue-500'
   },
   {
-    title: '海量模板',
-    description: '200+专业模板覆盖各行业，简约大气、现代时尚任你选择',
-    metricLabel: '模板数量',
-    metricValue: '200+',
-    icon: (
-      <svg width="32" height="32" viewBox="0 0 40 40" fill="none">
-        <rect x="6" y="6" width="12" height="12" rx="2" stroke="#9333EA" strokeWidth="2.5" fill="none"/>
-        <rect x="22" y="6" width="12" height="12" rx="2" stroke="#9333EA" strokeWidth="2.5" fill="none"/>
-        <rect x="6" y="22" width="12" height="12" rx="2" stroke="#9333EA" strokeWidth="2.5" fill="none"/>
-        <rect x="22" y="22" width="12" height="12" rx="2" stroke="#9333EA" strokeWidth="2.5" fill="none"/>
-      </svg>
-    )
+    title: '200+ 模板',
+    description: '涵盖各行业的高颜值模板。',
+    icon: <LayoutTemplate className="w-6 h-6 text-rose-500" />,
+    className: 'md:col-span-1 md:row-span-1',
+    gradient: 'from-rose-400 to-pink-500'
   },
-  {
-    title: 'ATS友好',
-    description: '确保简历通过ATS系统筛选，提高HR查看率',
-    metricLabel: '通过率',
-    metricValue: '95%',
-    icon: (
-      <svg width="32" height="32" viewBox="0 0 40 40" fill="none">
-        <path d="M20 6L8 10v10c0 6 5 12 12 14s12-8 12-14V10L20 6z" stroke="#9333EA" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-        <path d="M15 20l4 4 8-8" stroke="#9333EA" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-      </svg>
-    )
-  }
 ];
 
 export const LandingFeatures = ({ id }: FeaturesSectionProps) => {
   return (
-    <section id={id} className="py-24 bg-[#f8f9fb] relative overflow-hidden">
-      <div className="absolute top-[-10%] left-[-5%] w-[600px] h-[600px] bg-[radial-gradient(circle,rgba(168,85,247,0.05)_0%,transparent_70%)] rounded-full pointer-events-none" />
-      
+    <section id={id} className="py-24 bg-white relative overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="text-left mb-16 max-w-3xl">
-          <span className="inline-block px-4 py-2 bg-gradient-to-r from-[#a855f7] to-[#6366f1] text-white text-sm font-semibold rounded-full mb-4">
-            完全免费
-          </span>
-          <h2 className="text-5xl font-extrabold text-gray-900 mb-6 tracking-tight">
-            为什么选择智简简历？
+        <div className="text-center mb-16 max-w-3xl mx-auto">
+          <h2 className="text-4xl md:text-5xl font-extrabold text-slate-900 mb-6 tracking-tight">
+            不仅仅是简历工具
+            <br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-fuchsia-500">更是你的求职加速器</span>
           </h2>
-          <p className="text-xl text-gray-500 leading-relaxed">
-            所有功能永久免费，无隐藏收费，让每个人都能制作专业简历
-          </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {/* Bento Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-[240px]">
           {features.map((feature, index) => (
             <div
               key={index}
-              className="p-10 bg-white/80 backdrop-blur-md rounded-[24px] border border-white/80 shadow-sm transition-all duration-700 hover:-translate-y-2 hover:border-[#a855f7]/20 hover:shadow-[0_20px_40px_-10px_rgba(168,85,247,0.15)] hover:bg-white animate-in slide-in-from-bottom"
-              style={{ animationDelay: `${index * 100}ms` }}
+              className={cn(
+                "group relative p-8 rounded-3xl border border-slate-100 bg-white shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-500 overflow-hidden flex flex-col justify-between",
+                feature.className
+              )}
             >
-              <div className="w-16 h-16 rounded-[18px] bg-gradient-to-br from-[#a855f7]/10 to-[#f23a70]/10 flex items-center justify-center mb-6 transition-transform group-hover:scale-110 group-hover:rotate-3">
+              <div className="absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-5 transition-opacity duration-500"
+                style={{ backgroundImage: `linear-gradient(to bottom right, var(--tw-gradient-stops))` }}
+              />
+              
+              <div className={cn(
+                "w-12 h-12 rounded-2xl flex items-center justify-center mb-4 transition-transform group-hover:scale-110 duration-500 bg-slate-50 group-hover:bg-white shadow-sm"
+              )}>
                 {feature.icon}
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-4">{feature.title}</h3>
-              <p className="text-gray-500 leading-relaxed mb-6">{feature.description}</p>
-              
-              <div className="flex items-center gap-3 pt-6 border-t border-gray-100">
-                <span className="text-sm font-medium text-gray-400 bg-gray-50 px-3 py-1 rounded-full">
-                  {feature.metricLabel}
-                </span>
-                <span className="text-xl font-extrabold bg-gradient-to-r from-[#a855f7] to-[#f23a70] bg-clip-text text-transparent">
-                  {feature.metricValue}
-                </span>
+
+              <div>
+                <h3 className="text-2xl font-bold text-slate-800 mb-2">{feature.title}</h3>
+                <p className="text-slate-500 font-medium leading-relaxed">{feature.description}</p>
               </div>
+
+              {/* Decor */}
+              <div className={cn(
+                "absolute -bottom-10 -right-10 w-32 h-32 rounded-full blur-[40px] opacity-20 transition-opacity duration-500 group-hover:opacity-40",
+                `bg-gradient-to-r ${feature.gradient}`
+              )} />
             </div>
           ))}
         </div>

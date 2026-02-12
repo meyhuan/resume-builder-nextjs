@@ -178,38 +178,50 @@ export const WxLoginDialog: React.FC<WxLoginDialogProps> = ({ isOpen, onClose, o
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[420px] p-0 border-none overflow-hidden bg-white rounded-2xl">
+      <DialogContent className="sm:max-w-[420px] p-0 border-none overflow-hidden bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl ring-1 ring-white/50">
         <div className="relative p-8">
+          {/* Background Glow */}
+          <div className="absolute top-0 right-0 w-32 h-32 bg-violet-500/10 rounded-full blur-2xl pointer-events-none" />
+          <div className="absolute bottom-0 left-0 w-32 h-32 bg-fuchsia-500/10 rounded-full blur-2xl pointer-events-none" />
+
           <button 
             onClick={onClose}
-            className="absolute right-4 top-4 text-gray-400 hover:text-gray-600 transition-colors"
+            className="absolute right-4 top-4 w-8 h-8 flex items-center justify-center rounded-full bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-all z-10"
           >
-            <X size={20} />
+            <X size={18} />
           </button>
 
-          <div className="text-center mb-8">
-            <DialogTitle className="text-2xl font-bold text-gray-900">微信扫码登录</DialogTitle>
-            <p className="text-gray-500 mt-2 text-sm">使用微信扫码快速登录</p>
+          <div className="text-center mb-8 relative z-10">
+            <DialogTitle className="text-2xl font-bold text-slate-900 flex items-center justify-center gap-2">
+              <span className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center text-white">
+                <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>
+              </span>
+              微信扫码登录
+            </DialogTitle>
+            <p className="text-slate-500 mt-2 text-sm font-medium">即刻解锁 AI 简历超能力</p>
           </div>
 
-          <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100 shadow-inner flex flex-col items-center">
+          <div className="bg-white/50 rounded-2xl p-6 border border-white/60 shadow-inner flex flex-col items-center relative z-10 backdrop-blur-sm">
             {errorMessage ? (
-              <div className="w-64 h-64 bg-red-50 rounded-xl border border-red-100 p-6 flex flex-col items-center justify-center text-center gap-3">
-                <AlertCircle className="text-red-500" size={40} />
-                <p className="text-sm text-red-600 font-medium">{errorMessage}</p>
+              <div className="w-64 h-64 bg-rose-50/50 rounded-xl border border-rose-100 p-6 flex flex-col items-center justify-center text-center gap-3">
+                <AlertCircle className="text-rose-500" size={40} />
+                <p className="text-sm text-rose-600 font-medium">{errorMessage}</p>
                 <button 
                   onClick={handleRefresh}
-                  className="mt-2 text-xs font-bold text-red-700 hover:underline flex items-center gap-1"
+                  className="mt-2 text-xs font-bold text-rose-700 hover:underline flex items-center gap-1"
                 >
                   <RefreshCw size={12} /> 重试
                 </button>
               </div>
             ) : (
-              <div className="relative w-64 h-64 bg-white rounded-xl border border-gray-200 p-2 shadow-sm flex items-center justify-center">
+              <div className="relative w-64 h-64 bg-white rounded-xl border border-slate-100 p-2 shadow-sm flex items-center justify-center group">
+                {/* Border Gradient Animation */}
+                <div className="absolute -inset-[1px] bg-gradient-to-br from-violet-500 to-fuchsia-500 rounded-xl opacity-0 group-hover:opacity-20 transition-opacity duration-500" />
+                
                 {loading ? (
-                  <div className="flex flex-col items-center gap-2">
-                    <Loader2 className="animate-spin text-purple-600" size={32} />
-                    <span className="text-xs text-gray-400">正在生成二维码...</span>
+                  <div className="flex flex-col items-center gap-3">
+                    <Loader2 className="animate-spin text-violet-600" size={36} />
+                    <span className="text-xs text-slate-400 font-medium animate-pulse">正在生成专属二维码...</span>
                   </div>
                 ) : qrcodeUrl ? (
                   <div className="relative w-full h-full">
@@ -217,17 +229,17 @@ export const WxLoginDialog: React.FC<WxLoginDialogProps> = ({ isOpen, onClose, o
                       src={qrcodeUrl} 
                       alt="WeChat Login QR Code" 
                       fill 
-                      className={status === 'expired' ? 'opacity-20 grayscale' : ''}
+                      className={status === 'expired' ? 'opacity-20 grayscale' : 'mix-blend-multiply'}
                     />
                     {status === 'expired' && (
-                      <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-white/40 backdrop-blur-[2px]">
+                      <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-white/60 backdrop-blur-[2px]">
                         <button 
                           onClick={handleRefresh}
-                          className="p-3 bg-purple-600 text-white rounded-full hover:bg-purple-700 transition-all shadow-lg hover:scale-110 active:scale-95"
+                          className="p-3 bg-violet-600 text-white rounded-full hover:bg-violet-700 transition-all shadow-lg hover:scale-110 active:scale-95 ring-4 ring-violet-100"
                         >
                           <RefreshCw size={24} />
                         </button>
-                        <span className="text-sm font-bold text-gray-700">二维码已过期</span>
+                        <span className="text-sm font-bold text-slate-700">二维码已过期</span>
                       </div>
                     )}
                   </div>
@@ -235,26 +247,27 @@ export const WxLoginDialog: React.FC<WxLoginDialogProps> = ({ isOpen, onClose, o
               </div>
             )}
 
-            <div className="mt-6 text-sm text-gray-600 text-center font-medium">
-              {status === 'pending' && '请使用微信扫描上方二维码登录'}
-              {status === 'scanned' && '✅ 已扫码，请在手机上确认'}
-              {status === 'confirming' && '正在确认登录信息...'}
-              {status === 'expired' && '二维码已过期，请刷新'}
+            <div className="mt-6 flex flex-col items-center gap-1">
+              <p className="text-sm font-bold bg-gradient-to-r from-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
+                {status === 'pending' && '请使用微信扫描上方二维码'}
+                {status === 'scanned' && '✅ 已扫码，请在手机上确认'}
+                {status === 'confirming' && '正在确认登录信息...'}
+                {status === 'expired' && '二维码已过期，请刷新'}
+              </p>
+              {expireIn > 0 && status !== 'expired' && (
+                <span className="text-[10px] text-slate-400 font-medium bg-slate-100 px-2 py-0.5 rounded-full">
+                  有效期 {expireIn}s
+                </span>
+              )}
             </div>
-            
-            {expireIn > 0 && status !== 'expired' && (
-              <div className="mt-2 text-[10px] text-gray-400 uppercase tracking-widest">
-                有效时间: {expireIn}s
-              </div>
-            )}
           </div>
 
-          <div className="mt-8 text-center">
-            <p className="text-xs text-gray-400">
-              注册/登录即代表同意{' '}
-              <a href="#" className="text-purple-600 hover:underline">隐私协议</a>
+          <div className="mt-8 text-center relative z-10">
+            <p className="text-xs text-slate-400">
+              登录即代表同意{' '}
+              <a href="#" className="text-violet-600 hover:text-violet-700 hover:underline font-medium">隐私协议</a>
               {' '}与{' '}
-              <a href="#" className="text-purple-600 hover:underline">服务条款</a>
+              <a href="#" className="text-violet-600 hover:text-violet-700 hover:underline font-medium">服务条款</a>
             </p>
           </div>
         </div>

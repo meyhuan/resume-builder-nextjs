@@ -3,14 +3,15 @@ import { cn } from '@/lib/utils';
 
 interface BadgeProps {
   children: React.ReactNode;
-  variant?: 'primary' | 'accent';
+  variant?: 'primary' | 'accent' | 'glass';
   className?: string;
 }
 
 export const LandingBadge: React.FC<BadgeProps> = ({ children, variant = 'primary', className }) => {
   const variants = {
-    primary: 'bg-[#a855f7]/10 text-[#a855f7] border-[#a855f7]/20',
-    accent: 'bg-[#f23a70]/10 text-[#f23a70] border-[#f23a70]/20',
+    primary: 'bg-violet-500/10 text-violet-600 border-violet-500/20 backdrop-blur-sm',
+    accent: 'bg-fuchsia-500/10 text-fuchsia-600 border-fuchsia-500/20 backdrop-blur-sm',
+    glass: 'bg-white/30 text-white border-white/30 backdrop-blur-md shadow-sm',
   };
 
   return (
