@@ -1,7 +1,14 @@
+import type { Metadata } from "next";
 import ResumeEditor from "@/components/ResumeEditor";
 import { prisma } from "@/lib/prisma";
 import { notFound, redirect } from "next/navigation";
 import { cookies } from "next/headers";
+
+export const metadata: Metadata = {
+  title: '编辑简历',
+  description: '使用智简简历可视化编辑器编辑你的简历，支持拖拽排版、AI 智能填写、实时预览。',
+  robots: { index: false, follow: false },
+};
 
 interface PageParams {
   params: Promise<{

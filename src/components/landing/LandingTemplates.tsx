@@ -5,7 +5,7 @@ import { LandingButton } from './LandingButton';
 import Link from 'next/link';
 import Image from 'next/image';
 import { getTemplatesAction } from '@/app/admin/actions';
-import { Layout, Wand2, Sparkles, TrendingUp } from 'lucide-react';
+import { Layout, Wand2, Gem } from 'lucide-react';
 
 interface TemplatesSectionProps {
   id?: string;
@@ -39,27 +39,18 @@ export const LandingTemplates = ({ id }: TemplatesSectionProps) => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="text-center mb-16 animate-in slide-in-from-bottom duration-700">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/50 backdrop-blur-md border border-white/60 rounded-full mb-6 shadow-sm">
-            <span className="flex h-2 w-2 rounded-full bg-fuchsia-500 animate-pulse" />
-            <span className="text-sm font-semibold text-slate-600">Template Market</span>
+            <Gem className="w-4 h-4 text-violet-500" />
+            <span className="text-sm font-semibold text-slate-600">精选模板</span>
           </div>
           
           <h2 className="text-4xl md:text-5xl font-extrabold text-slate-900 mb-6 tracking-tight">
-            挑选你的 <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-fuchsia-500">求职战袍</span>
+            不求多，<span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-fuchsia-500">但求精</span>
           </h2>
           <p className="text-lg text-slate-500 max-w-2xl mx-auto">
-            从大厂风到创意设计，200+ 精选模板任你 Remix。
+            每一套模板都经过反复打磨，覆盖应届生、互联网、商务等主流场景。
             <br className="hidden md:block" />
-            不仅仅是模板，更是设计灵感。
+            全部免费使用，不收一分钱。
           </p>
-        </div>
-
-        {/* Categories / Tags (Visual only for now) */}
-        <div className="flex flex-wrap justify-center gap-3 mb-12">
-          {['🔥 热门推荐', '🦄 创意设计', '💼 商务精英', '🚀 互联网大厂', '🎓 应届生'].map((tag, i) => (
-            <button key={i} className="px-5 py-2 rounded-full bg-white border border-slate-200 text-slate-600 font-medium hover:border-violet-400 hover:text-violet-600 transition-colors shadow-sm text-sm">
-              {tag}
-            </button>
-          ))}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-12 animate-in slide-in-from-bottom duration-700 delay-200">
@@ -85,38 +76,26 @@ export const LandingTemplates = ({ id }: TemplatesSectionProps) => {
                     <Link href="/dashboard" className="w-full">
                       <LandingButton variant="primary" size="md" className="w-full rounded-xl shadow-none border-0 font-bold">
                         <Wand2 className="w-4 h-4 mr-2" />
-                        Remix 此设计
+                        免费使用此模板
                       </LandingButton>
                     </Link>
                   </div>
 
-                  {/* Badges */}
-                  <div className="absolute top-3 left-3 flex gap-2">
-                     <span className="px-2 py-1 bg-white/90 backdrop-blur text-[10px] font-bold text-slate-800 rounded-lg shadow-sm border border-white/50">
-                       FREE
-                     </span>
-                     {Math.random() > 0.5 && (
-                       <span className="px-2 py-1 bg-fuchsia-500/90 backdrop-blur text-[10px] font-bold text-white rounded-lg shadow-sm flex items-center gap-1">
-                         <TrendingUp className="w-3 h-3" /> HOT
-                       </span>
-                     )}
+                  {/* Badge */}
+                  <div className="absolute top-3 left-3">
+                    <span className="px-2.5 py-1 bg-green-500/90 backdrop-blur text-[10px] font-bold text-white rounded-lg shadow-sm">
+                      FREE
+                    </span>
                   </div>
                 </div>
                 
                 <div className="p-5">
-                  <h3 className="text-base font-bold text-slate-800 mb-1 flex items-center justify-between">
-                    {item.name}
-                    <div className="flex items-center text-xs font-normal text-slate-400 gap-1">
-                      <Sparkles className="w-3 h-3 text-amber-400" />
-                      <span>{Math.floor(Math.random() * 500) + 100}</span>
-                    </div>
-                  </h3>
-                  <p className="text-xs text-slate-400 truncate">适合产品经理、运营、设计师...</p>
+                  <h3 className="text-base font-bold text-slate-800 mb-1">{item.name}</h3>
+                  <p className="text-xs text-slate-400 truncate">免费使用 · 免费导出</p>
                 </div>
               </div>
             ))
           ) : (
-            // Fallback to static data if DB is empty
             [1, 2, 3, 4].map((i) => (
               <div key={i} className="group relative bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-lg animate-pulse">
                 <div className="aspect-[3/4] bg-slate-100" />
@@ -132,7 +111,7 @@ export const LandingTemplates = ({ id }: TemplatesSectionProps) => {
         <div className="flex justify-center">
           <Link href="/dashboard">
             <LandingButton variant="glass" size="lg" className="rounded-full px-8 text-slate-600 hover:text-violet-600">
-              探索更多设计灵感
+              查看全部模板
             </LandingButton>
           </Link>
         </div>

@@ -6,7 +6,7 @@ import { getCookie } from 'cookies-next';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { WxLoginDialog } from '@/components/auth/WxLoginDialog';
-import { LogIn, ArrowLeft, Sparkles } from 'lucide-react';
+import { LogIn, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 
 function LoginForm() {

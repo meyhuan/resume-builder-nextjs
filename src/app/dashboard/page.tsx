@@ -1,4 +1,11 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: '我的简历 - 管理你的所有简历',
+  description: '在智简简历控制台管理你的所有简历，一键创建新简历，使用 AI 智能生成专业内容，免费导出高清 PDF。',
+  robots: { index: false, follow: false },
+};
 import { Button } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
 import { FileText, Plus, Trash2, Clock, Sparkles, Layout } from "lucide-react";

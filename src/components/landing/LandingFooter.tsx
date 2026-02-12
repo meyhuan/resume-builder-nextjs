@@ -68,7 +68,7 @@ export const LandingFooter = () => {
                 <p className="text-[10px] text-slate-500 leading-relaxed">
                   获取最新求职干货
                   <br />
-                  领取 VIP 会员特权
+                  联系开发者反馈建议
                 </p>
               </div>
             </div>

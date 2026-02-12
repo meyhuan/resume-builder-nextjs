@@ -3,13 +3,18 @@
 import React from 'react';
 import { LandingButton } from './LandingButton';
 import { LandingBadge } from './LandingBadge';
-import Image from 'next/image';
-import { ChevronRight, Sparkles, Wand2, Zap } from 'lucide-react';
+import { Sparkles, Wand2, Zap, Heart, Shield } from 'lucide-react';
 import Link from 'next/link';
+
+const TRUST_STATS = [
+  { label: '求职者使用', value: '10,000+' },
+  { label: '永久免费', value: '100%' },
+  { label: '简历生成', value: '50,000+' },
+];
 
 export const LandingHero = () => {
   return (
-    <section id="hero" className="relative pt-32 pb-20 overflow-hidden bg-white selection:bg-fuchsia-200">
+    <section id="hero" className="relative pt-32 pb-24 overflow-hidden bg-white selection:bg-fuchsia-200">
       {/* Dynamic Background Elements */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
         <div className="absolute top-[-20%] right-[-10%] w-[800px] h-[800px] bg-violet-500/20 rounded-full blur-[120px] animate-pulse-slow" />
@@ -17,128 +22,152 @@ export const LandingHero = () => {
         <div className="absolute top-[20%] left-[20%] w-[300px] h-[300px] bg-cyan-400/10 rounded-full blur-[80px]" />
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid lg:grid-cols-2 gap-16 items-center relative z-10">
-        <div className="flex flex-col gap-8 animate-in slide-in-from-bottom duration-700">
-          <div className="flex gap-2 flex-wrap">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        {/* Centered Hero Content */}
+        <div className="text-center max-w-4xl mx-auto flex flex-col items-center gap-8 animate-in slide-in-from-bottom duration-700">
+          {/* Badges */}
+          <div className="flex gap-2 flex-wrap justify-center">
             <LandingBadge variant="primary" className="pl-1 pr-3 py-1 flex items-center gap-2">
-              <span className="bg-violet-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">NEW</span>
-              <span>AI 智能引擎 v2.0</span>
+              <span className="bg-violet-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">AI</span>
+              <span>由独立开发者用心打造</span>
             </LandingBadge>
             <LandingBadge variant="accent" className="flex items-center gap-1">
-              <Sparkles className="w-3 h-3" /> 100% 免费使用
+              <Heart className="w-3 h-3" /> 永久免费，无任何隐藏收费
             </LandingBadge>
           </div>
 
+          {/* Main Heading */}
           <h1 className="text-5xl lg:text-7xl font-bold text-slate-900 leading-[1.1] tracking-tight">
-            让简历成为你的
+            AI 帮你写简历
             <br />
             <span className="bg-gradient-to-r from-violet-600 via-fuchsia-500 to-rose-500 bg-clip-text text-transparent animate-gradient-x bg-[length:200%_auto]">
-              AI 超能力
+              你只需点击开始
             </span>
           </h1>
 
-          <p className="text-lg text-slate-600 max-w-xl leading-relaxed">
-            年轻人的第一款 AI 简历工具。
-            <span className="font-semibold text-slate-900">无需注册，微信扫码即用。</span>
-            智能排版、一键润色、多格式导出，让你的下一份 Offer 触手可及。
+          {/* Subheading — warm, personal */}
+          <p className="text-lg lg:text-xl text-slate-600 max-w-2xl leading-relaxed">
+            一个程序员，为求职路上的你做了这款工具。
+            <span className="font-semibold text-slate-900">微信扫码即用，</span>
+            AI 智能生成、可视化编辑、多格式导出 —— 完全免费，没有套路。
           </p>
 
-          <div className="flex flex-wrap gap-4 pt-2">
+          {/* CTA Buttons */}
+          <div className="flex flex-wrap gap-4 justify-center pt-2">
             <Link href="/dashboard">
               <LandingButton size="lg" className="rounded-full shadow-lg shadow-violet-500/30 hover:shadow-violet-500/40 text-lg px-8">
                 <Wand2 className="w-5 h-5 mr-2" />
-                立即免费制作
+                免费开始制作
               </LandingButton>
             </Link>
-            <LandingButton variant="glass" size="lg" className="rounded-full text-slate-700 hover:text-violet-700">
-              <span className="flex items-center gap-2">
-                查看热门模板 <ChevronRight className="w-5 h-5" />
-              </span>
-            </LandingButton>
+            <Link href="#editor-demo">
+              <LandingButton variant="glass" size="lg" className="rounded-full text-slate-700 hover:text-violet-700">
+                <span className="flex items-center gap-2">
+                  <Sparkles className="w-5 h-5" /> 看看有多好用
+                </span>
+              </LandingButton>
+            </Link>
           </div>
 
-          <div className="flex items-center gap-8 pt-8 border-t border-slate-100">
-            <div className="flex -space-x-3">
-              {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="w-10 h-10 rounded-full border-2 border-white bg-slate-100 relative overflow-hidden">
-                  <Image src={`/avatar-${i}.png`} alt="User" width={40} height={40} className="object-cover" />
-                </div>
-              ))}
-              <div className="w-10 h-10 rounded-full border-2 border-white bg-slate-50 flex items-center justify-center text-xs font-bold text-slate-500">
-                1w+
+          {/* Trust Stats Bar */}
+          <div className="flex items-center gap-6 sm:gap-10 pt-8 border-t border-slate-100 w-full justify-center">
+            {TRUST_STATS.map((stat) => (
+              <div key={stat.label} className="flex flex-col items-center gap-1">
+                <span className="text-2xl font-bold text-slate-900">{stat.value}</span>
+                <span className="text-xs text-slate-500">{stat.label}</span>
               </div>
-            </div>
-            <div className="flex flex-col">
-              <div className="flex items-center gap-1">
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <svg key={i} className="w-4 h-4 text-amber-400 fill-current" viewBox="0 0 20 20">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                ))}
-              </div>
-              <span className="text-sm text-slate-500">受到 10,000+ 求职者的信赖</span>
-            </div>
+            ))}
           </div>
         </div>
 
-        <div className="relative animate-in zoom-in duration-1000 delay-200 lg:h-[600px] flex items-center justify-center perspective-1000">
-          <div className="relative w-full h-full max-w-[500px] max-h-[600px]">
-            {/* Glassmorphism Back Card */}
-            <div className="absolute top-[10%] right-[5%] w-[80%] h-[70%] bg-gradient-to-br from-violet-100/50 to-fuchsia-100/50 backdrop-blur-xl rounded-3xl border border-white/40 shadow-2xl rotate-6 z-0 animate-float-slow"></div>
-            
-            {/* Main Resume Card */}
-            <div className="absolute top-[15%] left-[5%] w-[85%] h-[75%] bg-white rounded-2xl shadow-[0_20px_50px_rgba(124,58,237,0.15)] overflow-hidden border border-slate-100 z-10 rotate-[-3deg] transition-transform hover:rotate-0 hover:scale-105 duration-500">
-              <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-violet-500 to-fuchsia-500"></div>
-              <div className="p-6 h-full flex flex-col gap-4">
-                <div className="flex gap-4 items-center border-b border-slate-100 pb-4">
-                  <div className="w-16 h-16 rounded-full bg-slate-100 overflow-hidden">
-                    <Image src="/index-resume-1.png" alt="Profile" width={64} height={64} className="object-cover opacity-80" />
+        {/* Hero Visual — Resume Preview with AI overlay */}
+        <div className="relative mt-16 max-w-5xl mx-auto animate-in zoom-in duration-1000 delay-200">
+          <div className="relative rounded-3xl overflow-hidden shadow-[0_30px_80px_rgba(124,58,237,0.15)] border border-slate-200/60">
+            {/* Mock Editor Top Bar */}
+            <div className="bg-slate-50 border-b border-slate-200 px-6 py-3 flex items-center gap-3">
+              <div className="flex gap-2">
+                <div className="w-3 h-3 rounded-full bg-rose-400" />
+                <div className="w-3 h-3 rounded-full bg-amber-400" />
+                <div className="w-3 h-3 rounded-full bg-green-400" />
+              </div>
+              <div className="flex-1 flex justify-center">
+                <div className="px-4 py-1 bg-white rounded-lg border border-slate-200 text-xs text-slate-400 font-mono">
+                  aijianli.cn/editor
+                </div>
+              </div>
+            </div>
+            {/* Mock Editor Content */}
+            <div className="bg-white grid grid-cols-1 lg:grid-cols-[280px_1fr] min-h-[400px]">
+              {/* Sidebar */}
+              <div className="hidden lg:block border-r border-slate-100 p-5 space-y-4 bg-slate-50/50">
+                <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">模块</div>
+                {['个人信息', '教育经历', '实习经历', '项目经历', '技能特长'].map((item) => (
+                  <div key={item} className="px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-white hover:shadow-sm transition-all cursor-default flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-violet-400" />
+                    {item}
                   </div>
-                  <div className="flex-1 space-y-2">
-                    <div className="h-4 w-32 bg-slate-200 rounded animate-pulse"></div>
-                    <div className="h-3 w-48 bg-slate-100 rounded animate-pulse delay-75"></div>
+                ))}
+                <div className="pt-3 border-t border-slate-200">
+                  <div className="px-3 py-2.5 rounded-xl text-sm font-semibold text-violet-600 bg-violet-50 flex items-center gap-2">
+                    <Wand2 className="w-4 h-4" /> AI 智能填写
                   </div>
                 </div>
-                <div className="space-y-3 flex-1">
-                  <div className="h-3 w-full bg-slate-50 rounded"></div>
-                  <div className="h-3 w-[90%] bg-slate-50 rounded"></div>
-                  <div className="h-20 w-full bg-slate-50 rounded mt-4"></div>
-                  <div className="h-3 w-full bg-slate-50 rounded"></div>
-                  <div className="h-3 w-[80%] bg-slate-50 rounded"></div>
+              </div>
+              {/* Preview Area */}
+              <div className="p-6 lg:p-10 flex items-center justify-center bg-slate-50/30">
+                <div className="w-full max-w-[380px] bg-white rounded-xl shadow-lg border border-slate-100 p-6 space-y-4">
+                  <div className="h-1 w-full bg-gradient-to-r from-violet-500 to-fuchsia-500 rounded-full" />
+                  <div className="flex gap-3 items-center">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-violet-100 to-fuchsia-100 flex items-center justify-center text-violet-500 font-bold text-lg">Z</div>
+                    <div className="space-y-1.5 flex-1">
+                      <div className="h-4 w-24 bg-slate-200 rounded" />
+                      <div className="h-3 w-36 bg-slate-100 rounded" />
+                    </div>
+                  </div>
+                  <div className="space-y-2 pt-2">
+                    <div className="h-3 w-full bg-slate-100 rounded" />
+                    <div className="h-3 w-[90%] bg-slate-50 rounded" />
+                    <div className="h-3 w-[75%] bg-slate-50 rounded" />
+                  </div>
+                  <div className="space-y-2 pt-2">
+                    <div className="h-2.5 w-16 bg-violet-100 rounded" />
+                    <div className="h-3 w-full bg-slate-50 rounded" />
+                    <div className="h-3 w-[85%] bg-slate-50 rounded" />
+                  </div>
                 </div>
               </div>
-              
-              {/* AI Badge Overlay */}
-              <div className="absolute bottom-6 right-6 bg-white/90 backdrop-blur-md px-4 py-2 rounded-xl shadow-lg border border-violet-100 flex items-center gap-2 animate-bounce-subtle">
-                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                <span className="text-sm font-semibold text-violet-700">AI 优化完成</span>
-              </div>
             </div>
+          </div>
 
-            {/* Floating Elements */}
-            <div className="absolute top-[30%] right-[-10%] bg-white/80 backdrop-blur-lg p-3 rounded-2xl shadow-xl border border-white/50 animate-float-delayed z-20">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-violet-100 flex items-center justify-center text-violet-600">
-                  <Zap className="w-5 h-5" />
-                </div>
-                <div>
-                  <div className="text-xs text-slate-500">效率提升</div>
-                  <div className="text-sm font-bold text-slate-800">300%</div>
-                </div>
+          {/* Floating AI Cards */}
+          <div className="absolute top-[20%] right-[-3%] lg:right-[-5%] bg-white/90 backdrop-blur-lg p-3 rounded-2xl shadow-xl border border-white/50 animate-float-delayed z-20">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-violet-100 flex items-center justify-center text-violet-600">
+                <Zap className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="text-xs text-slate-500">制作耗时</div>
+                <div className="text-sm font-bold text-slate-800">3 分钟</div>
               </div>
             </div>
+          </div>
 
-            <div className="absolute bottom-[20%] left-[-5%] bg-white/80 backdrop-blur-lg p-3 rounded-2xl shadow-xl border border-white/50 animate-float z-20">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-fuchsia-100 flex items-center justify-center text-fuchsia-600">
-                  <Sparkles className="w-5 h-5" />
-                </div>
-                <div>
-                  <div className="text-xs text-slate-500">ATS 通过率</div>
-                  <div className="text-sm font-bold text-slate-800">99.8%</div>
-                </div>
+          <div className="absolute bottom-[15%] left-[-3%] lg:left-[-5%] bg-white/90 backdrop-blur-lg p-3 rounded-2xl shadow-xl border border-white/50 animate-float z-20">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600">
+                <Shield className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="text-xs text-slate-500">导出格式</div>
+                <div className="text-sm font-bold text-slate-800">PDF / 图片</div>
               </div>
             </div>
+          </div>
+
+          {/* AI Working Indicator */}
+          <div className="absolute bottom-6 right-6 bg-white/90 backdrop-blur-md px-4 py-2 rounded-xl shadow-lg border border-violet-100 flex items-center gap-2 animate-bounce-subtle z-20">
+            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+            <span className="text-sm font-semibold text-violet-700">AI 正在优化...</span>
           </div>
         </div>
       </div>
