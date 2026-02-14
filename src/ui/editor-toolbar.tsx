@@ -62,7 +62,7 @@ export default function EditorToolbar(props: EditorToolbarProps): ReactElement {
               flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium
               transition-all duration-150 whitespace-nowrap
               ${isActive
-                ? 'text-blue-600 bg-blue-50'
+                ? 'text-violet-600 bg-violet-50'
                 : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100'
               }
             `}

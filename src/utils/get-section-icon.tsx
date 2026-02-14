@@ -15,7 +15,7 @@ import {
 /**
  * Returns the appropriate icon for a section title.
  */
-export function getSectionIcon(title: string): ReactElement | null {
+export function getSectionIcon(title: string): ReactElement {
   const t = title.toLowerCase();
   if (t.includes('工作') || t.includes('experience')) return <IconBriefcase />;
   if (t.includes('教育') || t.includes('education')) return <IconGraduationCap />;
@@ -27,5 +27,5 @@ export function getSectionIcon(title: string): ReactElement | null {
   if (t.includes('校园') || t.includes('school')) return <IconBook />;
   if (t.includes('资质') || t.includes('证书') || t.includes('qualif')) return <IconStar />;
   if (t.includes('其他') || t.includes('other')) return <IconOther />;
-  return null;
+  return <IconOther />;
 }

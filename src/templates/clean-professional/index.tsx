@@ -28,6 +28,7 @@ import { CLEAN_PROFESSIONAL_STYLES } from './styles'
 import BlockWrapper from '@/components/blocks/block-wrapper'
 import SectionHeader from '@/components/sections/section-header'
 import DeleteSectionDialog from '@/components/sections/delete-section-dialog'
+import { isCustomSection } from '@/entities/blocks/block-factory'
 import { useAppStore } from '@/state/store'
 import DragDropProvider from '@/dnd/drag-drop-provider'
 import SortableSectionWrapper from '@/components/sections/sortable-section-wrapper'
@@ -277,6 +278,7 @@ function CleanProfessionalSection(props: {
   const { sectionId, title, themeColor, children, dragHandleAttributes, dragHandleListeners, dragHandleRef } = props
   const addBlock = useAppStore((s) => s.addBlockByType)
   const deleteSection = useAppStore((s) => s.deleteSection)
+  const updateSectionTitle = useAppStore((s) => s.updateSectionTitle)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
 
   /**
@@ -323,6 +325,7 @@ function CleanProfessionalSection(props: {
         title={title}
         icon={circularIcon}
         themeColor={themeColor}
+        onTitleChange={isCustomSection(title) ? (newTitle: string) => updateSectionTitle(sectionId, newTitle) : undefined}
         onAdd={() => addBlock(sectionId)}
         onDelete={handleDeleteSection}
         dragHandleAttributes={dragHandleAttributes}

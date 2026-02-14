@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import type { ReactElement, ReactNode } from 'react';
 import type { UUID } from '@/entities/common/uuid';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,7 @@ export interface SectionHeaderProps {
   readonly title: string;
   readonly icon?: ReactNode;
   readonly themeColor: string;
+  readonly onTitleChange?: (newTitle: string) => void;
   readonly onAdd?: () => void;
   readonly onDelete?: () => void;
   readonly dragHandleAttributes?: unknown;
@@ -23,9 +24,31 @@ export interface SectionHeaderProps {
 }
 
 export default function SectionHeader(props: SectionHeaderProps): ReactElement {
-  const { title, icon, themeColor, onAdd, onDelete, dragHandleAttributes, dragHandleListeners, dragHandleRef } = props;
+  const { title, icon, themeColor, onTitleChange, onAdd, onDelete, dragHandleAttributes, dragHandleListeners, dragHandleRef } = props;
   const [isHovered, setIsHovered] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editValue, setEditValue] = useState(title);
+  const inputRef = useRef<HTMLInputElement>(null);
   const hideTimerRef = useRef<NodeJS.Timeout | number | null>(null);
+  useEffect(() => {
+    if (isEditing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [isEditing]);
+  const commitEdit = useCallback((): void => {
+    const trimmed: string = editValue.trim();
+    if (trimmed && trimmed !== title && onTitleChange) {
+      onTitleChange(trimmed);
+    } else {
+      setEditValue(title);
+    }
+    setIsEditing(false);
+  }, [editValue, title, onTitleChange]);
+  const cancelEdit = useCallback((): void => {
+    setEditValue(title);
+    setIsEditing(false);
+  }, [title]);
 
   // eslint-disable-next-line react-hooks/refs
   const hasActions = Boolean(onAdd || onDelete || (dragHandleAttributes && dragHandleListeners && dragHandleRef));
@@ -55,9 +78,28 @@ export default function SectionHeader(props: SectionHeaderProps): ReactElement {
       onMouseLeave={handleMouseLeave}
     >
       {icon}
-      <h2 className="text-base font-bold flex-1" style={{ color: themeColor }}>
-        {title}
-      </h2>
+      {isEditing && onTitleChange ? (
+        <input
+          ref={inputRef}
+          className="text-base font-bold flex-1 bg-transparent border-b-2 border-violet-400 outline-none px-0 py-0"
+          style={{ color: themeColor }}
+          value={editValue}
+          onChange={(e) => setEditValue(e.target.value)}
+          onBlur={commitEdit}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') commitEdit();
+            if (e.key === 'Escape') cancelEdit();
+          }}
+        />
+      ) : (
+        <h2
+          className={`text-base font-bold flex-1 ${onTitleChange ? 'cursor-text' : ''}`}
+          style={{ color: themeColor }}
+          onClick={onTitleChange ? () => { setEditValue(title); setIsEditing(true); } : undefined}
+        >
+          {title}
+        </h2>
+      )}
 
       {isHovered && hasActions ? (
         <div 

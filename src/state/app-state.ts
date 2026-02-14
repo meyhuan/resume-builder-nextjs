@@ -33,6 +33,8 @@ export interface AppState {
   moveSection: (activeSectionId: UUID, overSectionId: UUID) => void
   /** Add a new section with the given title. */
   addSection: (title: string) => void
+  /** Rename a section. */
+  updateSectionTitle: (sectionId: UUID, title: string) => void
   /** Delete a section and all its blocks. */
   deleteSection: (sectionId: UUID) => void
   /** Import external resume JSON and replace current resume. */

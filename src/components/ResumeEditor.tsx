@@ -280,7 +280,7 @@ export default function ResumeEditor({ resumeId, initialData }: ResumeEditorProp
               className="h-7 px-2 text-xs text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded"
             >
               <ArrowLeft className="h-3.5 w-3.5 mr-1" />
-              文件
+              返回
             </Button>
             <span className="text-sm font-medium text-slate-700 truncate max-w-[180px]">
               {resume.name || '未命名简历'}
@@ -349,7 +349,7 @@ export default function ResumeEditor({ resumeId, initialData }: ResumeEditorProp
             <Button
               onClick={handleExportPdf}
               size="sm"
-              className="h-7 px-3 text-xs font-medium bg-blue-600 text-white hover:bg-blue-700 rounded"
+              className="h-7 px-3 text-xs font-medium bg-gradient-to-r from-violet-600 to-fuchsia-500 text-white hover:from-violet-700 hover:to-fuchsia-600 rounded shadow-sm"
             >
               下载简历
             </Button>

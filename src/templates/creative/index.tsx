@@ -10,6 +10,7 @@ import DeleteSectionDialog from '@/components/sections/delete-section-dialog'
 import BlockWrapper from '@/components/blocks/block-wrapper'
 import SortableSectionWrapper from '@/components/sections/sortable-section-wrapper'
 import { getSectionIcon } from '@/utils/get-section-icon'
+import { isCustomSection } from '@/entities/blocks/block-factory'
 import { useAppStore } from '@/state/store'
 import DragDropProvider from '@/dnd/drag-drop-provider'
 import { DndIds } from '@/dnd/ids'
@@ -322,6 +323,7 @@ function SectionView(props: SectionViewProps): ReactElement {
   const { sectionId, title, columns, themeColor, blockIds, children, dragHandleAttributes, dragHandleListeners, dragHandleRef } = props
   const addBlock = useAppStore((s) => s.addBlockByType)
   const deleteSection = useAppStore((s) => s.deleteSection)
+  const updateSectionTitle = useAppStore((s) => s.updateSectionTitle)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const { setNodeRef } = useDroppable({ id: `${DndIds.SECTION_DROP_ID_PREFIX}${sectionId}` })
   const icon = getSectionIcon(title)
@@ -342,6 +344,7 @@ function SectionView(props: SectionViewProps): ReactElement {
         title={title}
         icon={icon ? <span style={{ color: themeColor }}>{icon}</span> : undefined}
         themeColor={themeColor}
+        onTitleChange={isCustomSection(title) ? (newTitle: string) => updateSectionTitle(sectionId, newTitle) : undefined}
         onAdd={(): void => addBlock(sectionId)}
         onDelete={handleDeleteSection}
         dragHandleAttributes={dragHandleAttributes}

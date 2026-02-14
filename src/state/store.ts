@@ -11,6 +11,7 @@ import type { UUID } from '@/entities/common/uuid'
 import type { ExternalResume } from '@/io/external-resume-types'
 import { mapExternalResume } from '@/io/external-resume-importer'
 import { BLANK_RESUME_JSON, TEST_RESUME_JSON } from '@/io/default-resume-data'
+import { createDefaultBlock } from '@/entities/blocks/block-factory'
 
 const DEFAULT_FONT_SIZE: number = 14
 const defaultTheme: ThemeTokens = {
@@ -24,6 +25,7 @@ const defaultTheme: ThemeTokens = {
 
 const defaultResume = mapExternalResume(BLANK_RESUME_JSON)
 const testResume = mapExternalResume(TEST_RESUME_JSON)
+
 
 function createId(prefix: string): UUID {
   const ts: string = Date.now().toString(36)
@@ -101,50 +103,7 @@ export const useAppStore = create<AppState>()(
         resume: produce(state.resume, (draft) => {
           const section = draft.sections.find((s) => s.id === sectionId)
           if (!section) return
-          
-          const title = section.title.toLowerCase()
-          let newBlock
-          
-          if (title.includes('教育') || title.includes('education')) {
-            newBlock = {
-              id: createId('block'),
-              type: 'education' as const,
-              school: '学校名称',
-              major: '专业',
-              degree: '学历',
-              startDate: '开始时间',
-              endDate: '结束时间',
-              courseHtml: '<p>大学之前的教育经历建议不写，尽量写与求职行业或者求职岗位相关的课程。有交流交换的经验可以在教育经历中展示。工作年限较多或成绩自认不够优异，则可以直接将教育背景置清晰列后，重点其他模块。成绩优异的话建议写上GPA及排名等信息，尽量简洁。</p>',
-            }
-          } else if (title.includes('工作') || title.includes('experience') || title.includes('经历')) {
-            newBlock = {
-              id: createId('block'),
-              type: 'experience' as const,
-              company: '公司名称',
-              position: '职位名称',
-              startDate: '开始时间',
-              endDate: '结束时间',
-              contentHtml: '<p>工作内容描述</p>',
-            }
-          } else if (title.includes('项目') || title.includes('project')) {
-            newBlock = {
-              id: createId('block'),
-              type: 'project' as const,
-              name: '项目名称',
-              role: '项目角色',
-              startDate: '开始时间',
-              endDate: '结束时间',
-              contentHtml: '<p>项目描述</p>',
-            }
-          } else {
-            newBlock = {
-              id: createId('block'),
-              type: 'text' as const,
-              html: DEFAULT_NEW_TEXT_HTML,
-            }
-          }
-          
-          section.blocks.push(newBlock)
+          section.blocks.push(createDefaultBlock(section.title, createId))
         }),
       }), false, 'section/addBlockByType'),
     deleteBlock: (sectionId, blockId) =>
@@ -199,10 +158,17 @@ export const useAppStore = create<AppState>()(
             id: createId('section'),
             title,
             columns: 1,
-            blocks: [],
+            blocks: [createDefaultBlock(title, createId)],
           })
         }),
       }), false, 'section/addSection'),
+    updateSectionTitle: (sectionId, title) =>
+      set((state) => ({
+        resume: produce(state.resume, (draft) => {
+          const section = draft.sections.find((s) => s.id === sectionId)
+          if (section) section.title = title
+        }),
+      }), false, 'section/updateSectionTitle'),
     deleteSection: (sectionId) =>
       set((state) => ({
         resume: produce(state.resume, (draft) => {
