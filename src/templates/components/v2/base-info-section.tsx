@@ -10,7 +10,8 @@
  */
 
 import { useState, type ReactElement } from 'react'
-import { Phone, Mail, User, Calendar, Pencil, XCircle, MapPin } from 'lucide-react'
+import { Pencil, XCircle } from 'lucide-react'
+import { IconPhone, IconMail, IconGender, IconAge, IconLocation } from '@/components/sections/baseinfo-icons'
 import type { BaseInfo } from '@/entities/user/base-info'
 import BaseInfoModal from '@/components/modals/base-info-modal'
 import { useAppStore } from '@/state/store'
@@ -225,7 +226,7 @@ function renderInfoFields(
         onMouseEnter={() => setHoveredField('phone')}
         onMouseLeave={() => setHoveredField(null)}
       >
-        <Phone size={iconSize} strokeWidth={1.8} />
+        <IconPhone />
         <span className="text-gray-500">电话：</span>
         <span>{baseInfo.phone}</span>
         {hoveredField === 'phone' && (
@@ -252,7 +253,7 @@ function renderInfoFields(
         onMouseEnter={() => setHoveredField('email')}
         onMouseLeave={() => setHoveredField(null)}
       >
-        <Mail size={iconSize} strokeWidth={1.8} />
+        <IconMail />
         <span className="text-gray-500">邮箱：</span>
         <span>{baseInfo.email}</span>
         {hoveredField === 'email' && (
@@ -279,7 +280,7 @@ function renderInfoFields(
         onMouseEnter={() => setHoveredField('gender')}
         onMouseLeave={() => setHoveredField(null)}
       >
-        <User size={iconSize} strokeWidth={1.8} />
+        <IconGender />
         <span className="text-gray-500">性别：</span>
         <span>{baseInfo.gender}</span>
         {hoveredField === 'gender' && (
@@ -306,7 +307,7 @@ function renderInfoFields(
         onMouseEnter={() => setHoveredField('age')}
         onMouseLeave={() => setHoveredField(null)}
       >
-        <Calendar size={iconSize} strokeWidth={1.8} />
+        <IconAge />
         <span className="text-gray-500">年龄：</span>
         <span>{String(baseInfo.age)}</span>
         {hoveredField === 'age' && (
@@ -333,7 +334,7 @@ function renderInfoFields(
         onMouseEnter={() => setHoveredField('currentLocation')}
         onMouseLeave={() => setHoveredField(null)}
       >
-        <MapPin size={iconSize} strokeWidth={1.8} />
+        <IconLocation />
         <span className="text-gray-500">现居：</span>
         <span>{baseInfo.currentLocation}</span>
         {hoveredField === 'currentLocation' && (

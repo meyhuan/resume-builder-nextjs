@@ -10,7 +10,8 @@
  */
 
 import { useState, type ReactElement } from 'react'
-import { Briefcase, Pencil, XCircle } from 'lucide-react'
+import { Pencil, XCircle } from 'lucide-react'
+import { IconTarget } from '@/components/sections/section-icons'
 import type { JobIntention } from '@/entities/user/job-intention'
 import JobIntentionModal from '@/components/modals/job-intention-modal'
 import { useAppStore } from '@/state/store'
@@ -80,7 +81,7 @@ export default function JobIntentionSection(props: JobIntentionSectionProps): Re
 
   // 默认渲染：使用样式配置和插槽
   const containerClassName = styles.container || 'mb-5 relative group cursor-pointer print:cursor-default'
-  const headerClassName = styles.header || 'flex items-center gap-2 mb-3 relative'
+  const headerClassName = styles.header || 'flex items-center gap-2 mb-3 relative py-1 rounded border border-transparent'
   
   return (
     <>
@@ -91,12 +92,9 @@ export default function JobIntentionSection(props: JobIntentionSectionProps): Re
         {/* 标题区域 */}
         <div className={headerClassName}>
           {/* 图标 */}
-          <Briefcase 
-            size={styles.icon?.size || 20} 
-            color={themeColor} 
-            strokeWidth={2}
-            className={styles.icon?.className}
-          />
+          <span style={{ color: themeColor }}>
+            <IconTarget />
+          </span>
           
           {/* 标题 */}
           {slots?.header ? (
@@ -189,7 +187,7 @@ function renderJobFields(
   slots?: JobIntentionSlots
 ): ReactElement[] {
   const fields: ReactElement[] = []
-  const fieldClassName = styles.fieldItem || 'hover:bg-gray-50 rounded px-2 py-1 transition-colors relative'
+  const fieldClassName = styles.fieldItem || 'flex items-center gap-1.5 text-gray-700 relative group/field hover:bg-gray-50 rounded px-1 py-0.5 transition-colors'
   const labelClassName = styles.fieldLabel || 'text-gray-600'
   const valueClassName = styles.fieldValue || 'text-gray-900'
 
@@ -213,11 +211,6 @@ function renderJobFields(
       <div
         key={field.key}
         className={fieldClassName}
-        style={
-          fieldClassName.includes('bg-') 
-            ? { backgroundColor: `${themeColor}10` }
-            : undefined
-        }
         onMouseEnter={() => setHoveredField(field.key)}
         onMouseLeave={() => setHoveredField(null)}
       >
@@ -229,11 +222,6 @@ function renderJobFields(
             <span className={labelClassName}>{field.label}: </span>
             <span 
               className={valueClassName}
-              style={
-                valueClassName.includes('font-medium')
-                  ? { color: themeColor }
-                  : undefined
-              }
             >
               {field.value}
             </span>

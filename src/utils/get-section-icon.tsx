@@ -8,6 +8,8 @@ import {
   IconTarget,
   IconBook,
   IconStar,
+  IconIntern,
+  IconOther,
 } from '@/components/sections/section-icons';
 
 /**
@@ -21,8 +23,9 @@ export function getSectionIcon(title: string): ReactElement | null {
   if (t.includes('技能') || t.includes('skill')) return <IconAward />;
   if (t.includes('自我') || t.includes('评价') || t.includes('self')) return <IconUser />;
   if (t.includes('求职') || t.includes('意向') || t.includes('intention')) return <IconTarget />;
-  if (t.includes('实习') || t.includes('intern')) return <IconBriefcase />;
+  if (t.includes('实习') || t.includes('intern')) return <IconIntern />;
   if (t.includes('校园') || t.includes('school')) return <IconBook />;
   if (t.includes('资质') || t.includes('证书') || t.includes('qualif')) return <IconStar />;
+  if (t.includes('其他') || t.includes('other')) return <IconOther />;
   return null;
 }
