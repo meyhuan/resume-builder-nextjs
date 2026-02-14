@@ -259,85 +259,112 @@ export default function ResumeEditor({ resumeId, initialData }: ResumeEditorProp
   const TemplateComponent = templateConfig?.component
 
   return (
-    <div className="h-screen bg-gray-50 text-gray-900 flex flex-col overflow-hidden">
-      <header className="z-20 bg-white/80 backdrop-blur border-b shrink-0">
-        <div className="mx-auto max-w-5xl px-4 py-3 flex items-center gap-3">
+    <div className="h-screen bg-slate-50/50 text-slate-900 flex flex-col overflow-hidden relative">
+      {/* Background Decorative Orbs */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] bg-violet-500/5 rounded-full blur-[100px]" />
+        <div className="absolute bottom-[-10%] left-[-5%] w-[400px] h-[400px] bg-fuchsia-500/5 rounded-full blur-[100px]" />
+      </div>
+
+      <header className="z-50 bg-white/60 backdrop-blur-xl border-b border-slate-100 shadow-[0_4px_30px_rgba(0,0,0,0.03)] shrink-0">
+        <div className="mx-auto max-w-7xl px-4 py-3 flex items-center gap-3">
           <Button 
             variant="ghost" 
             size="sm" 
             onClick={handleBack}
-            className="mr-2"
+            className="mr-2 rounded-full hover:bg-violet-50 hover:text-violet-600"
           >
-            <ArrowLeft className="h-4 w-4 mr-1" />
+            <ArrowLeft className="h-4 w-4 mr-1.5" />
             返回
           </Button>
-          <h1 className="text-lg font-semibold">简历编辑器</h1>
-          <div className="ml-4 flex items-center gap-2">
-            <span className="text-xs text-gray-500">
-              当前模板: <span className="font-medium text-gray-700">{templateConfig?.name || tpl}</span>
+          
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-fuchsia-500 flex items-center justify-center shadow-lg shadow-violet-500/20">
+              <FileText className="w-4 h-4 text-white" />
+            </div>
+            <h1 className="text-base font-bold bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-600">简历编辑器</h1>
+          </div>
+
+          <div className="ml-6 hidden md:flex items-center gap-2">
+            <span className="px-3 py-1 rounded-full bg-slate-100 text-[11px] font-medium text-slate-500 border border-slate-200">
+              当前模板: <span className="text-slate-900">{templateConfig?.name || tpl}</span>
             </span>
           </div>
+
           <div className="ml-auto flex items-center gap-2">
-            {hasUnsavedChanges && (
-              <span className="text-xs text-orange-500 mr-2 flex items-center gap-1">
-                <span className="w-2 h-2 bg-orange-500 rounded-full animate-pulse" />
-                未保存
-              </span>
-            )}
-            {lastSaved && !hasUnsavedChanges && (
-              <span className="text-xs text-green-600 mr-2">
-                ✓ 已保存 {lastSaved.toLocaleTimeString()}
-              </span>
-            )}
-            {resumeId && (
+            <div className="flex items-center gap-4 mr-4 border-r border-slate-100 pr-4">
+              {hasUnsavedChanges && (
+                <span className="text-[11px] font-semibold text-amber-600 flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-50 border border-amber-100">
+                  <span className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse" />
+                  未保存
+                </span>
+              )}
+              {lastSaved && !hasUnsavedChanges && (
+                <span className="text-[11px] font-medium text-emerald-600 flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-100">
+                  <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
+                  已保存 {lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </span>
+              )}
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              {resumeId && (
+                <Button
+                  onClick={handleSave}
+                  disabled={isSaving}
+                  className="rounded-full bg-gradient-to-r from-violet-600 to-fuchsia-500 text-white shadow-md shadow-violet-500/20 hover:shadow-violet-500/30 hover:scale-105 transition-all duration-300 border-0 h-9"
+                >
+                  {isSaving ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
+                  ) : (
+                    <Save className="h-4 w-4 mr-1.5" />
+                  )}
+                  {isSaving ? '保存中...' : '保存'}
+                </Button>
+              )}
+              
+              <div className="h-6 w-px bg-slate-100 mx-1" />
+
               <Button
-                variant="default"
+                variant="outline"
                 size="sm"
-                onClick={handleSave}
-                disabled={isSaving}
+                onClick={handleExportPdf}
+                className="rounded-full border-slate-200 hover:border-violet-200 hover:bg-violet-50 hover:text-violet-600 h-9"
               >
-                {isSaving ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Save className="h-4 w-4" />
-                )}
-                {isSaving ? '保存中...' : '保存'}
+                <FileDown className="h-4 w-4 mr-1.5" />
+                导出 PDF
               </Button>
-            )}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleExportHtml}
-            >
-              <FileText className="h-4 w-4" />
-              导出 HTML
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleExportPdf}
-            >
-              <FileDown className="h-4 w-4" />
-              导出 PDF
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleExportPng}
-            >
-              <ImageIcon className="h-4 w-4" />
-              导出 PNG
-            </Button>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExportPng}
+                className="rounded-full border-slate-200 hover:border-violet-200 hover:bg-violet-50 hover:text-violet-600 h-9"
+              >
+                <ImageIcon className="h-4 w-4 mr-1.5" />
+                图片
+              </Button>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExportHtml}
+                className="rounded-full border-slate-200 hover:border-violet-200 hover:bg-violet-50 hover:text-violet-600 h-9"
+              >
+                <FileText className="h-4 w-4 mr-1.5" />
+                HTML
+              </Button>
+            </div>
           </div>
         </div>
       </header>
 
-      <main className="flex-1 flex overflow-hidden relative">
-        <div className="flex-1 overflow-auto p-6 md:p-8 custom-scrollbar">
-          <div className="mx-auto max-w-[210mm]">
+      <main className="flex-1 flex overflow-hidden relative z-10">
+        <div className="flex-1 overflow-auto p-6 md:p-12 custom-scrollbar bg-slate-50/30">
+          <div className="mx-auto max-w-[210mm] transition-all duration-500">
             <div
               ref={printRef}
-              className="page w-full bg-white shadow-md rounded-md print:shadow-none"
+              className="page w-full bg-white shadow-[0_0_50px_rgba(0,0,0,0.05)] rounded-xl print:shadow-none overflow-hidden"
             >
               {/* Suspense 包裹动态加载的模板 */}
               <Suspense
@@ -365,7 +392,7 @@ export default function ResumeEditor({ resumeId, initialData }: ResumeEditorProp
             </div>
           </div>
         </div>
-        <aside className="print:hidden w-[360px] border-l bg-white shrink-0 h-full overflow-y-auto custom-scrollbar shadow-sm">
+        <aside className="print:hidden w-[380px] border-l border-slate-100 bg-white/80 backdrop-blur-xl shrink-0 h-full overflow-y-auto custom-scrollbar shadow-[-4px_0_30px_rgba(0,0,0,0.02)]">
           <RightSidebar
             theme={theme}
             tpl={tpl}

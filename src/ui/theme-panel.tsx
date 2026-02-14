@@ -88,28 +88,28 @@ export default function ThemePanel(props: {
     '#3B82F6',
   ]
 
-  const sectionClass: string = 'rounded-xl bg-white/80 p-4 space-y-3 shadow-sm'
-  const labelClass: string = 'text-xs font-medium text-muted-foreground'
-  const controlWrapperClass: string = 'space-y-2'
-  const sliderLabelClass: string = 'flex items-center justify-between text-xs text-muted-foreground'
+  const sectionClass: string = 'rounded-[20px] bg-white border border-slate-50 p-5 space-y-4 shadow-sm transition-all duration-300 hover:shadow-md'
+  const labelClass: string = 'text-[11px] font-bold text-slate-400 uppercase tracking-wider'
+  const controlWrapperClass: string = 'space-y-2.5'
+  const sliderLabelClass: string = 'flex items-center justify-between text-xs font-semibold text-slate-600'
 
   return (
     <div className="print:hidden w-full space-y-5 text-sm">
       <section className={sectionClass}>
-        <div className="flex items-center justify-between">
-          <h4 className="text-sm font-semibold text-gray-900">文字</h4>
-          <span className="text-xs text-muted-foreground">Typography</span>
+        <div className="flex items-center justify-between mb-1">
+          <h4 className="text-sm font-bold text-slate-900">文字排版</h4>
+          <span className="text-[10px] font-bold text-violet-500 bg-violet-50 px-2 py-0.5 rounded-full">Typography</span>
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-4">
           <div className={controlWrapperClass}>
-            <Label className={labelClass} htmlFor="font-family">字体</Label>
+            <Label className={labelClass} htmlFor="font-family">字体家族</Label>
             <Select value={theme.fontFamily} onValueChange={handleFont}>
-              <SelectTrigger id="font-family" className="h-10 rounded-lg">
+              <SelectTrigger id="font-family" className="h-11 rounded-xl border-slate-100 bg-slate-50/50 focus:ring-violet-500/20">
                 <SelectValue placeholder="选择字体" />
               </SelectTrigger>
-              <SelectContent className="max-h-56">
+              <SelectContent className="rounded-xl border-slate-100 shadow-xl">
                 {fonts.map((f) => (
-                  <SelectItem key={f.value} value={f.value}>
+                  <SelectItem key={f.value} value={f.value} className="rounded-lg m-1">
                     {f.label}
                   </SelectItem>
                 ))}
@@ -117,15 +117,15 @@ export default function ThemePanel(props: {
             </Select>
           </div>
           <div className={controlWrapperClass}>
-            <Label className={labelClass} htmlFor="font-size-select">字号</Label>
+            <Label className={labelClass} htmlFor="font-size-select">全局字号</Label>
             <Select value={String(theme.fontSize)} onValueChange={handleFontSizeSelect}>
-              <SelectTrigger id="font-size-select" className="h-10 rounded-lg">
+              <SelectTrigger id="font-size-select" className="h-11 rounded-xl border-slate-100 bg-slate-50/50 focus:ring-violet-500/20">
                 <SelectValue placeholder="字号" />
               </SelectTrigger>
-              <SelectContent className="max-h-56">
+              <SelectContent className="rounded-xl border-slate-100 shadow-xl">
                 {fontSizes.map((size) => (
-                  <SelectItem key={size} value={String(size)}>
-                    {size}
+                  <SelectItem key={size} value={String(size)} className="rounded-lg m-1">
+                    {size}px
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -135,33 +135,39 @@ export default function ThemePanel(props: {
       </section>
 
       <section className={sectionClass}>
-        <h4 className="text-sm font-semibold text-gray-900">间距</h4>
+        <div className="flex items-center justify-between mb-1">
+          <h4 className="text-sm font-bold text-slate-900">间距布局</h4>
+          <span className="text-[10px] font-bold text-fuchsia-500 bg-fuchsia-50 px-2 py-0.5 rounded-full">Layout</span>
+        </div>
         <button
           type="button"
           onClick={toggleSinglePage}
-          className="w-full flex items-center justify-center gap-2 py-3 rounded-lg border-2 transition-all hover:border-gray-400"
+          className="w-full flex items-center justify-center gap-3 py-3.5 rounded-xl border-2 transition-all duration-300 group hover:scale-[1.02]"
           style={{
-            borderColor: props.onePage ? theme.primaryColor : '#e5e7eb',
-            backgroundColor: props.onePage ? `${theme.primaryColor}10` : 'transparent'
+            borderColor: props.onePage ? theme.primaryColor : '#f1f5f9',
+            backgroundColor: props.onePage ? `${theme.primaryColor}08` : '#f8fafc'
           }}
         >
           <FileText
-            size={16}
-            strokeWidth={2}
-            style={{ color: props.onePage ? theme.primaryColor : '#6b7280' }}
+            size={18}
+            className="transition-transform duration-300 group-hover:scale-110"
+            style={{ color: props.onePage ? theme.primaryColor : '#94a3b8' }}
           />
           <span
-            className="text-sm font-medium"
-            style={{ color: props.onePage ? theme.primaryColor : '#374151' }}
+            className="text-sm font-bold"
+            style={{ color: props.onePage ? theme.primaryColor : '#64748b' }}
           >
             一页模式
           </span>
+          {props.onePage && (
+            <div className="w-1.5 h-1.5 rounded-full bg-current animate-pulse ml-1" style={{ backgroundColor: theme.primaryColor }} />
+          )}
         </button>
-        <div className="space-y-4">
-          <div className="space-y-2">
+        <div className="space-y-5 pt-2">
+          <div className="space-y-3">
             <div className={sliderLabelClass}>
-              <span>行间距</span>
-              <span>{theme.lineHeight.toFixed(1)}</span>
+              <span>行高 (Line Height)</span>
+              <span className="text-violet-600 font-mono">{theme.lineHeight.toFixed(1)}</span>
             </div>
             <Slider
               id="line-height"
@@ -170,12 +176,13 @@ export default function ThemePanel(props: {
               step={0.1}
               value={[theme.lineHeight]}
               onValueChange={handleLineHeight}
+              className="py-2"
             />
           </div>
-          <div className="space-y-2">
+          <div className="space-y-3">
             <div className={sliderLabelClass}>
-              <span>模块间距</span>
-              <span>{theme.spacingScale.toFixed(1)}x</span>
+              <span>模块间距 (Spacing)</span>
+              <span className="text-fuchsia-600 font-mono">{theme.spacingScale.toFixed(1)}x</span>
             </div>
             <Slider
               id="spacing-scale"
@@ -184,41 +191,41 @@ export default function ThemePanel(props: {
               step={0.1}
               value={[theme.spacingScale]}
               onValueChange={handleSpacing}
+              className="py-2"
             />
           </div>
         </div>
       </section>
 
       <section className={sectionClass}>
-        <div className="flex items-center justify-between">
-          <h4 className="text-sm font-semibold text-gray-900">颜色</h4>
-          <span className="text-xs text-muted-foreground">Theme Colors</span>
+        <div className="flex items-center justify-between mb-1">
+          <h4 className="text-sm font-bold text-slate-900">色彩风格</h4>
+          <span className="text-[10px] font-bold text-cyan-500 bg-cyan-50 px-2 py-0.5 rounded-full">Colors</span>
         </div>
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label className={labelClass}>主颜色</Label>
+        <div className="space-y-5">
+          <div className="space-y-2.5">
+            <Label className={labelClass}>主题主色 (Primary)</Label>
             <Popover.Root open={primaryPopoverOpen} onOpenChange={setPrimaryPopoverOpen}>
               <Popover.Trigger asChild>
                 <button
                   type="button"
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg border-2 cursor-pointer transition-all hover:border-gray-300"
-                  style={{ borderColor: '#e5e7eb' }}
+                  className="w-full flex items-center gap-4 px-4 py-3 rounded-xl border border-slate-100 bg-slate-50/50 cursor-pointer transition-all hover:bg-white hover:border-violet-200 hover:shadow-sm"
                 >
                   <div
-                    className="h-8 w-16 rounded"
+                    className="h-7 w-14 rounded-lg shadow-sm border border-white/20"
                     style={{ backgroundColor: theme.primaryColor }}
                   />
-                  <span className="text-sm text-gray-600 flex-1">{theme.primaryColor}</span>
-                  <ChevronDown className="h-4 w-4 text-gray-400" />
+                  <span className="text-xs font-mono text-slate-500 flex-1 text-left">{theme.primaryColor.toUpperCase()}</span>
+                  <ChevronDown className="h-4 w-4 text-slate-400" />
                 </button>
               </Popover.Trigger>
               <Popover.Portal>
                 <Popover.Content
-                  className="z-50 w-80 bg-white rounded-lg border shadow-lg p-4 space-y-3"
-                  sideOffset={8}
-                  align="start"
+                  className="z-[100] w-72 bg-white/80 backdrop-blur-xl rounded-2xl border border-slate-100 shadow-2xl p-5 space-y-4 animate-in fade-in zoom-in duration-200"
+                  sideOffset={12}
+                  align="end"
                 >
-                  <div className="grid grid-cols-6 gap-2">
+                  <div className="grid grid-cols-6 gap-2.5">
                     {presetColors.map((color) => (
                       <button
                         key={color}
@@ -227,11 +234,11 @@ export default function ThemePanel(props: {
                           props.onUpdate({ primaryColor: color })
                           setPrimaryPopoverOpen(false)
                         }}
-                        className="h-10 rounded border-2 transition-all hover:scale-110"
+                        className="h-8 rounded-full border-2 transition-all hover:scale-125 active:scale-95"
                         style={{
                           backgroundColor: color,
-                          borderColor: theme.primaryColor === color ? theme.primaryColor : 'transparent',
-                          boxShadow: theme.primaryColor === color ? `0 0 0 2px ${color}40` : 'none'
+                          borderColor: theme.primaryColor === color ? 'white' : 'transparent',
+                          boxShadow: theme.primaryColor === color ? `0 0 0 2px ${color}` : 'none'
                         }}
                         title={color}
                       />
@@ -240,57 +247,55 @@ export default function ThemePanel(props: {
                   <button
                     type="button"
                     onClick={(): void => setShowPrimaryCustom(!showPrimaryCustom)}
-                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg border transition-all hover:bg-gray-50"
+                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-slate-100 bg-slate-50 text-slate-600 font-bold text-xs transition-all hover:bg-slate-100 hover:text-slate-900"
                   >
                     <Palette className="h-4 w-4" />
-                    <span className="text-sm">自定义</span>
+                    <span>自定义颜色</span>
                   </button>
                   {showPrimaryCustom ? (
-                    <div className="flex items-center gap-3 p-3 rounded-lg border bg-gray-50">
+                    <div className="flex items-center gap-3 p-3 rounded-xl border border-slate-100 bg-white shadow-inner">
                       <input
                         id="primary-color"
                         type="color"
                         value={theme.primaryColor}
                         onChange={(e): void => handleColor(e, 'primaryColor')}
-                        className="h-10 w-12 rounded border cursor-pointer"
+                        className="h-9 w-12 rounded-lg border-0 cursor-pointer p-0 bg-transparent"
                       />
                       <Input
                         type="text"
                         value={theme.primaryColor}
                         onChange={(e): void => handleColor(e, 'primaryColor')}
-                        className="flex-1 rounded-lg"
+                        className="flex-1 h-9 rounded-lg bg-slate-50 border-0 text-xs font-mono"
                       />
                     </div>
                   ) : null}
-                  <Popover.Arrow className="fill-white" />
                 </Popover.Content>
               </Popover.Portal>
             </Popover.Root>
           </div>
-          <div className="space-y-2">
-            <Label className={labelClass}>正文颜色</Label>
+          <div className="space-y-2.5">
+            <Label className={labelClass}>文本颜色 (Text)</Label>
             <Popover.Root open={textPopoverOpen} onOpenChange={setTextPopoverOpen}>
               <Popover.Trigger asChild>
                 <button
                   type="button"
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg border-2 cursor-pointer transition-all hover:border-gray-300"
-                  style={{ borderColor: '#e5e7eb' }}
+                  className="w-full flex items-center gap-4 px-4 py-3 rounded-xl border border-slate-100 bg-slate-50/50 cursor-pointer transition-all hover:bg-white hover:border-violet-200 hover:shadow-sm"
                 >
                   <div
-                    className="h-8 w-16 rounded"
+                    className="h-7 w-14 rounded-lg shadow-sm border border-white/20"
                     style={{ backgroundColor: theme.textColor }}
                   />
-                  <span className="text-sm text-gray-600 flex-1">{theme.textColor}</span>
-                  <ChevronDown className="h-4 w-4 text-gray-400" />
+                  <span className="text-xs font-mono text-slate-500 flex-1 text-left">{theme.textColor.toUpperCase()}</span>
+                  <ChevronDown className="h-4 w-4 text-slate-400" />
                 </button>
               </Popover.Trigger>
               <Popover.Portal>
                 <Popover.Content
-                  className="z-50 w-80 bg-white rounded-lg border shadow-lg p-4 space-y-3"
-                  sideOffset={8}
-                  align="start"
+                  className="z-[100] w-72 bg-white/80 backdrop-blur-xl rounded-2xl border border-slate-100 shadow-2xl p-5 space-y-4 animate-in fade-in zoom-in duration-200"
+                  sideOffset={12}
+                  align="end"
                 >
-                  <div className="grid grid-cols-6 gap-2">
+                  <div className="grid grid-cols-6 gap-2.5">
                     {presetColors.map((color) => (
                       <button
                         key={color}
@@ -299,11 +304,11 @@ export default function ThemePanel(props: {
                           props.onUpdate({ textColor: color })
                           setTextPopoverOpen(false)
                         }}
-                        className="h-10 rounded border-2 transition-all hover:scale-110"
+                        className="h-8 rounded-full border-2 transition-all hover:scale-125 active:scale-95"
                         style={{
                           backgroundColor: color,
-                          borderColor: theme.textColor === color ? theme.textColor : 'transparent',
-                          boxShadow: theme.textColor === color ? `0 0 0 2px ${color}40` : 'none'
+                          borderColor: theme.textColor === color ? 'white' : 'transparent',
+                          boxShadow: theme.textColor === color ? `0 0 0 2px ${color}` : 'none'
                         }}
                         title={color}
                       />
@@ -312,29 +317,28 @@ export default function ThemePanel(props: {
                   <button
                     type="button"
                     onClick={(): void => setShowTextCustom(!showTextCustom)}
-                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg border transition-all hover:bg-gray-50"
+                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-slate-100 bg-slate-50 text-slate-600 font-bold text-xs transition-all hover:bg-slate-100 hover:text-slate-900"
                   >
                     <Palette className="h-4 w-4" />
-                    <span className="text-sm">自定义</span>
+                    <span>自定义颜色</span>
                   </button>
                   {showTextCustom ? (
-                    <div className="flex items-center gap-3 p-3 rounded-lg border bg-gray-50">
+                    <div className="flex items-center gap-3 p-3 rounded-xl border border-slate-100 bg-white shadow-inner">
                       <input
                         id="text-color"
                         type="color"
                         value={theme.textColor}
                         onChange={(e): void => handleColor(e, 'textColor')}
-                        className="h-10 w-12 rounded border cursor-pointer"
+                        className="h-9 w-12 rounded-lg border-0 cursor-pointer p-0 bg-transparent"
                       />
                       <Input
                         type="text"
                         value={theme.textColor}
                         onChange={(e): void => handleColor(e, 'textColor')}
-                        className="flex-1 rounded-lg"
+                        className="flex-1 h-9 rounded-lg bg-slate-50 border-0 text-xs font-mono"
                       />
                     </div>
                   ) : null}
-                  <Popover.Arrow className="fill-white" />
                 </Popover.Content>
               </Popover.Portal>
             </Popover.Root>
