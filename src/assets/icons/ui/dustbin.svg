@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 14 14" fill="none">
+        <g fill="none" fill-rule="evenodd" opacity=".8">
+            <rect width="14" height="1" y="2" fill="currentColor" rx=".5"></rect>
+            <path stroke="currentColor"
+                d="M11.5 2.5V12c0 .414-.168.79-.44 1.06-.27.272-.646.44-1.06.44h0-6c-.414 0-.79-.168-1.06-.44A1.495 1.495 0 0 1 2.5 12h0V2.5h9z">
+            </path>
+            <rect width="1" height="6" x="4" y="5" fill="currentColor" rx=".5"></rect>
+            <rect width="1" height="6" x="9" y="5" fill="currentColor" rx=".5"></rect>
+            <path stroke="currentColor"
+                d="M9 .5c.414 0 .79.168 1.06.44.272.27.44.646.44 1.06h0v.5h-7V2c0-.414.168-.79.44-1.06C4.21.667 4.585.5 5 .5h0z">
+            </path>
+            <rect width="1" height="6" x="6.5" y="5" fill="currentColor" rx=".5"></rect>
+        </g>
+    </svg>

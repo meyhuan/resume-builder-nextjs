@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none">
+        <g stroke="#fff" stroke-linecap="round" stroke-width=".833"
+            clip-path="url(#svg-ai-logo-transparent_clip0_3431_52999)">
+            <path stroke-linejoin="round"
+                d="M4.36 12.417H1.64l3.707-7.412c.282-.565.86-.921 1.49-.921h2.72l-3.706 7.412c-.282.564-.86.92-1.49.92zM11.004 12.417h2.72L12.101 9.17a1.667 1.667 0 0 0-1.49-.921H7.89l1.622 3.245c.283.565.86.922 1.491.922z">
+            </path>
+            <path d="M7.682 7.833L5.958 4.385"></path>
+        </g>
+        <defs>
+            <clipPath id="svg-ai-logo-transparent_clip0_3431_52999">
+                <path fill="#fff" d="M0 0h13.333v13.333H0z" transform="translate(1 2)"></path>
+            </clipPath>
+        </defs>
+    </svg>

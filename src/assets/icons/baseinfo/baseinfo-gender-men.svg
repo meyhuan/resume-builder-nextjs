@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none">
+        <g clip-path="url(#svg-baseinfo-gender-men_女__a)">
+            <path fill="currentColor" fill-rule="evenodd"
+                d="M6.5 2.5a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm0-1.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11z"
+                clip-rule="evenodd"></path>
+            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                d="M10 10l4 4m-4 0l4-4"></path>
+        </g>
+        <defs>
+            <clipPath id="svg-baseinfo-gender-men_女__a">
+                <path fill="#fff" d="M0 0h16v16H0z"></path>
+            </clipPath>
+        </defs>
+    </svg>

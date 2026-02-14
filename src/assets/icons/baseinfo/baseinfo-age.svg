@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none">
+        <g clip-path="url(#svg-baseinfo-age_生日__a)">
+            <path stroke="currentColor" stroke-width="1.5"
+                d="M2.75 9c0-.69.56-1.25 1.25-1.25h8c.69 0 1.25.56 1.25 1.25v5.25H2.75V9z"></path>
+            <path fill="currentColor"
+                d="M1 14.25a.75.75 0 0 1 .75-.75h12.5a.75.75 0 0 1 0 1.5H1.75a.75.75 0 0 1-.75-.75z"></path>
+            <rect width="2" height="2" x="4" y="1" fill="currentColor" rx="1"></rect>
+            <rect width="2" height="2" x="7" y="1" fill="currentColor" rx="1"></rect>
+            <path fill="currentColor" d="M10 2a1 1 0 1 1 2 0 1 1 0 0 1-2 0z"></path>
+            <path stroke="currentColor" stroke-linecap="round" stroke-width="1.5" d="M5 5v2.5M8 5v2.5M11 5v2.5"></path>
+        </g>
+        <defs>
+            <clipPath id="svg-baseinfo-age_生日__a">
+                <path fill="#fff" d="M0 0h16v16H0z"></path>
+            </clipPath>
+        </defs>
+    </svg>

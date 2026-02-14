@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none">
+        <g fill="none" fill-rule="evenodd"><text fill="#999" font-family="MicrosoftYaHei, Microsoft YaHei"
+                font-size="12" transform="translate(0 -2)">
+                <tspan x="18" y="13">当前网络不可用，请稍后</tspan>
+            </text>
+            <path fill="#000"
+                d="M0 7.5A7.5 7.5 0 0 1 7.5 0 7.5 7.5 0 0 1 15 7.5 7.5 7.5 0 0 1 7.5 15 7.5 7.5 0 0 1 0 7.5z"
+                opacity=".2"></path>
+            <path fill="#FFF" fill-rule="nonzero" d="M7 9h1V3H7zM7 11h1v-1H7z"></path><text fill="#5087E6"
+                font-family="MicrosoftYaHeiLight, Microsoft YaHei" font-size="12" font-weight="300"
+                transform="translate(0 -2)">
+                <tspan x="154" y="13">重试</tspan>
+            </text>
+        </g>
+    </svg>

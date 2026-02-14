@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none">
+        <g stroke="currentColor" stroke-linecap="round" stroke-width="1.5"
+            clip-path="url(#svg-ai-chat_clip0_4886_169269)">
+            <path stroke-linejoin="round"
+                d="M11 13.382H8.333a1 1 0 0 1-1-1V10.43H11a1 1 0 0 0 1-1V7.478h1.666a1 1 0 0 1 1 1v3.904a1 1 0 0 1-1 1H13l-1 1.107-1-1.107z">
+            </path>
+            <path stroke-linejoin="round"
+                d="M1.333 2.574a1 1 0 0 1 1-1H11a1 1 0 0 1 1 1V9.43a1 1 0 0 1-1 1H5.666l-1.333 1.476L3 10.43h-.667a1 1 0 0 1-1-1V2.574z">
+            </path>
+            <path d="M4 7.03h2M4 4.237h4"></path>
+        </g>
+        <defs>
+            <clipPath id="svg-ai-chat_clip0_4886_169269">
+                <path fill="#fff" d="M0 0h16v16H0z"></path>
+            </clipPath>
+        </defs>
+    </svg>

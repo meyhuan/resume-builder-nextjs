@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none">
+        <g clip-path="url(#svg-baseinfo-nation_民族__a)">
+            <path stroke="currentColor" stroke-width="1.5"
+                d="M4.75 7.5a.25.25 0 0 1 .1-.2l-.45-.6.45.6 3-2.25a.25.25 0 0 1 .3 0l3 2.25a.25.25 0 0 1 .1.2V14a.25.25 0 0 1-.25.25H5a.25.25 0 0 1-.25-.25V7.5z">
+            </path>
+            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="M8 1v3.5m-1.5-2h3"></path>
+            <path fill="currentColor"
+                d="M1 8.75a.75.75 0 0 1 1.5 0v5.5a.75.75 0 0 1-1.5 0v-5.5zm13 0a.75.75 0 0 1 1.5 0v5.5a.75.75 0 0 1-1.5 0v-5.5z">
+            </path>
+        </g>
+        <defs>
+            <clipPath id="svg-baseinfo-nation_民族__a">
+                <path fill="#fff" d="M0 0h16v16H0z"></path>
+            </clipPath>
+        </defs>
+    </svg>

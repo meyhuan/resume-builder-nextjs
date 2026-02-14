@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none">
+        <g clip-path="url(#svg-baseinfo-weight_体重__a)">
+            <path stroke="currentColor" stroke-width="1.5"
+                d="M.75 3c0-.69.56-1.25 1.25-1.25h12c.69 0 1.25.56 1.25 1.25v10c0 .69-.56 1.25-1.25 1.25H2c-.69 0-1.25-.56-1.25-1.25V3z">
+            </path>
+            <path stroke="currentColor" stroke-width="1.5"
+                d="M3.865 5.867a.161.161 0 0 1-.002-.086C4.43 5.41 5.75 4.75 8 4.75c2.251 0 3.571.661 4.136 1.03l.001.002a.161.161 0 0 1-.002.085l-.591 2.366a6.874 6.874 0 0 0-7.088 0l-.591-2.366z">
+            </path>
+            <path fill="currentColor" d="M8 5h1v2H8z"></path>
+        </g>
+        <defs>
+            <clipPath id="svg-baseinfo-weight_体重__a">
+                <path fill="#fff" d="M0 0h16v16H0z"></path>
+            </clipPath>
+        </defs>
+    </svg>

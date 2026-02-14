@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 60" fill="none">
+        <defs>
+            <linearGradient id="svg-analysis-error_a" x1="50%" x2="50%" y1="0%" y2="98.921%">
+                <stop offset="0%" stop-color="#FFBBA3"></stop>
+                <stop offset="100%" stop-color="#FFEAD7"></stop>
+            </linearGradient>
+            <path id="svg-analysis-error_c"
+                d="M4.764 0l-.535 13.562H.72L.211 0h4.553zM2.512 20c-.73 0-1.33-.222-1.803-.667C.236 18.888 0 18.349 0 17.717c0-.657.238-1.196.715-1.616.477-.42 1.076-.63 1.797-.63.73 0 1.327.212 1.791.636.465.425.697.961.697 1.61 0 .657-.23 1.202-.69 1.634-.46.433-1.06.649-1.798.649z">
+            </path>
+            <filter id="svg-analysis-error_b" width="640%" height="235%" x="-270%" y="-67.5%"
+                filterUnits="objectBoundingBox">
+                <feOffset in="SourceAlpha" result="shadowOffsetOuter1"></feOffset>
+                <feGaussianBlur in="shadowOffsetOuter1" result="shadowBlurOuter1" stdDeviation="4.5"></feGaussianBlur>
+                <feColorMatrix in="shadowBlurOuter1" values="0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.8 0"></feColorMatrix>
+            </filter>
+        </defs>
+        <g fill="none" fill-rule="evenodd">
+            <circle cx="30" cy="30" r="30" fill="#FFF"></circle>
+            <circle cx="30" cy="30" r="29.5" fill="#FFF0E7" stroke="#FF7E71"></circle>
+            <path fill="url(#svg-analysis-error_a)"
+                d="M1.266 13.586L18.164.996a2.235 2.235 0 0 1 2.672 0l16.898 12.59a2.235 2.235 0 0 1 .8 2.452l-6.29 20.386A2.235 2.235 0 0 1 30.108 38H8.892c-.98 0-1.846-.64-2.136-1.576L.466 16.038a2.235 2.235 0 0 1 .8-2.452z"
+                transform="translate(11 9)"></path>
+            <path fill="#FFE6DA" fill-rule="nonzero"
+                d="M31.829 9.99l16.905 12.596a2.24 2.24 0 0 1 .8 2.455l-6.291 20.385A2.23 2.23 0 0 1 41.114 47H19.886a2.23 2.23 0 0 1-2.129-1.574l-6.29-20.385a2.24 2.24 0 0 1 .8-2.455L29.17 9.99a2.223 2.223 0 0 1 2.658 0zm14.31 13.447L31.836 12.78a2.235 2.235 0 0 0-2.672 0L14.861 23.437a2.235 2.235 0 0 0-.8 2.452l5.339 17.3a2.235 2.235 0 0 0 2.135 1.576h17.93c.98 0 1.846-.64 2.135-1.576l5.34-17.3a2.235 2.235 0 0 0-.801-2.452z">
+            </path>
+            <g fill-rule="nonzero">
+                <g transform="translate(28 20)">
+                    <use fill="#000" filter="url(#svg-analysis-error_b)" xlink:href="#svg-analysis-error_c"></use>
+                    <use fill="#F24014" xlink:href="#svg-analysis-error_c"></use>
+                </g>
+            </g>
+        </g>
+    </svg>

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 12" fill="none">
+        <g clip-path="url(#svg-stop-icon_clip0_4098_537958)">
+            <path fill="currentColor" fill-rule="evenodd"
+                d="M2.015 2.03A5.602 5.602 0 0 0 .375 6a5.625 5.625 0 1 0 1.64-3.97zm.38 1.072a4.625 4.625 0 0 0 6.503 6.503L2.395 3.102zm7.21 5.796L3.102 2.395a4.625 4.625 0 0 1 6.503 6.503z"
+                clip-rule="evenodd"></path>
+        </g>
+        <defs>
+            <clipPath id="svg-stop-icon_clip0_4098_537958">
+                <path fill="#fff" d="M0 0h12v12H0z"></path>
+            </clipPath>
+        </defs>
+    </svg>

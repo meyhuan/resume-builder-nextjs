@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 120" fill="none">
+        <g filter="url(#svg-ai-entry-bg_filter0_d_2997_269711)">
+            <path fill="currentColor"
+                d="M20.353 97.738l-14 4.307A9 9 0 0 0 0 110.647V114h-10V6H0v4.091a8 8 0 0 0 5.647 7.647l14.706 4.524A8 8 0 0 1 26 29.91V90.09a8 8 0 0 1-5.647 7.647z">
+            </path>
+        </g>
+        <defs>
+            <filter id="svg-ai-entry-bg_filter0_d_2997_269711" width="48" height="120" x="-16" y="0"
+                color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse">
+                <feFlood flood-opacity="0" result="BackgroundImageFix"></feFlood>
+                <feColorMatrix in="SourceAlpha" result="hardAlpha" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0">
+                </feColorMatrix>
+                <feOffset></feOffset>
+                <feGaussianBlur stdDeviation="3"></feGaussianBlur>
+                <feComposite in2="hardAlpha" operator="out"></feComposite>
+                <feColorMatrix values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.06 0"></feColorMatrix>
+                <feBlend in2="BackgroundImageFix" result="effect1_dropShadow_2997_269711"></feBlend>
+                <feBlend in="SourceGraphic" in2="effect1_dropShadow_2997_269711" result="shape"></feBlend>
+            </filter>
+        </defs>
+    </svg>

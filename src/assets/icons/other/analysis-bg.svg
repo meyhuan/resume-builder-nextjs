@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 60" fill="none">
+        <defs>
+            <linearGradient id="svg-analysis-bg_a" x1="50%" x2="50%" y1="0%" y2="98.921%">
+                <stop offset="0%" stop-color="#7AB1FF"></stop>
+                <stop offset="100%" stop-color="#317EFF"></stop>
+            </linearGradient>
+            <linearGradient id="svg-analysis-bg_b" x1="50%" x2="50%" y1="0%" y2="100%">
+                <stop offset="0%" stop-color="#B6F7FF"></stop>
+                <stop offset="100%" stop-color="#B7D5FF"></stop>
+            </linearGradient>
+            <path id="svg-analysis-bg_d"
+                d="M18.595 7.98L8.317 35.16a1.118 1.118 0 0 0 1.586 1.374l10.63-5.864 8.057-4.445c.525-.29.728-.941.46-1.478L20.641 7.877a1.118 1.118 0 0 0-2.046.103z">
+            </path>
+            <filter id="svg-analysis-bg_c" width="165.7%" height="140.1%" x="-31.4%" y="-7.2%"
+                filterUnits="objectBoundingBox">
+                <feOffset dy="4" in="SourceAlpha" result="shadowOffsetOuter1"></feOffset>
+                <feGaussianBlur in="shadowOffsetOuter1" result="shadowBlurOuter1" stdDeviation="2"></feGaussianBlur>
+                <feColorMatrix in="shadowBlurOuter1" values="0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.6 0"></feColorMatrix>
+            </filter>
+            <filter id="svg-analysis-bg_e" width="138.8%" height="121.6%" x="-17.9%" y="2.1%"
+                filterUnits="objectBoundingBox">
+                <feOffset dx="1" dy="1" in="SourceAlpha" result="shadowOffsetInner1"></feOffset>
+                <feComposite in="shadowOffsetInner1" in2="SourceAlpha" k2="-1" k3="1" operator="arithmetic"
+                    result="shadowInnerInner1"></feComposite>
+                <feColorMatrix in="shadowInnerInner1" result="shadowMatrixInner1"
+                    values="0 0 0 0 0.468542778 0 0 0 0 0.918469631 0 0 0 0 1 0 0 0 1 0"></feColorMatrix>
+                <feOffset dx="-2" dy="-1" in="SourceAlpha" result="shadowOffsetInner2"></feOffset>
+                <feComposite in="shadowOffsetInner2" in2="SourceAlpha" k2="-1" k3="1" operator="arithmetic"
+                    result="shadowInnerInner2"></feComposite>
+                <feColorMatrix in="shadowInnerInner2" result="shadowMatrixInner2"
+                    values="0 0 0 0 0.208556831 0 0 0 0 0.582013131 0 0 0 0 1 0 0 0 1 0"></feColorMatrix>
+                <feMerge>
+                    <feMergeNode in="shadowMatrixInner1"></feMergeNode>
+                    <feMergeNode in="shadowMatrixInner2"></feMergeNode>
+                </feMerge>
+            </filter>
+            <radialGradient id="svg-analysis-bg_f" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
+                <stop offset="0%" stop-color="#C6E7FF"></stop>
+                <stop offset="100%" stop-color="#FFF" stop-opacity="0"></stop>
+            </radialGradient>
+        </defs>
+        <g fill="none" fill-rule="evenodd">
+            <circle cx="30" cy="30" r="30" fill="#FFF"></circle>
+            <circle cx="30" cy="30" r="29.5" fill="#F1F6FF" stroke="#6599FF"></circle>
+            <g opacity=".8">
+                <path fill="url(#svg-analysis-bg_a)"
+                    d="M1.266 13.586L18.164.996a2.235 2.235 0 0 1 2.672 0l16.898 12.59a2.235 2.235 0 0 1 .8 2.452l-6.29 20.386A2.235 2.235 0 0 1 30.108 38H8.892c-.98 0-1.846-.64-2.136-1.576L.466 16.038a2.235 2.235 0 0 1 .8-2.452z"
+                    transform="translate(11 9)"></path>
+                <path fill="url(#svg-analysis-bg_b)" fill-rule="nonzero"
+                    d="M20.829.99l16.905 12.596a2.24 2.24 0 0 1 .8 2.455l-6.291 20.385A2.23 2.23 0 0 1 30.114 38H8.886a2.23 2.23 0 0 1-2.129-1.574L.467 16.04a2.24 2.24 0 0 1 .8-2.455L18.17.99a2.223 2.223 0 0 1 2.658 0zm14.31 13.447L20.836 3.78a2.235 2.235 0 0 0-2.672 0L3.861 14.437a2.235 2.235 0 0 0-.8 2.452l5.339 17.3a2.235 2.235 0 0 0 2.135 1.576h17.93c.98 0 1.846-.64 2.135-1.576l5.34-17.3a2.235 2.235 0 0 0-.801-2.452z"
+                    transform="translate(11 9)"></path>
+                <path fill="#D1FAFF" fill-rule="nonzero"
+                    d="M29.832 16.458l-11.71 8.726c-.38.282-.54.773-.4 1.225l4.385 14.215c.145.468.578.788 1.068.788h14.649c.49 0 .923-.32 1.068-.788l4.386-14.215c.14-.452-.021-.943-.4-1.225l-11.71-8.726a1.118 1.118 0 0 0-1.336 0z">
+                </path>
+                <g transform="translate(11 9)">
+                    <use fill="#000" filter="url(#svg-analysis-bg_c)" xlink:href="#svg-analysis-bg_d"></use>
+                    <use fill="#31B9FF" xlink:href="#svg-analysis-bg_d"></use>
+                    <use fill="#000" filter="url(#svg-analysis-bg_e)" xlink:href="#svg-analysis-bg_d"></use>
+                </g>
+            </g>
+            <circle cx="30" cy="30" r="30" fill="url(#svg-analysis-bg_f)"></circle>
+        </g>
+    </svg>

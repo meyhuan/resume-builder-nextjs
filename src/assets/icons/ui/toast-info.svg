@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none">
+        <g clip-path="url(#svg-toast-info_clip0_708_2897)">
+            <path fill="#1E5FC7" fill-rule="evenodd"
+                d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM7 8a1 1 0 0 1 2 0v4a1 1 0 1 1-2 0V8zm1-5a1 1 0 1 0 0 2 1 1 0 0 0 0-2z"
+                clip-rule="evenodd"></path>
+        </g>
+        <defs>
+            <clipPath id="svg-toast-info_clip0_708_2897">
+                <path fill="#fff" d="M0 0h16v16H0z"></path>
+            </clipPath>
+        </defs>
+    </svg>

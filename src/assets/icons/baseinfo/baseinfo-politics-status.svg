@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none">
+        <g clip-path="url(#svg-baseinfo-politics_status_政治面貌__a)">
+            <circle cx="8" cy="8" r="6.25" stroke="currentColor" stroke-width="1.5"></circle>
+            <path fill="currentColor"
+                d="M7.527 4.377a.5.5 0 0 1 .946 0l.707 2.06h2.21a.5.5 0 0 1 .284.913L9.91 8.562l.688 2.006a.5.5 0 0 1-.756.574L8 9.875l-1.842 1.267a.5.5 0 0 1-.756-.574l.688-2.006L4.326 7.35a.5.5 0 0 1 .284-.912h2.21l.707-2.06z">
+            </path>
+        </g>
+        <defs>
+            <clipPath id="svg-baseinfo-politics_status_政治面貌__a">
+                <path fill="#fff" d="M0 0h16v16H0z"></path>
+            </clipPath>
+        </defs>
+    </svg>

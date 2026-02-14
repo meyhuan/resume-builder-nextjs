@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none">
+        <g clip-path="url(#svg-baseinfo-workyear_age_工作年限__a)">
+            <rect width="12.5" height="9.5" x="1.75" y="4.75" stroke="currentColor" stroke-width="1.5" rx="1.25"></rect>
+            <path stroke="currentColor" stroke-width="1.5"
+                d="M4.75 3c0-.69.56-1.25 1.25-1.25h4c.69 0 1.25.56 1.25 1.25v1.75h-6.5V3z"></path>
+            <path fill="currentColor"
+                d="M6 11.25a.75.75 0 0 1 .75-.75h2.5a.75.75 0 0 1 0 1.5h-2.5a.75.75 0 0 1-.75-.75z"></path>
+        </g>
+        <defs>
+            <clipPath id="svg-baseinfo-workyear_age_工作年限__a">
+                <path fill="#fff" d="M0 0h16v16H0z"></path>
+            </clipPath>
+        </defs>
+    </svg>

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none">
+        <g clip-path="url(#svg-ai-stop_clip0_3401_22764)">
+            <circle cx="8" cy="8" r="6.75" stroke="#802DF0" stroke-width="1.5"></circle>
+            <path fill="#802DF0"
+                d="M5 6.5A1.5 1.5 0 0 1 6.5 5h3A1.5 1.5 0 0 1 11 6.5v3A1.5 1.5 0 0 1 9.5 11h-3A1.5 1.5 0 0 1 5 9.5v-3z">
+            </path>
+        </g>
+        <defs>
+            <clipPath id="svg-ai-stop_clip0_3401_22764">
+                <path fill="#fff" d="M0 0h16v16H0z"></path>
+            </clipPath>
+        </defs>
+    </svg>

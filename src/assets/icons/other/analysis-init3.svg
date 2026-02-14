@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 154" fill="none">
+        <g fill="none" fill-rule="evenodd">
+            <path d="M0 0h280v154H0z"></path>
+            <path fill="#D6DDF1"
+                d="M49.453 154h183.102c28.962 0 55.69-49.767 21.117-80.092-34.574-30.325-18.17-48.978-60.28-68.494s-89.152 19.034-143.94 31.91C-5.333 50.202-.92 154 49.453 154z"
+                opacity=".15"></path>
+            <g transform="translate(99.5 17)">
+                <rect width="90.92" height="121.92" x=".54" y=".54" fill="#FFF" stroke="#DDE0E7" stroke-width="1.08"
+                    rx="4"></rect>
+                <rect width="25" height="33" x="8" y="10" fill="#DDE0E7" opacity=".3" rx="2"></rect>
+                <rect width="21.905" height="8" x="38" y="11" fill="#DDE0E7" opacity=".3" rx="2"></rect>
+                <rect width="46" height="8" x="38" y="23" fill="#DDE0E7" opacity=".3" rx="2"></rect>
+                <rect width="46" height="8" x="38" y="35" fill="#DDE0E7" opacity=".3" rx="2"></rect>
+                <rect width="76" height="8" x="8" y="47" fill="#DDE0E7" opacity=".3" rx="2"></rect>
+                <rect width="76" height="32" x="8" y="59" fill="#DDE0E7" opacity=".3" rx="2"></rect>
+                <rect width="76" height="20" x="8" y="95" fill="#DDE0E7" opacity=".3" rx="2"></rect>
+            </g>
+            <g transform="translate(52 30)">
+                <path fill="#678DFF"
+                    d="M16 0h83.5a4 4 0 0 1 4 4v38a4 4 0 0 1-4 4h-83a4 4 0 0 1-4-4V21.381a1 1 0 0 0-.254-.666L1.488 8.666A1 1 0 0 1 2.233 7H11.5a1 1 0 0 0 1-1V3.5A3.5 3.5 0 0 1 16 0z">
+                </path>
+                <rect width="79" height="7" x="18.5" y="21" fill="#FFF" opacity=".2" rx="2"></rect>
+                <rect width="44.317" height="7" x="18.5" y="32" fill="#FFF" opacity=".134" rx="2"></rect>
+                <g fill="#FFF" font-family="MicrosoftYaHeiSemibold, Microsoft YaHei" font-size="8" font-weight="500">
+                    <text transform="translate(14.5 2)">
+                        <tspan x="4.332" y="9">发现问题</tspan>
+                        <tspan x="36.332" y="9" font-family="Helvetica-Bold, Helvetica" font-weight="bold"> </tspan>
+                        <tspan x="49.668" y="9">：</tspan>
+                    </text><text transform="translate(14.5 2)">
+                        <tspan x="32.779" y="9">（5）</tspan>
+                    </text></g>
+            </g>
+            <g transform="translate(128.5 84)">
+                <path fill="#1FBB7D"
+                    d="M84.751 0H4a4 4 0 0 0-4 4v37a4 4 0 0 0 4 4h80.251a4 4 0 0 0 4-4V21.34a1 1 0 0 1 .207-.61L97.765 8.61A1 1 0 0 0 96.97 7h-7.72a1 1 0 0 1-1-1V3.5a3.5 3.5 0 0 0-3.5-3.5z">
+                </path>
+                <rect width="72" height="7" x="6" y="20" fill="#FFF" opacity=".2" rx="2"></rect>
+                <rect width="57" height="7" x="6" y="31" fill="#FFF" opacity=".134" rx="2"></rect><text fill="#FFF"
+                    font-family="MicrosoftYaHeiSemibold, Microsoft YaHei" font-size="8" font-weight="500">
+                    <tspan x="6.332" y="10">解决建议</tspan>
+                    <tspan x="38.332" y="10" font-family="Helvetica-Bold, Helvetica" font-weight="bold"> </tspan>
+                    <tspan x="51.668" y="10">：</tspan>
+                </text><text fill="#FFF" font-family="MicrosoftYaHeiSemibold, Microsoft YaHei" font-size="8"
+                    font-weight="500">
+                    <tspan x="34.779" y="10">（5）</tspan>
+                </text>
+            </g>
+        </g>
+    </svg>

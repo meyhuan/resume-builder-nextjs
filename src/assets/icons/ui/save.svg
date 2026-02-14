@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none">
+        <defs>
+            <linearGradient id="svg-save_a" x1="99.585%" x2="15.342%" y1="89.863%" y2="0%">
+                <stop offset="0%" stop-color="#50D4A3" stop-opacity=".9"></stop>
+                <stop offset="100%" stop-color="#4AAC78"></stop>
+            </linearGradient>
+            <circle id="svg-save_b" cx="8" cy="8" r="8"></circle>
+        </defs>
+        <g fill="none" fill-rule="nonzero">
+            <g>
+                <use fill="url(#svg-save_a)" xlink:href="#svg-save_b"></use>
+                <use fill="#47B347" xlink:href="#svg-save_b"></use>
+            </g>
+            <path stroke="#FFF" stroke-linecap="round" stroke-linejoin="round" stroke-width=".857"
+                d="M4 8.15L6.843 11 12 6"></path>
+        </g>
+    </svg>

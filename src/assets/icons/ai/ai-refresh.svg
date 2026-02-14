@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none">
+        <g stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+            clip-path="url(#svg-ai-refresh_clip0_1709_112126)">
+            <path
+                d="M14.43 7.037A6.502 6.502 0 0 0 8 1.5c-1.91 0-3.347.693-4.815 2.133-.407.399-.937 1.117-.937 1.117M1.57 8.963A6.502 6.502 0 0 0 8 14.5c1.909 0 3.349-.691 4.815-2.133.405-.399.933-1.117.933-1.117">
+            </path>
+            <path d="M2 2v2.99c0 .006.004.01.01.01H5M14 14v-2.99a.01.01 0 0 0-.01-.01H11"></path>
+        </g>
+        <defs>
+            <clipPath id="svg-ai-refresh_clip0_1709_112126">
+                <path fill="#fff" d="M0 0h16v16H0z"></path>
+            </clipPath>
+        </defs>
+    </svg>
