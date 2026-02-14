@@ -192,6 +192,17 @@ export const useAppStore = create<AppState>()(
           draft.sections.splice(to, 0, moved)
         }),
       }), false, 'section/moveSection'),
+    addSection: (title) =>
+      set((state) => ({
+        resume: produce(state.resume, (draft) => {
+          draft.sections.push({
+            id: createId('section'),
+            title,
+            columns: 1,
+            blocks: [],
+          })
+        }),
+      }), false, 'section/addSection'),
     deleteSection: (sectionId) =>
       set((state) => ({
         resume: produce(state.resume, (draft) => {

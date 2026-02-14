@@ -31,6 +31,8 @@ export interface AppState {
   moveBlockDown: (sectionId: UUID, blockId: UUID) => void
   /** Reorder sections by moving active section before the over section. */
   moveSection: (activeSectionId: UUID, overSectionId: UUID) => void
+  /** Add a new section with the given title. */
+  addSection: (title: string) => void
   /** Delete a section and all its blocks. */
   deleteSection: (sectionId: UUID) => void
   /** Import external resume JSON and replace current resume. */

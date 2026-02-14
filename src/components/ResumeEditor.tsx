@@ -13,6 +13,8 @@ import { useExportPdf } from '@/io/export-pdf'
 import { exportImage } from '@/io/export-image'
 import { createResumeHtmlBlob, buildResumeHtml } from '@/io/html-export'
 import RightSidebar from '@/ui/right-sidebar'
+import EditorToolbar from '@/ui/editor-toolbar'
+import type { PanelId } from '@/ui/editor-toolbar'
 import type { ThemeTokens } from '@/entities/theme/theme-tokens'
 import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
@@ -48,6 +50,7 @@ export default function ResumeEditor({ resumeId, initialData }: ResumeEditorProp
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null)
   const AUTO_SAVE_DELAY = 30000 // 30 seconds
   const [showLeaveDialog, setShowLeaveDialog] = useState(false)
+  const [activePanel, setActivePanel] = useState<PanelId | null>(null)
 
   // Initialize from DB data if provided
   useEffect(() => {
@@ -266,95 +269,90 @@ export default function ResumeEditor({ resumeId, initialData }: ResumeEditorProp
         <div className="absolute bottom-[-10%] left-[-5%] w-[400px] h-[400px] bg-fuchsia-500/5 rounded-full blur-[100px]" />
       </div>
 
-      <header className="z-50 bg-white/60 backdrop-blur-xl border-b border-slate-100 shadow-[0_4px_30px_rgba(0,0,0,0.03)] shrink-0">
-        <div className="mx-auto max-w-7xl px-4 py-3 flex items-center gap-3">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={handleBack}
-            className="mr-2 rounded-full hover:bg-violet-50 hover:text-violet-600"
-          >
-            <ArrowLeft className="h-4 w-4 mr-1.5" />
-            返回
-          </Button>
-          
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-fuchsia-500 flex items-center justify-center shadow-lg shadow-violet-500/20">
-              <FileText className="w-4 h-4 text-white" />
-            </div>
-            <h1 className="text-base font-bold bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-600">简历编辑器</h1>
-          </div>
-
-          <div className="ml-6 hidden md:flex items-center gap-2">
-            <span className="px-3 py-1 rounded-full bg-slate-100 text-[11px] font-medium text-slate-500 border border-slate-200">
-              当前模板: <span className="text-slate-900">{templateConfig?.name || tpl}</span>
+      <header className="z-50 bg-white border-b border-slate-200 shrink-0 print:hidden">
+        <div className="px-3 h-10 flex items-center relative">
+          {/* Left: nav + title */}
+          <div className="flex items-center gap-1 shrink-0">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleBack}
+              className="h-7 px-2 text-xs text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded"
+            >
+              <ArrowLeft className="h-3.5 w-3.5 mr-1" />
+              文件
+            </Button>
+            <span className="text-sm font-medium text-slate-700 truncate max-w-[180px]">
+              {resume.name || '未命名简历'}
             </span>
+            {hasUnsavedChanges && (
+              <span className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse shrink-0" title="未保存" />
+            )}
           </div>
 
-          <div className="ml-auto flex items-center gap-2">
-            <div className="flex items-center gap-4 mr-4 border-r border-slate-100 pr-4">
-              {hasUnsavedChanges && (
-                <span className="text-[11px] font-semibold text-amber-600 flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-50 border border-amber-100">
-                  <span className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse" />
-                  未保存
-                </span>
-              )}
-              {lastSaved && !hasUnsavedChanges && (
-                <span className="text-[11px] font-medium text-emerald-600 flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-100">
-                  <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
-                  已保存 {lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </span>
-              )}
-            </div>
+          {/* Center: toolbar actions (absolutely centered) */}
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+            <EditorToolbar activePanel={activePanel} onPanelChange={setActivePanel} />
+          </div>
 
-            <div className="flex items-center gap-1.5">
-              {resumeId && (
-                <Button
-                  onClick={handleSave}
-                  disabled={isSaving}
-                  className="rounded-full bg-gradient-to-r from-violet-600 to-fuchsia-500 text-white shadow-md shadow-violet-500/20 hover:shadow-violet-500/30 hover:scale-105 transition-all duration-300 border-0 h-9"
-                >
-                  {isSaving ? (
-                    <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
-                  ) : (
-                    <Save className="h-4 w-4 mr-1.5" />
-                  )}
-                  {isSaving ? '保存中...' : '保存'}
-                </Button>
-              )}
-              
-              <div className="h-6 w-px bg-slate-100 mx-1" />
+          {/* Right: save + export */}
+          <div className="ml-auto flex items-center gap-1 shrink-0">
+            {lastSaved && !hasUnsavedChanges && (
+              <span className="text-[10px] text-emerald-600 mr-1 hidden lg:inline">
+                已保存 {lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            )}
+            {resumeId && (
+              <Button
+                onClick={handleSave}
+                disabled={isSaving}
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-xs text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded"
+              >
+                {isSaving ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
+                ) : (
+                  <Save className="h-3.5 w-3.5 mr-1" />
+                )}
+                {isSaving ? '保存中' : '保存'}
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleExportPdf}
+              className="h-7 px-2 text-xs text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded"
+            >
+              <FileDown className="h-3.5 w-3.5 mr-1" />
+              PDF
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleExportPng}
+              className="h-7 px-2 text-xs text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded"
+            >
+              <ImageIcon className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleExportHtml}
+              className="h-7 px-2 text-xs text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded"
+            >
+              <FileText className="h-3.5 w-3.5" />
+            </Button>
 
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleExportPdf}
-                className="rounded-full border-slate-200 hover:border-violet-200 hover:bg-violet-50 hover:text-violet-600 h-9"
-              >
-                <FileDown className="h-4 w-4 mr-1.5" />
-                导出 PDF
-              </Button>
-              
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleExportPng}
-                className="rounded-full border-slate-200 hover:border-violet-200 hover:bg-violet-50 hover:text-violet-600 h-9"
-              >
-                <ImageIcon className="h-4 w-4 mr-1.5" />
-                图片
-              </Button>
+            <div className="h-4 w-px bg-slate-200 mx-1" />
 
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleExportHtml}
-                className="rounded-full border-slate-200 hover:border-violet-200 hover:bg-violet-50 hover:text-violet-600 h-9"
-              >
-                <FileText className="h-4 w-4 mr-1.5" />
-                HTML
-              </Button>
-            </div>
+            <Button
+              onClick={handleExportPdf}
+              size="sm"
+              className="h-7 px-3 text-xs font-medium bg-blue-600 text-white hover:bg-blue-700 rounded"
+            >
+              下载简历
+            </Button>
           </div>
         </div>
       </header>
@@ -392,27 +390,31 @@ export default function ResumeEditor({ resumeId, initialData }: ResumeEditorProp
             </div>
           </div>
         </div>
-        <aside className="print:hidden w-[380px] border-l border-slate-100 bg-white/80 backdrop-blur-xl shrink-0 h-full overflow-y-auto custom-scrollbar shadow-[-4px_0_30px_rgba(0,0,0,0.02)]">
-          <RightSidebar
-            theme={theme}
-            tpl={tpl}
-            templates={getAllTemplates()}
-            onTplChange={(next): void => setTpl(next)}
-            onThemePatch={(patch): void => {
-              setThemeForTemplate(tpl, (draft) => {
-                Object.assign(draft, patch)
-              })
-            }}
-            onImportJson={(json): void => {
-              try {
-                const parsed = JSON.parse(json)
-                useAppStore.getState().importExternalResume(parsed)
-              } catch (e) {
-                alert(`解析失败: ${e}`)
-              }
-            }}
-          />
-        </aside>
+        {activePanel && (
+          <aside className="print:hidden w-[340px] border-l border-slate-100 bg-white/80 backdrop-blur-xl shrink-0 h-full overflow-y-auto custom-scrollbar shadow-[-4px_0_30px_rgba(0,0,0,0.02)]">
+            <RightSidebar
+              activePanel={activePanel}
+              onClose={() => setActivePanel(null)}
+              theme={theme}
+              tpl={tpl}
+              templates={getAllTemplates()}
+              onTplChange={(next): void => setTpl(next)}
+              onThemePatch={(patch): void => {
+                setThemeForTemplate(tpl, (draft) => {
+                  Object.assign(draft, patch)
+                })
+              }}
+              onImportJson={(json): void => {
+                try {
+                  const parsed = JSON.parse(json)
+                  useAppStore.getState().importExternalResume(parsed)
+                } catch (e) {
+                  alert(`解析失败: ${e}`)
+                }
+              }}
+            />
+          </aside>
+        )}
       </main>
       {/* 离开确认弹窗 */}
       <ConfirmDialog
