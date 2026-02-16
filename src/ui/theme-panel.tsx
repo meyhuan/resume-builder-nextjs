@@ -35,8 +35,8 @@ export default function ThemePanel(props: {
   ]
   const fontSizes: readonly number[] = [12, 13, 14, 15, 16, 17, 18, 19, 20]
 
-  function handleColor(e: ChangeEvent<HTMLInputElement>, key: 'primaryColor' | 'textColor'): void {
-    props.onUpdate({ [key]: e.target.value } as Partial<ThemeTokens>)
+  function handlePrimaryColor(e: ChangeEvent<HTMLInputElement>): void {
+    props.onUpdate({ primaryColor: e.target.value })
   }
 
   function handleLineHeight(value: number[]): void {
@@ -64,8 +64,6 @@ export default function ThemePanel(props: {
 
   const [primaryPopoverOpen, setPrimaryPopoverOpen] = useState(false)
   const [showPrimaryCustom, setShowPrimaryCustom] = useState(false)
-  const [textPopoverOpen, setTextPopoverOpen] = useState(false)
-  const [showTextCustom, setShowTextCustom] = useState(false)
 
   const presetColors: readonly string[] = [
     '#000000',
@@ -258,83 +256,13 @@ export default function ThemePanel(props: {
                         id="primary-color"
                         type="color"
                         value={theme.primaryColor}
-                        onChange={(e): void => handleColor(e, 'primaryColor')}
+                        onChange={(e): void => handlePrimaryColor(e)}
                         className="h-9 w-12 rounded-lg border-0 cursor-pointer p-0 bg-transparent"
                       />
                       <Input
                         type="text"
                         value={theme.primaryColor}
-                        onChange={(e): void => handleColor(e, 'primaryColor')}
-                        className="flex-1 h-9 rounded-lg bg-slate-50 border-0 text-xs font-mono"
-                      />
-                    </div>
-                  ) : null}
-                </Popover.Content>
-              </Popover.Portal>
-            </Popover.Root>
-          </div>
-          <div className="space-y-2.5">
-            <Label className={labelClass}>文本颜色 (Text)</Label>
-            <Popover.Root open={textPopoverOpen} onOpenChange={setTextPopoverOpen}>
-              <Popover.Trigger asChild>
-                <button
-                  type="button"
-                  className="w-full flex items-center gap-4 px-4 py-3 rounded-xl border border-slate-100 bg-slate-50/50 cursor-pointer transition-all hover:bg-white hover:border-violet-200 hover:shadow-sm"
-                >
-                  <div
-                    className="h-7 w-14 rounded-lg shadow-sm border border-white/20"
-                    style={{ backgroundColor: theme.textColor }}
-                  />
-                  <span className="text-xs font-mono text-slate-500 flex-1 text-left">{theme.textColor.toUpperCase()}</span>
-                  <ChevronDown className="h-4 w-4 text-slate-400" />
-                </button>
-              </Popover.Trigger>
-              <Popover.Portal>
-                <Popover.Content
-                  className="z-[100] w-72 bg-white/80 backdrop-blur-xl rounded-2xl border border-slate-100 shadow-2xl p-5 space-y-4 animate-in fade-in zoom-in duration-200"
-                  sideOffset={12}
-                  align="end"
-                >
-                  <div className="grid grid-cols-6 gap-2.5">
-                    {presetColors.map((color) => (
-                      <button
-                        key={color}
-                        type="button"
-                        onClick={(): void => {
-                          props.onUpdate({ textColor: color })
-                          setTextPopoverOpen(false)
-                        }}
-                        className="h-8 rounded-full border-2 transition-all hover:scale-125 active:scale-95"
-                        style={{
-                          backgroundColor: color,
-                          borderColor: theme.textColor === color ? 'white' : 'transparent',
-                          boxShadow: theme.textColor === color ? `0 0 0 2px ${color}` : 'none'
-                        }}
-                        title={color}
-                      />
-                    ))}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={(): void => setShowTextCustom(!showTextCustom)}
-                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-slate-100 bg-slate-50 text-slate-600 font-bold text-xs transition-all hover:bg-slate-100 hover:text-slate-900"
-                  >
-                    <Palette className="h-4 w-4" />
-                    <span>自定义颜色</span>
-                  </button>
-                  {showTextCustom ? (
-                    <div className="flex items-center gap-3 p-3 rounded-xl border border-slate-100 bg-white shadow-inner">
-                      <input
-                        id="text-color"
-                        type="color"
-                        value={theme.textColor}
-                        onChange={(e): void => handleColor(e, 'textColor')}
-                        className="h-9 w-12 rounded-lg border-0 cursor-pointer p-0 bg-transparent"
-                      />
-                      <Input
-                        type="text"
-                        value={theme.textColor}
-                        onChange={(e): void => handleColor(e, 'textColor')}
+                        onChange={(e): void => handlePrimaryColor(e)}
                         className="flex-1 h-9 rounded-lg bg-slate-50 border-0 text-xs font-mono"
                       />
                     </div>

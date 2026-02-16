@@ -1,8 +1,11 @@
+import React, { cloneElement, isValidElement } from 'react';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import type { ReactElement, ReactNode } from 'react';
 import type { UUID } from '@/entities/common/uuid';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, Trash2, GripVertical } from 'lucide-react';
+
+import type { SectionHeaderStyles } from '@/templates/components/v2/types';
 
 const HOVER_DELAY_MS = 200;
 
@@ -15,6 +18,7 @@ export interface SectionHeaderProps {
   readonly title: string;
   readonly icon?: ReactNode;
   readonly themeColor: string;
+  readonly styles?: SectionHeaderStyles;
   readonly onTitleChange?: (newTitle: string) => void;
   readonly onAdd?: () => void;
   readonly onDelete?: () => void;
@@ -24,18 +28,20 @@ export interface SectionHeaderProps {
 }
 
 export default function SectionHeader(props: SectionHeaderProps): ReactElement {
-  const { title, icon, themeColor, onTitleChange, onAdd, onDelete, dragHandleAttributes, dragHandleListeners, dragHandleRef } = props;
+  const { title, icon, themeColor, styles, onTitleChange, onAdd, onDelete, dragHandleAttributes, dragHandleListeners, dragHandleRef } = props;
   const [isHovered, setIsHovered] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(title);
   const inputRef = useRef<HTMLInputElement>(null);
   const hideTimerRef = useRef<NodeJS.Timeout | number | null>(null);
+
   useEffect(() => {
     if (isEditing && inputRef.current) {
       inputRef.current.focus();
       inputRef.current.select();
     }
   }, [isEditing]);
+
   const commitEdit = useCallback((): void => {
     const trimmed: string = editValue.trim();
     if (trimmed && trimmed !== title && onTitleChange) {
@@ -45,6 +51,7 @@ export default function SectionHeader(props: SectionHeaderProps): ReactElement {
     }
     setIsEditing(false);
   }, [editValue, title, onTitleChange]);
+
   const cancelEdit = useCallback((): void => {
     setEditValue(title);
     setIsEditing(false);
@@ -69,20 +76,32 @@ export default function SectionHeader(props: SectionHeaderProps): ReactElement {
     }, HOVER_DELAY_MS);
   }
 
+  const iconColor = styles?.icon?.color || themeColor;
+  const titleColor = styles?.color || themeColor;
+  const renderedIcon = isValidElement(icon) ? (
+    <span style={{ color: iconColor }}>
+      {cloneElement(icon as ReactElement<{ size?: string | number; className?: string }>, {
+        size: styles?.icon?.size,
+        className: styles?.icon?.className,
+      })}
+    </span>
+  ) : icon;
+
   return (
     <div
-      className={`flex items-center gap-2 mb-3 relative py-1 rounded transition-all duration-200 ${
+      className={`flex items-center gap-2 relative py-1 rounded transition-all duration-200 ${
         isHovered ? 'bg-gray-50 border border-gray-200' : 'border border-transparent'
-      }`}
+      } ${styles?.containerClassName || 'mb-3'}`}
+      style={{ fontSize: styles?.fontSize, fontWeight: styles?.fontWeight }}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      {icon}
+      {renderedIcon}
       {isEditing && onTitleChange ? (
         <input
           ref={inputRef}
-          className="text-base font-bold flex-1 bg-transparent border-b-2 border-violet-400 outline-none px-0 py-0"
-          style={{ color: themeColor }}
+          className={`font-bold flex-1 bg-transparent border-b-2 border-violet-400 outline-none px-0 py-0 ${styles?.className || ''}`}
+          style={{ color: titleColor }}
           value={editValue}
           onChange={(e) => setEditValue(e.target.value)}
           onBlur={commitEdit}
@@ -93,8 +112,8 @@ export default function SectionHeader(props: SectionHeaderProps): ReactElement {
         />
       ) : (
         <h2
-          className={`text-base font-bold flex-1 ${onTitleChange ? 'cursor-text' : ''}`}
-          style={{ color: themeColor }}
+          className={`font-bold flex-1 ${onTitleChange ? 'cursor-text' : ''} ${styles?.className || ''}`}
+          style={{ color: titleColor }}
           onClick={onTitleChange ? () => { setEditValue(title); setIsEditing(true); } : undefined}
         >
           {title}

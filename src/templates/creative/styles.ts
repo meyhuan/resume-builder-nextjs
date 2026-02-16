@@ -57,7 +57,15 @@ export const CREATIVE_TEMPLATE_STYLES: TemplateStylesConfig = {
     fieldItem: 'flex items-center gap-2',
     icon: {
       size: 18,
-      className: 'text-gray-800',
+    },
+  },
+
+  sectionHeader: {
+    fontSize: '1.125em',
+    fontWeight: 'bold',
+    containerClassName: 'mb-4',
+    icon: {
+      size: 18,
     },
   },
   
@@ -75,7 +83,9 @@ export const CREATIVE_TEMPLATE_STYLES: TemplateStylesConfig = {
       className: 'text-sm text-gray-700 font-medium',
       fontSize: '0.9em',
     },
-    dateRange: 'text-sm font-bold text-gray-900', // 日期加粗
+    dateRange: {
+      className: 'text-sm font-bold text-gray-900',
+    },
     content: 'mt-2 text-sm text-gray-600 leading-relaxed text-justify',
   },
 }

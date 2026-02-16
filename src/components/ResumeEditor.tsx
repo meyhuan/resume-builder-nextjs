@@ -50,7 +50,7 @@ export default function ResumeEditor({ resumeId, initialData }: ResumeEditorProp
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null)
   const AUTO_SAVE_DELAY = 30000 // 30 seconds
   const [showLeaveDialog, setShowLeaveDialog] = useState(false)
-  const [activePanel, setActivePanel] = useState<PanelId | null>(null)
+  const [activePanel, setActivePanel] = useState<PanelId | null>('layout')
 
   // Initialize from DB data if provided
   useEffect(() => {

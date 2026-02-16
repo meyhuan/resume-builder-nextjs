@@ -83,12 +83,13 @@ export default function SimpleTemplate(props: SimpleTemplateProps): ReactElement
 
   return (
     <div
-      className="resume-container bg-white text-black mx-auto p-8 rounded shadow-sm"
+      className="resume-container bg-white text-black mx-auto rounded shadow-sm"
       style={{
         color: theme.textColor,
         fontFamily: theme.fontFamily,
         fontSize: `${theme.fontSize}px`,
         lineHeight: theme.lineHeight,
+        padding: '22mm 15mm',
       }}
     >
       <BaseInfoSection
@@ -118,8 +119,9 @@ export default function SimpleTemplate(props: SimpleTemplateProps): ReactElement
               <SectionHeader
                 sectionId={section.id}
                 title={section.title}
-                icon={getSectionIcon(section.title) ? <span style={{ color: theme.primaryColor }}>{getSectionIcon(section.title)}</span> : undefined}
+                icon={getSectionIcon(section.title) || undefined}
                 themeColor={theme.primaryColor}
+                styles={SIMPLE_TEMPLATE_STYLES.sectionHeader}
               />
               <div className="space-y-3">
                 {section.blocks.map((block) => (
@@ -204,8 +206,9 @@ function SectionView(props: SectionViewProps): ReactElement {
       <SectionHeader
         sectionId={sectionId}
         title={title}
-        icon={icon ? <span style={{ color: themeColor }}>{icon}</span> : undefined}
+        icon={icon || undefined}
         themeColor={themeColor}
+        styles={SIMPLE_TEMPLATE_STYLES.sectionHeader}
         onTitleChange={isCustomSection(title) ? (newTitle: string) => updateSectionTitle(sectionId, newTitle) : undefined}
         onAdd={(): void => addBlock(sectionId)}
         onDelete={handleDeleteSection}

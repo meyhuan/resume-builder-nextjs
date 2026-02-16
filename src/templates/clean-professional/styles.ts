@@ -11,6 +11,15 @@ export const CLEAN_PROFESSIONAL_STYLES: TemplateStylesConfig = {
   name: 'clean-professional',
   description: '现代简洁专业风格 - 清新配色，圆形图标',
   
+  sectionHeader: {
+    fontSize: '1.125em',
+    fontWeight: 'bold',
+    containerClassName: 'mb-4',
+    icon: {
+      size: 20,
+    },
+  },
+  
   baseInfo: {
     // 大头像配置
     avatar: {
@@ -86,7 +95,9 @@ export const CLEAN_PROFESSIONAL_STYLES: TemplateStylesConfig = {
     },
     
     // 日期范围：右对齐，蓝色
-    dateRange: 'text-sm text-blue-600 font-medium shrink-0',
+    dateRange: {
+      className: 'text-sm text-blue-600 font-medium shrink-0',
+    },
     
     // 内容区域
     content: 'mt-3 text-sm text-gray-700',

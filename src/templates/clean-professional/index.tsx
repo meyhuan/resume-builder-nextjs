@@ -151,6 +151,7 @@ export default function CleanProfessionalTemplate(props: CleanProfessionalTempla
               <SectionHeader
                 sectionId={section.id}
                 title={section.title}
+                styles={CLEAN_PROFESSIONAL_STYLES.sectionHeader}
                 icon={
                   <div
                     className="w-10 h-10 rounded-full flex items-center justify-center text-white shrink-0"
@@ -325,6 +326,7 @@ function CleanProfessionalSection(props: {
         title={title}
         icon={circularIcon}
         themeColor={themeColor}
+        styles={CLEAN_PROFESSIONAL_STYLES.sectionHeader}
         onTitleChange={isCustomSection(title) ? (newTitle: string) => updateSectionTitle(sectionId, newTitle) : undefined}
         onAdd={() => addBlock(sectionId)}
         onDelete={handleDeleteSection}

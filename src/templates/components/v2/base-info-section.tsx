@@ -8,7 +8,7 @@
  * - Edit pencil at top-right on section hover
  */
 
-import { useState, useRef, useCallback, type ReactElement, type ChangeEvent } from 'react'
+import { useState, useRef, useCallback, cloneElement, type ReactElement, type ChangeEvent } from 'react'
 import { Pencil, XCircle } from 'lucide-react'
 import { IconPhone, IconMail, IconGender, IconAge, IconLocation } from '@/components/sections/baseinfo-icons'
 import type { BaseInfo } from '@/entities/user/base-info'
@@ -96,7 +96,7 @@ export default function BaseInfoSection(props: BaseInfoSectionProps): ReactEleme
 
   return (
     <>
-      <header className="mb-5 flex items-start gap-5 relative group cursor-pointer print:cursor-default">
+      <header className={styles.container || "mb-5 flex items-start gap-5 relative group cursor-pointer print:cursor-default"}>
         {/* Edit pencil - top right on hover */}
         {slots?.editButton ? (
           slots.editButton(() => setShowModal(true))
@@ -112,7 +112,7 @@ export default function BaseInfoSection(props: BaseInfoSectionProps): ReactEleme
 
         {/* Avatar with hover overlay */}
         <div
-          className="relative w-20 h-24 rounded-lg overflow-hidden shrink-0 bg-gray-100 border border-gray-200"
+          className={`relative ${styles.avatar?.containerClassName || 'w-20 h-24 rounded-lg bg-gray-100'} overflow-hidden shrink-0 border border-gray-200`}
           onMouseEnter={() => setAvatarHovered(true)}
           onMouseLeave={() => setAvatarHovered(false)}
         >
@@ -151,19 +151,19 @@ export default function BaseInfoSection(props: BaseInfoSectionProps): ReactEleme
         {/* Right content */}
         <div className="flex-1 min-w-0" onClick={() => setShowModal(true)}>
           {/* Name + intention row */}
-          <div className="flex items-baseline gap-4 mb-2">
+          <div className={styles.nameRow?.className || "flex items-baseline gap-4 mb-2"}>
             {slots?.name ? (
               slots.name(name, themeColor)
             ) : (
               <h1
-                className="font-bold leading-tight"
-                style={{ color: themeColor, fontSize: '1.6em' }}
+                className={styles.name?.className || "font-bold leading-tight"}
+                style={{ color: styles.name?.color || themeColor, fontSize: styles.name?.fontSize || '1.6em', fontWeight: styles.name?.fontWeight }}
               >
                 {name}
               </h1>
             )}
             {baseInfo?.title && (
-              <span className="text-gray-500" style={{ fontSize: '0.9em' }}>
+              <span className={styles.title?.className || "text-gray-500"} style={{ fontSize: styles.title?.fontSize || '0.9em' }}>
                 意向岗位: {baseInfo.title}
               </span>
             )}
@@ -173,12 +173,13 @@ export default function BaseInfoSection(props: BaseInfoSectionProps): ReactEleme
           {slots?.fields ? (
             slots.fields(baseInfo, themeColor)
           ) : (
-            <div className="flex flex-wrap gap-x-4 gap-y-1">
+            <div className={styles.infoLayout?.className || "flex flex-wrap gap-x-4 gap-y-1"}>
               {fields.map((f) => (
                 <InfoField
                   key={f.key}
                   field={f}
                   isHovered={hoveredField === f.key}
+                  styles={styles}
                   onMouseEnter={() => setHoveredField(f.key)}
                   onMouseLeave={() => setHoveredField(null)}
                   onDelete={() => handleDeleteField(f.key)}
@@ -220,20 +221,26 @@ function AvatarPlaceholder(): ReactElement {
 function InfoField(props: {
   readonly field: FieldDef
   readonly isHovered: boolean
+  readonly styles?: BaseInfoSectionStyles
   readonly onMouseEnter: () => void
   readonly onMouseLeave: () => void
   readonly onDelete: () => void
 }): ReactElement {
-  const { field, isHovered, onMouseEnter, onMouseLeave, onDelete } = props
+  const { field, isHovered, styles, onMouseEnter, onMouseLeave, onDelete } = props
   return (
     <div
-      className={`flex items-center gap-1.5 text-gray-700 rounded px-1.5 py-0.5 transition-all ${
+      className={`${styles?.fieldItem || 'flex items-center gap-1.5 text-gray-700 rounded px-1.5 py-0.5 transition-all'} ${
         isHovered ? 'border border-gray-300 bg-gray-50' : 'border border-transparent'
       }`}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >
-      <span className="text-gray-400 shrink-0">{field.icon}</span>
+      <span className="text-gray-400 shrink-0">
+        {cloneElement(field.icon as ReactElement<{ size?: string | number; className?: string }>, {
+          size: styles?.fieldIcon?.size,
+          className: styles?.fieldIcon?.className
+        })}
+      </span>
       <span className="text-gray-500">{field.label}：</span>
       <span>{field.value}</span>
       {isHovered && (

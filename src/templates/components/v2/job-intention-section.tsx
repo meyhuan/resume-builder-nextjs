@@ -90,10 +90,16 @@ export default function JobIntentionSection(props: JobIntentionSectionProps): Re
         onClick={() => setShowModal(true)}
       >
         {/* 标题区域 */}
-        <div className={headerClassName}>
+        <div 
+          className={headerClassName}
+          style={{ fontSize: styles.title?.fontSize, fontWeight: styles.title?.fontWeight }}
+        >
           {/* 图标 */}
-          <span style={{ color: themeColor }}>
-            <IconTarget />
+          <span style={{ color: styles.icon?.color || themeColor }}>
+            <IconTarget 
+              size={styles.icon?.size} 
+              className={styles.icon?.className} 
+            />
           </span>
           
           {/* 标题 */}
@@ -101,12 +107,8 @@ export default function JobIntentionSection(props: JobIntentionSectionProps): Re
             slots.header('求职意向', themeColor)
           ) : (
             <h2 
-              className={styles.title?.className || 'text-base font-bold'}
-              style={{ 
-                color: themeColor,
-                fontSize: styles.title?.fontSize || '1em',
-                fontWeight: styles.title?.fontWeight
-              }}
+              className={styles.title?.className || 'font-bold'}
+              style={{ color: styles.title?.color || themeColor }}
             >
               求职意向
             </h2>
@@ -158,7 +160,7 @@ export default function JobIntentionSection(props: JobIntentionSectionProps): Re
  * 获取字段布局类名
  */
 function getFieldsLayoutClassName(layout?: JobIntentionSectionStyles['fieldsLayout']): string {
-  if (!layout) return 'grid grid-cols-2 gap-y-2 gap-x-6 text-sm'
+  if (!layout) return 'grid grid-cols-2 gap-y-2 gap-x-6 text-[0.875em]'
   
   if (layout.className) return layout.className
   
@@ -170,7 +172,7 @@ function getFieldsLayoutClassName(layout?: JobIntentionSectionStyles['fieldsLayo
     case 'grid':
       return `grid grid-cols-${layout.columns || 2} gap-${layout.gap || '4'}`
     default:
-      return layout.className || 'grid grid-cols-2 gap-y-2 gap-x-6 text-sm'
+      return layout.className || 'grid grid-cols-2 gap-y-2 gap-x-6 text-[0.875em]'
   }
 }
 
@@ -190,6 +192,7 @@ function renderJobFields(
   const fieldClassName = styles.fieldItem || 'flex items-center gap-1.5 text-gray-700 relative group/field hover:bg-gray-50 rounded px-1 py-0.5 transition-colors'
   const labelClassName = styles.fieldLabel || 'text-gray-600'
   const valueClassName = styles.fieldValue || 'text-gray-900'
+  const fieldFontSize = styles.fieldsLayout?.className?.match(/text-\[([^\]]+)\]/)?.[1] || (styles.fieldsLayout?.className?.includes('text-sm') ? '0.875em' : undefined)
 
   const fieldDefinitions: Array<{
     key: string
@@ -210,7 +213,7 @@ function renderJobFields(
     fields.push(
       <div
         key={field.key}
-        className={fieldClassName}
+        className={`${fieldClassName} relative`}
         onMouseEnter={() => setHoveredField(field.key)}
         onMouseLeave={() => setHoveredField(null)}
       >
@@ -218,21 +221,21 @@ function renderJobFields(
         {slots?.field ? (
           slots.field(field.label, field.value, themeColor)
         ) : (
-          <>
+          <div style={{ fontSize: fieldFontSize }}>
             <span className={labelClassName}>{field.label}: </span>
             <span 
               className={valueClassName}
             >
               {field.value}
             </span>
-          </>
+          </div>
         )}
         
-        {/* 删除按钮 */}
+        {/* 删除按钮 - absolute positioned to prevent layout shift */}
         {hoveredField === field.key && (
           <button
             type="button"
-            className="ml-2 print:hidden text-red-500 hover:text-red-700"
+            className="absolute right-1 top-1/2 -translate-y-1/2 print:hidden text-red-500 hover:text-red-700 opacity-100 transition-opacity"
             onClick={(e) => {
               e.stopPropagation()
               handleDeleteField(field.key)

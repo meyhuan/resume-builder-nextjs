@@ -1,106 +1,106 @@
 import type { ReactElement } from 'react';
 
 /** Icon size relative to the parent font-size so it scales with the theme's fontSize setting. */
-const ICON_SIZE = '1.6em';
+const ICON_SIZE = '1.25em';
 
 /**
  * Section icons for resume sections — custom WPS SVG icons using currentColor.
  */
 
 /** 工作经验 / Experience */
-export function IconBriefcase({ size = ICON_SIZE }: { readonly size?: string | number }): ReactElement {
+export function IconBriefcase({ size = ICON_SIZE, className }: { readonly size?: string | number; readonly className?: string }): ReactElement {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" width={size} height={size}>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" width={size} height={size} className={className}>
       <path fill="currentColor" d="M14.11 8.6h4.78c.147 0 .266.12.266.267V10.2h-5.312V8.867c0-.147.12-.267.265-.267zm-1.86.267V10.2h-2.125A2.131 2.131 0 0 0 8 12.333v3.2h17v-3.2a2.131 2.131 0 0 0-2.125-2.133H20.75V8.867c0-1.03-.833-1.867-1.86-1.867h-4.78c-1.027 0-1.86.837-1.86 1.867zM25 16.6h-6.375v1.067c0 .59-.475 1.066-1.063 1.066h-2.125a1.063 1.063 0 0 1-1.062-1.066V16.6H8v4.267C8 22.043 8.953 23 10.125 23h12.75A2.131 2.131 0 0 0 25 20.867V16.6z" />
     </svg>
   );
 }
 
 /** 教育背景 / Education */
-export function IconGraduationCap({ size = ICON_SIZE }: { readonly size?: string | number }): ReactElement {
+export function IconGraduationCap({ size = ICON_SIZE, className }: { readonly size?: string | number; readonly className?: string }): ReactElement {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" width={size} height={size}>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" width={size} height={size} className={className}>
       <path fill="currentColor" d="M17.5 8a2.28 2.28 0 0 0-.777.137l-9.204 3.391a.806.806 0 0 0-.518.757c0 .338.206.64.518.756l1.9.7a5.592 5.592 0 0 0-.844 2.96v.94c0 .95-.354 1.932-.731 2.705a8.913 8.913 0 0 1-.739 1.259.548.548 0 0 0-.075.502c.06.17.197.297.368.341l2.1.536a.525.525 0 0 0 .64-.415 8.8 8.8 0 0 0-.07-3.64 7.509 7.509 0 0 0-.443-1.405V16.7c0-1.01.335-1.965.916-2.728a4.011 4.011 0 0 1 1.614-1.195l5.152-2.066a.521.521 0 0 1 .679.302.538.538 0 0 1-.295.693l-5.152 2.065a3.009 3.009 0 0 0-1.056.723l5.236 1.928a2.282 2.282 0 0 0 1.556 0l9.207-3.38a.802.802 0 0 0 .518-.757.806.806 0 0 0-.518-.757l-9.204-3.39A2.28 2.28 0 0 0 17.5 8zm-6.3 12.587c0 1.181 2.822 2.41 6.3 2.41 3.478 0 6.3-1.229 6.3-2.41l-.502-4.867-4.666 1.72a3.283 3.283 0 0 1-2.264 0l-4.666-1.72-.502 4.867z" />
     </svg>
   );
 }
 
 /** 项目经验 / Project */
-export function IconCode({ size = ICON_SIZE }: { readonly size?: string | number }): ReactElement {
+export function IconCode({ size = ICON_SIZE, className }: { readonly size?: string | number; readonly className?: string }): ReactElement {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" width={size} height={size}>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" width={size} height={size} className={className}>
       <path fill="currentColor" d="M10.926 13.422L8 18.512v-9.37C8 7.962 8.947 7 10.111 7h3.876c.561 0 1.099.224 1.495.626l.874.887c.396.402.933.627 1.494.627h3.873c1.165 0 2.111.96 2.111 2.142v1.072H12.75c-.752 0-1.445.405-1.824 1.065v.003zm.91.539c.192-.332.538-.532.914-.532h13.196c.379 0 .725.204.913.539.188.335.188.743-.003 1.074l-3.695 6.429a1.048 1.048 0 0 1-.91.529H9.056c-.38 0-.726-.204-.914-.54a1.086 1.086 0 0 1 .003-1.074l3.695-6.428-.004.003z" />
     </svg>
   );
 }
 
 /** 技能 / Skill (puzzle piece) */
-export function IconAward({ size = ICON_SIZE }: { readonly size?: string | number }): ReactElement {
+export function IconAward({ size = ICON_SIZE, className }: { readonly size?: string | number; readonly className?: string }): ReactElement {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" width={size} height={size}>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" width={size} height={size} className={className}>
       <path fill="currentColor" d="M14.75 9.684c0-.323-.204-.608-.464-.801-.408-.306-.661-.728-.661-1.195 0-.932 1.009-1.688 2.25-1.688s2.25.756 2.25 1.688c0 .467-.253.889-.66 1.195-.261.193-.465.478-.465.801 0 .45.366.816.816.816h1.997c.931 0 1.687.756 1.687 1.688v1.996c0 .45.366.816.816.816.323 0 .608-.204.801-.464.306-.408.728-.661 1.195-.661.932 0 1.688 1.009 1.688 2.25s-.756 2.25-1.688 2.25c-.467 0-.889-.253-1.195-.66-.193-.261-.478-.465-.801-.465a.816.816 0 0 0-.816.816v4.247c0 .931-.756 1.687-1.688 1.687h-1.996a.816.816 0 0 1-.816-.816c0-.323.204-.608.464-.801.408-.306.661-.728.661-1.195 0-.932-1.009-1.688-2.25-1.688s-2.25.756-2.25 1.688c0 .467.253.889.66 1.195.261.193.465.478.465.801 0 .45-.366.816-.816.816H9.688A1.688 1.688 0 0 1 8 22.312v-4.246c0-.45.366-.816.816-.816.323 0 .608.204.801.464.306.408.728.661 1.195.661.932 0 1.688-1.009 1.688-2.25s-.756-2.25-1.688-2.25c-.467 0-.889.253-1.195.66-.193.261-.478.465-.801.465A.816.816 0 0 1 8 14.184v-1.996c0-.932.756-1.688 1.688-1.688h4.246c.45 0 .816-.366.816-.816z" />
     </svg>
   );
 }
 
 /** 自我评价 / Self evaluation */
-export function IconUser({ size = ICON_SIZE }: { readonly size?: string | number }): ReactElement {
+export function IconUser({ size = ICON_SIZE, className }: { readonly size?: string | number; readonly className?: string }): ReactElement {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" width={size} height={size}>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" width={size} height={size} className={className}>
       <path fill="currentColor" fillRule="evenodd" d="M8.8 8A1.8 1.8 0 0 0 7 9.8v6.106a1.8 1.8 0 0 0 1.8 1.8h2.644v4.26a1.034 1.034 0 0 0 2.015.33l1.354-4.032c.124-.37.187-.757.187-1.146V9.8A1.8 1.8 0 0 0 13.2 8H8.8zm10 0A1.8 1.8 0 0 0 17 9.8v6.106a1.8 1.8 0 0 0 1.8 1.8h2.644v4.26a1.034 1.034 0 0 0 2.015.33l1.354-4.032c.124-.37.187-.757.187-1.146V9.8A1.8 1.8 0 0 0 23.2 8h-4.4z" clipRule="evenodd" />
     </svg>
   );
 }
 
 /** 求职意向 / Job intention */
-export function IconTarget({ size = ICON_SIZE }: { readonly size?: string | number }): ReactElement {
+export function IconTarget({ size = ICON_SIZE, className }: { readonly size?: string | number; readonly className?: string }): ReactElement {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" width={size} height={size}>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" width={size} height={size} className={className}>
       <path fill="currentColor" d="M16.316 16.011c.003.252.105.422.308.506l.093.03-1.087 5.02 1.393 1.155 1.714-1.155-1.377-5.013c.335-.06.433-.22.448-.468l.003-.071c4.038.16 7.189 1.569 7.189 5.69 0 4.393-16 4.393-16 0 0-4.153 3.202-5.552 7.285-5.693h.03zM17 7c.556 0 1.107.105 1.62.308.515.204.982.502 1.375.878s.705.823.918 1.314a3.897 3.897 0 0 1 0 3.1 4.042 4.042 0 0 1-.918 1.314c-.393.376-.86.674-1.374.877A4.405 4.405 0 0 1 17 15.1c-1.123 0-2.2-.427-2.995-1.186a3.962 3.962 0 0 1-1.24-2.864c0-1.074.446-2.104 1.24-2.864A4.336 4.336 0 0 1 17 7z" />
     </svg>
   );
 }
 
 /** 资质证书 / Qualifications */
-export function IconStar({ size = ICON_SIZE }: { readonly size?: string | number }): ReactElement {
+export function IconStar({ size = ICON_SIZE, className }: { readonly size?: string | number; readonly className?: string }): ReactElement {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" width={size} height={size}>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" width={size} height={size} className={className}>
       <path fill="currentColor" d="M15.238 5.226c.458-.3 1.058-.3 1.516 0l.741.48c.25.16.542.238.837.221l.887-.053a1.38 1.38 0 0 1 1.313.746l.4.784c.133.262.35.471.612.603l.804.397c.491.242.791.75.758 1.292l-.054.874c-.017.291.062.582.224.824l.492.73a1.335 1.335 0 0 1 0 1.493l-.492.734a1.353 1.353 0 0 0-.224.825l.054.873a1.351 1.351 0 0 1-.758 1.292l-.796.394a1.372 1.372 0 0 0-.612.603l-.404.791a1.38 1.38 0 0 1-1.312.747l-.887-.054a1.399 1.399 0 0 0-.838.222l-.741.484c-.458.3-1.058.3-1.516 0l-.746-.484a1.407 1.407 0 0 0-.837-.222l-.887.054a1.38 1.38 0 0 1-1.312-.747l-.4-.783a1.371 1.371 0 0 0-.613-.603l-.803-.398a1.351 1.351 0 0 1-.759-1.292l.055-.873a1.345 1.345 0 0 0-.225-.825l-.488-.734a1.335 1.335 0 0 1 0-1.493l.488-.73c.162-.246.241-.533.225-.824L8.885 9.7a1.351 1.351 0 0 1 .759-1.292l.795-.393c.267-.136.483-.349.617-.611l.4-.784a1.38 1.38 0 0 1 1.312-.746l.887.053c.296.017.591-.061.837-.221l.745-.48zm4.09 7.649c0-1.813-1.491-3.281-3.332-3.281-1.841 0-3.333 1.468-3.333 3.28 0 1.814 1.492 3.282 3.333 3.282 1.84 0 3.332-1.468 3.332-3.281zM8.052 23.12l1.796-4.204a.032.032 0 0 1 .016.016l.4.784c.488.951 1.5 1.53 2.583 1.468l.887-.053c.008 0 .02 0 .029.008l.741.484c.213.135.438.242.671.316L13.609 25.6a.658.658 0 0 1-.554.398.665.665 0 0 1-.617-.295l-1.34-2.022-2.338.34a.685.685 0 0 1-.624-.246.645.645 0 0 1-.088-.656h.004zm10.33 2.477l-1.566-3.658c.233-.074.458-.177.67-.316l.742-.484a.061.061 0 0 1 .03-.008l.887.053a2.724 2.724 0 0 0 2.582-1.468l.4-.784a.032.032 0 0 1 .017-.016l1.799 4.204a.656.656 0 0 1-.712.902l-2.337-.34-1.341 2.018a.665.665 0 0 1-.617.295.665.665 0 0 1-.554-.398z" />
     </svg>
   );
 }
 
 /** 校园经历 / School activities */
-export function IconBook({ size = ICON_SIZE }: { readonly size?: string | number }): ReactElement {
+export function IconBook({ size = ICON_SIZE, className }: { readonly size?: string | number; readonly className?: string }): ReactElement {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" width={size} height={size}>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" width={size} height={size} className={className}>
       <path fill="currentColor" fillRule="evenodd" d="M10.5 6A2.5 2.5 0 0 0 8 8.5v14a2.5 2.5 0 0 0 2.5 2.5h3v-4.5a2.5 2.5 0 0 1 5 0V25h3a2.5 2.5 0 0 0 2.5-2.5v-14A2.5 2.5 0 0 0 21.5 6h-11zm.6 2.5a.6.6 0 0 0-.6.6v1.5a.6.6 0 0 0 .6.6h1.6a.6.6 0 0 0 .6-.6V9.1a.6.6 0 0 0-.6-.6h-1.6zm4.102 0a.6.6 0 0 0-.6.6v1.5a.6.6 0 0 0 .6.6h1.6a.6.6 0 0 0 .6-.6V9.1a.6.6 0 0 0-.6-.6h-1.6zm3.497.6a.6.6 0 0 1 .6-.6h1.6a.6.6 0 0 1 .6.6v1.5a.6.6 0 0 1-.6.6h-1.6a.6.6 0 0 1-.6-.6V9.1zM11.1 12.5a.6.6 0 0 0-.6.6v1.5a.6.6 0 0 0 .6.6h1.6a.6.6 0 0 0 .6-.6v-1.5a.6.6 0 0 0-.6-.6h-1.6zm3.502.6a.6.6 0 0 1 .6-.6h1.6a.6.6 0 0 1 .6.6v1.5a.6.6 0 0 1-.6.6h-1.6a.6.6 0 0 1-.6-.6v-1.5zm4.697-.6a.6.6 0 0 0-.6.6v1.5a.6.6 0 0 0 .6.6h1.6a.6.6 0 0 0 .6-.6v-1.5a.6.6 0 0 0-.6-.6h-1.6z" clipRule="evenodd" />
     </svg>
   );
 }
 
 /** 实习经历 / Internship */
-export function IconIntern({ size = ICON_SIZE }: { readonly size?: string | number }): ReactElement {
+export function IconIntern({ size = ICON_SIZE, className }: { readonly size?: string | number; readonly className?: string }): ReactElement {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" width={size} height={size}>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" width={size} height={size} className={className}>
       <path fill="currentColor" d="M19.375 9.375c0 .503-.109.98-.31 1.413l1.857 3.207a6.726 6.726 0 0 1-3.111 1.884L16 12.75l-2.392 4.131c.756.24 1.558.37 2.395.37a7.858 7.858 0 0 0 6.149-2.954 1.127 1.127 0 0 1 1.582-.176c.485.387.562 1.097.175 1.582A10.126 10.126 0 0 1 16 19.5c-1.244 0-2.44-.225-3.54-.636l-1.99 3.438a1.696 1.696 0 0 1-.707.665l-1.947.974A.564.564 0 0 1 7 23.438V21.49c0-.295.077-.587.229-.847l2.109-3.646c-.45-.394-.868-.826-1.241-1.294a1.124 1.124 0 1 1 1.758-1.406c.2.25.415.485.64.707l2.44-4.216a3.376 3.376 0 1 1 6.44-1.413zm.738 10.473a11.312 11.312 0 0 0 3.126-1.86l1.536 2.655a1.7 1.7 0 0 1 .229.847v1.948a.565.565 0 0 1-.816.503l-1.947-.974a1.694 1.694 0 0 1-.707-.665l-1.42-2.454zM16 10.5a1.124 1.124 0 1 0 0-2.25 1.124 1.124 0 1 0 0 2.25z" />
     </svg>
   );
 }
 
 /** 其他 / Other */
-export function IconOther({ size = ICON_SIZE }: { readonly size?: string | number }): ReactElement {
+export function IconOther({ size = ICON_SIZE, className }: { readonly size?: string | number; readonly className?: string }): ReactElement {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" width={size} height={size}>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" width={size} height={size} className={className}>
       <path fill="currentColor" d="M23.52 7.66l.823.824c.88.88.88 2.305 0 3.185l-1.985 1.985-4.012-4.009L20.33 7.66c.88-.88 2.305-.88 3.185 0h.004zM8.582 19.413l8.968-8.972 4.013 4.012-8.972 8.969a1.976 1.976 0 0 1-.852.5l-3.66 1.045a.844.844 0 0 1-1.046-1.045l1.045-3.66c.092-.325.264-.617.5-.853l.004.004zm7.198-8.793l-5.14 5.14-3.076-3.08a1.693 1.693 0 0 1 0-2.39l2.75-2.746a1.693 1.693 0 0 1 2.39 0l.696.697-.035.031-2.253 2.253a.565.565 0 0 0 0 .796.565.565 0 0 0 .796 0l2.253-2.253c.01-.01.02-.025.031-.035l1.588 1.587zm5.603 5.604l1.588 1.587c-.01.01-.025.021-.035.032l-2.253 2.253a.565.565 0 0 0 0 .795.565.565 0 0 0 .795 0l2.253-2.253.032-.035.697.7a1.693 1.693 0 0 1 0 2.39l-2.75 2.746a1.693 1.693 0 0 1-2.39 0l-3.076-3.076 5.14-5.14z" />
     </svg>
   );
 }
 
 /** 基本信息 / Base info (head/card) */
-export function IconHead({ size = ICON_SIZE }: { readonly size?: string | number }): ReactElement {
+export function IconHead({ size = ICON_SIZE, className }: { readonly size?: string | number; readonly className?: string }): ReactElement {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" width={size} height={size}>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" width={size} height={size} className={className}>
       <path fill="currentColor" d="M8.222 8C6.997 8 6 8.96 6 10.143v11.714C6 23.04 6.997 24 8.222 24h15.556C25.004 24 26 23.04 26 21.857V10.143C26 8.96 25.003 8 23.778 8H8.222zM11 17.071h2.222c1.535 0 2.778 1.2 2.778 2.679 0 .295-.25.536-.556.536H8.778a.548.548 0 0 1-.556-.536c0-1.48 1.243-2.679 2.778-2.679zm3.333-3.214c0 1.182-.996 2.143-2.222 2.143s-2.222-.96-2.222-2.143c0-1.182.996-2.143 2.222-2.143s2.222.961 2.222 2.143zm4.245-1.071h4.444c.306 0 .556.24.556.535 0 .295-.25.536-.556.536h-4.444a.547.547 0 0 1-.556-.536c0-.294.25-.535.556-.535zm0 2.643h4.444c.306 0 .556.24.556.535 0 .295-.25.536-.556.536h-4.444a.548.548 0 0 1-.556-.536c0-.294.25-.535.556-.535zm0 2.642h4.444c.306 0 .556.241.556.536 0 .295-.25.536-.556.536h-4.444a.548.548 0 0 1-.556-.536c0-.294.25-.536.556-.536z" />
     </svg>
   );

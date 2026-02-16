@@ -33,6 +33,7 @@ export interface TextFieldStyles {
   readonly containerClassName?: string
   readonly fontSize?: string
   readonly fontWeight?: string
+  readonly color?: string
 }
 
 /**
@@ -55,12 +56,13 @@ export interface BaseInfoSectionStyles {
   readonly container?: string
   readonly header?: string
   readonly avatar?: AvatarStyles
+  readonly nameRow?: { className?: string }
   readonly name?: TextFieldStyles
   readonly title?: TextFieldStyles
   readonly infoLayout?: LayoutStyles
   readonly fieldItem?: string
   readonly fieldIcon?: {
-    size?: number
+    size?: string | number
     className?: string
   }
   readonly editButton?: string
@@ -80,8 +82,9 @@ export interface JobIntentionSectionStyles {
   readonly fieldValue?: string
   readonly editButton?: string
   readonly icon?: {
-    size?: number
+    size?: string | number
     className?: string
+    color?: string
   }
 }
 
@@ -93,7 +96,7 @@ export interface BlockRendererStyles {
   readonly header?: string
   readonly title?: TextFieldStyles
   readonly subtitle?: TextFieldStyles
-  readonly dateRange?: string
+  readonly dateRange?: TextFieldStyles
   readonly content?: string
   readonly layout?: 'default' | 'card' | 'timeline' | 'minimal' | string
   readonly spacing?: string
@@ -149,6 +152,14 @@ export interface BlockSlots {
   readonly footer?: (block: ResumeBlock) => ReactElement
 }
 
+export interface SectionHeaderStyles extends TextFieldStyles {
+  readonly icon?: {
+    readonly size?: string | number
+    readonly className?: string
+    readonly color?: string
+  }
+}
+
 /**
  * 完整的样式配置包
  */
@@ -157,5 +168,6 @@ export interface TemplateStylesConfig {
   readonly description?: string
   readonly baseInfo?: BaseInfoSectionStyles
   readonly jobIntention?: JobIntentionSectionStyles
+  readonly sectionHeader?: SectionHeaderStyles
   readonly blockRenderer?: BlockRendererStyles
 }

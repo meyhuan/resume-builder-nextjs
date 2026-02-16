@@ -130,8 +130,9 @@ export default function ProfessionalTemplate(props: ProfessionalTemplateProps): 
                   <SectionHeader
                     sectionId={section.id}
                     title={section.title}
-                    icon={getSectionIcon(section.title) ? <span style={{ color: theme.primaryColor }}>{getSectionIcon(section.title)}</span> : undefined}
+                    icon={getSectionIcon(section.title)}
                     themeColor={theme.primaryColor}
+                    styles={PROFESSIONAL_TEMPLATE_STYLES.sectionHeader}
                   />
                 </div>
                 <div className="space-y-3">
@@ -219,8 +220,9 @@ function SectionView(props: SectionViewProps): ReactElement {
         <SectionHeader
           sectionId={sectionId}
           title={title}
-          icon={icon ? <span style={{ color: themeColor }}>{icon}</span> : undefined}
+          icon={icon}
           themeColor={themeColor}
+          styles={PROFESSIONAL_TEMPLATE_STYLES.sectionHeader}
           onTitleChange={isCustomSection(title) ? (newTitle: string) => updateSectionTitle(sectionId, newTitle) : undefined}
           onAdd={() => addBlock(sectionId)}
           onDelete={handleDeleteSection}

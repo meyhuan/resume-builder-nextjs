@@ -56,9 +56,17 @@ export const PROFESSIONAL_TEMPLATE_STYLES: TemplateStylesConfig = {
     fieldValue: 'text-gray-900',
     icon: {
       size: 18,
-      className: '',
     },
     editButton: 'absolute right-0 opacity-0 group-hover:opacity-100 transition-opacity print:hidden text-gray-400 hover:text-gray-600',
+  },
+
+  sectionHeader: {
+    fontSize: '1.125em',
+    fontWeight: 'bold',
+    containerClassName: 'mb-3',
+    icon: {
+      size: 18,
+    },
   },
   
   blockRenderer: {
@@ -78,7 +86,9 @@ export const PROFESSIONAL_TEMPLATE_STYLES: TemplateStylesConfig = {
       className: 'text-sm text-gray-600 mt-0.5',
       fontSize: '0.875em',
     },
-    dateRange: 'text-xs text-gray-500 text-right ml-4 shrink-0',
+    dateRange: {
+      className: 'text-xs text-gray-500 text-right ml-4 shrink-0',
+    },
     content: 'mt-2',
   },
 }

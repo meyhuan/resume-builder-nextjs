@@ -256,8 +256,9 @@ export default function CreativeTemplate(props: CreativeTemplateProps): ReactEle
               <SectionHeader
                 sectionId={section.id}
                 title={section.title}
-                icon={getSectionIcon(section.title) ? <span style={{ color: theme.primaryColor }}>{getSectionIcon(section.title)}</span> : undefined}
+                icon={getSectionIcon(section.title)}
                 themeColor={theme.primaryColor}
+                styles={CREATIVE_TEMPLATE_STYLES.sectionHeader}
               />
               <div className="space-y-3">
                 {section.blocks.map((block) => (
@@ -342,8 +343,9 @@ function SectionView(props: SectionViewProps): ReactElement {
       <SectionHeader
         sectionId={sectionId}
         title={title}
-        icon={icon ? <span style={{ color: themeColor }}>{icon}</span> : undefined}
+        icon={icon}
         themeColor={themeColor}
+        styles={CREATIVE_TEMPLATE_STYLES.sectionHeader}
         onTitleChange={isCustomSection(title) ? (newTitle: string) => updateSectionTitle(sectionId, newTitle) : undefined}
         onAdd={(): void => addBlock(sectionId)}
         onDelete={handleDeleteSection}

@@ -117,7 +117,10 @@ function renderCardHeader(
     return (
       <div className={styles.header || 'flex justify-between items-start mb-2'}>
         <div className="flex-1">
-          <h3 className={styles.title?.className || 'text-base font-semibold'}>
+          <h3 
+            className={styles.title?.className || 'font-semibold'}
+            style={{ fontSize: styles.title?.fontSize, fontWeight: styles.title?.fontWeight, color: styles.title?.color }}
+          >
             <EditableFieldWrapper
               blockId={block.id}
               fieldName="company"
@@ -127,7 +130,10 @@ function renderCardHeader(
               className={styles.title?.className || 'font-semibold'}
             />
           </h3>
-          <p className={styles.subtitle?.className || 'text-sm text-gray-600 mt-0.5'}>
+          <p 
+            className={styles.subtitle?.className || 'text-gray-600 mt-0.5'}
+            style={{ fontSize: styles.subtitle?.fontSize, fontWeight: styles.subtitle?.fontWeight, color: styles.subtitle?.color }}
+          >
             <EditableFieldWrapper
               blockId={block.id}
               fieldName="position"
@@ -147,7 +153,10 @@ function renderCardHeader(
             ) : null}
           </p>
         </div>
-        <div className={styles.dateRange || 'text-xs text-gray-500 ml-4 shrink-0'}>
+        <div 
+          className={styles.dateRange?.className || 'text-gray-500 ml-4 shrink-0'}
+          style={{ fontSize: styles.dateRange?.fontSize, fontWeight: styles.dateRange?.fontWeight }}
+        >
           <EditableDateField blockId={block.id} fieldName="startDate" value={block.startDate} />
           {' - '}
           <EditableDateField blockId={block.id} fieldName="endDate" value={block.endDate} />
@@ -160,7 +169,10 @@ function renderCardHeader(
     return (
       <div className={styles.header || 'flex justify-between items-start mb-2'}>
         <div className="flex-1">
-          <h3 className={styles.title?.className || 'text-base font-semibold'}>
+          <h3 
+            className={styles.title?.className || 'font-semibold'}
+            style={{ fontSize: styles.title?.fontSize, fontWeight: styles.title?.fontWeight, color: styles.title?.color }}
+          >
             <EditableFieldWrapper
               blockId={block.id}
               fieldName="name"
@@ -171,7 +183,10 @@ function renderCardHeader(
             />
           </h3>
           {block.role ? (
-            <p className={styles.subtitle?.className || 'text-sm text-gray-600 mt-0.5'}>
+            <p 
+              className={styles.subtitle?.className || 'mt-0.5'}
+              style={{ fontSize: styles.subtitle?.fontSize, fontWeight: styles.subtitle?.fontWeight, color: styles.subtitle?.color }}
+            >
               <EditableFieldWrapper
                 blockId={block.id}
                 fieldName="role"
@@ -181,7 +196,10 @@ function renderCardHeader(
             </p>
           ) : null}
         </div>
-        <div className={styles.dateRange || 'text-xs text-gray-500 ml-4 shrink-0'}>
+        <div 
+          className={styles.dateRange?.className || 'text-gray-500 ml-4 shrink-0'}
+          style={{ fontSize: styles.dateRange?.fontSize, fontWeight: styles.dateRange?.fontWeight }}
+        >
           <EditableDateField blockId={block.id} fieldName="startDate" value={block.startDate} />
           {' - '}
           <EditableDateField blockId={block.id} fieldName="endDate" value={block.endDate} />
@@ -194,7 +212,10 @@ function renderCardHeader(
     return (
       <div className={styles.header || 'flex justify-between items-start mb-2'}>
         <div className="flex-1">
-          <h3 className={styles.title?.className || 'text-base font-semibold'}>
+          <h3 
+            className={styles.title?.className || 'font-semibold'}
+            style={{ fontSize: styles.title?.fontSize, fontWeight: styles.title?.fontWeight, color: styles.title?.color }}
+          >
             <EditableFieldWrapper
               blockId={block.id}
               fieldName="school"
@@ -204,7 +225,10 @@ function renderCardHeader(
               className={styles.title?.className || 'font-semibold'}
             />
           </h3>
-          <p className={styles.subtitle?.className || 'text-sm text-gray-600 mt-0.5'}>
+          <p 
+            className={styles.subtitle?.className || 'text-gray-600 mt-0.5'}
+            style={{ fontSize: styles.subtitle?.fontSize, fontWeight: styles.subtitle?.fontWeight, color: styles.subtitle?.color }}
+          >
             <EditableFieldWrapper
               blockId={block.id}
               fieldName="major"
@@ -220,7 +244,10 @@ function renderCardHeader(
             />
           </p>
         </div>
-        <div className={styles.dateRange || 'text-xs text-gray-500 ml-4 shrink-0'}>
+        <div 
+          className={styles.dateRange?.className || 'text-gray-500 ml-4 shrink-0'}
+          style={{ fontSize: styles.dateRange?.fontSize, fontWeight: styles.dateRange?.fontWeight }}
+        >
           <EditableDateField blockId={block.id} fieldName="startDate" value={block.startDate} />
           {' - '}
           <EditableDateField blockId={block.id} fieldName="endDate" value={block.endDate} />
@@ -233,7 +260,7 @@ function renderCardHeader(
     return (
       <div className={styles.header || 'flex justify-between items-start mb-2'}>
         <div className="flex-1">
-          <h3 className={styles.title?.className || 'text-base font-semibold'}>
+          <h3 className={styles.title?.className || 'font-semibold'}>
             <EditableFieldWrapper
               blockId={block.id}
               fieldName="organization"
@@ -243,7 +270,7 @@ function renderCardHeader(
               className={styles.title?.className || 'font-semibold'}
             />
           </h3>
-          <p className={styles.subtitle?.className || 'text-sm text-gray-600 mt-0.5'}>
+          <p className={styles.subtitle?.className || 'text-gray-600 mt-0.5'}>
             <EditableFieldWrapper
               blockId={block.id}
               fieldName="position"
@@ -252,7 +279,10 @@ function renderCardHeader(
             />
           </p>
         </div>
-        <div className={styles.dateRange || 'text-xs text-gray-500 ml-4 shrink-0'}>
+        <div 
+          className={styles.dateRange?.className || 'text-gray-500 ml-4 shrink-0'}
+          style={{ fontSize: styles.dateRange?.fontSize, fontWeight: styles.dateRange?.fontWeight }}
+        >
           <EditableFieldWrapper blockId={block.id} fieldName="startDate" value={block.startDate} onUpdate={() => {}} />
           {' - '}
           <EditableFieldWrapper blockId={block.id} fieldName="endDate" value={block.endDate} onUpdate={() => {}} />
@@ -299,10 +329,11 @@ function renderBlockContent(
   onEditingChange?: (isEditing: boolean) => void
 ): ReactElement {
   const contentClassName = styles.content || 'mt-2'
+  const contentFontSize = contentClassName.match(/text-\[([^\]]+)\]/)?.[1] || (styles.content?.includes('text-') ? undefined : styles.content)
 
   if (block.type === 'text') {
     return (
-      <div className={contentClassName}>
+      <div className={contentClassName} style={{ fontSize: contentFontSize }}>
         <EditableBlockWrapper
           blockId={block.id}
           contentField="html"
@@ -315,7 +346,7 @@ function renderBlockContent(
 
   if (block.type === 'experience' || block.type === 'project' || block.type === 'campus') {
     return (
-      <div className={contentClassName}>
+      <div className={contentClassName} style={{ fontSize: contentFontSize }}>
         <EditableBlockWrapper
           blockId={block.id}
           contentField="contentHtml"
@@ -328,7 +359,7 @@ function renderBlockContent(
 
   if (block.type === 'education') {
     return block.courseHtml ? (
-      <div className={contentClassName}>
+      <div className={contentClassName} style={{ fontSize: contentFontSize }}>
         <EditableBlockWrapper
           blockId={block.id}
           contentField="courseHtml"
