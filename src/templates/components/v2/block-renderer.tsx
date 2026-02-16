@@ -54,7 +54,7 @@ export default function BlockRenderer(props: BlockRendererProps): ReactElement {
   // 根据样式配置选择布局
   // const layout = styles.layout || 'default' // Unused
   const containerClassName = styles.container || ''
-  const spacingClassName = styles.spacing || 'mb-4'
+  const spacingClassName = styles.spacing || ''
 
   // 默认渲染：根据 block 类型和布局样式
   return (

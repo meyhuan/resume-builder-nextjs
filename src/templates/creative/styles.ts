@@ -86,6 +86,6 @@ export const CREATIVE_TEMPLATE_STYLES: TemplateStylesConfig = {
     dateRange: {
       className: 'text-sm font-bold text-gray-900',
     },
-    content: 'mt-2 text-sm text-gray-600 leading-relaxed text-justify',
+    content: 'mt-2 text-sm text-gray-600 text-justify',
   },
 }

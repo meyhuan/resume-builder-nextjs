@@ -12,10 +12,10 @@ export const SIMPLE_TEMPLATE_STYLES: TemplateStylesConfig = {
   description: '简约风格 - 传统布局，清晰层次',
   
   baseInfo: {
-    container: 'mb-9 flex items-start gap-6 relative group cursor-pointer print:cursor-default',
+    container: 'py-4 flex items-start gap-6 relative group cursor-pointer print:cursor-default',
     header: 'flex-1 min-w-0',
     nameRow: {
-      className: 'flex items-baseline gap-5 mb-5',
+      className: 'flex items-baseline gap-5',
     },
     avatar: {
       size: 'w-[100px] h-[120px]',
@@ -25,7 +25,7 @@ export const SIMPLE_TEMPLATE_STYLES: TemplateStylesConfig = {
       showFallbackText: false,
     },
     name: {
-      className: 'font-bold mb-1',
+      className: 'font-bold',
       fontSize: '2em',
       fontWeight: 'bold',
       color: '#333',
@@ -38,7 +38,7 @@ export const SIMPLE_TEMPLATE_STYLES: TemplateStylesConfig = {
       type: 'grid',
       columns: 3,
       gap: '4',
-      className: 'grid grid-cols-3 gap-y-2 gap-x-10 mt-4',
+      className: 'grid grid-cols-3 gap-y-2 gap-x-10',
     },
     fieldItem: 'flex items-center gap-2 text-gray-600 relative group/field hover:bg-gray-50 rounded px-1 py-0.5 transition-colors whitespace-nowrap text-[1em]',
     fieldIcon: {
@@ -49,8 +49,8 @@ export const SIMPLE_TEMPLATE_STYLES: TemplateStylesConfig = {
   },
   
   jobIntention: {
-    container: 'mb-9 relative group cursor-pointer print:cursor-default',
-    header: 'flex items-center gap-2.5 mb-4 pb-1 relative',
+    container: 'py-4 relative group cursor-pointer print:cursor-default',
+    header: 'flex items-center gap-2.5 pb-1 relative',
     title: {
       className: 'font-bold',
       fontSize: '1.285em',
@@ -74,7 +74,7 @@ export const SIMPLE_TEMPLATE_STYLES: TemplateStylesConfig = {
   sectionHeader: {
     fontSize: '1.285em',
     fontWeight: 'bold',
-    containerClassName: 'mb-4 pb-1',
+    containerClassName: 'pb-1',
     icon: {
       size: '1.5em',
     },
@@ -83,11 +83,11 @@ export const SIMPLE_TEMPLATE_STYLES: TemplateStylesConfig = {
   blockRenderer: {
     container: 'relative',
     layout: 'default',
-    spacing: 'mb-5',
+    spacing: '',
     border: '',
     shadow: '',
     hover: '',
-    header: 'flex justify-between items-start mb-1',
+    header: 'flex justify-between items-start',
     title: {
       className: 'font-bold',
       fontSize: '1.07em',
@@ -95,7 +95,7 @@ export const SIMPLE_TEMPLATE_STYLES: TemplateStylesConfig = {
       color: '#333',
     },
     subtitle: {
-      className: 'font-bold mt-0.5',
+      className: 'font-bold',
       fontSize: '1em',
       color: '#333',
     },
@@ -104,6 +104,6 @@ export const SIMPLE_TEMPLATE_STYLES: TemplateStylesConfig = {
       fontWeight: 'bold',
       className: 'text-gray-800 ml-4 shrink-0',
     },
-    content: 'mt-2 text-[0.928em] text-gray-600 leading-[1.8] text-justify',
+    content: 'text-[0.928em] text-gray-600 text-justify',
   },
 }

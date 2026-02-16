@@ -169,8 +169,8 @@ export default function ThemePanel(props: {
             </div>
             <Slider
               id="line-height"
-              min={1.2}
-              max={2.0}
+              min={1.0}
+              max={3.0}
               step={0.1}
               value={[theme.lineHeight]}
               onValueChange={handleLineHeight}
@@ -184,8 +184,8 @@ export default function ThemePanel(props: {
             </div>
             <Slider
               id="spacing-scale"
-              min={0.1}
-              max={2.0}
+              min={0}
+              max={3.0}
               step={0.1}
               value={[theme.spacingScale]}
               onValueChange={handleSpacing}

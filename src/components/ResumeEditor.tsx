@@ -127,6 +127,18 @@ export default function ResumeEditor({ resumeId, initialData }: ResumeEditorProp
     }
   }, [resume, resumeId, hasUnsavedChanges, isSaving, handleSave])
 
+  // Keyboard shortcut: Ctrl+S to save
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault()
+        handleSave()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [handleSave])
+
   // Warn user when closing browser tab with unsaved changes
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {

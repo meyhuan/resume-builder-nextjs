@@ -31,8 +31,9 @@ function BlockRendererWrapper(props: {
   blockIndex: number; 
   totalBlocks: number; 
   themeColor: string;
+  spacingScale: number;
 }): ReactElement {
-  const { block, sectionId, blockIndex, totalBlocks, themeColor } = props
+  const { block, sectionId, blockIndex, totalBlocks, themeColor, spacingScale } = props
   const addBlock = useAppStore((s) => s.addBlockByType)
   const deleteBlock = useAppStore((s) => s.deleteBlock)
   const moveBlockUp = useAppStore((s) => s.moveBlockUp)
@@ -58,23 +59,25 @@ function BlockRendererWrapper(props: {
   if (block.type === 'campus') blockTypeLabel = '校园经历'
   
   return (
-    <BlockWrapper
-      blockType={blockTypeLabel}
-      onAdd={(): void => addBlock(sectionId)}
-      onPolish={handlePolish}
-      onDelete={(): void => deleteBlock(sectionId, block.id)}
-      onMoveUp={blockIndex > 0 ? handleMoveUp : undefined}
-      onMoveDown={blockIndex < totalBlocks - 1 ? handleMoveDown : undefined}
-      showDragHandle={false}
-      disableHover={isEditing}
-    >
-      <BlockRenderer
-        block={block}
-        themeColor={themeColor}
-        styles={SIMPLE_TEMPLATE_STYLES.blockRenderer}
-        onEditingChange={setIsEditing}
-      />
-    </BlockWrapper>
+    <div style={{ marginBottom: blockIndex < totalBlocks - 1 ? `${16 * spacingScale}px` : '0' }}>
+      <BlockWrapper
+        blockType={blockTypeLabel}
+        onAdd={(): void => addBlock(sectionId)}
+        onPolish={handlePolish}
+        onDelete={(): void => deleteBlock(sectionId, block.id)}
+        onMoveUp={blockIndex > 0 ? handleMoveUp : undefined}
+        onMoveDown={blockIndex < totalBlocks - 1 ? handleMoveDown : undefined}
+        showDragHandle={false}
+        disableHover={isEditing}
+      >
+        <BlockRenderer
+          block={block}
+          themeColor={themeColor}
+          styles={SIMPLE_TEMPLATE_STYLES.blockRenderer}
+          onEditingChange={setIsEditing}
+        />
+      </BlockWrapper>
+    </div>
   )
 }
 
@@ -92,18 +95,22 @@ export default function SimpleTemplate(props: SimpleTemplateProps): ReactElement
         padding: '22mm 15mm',
       }}
     >
-      <BaseInfoSection
-        name={resume.name}
-        baseInfo={resume.baseInfo ?? null}
-        themeColor={theme.primaryColor}
-        styles={SIMPLE_TEMPLATE_STYLES.baseInfo}
-      />
+      <div style={{ marginBottom: `${24 * theme.spacingScale}px` }}>
+        <BaseInfoSection
+          name={resume.name}
+          baseInfo={resume.baseInfo ?? null}
+          themeColor={theme.primaryColor}
+          styles={SIMPLE_TEMPLATE_STYLES.baseInfo}
+        />
+      </div>
 
-      <JobIntentionSection
-        jobIntention={resume.jobIntention ?? null}
-        themeColor={theme.primaryColor}
-        styles={SIMPLE_TEMPLATE_STYLES.jobIntention}
-      />
+      <div style={{ marginBottom: `${24 * theme.spacingScale}px` }}>
+        <JobIntentionSection
+          jobIntention={resume.jobIntention ?? null}
+          themeColor={theme.primaryColor}
+          styles={SIMPLE_TEMPLATE_STYLES.jobIntention}
+        />
+      </div>
 
       <DragDropProvider
         resume={resume}
@@ -159,6 +166,7 @@ export default function SimpleTemplate(props: SimpleTemplateProps): ReactElement
                       blockIndex={index}
                       totalBlocks={section.blocks.length}
                       themeColor={theme.primaryColor}
+                      spacingScale={theme.spacingScale}
                     />
                   ))}
                 </SectionView>
