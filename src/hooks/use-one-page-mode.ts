@@ -1,31 +1,46 @@
 /**
  * useOnePageMode — auto-adjusts theme settings so the resume fits on one A4 page.
  *
+ * The snapshot is **externalized**: the caller owns it so it can be persisted
+ * to the database alongside resume data (via EditorMeta).
+ *
  * When enabled the hook:
- *  1. Saves the current lineHeight / spacingScale / fontSize as a snapshot.
+ *  1. Captures the current lineHeight / spacingScale / fontSize into the
+ *     caller-provided snapshot setter (only if no snapshot exists yet).
  *  2. Measures the rendered content height via ResizeObserver.
  *  3. Progressively reduces spacingScale → lineHeight → fontSize until the
- *     content fits within one A4 page (297 mm minus vertical padding).
+ *     content fits within one A4 page (297 mm).
  *  4. Shows sonner toasts to inform the user about auto-adjustments or overflow.
  *
- * When disabled it restores the saved snapshot.
+ * When disabled it restores from the caller-provided snapshot.
  */
 import { useEffect, useRef, useCallback, useState } from 'react'
 import type { RefObject } from 'react'
 import { toast } from 'sonner'
 import type { ThemeTokens } from '@/entities/theme/theme-tokens'
-
-/** Subset of ThemeTokens that the hook may adjust. */
-interface AdjustableTokens {
-  readonly lineHeight: number
-  readonly spacingScale: number
-  readonly fontSize: number
-}
+import type { AdjustableTokens } from '@/entities/editor/editor-meta'
 
 export type OnePageStatus = 'idle' | 'fitting' | 'fit' | 'overflow'
 
-interface UseOnePageModeReturn {
+export interface UseOnePageModeOptions {
+  /** Ref to the resume container element (printRef). */
+  contentRef: RefObject<HTMLDivElement | null>
+  /** Current theme tokens (read-only). */
+  theme: ThemeTokens
+  /** Callback to apply a partial theme update. */
+  patchTheme: (patch: Partial<ThemeTokens>) => void
+  /** Whether one-page mode is currently on. */
+  enabled: boolean
+  /** Externalized snapshot — persisted by the caller. */
+  snapshot: AdjustableTokens | null
+  /** Setter for the externalized snapshot. */
+  setSnapshot: (s: AdjustableTokens | null) => void
+}
+
+export interface UseOnePageModeReturn {
   readonly status: OnePageStatus
+  /** Restore snapshot & disable — intended for template-switch scenarios. */
+  readonly reset: () => void
 }
 
 /** Minimum values the auto-fit algorithm will reduce to. */
@@ -39,7 +54,6 @@ const DEBOUNCE_MS = 200
 
 /**
  * Convert mm to px at the current screen resolution.
- * Creates a temporary element to let the browser do the conversion.
  */
 function mmToPx(mm: number): number {
   const el = document.createElement('div')
@@ -54,22 +68,10 @@ function mmToPx(mm: number): number {
 
 /**
  * Hook that drives the one-page mode feature.
- *
- * @param contentRef   Ref to the resume container element (the printRef).
- * @param theme        Current theme tokens (read-only).
- * @param patchTheme   Callback to apply a partial theme update.
- * @param enabled      Whether one-page mode is currently on.
  */
-export function useOnePageMode(
-  contentRef: RefObject<HTMLDivElement | null>,
-  theme: ThemeTokens,
-  patchTheme: (patch: Partial<ThemeTokens>) => void,
-  enabled: boolean,
-): UseOnePageModeReturn {
-  const [status, setStatus] = useState<OnePageStatus>('idle')
-
-  // Snapshot of the theme tokens captured when one-page mode is turned on.
-  const snapshotRef = useRef<AdjustableTokens | null>(null)
+export function useOnePageMode(opts: UseOnePageModeOptions): UseOnePageModeReturn {
+  const { contentRef, theme, patchTheme, enabled, snapshot, setSnapshot } = opts
+  const [status, setStatus] = useState<OnePageStatus>(enabled ? 'fitting' : 'idle')
 
   // Track whether we are currently running the fit algorithm to avoid re-entry.
   const fittingRef = useRef(false)
@@ -85,36 +87,54 @@ export function useOnePageMode(
 
   // ── Compute A4 target height ──────────────────────────────────────────
   useEffect(() => {
-    // A4 = 297mm. The template uses 22mm top + 22mm bottom padding.
     targetHeightRef.current = mmToPx(297)
   }, [])
 
-  // ── Save / restore snapshot on toggle ─────────────────────────────────
+  // ── Save snapshot on enable (only if no snapshot yet) ─────────────────
   useEffect(() => {
-    if (enabled) {
-      // Save current values.
-      snapshotRef.current = {
+    if (enabled && !snapshot) {
+      setSnapshot({
         lineHeight: theme.lineHeight,
         spacingScale: theme.spacingScale,
         fontSize: theme.fontSize,
-      }
+      })
+    }
+    if (enabled) {
       adjustedToastShown.current = false
       setStatus('fitting')
-    } else if (snapshotRef.current) {
-      // Restore saved values.
-      const saved = snapshotRef.current
-      snapshotRef.current = null
-      patchTheme({
-        lineHeight: saved.lineHeight,
-        spacingScale: saved.spacingScale,
-        fontSize: saved.fontSize,
-      })
-      setStatus('idle')
-      toast.info('已关闭一页模式，已恢复原始设置')
     }
-    // We intentionally only react to `enabled` changing.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enabled])
+
+  // ── Restore helper (used by toggle-off and by reset) ──────────────────
+  const restoreSnapshot = useCallback(() => {
+    if (!snapshot) return
+    patchTheme({
+      lineHeight: snapshot.lineHeight,
+      spacingScale: snapshot.spacingScale,
+      fontSize: snapshot.fontSize,
+    })
+    setSnapshot(null)
+    setStatus('idle')
+  }, [snapshot, patchTheme, setSnapshot])
+
+  // ── Handle disable ────────────────────────────────────────────────────
+  const prevEnabled = useRef(enabled)
+  useEffect(() => {
+    if (prevEnabled.current && !enabled) {
+      restoreSnapshot()
+      toast.info('已关闭一页模式，已恢复原始设置')
+    }
+    prevEnabled.current = enabled
+  }, [enabled, restoreSnapshot])
+
+  // ── Reset (for template switch) ───────────────────────────────────────
+  const reset = useCallback(() => {
+    if (snapshot) {
+      restoreSnapshot()
+    }
+    setStatus('idle')
+  }, [snapshot, restoreSnapshot])
 
   // ── Auto-fit algorithm ────────────────────────────────────────────────
   const runFit = useCallback(() => {
@@ -127,7 +147,6 @@ export function useOnePageMode(
     const contentH = el.scrollHeight
 
     if (contentH <= targetH) {
-      // Already fits.
       setStatus('fit')
       if (!adjustedToastShown.current) {
         toast.success('已开启一页模式')
@@ -170,7 +189,6 @@ export function useOnePageMode(
         adjustedToastShown.current = true
       }
     } else {
-      // All reductions exhausted.
       setStatus('overflow')
       toast.warning('内容过多，建议精简内容或减少模块以适应一页')
     }
@@ -184,7 +202,6 @@ export function useOnePageMode(
     if (!el || !enabled) return
 
     const observer = new ResizeObserver(() => {
-      // Debounce to let the DOM settle after theme changes.
       if (debounceRef.current) clearTimeout(debounceRef.current)
       debounceRef.current = setTimeout(() => {
         runFit()
@@ -193,7 +210,7 @@ export function useOnePageMode(
 
     observer.observe(el)
 
-    // Also run immediately in case the element is already rendered.
+    // Run immediately in case the element is already rendered.
     const initialTimer = setTimeout(() => runFit(), DEBOUNCE_MS)
 
     return () => {
@@ -203,5 +220,5 @@ export function useOnePageMode(
     }
   }, [contentRef, enabled, runFit])
 
-  return { status }
+  return { status, reset }
 }

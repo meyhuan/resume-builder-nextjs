@@ -169,6 +169,9 @@ export default function ThemePanel(props: {
             <span className="ml-1 text-[10px] font-bold text-red-600 bg-red-50 px-1.5 py-0.5 rounded-full">内容超出</span>
           )}
         </button>
+        {props.onePage && (
+          <p className="text-[11px] text-slate-400 text-center -mt-1">关闭后将恢复为开启前的排版设置</p>
+        )}
         <div className="space-y-5 pt-2">
           <div className="space-y-3">
             <div className={sliderLabelClass}>

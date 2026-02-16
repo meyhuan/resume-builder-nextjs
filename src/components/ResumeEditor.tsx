@@ -22,6 +22,9 @@ import { Loader2, ArrowLeft, Save, FileDown, FileText, Image as ImageIcon } from
 import { useRouter } from 'next/navigation'
 import { revalidateDashboard } from '@/app/actions'
 import { useOnePageMode } from '@/hooks/use-one-page-mode'
+import { toast } from 'sonner'
+import type { AdjustableTokens } from '@/entities/editor/editor-meta'
+import { extractEditorMeta, embedEditorMeta } from '@/entities/editor/editor-meta'
 
 interface ResumeData {
   id: string
@@ -53,20 +56,35 @@ export default function ResumeEditor({ resumeId, initialData }: ResumeEditorProp
   const [showLeaveDialog, setShowLeaveDialog] = useState(false)
   const [activePanel, setActivePanel] = useState<PanelId | null>('layout')
   const [onePageMode, setOnePageMode] = useState(false)
+  const [onePageSnapshot, setOnePageSnapshot] = useState<AdjustableTokens | null>(null)
 
   // Initialize from DB data if provided
   useEffect(() => {
     if (initialData) {
-      if (initialData.content && Object.keys(initialData.content).length > 0) {
-        setResume(() => initialData.content)
-        // Store initial snapshot for dirty checking
-        setSavedSnapshot(JSON.stringify(initialData.content))
+      if (initialData.content && typeof initialData.content === 'object' && Object.keys(initialData.content).length > 0) {
+        const raw = initialData.content as Record<string, unknown>
+        const { content: cleanContent, meta } = extractEditorMeta(raw)
+        setResume(() => cleanContent)
+        setSavedSnapshot(JSON.stringify(cleanContent))
+        // Restore per-resume theme overrides
+        const tplId = initialData.template || 'simple'
+        const savedTheme = meta.themes[tplId]
+        if (savedTheme) {
+          setThemeForTemplate(tplId, (draft) => { Object.assign(draft, savedTheme) })
+        }
+        // Restore one-page mode state
+        setOnePageMode(meta.onePageMode)
+        setOnePageSnapshot(meta.onePageSnapshot)
       }
       if (initialData.template) {
         setTpl(initialData.template)
       }
     }
-  }, [initialData, setResume])
+  }, [initialData, setResume, setThemeForTemplate])
+
+  // Subscribe to theme changes for current template
+  const themes = useAppStore((s) => s.themes)
+  const theme = themes[tpl] || getThemeForTemplate(tpl)
 
   // Check if there are unsaved changes
   const hasUnsavedChanges = useMemo(() => {
@@ -85,13 +103,23 @@ export default function ResumeEditor({ resumeId, initialData }: ResumeEditorProp
         backgroundColor: '#ffffff'
       }) as string
 
-      // 2. Save to DB
+      // 2. Build content with editor metadata
+      const editorMeta = {
+        themes: { [tpl]: theme },
+        onePageMode,
+        onePageSnapshot,
+      }
+      const contentWithMeta = embedEditorMeta(
+        resume as unknown as Record<string, unknown>,
+        editorMeta,
+      )
+      // 3. Save to DB
       const res = await fetch(`/api/resumes/${resumeId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title: resume.name || 'Untitled Resume',
-          content: resume,
+          content: contentWithMeta,
           template: tpl,
           thumbnail,
         }),
@@ -109,7 +137,7 @@ export default function ResumeEditor({ resumeId, initialData }: ResumeEditorProp
     } finally {
       setIsSaving(false)
     }
-  }, [resumeId, resume, tpl])
+  }, [resumeId, resume, tpl, theme, onePageMode, onePageSnapshot])
 
   // Auto-save: debounced save after changes
   useEffect(() => {
@@ -168,10 +196,6 @@ export default function ResumeEditor({ resumeId, initialData }: ResumeEditorProp
     setShowLeaveDialog(false)
     router.push('/dashboard')
   }, [router])
-  
-  // Subscribe to theme changes for current template
-  const themes = useAppStore((s) => s.themes)
-  const theme = themes[tpl] || getThemeForTemplate(tpl)
 
   // Stable callback to patch the current template's theme
   const patchTheme = useCallback((patch: Partial<ThemeTokens>): void => {
@@ -181,7 +205,14 @@ export default function ResumeEditor({ resumeId, initialData }: ResumeEditorProp
   }, [tpl, setThemeForTemplate])
 
   // One-page mode hook
-  const { status: onePageStatus } = useOnePageMode(printRef, theme, patchTheme, onePageMode)
+  const { status: onePageStatus, reset: resetOnePage } = useOnePageMode({
+    contentRef: printRef,
+    theme,
+    patchTheme,
+    enabled: onePageMode,
+    snapshot: onePageSnapshot,
+    setSnapshot: setOnePageSnapshot,
+  })
 
   function handleExportHtml(): void {
     if (!printRef.current) return
@@ -238,48 +269,15 @@ export default function ResumeEditor({ resumeId, initialData }: ResumeEditorProp
     }
   }
 
-  // Restore themes from localStorage on mount
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem('rb.themes')
-      if (raw) {
-        const saved: Record<string, ThemeTokens> = JSON.parse(raw)
-        Object.entries(saved).forEach(([templateId, themeData]) => {
-          setThemeForTemplate(templateId, (draft) => {
-            Object.assign(draft, themeData)
-          })
-        })
-      }
-    } catch {
-      /* ignore storage errors */
+  // Template switch guard: disable one-page mode before switching
+  const handleTplChange = useCallback((next: string): void => {
+    if (onePageMode) {
+      resetOnePage()
+      setOnePageMode(false)
+      toast.info('已切换模板，一页模式已关闭')
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  // Restore template selection on mount
-  useEffect(() => {
-    try {
-      const t = localStorage.getItem('rb.template')
-      if (t && getTemplate(t)) setTpl(t)
-    } catch {
-      /* ignore storage errors */
-    }
-  }, [])
-
-  // Persist all themes to localStorage when they change
-  useEffect(() => {
-    const allThemes = useAppStore.getState().themes
-    localStorage.setItem('rb.themes', JSON.stringify(allThemes))
-  }, [theme])
-
-  // Persist template when it changes
-  useEffect(() => {
-    try {
-      localStorage.setItem('rb.template', tpl)
-    } catch {
-      /* ignore */
-    }
-  }, [tpl])
+    setTpl(next)
+  }, [onePageMode, resetOnePage])
 
   // 获取当前模板组件
   const templateConfig = getTemplate(tpl)
@@ -422,7 +420,7 @@ export default function ResumeEditor({ resumeId, initialData }: ResumeEditorProp
               theme={theme}
               tpl={tpl}
               templates={getAllTemplates()}
-              onTplChange={(next): void => setTpl(next)}
+              onTplChange={handleTplChange}
               onThemePatch={patchTheme}
               onePage={onePageMode}
               onePageStatus={onePageStatus}
