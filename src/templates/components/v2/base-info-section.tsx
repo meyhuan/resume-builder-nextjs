@@ -229,7 +229,7 @@ function InfoField(props: {
   const { field, isHovered, styles, onMouseEnter, onMouseLeave, onDelete } = props
   return (
     <div
-      className={`${styles?.fieldItem || 'flex items-center gap-1.5 text-gray-700 rounded px-1.5 py-0.5 transition-all'} ${
+      className={`${styles?.fieldItem || 'flex items-center gap-1.5 text-gray-700 relative rounded px-1.5 py-0.5 transition-all'} ${
         isHovered ? 'border border-gray-300 bg-gray-50' : 'border border-transparent'
       }`}
       onMouseEnter={onMouseEnter}
@@ -246,7 +246,7 @@ function InfoField(props: {
       {isHovered && (
         <button
           type="button"
-          className="ml-1 print:hidden text-red-400 hover:text-red-600 transition-colors shrink-0"
+          className="absolute -right-1 top-1/2 -translate-y-1/2 print:hidden text-red-400 hover:text-red-600 transition-colors shrink-0"
           onClick={(e) => { e.stopPropagation(); onDelete() }}
         >
           <XCircle size={14} />

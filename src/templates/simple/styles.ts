@@ -35,12 +35,12 @@ export const SIMPLE_TEMPLATE_STYLES: TemplateStylesConfig = {
       fontSize: '1em',
     },
     infoLayout: {
-      type: 'grid',
+      type: 'flex',
       columns: 3,
       gap: '4',
-      className: 'grid grid-cols-3 gap-y-2 gap-x-10',
+      className: 'flex flex-wrap gap-y-2 gap-x-10',
     },
-    fieldItem: 'flex items-center gap-2 text-gray-600 relative group/field hover:bg-gray-50 rounded px-1 py-0.5 transition-colors whitespace-nowrap text-[1em]',
+    fieldItem: 'flex items-center gap-2 text-gray-600 relative group/field hover:bg-gray-50 rounded pl-1 pr-5 py-0.5 transition-colors whitespace-nowrap text-[1em]',
     fieldIcon: {
       size: '1.14em',
       className: 'text-gray-500',
