@@ -18,7 +18,7 @@ import type { PanelId } from '@/ui/editor-toolbar'
 import type { ThemeTokens } from '@/entities/theme/theme-tokens'
 import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
-import { Loader2, ArrowLeft, Save, FileDown, FileText, Image as ImageIcon } from 'lucide-react'
+import { Loader2, ArrowLeft, Save, FileDown, FileText, Image as ImageIcon, Undo2, Redo2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { revalidateDashboard } from '@/app/actions'
 import { useOnePageMode } from '@/hooks/use-one-page-mode'
@@ -45,6 +45,10 @@ export default function ResumeEditor({ resumeId, initialData }: ResumeEditorProp
   const setResume = useAppStore((s) => s.setResume)
   const setThemeForTemplate = useAppStore((s) => s.setThemeForTemplate)
   const getThemeForTemplate = useAppStore((s) => s.getThemeForTemplate)
+  const undo = useAppStore((s) => s.undo)
+  const redo = useAppStore((s) => s.redo)
+  const canUndo = useAppStore((s) => s.pastStates.length > 0)
+  const canRedo = useAppStore((s) => s.futureStates.length > 0)
   const printRef = useRef<HTMLDivElement>(null)
   const handlePrint = useExportPdf<HTMLDivElement>(printRef, { documentTitle: 'resume' })
   const [tpl, setTpl] = useState<string>('simple')
@@ -174,17 +178,25 @@ export default function ResumeEditor({ resumeId, initialData }: ResumeEditorProp
     }
   }, [resume, resumeId, hasUnsavedChanges, isSaving, handleSave])
 
-  // Keyboard shortcut: Ctrl+S to save
+  // Keyboard shortcuts: Ctrl+S save, Ctrl+Z undo, Ctrl+Shift+Z / Ctrl+Y redo
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 's') {
         e.preventDefault()
         handleSave()
       }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault()
+        undo()
+      }
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'Z' || (e.key === 'z' && e.shiftKey) || e.key === 'y')) {
+        e.preventDefault()
+        redo()
+      }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [handleSave])
+  }, [handleSave, undo, redo])
 
   // Warn user when closing browser tab with unsaved changes
   useEffect(() => {
@@ -321,6 +333,28 @@ export default function ResumeEditor({ resumeId, initialData }: ResumeEditorProp
               <ArrowLeft className="h-3.5 w-3.5 mr-1" />
               返回
             </Button>
+            <div className="h-4 w-px bg-slate-200 mx-0.5" />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={undo}
+              disabled={!canUndo}
+              className="h-7 w-7 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded disabled:opacity-30 disabled:cursor-not-allowed"
+              title="撤销 (Ctrl+Z)"
+            >
+              <Undo2 className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={redo}
+              disabled={!canRedo}
+              className="h-7 w-7 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded disabled:opacity-30 disabled:cursor-not-allowed"
+              title="重做 (Ctrl+Shift+Z)"
+            >
+              <Redo2 className="h-3.5 w-3.5" />
+            </Button>
+            <div className="h-4 w-px bg-slate-200 mx-0.5" />
             <span className="text-sm font-medium text-slate-700 truncate max-w-[180px]">
               {resume.name || '未命名简历'}
             </span>

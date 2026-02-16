@@ -1,6 +1,7 @@
 /**
  * Global app store using Zustand with Immer.
  * Holds resume data and theme tokens, and exposes minimal actions.
+ * Includes undo/redo history for resume changes with debounced pushes.
  */
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
@@ -8,6 +9,7 @@ import { produce } from 'immer'
 import type { AppState } from '@/state/app-state'
 import type { ThemeTokens } from '@/entities/theme/theme-tokens'
 import type { UUID } from '@/entities/common/uuid'
+import type { ResumeData } from '@/entities/resume/resume-data'
 import type { ExternalResume } from '@/io/external-resume-types'
 import { mapExternalResume } from '@/io/external-resume-importer'
 import { BLANK_RESUME_JSON, TEST_RESUME_JSON } from '@/io/default-resume-data'
@@ -26,7 +28,6 @@ const defaultTheme: ThemeTokens = {
 const defaultResume = mapExternalResume(BLANK_RESUME_JSON)
 const testResume = mapExternalResume(TEST_RESUME_JSON)
 
-
 function createId(prefix: string): UUID {
   const ts: string = Date.now().toString(36)
   const rnd: string = Math.random().toString(36).slice(2, 6)
@@ -35,6 +36,36 @@ function createId(prefix: string): UUID {
 
 const DEFAULT_NEW_TEXT_HTML: string = '<p>New text block. Click to edit.</p>'
 
+/** Maximum number of undo history entries. */
+const MAX_HISTORY = 50
+/** Debounce window (ms) — rapid changes within this window merge into one entry. */
+const HISTORY_DEBOUNCE_MS = 500
+
+/** Timestamp of last history push (module-level for debounce). */
+let lastPushTs = 0
+
+/**
+ * Push the current resume onto the undo stack with debounce.
+ * Returns the new pastStates and cleared futureStates.
+ */
+function pushHistory(
+  current: ResumeData,
+  past: readonly ResumeData[],
+): readonly ResumeData[] {
+  const now = Date.now()
+  const isDebounced = now - lastPushTs < HISTORY_DEBOUNCE_MS && past.length > 0
+  lastPushTs = now
+  if (isDebounced) {
+    // Replace the most recent entry instead of pushing a new one
+    return past
+  }
+  const next = [...past, current]
+  if (next.length > MAX_HISTORY) {
+    next.shift()
+  }
+  return next
+}
+
 /**
  * Create app store.
  */
@@ -42,11 +73,46 @@ export const useAppStore = create<AppState>()(
   devtools((set, get) => ({
     resume: defaultResume,
     themes: {},
-    loadTestData: () => set(() => ({ resume: testResume }), false, 'resume/loadTest'),
-    setResume: (updater) =>
-      set((state) => ({
+    pastStates: [],
+    futureStates: [],
+    undo: () =>
+      set((state) => {
+        if (state.pastStates.length === 0) return state
+        const past = [...state.pastStates]
+        const previous = past.pop()!
+        return {
+          pastStates: past,
+          futureStates: [...state.futureStates, state.resume],
+          resume: previous,
+        }
+      }, false, 'history/undo'),
+    redo: () =>
+      set((state) => {
+        if (state.futureStates.length === 0) return state
+        const future = [...state.futureStates]
+        const next = future.pop()!
+        return {
+          futureStates: future,
+          pastStates: [...state.pastStates, state.resume],
+          resume: next,
+        }
+      }, false, 'history/redo'),
+    loadTestData: () => {
+      const state = get()
+      set(() => ({
+        pastStates: pushHistory(state.resume, state.pastStates),
+        futureStates: [],
+        resume: testResume,
+      }), false, 'resume/loadTest')
+    },
+    setResume: (updater) => {
+      const state = get()
+      set(() => ({
+        pastStates: pushHistory(state.resume, state.pastStates),
+        futureStates: [],
         resume: produce(state.resume, updater),
-      }), false, 'resume/set'),
+      }), false, 'resume/set')
+    },
     getThemeForTemplate: (templateId) => {
       const state = get()
       return state.themes[templateId] || defaultTheme
@@ -61,8 +127,11 @@ export const useAppStore = create<AppState>()(
           },
         }
       }, false, `theme/set/${templateId}`),
-    moveBlockInSection: (sectionId, activeId, overId) =>
-      set((state) => ({
+    moveBlockInSection: (sectionId, activeId, overId) => {
+      const state = get()
+      set(() => ({
+        pastStates: pushHistory(state.resume, state.pastStates),
+        futureStates: [],
         resume: produce(state.resume, (draft) => {
           const section = draft.sections.find((s) => s.id === sectionId)
           if (!section) return
@@ -72,9 +141,13 @@ export const useAppStore = create<AppState>()(
           const [moved] = section.blocks.splice(fromIdx, 1)
           section.blocks.splice(toIdx, 0, moved)
         }),
-      }), false, 'section/moveBlock'),
-    moveBlockToSection: (fromSectionId, blockId, toSectionId, toIndex) =>
-      set((state) => ({
+      }), false, 'section/moveBlock')
+    },
+    moveBlockToSection: (fromSectionId, blockId, toSectionId, toIndex) => {
+      const state = get()
+      set(() => ({
+        pastStates: pushHistory(state.resume, state.pastStates),
+        futureStates: [],
         resume: produce(state.resume, (draft) => {
           const fromSection = draft.sections.find((s) => s.id === fromSectionId)
           const toSection = draft.sections.find((s) => s.id === toSectionId)
@@ -84,9 +157,13 @@ export const useAppStore = create<AppState>()(
           const [block] = fromSection.blocks.splice(blockIdx, 1)
           toSection.blocks.splice(toIndex, 0, block)
         }),
-      }), false, 'section/moveBlockToSection'),
-    addTextBlock: (sectionId) =>
-      set((state) => ({
+      }), false, 'section/moveBlockToSection')
+    },
+    addTextBlock: (sectionId) => {
+      const state = get()
+      set(() => ({
+        pastStates: pushHistory(state.resume, state.pastStates),
+        futureStates: [],
         resume: produce(state.resume, (draft) => {
           const section = draft.sections.find((s) => s.id === sectionId)
           if (!section) return
@@ -97,17 +174,25 @@ export const useAppStore = create<AppState>()(
           }
           section.blocks.push(newBlock)
         }),
-      }), false, 'section/addTextBlock'),
-    addBlockByType: (sectionId) =>
-      set((state) => ({
+      }), false, 'section/addTextBlock')
+    },
+    addBlockByType: (sectionId) => {
+      const state = get()
+      set(() => ({
+        pastStates: pushHistory(state.resume, state.pastStates),
+        futureStates: [],
         resume: produce(state.resume, (draft) => {
           const section = draft.sections.find((s) => s.id === sectionId)
           if (!section) return
           section.blocks.push(createDefaultBlock(section.title, createId))
         }),
-      }), false, 'section/addBlockByType'),
-    deleteBlock: (sectionId, blockId) =>
-      set((state) => ({
+      }), false, 'section/addBlockByType')
+    },
+    deleteBlock: (sectionId, blockId) => {
+      const state = get()
+      set(() => ({
+        pastStates: pushHistory(state.resume, state.pastStates),
+        futureStates: [],
         resume: produce(state.resume, (draft) => {
           const section = draft.sections.find((s) => s.id === sectionId)
           if (!section) return
@@ -116,9 +201,13 @@ export const useAppStore = create<AppState>()(
             section.blocks.splice(idx, 1)
           }
         }),
-      }), false, 'section/deleteBlock'),
-    moveBlockUp: (sectionId, blockId) =>
-      set((state) => ({
+      }), false, 'section/deleteBlock')
+    },
+    moveBlockUp: (sectionId, blockId) => {
+      const state = get()
+      set(() => ({
+        pastStates: pushHistory(state.resume, state.pastStates),
+        futureStates: [],
         resume: produce(state.resume, (draft) => {
           const section = draft.sections.find((s) => s.id === sectionId)
           if (!section) return
@@ -128,9 +217,13 @@ export const useAppStore = create<AppState>()(
           section.blocks[idx] = section.blocks[idx - 1]
           section.blocks[idx - 1] = temp
         }),
-      }), false, 'section/moveBlockUp'),
-    moveBlockDown: (sectionId, blockId) =>
-      set((state) => ({
+      }), false, 'section/moveBlockUp')
+    },
+    moveBlockDown: (sectionId, blockId) => {
+      const state = get()
+      set(() => ({
+        pastStates: pushHistory(state.resume, state.pastStates),
+        futureStates: [],
         resume: produce(state.resume, (draft) => {
           const section = draft.sections.find((s) => s.id === sectionId)
           if (!section) return
@@ -140,9 +233,13 @@ export const useAppStore = create<AppState>()(
           section.blocks[idx] = section.blocks[idx + 1]
           section.blocks[idx + 1] = temp
         }),
-      }), false, 'section/moveBlockDown'),
-    moveSection: (activeSectionId, overSectionId) =>
-      set((state) => ({
+      }), false, 'section/moveBlockDown')
+    },
+    moveSection: (activeSectionId, overSectionId) => {
+      const state = get()
+      set(() => ({
+        pastStates: pushHistory(state.resume, state.pastStates),
+        futureStates: [],
         resume: produce(state.resume, (draft) => {
           const from: number = draft.sections.findIndex((s) => s.id === activeSectionId)
           const to: number = draft.sections.findIndex((s) => s.id === overSectionId)
@@ -150,9 +247,13 @@ export const useAppStore = create<AppState>()(
           const [moved] = draft.sections.splice(from, 1)
           draft.sections.splice(to, 0, moved)
         }),
-      }), false, 'section/moveSection'),
-    addSection: (title) =>
-      set((state) => ({
+      }), false, 'section/moveSection')
+    },
+    addSection: (title) => {
+      const state = get()
+      set(() => ({
+        pastStates: pushHistory(state.resume, state.pastStates),
+        futureStates: [],
         resume: produce(state.resume, (draft) => {
           draft.sections.push({
             id: createId('section'),
@@ -161,39 +262,60 @@ export const useAppStore = create<AppState>()(
             blocks: [createDefaultBlock(title, createId)],
           })
         }),
-      }), false, 'section/addSection'),
-    updateSectionTitle: (sectionId, title) =>
-      set((state) => ({
+      }), false, 'section/addSection')
+    },
+    updateSectionTitle: (sectionId, title) => {
+      const state = get()
+      set(() => ({
+        pastStates: pushHistory(state.resume, state.pastStates),
+        futureStates: [],
         resume: produce(state.resume, (draft) => {
           const section = draft.sections.find((s) => s.id === sectionId)
           if (section) section.title = title
         }),
-      }), false, 'section/updateSectionTitle'),
-    deleteSection: (sectionId) =>
-      set((state) => ({
+      }), false, 'section/updateSectionTitle')
+    },
+    deleteSection: (sectionId) => {
+      const state = get()
+      set(() => ({
+        pastStates: pushHistory(state.resume, state.pastStates),
+        futureStates: [],
         resume: produce(state.resume, (draft) => {
           const idx: number = draft.sections.findIndex((s) => s.id === sectionId)
           if (idx >= 0) {
             draft.sections.splice(idx, 1)
           }
         }),
-      }), false, 'section/deleteSection'),
-    importExternalResume: (external: ExternalResume) =>
+      }), false, 'section/deleteSection')
+    },
+    importExternalResume: (external: ExternalResume) => {
+      const state = get()
       set(() => ({
+        pastStates: pushHistory(state.resume, state.pastStates),
+        futureStates: [],
         resume: mapExternalResume(external),
-      }), false, 'resume/import'),
-    updateBaseInfo: (baseInfo, name) =>
-      set((state) => ({
+      }), false, 'resume/import')
+    },
+    updateBaseInfo: (baseInfo, name) => {
+      const state = get()
+      set(() => ({
+        pastStates: pushHistory(state.resume, state.pastStates),
+        futureStates: [],
         resume: produce(state.resume, (draft) => {
           draft.name = name
           draft.baseInfo = baseInfo
         }),
-      }), false, 'resume/updateBaseInfo'),
-    updateJobIntention: (jobIntention) =>
-      set((state) => ({
+      }), false, 'resume/updateBaseInfo')
+    },
+    updateJobIntention: (jobIntention) => {
+      const state = get()
+      set(() => ({
+        pastStates: pushHistory(state.resume, state.pastStates),
+        futureStates: [],
         resume: produce(state.resume, (draft) => {
           draft.jobIntention = jobIntention
         }),
-      }), false, 'resume/updateJobIntention'),
+      }), false, 'resume/updateJobIntention')
+    },
   }))
 )

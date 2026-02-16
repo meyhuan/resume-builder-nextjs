@@ -12,7 +12,15 @@ import type { ExternalResume } from '@/io/external-resume-types'
 export interface AppState {
   readonly resume: ResumeData
   readonly themes: Record<string, ThemeTokens>
+  /** Undo stack — most recent snapshot last. */
+  readonly pastStates: readonly ResumeData[]
+  /** Redo stack — most recent snapshot last. */
+  readonly futureStates: readonly ResumeData[]
   setResume: (updater: (draft: Draft<ResumeData>) => void) => void
+  /** Undo the last resume change. */
+  undo: () => void
+  /** Redo the last undone resume change. */
+  redo: () => void
   getThemeForTemplate: (templateId: string) => ThemeTokens
   setThemeForTemplate: (templateId: string, updater: (draft: Draft<ThemeTokens>) => void) => void
   /** Move a block inside a section by swapping positions based on ids. */
