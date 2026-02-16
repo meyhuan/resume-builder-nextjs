@@ -7,6 +7,7 @@
 import { useEffect, useState } from 'react'
 import type { ReactElement } from 'react'
 import type { ThemeTokens } from '@/entities/theme/theme-tokens'
+import type { OnePageStatus } from '@/hooks/use-one-page-mode'
 import type { TemplateConfig } from '@/templates/template-loader'
 import type { PanelId } from '@/ui/editor-toolbar'
 import ThemePanel from '@/ui/theme-panel'
@@ -27,6 +28,7 @@ export interface RightSidebarProps {
   readonly onTplChange: (tpl: string) => void
   readonly onThemePatch: (patch: Partial<ThemeTokens>) => void
   readonly onePage?: boolean
+  readonly onePageStatus?: OnePageStatus
   readonly onOnePageChange?: (v: boolean) => void
   readonly onImportJson?: (json: string) => void
 }
@@ -72,6 +74,7 @@ export default function RightSidebar(props: RightSidebarProps): ReactElement {
           onTplChange={props.onTplChange}
           onThemePatch={props.onThemePatch}
           onePage={props.onePage}
+          onePageStatus={props.onePageStatus}
           onOnePageChange={props.onOnePageChange}
           onImportJson={props.onImportJson}
         />
@@ -101,6 +104,7 @@ interface LayoutPanelProps {
   readonly onTplChange: (tpl: string) => void
   readonly onThemePatch: (patch: Partial<ThemeTokens>) => void
   readonly onePage?: boolean
+  readonly onePageStatus?: OnePageStatus
   readonly onOnePageChange?: (v: boolean) => void
   readonly onImportJson?: (json: string) => void
 }
@@ -230,6 +234,7 @@ function LayoutPanel(props: LayoutPanelProps): ReactElement {
                 onUpdate={props.onThemePatch}
                 onClose={() => {}}
                 onePage={props.onePage}
+                onePageStatus={props.onePageStatus}
                 onOnePageChange={props.onOnePageChange}
               />
             </div>

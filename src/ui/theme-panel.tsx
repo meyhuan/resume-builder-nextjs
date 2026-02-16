@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { ChangeEvent, ReactElement } from 'react'
 import type { ThemeTokens } from '@/entities/theme/theme-tokens'
+import type { OnePageStatus } from '@/hooks/use-one-page-mode'
 import { Slider } from '@/components/ui/slider'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
@@ -24,6 +25,7 @@ export default function ThemePanel(props: {
   readonly onUpdate: (patch: Partial<ThemeTokens>) => void
   readonly onClose: () => void
   readonly onePage?: boolean
+  readonly onePageStatus?: OnePageStatus
   readonly onOnePageChange?: (isOnePage: boolean) => void
 }): ReactElement {
   const theme = props.theme
@@ -157,8 +159,14 @@ export default function ThemePanel(props: {
           >
             一页模式
           </span>
-          {props.onePage && (
-            <div className="w-1.5 h-1.5 rounded-full bg-current animate-pulse ml-1" style={{ backgroundColor: theme.primaryColor }} />
+          {props.onePage && props.onePageStatus === 'fit' && (
+            <span className="ml-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full">已适配</span>
+          )}
+          {props.onePage && props.onePageStatus === 'fitting' && (
+            <div className="w-1.5 h-1.5 rounded-full animate-pulse ml-1" style={{ backgroundColor: theme.primaryColor }} />
+          )}
+          {props.onePage && props.onePageStatus === 'overflow' && (
+            <span className="ml-1 text-[10px] font-bold text-red-600 bg-red-50 px-1.5 py-0.5 rounded-full">内容超出</span>
           )}
         </button>
         <div className="space-y-5 pt-2">

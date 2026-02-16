@@ -21,6 +21,7 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Loader2, ArrowLeft, Save, FileDown, FileText, Image as ImageIcon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { revalidateDashboard } from '@/app/actions'
+import { useOnePageMode } from '@/hooks/use-one-page-mode'
 
 interface ResumeData {
   id: string
@@ -51,6 +52,7 @@ export default function ResumeEditor({ resumeId, initialData }: ResumeEditorProp
   const AUTO_SAVE_DELAY = 30000 // 30 seconds
   const [showLeaveDialog, setShowLeaveDialog] = useState(false)
   const [activePanel, setActivePanel] = useState<PanelId | null>('layout')
+  const [onePageMode, setOnePageMode] = useState(false)
 
   // Initialize from DB data if provided
   useEffect(() => {
@@ -170,6 +172,16 @@ export default function ResumeEditor({ resumeId, initialData }: ResumeEditorProp
   // Subscribe to theme changes for current template
   const themes = useAppStore((s) => s.themes)
   const theme = themes[tpl] || getThemeForTemplate(tpl)
+
+  // Stable callback to patch the current template's theme
+  const patchTheme = useCallback((patch: Partial<ThemeTokens>): void => {
+    setThemeForTemplate(tpl, (draft) => {
+      Object.assign(draft, patch)
+    })
+  }, [tpl, setThemeForTemplate])
+
+  // One-page mode hook
+  const { status: onePageStatus } = useOnePageMode(printRef, theme, patchTheme, onePageMode)
 
   function handleExportHtml(): void {
     if (!printRef.current) return
@@ -411,11 +423,10 @@ export default function ResumeEditor({ resumeId, initialData }: ResumeEditorProp
               tpl={tpl}
               templates={getAllTemplates()}
               onTplChange={(next): void => setTpl(next)}
-              onThemePatch={(patch): void => {
-                setThemeForTemplate(tpl, (draft) => {
-                  Object.assign(draft, patch)
-                })
-              }}
+              onThemePatch={patchTheme}
+              onePage={onePageMode}
+              onePageStatus={onePageStatus}
+              onOnePageChange={setOnePageMode}
               onImportJson={(json): void => {
                 try {
                   const parsed = JSON.parse(json)
