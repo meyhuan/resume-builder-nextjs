@@ -59,38 +59,55 @@ export default function ResumeEditor({ resumeId, initialData }: ResumeEditorProp
   const [onePageSnapshot, setOnePageSnapshot] = useState<AdjustableTokens | null>(null)
 
   // Initialize from DB data if provided
+  const initApplied = useRef(false)
   useEffect(() => {
-    if (initialData) {
-      if (initialData.content && typeof initialData.content === 'object' && Object.keys(initialData.content).length > 0) {
-        const raw = initialData.content as Record<string, unknown>
-        const { content: cleanContent, meta } = extractEditorMeta(raw)
-        setResume(() => cleanContent)
-        setSavedSnapshot(JSON.stringify(cleanContent))
-        // Restore per-resume theme overrides
-        const tplId = initialData.template || 'simple'
-        const savedTheme = meta.themes[tplId]
-        if (savedTheme) {
-          setThemeForTemplate(tplId, (draft) => { Object.assign(draft, savedTheme) })
-        }
-        // Restore one-page mode state
-        setOnePageMode(meta.onePageMode)
-        setOnePageSnapshot(meta.onePageSnapshot)
+    if (!initialData || initApplied.current) return
+    initApplied.current = true
+    let restoredTheme: ThemeTokens | undefined
+    let restoredOnePage = false
+    let restoredSnapshot: AdjustableTokens | null = null
+    if (initialData.content && typeof initialData.content === 'object' && Object.keys(initialData.content).length > 0) {
+      const raw = initialData.content as Record<string, unknown>
+      const { content: cleanContent, meta } = extractEditorMeta(raw)
+      setResume(() => cleanContent)
+      // Restore per-resume theme overrides
+      const tplId = initialData.template || 'simple'
+      restoredTheme = meta.themes[tplId]
+      if (restoredTheme) {
+        setThemeForTemplate(tplId, (draft) => { Object.assign(draft, restoredTheme!) })
       }
-      if (initialData.template) {
-        setTpl(initialData.template)
-      }
+      // Restore one-page mode state
+      restoredOnePage = meta.onePageMode
+      restoredSnapshot = meta.onePageSnapshot
+      setOnePageMode(restoredOnePage)
+      setOnePageSnapshot(restoredSnapshot)
+      // Build initial composite fingerprint after all state is restored
+      const initTheme = restoredTheme ?? getThemeForTemplate(tplId)
+      setSavedSnapshot(JSON.stringify({
+        resume: cleanContent,
+        theme: initTheme,
+        tpl: tplId,
+        onePageMode: restoredOnePage,
+        onePageSnapshot: restoredSnapshot,
+      }))
     }
-  }, [initialData, setResume, setThemeForTemplate])
+    if (initialData.template) {
+      setTpl(initialData.template)
+    }
+  }, [initialData, setResume, setThemeForTemplate, getThemeForTemplate])
 
   // Subscribe to theme changes for current template
   const themes = useAppStore((s) => s.themes)
   const theme = themes[tpl] || getThemeForTemplate(tpl)
 
-  // Check if there are unsaved changes
+  // Check if there are unsaved changes (composite: resume + theme + tpl + one-page state)
+  const currentFingerprint = useMemo(() => {
+    return JSON.stringify({ resume, theme, tpl, onePageMode, onePageSnapshot })
+  }, [resume, theme, tpl, onePageMode, onePageSnapshot])
   const hasUnsavedChanges = useMemo(() => {
     if (!savedSnapshot) return false
-    return JSON.stringify(resume) !== savedSnapshot
-  }, [resume, savedSnapshot])
+    return currentFingerprint !== savedSnapshot
+  }, [currentFingerprint, savedSnapshot])
 
   const handleSave = useCallback(async () => {
     if (!resumeId) return
@@ -126,8 +143,8 @@ export default function ResumeEditor({ resumeId, initialData }: ResumeEditorProp
       })
       if (!res.ok) throw new Error('Failed to save')
       setLastSaved(new Date())
-      // Update saved snapshot after successful save
-      setSavedSnapshot(JSON.stringify(resume))
+      // Update saved snapshot after successful save (composite fingerprint)
+      setSavedSnapshot(JSON.stringify({ resume, theme, tpl, onePageMode, onePageSnapshot }))
       // Invalidate dashboard cache to show new thumbnail
       await revalidateDashboard()
     } catch (e) {
