@@ -33,27 +33,6 @@ export const TEMPLATE_REGISTRY: Record<string, TemplateConfig> = {
     tags: ['通用', '简洁'],
     component: lazy(() => import('@/templates/simple')),
   },
-  professional: {
-    id: 'professional',
-    name: '专业商务',
-    description: '传统商务风格，适合金融、法律等正式行业',
-    tags: ['商务', '正式', '传统'],
-    component: lazy(() => import('@/templates/professional')),
-  },
-  'clean-professional': {
-    id: 'clean-professional',
-    name: '清爽专业',
-    description: '大头像、信息密集布局、圆形图标，适合应届生和信息丰富的简历',
-    tags: ['清爽', '专业', '应届生', '信息密集'],
-    component: lazy(() => import('@/templates/clean-professional')),
-  },
-  creative: {
-    id: 'creative',
-    name: '创意时间轴',
-    description: '清新简约，左图右文布局，强调时间轴，适合展示型简历',
-    tags: ['创意', '简约', '时间轴', '设计'],
-    component: lazy(() => import('@/templates/creative')),
-  },
   elegant: {
     id: 'elegant',
     name: '典雅',

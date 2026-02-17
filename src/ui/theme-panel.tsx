@@ -29,12 +29,12 @@ export default function ThemePanel(props: {
   readonly onOnePageChange?: (isOnePage: boolean) => void
 }): ReactElement {
   const theme = props.theme
-  const fonts: readonly { label: string; value: string }[] = [
-    { label: 'Inter + Noto Sans SC', value: 'Inter, Noto Sans SC, system-ui, sans-serif' },
-    { label: 'Noto Sans SC', value: 'Noto Sans SC, system-ui, sans-serif' },
-    { label: 'System Sans', value: 'system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif' },
-    { label: 'Georgia (serif)', value: 'Georgia, serif' },
-  ]
+  // const fonts: readonly { label: string; value: string }[] = [
+  //   { label: 'Inter + Noto Sans SC', value: 'Inter, Noto Sans SC, system-ui, sans-serif' },
+  //   { label: 'Noto Sans SC', value: 'Noto Sans SC, system-ui, sans-serif' },
+  //   { label: 'System Sans', value: 'system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif' },
+  //   { label: 'Georgia (serif)', value: 'Georgia, serif' },
+  // ]
   const fontSizes: readonly number[] = [12, 13, 14, 15, 16, 17, 18, 19, 20]
 
   function handlePrimaryColor(e: ChangeEvent<HTMLInputElement>): void {
@@ -49,9 +49,9 @@ export default function ThemePanel(props: {
     props.onUpdate({ spacingScale: value[0] })
   }
 
-  function handleFont(value: string): void {
-    props.onUpdate({ fontFamily: value })
-  }
+  // function handleFont(value: string): void {
+  //   props.onUpdate({ fontFamily: value })
+  // }
 
   function handleFontSizeSelect(value: string): void {
     const parsed = Number(value)
@@ -101,7 +101,7 @@ export default function ThemePanel(props: {
           <span className="text-[10px] font-bold text-violet-500 bg-violet-50 px-2 py-0.5 rounded-full">Typography</span>
         </div>
         <div className="space-y-4">
-          <div className={controlWrapperClass}>
+          {/* <div className={controlWrapperClass}>
             <Label className={labelClass} htmlFor="font-family">字体家族</Label>
             <Select value={theme.fontFamily} onValueChange={handleFont}>
               <SelectTrigger id="font-family" className="h-11 rounded-xl border-slate-100 bg-slate-50/50 focus:ring-violet-500/20">
@@ -115,7 +115,7 @@ export default function ThemePanel(props: {
                 ))}
               </SelectContent>
             </Select>
-          </div>
+          </div> */}
           <div className={controlWrapperClass}>
             <Label className={labelClass} htmlFor="font-size-select">全局字号</Label>
             <Select value={String(theme.fontSize)} onValueChange={handleFontSizeSelect}>
