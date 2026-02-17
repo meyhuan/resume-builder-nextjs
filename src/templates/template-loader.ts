@@ -54,6 +54,13 @@ export const TEMPLATE_REGISTRY: Record<string, TemplateConfig> = {
     tags: ['创意', '简约', '时间轴', '设计'],
     component: lazy(() => import('@/templates/creative')),
   },
+  elegant: {
+    id: 'elegant',
+    name: '典雅',
+    description: '深色头部 + 金色点缀，庄重大方，适合正式场合',
+    tags: ['正式', '庄重', '典雅', '金色'],
+    component: lazy(() => import('@/templates/elegant')),
+  },
 }
 
 /**
