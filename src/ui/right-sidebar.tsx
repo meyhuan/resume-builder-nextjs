@@ -196,7 +196,9 @@ function LayoutPanel(props: LayoutPanelProps): ReactElement {
                    )}
                    {tpl === template.id && (
                      <div className="absolute top-2.5 right-2.5 w-6 h-6 bg-gradient-to-br from-violet-600 to-fuchsia-500 text-white rounded-full flex items-center justify-center shadow-lg animate-in zoom-in duration-300">
-                        <span className="text-[10px] font-bold">✓</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" className="w-3.5 h-3.5">
+                          <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M2.5 7.388l4.188 3.905a.3.3 0 0 0 .419-.021L13.42 4.5" />
+                        </svg>
                      </div>
                    )}
                    <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-violet-600 to-fuchsia-500 opacity-0 group-hover:opacity-100 transition-opacity" />

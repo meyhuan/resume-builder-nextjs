@@ -89,10 +89,10 @@ export default function SectionHeader(props: SectionHeaderProps): ReactElement {
 
   return (
     <div
-      className={`flex items-center gap-2 relative py-1 rounded transition-all duration-200 ${
+      className={`flex items-center gap-2 relative rounded transition-all duration-200 ${
         isHovered ? 'bg-gray-50 border border-gray-200' : 'border border-transparent'
       } ${styles?.containerClassName || 'mb-3'}`}
-      style={{ fontSize: styles?.fontSize, fontWeight: styles?.fontWeight }}
+      style={{ fontSize: styles?.fontSize, fontWeight: styles?.fontWeight, lineHeight: styles?.lineHeight }}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >

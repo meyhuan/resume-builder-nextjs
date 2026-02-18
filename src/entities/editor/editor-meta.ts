@@ -21,6 +21,8 @@ export interface EditorMeta {
   readonly onePageMode: boolean
   /** Theme values captured right before one-page mode was enabled. */
   readonly onePageSnapshot: AdjustableTokens | null
+  /** Section IDs placed in the sidebar column (used by two-column templates like warm). */
+  readonly sidebarSectionIds?: readonly string[]
 }
 
 /** Sensible defaults when no persisted meta exists (e.g. new resume). */
@@ -28,6 +30,7 @@ export const DEFAULT_EDITOR_META: EditorMeta = {
   themes: {},
   onePageMode: false,
   onePageSnapshot: null,
+  sidebarSectionIds: undefined,
 }
 
 /**

@@ -9,6 +9,10 @@ import type { ThemeTokens } from '@/entities/theme/theme-tokens'
 export interface TemplateProps {
   readonly resume: ResumeData
   readonly theme: ThemeTokens
+  /** Section IDs placed in the sidebar (used by two-column templates). */
+  readonly sidebarSectionIds?: readonly string[]
+  /** Notify parent when sidebar assignment changes (for persistence). */
+  readonly onSidebarSectionIdsChange?: (ids: readonly string[]) => void
 }
 
 export interface TemplateConfig {
@@ -39,6 +43,13 @@ export const TEMPLATE_REGISTRY: Record<string, TemplateConfig> = {
     description: '深色头部 + 金色点缀，庄重大方，适合正式场合',
     tags: ['正式', '庄重', '典雅', '金色'],
     component: lazy(() => import('@/templates/elegant')),
+  },
+  warm: {
+    id: 'warm',
+    name: '淡黄通用',
+    description: '双列布局，左侧边栏 + 右侧主内容，淡黄色点缀',
+    tags: ['通用', '双列', '淡黄', '侧边栏'],
+    component: lazy(() => import('@/templates/warm')),
   },
 }
 

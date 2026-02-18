@@ -61,6 +61,8 @@ export default function ResumeEditor({ resumeId, initialData }: ResumeEditorProp
   const [activePanel, setActivePanel] = useState<PanelId | null>('layout')
   const [onePageMode, setOnePageMode] = useState(false)
   const [onePageSnapshot, setOnePageSnapshot] = useState<AdjustableTokens | null>(null)
+  const [sidebarSectionIds, setSidebarSectionIds] = useState<readonly string[] | undefined>(undefined)
+  const hasUnsavedRef = useRef(false)
 
   // Initialize from DB data if provided
   const initApplied = useRef(false)
@@ -85,6 +87,10 @@ export default function ResumeEditor({ resumeId, initialData }: ResumeEditorProp
       restoredSnapshot = meta.onePageSnapshot
       setOnePageMode(restoredOnePage)
       setOnePageSnapshot(restoredSnapshot)
+      // Restore sidebar section IDs (for two-column templates)
+      if (meta.sidebarSectionIds) {
+        setSidebarSectionIds(meta.sidebarSectionIds as readonly string[])
+      }
       // Build initial composite fingerprint after all state is restored
       const initTheme = restoredTheme ?? getThemeForTemplate(tplId)
       setSavedSnapshot(JSON.stringify({
@@ -93,6 +99,7 @@ export default function ResumeEditor({ resumeId, initialData }: ResumeEditorProp
         tpl: tplId,
         onePageMode: restoredOnePage,
         onePageSnapshot: restoredSnapshot,
+        sidebarSectionIds: meta.sidebarSectionIds,
       }))
     }
     if (initialData.template) {
@@ -100,18 +107,41 @@ export default function ResumeEditor({ resumeId, initialData }: ResumeEditorProp
     }
   }, [initialData, setResume, setThemeForTemplate, getThemeForTemplate])
 
+  // Set initial snapshot for new resumes (no initialData) so changes are detected
+  const initialSnapshotSet = useRef(false)
+  useEffect(() => {
+    if (initialSnapshotSet.current || savedSnapshot) return
+    if (initApplied.current || !initialData) {
+      initialSnapshotSet.current = true
+      const initTheme = getThemeForTemplate(tpl)
+      setSavedSnapshot(JSON.stringify({
+        resume,
+        theme: initTheme,
+        tpl,
+        onePageMode: false,
+        onePageSnapshot: null,
+        sidebarSectionIds: undefined,
+      }))
+    }
+  }, [initialData, resume, tpl, savedSnapshot, getThemeForTemplate])
+
   // Subscribe to theme changes for current template
   const themes = useAppStore((s) => s.themes)
   const theme = themes[tpl] || getThemeForTemplate(tpl)
 
   // Check if there are unsaved changes (composite: resume + theme + tpl + one-page state)
   const currentFingerprint = useMemo(() => {
-    return JSON.stringify({ resume, theme, tpl, onePageMode, onePageSnapshot })
-  }, [resume, theme, tpl, onePageMode, onePageSnapshot])
+    return JSON.stringify({ resume, theme, tpl, onePageMode, onePageSnapshot, sidebarSectionIds })
+  }, [resume, theme, tpl, onePageMode, onePageSnapshot, sidebarSectionIds])
   const hasUnsavedChanges = useMemo(() => {
     if (!savedSnapshot) return false
     return currentFingerprint !== savedSnapshot
   }, [currentFingerprint, savedSnapshot])
+
+  // Keep ref in sync for beforeunload handler
+  useEffect(() => {
+    hasUnsavedRef.current = hasUnsavedChanges
+  }, [hasUnsavedChanges])
 
   const handleSave = useCallback(async () => {
     if (!resumeId) return
@@ -129,6 +159,7 @@ export default function ResumeEditor({ resumeId, initialData }: ResumeEditorProp
         themes: { [tpl]: theme },
         onePageMode,
         onePageSnapshot,
+        sidebarSectionIds,
       }
       const contentWithMeta = embedEditorMeta(
         resume as unknown as Record<string, unknown>,
@@ -148,7 +179,7 @@ export default function ResumeEditor({ resumeId, initialData }: ResumeEditorProp
       if (!res.ok) throw new Error('Failed to save')
       setLastSaved(new Date())
       // Update saved snapshot after successful save (composite fingerprint)
-      setSavedSnapshot(JSON.stringify({ resume, theme, tpl, onePageMode, onePageSnapshot }))
+      setSavedSnapshot(JSON.stringify({ resume, theme, tpl, onePageMode, onePageSnapshot, sidebarSectionIds }))
       // Invalidate dashboard cache to show new thumbnail
       await revalidateDashboard()
     } catch (e) {
@@ -158,7 +189,7 @@ export default function ResumeEditor({ resumeId, initialData }: ResumeEditorProp
     } finally {
       setIsSaving(false)
     }
-  }, [resumeId, resume, tpl, theme, onePageMode, onePageSnapshot])
+  }, [resumeId, resume, tpl, theme, onePageMode, onePageSnapshot, sidebarSectionIds])
 
   // Auto-save: debounced save after changes
   useEffect(() => {
@@ -198,18 +229,17 @@ export default function ResumeEditor({ resumeId, initialData }: ResumeEditorProp
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [handleSave, undo, redo])
 
-  // Warn user when closing browser tab with unsaved changes
+  // Warn user when closing browser tab with unsaved changes (use ref to avoid stale closure)
   useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (hasUnsavedChanges) {
+    const handleBeforeUnload = (e: BeforeUnloadEvent): void => {
+      if (hasUnsavedRef.current) {
         e.preventDefault()
         e.returnValue = ''
-        return ''
       }
     }
     window.addEventListener('beforeunload', handleBeforeUnload)
     return () => window.removeEventListener('beforeunload', handleBeforeUnload)
-  }, [hasUnsavedChanges])
+  }, [])
 
   // Handle back navigation with unsaved changes warning
   const handleBack = useCallback(() => {
@@ -450,7 +480,12 @@ export default function ResumeEditor({ resumeId, initialData }: ResumeEditorProp
                 }
               >
                 {TemplateComponent ? (
-                  <TemplateComponent resume={resume} theme={theme} />
+                  <TemplateComponent
+                    resume={resume}
+                    theme={theme}
+                    sidebarSectionIds={sidebarSectionIds}
+                    onSidebarSectionIdsChange={setSidebarSectionIds}
+                  />
                 ) : (
                   <div className="flex items-center justify-center h-[297mm] bg-white">
                     <div className="text-center text-gray-500">

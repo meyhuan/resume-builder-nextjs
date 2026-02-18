@@ -33,6 +33,7 @@ export interface TextFieldStyles {
   readonly containerClassName?: string
   readonly fontSize?: string
   readonly fontWeight?: string
+  readonly lineHeight?: string
   readonly color?: string
 }
 

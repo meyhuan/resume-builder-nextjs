@@ -209,7 +209,7 @@ export default function ThemePanel(props: {
       <section className={sectionClass}>
         <div className="flex items-center justify-between mb-1">
           <h4 className="text-sm font-bold text-slate-900">色彩风格</h4>
-          <span className="text-[10px] font-bold text-cyan-500 bg-cyan-50 px-2 py-0.5 rounded-full">Colors</span>
+          <span className="text-[10px] font-bold text-violet-500 bg-violet-50 px-2 py-0.5 rounded-full">Colors</span>
         </div>
         <div className="space-y-5">
           <div className="space-y-2.5">

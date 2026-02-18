@@ -62,7 +62,7 @@ function BlockRendererWrapper(props: {
     <div style={{ marginBottom: blockIndex < totalBlocks - 1 ? `${16 * spacingScale}px` : '0' }}>
       <BlockWrapper
         blockType={blockTypeLabel}
-        onAdd={(): void => addBlock(sectionId)}
+        onAdd={block.type !== 'text' ? (): void => addBlock(sectionId) : undefined}
         onPolish={handlePolish}
         onDelete={(): void => deleteBlock(sectionId, block.id)}
         onMoveUp={blockIndex > 0 ? handleMoveUp : undefined}
