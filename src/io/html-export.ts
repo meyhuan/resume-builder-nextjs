@@ -17,7 +17,11 @@ export function buildResumeHtml(element: HTMLElement, options?: ResumeHtmlOption
   const fonts: string = collectFontLinks()
   const styles: string = collectStyleContent()
   const markup: string = element.outerHTML
-  return `${DOCUMENT_DOCTYPE}\n<html lang="en">\n<head>\n  <meta charset="UTF-8">\n  <meta http-equiv="X-UA-Compatible" content="IE=edge">\n  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n  <title>${title}</title>\n  ${fonts}\n  <style>\n  ${styles}\n  @media print {\n    @page {\n      size: A4;\n      margin: 10mm; /* Uniform margins on all pages */\n    }\n    body {\n      margin: 0;\n      padding: 0;\n    }\n  }\n  * {\n    -webkit-print-color-adjust: exact;\n    print-color-adjust: exact;\n  }\n  </style>\n</head>\n<body>\n${markup}\n</body>\n</html>`
+  const isOnePage: boolean = markup.includes('data-one-page="true"')
+  const onePageCss: string = isOnePage
+    ? `\n    .page[data-one-page="true"] {\n      max-height: 297mm !important;\n      height: 297mm !important;\n      overflow: hidden !important;\n      page-break-after: avoid !important;\n      break-after: avoid !important;\n    }`
+    : ''
+  return `${DOCUMENT_DOCTYPE}\n<html lang="en">\n<head>\n  <meta charset="UTF-8">\n  <meta http-equiv="X-UA-Compatible" content="IE=edge">\n  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n  <title>${title}</title>\n  ${fonts}\n  <style>\n  ${styles}\n  @media print {\n    @page {\n      size: A4;\n      margin: 0; /* Zero margins — resume templates provide internal padding */\n    }\n    body {\n      margin: 0;\n      padding: 0;\n    }${onePageCss}\n  }\n  * {\n    -webkit-print-color-adjust: exact;\n    print-color-adjust: exact;\n  }\n  </style>\n</head>\n<body>\n${markup}\n</body>\n</html>`
 }
 
 /**

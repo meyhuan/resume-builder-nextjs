@@ -11,8 +11,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'HTML content is required' }, { status: 400 });
     }
 
-    // Pre-process HTML with pagination hints
-    const paginatedHtml = paginateHtml(html);
+    // Detect one-page mode from the HTML content
+    const isOnePage = html.includes('data-one-page="true"');
+
+    // Pre-process HTML with pagination hints (skip for one-page mode)
+    const paginatedHtml = isOnePage ? html : paginateHtml(html);
 
     const isLocal = process.env.NODE_ENV === 'development';
     
@@ -37,8 +40,10 @@ export async function POST(req: Request) {
     // Ensure all fonts are loaded
     await page.evaluateHandle('document.fonts.ready');
     
-    // Run client-side pagination script to measure and adjust elements
-    await page.evaluate(getClientPaginationScript());
+    // Run client-side pagination script to measure and adjust elements (skip for one-page mode)
+    if (!isOnePage) {
+      await page.evaluate(getClientPaginationScript());
+    }
     
     // Generate PDF
     const pdf = await page.pdf({
@@ -51,7 +56,7 @@ export async function POST(req: Request) {
         left: '0',
       },
       displayHeaderFooter: false,
-      preferCSSPageSize: true, /* Let CSS @page handle margins for consistency */
+      preferCSSPageSize: false,
     });
 
     await browser.close();

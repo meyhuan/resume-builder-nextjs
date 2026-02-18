@@ -124,8 +124,7 @@ export function getClientPaginationScript(): string {
   return `
     (function() {
       const PAGE_HEIGHT = 1123; // A4 at 96 DPI
-      const MARGIN = 38; // 10mm
-      const USABLE_HEIGHT = PAGE_HEIGHT - (MARGIN * 2);
+      const USABLE_HEIGHT = PAGE_HEIGHT; // Full page — @page margin is 0, templates have internal padding
       const HEADER_SAFETY = 100; // Don't put headers in last 100px
       
       let currentY = 0;

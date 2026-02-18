@@ -284,7 +284,7 @@ export default function ElegantTemplate(props: ElegantTemplateProps): ReactEleme
 
   return (
     <div
-      className="resume-container bg-white text-black mx-auto rounded shadow-sm overflow-hidden"
+      className="resume-container bg-white text-black mx-auto rounded overflow-hidden"
       style={{
         color: theme.textColor,
         fontFamily: theme.fontFamily,

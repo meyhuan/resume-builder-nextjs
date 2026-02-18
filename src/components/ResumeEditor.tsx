@@ -466,6 +466,7 @@ export default function ResumeEditor({ resumeId, initialData }: ResumeEditorProp
             <div
               ref={printRef}
               className="page w-full bg-white shadow-[0_0_50px_rgba(0,0,0,0.05)] rounded-xl print:shadow-none overflow-hidden"
+              {...(onePageMode ? { 'data-one-page': 'true' } : {})}
             >
               {/* Suspense 包裹动态加载的模板 */}
               <Suspense

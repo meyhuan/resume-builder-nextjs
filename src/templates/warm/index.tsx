@@ -381,7 +381,7 @@ export default function WarmTemplate(props: WarmTemplateProps): ReactElement {
 
   return (
     <div
-      className="resume-container bg-white text-black mx-auto rounded shadow-sm overflow-hidden"
+      className="resume-container bg-white text-black mx-auto rounded overflow-hidden"
       style={{
         color: theme.textColor,
         fontFamily: theme.fontFamily,
