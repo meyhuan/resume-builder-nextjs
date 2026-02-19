@@ -5,6 +5,7 @@ import { SortableContext, rectSortingStrategy } from '@dnd-kit/sortable'
 import type { ResumeData } from '@/entities/resume/resume-data'
 import type { ThemeTokens } from '@/entities/theme/theme-tokens'
 import type { ResumeBlock } from '@/entities/blocks/resume-block'
+import type { Section } from '@/entities/resume/section'
 import SectionHeader from '@/components/sections/section-header'
 import DeleteSectionDialog from '@/components/sections/delete-section-dialog'
 import BlockWrapper from '@/components/blocks/block-wrapper'
@@ -16,6 +17,11 @@ import DragDropProvider from '@/dnd/drag-drop-provider'
 import { DndIds } from '@/dnd/ids'
 import { BaseInfoSection, JobIntentionSection, BlockRenderer, SectionContainer } from '@/templates/components/v2'
 import { SIMPLE_TEMPLATE_STYLES } from './styles'
+
+/** Check if every block in a section is a TextBlock. */
+function isTextOnlySection(section: Section): boolean {
+  return section.blocks.length > 0 && section.blocks.every((b) => b.type === 'text')
+}
 
 interface SimpleTemplateProps {
   readonly resume: ResumeData
@@ -149,11 +155,8 @@ export default function SimpleTemplate(props: SimpleTemplateProps): ReactElement
             <SortableSectionWrapper key={section.id} sectionId={section.id}>
               {(sectionDragProps) => (
                 <SectionView
-                  sectionId={section.id}
-                  title={section.title}
-                  columns={section.columns}
+                  section={section}
                   themeColor={theme.primaryColor}
-                  blockIds={section.blocks.map((b) => b.id)}
                   dragHandleAttributes={sectionDragProps.attributes}
                   dragHandleListeners={sectionDragProps.listeners}
                   dragHandleRef={sectionDragProps.ref}
@@ -180,11 +183,8 @@ export default function SimpleTemplate(props: SimpleTemplateProps): ReactElement
 }
 
 interface SectionViewProps {
-  readonly sectionId: string
-  readonly title: string
-  readonly columns: number
+  readonly section: Section
   readonly themeColor: string
-  readonly blockIds: string[]
   readonly children: ReactNode
   readonly dragHandleAttributes?: unknown
   readonly dragHandleListeners?: unknown
@@ -192,7 +192,10 @@ interface SectionViewProps {
 }
 
 function SectionView(props: SectionViewProps): ReactElement {
-  const { sectionId, title, columns, themeColor, blockIds, children, dragHandleAttributes, dragHandleListeners, dragHandleRef } = props
+  const { section, themeColor, children, dragHandleAttributes, dragHandleListeners, dragHandleRef } = props
+  const { id: sectionId, title, columns, blocks } = section
+  const blockIds = blocks.map((b) => b.id)
+  const isTextOnly = isTextOnlySection(section)
   const addBlock = useAppStore((s) => s.addBlockByType)
   const deleteSection = useAppStore((s) => s.deleteSection)
   const updateSectionTitle = useAppStore((s) => s.updateSectionTitle)
@@ -218,7 +221,7 @@ function SectionView(props: SectionViewProps): ReactElement {
         themeColor={themeColor}
         styles={SIMPLE_TEMPLATE_STYLES.sectionHeader}
         onTitleChange={isCustomSection(title) ? (newTitle: string) => updateSectionTitle(sectionId, newTitle) : undefined}
-        onAdd={(): void => addBlock(sectionId)}
+        onAdd={isTextOnly ? undefined : (): void => addBlock(sectionId)}
         onDelete={handleDeleteSection}
         dragHandleAttributes={dragHandleAttributes}
         dragHandleListeners={dragHandleListeners}

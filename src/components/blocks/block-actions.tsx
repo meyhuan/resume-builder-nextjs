@@ -1,6 +1,6 @@
-import type { ReactElement } from 'react';
-import { Button } from '@/components/ui/button';
-import { PlusCircle, Sparkles, Trash2, ArrowUp, ArrowDown } from 'lucide-react';
+import type { ReactElement } from "react";
+import { Button } from "@/components/ui/button";
+import { PlusCircle, Sparkles, Trash2, ArrowUp, ArrowDown } from "lucide-react";
 
 /**
  * Actions shown when hovering over a block (floating, no layout shift).
@@ -17,12 +17,21 @@ export interface BlockActionsProps {
 }
 
 export default function BlockActions(props: BlockActionsProps): ReactElement {
-  const { blockType, onAdd, onPolish, onDelete, onMoveUp, onMoveDown, onMouseEnter, onMouseLeave } = props;
+  const {
+    blockType,
+    onAdd,
+    onPolish,
+    onDelete,
+    onMoveUp,
+    onMoveDown,
+    onMouseEnter,
+    onMouseLeave,
+  } = props;
 
   return (
-    <div 
-      className="absolute bottom-0 right-0 flex items-center gap-1 print:hidden bg-white shadow-md rounded px-1.5 py-1 border z-10"
-      style={{ transform: 'translateY(calc(100% - 14px))' }}
+    <div
+      className="absolute bottom-0 right-0 flex items-center gap-1 print:hidden bg-white shadow-md rounded px-0.5 py-0.5 border z-10"
+      style={{ transform: "translateY(calc(100% - 14px))" }}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >
@@ -64,30 +73,32 @@ export default function BlockActions(props: BlockActionsProps): ReactElement {
           <span>删除</span>
         </Button>
       ) : null}
-
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={onMoveUp}
-        disabled={!onMoveUp}
-        className="h-7 text-xs gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
-        title="上移"
-      >
-        <ArrowUp className="h-3 w-3" />
-        <span>上移</span>
-      </Button>
-
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={onMoveDown}
-        disabled={!onMoveDown}
-        className="h-7 text-xs gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
-        title="下移"
-      >
-        <ArrowDown className="h-3 w-3" />
-        <span>下移</span>
-      </Button>
+      {onMoveUp ? (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onMoveUp}
+          disabled={!onMoveUp}
+          className="h-7 text-xs gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+          title="上移"
+        >
+          <ArrowUp className="h-3 w-3" />
+          {/* <span>上移</span> */}
+        </Button>
+      ) : null}
+      {onMoveDown ? (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onMoveDown}
+          disabled={!onMoveDown}
+          className="h-7 text-xs gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+          title="下移"
+        >
+          <ArrowDown className="h-3 w-3" />
+          {/* <span>下移</span> */}
+        </Button>
+      ) : null}
     </div>
   );
 }

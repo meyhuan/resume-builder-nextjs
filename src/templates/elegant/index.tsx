@@ -7,6 +7,7 @@ import type { ResumeData } from '@/entities/resume/resume-data'
 import type { ThemeTokens } from '@/entities/theme/theme-tokens'
 import type { ResumeBlock } from '@/entities/blocks/resume-block'
 import type { BaseInfo } from '@/entities/user/base-info'
+import type { Section } from '@/entities/resume/section'
 import SectionHeader from '@/components/sections/section-header'
 import DeleteSectionDialog from '@/components/sections/delete-section-dialog'
 import BlockWrapper from '@/components/blocks/block-wrapper'
@@ -21,6 +22,11 @@ import BaseInfoModal from '@/components/modals/base-info-modal'
 import AvatarCropModal from '@/components/modals/avatar-crop-modal'
 import { IconPhone, IconMail, IconGender, IconAge, IconLocation } from '@/components/sections/baseinfo-icons'
 import { ELEGANT_TEMPLATE_STYLES, HEADER_BG, ACCENT_GOLD } from './styles'
+
+/** Check if every block in a section is a TextBlock. */
+function isTextOnlySection(section: Section): boolean {
+  return section.blocks.length > 0 && section.blocks.every((b) => b.type === 'text')
+}
 
 interface ElegantTemplateProps {
   readonly resume: ResumeData
@@ -346,11 +352,8 @@ export default function ElegantTemplate(props: ElegantTemplateProps): ReactEleme
               <SortableSectionWrapper key={section.id} sectionId={section.id}>
                 {(sectionDragProps) => (
                   <ElegantSectionView
-                    sectionId={section.id}
-                    title={section.title}
-                    columns={section.columns}
+                    section={section}
                     themeColor={accentColor}
-                    blockIds={section.blocks.map((b) => b.id)}
                     dragHandleAttributes={sectionDragProps.attributes}
                     dragHandleListeners={sectionDragProps.listeners}
                     dragHandleRef={sectionDragProps.ref}
@@ -378,11 +381,8 @@ export default function ElegantTemplate(props: ElegantTemplateProps): ReactEleme
 }
 
 interface ElegantSectionViewProps {
-  readonly sectionId: string
-  readonly title: string
-  readonly columns: number
+  readonly section: Section
   readonly themeColor: string
-  readonly blockIds: string[]
   readonly children: ReactNode
   readonly dragHandleAttributes?: unknown
   readonly dragHandleListeners?: unknown
@@ -390,7 +390,10 @@ interface ElegantSectionViewProps {
 }
 
 function ElegantSectionView(props: ElegantSectionViewProps): ReactElement {
-  const { sectionId, title, columns, themeColor, blockIds, children, dragHandleAttributes, dragHandleListeners, dragHandleRef } = props
+  const { section, themeColor, children, dragHandleAttributes, dragHandleListeners, dragHandleRef } = props
+  const { id: sectionId, title, columns, blocks } = section
+  const blockIds = blocks.map((b) => b.id)
+  const isTextOnly = isTextOnlySection(section)
   const addBlock = useAppStore((s) => s.addBlockByType)
   const deleteSection = useAppStore((s) => s.deleteSection)
   const updateSectionTitle = useAppStore((s) => s.updateSectionTitle)
@@ -412,7 +415,7 @@ function ElegantSectionView(props: ElegantSectionViewProps): ReactElement {
           themeColor={themeColor}
           styles={ELEGANT_TEMPLATE_STYLES.sectionHeader}
           onTitleChange={isCustomSection(title) ? (newTitle: string) => updateSectionTitle(sectionId, newTitle) : undefined}
-          onAdd={(): void => addBlock(sectionId)}
+          onAdd={isTextOnly ? undefined : (): void => addBlock(sectionId)}
           onDelete={(): void => setShowDeleteDialog(true)}
           dragHandleAttributes={dragHandleAttributes}
           dragHandleListeners={dragHandleListeners}

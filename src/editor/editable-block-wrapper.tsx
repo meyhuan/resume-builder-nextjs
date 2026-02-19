@@ -12,6 +12,7 @@ interface EditableBlockWrapperProps {
   readonly blockId: string
   readonly contentField: 'contentHtml' | 'courseHtml' | 'html'
   readonly contentSize?: 'xs' | 'sm'
+  readonly className?: string
   readonly onEditingChange?: (isEditing: boolean) => void
   readonly children?: (props: {
     isEditing: boolean
@@ -31,7 +32,7 @@ interface EditableBlockWrapperProps {
  * </EditableBlockWrapper>
  */
 export default function EditableBlockWrapper(props: EditableBlockWrapperProps): ReactElement {
-  const { onEditingChange } = props
+  const { onEditingChange, className } = props
   const [isEditing, setIsEditing] = useState(false)
   const setResume = useAppStore((s) => s.setResume)
   const resume = useAppStore((s) => s.resume)
@@ -91,7 +92,7 @@ export default function EditableBlockWrapper(props: EditableBlockWrapperProps): 
 
   if (isEditing) {
     return (
-      <div className={editingStyles}>
+      <div className={`${editingStyles} ${className || ''}`.trim()}>
         <InlineEditor
           initialHtml={content}
           onChange={handleContentChange}
@@ -105,7 +106,7 @@ export default function EditableBlockWrapper(props: EditableBlockWrapperProps): 
 
   return (
     <div
-      className={displayStyles}
+      className={`${displayStyles} ${className || ''}`.trim()}
       onClick={(): void => setIsEditing(true)}
       dangerouslySetInnerHTML={{ __html: content }}
     />

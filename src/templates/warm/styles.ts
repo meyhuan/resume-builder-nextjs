@@ -127,6 +127,6 @@ export const WARM_TEMPLATE_STYLES: TemplateStylesConfig = {
       fontWeight: 'bold',
       className: 'text-gray-800 shrink-0',
     },
-    content: 'text-[0.8125em] text-[#333] text-justify leading-relaxed',
+    content: 'text-[1em] text-gray-500 text-justify leading-relaxed',
   },
 }

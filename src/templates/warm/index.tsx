@@ -278,17 +278,17 @@ function BlockRendererWrapper(props: {
  * Section view with accent left-bar and section header.
  */
 function WarmSectionView(props: {
-  readonly sectionId: string
-  readonly title: string
-  readonly columns: number
+  readonly section: Section
   readonly themeColor: string
-  readonly blockIds: string[]
   readonly children: ReactNode
   readonly dragHandleAttributes?: unknown
   readonly dragHandleListeners?: unknown
   readonly dragHandleRef?: (element: HTMLElement | null) => void
 }): ReactElement {
-  const { sectionId, title, columns, themeColor, blockIds, children, dragHandleAttributes, dragHandleListeners, dragHandleRef } = props
+  const { section, themeColor, children, dragHandleAttributes, dragHandleListeners, dragHandleRef } = props
+  const { id: sectionId, title, columns, blocks } = section
+  const blockIds = blocks.map((b) => b.id)
+  const isTextOnly = isTextOnlySection(section)
   const addBlock = useAppStore((s) => s.addBlockByType)
   const deleteSection = useAppStore((s) => s.deleteSection)
   const updateSectionTitle = useAppStore((s) => s.updateSectionTitle)
@@ -318,7 +318,7 @@ function WarmSectionView(props: {
             containerClassName: 'w-full',
           }}
           onTitleChange={isCustomSection(title) ? (newTitle: string) => updateSectionTitle(sectionId, newTitle) : undefined}
-          onAdd={(): void => addBlock(sectionId)}
+          onAdd={isTextOnly ? undefined : (): void => addBlock(sectionId)}
           onDelete={(): void => setShowDeleteDialog(true)}
           dragHandleAttributes={dragHandleAttributes}
           dragHandleListeners={dragHandleListeners}
@@ -481,11 +481,8 @@ export default function WarmTemplate(props: WarmTemplateProps): ReactElement {
                 <SortableSectionWrapper key={section.id} sectionId={section.id}>
                   {(sectionDragProps) => (
                     <WarmSectionView
-                      sectionId={section.id}
-                      title={section.title}
-                      columns={section.columns}
+                      section={section}
                       themeColor={accentColor}
-                      blockIds={section.blocks.map((b) => b.id)}
                       dragHandleAttributes={sectionDragProps.attributes}
                       dragHandleListeners={sectionDragProps.listeners}
                       dragHandleRef={sectionDragProps.ref}
@@ -516,11 +513,8 @@ export default function WarmTemplate(props: WarmTemplateProps): ReactElement {
                   <SortableSectionWrapper key={section.id} sectionId={section.id}>
                     {(sectionDragProps) => (
                       <WarmSectionView
-                        sectionId={section.id}
-                        title={section.title}
-                        columns={section.columns}
+                        section={section}
                         themeColor={accentColor}
-                        blockIds={section.blocks.map((b) => b.id)}
                         dragHandleAttributes={sectionDragProps.attributes}
                         dragHandleListeners={sectionDragProps.listeners}
                         dragHandleRef={sectionDragProps.ref}

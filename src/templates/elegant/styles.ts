@@ -110,6 +110,6 @@ export const ELEGANT_TEMPLATE_STYLES: TemplateStylesConfig = {
       fontWeight: 'bold',
       className: 'text-gray-700 ml-4 shrink-0',
     },
-    content: 'text-[0.928em] text-gray-600 text-justify',
+    content: 'text-[1em] text-gray-500 text-justify',
   },
 }
