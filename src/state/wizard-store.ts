@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
+import type { WizardInput } from '@/lib/ai/resume-prompt-builder';
 
 export type UserIdentity = 'student' | 'graduate' | 'professional';
 
@@ -156,3 +157,22 @@ export const useWizardStore = create<WizardState>()(
     )
   )
 );
+
+/**
+ * Extracts a clean WizardInput object from the current wizard state.
+ * Returns null if required fields (identity, targetRole) are missing.
+ */
+export function getWizardInput(state: WizardState): WizardInput | null {
+  if (!state.identity || !state.targetRole) return null;
+  return {
+    identity: state.identity,
+    workYears: state.workYears,
+    targetRole: state.targetRole,
+    major: state.major,
+    projects: state.projects,
+    campusActivities: state.campusActivities,
+    softSkills: state.softSkills,
+    certificates: state.certificates,
+    additionalInfo: state.additionalInfo,
+  };
+}

@@ -44,6 +44,7 @@
     "lexical": "^0.36.1",
     "lucide-react": "^0.544.0",
     "next": "15.0.0",
+    "openai": "^6.22.0",
     "puppeteer": "^22.0.0",
     "puppeteer-core": "^24.36.0",
     "react": "^19.1.1",

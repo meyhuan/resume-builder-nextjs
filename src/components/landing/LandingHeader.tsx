@@ -32,7 +32,7 @@ export const LandingHeader = () => {
       label: 'AI简历',
       hasDropdown: true,
       items: [
-        { id: 'ai-gen', label: 'AI 简历生成', href: '/dashboard' },
+        { id: 'ai-gen', label: 'AI 简历生成', href: '/ai' },
         { id: 'ai-diag', label: 'AI 简历诊断', href: '/dashboard' },
       ],
     },
