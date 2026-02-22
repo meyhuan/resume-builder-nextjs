@@ -51,7 +51,7 @@ export default function EditorToolbar(props: EditorToolbarProps): ReactElement {
   }
 
   return (
-    <nav className="flex items-center gap-0.5">
+    <nav className="flex items-center gap-1.5 p-1.5 bg-white/70 backdrop-blur-md rounded-xl border border-white shadow-sm">
       {TOOLBAR_ACTIONS.map((action) => {
         const isActive: boolean = activePanel === action.id
         return (
@@ -59,11 +59,11 @@ export default function EditorToolbar(props: EditorToolbarProps): ReactElement {
             key={action.id}
             type="button"
             className={`
-              flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium
-              transition-all duration-150 whitespace-nowrap
+              flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
+              transition-all duration-200 whitespace-nowrap
               ${isActive
-                ? 'text-violet-600 bg-violet-50'
-                : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100'
+                ? 'text-[#8B5CF6] bg-[#8B5CF6]/10 shadow-[inset_0_0_0_1px_rgba(139,92,246,0.1)]'
+                : 'text-slate-500 hover:text-slate-800 hover:bg-black/5'
               }
             `}
             onClick={() => handleClick(action.id)}

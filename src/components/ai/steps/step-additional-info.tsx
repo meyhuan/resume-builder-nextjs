@@ -3,12 +3,11 @@
 import React, { useState, useMemo } from 'react';
 import { useWizardStore } from '@/state/wizard-store';
 import { StepCard } from '../wizard-layout';
-import { RefreshCw, Upload } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import genConfig from '../../../../files/gen_config.json';
 
 export const StepAdditionalInfo = ({ stepNumber, onClickPast }: { stepNumber: number; onClickPast?: () => void }) => {
-  const { additionalInfo, setAdditionalInfo, uploadedFiles, setUploadedFiles, identity, workYears, currentStep } = useWizardStore();
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const { additionalInfo, setAdditionalInfo, identity, workYears, currentStep } = useWizardStore();
   const [recommendationIndex, setRecommendationIndex] = useState(0);
   const isCurrent = currentStep === stepNumber;
 
@@ -54,15 +53,6 @@ export const StepAdditionalInfo = ({ stepNumber, onClickPast }: { stepNumber: nu
     setAdditionalInfo(text);
     if (!isCurrent && onClickPast) {
       onClickPast();
-    }
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      setUploadedFiles(Array.from(e.target.files));
-      if (!isCurrent && onClickPast) {
-        onClickPast();
-      }
     }
   };
 

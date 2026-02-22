@@ -14,45 +14,49 @@ const PROMISES = [
     icon: <Heart className="w-5 h-5 text-rose-500" />,
     title: '永久免费',
     description: '所有功能、所有模板、所有导出，不收一分钱。没有 VIP，没有付费墙。',
+    bgClass: 'bg-rose-50',
   },
   {
-    icon: <Shield className="w-5 h-5 text-violet-500" />,
+    icon: <Shield className="w-5 h-5 text-[#8B5CF6]" />,
     title: '隐私安全',
     description: '你的简历数据只属于你。不会被用于训练 AI，不会被分享给第三方。',
+    bgClass: 'bg-[#F5F3FF]',
   },
   {
-    icon: <Code2 className="w-5 h-5 text-cyan-500" />,
+    icon: <Code2 className="w-5 h-5 text-blue-500" />,
     title: '持续迭代',
     description: '作为独立开发者，我会持续听取用户反馈，不断优化产品体验。',
+    bgClass: 'bg-blue-50',
   },
   {
-    icon: <MessageCircle className="w-5 h-5 text-green-500" />,
+    icon: <MessageCircle className="w-5 h-5 text-emerald-500" />,
     title: '真人支持',
     description: '遇到任何问题，通过公众号随时找到我。不是客服机器人，是开发者本人。',
+    bgClass: 'bg-emerald-50',
   },
 ];
 
 export const LandingWhyFree = ({ id }: WhyFreeSectionProps) => {
   return (
-    <section id={id} className="py-24 bg-white relative overflow-hidden">
+    <section id={id} className="py-24 bg-[#F8FAFC] relative overflow-hidden">
       {/* Background Decor */}
-      <div className="absolute top-1/2 right-0 w-[500px] h-[500px] bg-violet-500/5 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute top-1/2 right-0 w-[500px] h-[500px] bg-[#8B5CF6]/5 rounded-full blur-[120px] pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="grid lg:grid-cols-2 gap-16 items-center">
           {/* Left — Story */}
           <div className="space-y-8">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-rose-50 border border-rose-100 rounded-full">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/60 backdrop-blur-md border border-white rounded-full shadow-sm">
               <Heart className="w-4 h-4 text-rose-500" />
-              <span className="text-sm font-semibold text-rose-600">独立开发者的承诺</span>
+              <span className="text-sm font-semibold text-slate-700">独立开发者的承诺</span>
             </div>
 
-            <h2 className="text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight leading-tight">
+            <h2 className="text-4xl md:text-5xl font-extrabold text-slate-800 tracking-tight leading-tight">
               为什么
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-fuchsia-500"> 完全免费？</span>
+              <span className="text-[#8B5CF6]"> 完全免费？</span>
             </h2>
 
-            <div className="space-y-4 text-lg text-slate-600 leading-relaxed">
+            <div className="space-y-4 text-lg text-slate-500 leading-relaxed font-medium">
               <p>
                 你好，我是智简简历的开发者。
               </p>
@@ -62,13 +66,13 @@ export const LandingWhyFree = ({ id }: WhyFreeSectionProps) => {
               </p>
               <p>
                 所以我决定自己做一款：
-                <span className="font-semibold text-slate-900">好看、好用、完全免费</span>的简历工具，
+                <span className="font-bold text-slate-700">好看、好用、完全免费</span>的简历工具，
                 让每一个求职路上的年轻人都能用上。
               </p>
             </div>
 
             <Link href="/dashboard">
-              <LandingButton size="lg" className="rounded-full shadow-lg shadow-violet-500/30 text-lg px-8 mt-4">
+              <LandingButton size="lg" className="rounded-xl shadow-sm text-lg px-8 mt-4 bg-[#8B5CF6] hover:bg-[#7C3AED] transition-all">
                 免费开始制作
               </LandingButton>
             </Link>
@@ -79,13 +83,13 @@ export const LandingWhyFree = ({ id }: WhyFreeSectionProps) => {
             {PROMISES.map((item, index) => (
               <div
                 key={index}
-                className="group p-6 rounded-2xl border border-slate-100 bg-white hover:shadow-lg hover:shadow-violet-500/5 hover:-translate-y-1 transition-all duration-500"
+                className="group p-6 rounded-2xl border border-white bg-white/60 backdrop-blur-md hover:bg-white/80 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300"
               >
-                <div className="w-11 h-11 rounded-xl bg-slate-50 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                <div className={`w-11 h-11 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300 shadow-sm ${item.bgClass}`}>
                   {item.icon}
                 </div>
                 <h3 className="text-lg font-bold text-slate-800 mb-2">{item.title}</h3>
-                <p className="text-sm text-slate-500 leading-relaxed">{item.description}</p>
+                <p className="text-sm font-medium text-slate-500 leading-relaxed">{item.description}</p>
               </div>
             ))}
           </div>

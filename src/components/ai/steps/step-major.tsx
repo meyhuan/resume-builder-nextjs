@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo} from 'react';
 import { useWizardStore } from '@/state/wizard-store';
 import { StepCard } from '../wizard-layout';
 import { MAJOR_HOT_PICKS } from '../constants';

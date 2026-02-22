@@ -143,20 +143,20 @@ function LayoutPanel(props: LayoutPanelProps): ReactElement {
   return (
     <Tabs defaultValue="templates" className="flex-1 flex flex-col overflow-hidden">
       <div className="px-5 shrink-0">
-        <TabsList className="w-full h-10 bg-slate-100/80 backdrop-blur-md rounded-xl p-1 gap-1 border border-slate-200/50">
+        <TabsList className="w-full h-10 bg-white/50 backdrop-blur-md rounded-xl p-1 gap-1 border border-white shadow-sm">
           <TabsTrigger
             value="templates"
-            className="flex-1 rounded-lg text-xs font-bold
-              data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm
-              text-slate-500 hover:text-slate-900"
+            className="flex-1 rounded-lg text-xs font-semibold
+              data-[state=active]:bg-white data-[state=active]:text-slate-800 data-[state=active]:shadow-sm
+              text-slate-500 hover:text-slate-700 transition-all"
           >
             切换模板
           </TabsTrigger>
           <TabsTrigger
             value="settings"
-            className="flex-1 rounded-lg text-xs font-bold
-              data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm
-              text-slate-500 hover:text-slate-900"
+            className="flex-1 rounded-lg text-xs font-semibold
+              data-[state=active]:bg-white data-[state=active]:text-slate-800 data-[state=active]:shadow-sm
+              text-slate-500 hover:text-slate-700 transition-all"
           >
             排版设置
           </TabsTrigger>
@@ -170,42 +170,41 @@ function LayoutPanel(props: LayoutPanelProps): ReactElement {
             {templates.map((template) => (
               <div
                 key={template.id}
-                className={`group relative cursor-pointer rounded-2xl border transition-all duration-300 overflow-hidden ${
+                className={`group relative cursor-pointer rounded-xl border transition-all duration-200 overflow-hidden ${
                   tpl === template.id
-                    ? 'border-violet-500 ring-1 ring-violet-500/20 shadow-lg shadow-violet-500/5 bg-white'
-                    : 'border-slate-100 bg-white hover:border-violet-200 hover:shadow-md hover:-translate-y-0.5'
+                    ? 'border-[#8B5CF6] ring-1 ring-[#8B5CF6]/20 shadow-sm bg-white'
+                    : 'border-white bg-white/60 backdrop-blur-sm shadow-sm hover:border-[#8B5CF6]/50 hover:bg-white/90'
                 }`}
                 onClick={(): void => props.onTplChange(template.id)}
               >
-                <div className="aspect-[3/4] bg-slate-50 overflow-hidden relative">
+                <div className="aspect-[3/4] bg-slate-50 overflow-hidden relative border-b border-slate-100">
                    {thumbnailMap[template.id] ? (
                      <Image
                        src={thumbnailMap[template.id]}
                        alt={template.name}
                        fill
-                       className="object-cover transition-transform duration-500 group-hover:scale-105"
+                       className="object-cover transition-transform duration-300 group-hover:scale-105"
                        sizes="160px"
                      />
                    ) : (
                      <div className="absolute inset-0 flex items-center justify-center text-slate-200">
-                       <Layout className="w-10 h-10 opacity-30" />
+                       <Layout className="w-8 h-8 opacity-40" />
                      </div>
                    )}
                    {tpl === template.id && (
-                     <div className="absolute inset-0 bg-violet-600/5 transition-opacity" />
+                     <div className="absolute inset-0 bg-[#8B5CF6]/5 transition-opacity" />
                    )}
                    {tpl === template.id && (
-                     <div className="absolute top-2.5 right-2.5 w-6 h-6 bg-gradient-to-br from-violet-600 to-fuchsia-500 text-white rounded-full flex items-center justify-center shadow-lg animate-in zoom-in duration-300">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" className="w-3.5 h-3.5">
-                          <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M2.5 7.388l4.188 3.905a.3.3 0 0 0 .419-.021L13.42 4.5" />
+                     <div className="absolute top-2 right-2 w-5 h-5 bg-[#8B5CF6] text-white rounded-full flex items-center justify-center shadow-sm animate-in zoom-in duration-200">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" className="w-3 h-3">
+                          <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l3.5 3.5a.3.3 0 0 0 .42-.02L13 5" />
                         </svg>
                      </div>
                    )}
-                   <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-violet-600 to-fuchsia-500 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
-                <div className="px-3 py-2.5">
-                  <div className="font-bold text-[11px] text-slate-800 line-clamp-1">{template.name}</div>
-                  <div className="text-[9px] font-semibold text-slate-400 uppercase tracking-wider mt-0.5">
+                <div className="px-3 py-2 bg-white">
+                  <div className="font-semibold text-xs text-slate-800 line-clamp-1">{template.name}</div>
+                  <div className="text-[10px] font-medium text-slate-500 mt-0.5">
                     {template.tags?.[0] || '通用'}
                   </div>
                 </div>
@@ -213,11 +212,11 @@ function LayoutPanel(props: LayoutPanelProps): ReactElement {
             ))}
           </div>
         </div>
-        <div className="p-4 border-t border-slate-100 bg-white/60 backdrop-blur-md shrink-0">
+        <div className="p-4 border-t border-white bg-white/70 backdrop-blur-md shrink-0">
           <Button
             variant="outline"
             size="sm"
-            className="w-full gap-2 text-xs font-bold h-10 bg-white rounded-xl border-slate-200 text-slate-600 hover:border-violet-200 hover:text-violet-600 hover:bg-violet-50 transition-all shadow-sm"
+            className="w-full gap-2 text-xs font-semibold h-9 bg-white/80 backdrop-blur-sm rounded-lg border-white shadow-sm text-slate-600 hover:border-[#8B5CF6]/30 hover:text-[#8B5CF6] hover:bg-[#F5F3FF] transition-all"
             onClick={handleImportClick}
           >
             <Upload className="h-3.5 w-3.5" />
@@ -230,7 +229,7 @@ function LayoutPanel(props: LayoutPanelProps): ReactElement {
       <TabsContent value="settings" className="flex-1 m-0 p-0 overflow-hidden">
         <div className="h-full flex flex-col overflow-hidden">
           <div className="flex-1 overflow-y-auto custom-scrollbar p-5">
-            <div className="bg-white rounded-[24px] border border-slate-100 shadow-sm overflow-hidden">
+            <div className="bg-transparent overflow-hidden">
               <ThemePanel
                 theme={theme}
                 onUpdate={props.onThemePatch}
@@ -242,11 +241,11 @@ function LayoutPanel(props: LayoutPanelProps): ReactElement {
             </div>
           </div>
           {process.env.NODE_ENV === 'development' && (
-            <div className="p-4 border-t border-slate-100 bg-white/60 backdrop-blur-md shrink-0">
+            <div className="p-4 border-t border-white bg-white/70 backdrop-blur-md shrink-0">
               <Button
                 variant="outline"
                 size="sm"
-                className="w-full gap-2 text-xs font-bold h-10 bg-white rounded-xl border-slate-200 text-slate-600 hover:border-violet-200 hover:text-violet-600 hover:bg-violet-50 transition-all shadow-sm"
+                className="w-full gap-2 text-xs font-semibold h-9 bg-white/80 backdrop-blur-sm rounded-lg border-white shadow-sm text-slate-600 hover:border-[#8B5CF6]/30 hover:text-[#8B5CF6] hover:bg-[#F5F3FF] transition-all"
                 onClick={() => {
                   if (window.confirm('加载测试数据将覆盖当前所有内容，确定吗？')) {
                     useAppStore.getState().loadTestData()

@@ -70,7 +70,7 @@ export default function SectionManager(props: SectionManagerProps): ReactElement
   )
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full bg-transparent">
       {/* Header */}
       <div className="flex items-center justify-between px-5 pt-5 pb-3">
         <h2 className="text-lg font-bold text-slate-800">模块管理</h2>
@@ -87,10 +87,10 @@ export default function SectionManager(props: SectionManagerProps): ReactElement
       <div className="flex-1 overflow-y-auto px-4 pb-4 custom-scrollbar">
         {/* Pinned: 个人信息 */}
         <SectionRow label="个人信息">
-          <label className="flex items-center gap-1.5 text-xs text-slate-500 cursor-pointer select-none">
+          <label className="flex items-center gap-1.5 text-xs font-medium text-slate-500 cursor-pointer select-none">
             <input
               type="checkbox"
-              className="accent-violet-600 w-3.5 h-3.5 rounded"
+              className="accent-[#8B5CF6] w-3.5 h-3.5 rounded-sm border-slate-300"
               checked={showPhotoAvatar}
               onChange={(e) => setShowPhotoAvatar(e.target.checked)}
             />
@@ -129,10 +129,10 @@ export default function SectionManager(props: SectionManagerProps): ReactElement
                 <button
                   key={label}
                   type="button"
-                  className="flex items-center gap-2 px-3 py-2.5 rounded-lg border border-slate-100 bg-white text-sm text-slate-600 hover:border-violet-200 hover:bg-violet-50 hover:text-violet-700 transition-all shadow-sm"
+                  className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-white bg-white/60 backdrop-blur-md shadow-sm text-sm font-medium text-slate-600 hover:border-[#8B5CF6]/30 hover:bg-white/90 hover:text-[#8B5CF6] transition-all"
                   onClick={() => addSection(label)}
                 >
-                  <PlusSquare size={16} className="text-violet-500 shrink-0" />
+                  <PlusSquare size={16} className="text-[#8B5CF6] shrink-0" />
                   {label}
                 </button>
               ))}
@@ -150,7 +150,7 @@ function SectionRow(props: {
   readonly children?: ReactNode
 }): ReactElement {
   return (
-    <div className="flex items-center justify-between px-4 py-3.5 mb-2 rounded-lg border border-slate-100 bg-white shadow-sm">
+    <div className="flex items-center justify-between px-4 py-3 mb-2 rounded-xl border border-white bg-white/60 backdrop-blur-md shadow-sm">
       <span className="text-sm font-medium text-slate-700">{props.label}</span>
       {props.children}
     </div>
@@ -162,7 +162,7 @@ function RemoveButton(props: { readonly onClick: () => void }): ReactElement {
   return (
     <button
       type="button"
-      className="text-slate-300 hover:text-red-400 transition-colors"
+      className="text-slate-300 hover:text-rose-500 transition-colors"
       title="移除"
       onClick={props.onClick}
     >
@@ -188,21 +188,25 @@ function SortableSectionRow(props: {
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : 1,
+    opacity: isDragging ? 0.7 : 1,
     zIndex: isDragging ? 10 : 'auto',
   }
   return (
     <div
       ref={setNodeRef}
       style={style}
-      className="flex items-center justify-between px-4 py-3.5 mb-2 rounded-lg border border-slate-100 bg-white shadow-sm cursor-grab active:cursor-grabbing"
+      className={`flex items-center justify-between px-4 py-3 mb-2 rounded-xl border transition-all duration-200 cursor-grab active:cursor-grabbing ${
+        isDragging 
+          ? 'border-[#8B5CF6] bg-white shadow-md scale-[1.02]' 
+          : 'border-white bg-white/60 backdrop-blur-md shadow-sm hover:bg-white/80'
+      }`}
       {...attributes}
       {...listeners}
     >
       <span className="text-sm font-medium text-slate-700">{section.title}</span>
       <button
         type="button"
-        className="text-slate-300 hover:text-red-400 transition-colors"
+        className="text-slate-300 hover:text-rose-500 transition-colors"
         title="移除"
         onClick={(e) => {
           e.stopPropagation()

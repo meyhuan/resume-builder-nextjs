@@ -49,11 +49,13 @@ export const LandingFAQ = ({ id }: FAQSectionProps) => {
   };
 
   return (
-    <section id={id} className="py-24 bg-slate-50 relative">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section id={id} className="py-24 bg-[#F8FAFC] relative">
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-blue-500/5 rounded-full blur-[120px] pointer-events-none" />
+      
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-6 tracking-tight">
-            FAQ <span className="text-slate-400 font-normal">常见问题</span>
+          <h2 className="text-3xl md:text-4xl font-extrabold text-slate-800 mb-6 tracking-tight">
+            FAQ <span className="text-slate-400 font-medium">常见问题</span>
           </h2>
         </div>
 
@@ -64,37 +66,37 @@ export const LandingFAQ = ({ id }: FAQSectionProps) => {
               <div
                 key={index}
                 className={cn(
-                  "group bg-white rounded-2xl border border-slate-200 transition-all duration-300 overflow-hidden cursor-pointer",
-                  isActive ? "shadow-lg shadow-violet-500/5 border-violet-200 ring-1 ring-violet-500/20" : "hover:border-violet-300"
+                  "group bg-white/60 backdrop-blur-md rounded-2xl border border-white transition-all duration-300 overflow-hidden cursor-pointer",
+                  isActive ? "shadow-md bg-white/90" : "hover:bg-white/80 shadow-sm hover:shadow-md"
                 )}
                 onClick={() => toggleItem(index)}
               >
                 <div className="flex items-start justify-between p-6 gap-4">
                   <div className="flex items-start gap-4">
                     <div className={cn(
-                      "mt-1 w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 transition-colors",
-                      isActive ? "bg-violet-100 text-violet-600" : "bg-slate-100 text-slate-400 group-hover:text-violet-500"
+                      "mt-1 w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors shadow-sm",
+                      isActive ? "bg-[#8B5CF6] text-white" : "bg-slate-50 text-slate-400 group-hover:text-[#8B5CF6]"
                     )}>
-                      <MessageCircle className="w-3.5 h-3.5" />
+                      <MessageCircle className="w-4 h-4" />
                     </div>
                     <h3 className={cn(
-                      "text-lg font-bold leading-tight transition-colors pt-0.5",
-                      isActive ? "text-violet-900" : "text-slate-700 group-hover:text-violet-700"
+                      "text-lg font-bold leading-tight transition-colors pt-1",
+                      isActive ? "text-slate-900" : "text-slate-700 group-hover:text-slate-900"
                     )}>
                       {item.question}
                     </h3>
                   </div>
                   <ChevronDown className={cn(
-                    "w-5 h-5 text-slate-300 transition-transform duration-300 flex-shrink-0 mt-1",
-                    isActive && "rotate-180 text-violet-500"
+                    "w-5 h-5 text-slate-400 transition-transform duration-300 flex-shrink-0 mt-1.5",
+                    isActive && "rotate-180 text-[#8B5CF6]"
                   )} />
                 </div>
                 
                 <div className={cn(
-                  "px-6 sm:px-[64px] overflow-hidden transition-all duration-300 ease-in-out",
+                  "px-6 sm:px-[68px] overflow-hidden transition-all duration-300 ease-in-out",
                   isActive ? "max-h-[500px] pb-6 opacity-100" : "max-h-0 opacity-0"
                 )}>
-                  <p className="text-slate-600 leading-relaxed bg-slate-50/50 p-4 rounded-xl border border-slate-100">
+                  <p className="text-slate-600 font-medium leading-relaxed bg-slate-50/50 p-4 rounded-xl border border-slate-100/50 shadow-inner">
                     {item.answer}
                   </p>
                 </div>
