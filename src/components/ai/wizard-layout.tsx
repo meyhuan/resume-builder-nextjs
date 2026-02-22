@@ -74,7 +74,30 @@ export const WizardLayout = ({ children }: { children: React.ReactNode }) => {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8F9FC] flex flex-col items-center py-10 px-4">
+    <div className="min-h-screen bg-[#F8F9FC] flex flex-col">
+      {/* Page header */}
+      <header className="sticky top-0 z-20 bg-white/70 backdrop-blur-xl border-b border-gray-100">
+        <div className="max-w-4xl mx-auto px-6 h-14 flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => router.push('/dashboard')}
+            className="flex items-center gap-1 text-sm text-gray-500 hover:text-[#8B5CF6] transition-colors"
+          >
+            <ChevronLeft className="w-4 h-4" />
+            返回
+          </button>
+          <div className="w-px h-4 bg-gray-200" />
+          <h1 className="text-sm font-semibold text-gray-800">AI 生成简历</h1>
+        </div>
+      </header>
+
+      {/* Hero title */}
+      <div className="text-center pt-8 pb-4">
+        <h2 className="text-xl font-bold text-gray-900">一分钟，AI生成简历</h2>
+        <p className="text-sm text-gray-400 mt-1">输入关键信息，AI 一键生成匹配岗位的专业简历</p>
+      </div>
+
+      <div className="flex-1 flex flex-col items-center pb-10 px-4">
       <div className="w-full max-w-3xl space-y-6">
         <div className="space-y-6">
           {children}
@@ -123,6 +146,7 @@ export const WizardLayout = ({ children }: { children: React.ReactNode }) => {
             </button>
           </div>
         )}
+      </div>
       </div>
     </div>
   );
@@ -362,17 +386,26 @@ export const StepCard = ({
   stepNumber, 
   title, 
   children, 
-  onSkip
+  onSkip,
+  onClickPast,
 }: { 
   stepNumber: number; 
   title: string; 
   children: React.ReactNode;
   onSkip?: () => void;
+  onClickPast?: () => void;
 }) => {
   const { currentStep, totalSteps } = useWizardStore();
   const isCurrent: boolean = stepNumber === currentStep;
+  const isPast: boolean = stepNumber < currentStep;
   
   if (stepNumber > currentStep) return null;
+
+  const handleHeaderClick = (): void => {
+    if (isPast && onClickPast) {
+      onClickPast();
+    }
+  };
 
   return (
     <motion.div 
@@ -380,8 +413,17 @@ export const StepCard = ({
       animate={{ opacity: 1, y: 0 }}
       className="w-full"
     >
-      <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-        <div className="flex items-center justify-between mb-4">
+      <div className={cn(
+        "bg-white rounded-2xl p-6 shadow-sm border border-gray-100",
+        isPast && onClickPast && "transition-colors"
+      )}>
+        <div
+          className={cn(
+            "flex items-center justify-between mb-4",
+            isPast && onClickPast && "cursor-pointer hover:opacity-70 transition-opacity"
+          )}
+          onClick={handleHeaderClick}
+        >
           <div className="flex items-center gap-2">
             <span className="text-gray-500 font-medium">{stepNumber}/{totalSteps}</span>
             <h2 className="text-gray-800 font-bold text-lg">{title}</h2>

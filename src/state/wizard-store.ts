@@ -51,6 +51,7 @@ export interface WizardState {
   toggleCertificate: (cert: string) => void;
   setAdditionalInfo: (info: string) => void;
   setUploadedFiles: (files: File[]) => void;
+  resetFromStep: (step: number, stepKeys: string[]) => void;
   reset: () => void;
 }
 
@@ -126,7 +127,29 @@ export const useWizardStore = create<WizardState>()(
 
         setAdditionalInfo: (additionalInfo) => set({ additionalInfo }),
         setUploadedFiles: (files) => set({ uploadedFiles: files }),
-          
+
+        resetFromStep: (step, stepKeys) => {
+          const fieldMap: Record<string, Partial<WizardState>> = {
+            identity: { identity: null },
+            workYears: { workYears: '' },
+            targetRole: { targetRole: '' },
+            major: { major: '' },
+            projects: { projects: [] },
+            campusActivities: { campusActivities: [] },
+            skills: { softSkills: [] },
+            certificates: { certificates: [] },
+            additionalInfo: { additionalInfo: '', uploadedFiles: [] },
+          };
+          const resetFields: Partial<WizardState> = {};
+          for (let i = step; i < stepKeys.length; i++) {
+            const key = stepKeys[i];
+            if (key && fieldMap[key]) {
+              Object.assign(resetFields, fieldMap[key]);
+            }
+          }
+          set({ currentStep: step, ...resetFields } as Partial<WizardState>);
+        },
+
         reset: () => set({
           currentStep: 1,
           identity: null,

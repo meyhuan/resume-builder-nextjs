@@ -5,14 +5,14 @@ export const IDENTITY_OPTIONS = [
   { id: 'professional', label: '职场人', image: '/images/identity-professional.png' },
 ];
 
-export const JOB_OPTIONS = [
-  '检验师', '护士', '幼儿教师', '销售代表', 
-  '会计', '新媒体运营', '客服', '更多岗位'
+export const JOB_HOT_PICKS = [
+  '行政助理', '护士', '幼儿教师', '销售代表',
+  '会计', '新媒体运营', '客服', '客户经理',
 ];
 
-export const MAJOR_OPTIONS = [
-  '生物医学电子与信号技术', '护理学', '学前教育', '电子商务',
-  '会计学', '市场营销', '财务管理', '临床医学'
+export const MAJOR_HOT_PICKS = [
+  '工商管理', '护理学', '学前教育', '电子商务',
+  '会计学', '市场营销', '财务管理', '临床医学',
 ];
 
 export const PROJECT_OPTIONS = [

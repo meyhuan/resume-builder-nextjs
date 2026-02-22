@@ -14,22 +14,22 @@ const IDENTITY_ICONS: Record<string, string> = {
   professional: '/icons/icon-professional.png',
 };
 
-export const StepIdentity = ({ stepNumber = 1 }: { stepNumber?: number }) => {
+export const StepIdentity = ({ stepNumber = 1, onClickPast }: { stepNumber?: number; onClickPast?: () => void }) => {
   const { setIdentity, identity, nextStep, currentStep } = useWizardStore();
   const isCurrent = currentStep === stepNumber;
 
   const handleSelect = (id: string) => {
     setIdentity(id as UserIdentity);
-    // Add a small delay for better UX before moving next
-    if (isCurrent) {
-      setTimeout(() => {
-          nextStep();
-      }, 400);
+    if (!isCurrent && onClickPast) {
+      onClickPast();
+      setTimeout(() => nextStep(), 400);
+    } else if (isCurrent) {
+      setTimeout(() => nextStep(), 400);
     }
   };
 
   return (
-    <StepCard stepNumber={stepNumber} title="选择你的身份">
+    <StepCard stepNumber={stepNumber} title="选择你的身份" onClickPast={onClickPast}>
       <div className="grid grid-cols-3 gap-6 mt-8">
         {IDENTITY_OPTIONS.map((option) => {
           const isSelected = identity === option.id;

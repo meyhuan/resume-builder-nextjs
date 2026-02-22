@@ -6,7 +6,7 @@ import { StepCard } from '../wizard-layout';
 import { ChipGroup } from '../ui/chip-group';
 import { CERTIFICATE_OPTIONS } from '../constants';
 
-export const StepCertificates = ({ stepNumber }: { stepNumber: number }) => {
+export const StepCertificates = ({ stepNumber, onClickPast }: { stepNumber: number; onClickPast?: () => void }) => {
   const { certificates, toggleCertificate, nextStep, currentStep } = useWizardStore();
   const isCurrent = currentStep === stepNumber;
 
@@ -16,13 +16,25 @@ export const StepCertificates = ({ stepNumber }: { stepNumber: number }) => {
       
       if (added) toggleCertificate(added);
       if (removed) toggleCertificate(removed);
+
+      if (!isCurrent && onClickPast) {
+        onClickPast();
+      }
+  };
+
+  const handleConfirm = () => {
+    if (!isCurrent && onClickPast) {
+      onClickPast();
+    }
+    nextStep();
   };
 
   return (
     <StepCard 
       stepNumber={stepNumber} 
       title="请填写你获得的资格证书 (可多选)"
-      onSkip={nextStep}
+      onSkip={handleConfirm}
+      onClickPast={onClickPast}
     >
        <div className="space-y-6">
         <ChipGroup
@@ -36,7 +48,7 @@ export const StepCertificates = ({ stepNumber }: { stepNumber: number }) => {
         {isCurrent && (
           <div className="flex justify-end">
              <button 
-                onClick={nextStep}
+                onClick={handleConfirm}
                 className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white px-6 py-2 rounded-lg text-sm font-medium transition-colors"
              >
                 确认

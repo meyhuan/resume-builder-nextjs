@@ -8,13 +8,17 @@ import { CAMPUS_ACTIVITY_OPTIONS } from '../constants';
 
 interface StepCampusActivitiesProps {
   stepNumber: number;
+  onClickPast?: () => void;
 }
 
-export const StepCampusActivities = ({ stepNumber }: StepCampusActivitiesProps) => {
+export const StepCampusActivities = ({ stepNumber, onClickPast }: StepCampusActivitiesProps) => {
   const { campusActivities, toggleCampusActivity, nextStep, currentStep } = useWizardStore();
   const isCurrent = currentStep === stepNumber;
 
   const handleNext = () => {
+    if (!isCurrent && onClickPast) {
+      onClickPast();
+    }
     nextStep();
   };
 
@@ -23,6 +27,7 @@ export const StepCampusActivities = ({ stepNumber }: StepCampusActivitiesProps) 
       stepNumber={stepNumber} 
       title="请问你曾参与过哪些校园活动 (可多选)"
       onSkip={handleNext}
+      onClickPast={onClickPast}
     >
       <div className="space-y-6">
         <ChipGroup
@@ -38,6 +43,10 @@ export const StepCampusActivities = ({ stepNumber }: StepCampusActivitiesProps) 
                  // Custom addition
                  const newCustom = selected.find(s => !CAMPUS_ACTIVITY_OPTIONS.includes(s) && !current.has(s));
                  if (newCustom) toggleCampusActivity(newCustom);
+             }
+
+             if (!isCurrent && onClickPast) {
+               onClickPast();
              }
           }}
           multiSelect={true}
