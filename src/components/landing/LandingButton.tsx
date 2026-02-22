@@ -1,35 +1,39 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 
-export interface LandingButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'glass';
   size?: 'sm' | 'md' | 'lg';
   loading?: boolean;
-  children: React.ReactNode;
 }
 
-export const LandingButton = React.forwardRef<HTMLButtonElement, LandingButtonProps>(
-  ({ className, variant = 'primary', size = 'md', loading = false, children, ...props }, ref) => {
-    const baseStyles = "inline-flex items-center justify-center font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50 disabled:pointer-events-none disabled:opacity-50";
-    
+export const LandingButton = React.forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ className, variant = 'primary', size = 'md', loading, disabled, children, ...props }, ref) => {
     const variants = {
-      primary: "bg-[#8B5CF6] text-white hover:bg-[#7C3AED] shadow-sm active:scale-[0.98]",
-      secondary: "bg-white text-slate-800 hover:bg-slate-50 border border-slate-200 shadow-sm active:scale-[0.98]",
-      outline: "border-2 border-[#8B5CF6]/20 bg-transparent hover:bg-[#8B5CF6]/5 text-[#8B5CF6] active:scale-[0.98]",
-      ghost: "hover:bg-black/5 text-slate-600 hover:text-slate-900 active:scale-[0.98]",
-      glass: "bg-white/60 backdrop-blur-md border border-white text-slate-700 hover:bg-white/80 hover:text-[#8B5CF6] shadow-sm active:scale-[0.98]"
+      primary: 'bg-gradient-to-r from-violet-600 to-fuchsia-500 text-white shadow-[0_0_20px_rgba(124,58,237,0.3)] hover:shadow-[0_0_30px_rgba(124,58,237,0.5)] hover:scale-105 border border-white/10',
+      secondary: 'bg-white/10 backdrop-blur-md border border-white/20 text-gray-900 dark:text-white hover:bg-white/20 hover:scale-105',
+      outline: 'border-2 border-violet-500 text-violet-600 hover:bg-violet-50',
+      ghost: 'text-gray-600 hover:bg-violet-50 hover:text-violet-600',
+      glass: 'bg-white/70 backdrop-blur-lg border border-white/50 text-violet-900 shadow-lg hover:bg-white/90 hover:scale-105',
     };
 
     const sizes = {
-      sm: "h-9 px-4 text-xs rounded-lg",
-      md: "h-11 px-6 text-sm rounded-xl",
-      lg: "h-14 px-8 text-base rounded-2xl"
+      sm: 'px-4 py-2 text-sm',
+      md: 'px-6 py-3 text-base',
+      lg: 'px-8 py-4 text-lg',
     };
 
     return (
       <button
         ref={ref}
-        className={cn(baseStyles, variants[variant], sizes[size], className)}
+        disabled={loading || disabled}
+        className={cn(
+          'inline-flex items-center justify-center rounded-lg font-semibold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap',
+          variants[variant],
+          sizes[size],
+          loading && 'pointer-events-none',
+          className
+        )}
         {...props}
       >
         {loading ? (
