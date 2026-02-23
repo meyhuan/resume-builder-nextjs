@@ -52,7 +52,7 @@ export const LandingHero = () => {
 
           {/* CTA Buttons */}
           <div className="flex flex-wrap gap-4 justify-center mt-2">
-            <Link href="/dashboard">
+            <Link href="/ai">
               <LandingButton size="lg" className="rounded-full shadow-[0_8px_20px_rgba(139,92,246,0.25)] hover:shadow-[0_10px_25px_rgba(139,92,246,0.35)] text-base px-8 h-12">
                 <Wand2 className="w-5 h-5 mr-2" />
                 免费生成简历

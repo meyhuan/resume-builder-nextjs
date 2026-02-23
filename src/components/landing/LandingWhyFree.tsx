@@ -67,9 +67,9 @@ export const LandingWhyFree = ({ id }: WhyFreeSectionProps) => {
               </p>
             </div>
 
-            <Link href="/dashboard">
+            <Link href="/ai">
               <LandingButton size="lg" className="rounded-full shadow-lg shadow-violet-500/30 text-lg px-8 mt-4">
-                免费开始制作
+                免费生成简历
               </LandingButton>
             </Link>
           </div>

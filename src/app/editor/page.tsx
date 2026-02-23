@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import ResumeEditor from "@/components/ResumeEditor";
+import { Suspense } from "react";
+import { Loader2 } from "lucide-react";
 
 export const metadata: Metadata = {
   title: '简历编辑器 - 可视化编辑你的简历',
@@ -7,6 +9,21 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
+function EditorFallback() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div className="flex flex-col items-center gap-4 text-slate-500">
+        <Loader2 className="w-8 h-8 animate-spin text-violet-500" />
+        <p>正在加载编辑器...</p>
+      </div>
+    </div>
+  );
+}
+
 export default function Page() {
-  return <ResumeEditor />;
+  return (
+    <Suspense fallback={<EditorFallback />}>
+      <ResumeEditor />
+    </Suspense>
+  );
 }

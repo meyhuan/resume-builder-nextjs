@@ -73,7 +73,7 @@ export const LandingTemplates = ({ id }: TemplatesSectionProps) => {
                   
                   {/* Overlay */}
                   <div className="absolute inset-0 bg-gradient-to-t from-violet-900/90 via-violet-900/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-6">
-                    <Link href="/dashboard" className="w-full">
+                    <Link href={`/editor?template=${item.id}`} className="w-full">
                       <LandingButton variant="primary" size="md" className="w-full rounded-xl shadow-none border-0 font-bold">
                         <Wand2 className="w-4 h-4 mr-2" />
                         免费使用此模板
@@ -109,7 +109,7 @@ export const LandingTemplates = ({ id }: TemplatesSectionProps) => {
         </div>
 
         <div className="flex justify-center">
-          <Link href="/dashboard">
+          <Link href="/editor">
             <LandingButton variant="glass" size="lg" className="rounded-full px-8 text-slate-600 hover:text-violet-600">
               查看全部模板
             </LandingButton>

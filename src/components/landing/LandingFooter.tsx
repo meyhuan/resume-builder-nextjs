@@ -36,18 +36,17 @@ export const LandingFooter = () => {
           <div>
             <h4 className="font-bold text-slate-900 mb-6">产品</h4>
             <ul className="space-y-3 text-sm text-slate-500">
-              <li><Link href="/dashboard" className="hover:text-violet-600 transition-colors">简历模板</Link></li>
-              <li><Link href="/dashboard" className="hover:text-violet-600 transition-colors">AI 简历生成</Link></li>
-              <li><Link href="/dashboard" className="hover:text-violet-600 transition-colors">求职攻略</Link></li>
+              <li><Link href="/#templates" className="hover:text-violet-600 transition-colors">简历模板</Link></li>
+              <li><Link href="/ai" className="hover:text-violet-600 transition-colors">AI 简历生成</Link></li>
             </ul>
           </div>
 
           <div>
             <h4 className="font-bold text-slate-900 mb-6">支持</h4>
             <ul className="space-y-3 text-sm text-slate-500">
-              <li><Link href="/dashboard" className="hover:text-violet-600 transition-colors">帮助中心</Link></li>
-              <li><Link href="/dashboard" className="hover:text-violet-600 transition-colors">用户反馈</Link></li>
-              <li><Link href="/dashboard" className="hover:text-violet-600 transition-colors">商务合作</Link></li>
+              <li><Link href="/about" className="hover:text-violet-600 transition-colors">关于开发者</Link></li>
+              <li><Link href="/about" className="hover:text-violet-600 transition-colors">用户反馈</Link></li>
+              <li><Link href="/about" className="hover:text-violet-600 transition-colors">商务合作</Link></li>
             </ul>
           </div>
 

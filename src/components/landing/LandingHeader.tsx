@@ -26,18 +26,9 @@ export const LandingHeader = () => {
   }, []);
 
   const menuItems = [
-    { id: 'templates', label: '简历模板', href: '/dashboard' },
-    {
-      id: 'ai',
-      label: 'AI简历',
-      hasDropdown: true,
-      items: [
-        { id: 'ai-gen', label: 'AI 简历生成', href: '/ai' },
-        { id: 'ai-diag', label: 'AI 简历诊断', href: '/dashboard' },
-      ],
-    },
-    { id: 'guide', label: '求职攻略', href: '/dashboard' },
-    { id: 'about', label: '关于我们', href: '/dashboard' },
+    { id: 'templates', label: '简历模板', href: '/#templates' },
+    { id: 'ai', label: 'AI 简历生成', href: '/ai' },
+    { id: 'about', label: '关于开发者', href: '/about' },
   ];
 
   return (
@@ -62,39 +53,13 @@ export const LandingHeader = () => {
               <div
                 key={item.id}
                 className="relative group px-1"
-                onMouseEnter={() => item.hasDropdown && setActiveDropdown(item.id)}
-                onMouseLeave={() => setActiveDropdown(null)}
               >
-                {item.hasDropdown ? (
-                  <button className="flex items-center gap-1 px-4 py-2 text-sm font-medium text-slate-600 hover:text-violet-700 rounded-full hover:bg-white/50 transition-all">
-                    {item.label}
-                    <ChevronDown className={cn("w-4 h-4 transition-transform text-slate-400 group-hover:text-violet-500", activeDropdown === item.id && "rotate-180")} />
-                  </button>
-                ) : (
-                  <Link 
-                    href={item.href!} 
-                    className="flex items-center px-4 py-2 text-sm font-medium text-slate-600 hover:text-violet-700 rounded-full hover:bg-white/50 transition-all"
-                  >
-                    {item.label}
-                  </Link>
-                )}
-
-                {item.hasDropdown && (
-                  <div className={cn(
-                    "absolute top-full left-0 mt-2 w-56 p-2 bg-white/80 backdrop-blur-xl rounded-2xl shadow-[0_8px_32px_rgba(31,38,135,0.07)] border border-white/20 transition-all duration-300 opacity-0 invisible translate-y-2 origin-top-left ring-1 ring-black/5",
-                    activeDropdown === item.id && "opacity-100 visible translate-y-0"
-                  )}>
-                    {item.items?.map((sub) => (
-                      <Link
-                        key={sub.id}
-                        href={sub.href}
-                        className="block px-4 py-3 text-sm text-slate-600 hover:text-violet-700 hover:bg-violet-50/50 rounded-xl transition-colors"
-                      >
-                        <div className="font-medium">{sub.label}</div>
-                      </Link>
-                    ))}
-                  </div>
-                )}
+                <Link 
+                  href={item.href} 
+                  className="flex items-center px-4 py-2 text-sm font-medium text-slate-600 hover:text-violet-700 rounded-full hover:bg-white/50 transition-all"
+                >
+                  {item.label}
+                </Link>
               </div>
             ))}
           </nav>
@@ -134,7 +99,9 @@ export const LandingHeader = () => {
             ) : (
               <>
                 <LandingButton variant="ghost" size="sm" onClick={() => setIsLoginOpen(true)} className="rounded-full hover:bg-white/50">登录</LandingButton>
-                <LandingButton size="sm" onClick={() => setIsLoginOpen(true)} className="rounded-full shadow-lg shadow-violet-500/25">免费制作</LandingButton>
+                <Link href="/ai">
+                  <LandingButton size="sm" className="rounded-full shadow-lg shadow-violet-500/25">免费制作</LandingButton>
+                </Link>
               </>
             )}
           </div>
@@ -150,14 +117,9 @@ export const LandingHeader = () => {
           <div className="md:hidden absolute top-full left-0 right-0 bg-white/90 backdrop-blur-xl border-b border-white/20 px-4 py-6 space-y-4 animate-in slide-in-from-top duration-300 shadow-xl">
             {menuItems.map((item) => (
               <div key={item.id} className="space-y-2 border-b border-slate-100 pb-2">
-                <Link href={item.href!} className="block text-slate-700 font-semibold text-lg" onClick={() => setMobileMenuOpen(false)}>
+                <Link href={item.href} className="block text-slate-700 font-semibold text-lg" onClick={() => setMobileMenuOpen(false)}>
                   {item.label}
                 </Link>
-                {item.items?.map((sub) => (
-                  <Link key={sub.id} href={sub.href} className="block pl-4 text-slate-500 hover:text-violet-600" onClick={() => setMobileMenuOpen(false)}>
-                    {sub.label}
-                  </Link>
-                ))}
               </div>
             ))}
             <div className="flex flex-col gap-3 pt-4">
@@ -168,7 +130,9 @@ export const LandingHeader = () => {
               ) : (
                 <>
                   <LandingButton variant="outline" size="md" className="w-full rounded-xl" onClick={() => setIsLoginOpen(true)}>注册/登录</LandingButton>
-                  <LandingButton size="md" className="w-full rounded-xl" onClick={() => setIsLoginOpen(true)}>免费制作</LandingButton>
+                  <Link href="/ai" className="w-full" onClick={() => setMobileMenuOpen(false)}>
+                    <LandingButton size="md" className="w-full rounded-xl">免费制作</LandingButton>
+                  </Link>
                 </>
               )}
             </div>

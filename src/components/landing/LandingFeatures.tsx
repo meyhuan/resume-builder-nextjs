@@ -98,7 +98,7 @@ const MatchVisual = (): React.ReactElement => (
 /** Mini visual: ATS checklist */
 const AtsVisual = (): React.ReactElement => (
   <div className="mt-3 space-y-2">
-    {['PDF 格式正确', '关键词覆盖', '结构化信息', '无乱码风险'].map((item) => (
+    {['PDF 格式正确', '关键词覆盖', '结构化信息'].map((item) => (
       <div key={item} className="flex items-center gap-2 bg-white/60 backdrop-blur-sm rounded-lg px-3 py-1.5 border border-white shadow-sm">
         <div className="w-4 h-4 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
           <Check className="w-2.5 h-2.5 text-emerald-600" />

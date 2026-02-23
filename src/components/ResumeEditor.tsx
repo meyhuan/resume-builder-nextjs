@@ -19,7 +19,7 @@ import type { ThemeTokens } from '@/entities/theme/theme-tokens'
 import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Loader2, ArrowLeft, Save, FileDown, FileText, Image as ImageIcon, Undo2, Redo2 } from 'lucide-react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { revalidateDashboard } from '@/app/actions'
 import { useOnePageMode } from '@/hooks/use-one-page-mode'
 import { toast } from 'sonner'
@@ -41,17 +41,22 @@ interface ResumeEditorProps {
 
 export default function ResumeEditor({ resumeId, initialData }: ResumeEditorProps): ReactElement {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const resume = useAppStore((s) => s.resume)
   const setResume = useAppStore((s) => s.setResume)
   const setThemeForTemplate = useAppStore((s) => s.setThemeForTemplate)
   const getThemeForTemplate = useAppStore((s) => s.getThemeForTemplate)
+  const loadTestData = useAppStore((s) => s.loadTestData)
   const undo = useAppStore((s) => s.undo)
   const redo = useAppStore((s) => s.redo)
   const canUndo = useAppStore((s) => s.pastStates.length > 0)
   const canRedo = useAppStore((s) => s.futureStates.length > 0)
   const printRef = useRef<HTMLDivElement>(null)
   const handlePrint = useExportPdf<HTMLDivElement>(printRef, { documentTitle: 'resume' })
-  const [tpl, setTpl] = useState<string>('simple')
+
+  // Initialize template state from URL query param or 'simple' default
+  const defaultTemplate = searchParams.get('template') || 'simple'
+  const [tpl, setTpl] = useState<string>(defaultTemplate)
   const [isSaving, setIsSaving] = useState(false)
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
   const [savedSnapshot, setSavedSnapshot] = useState<string>('')
@@ -113,6 +118,12 @@ export default function ResumeEditor({ resumeId, initialData }: ResumeEditorProp
     if (initialSnapshotSet.current || savedSnapshot) return
     if (initApplied.current || !initialData) {
       initialSnapshotSet.current = true
+      
+      // If a template was specified in URL and we have no initialData, load test data to showcase the template
+      if (!initialData && searchParams.has('template')) {
+        loadTestData()
+      }
+
       const initTheme = getThemeForTemplate(tpl)
       setSavedSnapshot(JSON.stringify({
         resume,
@@ -123,7 +134,7 @@ export default function ResumeEditor({ resumeId, initialData }: ResumeEditorProp
         sidebarSectionIds: undefined,
       }))
     }
-  }, [initialData, resume, tpl, savedSnapshot, getThemeForTemplate])
+  }, [initialData, resume, tpl, savedSnapshot, getThemeForTemplate, searchParams, loadTestData])
 
   // Subscribe to theme changes for current template
   const themes = useAppStore((s) => s.themes)
