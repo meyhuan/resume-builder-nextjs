@@ -2,8 +2,8 @@
 
 import React from 'react';
 import { LandingButton } from './LandingButton';
-import { LandingBadge } from './LandingBadge';
-import { Sparkles, Wand2, Zap, Heart, Shield } from 'lucide-react';
+import { Sparkles, Wand2 } from 'lucide-react';
+import { EditorShowcase } from './EditorShowcase';
 import Link from 'next/link';
 
 const TRUST_STATS = [
@@ -14,7 +14,7 @@ const TRUST_STATS = [
 
 export const LandingHero = () => {
   return (
-    <section id="hero" className="relative pt-32 pb-24 overflow-hidden bg-white selection:bg-fuchsia-200">
+    <section id="hero" className="relative pt-20 pb-16 overflow-hidden bg-white selection:bg-fuchsia-200">
       {/* Dynamic Background Elements */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
         <div className="absolute top-[-20%] right-[-10%] w-[800px] h-[800px] bg-violet-500/20 rounded-full blur-[120px] animate-pulse-slow" />
@@ -24,151 +24,68 @@ export const LandingHero = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Centered Hero Content */}
-        <div className="text-center max-w-4xl mx-auto flex flex-col items-center gap-8 animate-in slide-in-from-bottom duration-700">
+        <div className="text-center max-w-4xl mx-auto flex flex-col items-center gap-5 animate-in slide-in-from-bottom duration-700">
           {/* Badges */}
-          <div className="flex gap-2 flex-wrap justify-center">
-            <LandingBadge variant="primary" className="pl-1 pr-3 py-1 flex items-center gap-2">
-              <span className="bg-violet-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">AI</span>
-              <span>由独立开发者用心打造</span>
-            </LandingBadge>
-            <LandingBadge variant="accent" className="flex items-center gap-1">
-              <Heart className="w-3 h-3" /> 永久免费，无任何隐藏收费
-            </LandingBadge>
+          <div className="flex justify-center">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-violet-50/50 border border-violet-100 text-[11px] font-medium text-violet-600 shadow-sm">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-violet-500"></span>
+              </span>
+              👋 独立开发者作品 · 承诺永久免费
+            </div>
           </div>
 
           {/* Main Heading */}
-          <h1 className="text-5xl lg:text-7xl font-bold text-slate-900 leading-[1.1] tracking-tight">
-            AI 帮你写简历
+          <h1 className="text-4xl lg:text-6xl font-extrabold text-slate-900 leading-[1.15] tracking-tight">
+            没经验，不知道简历怎么写？
             <br />
-            <span className="bg-gradient-to-r from-violet-600 via-fuchsia-500 to-rose-500 bg-clip-text text-transparent animate-gradient-x bg-[length:200%_auto]">
-              你只需点击开始
+            <span className="bg-gradient-to-r from-violet-600 to-fuchsia-500 bg-clip-text text-transparent">
+              AI 帮你写出专业大厂范儿
             </span>
           </h1>
 
-          {/* Subheading — warm, personal */}
-          <p className="text-lg lg:text-xl text-slate-600 max-w-2xl leading-relaxed">
-            一个程序员，为求职路上的你做了这款工具。
-            <span className="font-semibold text-slate-900">微信扫码即用，</span>
-            AI 智能生成、可视化编辑、多格式导出 —— 完全免费，没有套路。
+          {/* Subheading */}
+          <p className="text-base lg:text-lg text-slate-500 max-w-xl leading-relaxed mt-2 mx-auto">
+            深知新人求职的痛苦，我作为独立开发者为你做了这款工具：<strong className="text-slate-700 font-semibold">无需苦想措辞，AI 自动帮你挖掘经历亮点。</strong>微信扫码即用，无任何隐藏收费，连导出 PDF 都是免费的。
           </p>
 
           {/* CTA Buttons */}
-          <div className="flex flex-wrap gap-4 justify-center pt-2">
+          <div className="flex flex-wrap gap-4 justify-center mt-2">
             <Link href="/dashboard">
-              <LandingButton size="lg" className="rounded-full shadow-lg shadow-violet-500/30 hover:shadow-violet-500/40 text-lg px-8">
+              <LandingButton size="lg" className="rounded-full shadow-[0_8px_20px_rgba(139,92,246,0.25)] hover:shadow-[0_10px_25px_rgba(139,92,246,0.35)] text-base px-8 h-12">
                 <Wand2 className="w-5 h-5 mr-2" />
-                免费开始制作
+                免费生成简历
               </LandingButton>
             </Link>
             <Link href="#editor-demo">
-              <LandingButton variant="glass" size="lg" className="rounded-full text-slate-700 hover:text-violet-700">
-                <span className="flex items-center gap-2">
-                  <Sparkles className="w-5 h-5" /> 看看有多好用
+              <LandingButton variant="glass" size="lg" className="rounded-full text-slate-700 hover:text-violet-700 bg-white border border-slate-200 shadow-sm hover:shadow-md hover:border-violet-200 h-12 px-8 transition-all duration-300">
+                <span className="flex items-center gap-2 font-medium">
+                  <Sparkles className="w-4 h-4" /> 看看有多好用
                 </span>
               </LandingButton>
             </Link>
           </div>
 
           {/* Trust Stats Bar */}
-          <div className="flex items-center gap-6 sm:gap-10 pt-8 border-t border-slate-100 w-full justify-center">
-            {TRUST_STATS.map((stat) => (
-              <div key={stat.label} className="flex flex-col items-center gap-1">
-                <span className="text-2xl font-bold text-slate-900">{stat.value}</span>
-                <span className="text-xs text-slate-500">{stat.label}</span>
-              </div>
+          <div className="flex items-center justify-center gap-6 sm:gap-12 mt-8 mb-2">
+            {TRUST_STATS.map((stat, index) => (
+              <React.Fragment key={stat.label}>
+                <div className="flex flex-col items-center gap-1">
+                  <span className="text-2xl sm:text-3xl font-extrabold text-slate-800 tracking-tight">{stat.value}</span>
+                  <span className="text-xs sm:text-sm text-slate-500 font-medium">{stat.label}</span>
+                </div>
+                {index < TRUST_STATS.length - 1 && (
+                  <div className="w-px h-10 bg-slate-200" />
+                )}
+              </React.Fragment>
             ))}
           </div>
         </div>
 
-        {/* Hero Visual — Resume Preview with AI overlay */}
-        <div className="relative mt-16 max-w-5xl mx-auto animate-in zoom-in duration-1000 delay-200">
-          <div className="relative rounded-3xl overflow-hidden shadow-[0_30px_80px_rgba(124,58,237,0.15)] border border-slate-200/60">
-            {/* Mock Editor Top Bar */}
-            <div className="bg-slate-50 border-b border-slate-200 px-6 py-3 flex items-center gap-3">
-              <div className="flex gap-2">
-                <div className="w-3 h-3 rounded-full bg-rose-400" />
-                <div className="w-3 h-3 rounded-full bg-amber-400" />
-                <div className="w-3 h-3 rounded-full bg-green-400" />
-              </div>
-              <div className="flex-1 flex justify-center">
-                <div className="px-4 py-1 bg-white rounded-lg border border-slate-200 text-xs text-slate-400 font-mono">
-                  aijianli.cn/editor
-                </div>
-              </div>
-            </div>
-            {/* Mock Editor Content */}
-            <div className="bg-white grid grid-cols-1 lg:grid-cols-[280px_1fr] min-h-[400px]">
-              {/* Sidebar */}
-              <div className="hidden lg:block border-r border-slate-100 p-5 space-y-4 bg-slate-50/50">
-                <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">模块</div>
-                {['个人信息', '教育经历', '实习经历', '项目经历', '技能特长'].map((item) => (
-                  <div key={item} className="px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-white hover:shadow-sm transition-all cursor-default flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-violet-400" />
-                    {item}
-                  </div>
-                ))}
-                <div className="pt-3 border-t border-slate-200">
-                  <div className="px-3 py-2.5 rounded-xl text-sm font-semibold text-violet-600 bg-violet-50 flex items-center gap-2">
-                    <Wand2 className="w-4 h-4" /> AI 智能填写
-                  </div>
-                </div>
-              </div>
-              {/* Preview Area */}
-              <div className="p-6 lg:p-10 flex items-center justify-center bg-slate-50/30">
-                <div className="w-full max-w-[380px] bg-white rounded-xl shadow-lg border border-slate-100 p-6 space-y-4">
-                  <div className="h-1 w-full bg-gradient-to-r from-violet-500 to-fuchsia-500 rounded-full" />
-                  <div className="flex gap-3 items-center">
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-violet-100 to-fuchsia-100 flex items-center justify-center text-violet-500 font-bold text-lg">Z</div>
-                    <div className="space-y-1.5 flex-1">
-                      <div className="h-4 w-24 bg-slate-200 rounded" />
-                      <div className="h-3 w-36 bg-slate-100 rounded" />
-                    </div>
-                  </div>
-                  <div className="space-y-2 pt-2">
-                    <div className="h-3 w-full bg-slate-100 rounded" />
-                    <div className="h-3 w-[90%] bg-slate-50 rounded" />
-                    <div className="h-3 w-[75%] bg-slate-50 rounded" />
-                  </div>
-                  <div className="space-y-2 pt-2">
-                    <div className="h-2.5 w-16 bg-violet-100 rounded" />
-                    <div className="h-3 w-full bg-slate-50 rounded" />
-                    <div className="h-3 w-[85%] bg-slate-50 rounded" />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Floating AI Cards */}
-          <div className="absolute top-[20%] right-[-3%] lg:right-[-5%] bg-white/90 backdrop-blur-lg p-3 rounded-2xl shadow-xl border border-white/50 animate-float-delayed z-20">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-violet-100 flex items-center justify-center text-violet-600">
-                <Zap className="w-5 h-5" />
-              </div>
-              <div>
-                <div className="text-xs text-slate-500">制作耗时</div>
-                <div className="text-sm font-bold text-slate-800">3 分钟</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="absolute bottom-[15%] left-[-3%] lg:left-[-5%] bg-white/90 backdrop-blur-lg p-3 rounded-2xl shadow-xl border border-white/50 animate-float z-20">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600">
-                <Shield className="w-5 h-5" />
-              </div>
-              <div>
-                <div className="text-xs text-slate-500">导出格式</div>
-                <div className="text-sm font-bold text-slate-800">PDF / 图片</div>
-              </div>
-            </div>
-          </div>
-
-          {/* AI Working Indicator */}
-          <div className="absolute bottom-6 right-6 bg-white/90 backdrop-blur-md px-4 py-2 rounded-xl shadow-lg border border-violet-100 flex items-center gap-2 animate-bounce-subtle z-20">
-            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-            <span className="text-sm font-semibold text-violet-700">AI 正在优化...</span>
-          </div>
+        {/* Hero Visual — Interactive Editor Showcase */}
+        <div className="relative mt-10 max-w-5xl mx-auto animate-in zoom-in duration-1000 delay-200">
+          <EditorShowcase />
         </div>
       </div>
 
