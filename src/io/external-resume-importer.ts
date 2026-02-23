@@ -59,6 +59,11 @@ export function mapExternalResume(ext: ExternalResume): ResumeData {
     if (schoolSection) sections.push(schoolSection);
   }
 
+  if (ext.custom_module_info && ext.custom_module_info.length > 0) {
+    const customSections = mapCustomModules(ext);
+    sections.push(...customSections);
+  }
+
   return {
     id: 'resume-imported',
     name: ext.base_info.name,
@@ -113,8 +118,8 @@ function mapExperience(ext: ExternalResume): Section | undefined {
     company: it.name,
     position: it.position,
     industry: it.industry,
-    startDate: it.period.start,
-    endDate: it.period.end,
+    startDate: it.period?.start || '',
+    endDate: it.period?.end || '',
     contentHtml: it.content,
   }));
   return {
@@ -133,8 +138,8 @@ function mapProjects(ext: ExternalResume): Section | undefined {
     type: 'project',
     name: it.name,
     role: it.role,
-    startDate: it.period.start,
-    endDate: it.period.end,
+    startDate: it.period?.start || '',
+    endDate: it.period?.end || '',
     contentHtml: it.content,
   }));
   return {
@@ -154,8 +159,8 @@ function mapEducation(ext: ExternalResume): Section | undefined {
     school: it.name,
     major: it.major,
     degree: it.degree,
-    startDate: it.period.start,
-    endDate: it.period.end,
+    startDate: it.period?.start || '',
+    endDate: it.period?.end || '',
     courseHtml: it.course,
   }));
   return {
@@ -175,8 +180,8 @@ function mapInternship(ext: ExternalResume): Section | undefined {
     company: it.name,
     position: it.position,
     industry: it.industry,
-    startDate: it.period.start,
-    endDate: it.period.end,
+    startDate: it.period?.start || '',
+    endDate: it.period?.end || '',
     contentHtml: it.content,
   }));
   return {
@@ -219,8 +224,8 @@ function mapSchoolExps(ext: ExternalResume): Section | undefined {
     type: 'campus',
     organization: it.name,
     position: it.position || '成员',
-    startDate: it.period.start,
-    endDate: it.period.end,
+    startDate: it.period?.start || '',
+    endDate: it.period?.end || '',
     contentHtml: it.content,
   }));
   return {
@@ -229,4 +234,21 @@ function mapSchoolExps(ext: ExternalResume): Section | undefined {
     columns: 1,
     blocks,
   };
+}
+
+function mapCustomModules(ext: ExternalResume): Section[] {
+  const modules = (ext.custom_module_info || []).filter((m) => !m.is_hide);
+  return modules.map((m, idx) => {
+    const block: TextBlock = {
+      id: `block-custom-${idx}`,
+      type: 'text',
+      html: m.content,
+    };
+    return {
+      id: `section-custom-${idx}`,
+      title: m.module_name || m.name || '自定义模块',
+      columns: 1,
+      blocks: [block],
+    };
+  });
 }

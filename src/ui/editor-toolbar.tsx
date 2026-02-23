@@ -51,7 +51,7 @@ export default function EditorToolbar(props: EditorToolbarProps): ReactElement {
   }
 
   return (
-    <nav className="flex items-center gap-1.5 p-1.5 bg-white/70 backdrop-blur-md rounded-xl border border-white shadow-sm">
+    <nav className="flex items-center gap-1.5 bg-white/70 backdrop-blur-md rounded-xl border border-white shadow-sm">
       {TOOLBAR_ACTIONS.map((action) => {
         const isActive: boolean = activePanel === action.id
         return (

@@ -114,10 +114,10 @@ export default async function DashboardPage() {
             </form>
 
             {/* 导入简历 */}
-            <button type="button" className="w-full h-[84px] flex flex-col items-center justify-center gap-1.5 bg-white/80 backdrop-blur-md rounded-xl border border-slate-200 hover:bg-slate-50 shadow-sm transition-all opacity-80 cursor-not-allowed" title="暂未开放">
+            <Link href="/import" className="w-full h-[84px] flex flex-col items-center justify-center gap-1.5 bg-white/80 backdrop-blur-md rounded-xl border border-slate-200 hover:border-violet-300 hover:bg-slate-50 shadow-sm hover:shadow-md transition-all">
               <FileDown className="w-5 h-5 text-slate-700" />
               <span className="text-xs sm:text-[13px] font-medium text-slate-800">导入简历</span>
-            </button>
+            </Link>
           </div>
 
           {/* Resume Grid */}

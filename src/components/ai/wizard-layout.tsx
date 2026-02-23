@@ -174,14 +174,23 @@ function GenerationPage({
   onRetry,
 }: GenerationPageProps): React.ReactElement {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const isUserScrolled = useRef<boolean>(false);
   const sections: readonly DisplaySection[] = parseStreamSections(streamedText);
   const hasSections: boolean = sections.length > 0;
 
+  const handleScroll = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    // 如果距离底部小于 100px，认为用户在最底部，否则认为是用户主动向上滑动了
+    const isAtBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 100;
+    isUserScrolled.current = !isAtBottom;
+  }, []);
+
   useEffect(() => {
-    if (scrollRef.current && isGenerating) {
+    if (scrollRef.current && isGenerating && !isUserScrolled.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [sections.length, isGenerating]);
+  }, [streamedText, isGenerating]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent): void => {
@@ -214,6 +223,7 @@ function GenerationPage({
       {/* Content area */}
       <div
         ref={scrollRef}
+        onScroll={handleScroll}
         className="flex-1 overflow-y-auto pb-28"
       >
         <div className="max-w-3xl mx-auto px-6 py-8">
