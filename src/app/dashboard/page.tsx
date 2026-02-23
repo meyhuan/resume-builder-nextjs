@@ -2,11 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
-import { FileText, Plus, Trash2, Clock, Sparkles, Wand2, ArrowLeft, FileDown } from "lucide-react";
+import { FileText, Plus, Clock, Sparkles, Wand2, ArrowLeft, FileDown } from "lucide-react";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import Image from "next/image";
+import { defaultResume } from "@/state/store";
+import { DeleteResumeButton } from "@/components/dashboard/delete-resume-button";
 
 export const metadata: Metadata = {
   title: '我的简历 - 管理你的所有简历',
@@ -23,7 +25,7 @@ async function createResume() {
   const resume = await prisma.resume.create({
     data: {
       title: "未命名简历",
-      content: {},
+      content: JSON.parse(JSON.stringify(defaultResume)),
       template: "simple",
       user: {
         connect: { wxId: userId }
@@ -83,51 +85,39 @@ export default async function DashboardPage() {
                 我的简历
               </h1>
             </div>
-            <form action={async () => {
-              "use server"
-              const id = await createResume();
-              const { redirect } = await import("next/navigation");
-              redirect(`/editor/${id}`);
-            }}>
-              <Button className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white rounded-lg shadow-sm transition-all duration-200 border-0 font-medium px-5 h-9">
-                <Plus className="w-4 h-4 mr-1.5" />
-                新建简历
-              </Button>
-            </form>
           </div>
         </nav>
 
         {/* Main Content */}
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-          {/* Stats Overview - Flat with slight glass */}
-          <div className="flex flex-wrap items-center gap-4 mb-10">
-            <div className="flex items-center gap-4 px-6 py-4 bg-white/80 backdrop-blur-md rounded-xl border border-white shadow-sm flex-1 sm:flex-none min-w-[200px]">
-              <div className="w-12 h-12 rounded-full bg-[#F5F3FF] flex items-center justify-center">
-                <FileText className="w-5 h-5 text-[#8B5CF6]" />
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-slate-800">{resumes.length}</div>
-                <div className="text-xs text-slate-500 font-medium">简历总数</div>
-              </div>
+          {/* Action Cards Overview */}
+          <div className="grid grid-cols-3 gap-3 sm:gap-4 mb-10 w-full md:w-[70%] lg:w-[55%] xl:w-[45%]">
+            {/* AI生成简历 */}
+            <div className="rounded-xl bg-gradient-to-r from-violet-400 to-fuchsia-400 p-[1px] shadow-sm hover:shadow-md transition-shadow h-[84px]">
+              <Link href="/ai" className="flex flex-col items-center justify-center gap-1.5 bg-white/90 backdrop-blur-md rounded-[11px] h-full hover:bg-white/60 transition-colors">
+                <Wand2 className="w-5 h-5 text-fuchsia-500" />
+                <span className="text-xs sm:text-[13px] font-medium text-slate-800">AI生成简历</span>
+              </Link>
             </div>
-            <div className="flex items-center gap-4 px-6 py-4 bg-white/80 backdrop-blur-md rounded-xl border border-white shadow-sm flex-1 sm:flex-none min-w-[200px]">
-              <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center">
-                <Wand2 className="w-5 h-5 text-blue-500" />
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-slate-800">AI</div>
-                <div className="text-xs text-slate-500 font-medium">智能生成</div>
-              </div>
-            </div>
-            <div className="flex items-center gap-4 px-6 py-4 bg-white/80 backdrop-blur-md rounded-xl border border-white shadow-sm flex-1 sm:flex-none min-w-[200px]">
-              <div className="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center">
-                <FileDown className="w-5 h-5 text-slate-600" />
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-slate-800">PDF</div>
-                <div className="text-xs text-slate-500 font-medium">免费导出</div>
-              </div>
-            </div>
+            
+            {/* 创建新简历 */}
+            <form action={async () => {
+              "use server"
+              const id = await createResume();
+              const { redirect } = await import("next/navigation");
+              redirect(`/editor/${id}`);
+            }} className="w-full h-[84px]">
+              <button type="submit" className="w-full h-full flex flex-col items-center justify-center gap-1.5 bg-white/80 backdrop-blur-md rounded-xl border border-slate-200 hover:border-violet-300 hover:bg-slate-50 shadow-sm hover:shadow-md transition-all">
+                <Plus className="w-6 h-6 text-slate-700 font-light" />
+                <span className="text-xs sm:text-[13px] font-medium text-slate-800">创建新简历</span>
+              </button>
+            </form>
+
+            {/* 导入简历 */}
+            <button type="button" className="w-full h-[84px] flex flex-col items-center justify-center gap-1.5 bg-white/80 backdrop-blur-md rounded-xl border border-slate-200 hover:bg-slate-50 shadow-sm transition-all opacity-80 cursor-not-allowed" title="暂未开放">
+              <FileDown className="w-5 h-5 text-slate-700" />
+              <span className="text-xs sm:text-[13px] font-medium text-slate-800">导入简历</span>
+            </button>
           </div>
 
           {/* Resume Grid */}
@@ -140,17 +130,12 @@ export default async function DashboardPage() {
               <p className="text-slate-500 mb-8 max-w-sm text-sm leading-relaxed">
                 你还没有创建过简历。点击下方按钮，让 AI 协助你快速生成一份专业出彩的求职简历。
               </p>
-              <form action={async () => {
-                "use server"
-                const id = await createResume();
-                const { redirect } = await import("next/navigation");
-                redirect(`/editor/${id}`);
-              }}>
+              <Link href="/ai">
                 <Button className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white rounded-lg px-8 py-5 text-base shadow-sm transition-all duration-200 font-medium">
                   <Wand2 className="w-4 h-4 mr-2" />
                   AI 创建简历
                 </Button>
-              </form>
+              </Link>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
@@ -218,16 +203,10 @@ export default async function DashboardPage() {
                           })}
                         </span>
                       </div>
-                      <form action={deleteResume.bind(null, resume.id)}>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 w-7 p-0 rounded-md text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"
-                          title="删除简历"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </Button>
-                      </form>
+                      <DeleteResumeButton onDelete={async () => {
+                        "use server"
+                        await deleteResume(resume.id)
+                      }} />
                     </div>
                   </div>
                 </div>

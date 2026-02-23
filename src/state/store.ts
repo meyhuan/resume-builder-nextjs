@@ -25,7 +25,7 @@ const defaultTheme: ThemeTokens = {
   spacingScale: 1,
 }
 
-const defaultResume = mapExternalResume(BLANK_RESUME_JSON)
+export const defaultResume = mapExternalResume(BLANK_RESUME_JSON)
 const testResume = mapExternalResume(TEST_RESUME_JSON)
 
 function createId(prefix: string): UUID {

@@ -540,11 +540,15 @@ export default function ResumeEditor({ resumeId, initialData }: ResumeEditorProp
         open={showLeaveDialog}
         onOpenChange={setShowLeaveDialog}
         title="确认离开"
-        description="您有未保存的更改，确定要离开吗？离开后未保存的内容将会丢失。"
-        confirmText="不保存并离开"
-        cancelText="继续编辑"
-        variant="destructive"
-        onConfirm={confirmLeave}
+        description="您有未保存的更改，保存后再离开吗？"
+        confirmText="保存并离开"
+        cancelText="取消"
+        variant="default"
+        loading={isSaving}
+        onConfirm={async () => {
+          await handleSave()
+          confirmLeave()
+        }}
       />
     </div>
   )
