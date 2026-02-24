@@ -5,29 +5,34 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { LandingButton } from './LandingButton';
 import { cn } from '@/lib/utils';
-import { Menu, X, ChevronDown, User, LogOut } from 'lucide-react';
+import { Menu, X, User, LogOut } from 'lucide-react';
 import { WxLoginDialog } from '../auth/WxLoginDialog';
 import { useAuthStore } from '@/store/use-auth-store';
 
-export const LandingHeader = () => {
-  const [isScrolled, setIsScrolled] = useState(false);
+interface LandingHeaderProps {
+  forceSolid?: boolean;
+}
+
+export const LandingHeader = ({ forceSolid = false }: LandingHeaderProps = {}) => {
+  const [isScrolled, setIsScrolled] = useState(forceSolid);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
 
   const { token, userInfo, logout } = useAuthStore();
 
   useEffect(() => {
+    if (forceSolid) return;
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 50);
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [forceSolid]);
 
   const menuItems = [
     { id: 'templates', label: '简历模板', href: '/#templates' },
     { id: 'ai', label: 'AI 简历生成', href: '/ai' },
+    { id: 'articles', label: '求职攻略', href: '/articles' },
     { id: 'about', label: '关于开发者', href: '/about' },
   ];
 
