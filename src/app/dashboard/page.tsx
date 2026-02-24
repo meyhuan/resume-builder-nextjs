@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
-import { FileText, Plus, Clock, Sparkles, Wand2, ArrowLeft, FileDown } from "lucide-react";
+import { FileText, Plus, Clock, Sparkles, Wand2, FileDown } from "lucide-react";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
@@ -69,27 +69,13 @@ export default async function DashboardPage() {
           <div className="absolute bottom-[-10%] left-[-10%] w-[600px] h-[600px] bg-blue-500/5 rounded-full blur-[120px]" />
         </div>
 
-        {/* Nav Bar — Glassmorphism */}
-        <nav className="sticky top-0 z-50 bg-white/70 backdrop-blur-xl border-b border-white shadow-sm">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Link href="/" className="flex items-center gap-2 text-slate-500 hover:text-[#8B5CF6] transition-colors text-sm font-medium">
-                <ArrowLeft className="w-4 h-4" />
-                <span className="hidden sm:inline">返回首页</span>
-              </Link>
-              <div className="h-4 w-px bg-slate-200" />
-              <h1 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                <span className="w-8 h-8 rounded-lg bg-[#8B5CF6] flex items-center justify-center shadow-sm">
-                  <FileText className="w-4 h-4 text-white" />
-                </span>
-                我的简历
-              </h1>
-            </div>
-          </div>
-        </nav>
+        {/* Page Title */}
+        <div className="relative z-10 pt-8 pb-2 px-6 sm:px-10 lg:px-12">
+          <h1 className="text-2xl font-bold text-slate-800">简历</h1>
+        </div>
 
         {/* Main Content */}
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <div className="relative z-10 px-6 sm:px-10 lg:px-12 py-6">
           {/* Action Cards Overview */}
           <div className="grid grid-cols-3 gap-3 sm:gap-4 mb-10 w-full md:w-[70%] lg:w-[55%] xl:w-[45%]">
             {/* AI生成简历 */}

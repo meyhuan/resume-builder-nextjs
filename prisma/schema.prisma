@@ -8,15 +8,16 @@ generator client {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  clerkId   String?  @unique
-  wxId      String?  @unique
-  email     String?  @unique
+  id        String     @id @default(cuid())
+  clerkId   String?    @unique
+  wxId      String?    @unique
+  email     String?    @unique
   name      String?
   avatar    String?
   resumes   Resume[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  feedbacks Feedback[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
 }
 
 model Resume {
@@ -39,4 +40,14 @@ model Template {
   config      Json?    // Optional extra configuration for the template
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model Feedback {
+  id          String   @id @default(cuid())
+  content     String   // The feedback text content
+  contact     String?  // Optional contact info (email/phone/wechat)
+  attachment  String?  // Optional base64 or URL for uploaded image/screenshot
+  userId      String?  // Optional relation if user is logged in
+  user        User?    @relation(fields: [userId], references: [id])
+  createdAt   DateTime @default(now())
 }
