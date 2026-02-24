@@ -76,6 +76,7 @@ export interface BaseInfoSectionStyles {
 export interface JobIntentionSectionStyles {
   readonly container?: string
   readonly header?: string
+  readonly headerBorderBottom?: boolean
   readonly title?: TextFieldStyles
   readonly fieldsLayout?: LayoutStyles
   readonly fieldItem?: string

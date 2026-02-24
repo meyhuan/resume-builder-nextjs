@@ -14,4 +14,6 @@ export interface JobIntention {
   readonly industry?: string;
   /** Current status. */
   readonly currentStatus?: string;
+  /** User-defined custom fields. */
+  readonly customFields?: Array<{ label: string; value: string }>;
 }

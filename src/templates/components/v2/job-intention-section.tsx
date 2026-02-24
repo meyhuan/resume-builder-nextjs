@@ -92,7 +92,11 @@ export default function JobIntentionSection(props: JobIntentionSectionProps): Re
         {/* 标题区域 */}
         <div 
           className={headerClassName}
-          style={{ fontSize: styles.title?.fontSize, fontWeight: styles.title?.fontWeight }}
+          style={{
+            fontSize: styles.title?.fontSize,
+            fontWeight: styles.title?.fontWeight,
+            ...(styles.headerBorderBottom ? { borderBottom: `2px solid ${themeColor}` } : {}),
+          }}
         >
           {/* 图标 */}
           <span style={{ color: styles.icon?.color || themeColor }}>
@@ -206,6 +210,13 @@ function renderJobFields(
     { key: 'industry', label: '期望行业', value: jobIntention.industry },
     { key: 'currentStatus', label: '当前状态', value: jobIntention.currentStatus },
   ]
+  if (jobIntention.customFields) {
+    for (const cf of jobIntention.customFields) {
+      if (cf.label && cf.value) {
+        fieldDefinitions.push({ key: `custom_${cf.label}`, label: cf.label, value: cf.value })
+      }
+    }
+  }
 
   for (const field of fieldDefinitions) {
     if (!field.value) continue

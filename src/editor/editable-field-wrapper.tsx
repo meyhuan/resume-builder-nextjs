@@ -102,7 +102,7 @@ export default function EditableFieldWrapper(props: EditableFieldWrapperProps): 
         onChange={(e): void => setTempValue(e.target.value)}
         onBlur={saveEdit}
         onKeyDown={handleKeyDown}
-        className={`${props.className || ''} bg-blue-50 border border-blue-500 rounded px-1 outline-none min-w-[50px] w-full text-right`}
+        className={`${props.className || ''} bg-blue-50 rounded px-1 leading-tight outline-none min-w-[50px] w-full text-right ring-1 ring-blue-500`}
         placeholder={props.placeholder}
       />
     )
@@ -111,7 +111,7 @@ export default function EditableFieldWrapper(props: EditableFieldWrapperProps): 
   return (
     <span
       onClick={startEditing}
-      className={`${props.className || ''} cursor-text hover:bg-gray-100 rounded px-1 transition-colors`}
+      className={`${props.className || ''} cursor-text hover:bg-gray-100 rounded px-1 leading-tight transition-colors border border-transparent`}
       title={props.title || '点击编辑'}
     >
       {props.value || props.placeholder || '点击编辑'}

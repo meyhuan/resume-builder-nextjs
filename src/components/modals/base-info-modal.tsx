@@ -6,7 +6,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Plus, Trash2 } from 'lucide-react';
+
+interface CustomField {
+  label: string;
+  value: string;
+}
 
 /**
  * Modal for editing base info fields.
@@ -25,7 +30,8 @@ export default function BaseInfoModal(props: BaseInfoModalProps): ReactElement {
   const [email, setEmail] = useState(props.baseInfo?.email ?? '');
   const [gender, setGender] = useState(props.baseInfo?.gender ?? '');
   const [age, setAge] = useState(props.baseInfo?.age?.toString() ?? '');
-  const [avatarUrl, setAvatarUrl] = useState(props.baseInfo?.avatarUrl ?? '');
+  const [avatarUrl] = useState(props.baseInfo?.avatarUrl ?? '');
+  const [showAvatar, setShowAvatar] = useState(props.baseInfo?.showAvatar !== false);
   const [nation, setNation] = useState(props.baseInfo?.nation ?? '');
   const [household, setHousehold] = useState(props.baseInfo?.household ?? '');
   const [currentLocation, setCurrentLocation] = useState(props.baseInfo?.currentLocation ?? '');
@@ -34,15 +40,34 @@ export default function BaseInfoModal(props: BaseInfoModalProps): ReactElement {
   const [height, setHeight] = useState(props.baseInfo?.height ?? '');
   const [weight, setWeight] = useState(props.baseInfo?.weight ?? '');
   const [showMoreFields, setShowMoreFields] = useState(false);
+  const [customFields, setCustomFields] = useState<CustomField[]>(
+    (props.baseInfo?.customFields as CustomField[] | undefined)?.map(f => ({ ...f })) ?? []
+  );
+
+  function addCustomField(): void {
+    setCustomFields([...customFields, { label: '', value: '' }]);
+  }
+
+  function removeCustomField(index: number): void {
+    setCustomFields(customFields.filter((_, i) => i !== index));
+  }
+
+  function updateCustomField(index: number, key: 'label' | 'value', val: string): void {
+    const updated = [...customFields];
+    updated[index] = { ...updated[index], [key]: val };
+    setCustomFields(updated);
+  }
 
   function handleSave(): void {
+    const validCustomFields = customFields.filter(f => f.label && f.value);
     const updatedBaseInfo: BaseInfo = {
       title,
       phone: phone || undefined,
       email: email || undefined,
       gender: gender || undefined,
       age: age ? Number(age) : undefined,
-      avatarUrl: avatarUrl || undefined,
+      avatarUrl: showAvatar ? (avatarUrl || undefined) : undefined,
+      showAvatar,
       nation: nation || undefined,
       household: household || undefined,
       currentLocation: currentLocation || undefined,
@@ -50,6 +75,7 @@ export default function BaseInfoModal(props: BaseInfoModalProps): ReactElement {
       politicalStatus: politicalStatus || undefined,
       height: height || undefined,
       weight: weight || undefined,
+      customFields: validCustomFields.length > 0 ? validCustomFields : undefined,
     };
     props.onSave(updatedBaseInfo, name);
     props.onClose();
@@ -98,9 +124,9 @@ export default function BaseInfoModal(props: BaseInfoModalProps): ReactElement {
             </div>
             <div className="space-y-2">
               <Label htmlFor="avatar">头像</Label>
-              <Select 
-                value={avatarUrl ? 'show' : 'hide'} 
-                onValueChange={(val) => setAvatarUrl(val === 'show' ? 'default' : '')}
+              <Select
+                value={showAvatar ? 'show' : 'hide'}
+                onValueChange={(val) => setShowAvatar(val === 'show')}
               >
                 <SelectTrigger id="avatar">
                   <SelectValue />
@@ -234,6 +260,35 @@ export default function BaseInfoModal(props: BaseInfoModalProps): ReactElement {
                     placeholder="体重(kg)"
                   />
                 </div>
+              </div>
+
+              {/* Custom fields */}
+              <div className="space-y-3 pt-2 border-t">
+                <div className="flex items-center justify-between">
+                  <Label>自定义字段</Label>
+                  <Button type="button" variant="ghost" size="sm" onClick={addCustomField} className="h-7 text-xs gap-1">
+                    <Plus className="h-3 w-3" />
+                    <span>添加字段</span>
+                  </Button>
+                </div>
+                {customFields.map((field, index) => (
+                  <div key={index} className="flex items-center gap-2">
+                    <Input
+                      value={field.label}
+                      onChange={(e) => updateCustomField(index, 'label', e.target.value)}
+                      placeholder="字段名"
+                      className="w-28 shrink-0"
+                    />
+                    <Input
+                      value={field.value}
+                      onChange={(e) => updateCustomField(index, 'value', e.target.value)}
+                      placeholder="字段值"
+                    />
+                    <Button type="button" variant="ghost" size="sm" onClick={() => removeCustomField(index)} className="h-8 w-8 p-0 shrink-0 text-red-500 hover:text-red-700 hover:bg-red-50">
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                ))}
               </div>
             </div>
           )}

@@ -20,7 +20,7 @@ import { DndIds } from '@/dnd/ids'
 import { JobIntentionSection, BlockRenderer, SectionContainer } from '@/templates/components/v2'
 import BaseInfoModal from '@/components/modals/base-info-modal'
 import AvatarCropModal from '@/components/modals/avatar-crop-modal'
-import { IconPhone, IconMail, IconGender, IconAge, IconLocation } from '@/components/sections/baseinfo-icons'
+import { IconPhone, IconMail, IconGender, IconAge, IconLocation, IconWorkYear, IconInfo } from '@/components/sections/baseinfo-icons'
 import { ELEGANT_TEMPLATE_STYLES, HEADER_BG, ACCENT_GOLD } from './styles'
 
 /** Check if every block in a section is a TextBlock. */
@@ -61,6 +61,31 @@ function buildFieldDefs(baseInfo: BaseInfo | null): FieldDef[] {
   }
   if (baseInfo.currentLocation) {
     defs.push({ key: 'currentLocation', label: '现居', value: baseInfo.currentLocation, icon: <IconLocation /> })
+  }
+  if (baseInfo.nation) {
+    defs.push({ key: 'nation', label: '民族', value: baseInfo.nation, icon: <IconInfo /> })
+  }
+  if (baseInfo.household) {
+    defs.push({ key: 'household', label: '户籍', value: baseInfo.household, icon: <IconInfo /> })
+  }
+  if (baseInfo.workStartTime) {
+    defs.push({ key: 'workStartTime', label: '工作时间', value: baseInfo.workStartTime, icon: <IconWorkYear /> })
+  }
+  if (baseInfo.politicalStatus) {
+    defs.push({ key: 'politicalStatus', label: '政治面貌', value: baseInfo.politicalStatus, icon: <IconInfo /> })
+  }
+  if (baseInfo.height) {
+    defs.push({ key: 'height', label: '身高', value: `${baseInfo.height}cm`, icon: <IconInfo /> })
+  }
+  if (baseInfo.weight) {
+    defs.push({ key: 'weight', label: '体重', value: `${baseInfo.weight}kg`, icon: <IconInfo /> })
+  }
+  if (baseInfo.customFields) {
+    for (const cf of baseInfo.customFields) {
+      if (cf.label && cf.value) {
+        defs.push({ key: `custom_${cf.label}`, label: cf.label, value: cf.value, icon: <IconInfo /> })
+      }
+    }
   }
   return defs
 }
@@ -135,6 +160,7 @@ function ElegantHeader(props: {
 
         <div className="flex items-start gap-6 px-8 py-6 pl-10">
           {/* Avatar */}
+          {baseInfo?.showAvatar !== false && (
           <div
             className="relative w-[110px] h-[130px] rounded overflow-hidden shrink-0"
             style={{ border: `3px solid ${accentColor}` }}
@@ -177,6 +203,7 @@ function ElegantHeader(props: {
               onChange={handleFileChange}
             />
           </div>
+          )}
 
           {/* Name + info */}
           <div className="flex-1 min-w-0">

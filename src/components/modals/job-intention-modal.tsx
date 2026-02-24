@@ -5,7 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ChevronDown } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ChevronDown, Plus, Trash2 } from 'lucide-react';
+
+interface CustomField {
+  label: string;
+  value: string;
+}
 
 /**
  * Modal for editing job intention fields.
@@ -24,8 +30,26 @@ export default function JobIntentionModal(props: JobIntentionModalProps): ReactE
   const [industry, setIndustry] = useState(props.jobIntention?.industry ?? '');
   const [currentStatus, setCurrentStatus] = useState(props.jobIntention?.currentStatus ?? '');
   const [showMoreFields, setShowMoreFields] = useState(false);
+  const [customFields, setCustomFields] = useState<CustomField[]>(
+    (props.jobIntention?.customFields as CustomField[] | undefined)?.map(f => ({ ...f })) ?? []
+  );
+
+  function addCustomField(): void {
+    setCustomFields([...customFields, { label: '', value: '' }]);
+  }
+
+  function removeCustomField(idx: number): void {
+    setCustomFields(customFields.filter((_, i) => i !== idx));
+  }
+
+  function updateCustomField(idx: number, key: 'label' | 'value', val: string): void {
+    const updated = [...customFields];
+    updated[idx] = { ...updated[idx], [key]: val };
+    setCustomFields(updated);
+  }
 
   function handleSave(): void {
+    const validCustomFields = customFields.filter(f => f.label && f.value);
     const updatedJobIntention: JobIntention = {
       position: position || undefined,
       city: city || undefined,
@@ -33,6 +57,7 @@ export default function JobIntentionModal(props: JobIntentionModalProps): ReactE
       type: type || undefined,
       industry: industry || undefined,
       currentStatus: currentStatus || undefined,
+      customFields: validCustomFields.length > 0 ? validCustomFields : undefined,
     };
     props.onSave(updatedJobIntention);
     props.onClose();
@@ -79,12 +104,18 @@ export default function JobIntentionModal(props: JobIntentionModalProps): ReactE
             </div>
             <div className="space-y-2">
               <Label htmlFor="type">求职类型</Label>
-              <Input
-                id="type"
-                value={type}
-                onChange={(e) => setType(e.target.value)}
-                placeholder="社招"
-              />
+              <Select value={type} onValueChange={setType}>
+                <SelectTrigger id="type">
+                  <SelectValue placeholder="请选择" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="全职">全职</SelectItem>
+                  <SelectItem value="兼职">兼职</SelectItem>
+                  <SelectItem value="实习">实习</SelectItem>
+                  <SelectItem value="社招">社招</SelectItem>
+                  <SelectItem value="校招">校招</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -121,6 +152,35 @@ export default function JobIntentionModal(props: JobIntentionModalProps): ReactE
                     placeholder="请选择"
                   />
                 </div>
+              </div>
+
+              {/* Custom fields */}
+              <div className="space-y-3 pt-2 border-t">
+                <div className="flex items-center justify-between">
+                  <Label>自定义字段</Label>
+                  <Button type="button" variant="ghost" size="sm" onClick={addCustomField} className="h-7 text-xs gap-1">
+                    <Plus className="h-3 w-3" />
+                    <span>添加字段</span>
+                  </Button>
+                </div>
+                {customFields.map((field, index) => (
+                  <div key={index} className="flex items-center gap-2">
+                    <Input
+                      value={field.label}
+                      onChange={(e) => updateCustomField(index, 'label', e.target.value)}
+                      placeholder="字段名"
+                      className="w-28 shrink-0"
+                    />
+                    <Input
+                      value={field.value}
+                      onChange={(e) => updateCustomField(index, 'value', e.target.value)}
+                      placeholder="字段值"
+                    />
+                    <Button type="button" variant="ghost" size="sm" onClick={() => removeCustomField(index)} className="h-8 w-8 p-0 shrink-0 text-red-500 hover:text-red-700 hover:bg-red-50">
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                ))}
               </div>
             </div>
           )}

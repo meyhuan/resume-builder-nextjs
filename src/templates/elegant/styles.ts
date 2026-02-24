@@ -56,7 +56,8 @@ export const ELEGANT_TEMPLATE_STYLES: TemplateStylesConfig = {
 
   jobIntention: {
     container: 'py-3 relative group cursor-pointer print:cursor-default',
-    header: 'flex items-center gap-2.5 pb-1 relative',
+    header: 'flex items-center gap-2.5 pb-2 mb-3 relative',
+    headerBorderBottom: true,
     title: {
       className: 'font-bold',
       fontSize: '1.285em',

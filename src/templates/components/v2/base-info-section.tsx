@@ -10,7 +10,7 @@
 
 import { useState, useRef, useCallback, cloneElement, type ReactElement, type ChangeEvent } from 'react'
 import { Pencil, XCircle } from 'lucide-react'
-import { IconPhone, IconMail, IconGender, IconAge, IconLocation } from '@/components/sections/baseinfo-icons'
+import { IconPhone, IconMail, IconGender, IconAge, IconLocation, IconWorkYear, IconInfo } from '@/components/sections/baseinfo-icons'
 import type { BaseInfo } from '@/entities/user/base-info'
 import BaseInfoModal from '@/components/modals/base-info-modal'
 import AvatarCropModal from '@/components/modals/avatar-crop-modal'
@@ -111,6 +111,7 @@ export default function BaseInfoSection(props: BaseInfoSectionProps): ReactEleme
         )}
 
         {/* Avatar with hover overlay */}
+        {baseInfo?.showAvatar !== false && (
         <div
           className={`relative ${styles.avatar?.containerClassName || 'w-20 h-24 rounded-lg bg-gray-100'} overflow-hidden shrink-0 border border-gray-200`}
           onMouseEnter={() => setAvatarHovered(true)}
@@ -147,6 +148,7 @@ export default function BaseInfoSection(props: BaseInfoSectionProps): ReactEleme
             onChange={handleFileChange}
           />
         </div>
+        )}
 
         {/* Right content */}
         <div className="flex-1 min-w-0" onClick={() => setShowModal(true)}>
@@ -276,6 +278,31 @@ function buildFieldDefs(baseInfo: BaseInfo | null): FieldDef[] {
   }
   if (baseInfo.currentLocation) {
     defs.push({ key: 'currentLocation', label: '现居', value: baseInfo.currentLocation, icon: <IconLocation /> })
+  }
+  if (baseInfo.nation) {
+    defs.push({ key: 'nation', label: '民族', value: baseInfo.nation, icon: <IconInfo /> })
+  }
+  if (baseInfo.household) {
+    defs.push({ key: 'household', label: '户籍', value: baseInfo.household, icon: <IconInfo /> })
+  }
+  if (baseInfo.workStartTime) {
+    defs.push({ key: 'workStartTime', label: '工作时间', value: baseInfo.workStartTime, icon: <IconWorkYear /> })
+  }
+  if (baseInfo.politicalStatus) {
+    defs.push({ key: 'politicalStatus', label: '政治面貌', value: baseInfo.politicalStatus, icon: <IconInfo /> })
+  }
+  if (baseInfo.height) {
+    defs.push({ key: 'height', label: '身高', value: `${baseInfo.height}cm`, icon: <IconInfo /> })
+  }
+  if (baseInfo.weight) {
+    defs.push({ key: 'weight', label: '体重', value: `${baseInfo.weight}kg`, icon: <IconInfo /> })
+  }
+  if (baseInfo.customFields) {
+    for (const cf of baseInfo.customFields) {
+      if (cf.label && cf.value) {
+        defs.push({ key: `custom_${cf.label}`, label: cf.label, value: cf.value, icon: <IconInfo /> })
+      }
+    }
   }
   return defs
 }

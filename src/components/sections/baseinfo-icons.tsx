@@ -86,6 +86,16 @@ export function IconLocation({ size = DEFAULT_ICON_SIZE, className }: { readonly
   );
 }
 
+/** 通用信息 / Generic info */
+export function IconInfo({ size = DEFAULT_ICON_SIZE, className }: { readonly size?: string | number; readonly className?: string }): ReactElement {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" width={size} height={size} className={className}>
+      <circle cx="8" cy="8" r="6.25" stroke="currentColor" strokeWidth="1.5" />
+      <path fill="currentColor" d="M7.25 7h1.5v4.5h-1.5zM8 4.5a.75.75 0 1 1 0 1.5.75.75 0 0 1 0-1.5z" />
+    </svg>
+  );
+}
+
 /** 工作年限 / Work years */
 export function IconWorkYear({ size = DEFAULT_ICON_SIZE, className }: { readonly size?: string | number; readonly className?: string }): ReactElement {
   return (

@@ -19,7 +19,7 @@ import { DndIds } from '@/dnd/ids'
 import { JobIntentionSection, BlockRenderer, SectionContainer } from '@/templates/components/v2'
 import BaseInfoModal from '@/components/modals/base-info-modal'
 import AvatarCropModal from '@/components/modals/avatar-crop-modal'
-import { IconPhone, IconMail, IconGender, IconAge, IconLocation } from '@/components/sections/baseinfo-icons'
+import { IconPhone, IconMail, IconGender, IconAge, IconLocation, IconWorkYear, IconInfo } from '@/components/sections/baseinfo-icons'
 import TwoColumnDndProvider, {
   ColumnDroppable,
   CrossColumnPlaceholder,
@@ -69,6 +69,31 @@ function buildFieldDefs(baseInfo: BaseInfo | null): FieldDef[] {
   }
   if (baseInfo.currentLocation) {
     defs.push({ key: 'currentLocation', label: '现居', value: baseInfo.currentLocation, icon: <IconLocation /> })
+  }
+  if (baseInfo.nation) {
+    defs.push({ key: 'nation', label: '民族', value: baseInfo.nation, icon: <IconInfo /> })
+  }
+  if (baseInfo.household) {
+    defs.push({ key: 'household', label: '户籍', value: baseInfo.household, icon: <IconInfo /> })
+  }
+  if (baseInfo.workStartTime) {
+    defs.push({ key: 'workStartTime', label: '工作时间', value: baseInfo.workStartTime, icon: <IconWorkYear /> })
+  }
+  if (baseInfo.politicalStatus) {
+    defs.push({ key: 'politicalStatus', label: '政治面貌', value: baseInfo.politicalStatus, icon: <IconInfo /> })
+  }
+  if (baseInfo.height) {
+    defs.push({ key: 'height', label: '身高', value: `${baseInfo.height}cm`, icon: <IconInfo /> })
+  }
+  if (baseInfo.weight) {
+    defs.push({ key: 'weight', label: '体重', value: `${baseInfo.weight}kg`, icon: <IconInfo /> })
+  }
+  if (baseInfo.customFields) {
+    for (const cf of baseInfo.customFields) {
+      if (cf.label && cf.value) {
+        defs.push({ key: `custom_${cf.label}`, label: cf.label, value: cf.value, icon: <IconInfo /> })
+      }
+    }
   }
   return defs
 }
@@ -134,6 +159,7 @@ function WarmSidebarHeader(props: {
         </button>
 
         {/* Avatar */}
+        {baseInfo?.showAvatar !== false && (
         <div className="flex justify-center mb-10">
           <div
             className="relative w-[130px] h-[150px] rounded-b-[65px] overflow-hidden bg-white flex items-center justify-center"
@@ -179,6 +205,7 @@ function WarmSidebarHeader(props: {
             />
           </div>
         </div>
+        )}
 
         {/* Name */}
         <h1 className="font-bold text-gray-800 mb-[35px] pl-[5px] tracking-wide" style={{ fontSize: '1.875em' }}>

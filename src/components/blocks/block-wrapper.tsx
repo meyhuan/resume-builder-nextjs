@@ -22,11 +22,13 @@ export interface BlockWrapperProps {
 }
 
 const HOVER_DELAY_MS = 200;
+const HOVER_POLL_MS = 500;
 
 export default function BlockWrapper(props: BlockWrapperProps): ReactElement {
   const { children, blockType, onAdd, onPolish, onDelete, onMoveUp, onMoveDown, dragHandleProps, dragHandleRef, showDragHandle = true, disableHover = false } = props;
   const [isHovered, setIsHovered] = useState(false);
   const hideTimerRef = useRef<NodeJS.Timeout | number | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (disableHover && isHovered) {
@@ -34,6 +36,16 @@ export default function BlockWrapper(props: BlockWrapperProps): ReactElement {
       setIsHovered(false);
     }
   }, [disableHover, isHovered]);
+
+  useEffect(() => {
+    if (!isHovered || disableHover) return;
+    const pollId = setInterval(() => {
+      if (containerRef.current && !containerRef.current.matches(':hover')) {
+        setIsHovered(false);
+      }
+    }, HOVER_POLL_MS);
+    return (): void => { clearInterval(pollId); };
+  }, [isHovered, disableHover]);
 
   function handleMouseEnter(): void {
     if (disableHover) return;
@@ -52,6 +64,7 @@ export default function BlockWrapper(props: BlockWrapperProps): ReactElement {
 
   return (
     <div
+      ref={containerRef}
       className="relative rounded mb-4 last:mb-0 pb-1"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}

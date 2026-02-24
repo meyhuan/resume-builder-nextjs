@@ -30,4 +30,8 @@ export interface BaseInfo {
   readonly height?: string;
   /** Weight in kg. */
   readonly weight?: string;
+  /** Whether to show avatar on the resume. */
+  readonly showAvatar?: boolean;
+  /** User-defined custom fields. */
+  readonly customFields?: Array<{ label: string; value: string }>;
 }

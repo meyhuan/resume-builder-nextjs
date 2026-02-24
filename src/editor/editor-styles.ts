@@ -17,7 +17,7 @@ export const LIST_STYLES = '[&_ul]:list-disc [&_ul]:pl-5 [&_ul]:space-y-1 [&_ol]
 /**
  * Interactive styles for clickable content (hover, cursor).
  */
-export const INTERACTIVE_STYLES = 'cursor-text hover:bg-gray-50 rounded p-1 transition-colors'
+export const INTERACTIVE_STYLES = 'cursor-text hover:bg-gray-100 rounded p-1 transition-colors'
 
 /**
  * Editing state styles (non-intrusive highlight).
