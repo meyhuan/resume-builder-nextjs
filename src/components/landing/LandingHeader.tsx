@@ -39,10 +39,10 @@ export const LandingHeader = ({ forceSolid = false }: LandingHeaderProps = {}) =
   return (
     <>
       <header className={cn(
-        'fixed top-0 left-0 right-0 z-[1000] transition-all duration-300',
+        'fixed top-0 left-0 right-0 z-[1000] transition-all duration-300 py-3',
         isScrolled 
-          ? 'bg-white/60 backdrop-blur-xl border-b border-white/20 shadow-[0_4px_30px_rgba(0,0,0,0.03)] py-3' 
-          : 'bg-transparent py-5'
+          ? 'bg-white/60 backdrop-blur-xl border-b border-white/20 shadow-[0_4px_30px_rgba(0,0,0,0.03)]' 
+          : 'bg-transparent'
       )}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 group transition-transform hover:scale-105">
