@@ -17,7 +17,7 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { key: 'resume', label: '简历', href: '/dashboard', icon: <FileText className="w-[18px] h-[18px]" /> },
+  { key: 'resume', label: '我的简历', href: '/dashboard', icon: <FileText className="w-[18px] h-[18px]" /> },
   // { key: 'ai', label: 'AI 简历', href: '/ai', icon: <Code2 className="w-[18px] h-[18px]" /> },
   { key: 'feedback', label: '用户反馈', href: '/dashboard/feedback', icon: <MessageSquareHeart className="w-[18px] h-[18px]" /> },
 ];

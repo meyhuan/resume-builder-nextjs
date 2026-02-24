@@ -71,15 +71,15 @@ export default async function DashboardPage() {
 
         {/* Page Title */}
         <div className="relative z-10 pt-8 pb-2 px-6 sm:px-10 lg:px-12">
-          <h1 className="text-2xl font-bold text-slate-800">简历</h1>
+          <h1 className="text-2xl font-bold text-slate-800">我的简历</h1>
         </div>
 
         {/* Main Content */}
         <div className="relative z-10 px-6 sm:px-10 lg:px-12 py-6">
           {/* Action Cards Overview */}
-          <div className="grid grid-cols-3 gap-3 sm:gap-4 mb-10 w-full md:w-[70%] lg:w-[55%] xl:w-[45%]">
+          <div className="grid grid-cols-3 gap-3 sm:gap-4 mb-10 w-full md:w-[70%] lg:w-[60%] xl:w-[50%]">
             {/* AI生成简历 */}
-            <div className="rounded-xl bg-gradient-to-r from-violet-400 to-fuchsia-400 p-[1px] shadow-sm hover:shadow-md transition-shadow h-[84px]">
+            <div className="rounded-xl bg-gradient-to-r from-violet-400 to-fuchsia-400 p-[1px] shadow-sm hover:shadow-md transition-shadow h-[76px]">
               <Link href="/ai" className="flex flex-col items-center justify-center gap-1.5 bg-white/90 backdrop-blur-md rounded-[11px] h-full hover:bg-white/60 transition-colors">
                 <Wand2 className="w-5 h-5 text-fuchsia-500" />
                 <span className="text-xs sm:text-[13px] font-medium text-slate-800">AI生成简历</span>
@@ -92,7 +92,7 @@ export default async function DashboardPage() {
               const id = await createResume();
               const { redirect } = await import("next/navigation");
               redirect(`/editor/${id}`);
-            }} className="w-full h-[84px]">
+            }} className="w-full h-[76px]">
               <button type="submit" className="w-full h-full flex flex-col items-center justify-center gap-1.5 bg-white/80 backdrop-blur-md rounded-xl border border-slate-200 hover:border-violet-300 hover:bg-slate-50 shadow-sm hover:shadow-md transition-all">
                 <Plus className="w-6 h-6 text-slate-700 font-light" />
                 <span className="text-xs sm:text-[13px] font-medium text-slate-800">创建新简历</span>
@@ -100,7 +100,7 @@ export default async function DashboardPage() {
             </form>
 
             {/* 导入简历 */}
-            <Link href="/import" className="w-full h-[84px] flex flex-col items-center justify-center gap-1.5 bg-white/80 backdrop-blur-md rounded-xl border border-slate-200 hover:border-violet-300 hover:bg-slate-50 shadow-sm hover:shadow-md transition-all">
+            <Link href="/import" className="w-full h-[76px] flex flex-col items-center justify-center gap-1.5 bg-white/80 backdrop-blur-md rounded-xl border border-slate-200 hover:border-violet-300 hover:bg-slate-50 shadow-sm hover:shadow-md transition-all">
               <FileDown className="w-5 h-5 text-slate-700" />
               <span className="text-xs sm:text-[13px] font-medium text-slate-800">导入简历</span>
             </Link>
