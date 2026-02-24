@@ -303,8 +303,154 @@ function renderTimelineHeader(
   styles: BlockRendererStyles,
   onEditingChange?: (isEditing: boolean) => void
 ): ReactElement | null {
-  // 时间线布局的头部渲染
-  return renderCardHeader(block, themeColor, styles, onEditingChange)
+  // 复制 card header 的逻辑，但不渲染右侧的时间
+  if (block.type === 'experience') {
+    return (
+      <div className={styles.header || 'flex justify-between items-start mb-2'}>
+        <div className="flex-1">
+          <h3 
+            className={styles.title?.className || 'font-semibold'}
+            style={{ fontSize: styles.title?.fontSize, fontWeight: styles.title?.fontWeight, color: styles.title?.color }}
+          >
+            <EditableFieldWrapper
+              blockId={block.id}
+              fieldName="company"
+              value={block.company}
+              onUpdate={() => {}}
+              onEditingChange={onEditingChange}
+              className={styles.title?.className || 'font-semibold'}
+            />
+          </h3>
+          <p 
+            className={styles.subtitle?.className || 'text-gray-600 mt-0.5'}
+            style={{ fontSize: styles.subtitle?.fontSize, fontWeight: styles.subtitle?.fontWeight, color: styles.subtitle?.color }}
+          >
+            <EditableFieldWrapper
+              blockId={block.id}
+              fieldName="position"
+              value={block.position}
+              onUpdate={() => {}}
+            />
+            {block.industry ? (
+              <>
+                {' | '}
+                <EditableFieldWrapper
+                  blockId={block.id}
+                  fieldName="industry"
+                  value={block.industry}
+                  onUpdate={() => {}}
+                />
+              </>
+            ) : null}
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  if (block.type === 'project') {
+    return (
+      <div className={styles.header || 'flex justify-between items-start mb-2'}>
+        <div className="flex-1">
+          <h3 
+            className={styles.title?.className || 'font-semibold'}
+            style={{ fontSize: styles.title?.fontSize, fontWeight: styles.title?.fontWeight, color: styles.title?.color }}
+          >
+            <EditableFieldWrapper
+              blockId={block.id}
+              fieldName="name"
+              value={block.name}
+              onUpdate={() => {}}
+              onEditingChange={onEditingChange}
+              className={styles.title?.className || 'font-semibold'}
+            />
+          </h3>
+          {block.role ? (
+            <p 
+              className={styles.subtitle?.className || 'mt-0.5'}
+              style={{ fontSize: styles.subtitle?.fontSize, fontWeight: styles.subtitle?.fontWeight, color: styles.subtitle?.color }}
+            >
+              <EditableFieldWrapper
+                blockId={block.id}
+                fieldName="role"
+                value={block.role}
+                onUpdate={() => {}}
+              />
+            </p>
+          ) : null}
+        </div>
+      </div>
+    )
+  }
+
+  if (block.type === 'education') {
+    return (
+      <div className={styles.header || 'flex justify-between items-start mb-2'}>
+        <div className="flex-1">
+          <h3 
+            className={styles.title?.className || 'font-semibold'}
+            style={{ fontSize: styles.title?.fontSize, fontWeight: styles.title?.fontWeight, color: styles.title?.color }}
+          >
+            <EditableFieldWrapper
+              blockId={block.id}
+              fieldName="school"
+              value={block.school}
+              onUpdate={() => {}}
+              onEditingChange={onEditingChange}
+              className={styles.title?.className || 'font-semibold'}
+            />
+          </h3>
+          <p 
+            className={styles.subtitle?.className || 'text-gray-600 mt-0.5'}
+            style={{ fontSize: styles.subtitle?.fontSize, fontWeight: styles.subtitle?.fontWeight, color: styles.subtitle?.color }}
+          >
+            <EditableFieldWrapper
+              blockId={block.id}
+              fieldName="major"
+              value={block.major}
+              onUpdate={() => {}}
+            />
+            {' | '}
+            <EditableFieldWrapper
+              blockId={block.id}
+              fieldName="degree"
+              value={block.degree}
+              onUpdate={() => {}}
+            />
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  if (block.type === 'campus') {
+    return (
+      <div className={styles.header || 'flex justify-between items-start mb-2'}>
+        <div className="flex-1">
+          <h3 className={styles.title?.className || 'font-semibold'}>
+            <EditableFieldWrapper
+              blockId={block.id}
+              fieldName="organization"
+              value={block.organization}
+              onUpdate={() => {}}
+              onEditingChange={onEditingChange}
+              className={styles.title?.className || 'font-semibold'}
+            />
+          </h3>
+          <p className={styles.subtitle?.className || 'text-gray-600 mt-0.5'}>
+            <EditableFieldWrapper
+              blockId={block.id}
+              fieldName="position"
+              value={block.position}
+              onUpdate={() => {}}
+            />
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  return null
 }
 
 /**

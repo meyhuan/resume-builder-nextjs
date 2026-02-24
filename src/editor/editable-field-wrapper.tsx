@@ -102,7 +102,7 @@ export default function EditableFieldWrapper(props: EditableFieldWrapperProps): 
         onChange={(e): void => setTempValue(e.target.value)}
         onBlur={saveEdit}
         onKeyDown={handleKeyDown}
-        className={`${props.className || ''} bg-blue-50 border border-blue-500 rounded px-1 outline-none`}
+        className={`${props.className || ''} bg-blue-50 border border-blue-500 rounded px-1 outline-none min-w-[50px] w-full text-right`}
         placeholder={props.placeholder}
       />
     )

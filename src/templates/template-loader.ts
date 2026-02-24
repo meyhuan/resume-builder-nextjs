@@ -51,6 +51,13 @@ export const TEMPLATE_REGISTRY: Record<string, TemplateConfig> = {
     tags: ['通用', '双列', '淡黄', '侧边栏'],
     component: lazy(() => import('@/templates/warm')),
   },
+  timeline: {
+    id: 'timeline',
+    name: '时间轴',
+    description: '左侧日期 + 右侧内容，竖线贯穿，经典时间轴风格',
+    tags: ['通用', '时间轴', '经典', '简洁'],
+    component: lazy(() => import('@/templates/timeline')),
+  },
 }
 
 /**

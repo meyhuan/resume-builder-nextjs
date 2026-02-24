@@ -9,10 +9,6 @@ import type { SectionHeaderStyles } from '@/templates/components/v2/types';
 
 const HOVER_DELAY_MS = 200;
 
-/**
- * Section header with hover actions (add, delete, drag) - floating buttons.
- * Drag functionality should be bound via dragHandleProps from parent.
- */
 export interface SectionHeaderProps {
   readonly sectionId: UUID;
   readonly title: string;
@@ -25,10 +21,11 @@ export interface SectionHeaderProps {
   readonly dragHandleAttributes?: unknown;
   readonly dragHandleListeners?: unknown;
   readonly dragHandleRef?: (element: HTMLElement | null) => void;
+  readonly layout?: 'default' | 'ribbon';
 }
 
 export default function SectionHeader(props: SectionHeaderProps): ReactElement {
-  const { title, icon, themeColor, styles, onTitleChange, onAdd, onDelete, dragHandleAttributes, dragHandleListeners, dragHandleRef } = props;
+  const { title, icon, themeColor, styles, onTitleChange, onAdd, onDelete, dragHandleAttributes, dragHandleListeners, dragHandleRef, layout = 'default' } = props;
   const [isHovered, setIsHovered] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(title);
@@ -57,8 +54,7 @@ export default function SectionHeader(props: SectionHeaderProps): ReactElement {
     setIsEditing(false);
   }, [title]);
 
-  // eslint-disable-next-line react-hooks/refs
-  const hasActions = Boolean(onAdd || onDelete || (dragHandleAttributes && dragHandleListeners && dragHandleRef));
+  const hasActions = Boolean(onAdd || onDelete || (dragHandleAttributes && dragHandleListeners && dragHandleRef !== undefined));
 
   function handleMouseEnter(): void {
     if (!hasActions) return;
@@ -78,7 +74,7 @@ export default function SectionHeader(props: SectionHeaderProps): ReactElement {
 
   const iconColor = styles?.icon?.color || themeColor;
   const titleColor = styles?.color || themeColor;
-  const renderedIcon = isValidElement(icon) ? (
+  const renderedIcon: ReactNode = isValidElement(icon) ? (
     <span style={{ color: iconColor }}>
       {cloneElement(icon as ReactElement<{ size?: string | number; className?: string }>, {
         size: styles?.icon?.size,
@@ -87,6 +83,111 @@ export default function SectionHeader(props: SectionHeaderProps): ReactElement {
     </span>
   ) : icon;
 
+  const actionsMenu = isHovered && hasActions ? (
+    <div 
+      className="absolute top-1 right-2 flex items-center gap-1 print:hidden bg-white shadow-md rounded px-1.5 py-1 border z-10"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      {onAdd && (
+        <Button variant="ghost" size="sm" onClick={onAdd} className="h-7 text-xs gap-1" title="添加">
+          <PlusCircle className="h-3 w-3" />
+          <span>添加</span>
+        </Button>
+      )}
+      {onDelete && (
+        <Button variant="ghost" size="sm" onClick={onDelete} className="h-7 text-xs gap-1 hover:bg-red-50 hover:text-red-600" title="删除">
+          <Trash2 className="h-3 w-3" />
+          <span>删除</span>
+        </Button>
+      )}
+      {!!dragHandleAttributes && !!dragHandleListeners && !!dragHandleRef && (
+        <Button
+          variant="ghost" size="sm" ref={dragHandleRef}
+          /* eslint-disable @typescript-eslint/no-explicit-any */
+          {...(dragHandleAttributes as Record<string, any>)}
+          {...(dragHandleListeners as Record<string, any>)}
+          /* eslint-enable @typescript-eslint/no-explicit-any */
+          className="h-7 text-xs gap-1 cursor-grab active:cursor-grabbing" title="拖动"
+        >
+          <GripVertical className="h-3 w-3" />
+          <span>拖动</span>
+        </Button>
+      )}
+    </div>
+  ) : null;
+
+  const renderTitle = (overrideColor?: string) => {
+    const finalColor = overrideColor || titleColor;
+    if (isEditing && onTitleChange) {
+      return (
+        <input
+          ref={inputRef}
+          className={`font-bold bg-transparent border-b-2 border-violet-400 outline-none px-0 py-0 w-32 ${styles?.className || ''}`}
+          style={{ color: finalColor }}
+          value={editValue}
+          onChange={(e) => setEditValue(e.target.value)}
+          onBlur={commitEdit}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') commitEdit();
+            if (e.key === 'Escape') cancelEdit();
+          }}
+        />
+      );
+    }
+    return (
+      <h2
+        className={`font-bold tracking-widest ${onTitleChange ? 'cursor-text' : ''} ${styles?.className || ''}`}
+        style={{ color: finalColor }}
+        onClick={onTitleChange ? () => { setEditValue(title); setIsEditing(true); } : undefined}
+      >
+        {title}
+      </h2>
+    );
+  };
+
+  if (layout === 'ribbon') {
+    return (
+      <div
+        className={`flex items-center w-full relative transition-all duration-200 group/header ${
+          isHovered ? 'bg-gray-50' : ''
+        } ${styles?.containerClassName || 'mb-4 mt-2'}`}
+        style={{ fontSize: styles?.fontSize, fontWeight: styles?.fontWeight, lineHeight: styles?.lineHeight }}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
+        <div className="flex items-center relative h-[32px] drop-shadow-sm">
+          {/* Icon part */}
+          <div className="h-full flex items-center justify-center w-[40px] z-20 rounded-l-sm" style={{ backgroundColor: themeColor }}>
+            {isValidElement(icon) ? (
+              <span style={{ color: '#fff' }}>
+                {cloneElement(icon as ReactElement<{ size?: string | number; className?: string }>, {
+                  size: styles?.icon?.size || '1.2em',
+                  className: styles?.icon?.className,
+                })}
+              </span>
+            ) : icon}
+          </div>
+
+          {/* Title part */}
+          <div className="bg-[#f8f8f8] h-full flex items-center pl-3 pr-2 z-10 relative border-y border-[#ddd]">
+            {renderTitle('#333')}
+            
+            {/* Arrow right */}
+            <div className="absolute top-[-1px] -right-[16px] w-0 h-0 border-y-[16px] border-y-transparent border-l-[16px] border-l-[#f8f8f8] z-20"></div>
+            <div className="absolute top-[-1px] -right-[17px] w-0 h-0 border-y-[16px] border-y-transparent border-l-[17px] border-l-[#ddd] z-10"></div>
+          </div>
+        </div>
+        
+        {/* Horizontal Line */}
+        <div className="flex-1 h-[6px] bg-[#f0f0f0] ml-6 rounded-r"></div>
+
+        {actionsMenu}
+      </div>
+    );
+  }
+
+  // Default Layout
   return (
     <div
       className={`flex items-center gap-2 relative rounded transition-all duration-200 ${
@@ -97,77 +198,10 @@ export default function SectionHeader(props: SectionHeaderProps): ReactElement {
       onMouseLeave={handleMouseLeave}
     >
       {renderedIcon}
-      {isEditing && onTitleChange ? (
-        <input
-          ref={inputRef}
-          className={`font-bold flex-1 bg-transparent border-b-2 border-violet-400 outline-none px-0 py-0 ${styles?.className || ''}`}
-          style={{ color: titleColor }}
-          value={editValue}
-          onChange={(e) => setEditValue(e.target.value)}
-          onBlur={commitEdit}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') commitEdit();
-            if (e.key === 'Escape') cancelEdit();
-          }}
-        />
-      ) : (
-        <h2
-          className={`font-bold flex-1 ${onTitleChange ? 'cursor-text' : ''} ${styles?.className || ''}`}
-          style={{ color: titleColor }}
-          onClick={onTitleChange ? () => { setEditValue(title); setIsEditing(true); } : undefined}
-        >
-          {title}
-        </h2>
-      )}
-
-      {isHovered && hasActions ? (
-        <div 
-          className="absolute top-1 right-2 flex items-center gap-1 print:hidden bg-white shadow-md rounded px-1.5 py-1 border z-10"
-          onMouseEnter={handleMouseEnter}
-          onMouseLeave={handleMouseLeave}
-        >
-          {onAdd ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onAdd}
-              className="h-7 text-xs gap-1"
-              title="添加"
-            >
-              <PlusCircle className="h-3 w-3" />
-              <span>添加</span>
-            </Button>
-          ) : null}
-
-          {onDelete ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onDelete}
-              className="h-7 text-xs gap-1 hover:bg-red-50 hover:text-red-600"
-              title="删除"
-            >
-              <Trash2 className="h-3 w-3" />
-              <span>删除</span>
-            </Button>
-          ) : null}
-
-          {dragHandleAttributes && dragHandleListeners && dragHandleRef ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              ref={dragHandleRef}
-              {...(dragHandleAttributes as Record<string, unknown>)}
-              {...(dragHandleListeners as Record<string, unknown>)}
-              className="h-7 text-xs gap-1 cursor-grab active:cursor-grabbing"
-              title="拖动"
-            >
-              <GripVertical className="h-3 w-3" />
-              <span>拖动</span>
-            </Button>
-          ) : null}
-        </div>
-      ) : null}
+      <div className="flex-1 flex">
+        {renderTitle()}
+      </div>
+      {actionsMenu}
     </div>
   );
 }

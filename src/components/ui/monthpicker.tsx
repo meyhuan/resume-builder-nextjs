@@ -16,30 +16,30 @@ export interface MonthPickerProps {
 }
 
 const MONTHS: ReadonlyArray<{ number: number; name: string }> = [
-  { number: 1, name: '一月' },
-  { number: 2, name: '二月' },
-  { number: 3, name: '三月' },
-  { number: 4, name: '四月' },
-  { number: 5, name: '五月' },
-  { number: 6, name: '六月' },
-  { number: 7, name: '七月' },
-  { number: 8, name: '八月' },
-  { number: 9, name: '九月' },
-  { number: 10, name: '十月' },
-  { number: 11, name: '十一月' },
-  { number: 12, name: '十二月' },
+  { number: 1, name: '1月' },
+  { number: 2, name: '2月' },
+  { number: 3, name: '3月' },
+  { number: 4, name: '4月' },
+  { number: 5, name: '5月' },
+  { number: 6, name: '6月' },
+  { number: 7, name: '7月' },
+  { number: 8, name: '8月' },
+  { number: 9, name: '9月' },
+  { number: 10, name: '10月' },
+  { number: 11, name: '11月' },
+  { number: 12, name: '12月' },
 ]
 
 const DEFAULT_MIN_YEAR: number = 1980
 const DEFAULT_MAX_YEAR: number = 2050
-const YEAR_PAGE_SIZE: number = 8
-const COMPACT_CONTAINER_PADDING_CLASS: string = 'p-2'
+const YEAR_PAGE_SIZE: number = 12
+const COMPACT_CONTAINER_PADDING_CLASS: string = 'p-2 w-[220px]'
 const HEADER_SPACING_CLASS: string = 'mb-2'
-const YEAR_GRID_GAP_CLASS: string = 'gap-1.5'
-const MONTH_GRID_GAP_CLASS: string = 'gap-1.5'
-const YEAR_RANGE_TEXT_CLASS: string = 'text-sm font-semibold'
-const YEAR_BUTTON_CLASS: string = 'h-8 px-2 text-sm'
-const MONTH_BUTTON_CLASS: string = 'h-8 px-2 text-sm'
+const YEAR_GRID_GAP_CLASS: string = 'gap-1'
+const MONTH_GRID_GAP_CLASS: string = 'gap-1'
+const YEAR_RANGE_TEXT_CLASS: string = 'text-sm font-medium'
+const YEAR_BUTTON_CLASS: string = 'h-7 w-full text-xs font-normal'
+const MONTH_BUTTON_CLASS: string = 'h-7 w-full text-xs font-normal'
 
 function getYearBounds(minDate?: Date, maxDate?: Date): { minYear: number; maxYear: number } {
   const minYear: number = minDate?.getFullYear() ?? DEFAULT_MIN_YEAR
@@ -128,24 +128,24 @@ export function MonthPicker(props: MonthPickerProps): React.ReactElement {
       <div className={cn('flex items-center justify-between', HEADER_SPACING_CLASS)}>
         <Button
           variant="outline"
-          size="icon"
+          className="h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100"
           onClick={handleYearPageBackward}
           type="button"
           disabled={yearPageStart <= minYear}
         >
-          <ChevronLeft className="h-3.5 w-3.5" />
+          <ChevronLeft className="h-4 w-4" />
         </Button>
         <div className={YEAR_RANGE_TEXT_CLASS}>
           {yearPageStart} - {Math.min(yearPageStart + YEAR_PAGE_SIZE - 1, maxYear)}
         </div>
         <Button
           variant="outline"
-          size="icon"
+          className="h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100"
           onClick={handleYearPageForward}
           type="button"
           disabled={yearPageStart >= computePageStart(maxYear, minYear, maxYear)}
         >
-          <ChevronRight className="h-3.5 w-3.5" />
+          <ChevronRight className="h-4 w-4" />
         </Button>
       </div>
 
@@ -159,17 +159,19 @@ export function MonthPicker(props: MonthPickerProps): React.ReactElement {
           return (
             <Button
               key={year}
-              variant={selected ? 'default' : 'outline'}
+              variant={selected ? 'default' : 'ghost'}
               onClick={() => handleYearSelect(year)}
               disabled={disabled}
               type="button"
-              className={cn(YEAR_BUTTON_CLASS, selected && 'bg-primary text-primary-foreground')}
+              className={cn(YEAR_BUTTON_CLASS, selected && 'bg-primary text-primary-foreground font-medium hover:bg-primary hover:text-primary-foreground')}
             >
               {year}
             </Button>
           )
         })}
       </div>
+
+      <div className="h-px bg-gray-100 my-3"></div>
 
       <div className={cn('grid grid-cols-3', MONTH_GRID_GAP_CLASS)}>
         {MONTHS.map((month) => {
@@ -179,13 +181,13 @@ export function MonthPicker(props: MonthPickerProps): React.ReactElement {
           return (
             <Button
               key={month.number}
-              variant={selected ? 'default' : 'outline'}
+              variant={selected ? 'default' : 'ghost'}
               onClick={() => handleMonthClick(month.number)}
               disabled={disabled}
               type="button"
               className={cn(
                 MONTH_BUTTON_CLASS,
-                selected && 'bg-primary text-primary-foreground'
+                selected && 'bg-primary text-primary-foreground font-medium hover:bg-primary hover:text-primary-foreground'
               )}
             >
               {month.name}
