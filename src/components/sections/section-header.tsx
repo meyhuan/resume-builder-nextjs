@@ -85,18 +85,18 @@ export default function SectionHeader(props: SectionHeaderProps): ReactElement {
 
   const actionsMenu = isHovered && hasActions ? (
     <div 
-      className="absolute top-1 right-2 flex items-center gap-1 print:hidden bg-white shadow-md rounded px-1.5 py-1 border z-10"
+      className="absolute top-1 right-2 flex items-center gap-0.5 print:hidden bg-white shadow-md rounded-md px-1 py-0.5 border border-slate-200 z-10"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
       {onAdd && (
-        <Button variant="ghost" size="sm" onClick={onAdd} className="h-7 text-xs gap-1" title="添加">
+        <Button variant="ghost" size="sm" onClick={onAdd} className="h-6 px-2 text-[11px] gap-1 text-slate-600 hover:!text-slate-900 hover:!bg-slate-100" title="添加">
           <PlusCircle className="h-3 w-3" />
           <span>添加</span>
         </Button>
       )}
       {onDelete && (
-        <Button variant="ghost" size="sm" onClick={onDelete} className="h-7 text-xs gap-1 hover:bg-red-50 hover:text-red-600" title="删除">
+        <Button variant="ghost" size="sm" onClick={onDelete} className="h-6 px-2 text-[11px] gap-1 text-slate-600 hover:!text-red-600 hover:!bg-red-50" title="删除">
           <Trash2 className="h-3 w-3" />
           <span>删除</span>
         </Button>
@@ -108,10 +108,10 @@ export default function SectionHeader(props: SectionHeaderProps): ReactElement {
           {...(dragHandleAttributes as Record<string, any>)}
           {...(dragHandleListeners as Record<string, any>)}
           /* eslint-enable @typescript-eslint/no-explicit-any */
-          className="h-7 text-xs gap-1 cursor-grab active:cursor-grabbing" title="拖动"
+          className="h-6 w-6 px-0 text-[11px] gap-1 cursor-grab active:cursor-grabbing text-slate-600 hover:!text-slate-900 hover:!bg-slate-100" title="拖动"
         >
           <GripVertical className="h-3 w-3" />
-          <span>拖动</span>
+          {/* <span>拖动</span> */}
         </Button>
       )}
     </div>
