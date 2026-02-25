@@ -1,6 +1,6 @@
 import type { ReactElement } from "react";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Sparkles, Trash2, ArrowUp, ArrowDown } from "lucide-react";
+import { PlusCircle, Sparkles, Wand2, Trash2, ArrowUp, ArrowDown } from "lucide-react";
 
 /**
  * Actions shown when hovering over a block (floating, no layout shift).
@@ -9,6 +9,7 @@ export interface BlockActionsProps {
   readonly blockType: string;
   readonly onAdd?: () => void;
   readonly onPolish?: () => void;
+  readonly onGenerate?: () => void;
   readonly onDelete?: () => void;
   readonly onMoveUp?: () => void;
   readonly onMoveDown?: () => void;
@@ -21,6 +22,7 @@ export default function BlockActions(props: BlockActionsProps): ReactElement {
     blockType,
     onAdd,
     onPolish,
+    onGenerate,
     onDelete,
     onMoveUp,
     onMoveDown,
@@ -58,6 +60,19 @@ export default function BlockActions(props: BlockActionsProps): ReactElement {
         >
           <Sparkles className="h-3 w-3" />
           <span>AI润色</span>
+        </Button>
+      ) : null}
+
+      {onGenerate ? (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onGenerate}
+          className="h-7 text-xs gap-1 text-violet-600 hover:bg-violet-50 hover:text-violet-700"
+          title="AI帮我写"
+        >
+          <Wand2 className="h-3 w-3" />
+          <span>AI帮我写</span>
         </Button>
       ) : null}
 

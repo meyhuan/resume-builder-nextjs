@@ -13,6 +13,8 @@ import SortableSectionWrapper from '@/components/sections/sortable-section-wrapp
 import { getSectionIcon } from '@/utils/get-section-icon'
 import { isCustomSection } from '@/entities/blocks/block-factory'
 import { useAppStore } from '@/state/store'
+import { useAiSection } from '@/components/ai-section/ai-section-provider'
+import { blockTypeToModuleType, extractBlockContentHtml } from '@/components/ai-section/block-module-utils'
 import DragDropProvider from '@/dnd/drag-drop-provider'
 import { DndIds } from '@/dnd/ids'
 import { BaseInfoSection, JobIntentionSection, BlockRenderer, SectionContainer } from '@/templates/components/v2'
@@ -45,6 +47,8 @@ function BlockRendererWrapper(props: {
   const moveBlockUp = useAppStore((s) => s.moveBlockUp)
   const moveBlockDown = useAppStore((s) => s.moveBlockDown)
   const [isEditing, setIsEditing] = useState(false)
+  const { openPolish, openGenerate } = useAiSection()
+  const moduleType = blockTypeToModuleType(block.type)
   
   function handleMoveUp(): void {
     moveBlockUp(sectionId, block.id)
@@ -55,7 +59,14 @@ function BlockRendererWrapper(props: {
   }
   
   function handlePolish(): void {
-    console.log('Polish', block.id)
+    if (!moduleType) return
+    const content = extractBlockContentHtml(block)
+    openPolish(block.id, content, moduleType)
+  }
+  
+  function handleGenerate(): void {
+    if (!moduleType) return
+    openGenerate(block.id, moduleType, block)
   }
   
   let blockTypeLabel = '内容'
@@ -69,7 +80,8 @@ function BlockRendererWrapper(props: {
       <BlockWrapper
         blockType={blockTypeLabel}
         onAdd={block.type !== 'text' ? (): void => addBlock(sectionId) : undefined}
-        onPolish={handlePolish}
+        onPolish={moduleType ? handlePolish : undefined}
+        onGenerate={moduleType ? handleGenerate : undefined}
         onDelete={(): void => deleteBlock(sectionId, block.id)}
         onMoveUp={blockIndex > 0 ? handleMoveUp : undefined}
         onMoveDown={blockIndex < totalBlocks - 1 ? handleMoveDown : undefined}

@@ -25,6 +25,7 @@ import { useOnePageMode } from '@/hooks/use-one-page-mode'
 import { toast } from 'sonner'
 import type { AdjustableTokens } from '@/entities/editor/editor-meta'
 import { extractEditorMeta, embedEditorMeta } from '@/entities/editor/editor-meta'
+import AiSectionProvider from '@/components/ai-section/ai-section-provider'
 
 interface ResumeData {
   id: string
@@ -474,6 +475,7 @@ export default function ResumeEditor({ resumeId, initialData }: ResumeEditorProp
       <main className="flex-1 flex overflow-hidden relative z-10">
         <div className="flex-1 overflow-auto p-6 md:p-12 custom-scrollbar bg-slate-50/30">
           <div className="mx-auto max-w-[210mm] transition-all duration-500">
+            <AiSectionProvider>
             <div
               ref={printRef}
               className="page w-full bg-white shadow-[0_0_50px_rgba(0,0,0,0.05)] rounded-xl print:shadow-none overflow-hidden"
@@ -508,6 +510,7 @@ export default function ResumeEditor({ resumeId, initialData }: ResumeEditorProp
                 )}
               </Suspense>
             </div>
+            </AiSectionProvider>
           </div>
         </div>
         {activePanel && (

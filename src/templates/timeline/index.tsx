@@ -14,6 +14,8 @@ import EditableDateField from '@/editor/editable-date-field'
 import { getSectionIcon } from '@/utils/get-section-icon'
 import { isCustomSection } from '@/entities/blocks/block-factory'
 import { useAppStore } from '@/state/store'
+import { useAiSection } from '@/components/ai-section/ai-section-provider'
+import { blockTypeToModuleType, extractBlockContentHtml } from '@/components/ai-section/block-module-utils'
 import DragDropProvider from '@/dnd/drag-drop-provider'
 import { DndIds } from '@/dnd/ids'
 import { BaseInfoSection, JobIntentionSection, BlockRenderer, SectionContainer } from '@/templates/components/v2'
@@ -55,13 +57,16 @@ function BlockRendererWrapper(props: BlockRendererWrapperProps): ReactElement {
   const moveBlockUp = useAppStore((s) => s.moveBlockUp)
   const moveBlockDown = useAppStore((s) => s.moveBlockDown)
   const [isEditing, setIsEditing] = useState(false)
+  const { openPolish, openGenerate } = useAiSection()
+  const moduleType = blockTypeToModuleType(block.type)
   const blockTypeLabel = getBlockTypeLabel(block.type)
   return (
     <div style={{ marginBottom: blockIndex < totalBlocks - 1 ? `${16 * spacingScale}px` : '0' }}>
       <BlockWrapper
         blockType={blockTypeLabel}
         onAdd={block.type !== 'text' ? (): void => addBlock(sectionId) : undefined}
-        onPolish={(): void => { console.log('Polish', block.id) }}
+        onPolish={moduleType ? (): void => openPolish(block.id, extractBlockContentHtml(block), moduleType) : undefined}
+        onGenerate={moduleType ? (): void => openGenerate(block.id, moduleType, block) : undefined}
         onDelete={(): void => deleteBlock(sectionId, block.id)}
         onMoveUp={blockIndex > 0 ? (): void => moveBlockUp(sectionId, block.id) : undefined}
         onMoveDown={blockIndex < totalBlocks - 1 ? (): void => moveBlockDown(sectionId, block.id) : undefined}

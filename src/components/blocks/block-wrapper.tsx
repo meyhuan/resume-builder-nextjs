@@ -12,6 +12,7 @@ export interface BlockWrapperProps {
   readonly blockType: string;
   readonly onAdd?: () => void;
   readonly onPolish?: () => void;
+  readonly onGenerate?: () => void;
   readonly onDelete?: () => void;
   readonly onMoveUp?: () => void;
   readonly onMoveDown?: () => void;
@@ -25,7 +26,7 @@ const HOVER_DELAY_MS = 200;
 const HOVER_POLL_MS = 500;
 
 export default function BlockWrapper(props: BlockWrapperProps): ReactElement {
-  const { children, blockType, onAdd, onPolish, onDelete, onMoveUp, onMoveDown, dragHandleProps, dragHandleRef, showDragHandle = true, disableHover = false } = props;
+  const { children, blockType, onAdd, onPolish, onGenerate, onDelete, onMoveUp, onMoveDown, dragHandleProps, dragHandleRef, showDragHandle = true, disableHover = false } = props;
   const [isHovered, setIsHovered] = useState(false);
   const hideTimerRef = useRef<NodeJS.Timeout | number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -89,6 +90,7 @@ export default function BlockWrapper(props: BlockWrapperProps): ReactElement {
           blockType={blockType}
           onAdd={onAdd}
           onPolish={onPolish}
+          onGenerate={onGenerate}
           onDelete={onDelete}
           onMoveUp={onMoveUp}
           onMoveDown={onMoveDown}
