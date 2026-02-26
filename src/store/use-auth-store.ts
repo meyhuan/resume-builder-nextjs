@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { deleteCookie } from 'cookies-next';
 
 interface UserInfo {
   id: string;
@@ -30,6 +31,7 @@ export const useAuthStore = create<AuthState>()(
       setUserInfo: (userInfo) => set({ userInfo }),
       logout: () => {
         localStorage.removeItem('token');
+        deleteCookie('auth_uid');
         set({ token: null, userInfo: null });
       },
     }),

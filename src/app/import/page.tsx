@@ -49,7 +49,7 @@ export default function ImportResumePage(): React.ReactElement {
     isGenerating, streamedText, error, isNotResume,
     generate, abort, reset,
   } = useImportGeneration();
-  const { isLoginOpen, requireAuth, handleLoginSuccess, handleLoginClose, isLoggedIn } = useRequireAuth();
+  const { isLoginOpen, handleLoginSuccess, handleLoginClose, isLoggedIn } = useRequireAuth();
   const { usage, isLimitReached, refresh: refreshUsage } = useAiUsage();
 
   const saveResume = useCallback(async (resumeData: ResumeData): Promise<void> => {
@@ -88,6 +88,15 @@ export default function ImportResumePage(): React.ReactElement {
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const openEditorWithData = useCallback((resumeData: ResumeData): void => {
+    localStorage.setItem(IMPORT_CACHE_KEY, JSON.stringify(resumeData));
+    if (isLoggedIn()) {
+      saveResume(resumeData);
+    } else {
+      router.push('/editor/new?source=import');
+    }
+  }, [isLoggedIn, saveResume, router]);
+
   const handleImport = useCallback(async (): Promise<void> => {
     if (isLimitReached) return;
     if (rawText.trim().length < MIN_TEXT_LENGTH) return;
@@ -96,10 +105,9 @@ export default function ImportResumePage(): React.ReactElement {
     await refreshUsage();
     if (importResult) {
       const resumeData = mapExternalResume(importResult);
-      localStorage.setItem(IMPORT_CACHE_KEY, JSON.stringify(resumeData));
-      requireAuth(() => { saveResume(resumeData); });
+      openEditorWithData(resumeData);
     }
-  }, [rawText, selectedModel, generate, requireAuth, saveResume, isLimitReached, refreshUsage]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [rawText, selectedModel, generate, openEditorWithData, isLimitReached, refreshUsage]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleStop = useCallback((): void => { abort(); }, [abort]);
   const handleBack = useCallback((): void => {

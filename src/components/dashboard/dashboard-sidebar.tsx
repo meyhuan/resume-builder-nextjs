@@ -3,7 +3,7 @@
 import type { ReactElement } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { FileText, MessageSquareHeart, LogOut } from 'lucide-react';
 import { useAuthStore } from '@/store/use-auth-store';
 import { useState, useEffect } from 'react';
@@ -31,6 +31,7 @@ const COPYRIGHT_YEAR = new Date().getFullYear();
  */
 export default function DashboardSidebar(): ReactElement {
   const pathname = usePathname();
+  const router = useRouter();
   const { userInfo, logout } = useAuthStore();
   const [mounted, setMounted] = useState(false);
 
@@ -111,7 +112,7 @@ export default function DashboardSidebar(): ReactElement {
         {mounted && userInfo && (
           <button
             type="button"
-            onClick={() => logout()}
+            onClick={() => { logout(); router.push('/'); }}
             className="flex items-center gap-2 w-full px-4 py-2 rounded-lg text-xs font-medium text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-colors mb-3"
           >
             <LogOut className="w-3.5 h-3.5" />

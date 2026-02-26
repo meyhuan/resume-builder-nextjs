@@ -17,11 +17,13 @@ interface WxLoginDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess?: () => void;
+  closeable?: boolean;
+  subtitle?: string;
 }
 
 type WxStatus = 'pending' | 'scanned' | 'confirming' | 'expired';
 
-export const WxLoginDialog: React.FC<WxLoginDialogProps> = ({ isOpen, onClose, onSuccess }) => {
+export const WxLoginDialog: React.FC<WxLoginDialogProps> = ({ isOpen, onClose, onSuccess, closeable = true, subtitle }) => {
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<WxStatus>('pending');
   const [qrcodeUrl, setQrcodeUrl] = useState('');
@@ -30,8 +32,13 @@ export const WxLoginDialog: React.FC<WxLoginDialogProps> = ({ isOpen, onClose, o
   const sceneStrRef = useRef('');
   const pollTimerRef = useRef<NodeJS.Timeout | null>(null);
   const expireTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const isOpenRef = useRef(isOpen);
   const [legalOpen, setLegalOpen] = useState<boolean>(false);
   const [legalTab, setLegalTab] = useState<LegalTab>('privacy');
+
+  useEffect(() => {
+    isOpenRef.current = isOpen;
+  }, [isOpen]);
 
   const openLegal = (tab: LegalTab): void => {
     setLegalTab(tab);
@@ -92,6 +99,11 @@ export const WxLoginDialog: React.FC<WxLoginDialogProps> = ({ isOpen, onClose, o
       } else {
         throw new Error('No ticket or URL found in response');
       }
+
+      if (!isOpenRef.current) {
+        return;
+      }
+
       setExpireIn(qrData?.expire_seconds || 120);
       startExpireCountdown();
       startPolling();
@@ -188,19 +200,26 @@ export const WxLoginDialog: React.FC<WxLoginDialogProps> = ({ isOpen, onClose, o
 
   return (
     <>
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[420px] p-0 border-none overflow-hidden bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl ring-1 ring-white/50">
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open && closeable) onClose(); }}>
+      <DialogContent
+        className="sm:max-w-[420px] p-0 border-none overflow-hidden bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl ring-1 ring-white/50"
+        onPointerDownOutside={closeable ? undefined : (e) => e.preventDefault()}
+        onEscapeKeyDown={closeable ? undefined : (e) => e.preventDefault()}
+        hideCloseButton={!closeable}
+      >
         <div className="relative p-8">
           {/* Background Glow */}
           <div className="absolute top-0 right-0 w-32 h-32 bg-violet-500/10 rounded-full blur-2xl pointer-events-none" />
           <div className="absolute bottom-0 left-0 w-32 h-32 bg-fuchsia-500/10 rounded-full blur-2xl pointer-events-none" />
 
-          <button 
-            onClick={onClose}
-            className="absolute right-4 top-4 w-8 h-8 flex items-center justify-center rounded-full bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-all z-10"
-          >
-            <X size={18} />
-          </button>
+          {closeable && (
+            <button 
+              onClick={onClose}
+              className="absolute right-4 top-4 w-8 h-8 flex items-center justify-center rounded-full bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-all z-10"
+            >
+              <X size={18} />
+            </button>
+          )}
 
           <div className="text-center mb-8 relative z-10">
             <DialogTitle className="text-2xl font-bold text-slate-900 flex items-center justify-center gap-2">
@@ -209,7 +228,7 @@ export const WxLoginDialog: React.FC<WxLoginDialogProps> = ({ isOpen, onClose, o
               </span>
               微信扫码登录
             </DialogTitle>
-            <p className="text-slate-500 mt-2 text-sm font-medium">即刻解锁 AI 简历超能力</p>
+            <p className="text-slate-500 mt-2 text-sm font-medium">{subtitle || '即刻解锁 AI 简历超能力'}</p>
           </div>
 
           <div className="bg-white/50 rounded-2xl p-6 border border-white/60 shadow-inner flex flex-col items-center relative z-10 backdrop-blur-sm">
@@ -258,17 +277,19 @@ export const WxLoginDialog: React.FC<WxLoginDialogProps> = ({ isOpen, onClose, o
               </div>
             )}
 
-            <div className="mt-6 flex flex-col items-center gap-1">
+            <div className="mt-6 flex flex-col items-center justify-center gap-1 h-[44px]">
               <p className="text-sm font-bold bg-gradient-to-r from-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
                 {status === 'pending' && '请使用微信扫描上方二维码'}
                 {status === 'scanned' && '✅ 已扫码，请在手机上确认'}
                 {status === 'confirming' && '正在确认登录信息...'}
                 {status === 'expired' && '二维码已过期，请刷新'}
               </p>
-              {expireIn > 0 && status !== 'expired' && (
+              {expireIn > 0 && status !== 'expired' ? (
                 <span className="text-[10px] text-slate-400 font-medium bg-slate-100 px-2 py-0.5 rounded-full">
                   有效期 {expireIn}s
                 </span>
+              ) : (
+                <div className="h-[20px]" /> /* Placeholder to maintain height */
               )}
             </div>
           </div>

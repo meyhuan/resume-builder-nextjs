@@ -28,8 +28,15 @@ import { extractEditorMeta, embedEditorMeta } from '@/entities/editor/editor-met
 import AiSectionProvider from '@/components/ai-section/ai-section-provider'
 import { useRequireAuth } from '@/hooks/use-require-auth'
 import { WxLoginDialog } from '@/components/auth/WxLoginDialog'
+import { useAuthStore } from '@/store/use-auth-store'
+import type { ResumeData } from '@/entities/resume/resume-data'
 
-interface ResumeData {
+const AI_CACHE_KEYS: Record<string, string> = {
+  ai: 'wizard_pending_resume',
+  import: 'import_pending_resume',
+} as const
+
+interface DbResumeRecord {
   id: string
   title: string
   content: unknown
@@ -39,7 +46,7 @@ interface ResumeData {
 
 interface ResumeEditorProps {
   resumeId?: string
-  initialData?: ResumeData | null
+  initialData?: DbResumeRecord | null
 }
 
 export default function ResumeEditor({ resumeId: initialResumeId, initialData }: ResumeEditorProps): ReactElement {
@@ -48,7 +55,16 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
   const resume = useAppStore((s) => s.resume)
   // Mutable resumeId — starts undefined in guest mode, set after first save
   const [resumeId, setResumeId] = useState<string | undefined>(initialResumeId)
-  const { isLoginOpen, requireAuth, handleLoginSuccess, handleLoginClose, isLoggedIn } = useRequireAuth()
+  const { isLoginOpen, requireAuth, handleLoginSuccess, handleLoginClose } = useRequireAuth()
+  const { token } = useAuthStore()
+  
+  // Hydration check to prevent SSR mismatch for auth state
+  const [isHydrated, setIsHydrated] = useState(false)
+  useEffect(() => {
+    setIsHydrated(true)
+  }, [])
+  const needsForceLogin = isHydrated && !token
+
   const setResume = useAppStore((s) => s.setResume)
   const setThemeForTemplate = useAppStore((s) => s.setThemeForTemplate)
   const getThemeForTemplate = useAppStore((s) => s.getThemeForTemplate)
@@ -118,6 +134,31 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
     }
   }, [initialData, setResume, setThemeForTemplate, getThemeForTemplate])
 
+  // Load cached AI / import resume data when opened via /editor/new?source=ai|import
+  const cachedDataApplied = useRef(false)
+  useEffect(() => {
+    if (cachedDataApplied.current || initialData) return
+    const source = searchParams.get('source')
+    if (!source) return
+    const cacheKey = AI_CACHE_KEYS[source]
+    if (!cacheKey) return
+    const cached = localStorage.getItem(cacheKey)
+    if (!cached) {
+      toast.error('未找到缓存的简历数据')
+      return
+    }
+    cachedDataApplied.current = true
+    try {
+      const resumeData = JSON.parse(cached) as ResumeData
+      setResume(() => resumeData)
+      localStorage.removeItem(cacheKey)
+      toast.success(source === 'ai' ? '✨ AI 简历生成完毕，快来完善细节吧' : '✨ 简历解析成功，快来完善细节吧')
+    } catch {
+      toast.error('简历数据解析失败')
+      localStorage.removeItem(cacheKey)
+    }
+  }, [initialData, searchParams, setResume])
+
   // Set initial snapshot for new resumes (no initialData) so changes are detected
   const initialSnapshotSet = useRef(false)
   useEffect(() => {
@@ -126,7 +167,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
       initialSnapshotSet.current = true
       
       // If a template was specified in URL and we have no initialData, load test data to showcase the template
-      if (!initialData && searchParams.has('template')) {
+      if (!initialData && searchParams.has('template') && !searchParams.has('source')) {
         loadTestData()
       }
 
@@ -291,7 +332,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
   }, [])
 
   // Determine back destination based on auth state
-  const backPath = isLoggedIn() ? '/dashboard' : '/'
+  const backPath = token ? '/dashboard' : '/'
   // Handle back navigation with unsaved changes warning
   const handleBack = useCallback(() => {
     if (hasUnsavedChanges && resumeId) {
@@ -303,9 +344,13 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
 
   // Confirm leave action
   const confirmLeave = useCallback(() => {
-    setShowLeaveDialog(false)
-    router.push(backPath)
-  }, [router, backPath])
+    if (!token) {
+      // Guest users who abandon unsaved changes just get router back
+      router.back()
+    } else {
+      router.push('/dashboard')
+    }
+  }, [router, token])
 
   // Stable callback to patch the current template's theme
   const patchTheme = useCallback((patch: Partial<ThemeTokens>): void => {
@@ -594,8 +639,17 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
           confirmLeave()
         }}
       />
-      {/* Login dialog for guest-mode save */}
-      <WxLoginDialog isOpen={isLoginOpen} onClose={handleLoginClose} onSuccess={handleLoginSuccess} />
+      {/* Forced login dialog for unauthenticated users */}
+      <WxLoginDialog
+        isOpen={needsForceLogin || isLoginOpen}
+        onClose={handleLoginClose}
+        onSuccess={() => {
+          handleLoginSuccess()
+          toast.success('登录成功，已自动为你保存简历进度')
+        }}
+        closeable={!needsForceLogin}
+        subtitle={needsForceLogin ? '登录后即可保存、导出，你的简历不会丢失' : undefined}
+      />
     </div>
   )
 }

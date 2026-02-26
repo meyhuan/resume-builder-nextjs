@@ -26,7 +26,7 @@ export const WizardLayout = ({ children }: { children: React.ReactNode }) => {
   const { isGenerating, streamedText, error, generate, abort, reset } = useAiGeneration();
   const selectedModel: string = AI_MODELS[0].name;
   const [showGenPage, setShowGenPage] = useState<boolean>(false);
-  const { isLoginOpen, requireAuth, handleLoginSuccess, handleLoginClose, isLoggedIn } = useRequireAuth();
+  const { isLoginOpen, handleLoginSuccess, handleLoginClose, isLoggedIn } = useRequireAuth();
   const { usage, isLimitReached, refresh: refreshUsage } = useAiUsage();
 
   const saveResume = useCallback(async (resumeData: ResumeData): Promise<void> => {
@@ -62,6 +62,15 @@ export const WizardLayout = ({ children }: { children: React.ReactNode }) => {
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const openEditorWithData = useCallback((resumeData: ResumeData): void => {
+    localStorage.setItem(WIZARD_CACHE_KEY, JSON.stringify(resumeData));
+    if (isLoggedIn()) {
+      saveResume(resumeData);
+    } else {
+      router.push('/editor/new?source=ai');
+    }
+  }, [isLoggedIn, saveResume, router]);
+
   const handleGenerate = async (): Promise<void> => {
     if (isLimitReached) return;
     const input = getWizardInput(wizardState);
@@ -71,8 +80,7 @@ export const WizardLayout = ({ children }: { children: React.ReactNode }) => {
     await refreshUsage();
     if (result) {
       const resumeData = mapExternalResume(result);
-      localStorage.setItem(WIZARD_CACHE_KEY, JSON.stringify(resumeData));
-      requireAuth(() => { saveResume(resumeData); });
+      openEditorWithData(resumeData);
     }
   };
 
@@ -129,9 +137,13 @@ export const WizardLayout = ({ children }: { children: React.ReactNode }) => {
           {children}
         </div>
 
-        {wizardState.currentStep === wizardState.totalSteps && (
+        {wizardState.currentStep >= 3 && wizardState.identity && wizardState.targetRole && (
           <div className="flex flex-col items-center pt-8 gap-4">
-            <p className="text-gray-400 text-sm">已收到你的信息，点击生成简历</p>
+            <p className="text-gray-400 text-sm">
+              {wizardState.currentStep < wizardState.totalSteps
+                ? '已可生成简历，也可继续填写更多信息'
+                : '已收到你的信息，点击生成简历'}
+            </p>
 
             <div className="flex flex-col sm:flex-row items-center gap-4">
               <button
