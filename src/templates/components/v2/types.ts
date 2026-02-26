@@ -76,7 +76,13 @@ export interface BaseInfoSectionStyles {
 export interface JobIntentionSectionStyles {
   readonly container?: string
   readonly header?: string
+  /** 是否在头部添加底边框 */
   readonly headerBorderBottom?: boolean
+  /** 头部容器布局类型 */
+  readonly layout?: 'default' | 'ribbon'
+  /** 头部容器类名 */
+  readonly headerClassName?: string
+  /** 标题样式 */
   readonly title?: TextFieldStyles
   readonly fieldsLayout?: LayoutStyles
   readonly fieldItem?: string

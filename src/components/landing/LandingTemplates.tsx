@@ -1,35 +1,17 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { LandingButton } from './LandingButton';
+import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { getTemplatesAction } from '@/app/admin/actions';
+import { getAllTemplates } from '@/templates/template-loader';
 import { Layout, Wand2, Gem } from 'lucide-react';
 
 interface TemplatesSectionProps {
   id?: string;
 }
 
-interface TemplateItem {
-  id: string;
-  name: string;
-  thumbnail?: string | null;
-  [key: string]: unknown;
-}
-
 export const LandingTemplates = ({ id }: TemplatesSectionProps) => {
-  const [templates, setTemplates] = useState<TemplateItem[]>([]);
-
-  useEffect(() => {
-    async function fetchTemplates() {
-      const res = await getTemplatesAction();
-      if (res.success && res.data) {
-        setTemplates(res.data);
-      }
-    }
-    fetchTemplates();
-  }, []);
+  const templates = getAllTemplates();
 
   return (
     <section id={id} className="py-24 bg-slate-50 relative overflow-hidden">
@@ -58,12 +40,12 @@ export const LandingTemplates = ({ id }: TemplatesSectionProps) => {
             templates.map((item) => (
               <div key={item.id} className="group relative bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-xl shadow-slate-200/50 transition-all duration-500 hover:shadow-2xl hover:shadow-violet-500/20 hover:-translate-y-2">
                 <div className="aspect-[3/4] relative overflow-hidden bg-slate-100">
-                  {item.thumbnail ? (
+                  {item.preview ? (
                     <Image 
-                      src={item.thumbnail} 
+                      src={item.preview} 
                       alt={item.name} 
                       fill 
-                      className="object-cover transition-transform duration-700 group-hover:scale-105" 
+                      className="object-cover object-top transition-transform duration-700 group-hover:scale-105" 
                     />
                   ) : (
                     <div className="absolute inset-0 flex items-center justify-center text-slate-300">
@@ -71,27 +53,25 @@ export const LandingTemplates = ({ id }: TemplatesSectionProps) => {
                     </div>
                   )}
                   
-                  {/* Overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-violet-900/90 via-violet-900/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-6">
-                    <Link href={`/editor?template=${item.id}`} className="w-full">
-                      <LandingButton variant="primary" size="md" className="w-full rounded-xl shadow-none border-0 font-bold">
-                        <Wand2 className="w-4 h-4 mr-2" />
+                  {/* Overlay (Glassmorphism + Flat) */}
+                  <div className="absolute inset-0 bg-white/30 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all duration-500 flex items-center justify-center p-6 border border-white/50">
+                    <Link href={`/editor?template=${item.id}`} className="w-full flex justify-center translate-y-4 group-hover:translate-y-0 transition-all duration-500">
+                      <div className="flex items-center gap-2 px-6 py-3 bg-white/90 backdrop-blur-md rounded-2xl shadow-xl shadow-slate-200/50 border border-white text-violet-600 font-bold hover:bg-white hover:scale-105 hover:shadow-2xl hover:shadow-violet-500/20 transition-all">
+                        <Wand2 className="w-4 h-4" />
                         免费使用此模板
-                      </LandingButton>
+                      </div>
                     </Link>
-                  </div>
-
-                  {/* Badge */}
-                  <div className="absolute top-3 left-3">
-                    <span className="px-2.5 py-1 bg-green-500/90 backdrop-blur text-[10px] font-bold text-white rounded-lg shadow-sm">
-                      FREE
-                    </span>
                   </div>
                 </div>
                 
-                <div className="p-5">
-                  <h3 className="text-base font-bold text-slate-800 mb-1">{item.name}</h3>
-                  <p className="text-xs text-slate-400 truncate">免费使用 · 免费导出</p>
+                <div className="p-5 flex items-center justify-between bg-white relative z-10">
+                  <div>
+                    <h3 className="text-base font-bold text-slate-800 mb-1">{item.name}</h3>
+                    <p className="text-xs text-slate-400 truncate">免费使用 · 免费导出</p>
+                  </div>
+                  <span className="px-3 py-1 bg-emerald-50 text-emerald-500 border border-emerald-100 text-[10px] font-extrabold rounded-full">
+                    FREE
+                  </span>
                 </div>
               </div>
             ))
@@ -106,14 +86,6 @@ export const LandingTemplates = ({ id }: TemplatesSectionProps) => {
               </div>
             ))
           )}
-        </div>
-
-        <div className="flex justify-center">
-          <Link href="/editor">
-            <LandingButton variant="glass" size="lg" className="rounded-full px-8 text-slate-600 hover:text-violet-600">
-              查看全部模板
-            </LandingButton>
-          </Link>
         </div>
       </div>
     </section>

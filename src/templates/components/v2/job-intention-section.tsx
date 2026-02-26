@@ -83,48 +83,49 @@ export default function JobIntentionSection(props: JobIntentionSectionProps): Re
   const containerClassName = styles.container || 'mb-5 relative group cursor-pointer print:cursor-default'
   const headerClassName = styles.header || 'flex items-center gap-2 mb-3 relative py-1 rounded border border-transparent'
   
-  return (
-    <>
-      <section 
-        className={containerClassName}
-        onClick={() => setShowModal(true)}
-      >
-        {/* 标题区域 */}
+  // 处理标题渲染
+  const renderHeader = () => {
+    // 如果配置了特殊布局，比如 ribbon（带底色的横幅样式）
+    if (styles.layout === 'ribbon') {
+      return (
         <div 
-          className={headerClassName}
-          style={{
-            fontSize: styles.title?.fontSize,
-            fontWeight: styles.title?.fontWeight,
-            ...(styles.headerBorderBottom ? { borderBottom: `2px solid ${themeColor}` } : {}),
-          }}
+          className={`flex items-center w-full relative transition-all duration-200 ${styles.headerClassName || 'mb-4 mt-2'}`}
+          style={{ fontSize: styles.title?.fontSize, fontWeight: styles.title?.fontWeight }}
         >
-          {/* 图标 */}
-          <span style={{ color: styles.icon?.color || themeColor }}>
-            <IconTarget 
-              size={styles.icon?.size} 
-              className={styles.icon?.className} 
-            />
-          </span>
+          <div className="flex items-center relative h-[32px] drop-shadow-sm">
+            {/* Icon part */}
+            <div className="h-full flex items-center justify-center w-[40px] z-20 rounded-l-sm" style={{ backgroundColor: themeColor }}>
+              <span style={{ color: '#fff' }}>
+                <IconTarget size={styles.icon?.size || '1.2em'} className={styles.icon?.className} />
+              </span>
+            </div>
+
+            {/* Title part */}
+            <div className="bg-[#f8f8f8] h-full flex items-center pl-3 pr-2 z-10 relative border-y border-[#ddd]">
+              {slots?.header ? (
+                slots.header('求职意向', '#333')
+              ) : (
+                <h2 className={`font-bold tracking-widest ${styles.title?.className || ''}`} style={{ color: '#333' }}>
+                  求职意向
+                </h2>
+              )}
+              
+              {/* Arrow right */}
+              <div className="absolute top-[-1px] -right-[16px] w-0 h-0 border-y-[16px] border-y-transparent border-l-[16px] border-l-[#f8f8f8] z-20"></div>
+              <div className="absolute top-[-1px] -right-[17px] w-0 h-0 border-y-[16px] border-y-transparent border-l-[17px] border-l-[#ddd] z-10"></div>
+            </div>
+          </div>
           
-          {/* 标题 */}
-          {slots?.header ? (
-            slots.header('求职意向', themeColor)
-          ) : (
-            <h2 
-              className={styles.title?.className || 'font-bold'}
-              style={{ color: styles.title?.color || themeColor }}
-            >
-              求职意向
-            </h2>
-          )}
-          
+          {/* Horizontal Line */}
+          <div className="flex-1 h-[6px] bg-[#f0f0f0] ml-6 rounded-r"></div>
+
           {/* 编辑按钮 */}
           {slots?.editButton ? (
             slots.editButton(() => setShowModal(true))
           ) : (
             <button
               type="button"
-              className={styles.editButton || 'ml-auto opacity-0 group-hover:opacity-100 transition-opacity print:hidden text-gray-400 hover:text-gray-600'}
+              className={styles.editButton || 'absolute right-0 opacity-0 group-hover:opacity-100 transition-opacity print:hidden text-gray-400 hover:text-gray-600'}
               onClick={(e) => {
                 e.stopPropagation()
                 setShowModal(true)
@@ -134,6 +135,65 @@ export default function JobIntentionSection(props: JobIntentionSectionProps): Re
             </button>
           )}
         </div>
+      );
+    }
+
+    // 默认布局
+    return (
+      <div 
+        className={headerClassName}
+        style={{
+          fontSize: styles.title?.fontSize,
+          fontWeight: styles.title?.fontWeight,
+          ...(styles.headerBorderBottom ? { borderBottom: `2px solid ${themeColor}` } : {}),
+        }}
+      >
+        {/* 图标 */}
+        <span style={{ color: styles.icon?.color || themeColor }}>
+          <IconTarget 
+            size={styles.icon?.size} 
+            className={styles.icon?.className} 
+          />
+        </span>
+        
+        {/* 标题 */}
+        {slots?.header ? (
+          slots.header('求职意向', themeColor)
+        ) : (
+          <h2 
+            className={styles.title?.className || 'font-bold'}
+            style={{ color: styles.title?.color || themeColor }}
+          >
+            求职意向
+          </h2>
+        )}
+        
+        {/* 编辑按钮 */}
+        {slots?.editButton ? (
+          slots.editButton(() => setShowModal(true))
+        ) : (
+          <button
+            type="button"
+            className={styles.editButton || 'ml-auto opacity-0 group-hover:opacity-100 transition-opacity print:hidden text-gray-400 hover:text-gray-600'}
+            onClick={(e) => {
+              e.stopPropagation()
+              setShowModal(true)
+            }}
+          >
+            <Pencil size={18} />
+          </button>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <>
+      <section 
+        className={containerClassName}
+        onClick={() => setShowModal(true)}
+      >
+        {renderHeader()}
 
         {/* 字段列表 */}
         <div className={getFieldsLayoutClassName(styles.fieldsLayout)}>

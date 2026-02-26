@@ -51,8 +51,10 @@ export const TIMELINE_TEMPLATE_STYLES: TemplateStylesConfig = {
   },
 
   jobIntention: {
-    container: 'py-3 relative group cursor-pointer print:cursor-default',
-    header: 'flex items-center gap-2.5 pb-1 relative',
+    container: 'py-0 relative group cursor-pointer print:cursor-default',
+    layout: 'ribbon',
+    headerClassName: 'mb-4 mt-2',
+    header: 'flex items-center gap-2 pb-1 relative',
     title: {
       className: 'font-bold',
       fontSize: '1.285em',

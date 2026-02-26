@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react';
 import Link from 'next/link';
-import { LayoutDashboard, FileText, ArrowLeft } from 'lucide-react';
+import { LayoutDashboard, ArrowLeft } from 'lucide-react';
 import AuthGuard from '@/components/auth/AuthGuard';
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
@@ -18,13 +18,6 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             </h2>
           </div>
           <nav className="flex-1 p-4 space-y-2">
-            <Link
-              href="/admin/templates"
-              className="flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors"
-            >
-              <FileText className="w-4 h-4" />
-              模板管理
-            </Link>
             <Link
               href="/dashboard"
               className="flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors mt-auto"

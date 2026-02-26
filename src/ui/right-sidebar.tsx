@@ -4,7 +4,6 @@
  * Each panel has a title bar with a close (×) button.
  * The 排版美化 panel contains sub-tabs for template switching and theme settings.
  */
-import { useEffect, useState } from 'react'
 import type { ReactElement } from 'react'
 import type { ThemeTokens } from '@/entities/theme/theme-tokens'
 import type { OnePageStatus } from '@/hooks/use-one-page-mode'
@@ -17,7 +16,6 @@ import { Button } from '@/components/ui/button'
 import { Layout, Upload, Database, X } from 'lucide-react'
 import SectionManager from '@/ui/section-manager'
 import Image from 'next/image'
-import { getTemplatesAction } from '@/app/admin/actions'
 
 export interface RightSidebarProps {
   readonly activePanel: PanelId
@@ -111,23 +109,6 @@ interface LayoutPanelProps {
 
 function LayoutPanel(props: LayoutPanelProps): ReactElement {
   const { theme, tpl, templates } = props
-  const [thumbnailMap, setThumbnailMap] = useState<Record<string, string>>({})
-
-  useEffect(() => {
-    async function fetchThumbnails(): Promise<void> {
-      const res = await getTemplatesAction()
-      if (res.success && res.data) {
-        const map: Record<string, string> = {}
-        for (const t of res.data) {
-          if (t.thumbnail) {
-            map[t.id] = t.thumbnail
-          }
-        }
-        setThumbnailMap(map)
-      }
-    }
-    fetchThumbnails()
-  }, [])
 
   function handleImportClick(): void {
     const json = prompt('粘贴 JSON 简历数据：')
@@ -178,12 +159,12 @@ function LayoutPanel(props: LayoutPanelProps): ReactElement {
                 onClick={(): void => props.onTplChange(template.id)}
               >
                 <div className="aspect-[3/4] bg-slate-50 overflow-hidden relative border-b border-slate-100">
-                   {thumbnailMap[template.id] ? (
+                   {template.preview ? (
                      <Image
-                       src={thumbnailMap[template.id]}
+                       src={template.preview}
                        alt={template.name}
                        fill
-                       className="object-cover transition-transform duration-300 group-hover:scale-105"
+                       className="object-cover object-top transition-transform duration-300 group-hover:scale-105"
                        sizes="160px"
                      />
                    ) : (
