@@ -99,26 +99,21 @@ export default function AiGenerateSheet(props: AiGenerateSheetProps): ReactEleme
     setHasResult(false);
     setEditedResult('');
     store.setCachedJobDescription(jobDescription);
-    
-    // Auto-scroll to bottom to show the generating result
-    setTimeout(() => {
-      bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-    }, 100);
 
-    const result = await generate({
-      identity,
-      moduleType,
-      answers,
-      jobDescription: jobDescription.trim() || undefined,
-      jobCategory: moduleType === 'self-evaluation' ? jobCategory : undefined,
-      realisticMode: store.realisticMode,
-    });
-    await refreshUsage();
-    if (result) {
-      setEditedResult(result);
-      setHasResult(true);
+    try {
+      await generate({
+        moduleType,
+        identity,
+        jobCategory,
+        jobDescription,
+        answers,
+      });
+      // Refresh usage after generation
+      refreshUsage();
+    } catch (error) {
+      console.error('Failed to generate:', error);
     }
-  }, [identity, moduleType, answers, jobDescription, jobCategory, generate, store]);
+  }, [identity, moduleType, answers, jobDescription, jobCategory, generate, store, refreshUsage]);
 
   useEffect(() => {
     if (isGenerating) {

@@ -1,12 +1,8 @@
 import type { Metadata } from "next";
-import { Inter, Noto_Sans_SC } from "next/font/google";
 import "@/styles/tailwind.css";
 import "@/styles/print.css";
 import "@/styles/base.css";
 import "@/styles/theme-override.css";
-
-const inter = Inter({ subsets: ["latin"] });
-const notoSansSC = Noto_Sans_SC({ subsets: ["latin"], weight: ["400", "500", "700"] });
 
 const SITE_URL = 'https://aijianli.cn';
 const SITE_NAME = '智简简历';
@@ -88,7 +84,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="zh-CN">
-      <body className={`${inter.className} ${notoSansSC.className} antialiased`}>
+      <body className="antialiased text-slate-900 bg-white font-sans">
         {children}
         <Toaster position="top-center" richColors />
         <BaiduAnalytics />

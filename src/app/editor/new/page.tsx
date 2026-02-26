@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import ResumeEditor from '@/components/ResumeEditor';
 
 export const metadata: Metadata = {
@@ -13,5 +14,9 @@ export const metadata: Metadata = {
  * attempts to save.
  */
 export default function NewEditorPage(): React.ReactElement {
-  return <ResumeEditor />;
+  return (
+    <Suspense fallback={<div className="flex h-screen items-center justify-center bg-slate-50 text-slate-400">加载编辑器中...</div>}>
+      <ResumeEditor />
+    </Suspense>
+  );
 }

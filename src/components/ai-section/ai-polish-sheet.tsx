@@ -93,7 +93,7 @@ export default function AiPolishSheet(props: AiPolishSheetProps): ReactElement {
       setEditedResult(result);
       setHasResult(true);
     }
-  }, [originalContent, identity, moduleType, polishLevel, realisticMode, jobDescription, polish, store]);
+  }, [originalContent, identity, moduleType, polishLevel, realisticMode, jobDescription, polish, store, refreshUsage]);
 
   useEffect(() => {
     if (isPolishing) {
