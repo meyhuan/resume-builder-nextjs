@@ -26,6 +26,8 @@ import { toast } from 'sonner'
 import type { AdjustableTokens } from '@/entities/editor/editor-meta'
 import { extractEditorMeta, embedEditorMeta } from '@/entities/editor/editor-meta'
 import AiSectionProvider from '@/components/ai-section/ai-section-provider'
+import { useRequireAuth } from '@/hooks/use-require-auth'
+import { WxLoginDialog } from '@/components/auth/WxLoginDialog'
 
 interface ResumeData {
   id: string
@@ -40,10 +42,13 @@ interface ResumeEditorProps {
   initialData?: ResumeData | null
 }
 
-export default function ResumeEditor({ resumeId, initialData }: ResumeEditorProps): ReactElement {
+export default function ResumeEditor({ resumeId: initialResumeId, initialData }: ResumeEditorProps): ReactElement {
   const router = useRouter()
   const searchParams = useSearchParams()
   const resume = useAppStore((s) => s.resume)
+  // Mutable resumeId — starts undefined in guest mode, set after first save
+  const [resumeId, setResumeId] = useState<string | undefined>(initialResumeId)
+  const { isLoginOpen, requireAuth, handleLoginSuccess, handleLoginClose, isLoggedIn } = useRequireAuth()
   const setResume = useAppStore((s) => s.setResume)
   const setThemeForTemplate = useAppStore((s) => s.setThemeForTemplate)
   const getThemeForTemplate = useAppStore((s) => s.getThemeForTemplate)
@@ -155,18 +160,49 @@ export default function ResumeEditor({ resumeId, initialData }: ResumeEditorProp
     hasUnsavedRef.current = hasUnsavedChanges
   }, [hasUnsavedChanges])
 
-  const handleSave = useCallback(async () => {
-    if (!resumeId) return
+  /**
+   * Persist resume to DB. In guest mode (no resumeId), creates a new
+   * resume first, then saves. Auth is checked before any API call.
+   */
+  const doSave = useCallback(async () => {
     setIsSaving(true)
     try {
-      // 1. Generate thumbnail (Base64)
+      let currentId = resumeId
+      // 1. If no resumeId yet, create the resume first
+      if (!currentId) {
+        const editorMeta = {
+          themes: { [tpl]: theme },
+          onePageMode,
+          onePageSnapshot,
+          sidebarSectionIds,
+        }
+        const contentWithMeta = embedEditorMeta(
+          resume as unknown as Record<string, unknown>,
+          editorMeta,
+        )
+        const createRes = await fetch('/api/resumes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: resume.name || '未命名简历',
+            content: contentWithMeta,
+            template: tpl,
+          }),
+        })
+        if (!createRes.ok) throw new Error('Failed to create resume')
+        const created: { id: string } = await createRes.json()
+        currentId = created.id
+        setResumeId(currentId)
+        // Update browser URL without full navigation
+        window.history.replaceState(null, '', `/editor/${currentId}`)
+      }
+      // 2. Generate thumbnail (Base64)
       const thumbnail = await exportImage(printRef, {
-        pixelRatio: 1, // Lower resolution for thumbnail
+        pixelRatio: 1,
         returnBase64: true,
         backgroundColor: '#ffffff'
       }) as string
-
-      // 2. Build content with editor metadata
+      // 3. Build content with editor metadata
       const editorMeta = {
         themes: { [tpl]: theme },
         onePageMode,
@@ -177,8 +213,8 @@ export default function ResumeEditor({ resumeId, initialData }: ResumeEditorProp
         resume as unknown as Record<string, unknown>,
         editorMeta,
       )
-      // 3. Save to DB
-      const res = await fetch(`/api/resumes/${resumeId}`, {
+      // 4. Save to DB
+      const res = await fetch(`/api/resumes/${currentId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -190,36 +226,37 @@ export default function ResumeEditor({ resumeId, initialData }: ResumeEditorProp
       })
       if (!res.ok) throw new Error('Failed to save')
       setLastSaved(new Date())
-      // Update saved snapshot after successful save (composite fingerprint)
       setSavedSnapshot(JSON.stringify({ resume, theme, tpl, onePageMode, onePageSnapshot, sidebarSectionIds }))
-      // Invalidate dashboard cache to show new thumbnail
       await revalidateDashboard()
+      toast.success('保存成功')
     } catch (e) {
       console.error(e)
-      alert('Save failed')
-      await revalidateDashboard()
+      toast.error('保存失败，请重试')
     } finally {
       setIsSaving(false)
     }
   }, [resumeId, resume, tpl, theme, onePageMode, onePageSnapshot, sidebarSectionIds])
 
-  // Auto-save: debounced save after changes
+  /** Auth-gated save — prompts login if user is not authenticated. */
+  const handleSave = useCallback(() => {
+    requireAuth(() => { doSave() })
+  }, [requireAuth, doSave])
+
+  // Auto-save: debounced save after changes (only when resumeId exists — i.e. already persisted)
   useEffect(() => {
     if (!resumeId || !hasUnsavedChanges || isSaving) return
-    // Clear existing timer
     if (autoSaveTimerRef.current) {
       clearTimeout(autoSaveTimerRef.current)
     }
-    // Set new timer for auto-save
     autoSaveTimerRef.current = setTimeout(() => {
-      handleSave()
+      doSave()
     }, AUTO_SAVE_DELAY)
     return () => {
       if (autoSaveTimerRef.current) {
         clearTimeout(autoSaveTimerRef.current)
       }
     }
-  }, [resume, resumeId, hasUnsavedChanges, isSaving, handleSave])
+  }, [resume, resumeId, hasUnsavedChanges, isSaving, doSave])
 
   // Keyboard shortcuts: Ctrl+S save, Ctrl+Z undo, Ctrl+Shift+Z / Ctrl+Y redo
   useEffect(() => {
@@ -253,20 +290,22 @@ export default function ResumeEditor({ resumeId, initialData }: ResumeEditorProp
     return () => window.removeEventListener('beforeunload', handleBeforeUnload)
   }, [])
 
+  // Determine back destination based on auth state
+  const backPath = isLoggedIn() ? '/dashboard' : '/'
   // Handle back navigation with unsaved changes warning
   const handleBack = useCallback(() => {
-    if (hasUnsavedChanges) {
+    if (hasUnsavedChanges && resumeId) {
       setShowLeaveDialog(true)
       return
     }
-    router.push('/dashboard')
-  }, [hasUnsavedChanges, router])
+    router.push(backPath)
+  }, [hasUnsavedChanges, resumeId, router, backPath])
 
   // Confirm leave action
   const confirmLeave = useCallback(() => {
     setShowLeaveDialog(false)
-    router.push('/dashboard')
-  }, [router])
+    router.push(backPath)
+  }, [router, backPath])
 
   // Stable callback to patch the current template's theme
   const patchTheme = useCallback((patch: Partial<ThemeTokens>): void => {
@@ -417,22 +456,20 @@ export default function ResumeEditor({ resumeId, initialData }: ResumeEditorProp
                 已保存 {lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </span>
             )}
-            {resumeId && (
-              <Button
-                onClick={handleSave}
-                disabled={isSaving}
-                variant="ghost"
-                size="sm"
-                className="h-7 px-2 text-xs text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded"
-              >
-                {isSaving ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
-                ) : (
-                  <Save className="h-3.5 w-3.5 mr-1" />
-                )}
-                {isSaving ? '保存中' : '保存'}
-              </Button>
-            )}
+            <Button
+              onClick={handleSave}
+              disabled={isSaving}
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2 text-xs text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded"
+            >
+              {isSaving ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
+              ) : (
+                <Save className="h-3.5 w-3.5 mr-1" />
+              )}
+              {isSaving ? '保存中' : '保存'}
+            </Button>
             <Button
               variant="ghost"
               size="sm"
@@ -550,13 +587,15 @@ export default function ResumeEditor({ resumeId, initialData }: ResumeEditorProp
         variant="default"
         loading={isSaving}
         onConfirm={async () => {
-          await handleSave()
+          await doSave()
           confirmLeave()
         }}
         onDiscard={() => {
           confirmLeave()
         }}
       />
+      {/* Login dialog for guest-mode save */}
+      <WxLoginDialog isOpen={isLoginOpen} onClose={handleLoginClose} onSuccess={handleLoginSuccess} />
     </div>
   )
 }

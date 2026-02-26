@@ -1,30 +1,17 @@
-import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
-import { prisma } from '@/lib/prisma';
-import { defaultResume } from '@/state/store';
+import type { Metadata } from 'next';
+import ResumeEditor from '@/components/ResumeEditor';
+
+export const metadata: Metadata = {
+  title: '创建新简历 - 空白简历编辑器',
+  description: '从零开始创建你的专业简历，无需登录即可预览和编辑，支持多种模板和 AI 辅助功能。',
+  robots: { index: false, follow: false },
+};
 
 /**
- * Server page that creates a new blank resume and redirects to the editor.
- * If the user is not authenticated, redirects to login first.
+ * Guest-friendly editor page — renders ResumeEditor with default (blank)
+ * data, no authentication required. Login is prompted only when the user
+ * attempts to save.
  */
-export default async function NewEditorPage(): Promise<never> {
-  const cookieStore = await cookies();
-  const userId: string | undefined = cookieStore.get('auth_uid')?.value;
-
-  if (!userId) {
-    redirect('/login?redirect=/editor/new');
-  }
-
-  const resume = await prisma.resume.create({
-    data: {
-      title: '未命名简历',
-      content: JSON.parse(JSON.stringify(defaultResume)),
-      template: 'simple',
-      user: {
-        connect: { wxId: userId },
-      },
-    },
-  });
-
-  redirect(`/editor/${resume.id}`);
+export default function NewEditorPage(): React.ReactElement {
+  return <ResumeEditor />;
 }

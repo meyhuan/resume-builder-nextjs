@@ -1,32 +1,159 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { getCookie } from 'cookies-next';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { WxLoginDialog } from '@/components/auth/WxLoginDialog';
-import { LogIn, ArrowLeft } from 'lucide-react';
+import { getCookie, setCookie } from 'cookies-next';
+import { ArrowLeft, Loader2, RefreshCw, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
+import { authApi } from '@/lib/api';
+import { useAuthStore } from '@/store/use-auth-store';
+import { syncUserAction } from '@/app/actions';
+import { logger } from '@/utils/logger';
+import { LegalDialog } from '@/components/legal/LegalDialog';
 
-function LoginForm() {
+type WxStatus = 'pending' | 'scanned' | 'confirming' | 'expired';
+type LegalTab = 'privacy' | 'terms';
+
+/**
+ * Login page that displays the WeChat QR code directly on load
+ * without requiring the user to click a button first.
+ */
+function LoginForm(): React.ReactElement {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [showWxLogin, setShowWxLogin] = useState(false);
-  const redirectPath = searchParams.get('redirect') || '/dashboard';
+  const redirectPath: string = searchParams.get('redirect') || '/dashboard';
+  const { setToken, setUserInfo } = useAuthStore();
 
+  // QR code state
+  const [loading, setLoading] = useState<boolean>(true);
+  const [status, setStatus] = useState<WxStatus>('pending');
+  const [qrcodeUrl, setQrcodeUrl] = useState<string>('');
+  const [expireIn, setExpireIn] = useState<number>(0);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const sceneStrRef = useRef<string>('');
+  const pollTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const expireTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const [legalOpen, setLegalOpen] = useState<boolean>(false);
+  const [legalTab, setLegalTab] = useState<LegalTab>('privacy');
+
+  const openLegal = (tab: LegalTab): void => {
+    setLegalTab(tab);
+    setLegalOpen(true);
+  };
+
+  // If already logged in, redirect immediately
   useEffect(() => {
-    // If already logged in, redirect to target page
     const authToken = getCookie('auth_uid');
     if (authToken) {
       router.push(redirectPath);
     }
   }, [redirectPath, router]);
 
-  const handleLoginSuccess = () => {
-    // Redirect to the original page after successful login
+  const stopPolling = useCallback((): void => {
+    if (pollTimerRef.current) {
+      clearInterval(pollTimerRef.current);
+      pollTimerRef.current = null;
+    }
+  }, []);
+
+  const stopExpireCountdown = useCallback((): void => {
+    if (expireTimerRef.current) {
+      clearInterval(expireTimerRef.current);
+      expireTimerRef.current = null;
+    }
+  }, []);
+
+  const handleLoginSuccess = useCallback((uid: string): void => {
+    setToken(uid);
+    setCookie('auth_uid', uid, { maxAge: 60 * 60 * 24 * 7 });
+    setUserInfo({ id: uid, name: `用户_${uid}` });
+    stopPolling();
+    stopExpireCountdown();
     router.push(redirectPath);
-  };
+  }, [setToken, setUserInfo, stopPolling, stopExpireCountdown, router, redirectPath]);
+
+  const startExpireCountdown = useCallback((): void => {
+    stopExpireCountdown();
+    expireTimerRef.current = setInterval(() => {
+      setExpireIn((prev) => {
+        if (prev <= 1) {
+          stopPolling();
+          setStatus('expired');
+          stopExpireCountdown();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  }, [stopExpireCountdown, stopPolling]);
+
+  const startPolling = useCallback((): void => {
+    stopPolling();
+    pollTimerRef.current = setInterval(async () => {
+      try {
+        const resp = await authApi.exchangeWxToken(sceneStrRef.current);
+        const payload = resp.data || resp;
+        if (payload === 'pending' || payload.status === 'pending') return;
+        const uid: string | undefined = payload.uid || (payload.data && payload.data.uid);
+        if (uid) {
+          logger.success('WxLogin', `Login successful, UID: ${uid}`);
+          try {
+            await syncUserAction({ wxId: uid, name: `用户_${uid}` });
+          } catch (syncError) {
+            logger.error('WxLogin', 'Failed to sync user', syncError);
+          }
+          handleLoginSuccess(uid);
+        }
+      } catch {
+        // Continue polling
+      }
+    }, 2000);
+  }, [stopPolling, handleLoginSuccess]);
+
+  const getQr = useCallback(async (): Promise<void> => {
+    setLoading(true);
+    setStatus('pending');
+    setErrorMessage(null);
+    const newSceneStr = `wx_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    sceneStrRef.current = newSceneStr;
+    setQrcodeUrl('');
+    setExpireIn(0);
+    try {
+      const resp = await authApi.getWxQrcode(newSceneStr);
+      let qrData = resp?.data || resp;
+      if (typeof qrData === 'string') {
+        try { qrData = JSON.parse(qrData); } catch { /* ignore */ }
+      }
+      if (qrData?.ticket) {
+        setQrcodeUrl(`https://mp.weixin.qq.com/cgi-bin/showqrcode?ticket=${encodeURIComponent(qrData.ticket)}`);
+      } else if (qrData?.url) {
+        setQrcodeUrl(qrData.url);
+      } else {
+        throw new Error('No ticket or URL found in response');
+      }
+      setExpireIn(qrData?.expire_seconds || 120);
+      startExpireCountdown();
+      startPolling();
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : '获取二维码失败，请检查网络或稍后重试';
+      setErrorMessage(msg);
+    } finally {
+      setLoading(false);
+    }
+  }, [startExpireCountdown, startPolling]);
+
+  // Fetch QR code on mount
+  useEffect(() => {
+    const authToken = getCookie('auth_uid');
+    if (!authToken) {
+      getQr();
+    }
+    return () => {
+      stopPolling();
+      stopExpireCountdown();
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="min-h-screen relative flex items-center justify-center p-4 overflow-hidden bg-slate-50">
@@ -38,8 +165,8 @@ function LoginForm() {
 
       <div className="w-full max-w-md relative z-10">
         {/* Back to home link */}
-        <Link 
-          href="/" 
+        <Link
+          href="/"
           className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-violet-600 mb-8 transition-colors group"
         >
           <div className="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
@@ -48,69 +175,96 @@ function LoginForm() {
           返回首页
         </Link>
 
-        <Card className="shadow-2xl shadow-violet-500/10 border-white/60 bg-white/80 backdrop-blur-xl rounded-3xl overflow-hidden">
+        <div className="shadow-2xl shadow-violet-500/10 border border-white/60 bg-white/80 backdrop-blur-xl rounded-3xl overflow-hidden relative">
           <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-violet-500 to-fuchsia-500" />
-          
-          <CardHeader className="space-y-4 text-center pb-8 pt-10">
-            <div className="mx-auto w-20 h-20 bg-gradient-to-br from-violet-500 to-fuchsia-600 rounded-3xl flex items-center justify-center shadow-lg shadow-violet-500/30 rotate-3 transition-transform hover:rotate-0 hover:scale-105 duration-300">
-              <LogIn className="w-10 h-10 text-white" />
-            </div>
-            <div>
-              <CardTitle className="text-3xl font-bold bg-slate-900 bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700">
-                欢迎回来
-              </CardTitle>
-              <CardDescription className="text-base mt-2 text-slate-500">
-                {redirectPath !== '/dashboard' ? (
-                  <>继续访问 <span className="font-medium text-violet-600 bg-violet-50 px-2 py-0.5 rounded">{redirectPath}</span></>
-                ) : (
-                  '登录以解锁所有 AI 功能'
-                )}
-              </CardDescription>
-            </div>
-          </CardHeader>
 
-          <CardContent className="space-y-6 px-8 pb-10">
-            <Button
-              onClick={() => setShowWxLogin(true)}
-              className="w-full h-14 text-base font-bold bg-[#07C160] hover:bg-[#06ad56] text-white shadow-lg shadow-green-500/20 rounded-2xl transition-all hover:scale-[1.02] active:scale-[0.98]"
-              size="lg"
-            >
-              <svg className="w-6 h-6 mr-2 fill-white" viewBox="0 0 24 24">
+          {/* Header */}
+          <div className="text-center pt-10 pb-4 px-8">
+            <div className="mx-auto w-10 h-10 bg-gradient-to-br from-violet-500 to-fuchsia-600 rounded-xl flex items-center justify-center shadow-lg shadow-violet-500/30 mb-4">
+              <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-white">
                 <path d="M8.691 2.188C3.891 2.188 0 5.476 0 9.53c0 2.212 1.17 4.203 3.002 5.55a.59.59 0 0 1 .213.665l-.39 1.48c-.019.07-.048.141-.048.213 0 .163.13.295.29.295a.326.326 0 0 0 .167-.054l1.903-1.114a.864.864 0 0 1 .717-.098 10.16 10.16 0 0 0 2.837.403c.276 0 .543-.027.811-.05-.857-2.578.157-4.972 1.932-6.446 1.703-1.415 3.882-1.98 5.853-1.838-.576-3.583-4.196-6.348-8.596-6.348zM5.785 5.991c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 0 1-1.162 1.178A1.17 1.17 0 0 1 4.623 7.17c0-.651.52-1.18 1.162-1.18zm5.813 0c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 0 1-1.162 1.178 1.17 1.17 0 0 1-1.162-1.178c0-.651.52-1.18 1.162-1.18zm5.34 2.867c-1.797-.052-3.746.512-5.28 1.786-1.72 1.428-2.687 3.72-1.78 6.22.942 2.453 3.666 4.229 6.884 4.229.826 0 1.622-.12 2.361-.336a.722.722 0 0 1 .598.082l1.584.926a.272.272 0 0 0 .14.047c.134 0 .24-.111.24-.247 0-.06-.023-.12-.038-.177l-.327-1.233a.582.582 0 0 1-.023-.156.49.49 0 0 1 .201-.398C23.024 18.48 24 16.82 24 14.98c0-3.21-2.931-5.837-6.656-6.088V8.89c-.135-.01-.27-.027-.407-.03zm-2.53 3.274c.535 0 .969.44.969.982a.976.976 0 0 1-.969.983.976.976 0 0 1-.969-.983c0-.542.434-.982.969-.982zm4.844 0c.535 0 .969.44.969.982a.976.976 0 0 1-.969.983.976.976 0 0 1-.969-.983c0-.542.434-.982.969-.982z"/>
               </svg>
-              微信一键登录
-            </Button>
+            </div>
+            <h1 className="text-2xl font-bold text-slate-900">微信扫码登录</h1>
+            <p className="text-sm text-slate-500 mt-1.5">
+              {redirectPath !== '/dashboard'
+                ? '扫码登录后将自动跳转'
+                : '即刻解锁 AI 简历超能力'}
+            </p>
+          </div>
 
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-slate-200"></div>
-              </div>
-              <div className="relative flex justify-center text-xs uppercase tracking-wider">
-                <span className="px-4 bg-white/0 text-slate-400 font-medium bg-white">Or continue with</span>
+          {/* QR Code — displayed directly */}
+          <div className="px-8 pb-6">
+            <div className="bg-white/50 rounded-2xl p-6 border border-white/60 shadow-inner flex flex-col items-center backdrop-blur-sm">
+              {errorMessage ? (
+                <div className="w-56 h-56 bg-rose-50/50 rounded-xl border border-rose-100 p-6 flex flex-col items-center justify-center text-center gap-3">
+                  <AlertCircle className="text-rose-500" size={40} />
+                  <p className="text-sm text-rose-600 font-medium">{errorMessage}</p>
+                  <button
+                    onClick={getQr}
+                    className="mt-2 text-xs font-bold text-rose-700 hover:underline flex items-center gap-1"
+                  >
+                    <RefreshCw size={12} /> 重试
+                  </button>
+                </div>
+              ) : (
+                <div className="relative w-56 h-56 bg-white rounded-xl border border-slate-100 p-2 shadow-sm flex items-center justify-center group">
+                  <div className="absolute -inset-[1px] bg-gradient-to-br from-violet-500 to-fuchsia-500 rounded-xl opacity-0 group-hover:opacity-20 transition-opacity duration-500" />
+                  {loading ? (
+                    <div className="flex flex-col items-center gap-3">
+                      <Loader2 className="animate-spin text-violet-600" size={36} />
+                      <span className="text-xs text-slate-400 font-medium animate-pulse">正在生成二维码...</span>
+                    </div>
+                  ) : qrcodeUrl ? (
+                    <div className="relative w-full h-full">
+                      <Image
+                        src={qrcodeUrl}
+                        alt="WeChat Login QR Code"
+                        fill
+                        className={status === 'expired' ? 'opacity-20 grayscale' : 'mix-blend-multiply'}
+                      />
+                      {status === 'expired' && (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-white/60 backdrop-blur-[2px]">
+                          <button
+                            onClick={getQr}
+                            className="p-3 bg-violet-600 text-white rounded-full hover:bg-violet-700 transition-all shadow-lg hover:scale-110 active:scale-95 ring-4 ring-violet-100"
+                          >
+                            <RefreshCw size={24} />
+                          </button>
+                          <span className="text-sm font-bold text-slate-700">二维码已过期</span>
+                        </div>
+                      )}
+                    </div>
+                  ) : null}
+                </div>
+              )}
+
+              <div className="mt-4 flex flex-col items-center gap-1">
+                <p className="text-sm font-bold bg-gradient-to-r from-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
+                  {status === 'pending' && '请使用微信扫描上方二维码'}
+                  {status === 'scanned' && '已扫码，请在手机上确认'}
+                  {status === 'confirming' && '正在确认登录信息...'}
+                  {status === 'expired' && '二维码已过期，请刷新'}
+                </p>
+                {expireIn > 0 && status !== 'expired' && (
+                  <span className="text-[10px] text-slate-400 font-medium bg-slate-100 px-2 py-0.5 rounded-full">
+                    有效期 {expireIn}s
+                  </span>
+                )}
               </div>
             </div>
+          </div>
 
-            <Button
-              variant="outline"
-              className="w-full h-12 text-base font-medium border-slate-200 text-slate-400 bg-slate-50 cursor-not-allowed hover:bg-slate-50"
-              size="lg"
-              disabled
-            >
-              更多登录方式即将开放
-            </Button>
-
-            <p className="text-xs text-center text-slate-400 pt-2">
-              登录即表示同意我们的
-              <Link href="/terms" className="text-violet-600 hover:text-violet-700 hover:underline mx-1 font-medium">
-                服务条款
-              </Link>
-              和
-              <Link href="/privacy" className="text-violet-600 hover:text-violet-700 hover:underline ml-1 font-medium">
-                隐私政策
-              </Link>
+          {/* Legal footer */}
+          <div className="px-8 pb-8 text-center">
+            <p className="text-xs text-slate-400">
+              登录即代表同意{' '}
+              <button type="button" onClick={() => openLegal('privacy')} className="text-violet-600 hover:text-violet-700 hover:underline font-medium">隐私协议</button>
+              {' '}与{' '}
+              <button type="button" onClick={() => openLegal('terms')} className="text-violet-600 hover:text-violet-700 hover:underline font-medium">服务条款</button>
             </p>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         {/* Feature highlights */}
         <div className="mt-12 grid grid-cols-3 gap-6 text-center">
@@ -135,19 +289,12 @@ function LoginForm() {
         </div>
       </div>
 
-      {/* WeChat Login Dialog */}
-      {showWxLogin && (
-        <WxLoginDialog
-          isOpen={showWxLogin}
-          onClose={() => setShowWxLogin(false)}
-          onSuccess={handleLoginSuccess}
-        />
-      )}
+      <LegalDialog isOpen={legalOpen} onClose={() => setLegalOpen(false)} initialTab={legalTab} />
     </div>
   );
 }
 
-export default function LoginPage() {
+export default function LoginPage(): React.ReactElement {
   return (
     <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
       <LoginForm />

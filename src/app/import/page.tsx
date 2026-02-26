@@ -12,7 +12,6 @@ import { parseStreamSections } from '@/lib/ai/json-to-markdown';
 import type { DisplaySection } from '@/lib/ai/json-to-markdown';
 import {
   ChevronLeft,
-  ChevronDown,
   FileUp,
   FileText,
   Loader2,
@@ -43,8 +42,7 @@ const PLATFORM_BADGES: readonly { label: string; color: string }[] = [
 export default function ImportResumePage(): React.ReactElement {
   const router = useRouter();
   const [rawText, setRawText] = useState<string>('');
-  const [selectedModel, setSelectedModel] = useState<string>(AI_MODELS[0].name);
-  const [showModelPicker, setShowModelPicker] = useState<boolean>(false);
+  const selectedModel: string = AI_MODELS[0].name;
   const [showGenPage, setShowGenPage] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const {
@@ -101,7 +99,7 @@ export default function ImportResumePage(): React.ReactElement {
       localStorage.setItem(IMPORT_CACHE_KEY, JSON.stringify(resumeData));
       requireAuth(() => { saveResume(resumeData); });
     }
-  }, [rawText, selectedModel, generate, requireAuth, saveResume, isLimitReached, refreshUsage]);
+  }, [rawText, selectedModel, generate, requireAuth, saveResume, isLimitReached, refreshUsage]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleStop = useCallback((): void => { abort(); }, [abort]);
   const handleBack = useCallback((): void => {
@@ -109,9 +107,6 @@ export default function ImportResumePage(): React.ReactElement {
     setShowGenPage(false);
     setIsSaving(false);
   }, [reset]);
-
-  const selectedModelLabel: string =
-    AI_MODELS.find((m) => m.name === selectedModel)?.displayName ?? selectedModel;
 
   if (showGenPage) {
     return (
@@ -232,36 +227,7 @@ export default function ImportResumePage(): React.ReactElement {
             </div>
           </div>
 
-          {/* Model selector + button */}
           <div className="flex flex-col items-center gap-4 pt-2">
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setShowModelPicker(!showModelPicker)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-xs text-gray-500 hover:border-[#8B5CF6]/40 transition-colors"
-              >
-                模型：{selectedModelLabel}
-                <ChevronDown className="w-3 h-3" />
-              </button>
-              {showModelPicker && (
-                <div className="absolute top-full mt-1 left-1/2 -translate-x-1/2 bg-white rounded-lg border border-gray-200 shadow-lg z-10 min-w-[180px] py-1">
-                  {AI_MODELS.map((m) => (
-                    <button
-                      key={m.name}
-                      type="button"
-                      onClick={() => { setSelectedModel(m.name); setShowModelPicker(false); }}
-                      className={cn(
-                        'w-full text-left px-4 py-2 text-sm hover:bg-[#F5F3FF] transition-colors',
-                        m.name === selectedModel ? 'text-[#8B5CF6] font-medium bg-[#F5F3FF]' : 'text-gray-600',
-                      )}
-                    >
-                      {m.displayName}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-            
             <div className="flex flex-col sm:flex-row items-center gap-4">
               <button
                 type="button"
