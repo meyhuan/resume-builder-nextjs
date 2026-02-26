@@ -47,7 +47,7 @@ export const FAQ_ITEMS: readonly FaqItem[] = [
   {
     question: '智简简历支持把豆包、ChatGPT 生成的简历文本自动排版吗？',
     answer:
-      '支持。智简简历提供"AI 简历排版"功能，你可以把在豆包、通义千问、ChatGPT、DeepSeek、Kimi 等 AI 工具中生成的简历文本直接粘贴，系统会自动解析为结构化简历，应用专业排版模板，一键导出高清 PDF。',
+      '支持。智简简历提供"AI 文本转简历"功能，你可以把在豆包、通义千问、ChatGPT、DeepSeek、Kimi 等 AI 工具中生成的简历文本直接粘贴，系统会自动解析为结构化简历，应用专业排版模板，一键导出高清 PDF。',
   },
   {
     question: '应届生没有实习经历，AI 能帮我写什么内容？',

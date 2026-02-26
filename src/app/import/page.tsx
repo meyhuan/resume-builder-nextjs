@@ -14,6 +14,7 @@ import {
   ChevronLeft,
   ChevronDown,
   FileUp,
+  FileText,
   Loader2,
   AlertCircle,
   CircleStop,
@@ -21,6 +22,7 @@ import {
   CheckCircle2,
   MessageSquareText,
 } from 'lucide-react';
+import Link from 'next/link';
 import { useRequireAuth } from '@/hooks/use-require-auth';
 import { useAiUsage } from '@/hooks/use-ai-usage';
 import { WxLoginDialog } from '@/components/auth/WxLoginDialog';
@@ -141,7 +143,7 @@ export default function ImportResumePage(): React.ReactElement {
             返回
           </button>
           <div className="w-px h-4 bg-gray-200" />
-          <h1 className="text-sm font-semibold text-gray-800">AI 简历排版</h1>
+          <h1 className="text-sm font-semibold text-gray-800">AI 文本转简历</h1>
         </div>
       </header>
       <WxLoginDialog isOpen={isLoginOpen} onClose={handleLoginClose} onSuccess={handleLoginSuccess} />
@@ -259,20 +261,31 @@ export default function ImportResumePage(): React.ReactElement {
                 </div>
               )}
             </div>
-            <button
-              type="button"
-              onClick={handleImport}
-              disabled={!isValid || isLimitReached}
-              className={cn(
-                'px-8 py-3 rounded-full text-lg font-medium flex items-center gap-2 shadow-lg transition-all',
-                isValid && !isLimitReached
-                  ? 'bg-[#8B5CF6] hover:bg-[#7C3AED] text-white hover:shadow-xl'
-                  : 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none',
-              )}
-            >
-              <FileUp className="w-5 h-5" />
-              开始解析导入
-            </button>
+            
+            <div className="flex flex-col sm:flex-row items-center gap-4">
+              <button
+                type="button"
+                onClick={handleImport}
+                disabled={!isValid || isLimitReached}
+                className={cn(
+                  'px-8 py-3 rounded-full text-lg font-medium flex items-center gap-2 shadow-lg transition-all',
+                  isValid && !isLimitReached
+                    ? 'bg-[#8B5CF6] hover:bg-[#7C3AED] text-white hover:shadow-xl'
+                    : 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none',
+                )}
+              >
+                <FileUp className="w-5 h-5" />
+                开始解析导入
+              </button>
+              
+              <Link
+                href="/editor/new"
+                className="px-8 py-3 rounded-full text-lg font-medium flex items-center gap-2 border-2 border-gray-200 text-gray-600 hover:border-violet-300 hover:text-violet-600 hover:bg-violet-50 transition-all bg-white"
+              >
+                <FileText className="w-5 h-5" />
+                跳过导入，直接创建
+              </Link>
+            </div>
             {usage && (
               <p className={cn('text-xs', isLimitReached ? 'text-red-500' : 'text-gray-400')}>
                 {isLimitReached

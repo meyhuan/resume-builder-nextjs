@@ -11,7 +11,8 @@ import { mapExternalResume } from '@/io/external-resume-importer';
 import type { ResumeData } from '@/entities/resume/resume-data';
 import { parseStreamSections } from '@/lib/ai/json-to-markdown';
 import type { DisplaySection } from '@/lib/ai/json-to-markdown';
-import { Sparkles, Loader2, AlertCircle, ChevronDown, ChevronLeft, CircleStop } from 'lucide-react';
+import { Sparkles, Loader2, AlertCircle, ChevronDown, ChevronLeft, CircleStop, FileText } from 'lucide-react';
+import Link from 'next/link';
 import { useRequireAuth } from '@/hooks/use-require-auth';
 import { useAiUsage } from '@/hooks/use-ai-usage';
 import { WxLoginDialog } from '@/components/auth/WxLoginDialog';
@@ -165,20 +166,30 @@ export const WizardLayout = ({ children }: { children: React.ReactNode }) => {
               )}
             </div>
 
-            <button
-              type="button"
-              onClick={handleGenerate}
-              disabled={isLimitReached}
-              className={cn(
-                'px-8 py-3 rounded-full text-lg font-medium flex items-center gap-2 shadow-lg transition-all',
-                isLimitReached
-                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed shadow-none'
-                  : 'bg-[#8B5CF6] hover:bg-[#7C3AED] text-white hover:shadow-xl',
-              )}
-            >
-              <Sparkles className="w-5 h-5" />
-              生成简历
-            </button>
+            <div className="flex flex-col sm:flex-row items-center gap-4">
+              <button
+                type="button"
+                onClick={handleGenerate}
+                disabled={isLimitReached}
+                className={cn(
+                  'px-8 py-3 rounded-full text-lg font-medium flex items-center gap-2 shadow-lg transition-all',
+                  isLimitReached
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed shadow-none'
+                    : 'bg-[#8B5CF6] hover:bg-[#7C3AED] text-white hover:shadow-xl',
+                )}
+              >
+                <Sparkles className="w-5 h-5" />
+                生成简历
+              </button>
+              
+              <Link
+                href="/editor/new"
+                className="px-8 py-3 rounded-full text-lg font-medium flex items-center gap-2 border-2 border-gray-200 text-gray-600 hover:border-violet-300 hover:text-violet-600 hover:bg-violet-50 transition-all bg-white"
+              >
+                <FileText className="w-5 h-5" />
+                跳过 AI，直接创建
+              </Link>
+            </div>
             {usage && (
               <p className={cn('text-xs', isLimitReached ? 'text-red-500' : 'text-gray-400')}>
                 {isLimitReached

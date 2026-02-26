@@ -28,7 +28,7 @@ export const JsonLd = () => {
       '身份定制化 AI 引导（在校生/应届生/职场人）',
       '岗位针对性 AI 内容生成',
       '模块级 AI 润色与重写',
-      'AI 简历排版（粘贴文本自动排版，支持豆包/ChatGPT/DeepSeek/Kimi/通义千问）',
+      'AI 文本转简历（粘贴文本自动排版，支持豆包/ChatGPT/DeepSeek/Kimi/通义千问）',
       '可视化拖拽编辑',
       'JD 智能匹配',
       'ATS 格式优化',

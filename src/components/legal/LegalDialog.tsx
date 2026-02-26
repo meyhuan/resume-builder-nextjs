@@ -194,7 +194,7 @@ const TermsContent: React.FC = () => (
             <li>多款精美简历模板免费使用</li>
             <li>AI 智能生成简历内容</li>
             <li>AI 简历润色与优化</li>
-            <li>AI 简历排版（导入已有简历并重新排版）</li>
+            <li>AI 文本转简历（导入已有简历并重新排版）</li>
             <li>免费导出 PDF、图片、Markdown 格式</li>
             <li>求职攻略与面试技巧分享</li>
           </ul>

@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { LandingButton } from './LandingButton';
-import { Sparkles, Wand2 } from 'lucide-react';
+import { Wand2, FileText } from 'lucide-react';
 import { EditorShowcase } from './EditorShowcase';
 import Link from 'next/link';
 
@@ -51,17 +51,17 @@ export const LandingHero = () => {
           </p>
 
           {/* CTA Buttons */}
-          <div className="flex flex-wrap gap-4 justify-center mt-2">
+          <div className="flex flex-wrap items-center justify-center gap-4 mt-2">
             <Link href="/ai">
               <LandingButton size="lg" className="rounded-full shadow-[0_8px_20px_rgba(139,92,246,0.25)] hover:shadow-[0_10px_25px_rgba(139,92,246,0.35)] text-base px-8 h-12">
                 <Wand2 className="w-5 h-5 mr-2" />
                 免费生成简历
               </LandingButton>
             </Link>
-            <Link href="#editor-demo">
-              <LandingButton variant="glass" size="lg" className="rounded-full text-slate-700 hover:text-violet-700 bg-white border border-slate-200 shadow-sm hover:shadow-md hover:border-violet-200 h-12 px-8 transition-all duration-300">
+            <Link href="/editor/new">
+              <LandingButton variant="outline" size="lg" className="rounded-full text-slate-700 hover:text-violet-700 bg-white border border-slate-200 shadow-sm hover:shadow-md hover:border-violet-200 h-12 px-8 transition-all duration-300">
                 <span className="flex items-center gap-2 font-medium">
-                  <Sparkles className="w-4 h-4" /> 看看有多好用
+                  <FileText className="w-4 h-4" /> 创建空白简历
                 </span>
               </LandingButton>
             </Link>

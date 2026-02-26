@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { LandingButton } from './LandingButton';
 import { cn } from '@/lib/utils';
-import { Menu, X, User, LogOut } from 'lucide-react';
+import { Menu, X, User, LogOut, ChevronDown, FileText, Wand2, FileUp } from 'lucide-react';
 import { WxLoginDialog } from '../auth/WxLoginDialog';
 import { useAuthStore } from '@/store/use-auth-store';
 
@@ -29,10 +29,17 @@ export const LandingHeader = ({ forceSolid = false }: LandingHeaderProps = {}) =
     return () => window.removeEventListener('scroll', handleScroll);
   }, [forceSolid]);
 
-  const menuItems = [
+  const navItems = [
+    {
+      id: 'create',
+      label: '制作简历',
+      children: [
+        { id: 'ai', label: 'AI 简历生成', href: '/ai', icon: <Wand2 className="w-4 h-4 text-fuchsia-500" />, desc: '几步生成专属简历' },
+        { id: 'import', label: 'AI 文本转简历', href: '/import', icon: <FileUp className="w-4 h-4 text-violet-500" />, desc: '一键生成精美简历' },
+        { id: 'blank', label: '创建空白简历', href: '/editor/new', icon: <FileText className="w-4 h-4 text-emerald-500" />, desc: '从零开始自由编辑' },
+      ]
+    },
     { id: 'templates', label: '简历模板', href: '/#templates' },
-    { id: 'ai', label: 'AI 简历生成', href: '/ai' },
-    { id: 'import', label: 'AI 简历排版', href: '/import' },
     { id: 'articles', label: '求职攻略', href: '/articles' },
     { id: 'about', label: '关于开发者', href: '/about' },
   ];
@@ -54,18 +61,47 @@ export const LandingHeader = ({ forceSolid = false }: LandingHeaderProps = {}) =
           </Link>
 
           {/* Desktop Nav */}
-          <nav className="hidden md:flex items-center gap-1">
-            {menuItems.map((item) => (
-              <div
-                key={item.id}
-                className="relative group px-1"
-              >
-                <Link 
-                  href={item.href} 
-                  className="flex items-center px-4 py-2 text-sm font-medium text-slate-600 hover:text-violet-700 rounded-full hover:bg-white/50 transition-all"
-                >
-                  {item.label}
-                </Link>
+          <nav className="hidden md:flex items-center gap-2">
+            {navItems.map((item) => (
+              <div key={item.id} className="relative group/nav px-1">
+                {item.children ? (
+                  <>
+                    <button className="flex items-center gap-1 px-4 py-2 text-sm font-medium text-slate-600 hover:text-violet-700 rounded-full hover:bg-white/50 transition-all">
+                      {item.label}
+                      <ChevronDown className="w-3.5 h-3.5 opacity-50 group-hover/nav:rotate-180 transition-transform duration-200" />
+                    </button>
+                    <div className="absolute top-full left-1/2 -translate-x-1/2 pt-2 opacity-0 invisible group-hover/nav:opacity-100 group-hover/nav:visible transition-all duration-200">
+                      <div className="w-64 bg-white/90 backdrop-blur-xl rounded-2xl shadow-[0_8px_32px_rgba(31,38,135,0.07)] border border-white/20 p-2 flex flex-col gap-1">
+                        {item.children.map((child) => (
+                          <Link 
+                            key={child.id} 
+                            href={child.href}
+                            className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50 transition-colors group/child"
+                          >
+                            <div className="mt-0.5 w-8 h-8 rounded-lg bg-slate-100 group-hover/child:bg-white shadow-sm flex items-center justify-center shrink-0 transition-colors">
+                              {child.icon}
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="text-sm font-semibold text-slate-800 group-hover/child:text-violet-700 transition-colors">
+                                {child.label}
+                              </span>
+                              <span className="text-xs text-slate-500">
+                                {child.desc}
+                              </span>
+                            </div>
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <Link 
+                    href={item.href!} 
+                    className="flex items-center px-4 py-2 text-sm font-medium text-slate-600 hover:text-violet-700 rounded-full hover:bg-white/50 transition-all"
+                  >
+                    {item.label}
+                  </Link>
+                )}
               </div>
             ))}
           </nav>
@@ -121,11 +157,32 @@ export const LandingHeader = ({ forceSolid = false }: LandingHeaderProps = {}) =
         {/* Mobile Menu */}
         {mobileMenuOpen && (
           <div className="md:hidden absolute top-full left-0 right-0 bg-white/90 backdrop-blur-xl border-b border-white/20 px-4 py-6 space-y-4 animate-in slide-in-from-top duration-300 shadow-xl">
-            {menuItems.map((item) => (
+            {navItems.map((item) => (
               <div key={item.id} className="space-y-2 border-b border-slate-100 pb-2">
-                <Link href={item.href} className="block text-slate-700 font-semibold text-lg" onClick={() => setMobileMenuOpen(false)}>
-                  {item.label}
-                </Link>
+                {item.children ? (
+                  <>
+                    <div className="block text-slate-400 font-medium text-sm mb-2">{item.label}</div>
+                    <div className="flex flex-col gap-2 pl-2">
+                      {item.children.map((child) => (
+                        <Link 
+                          key={child.id} 
+                          href={child.href} 
+                          className="flex items-center gap-2 text-slate-700 font-semibold py-1" 
+                          onClick={() => setMobileMenuOpen(false)}
+                        >
+                          <div className="w-5 h-5 flex items-center justify-center">
+                            {child.icon}
+                          </div>
+                          {child.label}
+                        </Link>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <Link href={item.href!} className="block text-slate-700 font-semibold text-lg" onClick={() => setMobileMenuOpen(false)}>
+                    {item.label}
+                  </Link>
+                )}
               </div>
             ))}
             <div className="flex flex-col gap-3 pt-4">

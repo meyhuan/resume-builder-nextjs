@@ -200,7 +200,7 @@ const AI_FEATURES: readonly FeatureItem[] = [
     span: 'md:col-span-1 md:row-span-1',
   },
   {
-    title: 'AI 简历排版',
+    title: 'AI 文本转简历',
     description: '粘贴文本内容，AI 自动解析结构并应用专业模板排版，支持豆包、ChatGPT 等来源。',
     icon: <FileUp className="w-5 h-5" />,
     color: 'text-rose-500',

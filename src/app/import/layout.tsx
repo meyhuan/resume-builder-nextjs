@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 
 export const metadata: Metadata = {
-  title: 'AI 简历排版 - 粘贴文本自动生成专业简历 | 智简简历',
+  title: 'AI 文本转简历 - 粘贴文本自动生成专业简历 | 智简简历',
   description:
     '粘贴任意简历文本内容，AI 自动解析结构并应用专业排版模板，一键免费导出高清 PDF。支持豆包、通义千问、ChatGPT、DeepSeek、Kimi 等 AI 工具生成的内容。',
   keywords: [
