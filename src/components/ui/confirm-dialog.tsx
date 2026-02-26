@@ -18,9 +18,11 @@ interface ConfirmDialogProps {
   description: string
   confirmText?: string
   cancelText?: string
+  discardText?: string
   variant?: ConfirmDialogVariant
   onConfirm: () => void
   onCancel?: () => void
+  onDiscard?: () => void
   loading?: boolean
 }
 
@@ -45,9 +47,11 @@ export function ConfirmDialog({
   description,
   confirmText = '确认',
   cancelText = '取消',
+  discardText = '放弃修改',
   variant = 'default',
   onConfirm,
   onCancel,
+  onDiscard,
   loading = false,
 }: ConfirmDialogProps): React.ReactElement {
   const handleCancel = (): void => {
@@ -57,6 +61,11 @@ export function ConfirmDialog({
 
   const handleConfirm = (): void => {
     onConfirm()
+  }
+
+  const handleDiscard = (): void => {
+    onDiscard?.()
+    onOpenChange(false)
   }
 
   const getConfirmButtonVariant = (): 'default' | 'destructive' | 'outline' => {
@@ -77,17 +86,26 @@ export function ConfirmDialog({
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
-        <DialogFooter className="gap-2 sm:gap-0">
-          <Button variant="outline" onClick={handleCancel} disabled={loading}>
-            {cancelText}
-          </Button>
-          <Button
-            variant={getConfirmButtonVariant()}
-            onClick={handleConfirm}
-            disabled={loading}
-          >
-            {loading ? '处理中...' : confirmText}
-          </Button>
+        <DialogFooter className="gap-2 sm:gap-0 sm:justify-between w-full">
+          {onDiscard ? (
+            <Button variant="ghost" className="text-red-500 hover:text-red-600 hover:bg-red-50 px-2 sm:px-4" onClick={handleDiscard} disabled={loading}>
+              {discardText}
+            </Button>
+          ) : (
+            <div />
+          )}
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={handleCancel} disabled={loading}>
+              {cancelText}
+            </Button>
+            <Button
+              variant={getConfirmButtonVariant()}
+              onClick={handleConfirm}
+              disabled={loading}
+            >
+              {loading ? '处理中...' : confirmText}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

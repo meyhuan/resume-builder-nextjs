@@ -545,11 +545,15 @@ export default function ResumeEditor({ resumeId, initialData }: ResumeEditorProp
         title="确认离开"
         description="您有未保存的更改，保存后再离开吗？"
         confirmText="保存并离开"
+        discardText="不保存直接离开"
         cancelText="取消"
         variant="default"
         loading={isSaving}
         onConfirm={async () => {
           await handleSave()
+          confirmLeave()
+        }}
+        onDiscard={() => {
           confirmLeave()
         }}
       />
