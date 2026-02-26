@@ -1,34 +1,8 @@
 import React from 'react';
+import { FAQ_ITEMS } from '@/lib/faq-data';
 
 const SITE_URL = 'https://aijianli.cn';
 const SITE_NAME = '智简简历';
-
-const FAQ_ITEMS = [
-  {
-    question: '智简简历是免费的吗？',
-    answer: '是的。智简简历的核心功能始终对所有用户免费，包括：AI 辅助生成简历、实时可视化排版、内容润色/结构重写/JD 匹配、多语言自动生成、模板拖拽排版、Web/小程序多端同步、免费模板无限次导出。',
-  },
-  {
-    question: '导出简历的最佳格式是什么？',
-    answer: '目前招聘方公认的 PDF 格式，是最优简历文件格式。PDF 能最大限度保持排版一致性，ATS 也可以良好识别。目前智简简历，支持一键导出高清 PDF 简历。',
-  },
-  {
-    question: '我没有实习/项目怎么写简历？',
-    answer: '智简简历内置针对"零经验"的 AI 引导，会帮你：挖掘课程作业、转换校园经历、结构化个人特长、补齐求职行业需要的技能点。非常适合大一到大三、转专业、跨方向求职的同学。',
-  },
-  {
-    question: '如何针对不同岗位进行针对性的优化简历？',
-    answer: '这正是智简简历的强项之一：从一份基础简历，一键派生出多个版本，针对不同 JD 自动重写要点。非常适合同时投运营、产品、数据、市场等多个方向的同学。',
-  },
-  {
-    question: '能在手机上编辑吗？',
-    answer: '可以。智简简历支持：Web 网页版、微信小程序。PC/平板/手机均可实时同步，换设备也不会丢失任何内容。',
-  },
-  {
-    question: '为什么智简简历比其他简历编辑工具更适合求职？',
-    answer: '因为智简简历是为"学生与求职者"设计的，而不是通用模板工具。相比于 Word 等文档工具，智简简历针对简历排版做了专业优化，简历排版更加高效。相对于其他简历工具来讲，智简简历提供了更加深度的 AI 集成，辅助生成简历内容质量更高。',
-  },
-];
 
 /**
  * JSON-LD structured data for the landing page.
@@ -51,8 +25,11 @@ export const JsonLd = () => {
     },
     featureList: [
       'AI 智能简历生成',
+      '身份定制化 AI 引导（在校生/应届生/职场人）',
+      '岗位针对性 AI 内容生成',
+      '模块级 AI 润色与重写',
+      'AI 简历排版（粘贴文本自动排版，支持豆包/ChatGPT/DeepSeek/Kimi/通义千问）',
       '可视化拖拽编辑',
-      'AI 内容润色',
       'JD 智能匹配',
       'ATS 格式优化',
       '多语言简历生成',
@@ -87,6 +64,47 @@ export const JsonLd = () => {
     sameAs: [],
   };
 
+  const howToSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'HowTo',
+    name: '如何用智简简历制作一份专业简历',
+    description: '使用智简简历的 AI 功能，几分钟即可生成一份专业简历并导出为高清 PDF。',
+    totalTime: 'PT5M',
+    tool: [{ '@type': 'HowToTool', name: '智简简历 (aijianli.cn)' }],
+    step: [
+      {
+        '@type': 'HowToStep',
+        position: 1,
+        name: '选择求职身份',
+        text: '打开智简简历，选择你的身份（在校生、应届生或职场人），AI 会根据身份自动调整引导问题。',
+      },
+      {
+        '@type': 'HowToStep',
+        position: 2,
+        name: '填写基本信息与目标岗位',
+        text: '输入姓名、学历、目标岗位等基本信息，AI 会根据目标岗位定制简历内容。',
+      },
+      {
+        '@type': 'HowToStep',
+        position: 3,
+        name: 'AI 自动生成简历',
+        text: '点击生成，AI 会自动为你生成包含工作经历、项目经历、教育背景、自我评价等完整简历内容。',
+      },
+      {
+        '@type': 'HowToStep',
+        position: 4,
+        name: '可视化编辑与排版',
+        text: '在可视化编辑器中直接点击编辑内容，拖拽调整模块顺序，切换模板和主题色。',
+      },
+      {
+        '@type': 'HowToStep',
+        position: 5,
+        name: '导出高清 PDF',
+        text: '点击导出按钮，免费生成高清 PDF 简历，无水印、无付费墙。',
+      },
+    ],
+  };
+
   return (
     <>
       <script
@@ -100,6 +118,10 @@ export const JsonLd = () => {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(howToSchema) }}
       />
     </>
   );

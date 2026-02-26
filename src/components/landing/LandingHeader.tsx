@@ -32,6 +32,7 @@ export const LandingHeader = ({ forceSolid = false }: LandingHeaderProps = {}) =
   const menuItems = [
     { id: 'templates', label: '简历模板', href: '/#templates' },
     { id: 'ai', label: 'AI 简历生成', href: '/ai' },
+    { id: 'import', label: 'AI 简历排版', href: '/import' },
     { id: 'articles', label: '求职攻略', href: '/articles' },
     { id: 'about', label: '关于开发者', href: '/about' },
   ];

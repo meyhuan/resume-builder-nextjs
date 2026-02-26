@@ -38,6 +38,7 @@ export const LandingFooter = () => {
             <ul className="space-y-3 text-sm text-slate-500">
               <li><Link href="/#templates" className="hover:text-violet-600 transition-colors">简历模板</Link></li>
               <li><Link href="/ai" className="hover:text-violet-600 transition-colors">AI 简历生成</Link></li>
+              <li><Link href="/import" className="hover:text-violet-600 transition-colors">AI 简历排版</Link></li>
               <li><Link href="/articles" className="hover:text-violet-600 transition-colors">求职攻略</Link></li>
             </ul>
           </div>

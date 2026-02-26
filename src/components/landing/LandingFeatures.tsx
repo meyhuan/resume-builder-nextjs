@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Wand2, Sparkles, Brain, FileCheck, Languages, Target, Check, ArrowRight } from 'lucide-react';
+import { Wand2, Sparkles, Brain, FileCheck, Languages, Target, Check, ArrowRight, FileUp } from 'lucide-react';
 
 interface FeaturesSectionProps {
   id?: string;
@@ -126,7 +126,28 @@ const LanguageVisual = (): React.ReactElement => (
 );
 
 /** Feature card visual components mapped by index */
-const FEATURE_VISUALS: readonly React.FC[] = [AiGenerateVisual, PolishVisual, MatchVisual, AtsVisual, LanguageVisual];
+/** Mini visual: AI Import from platforms */
+const ImportVisual = (): React.ReactElement => (
+  <div className="mt-3 space-y-2">
+    <div className="flex flex-wrap gap-1.5">
+      {['豆包', 'ChatGPT', 'DeepSeek', 'Kimi', '通义千问'].map((name) => (
+        <span key={name} className="text-[9px] font-semibold px-2 py-0.5 rounded-md bg-white/60 border border-white shadow-sm text-slate-600">{name}</span>
+      ))}
+    </div>
+    <div className="flex items-center justify-center gap-2 py-1">
+      <ArrowRight className="w-3.5 h-3.5 text-rose-400 rotate-90" />
+    </div>
+    <div className="bg-white/60 backdrop-blur-sm rounded-lg px-3 py-1.5 border border-white shadow-sm flex items-center gap-2">
+      <div className="w-4 h-4 rounded-full bg-rose-100 flex items-center justify-center shrink-0">
+        <Check className="w-2.5 h-2.5 text-rose-500" />
+      </div>
+      <span className="text-[10px] font-medium text-slate-700">专业排版 + 免费 PDF 导出</span>
+    </div>
+  </div>
+);
+
+/** Feature card visual components mapped by index */
+const FEATURE_VISUALS: readonly React.FC[] = [AiGenerateVisual, PolishVisual, MatchVisual, AtsVisual, LanguageVisual, ImportVisual];
 
 interface FeatureItem {
   readonly title: string;
@@ -140,7 +161,7 @@ interface FeatureItem {
 const AI_FEATURES: readonly FeatureItem[] = [
   {
     title: 'AI 一键生成',
-    description: '输入基本信息，AI 自动生成完整、专业的简历内容。零经验也能写出让 HR 眼前一亮的简历。',
+    description: '根据你的身份（在校生/应届生/职场人）和目标岗位，AI 自动调整引导流程，生成完整、专业的简历内容。',
     icon: <Brain className="w-5 h-5" />,
     color: 'text-[#8B5CF6]',
     bgColor: 'bg-[#8B5CF6]/10',
@@ -148,7 +169,7 @@ const AI_FEATURES: readonly FeatureItem[] = [
   },
   {
     title: 'AI 内容润色',
-    description: '一键优化措辞，让经历描述更有说服力。',
+    description: '模块级 AI 润色，针对单条经历精准优化措辞，支持按岗位类别定制。',
     icon: <Sparkles className="w-5 h-5" />,
     color: 'text-fuchsia-500',
     bgColor: 'bg-fuchsia-500/10',
@@ -178,6 +199,14 @@ const AI_FEATURES: readonly FeatureItem[] = [
     bgColor: 'bg-cyan-500/10',
     span: 'md:col-span-1 md:row-span-1',
   },
+  {
+    title: 'AI 简历排版',
+    description: '粘贴文本内容，AI 自动解析结构并应用专业模板排版，支持豆包、ChatGPT 等来源。',
+    icon: <FileUp className="w-5 h-5" />,
+    color: 'text-rose-500',
+    bgColor: 'bg-rose-500/10',
+    span: 'md:col-span-1 md:row-span-1',
+  },
 ];
 
 export const LandingFeatures = ({ id }: FeaturesSectionProps): React.ReactElement => {
@@ -205,7 +234,7 @@ export const LandingFeatures = ({ id }: FeaturesSectionProps): React.ReactElemen
         </div>
 
         {/* Bento Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 auto-rows-[220px]">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 auto-rows-[220px] md:auto-rows-[220px]">
           {AI_FEATURES.map((feature, index) => {
             const Visual = FEATURE_VISUALS[index];
             const isHero: boolean = index === 0;

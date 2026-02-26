@@ -2,6 +2,7 @@ import { LandingHeader } from "@/components/landing/LandingHeader";
 import { LandingHero } from "@/components/landing/LandingHero";
 import { LandingEditorDemo } from "@/components/landing/LandingEditorDemo";
 import { LandingFeatures } from "@/components/landing/LandingFeatures";
+import { LandingUseCases } from "@/components/landing/LandingUseCases";
 import { LandingTemplates } from "@/components/landing/LandingTemplates";
 import { LandingArticles } from "@/components/landing/LandingArticles";
 import { LandingWhyFree } from "@/components/landing/LandingWhyFree";
@@ -18,6 +19,7 @@ export default function Home() {
         <LandingHero />
         <LandingEditorDemo id="editor-demo" />
         <LandingFeatures id="features" />
+        <LandingUseCases id="use-cases" />
         <LandingTemplates id="templates" />
         <LandingArticles id="articles" />
         <LandingWhyFree id="why-free" />
