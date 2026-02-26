@@ -1,7 +1,8 @@
 import { LandingHeader } from "@/components/landing/LandingHeader";
 import { LandingFooter } from "@/components/landing/LandingFooter";
 import Image from "next/image";
-import { Heart, Code2, Coffee, MessageCircle, Mail, TreePine, Users } from "lucide-react";
+import Link from "next/link";
+import { Heart, Code2, Coffee, MessageCircle, Mail, TreePine, Users, Wand2, ArrowRight } from "lucide-react";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -9,10 +10,10 @@ export const metadata: Metadata = {
   description: '独立开发者倾力打造，永久免费的 AI 简历工具。',
 };
 
-export default function AboutPage() {
+export default function AboutPage(): React.ReactElement {
   return (
     <div className="min-h-screen flex flex-col bg-[#F8FAFC] selection:bg-fuchsia-200">
-      <LandingHeader />
+      <LandingHeader forceSolid />
       
       <main className="flex-grow pt-32 pb-24 relative overflow-hidden">
         {/* Background Orbs */}
@@ -38,14 +39,14 @@ export default function AboutPage() {
 
           <div className="space-y-8 animate-in slide-in-from-bottom duration-700 delay-150">
             {/* Story Section */}
-            <div className="bg-white/70 backdrop-blur-md rounded-3xl p-8 md:p-12 border border-white shadow-sm hover:shadow-md transition-shadow">
+            <div className="bg-white/70 backdrop-blur-md rounded-3xl p-6 sm:p-8 md:p-12 border border-white shadow-sm hover:shadow-md transition-shadow">
               <div className="flex items-center gap-4 mb-6">
                 <div className="w-12 h-12 rounded-2xl bg-violet-100 flex items-center justify-center">
                   <Coffee className="w-6 h-6 text-violet-600" />
                 </div>
-                <h2 className="text-2xl font-bold text-slate-800">我的故事</h2>
+                <h2 className="text-xl sm:text-2xl font-bold text-slate-800">我的故事</h2>
               </div>
-              <div className="space-y-4 text-slate-600 leading-relaxed text-lg">
+              <div className="space-y-4 text-slate-600 leading-relaxed text-base sm:text-lg">
                 <p>
                   从大学开始，我就喜欢自己写代码做小应用。2014 年做了个五子棋 App 挂上广告，赚到了人生第一个 2 万块。后来做过几十个小程序和网站，大部分都死掉了——跟风卖流量卡、搞小红书虚拟资料、做咸鱼无货源，踩了无数的坑。
                 </p>
@@ -65,14 +66,14 @@ export default function AboutPage() {
             </div>
 
             {/* Why indie dev */}
-            <div className="bg-white/70 backdrop-blur-md rounded-3xl p-8 md:p-12 border border-white shadow-sm hover:shadow-md transition-shadow">
+            <div className="bg-white/70 backdrop-blur-md rounded-3xl p-6 sm:p-8 md:p-12 border border-white shadow-sm hover:shadow-md transition-shadow">
               <div className="flex items-center gap-4 mb-6">
                 <div className="w-12 h-12 rounded-2xl bg-emerald-100 flex items-center justify-center">
                   <TreePine className="w-6 h-6 text-emerald-600" />
                 </div>
-                <h2 className="text-2xl font-bold text-slate-800">为什么是独立开发？</h2>
+                <h2 className="text-xl sm:text-2xl font-bold text-slate-800">为什么是独立开发？</h2>
               </div>
-              <div className="space-y-4 text-slate-600 leading-relaxed text-lg">
+              <div className="space-y-4 text-slate-600 leading-relaxed text-base sm:text-lg">
                 <p>
                   我有房贷要还，有女儿要养，不能一冲动就辞职。但上个月女儿生日，我本来打算 6 点下班回家给她拆蛋糕，结果 5 点半一条通知：全组紧急开会。那一开就是两个小时。
                 </p>
@@ -86,14 +87,14 @@ export default function AboutPage() {
             </div>
 
             {/* Why this product is different */}
-            <div className="bg-white/70 backdrop-blur-md rounded-3xl p-8 md:p-12 border border-white shadow-sm hover:shadow-md transition-shadow">
+            <div className="bg-white/70 backdrop-blur-md rounded-3xl p-6 sm:p-8 md:p-12 border border-white shadow-sm hover:shadow-md transition-shadow">
               <div className="flex items-center gap-4 mb-6">
                 <div className="w-12 h-12 rounded-2xl bg-amber-100 flex items-center justify-center">
                   <Users className="w-6 h-6 text-amber-600" />
                 </div>
-                <h2 className="text-2xl font-bold text-slate-800">用心做产品</h2>
+                <h2 className="text-xl sm:text-2xl font-bold text-slate-800">用心做产品</h2>
               </div>
-              <div className="space-y-4 text-slate-600 leading-relaxed text-lg">
+              <div className="space-y-4 text-slate-600 leading-relaxed text-base sm:text-lg">
                 <p>
                   以前我只会抄，别人加什么功能我就加什么，根本不知道为什么。
                 </p>
@@ -110,14 +111,14 @@ export default function AboutPage() {
             </div>
 
             {/* Free Promise Section */}
-            <div className="bg-white/70 backdrop-blur-md rounded-3xl p-8 md:p-12 border border-white shadow-sm hover:shadow-md transition-shadow">
+            <div className="bg-white/70 backdrop-blur-md rounded-3xl p-6 sm:p-8 md:p-12 border border-white shadow-sm hover:shadow-md transition-shadow">
               <div className="flex items-center gap-4 mb-6">
                 <div className="w-12 h-12 rounded-2xl bg-rose-100 flex items-center justify-center">
                   <Heart className="w-6 h-6 text-rose-500" />
                 </div>
-                <h2 className="text-2xl font-bold text-slate-800">为什么完全免费？</h2>
+                <h2 className="text-xl sm:text-2xl font-bold text-slate-800">为什么完全免费？</h2>
               </div>
-              <div className="space-y-4 text-slate-600 leading-relaxed text-lg">
+              <div className="space-y-4 text-slate-600 leading-relaxed text-base sm:text-lg">
                 <p>
                   因为我知道求职是什么滋味。辛辛苦苦填完简历，导出时弹出付费弹窗；好不容易选了个模板，PDF 上印着去不掉的水印——这种体验太糟糕了。
                 </p>
@@ -134,20 +135,20 @@ export default function AboutPage() {
             </div>
 
             {/* Contact Section */}
-            <div className="bg-white/70 backdrop-blur-md rounded-3xl p-8 md:p-12 border border-white shadow-sm hover:shadow-md transition-shadow">
+            <div className="bg-white/70 backdrop-blur-md rounded-3xl p-6 sm:p-8 md:p-12 border border-white shadow-sm hover:shadow-md transition-shadow">
               <div className="flex items-center gap-4 mb-6">
                 <div className="w-12 h-12 rounded-2xl bg-sky-100 flex items-center justify-center">
                   <MessageCircle className="w-6 h-6 text-sky-500" />
                 </div>
-                <h2 className="text-2xl font-bold text-slate-800">找到我</h2>
+                <h2 className="text-xl sm:text-2xl font-bold text-slate-800">找到我</h2>
               </div>
-              <div className="text-slate-600 leading-relaxed text-lg mb-8">
+              <div className="text-slate-600 leading-relaxed text-base sm:text-lg mb-8">
                 <p>
                   遇到问题、有功能建议、或者只是想聊聊求职的困惑，都可以直接加我微信。这里没有客服机器人，只有我本人。每一条消息我都会认真回复。
                 </p>
               </div>
               <div className="flex flex-col sm:flex-row gap-6 items-center bg-white/50 p-6 rounded-2xl border border-white shadow-sm">
-                <div className="w-32 h-auto bg-white rounded-xl shadow-sm overflow-hidden border border-slate-100 shrink-0">
+                <div className="w-24 sm:w-32 h-auto bg-white rounded-xl shadow-sm overflow-hidden border border-slate-100 shrink-0">
                   <Image src="/wx.webp" alt="袁小智微信二维码" width={600} height={818} className="w-full h-auto object-contain" />
                 </div>
                 <div className="space-y-3">
@@ -166,6 +167,24 @@ export default function AboutPage() {
                     问题反馈 · 求职交流 · 功能建议 · 商务合作
                   </p>
                 </div>
+              </div>
+            </div>
+
+            {/* CTA Section */}
+            <div className="bg-gradient-to-br from-violet-600 to-fuchsia-500 rounded-3xl p-6 sm:p-8 md:p-12 shadow-lg text-center">
+              <h2 className="text-2xl md:text-3xl font-extrabold text-white mb-4">开始制作你的专业简历</h2>
+              <p className="text-white/80 mb-8 max-w-lg mx-auto">
+                完全免费，无需担心任何费用。AI 帮你写出亮眼的简历内容。
+              </p>
+              <div className="flex flex-wrap gap-4 justify-center">
+                <Link href="/ai" className="inline-flex items-center gap-2 px-8 py-3 bg-white text-violet-700 font-bold rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all">
+                  <Wand2 className="w-5 h-5" />
+                  免费生成简历
+                </Link>
+                <Link href="/" className="inline-flex items-center gap-2 px-8 py-3 bg-white/20 text-white font-medium rounded-full border border-white/30 hover:bg-white/30 transition-all">
+                  了解更多
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
               </div>
             </div>
           </div>

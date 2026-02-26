@@ -98,34 +98,6 @@ export const LandingHero = () => {
         .animate-gradient-x {
           animation: gradient-x 6s ease infinite;
         }
-        @keyframes float {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-20px); }
-        }
-        .animate-float {
-          animation: float 6s ease-in-out infinite;
-        }
-        .animate-float-delayed {
-          animation: float 6s ease-in-out infinite;
-          animation-delay: 3s;
-        }
-        .animate-float-slow {
-          animation: float 8s ease-in-out infinite;
-        }
-        @keyframes pulse-slow {
-          0%, 100% { opacity: 0.2; transform: scale(1); }
-          50% { opacity: 0.3; transform: scale(1.1); }
-        }
-        .animate-pulse-slow {
-          animation: pulse-slow 8s ease-in-out infinite;
-        }
-        @keyframes bounce-subtle {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-5px); }
-        }
-        .animate-bounce-subtle {
-          animation: bounce-subtle 3s ease-in-out infinite;
-        }
         .perspective-1000 {
           perspective: 1000px;
         }
