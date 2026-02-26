@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 import { useImportGeneration } from '@/lib/ai/use-import-generation';
 import { getAvailableModels } from '@/lib/ai/ai-config';
 import { mapExternalResume } from '@/io/external-resume-importer';
+import type { ResumeData } from '@/entities/resume/resume-data';
 import { parseStreamSections } from '@/lib/ai/json-to-markdown';
 import type { DisplaySection } from '@/lib/ai/json-to-markdown';
 import {
@@ -20,9 +21,13 @@ import {
   CheckCircle2,
   MessageSquareText,
 } from 'lucide-react';
+import { useRequireAuth } from '@/hooks/use-require-auth';
+import { useAiUsage } from '@/hooks/use-ai-usage';
+import { WxLoginDialog } from '@/components/auth/WxLoginDialog';
 
 const AI_MODELS = getAvailableModels();
 const MIN_TEXT_LENGTH = 10;
+const IMPORT_CACHE_KEY = 'import_pending_resume';
 
 const PLATFORM_BADGES: readonly { label: string; color: string }[] = [
   { label: '豆包', color: 'bg-sky-100 text-sky-700' },
@@ -44,34 +49,57 @@ export default function ImportResumePage(): React.ReactElement {
     isGenerating, streamedText, error, isNotResume,
     generate, abort, reset,
   } = useImportGeneration();
+  const { isLoginOpen, requireAuth, handleLoginSuccess, handleLoginClose, isLoggedIn } = useRequireAuth();
+  const { usage, isLimitReached, refresh: refreshUsage } = useAiUsage();
+
+  const saveResume = useCallback(async (resumeData: ResumeData): Promise<void> => {
+    setIsSaving(true);
+    try {
+      const res: Response = await fetch('/api/resumes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: resumeData.name || 'AI 排版简历',
+          content: resumeData,
+          template: 'simple',
+        }),
+      });
+      if (!res.ok) throw new Error('保存简历失败');
+      const saved: { id: string } = await res.json();
+      localStorage.removeItem(IMPORT_CACHE_KEY);
+      router.push(`/editor/${saved.id}`);
+    } catch (err) {
+      console.error('[Import] Failed to save resume:', err);
+    } finally {
+      setIsSaving(false);
+    }
+  }, [router]);
+
+  // Auto-save cached result when user returns logged in
+  useEffect(() => {
+    const cached = localStorage.getItem(IMPORT_CACHE_KEY);
+    if (cached && isLoggedIn()) {
+      try {
+        const resumeData = JSON.parse(cached) as ResumeData;
+        saveResume(resumeData);
+      } catch {
+        localStorage.removeItem(IMPORT_CACHE_KEY);
+      }
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleImport = useCallback(async (): Promise<void> => {
+    if (isLimitReached) return;
     if (rawText.trim().length < MIN_TEXT_LENGTH) return;
     setShowGenPage(true);
     const importResult = await generate(rawText, selectedModel);
+    await refreshUsage();
     if (importResult) {
-      setIsSaving(true);
-      try {
-        const resumeData = mapExternalResume(importResult);
-        const res: Response = await fetch('/api/resumes', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            title: resumeData.name || '导入简历',
-            content: resumeData,
-            template: 'simple',
-          }),
-        });
-        if (!res.ok) throw new Error('保存简历失败');
-        const saved: { id: string } = await res.json();
-        router.push(`/editor/${saved.id}`);
-      } catch (err) {
-        console.error('[Import] Failed to save resume:', err);
-      } finally {
-        setIsSaving(false);
-      }
+      const resumeData = mapExternalResume(importResult);
+      localStorage.setItem(IMPORT_CACHE_KEY, JSON.stringify(resumeData));
+      requireAuth(() => { saveResume(resumeData); });
     }
-  }, [rawText, selectedModel, generate, router]);
+  }, [rawText, selectedModel, generate, requireAuth, saveResume, isLimitReached, refreshUsage]);
 
   const handleStop = useCallback((): void => { abort(); }, [abort]);
   const handleBack = useCallback((): void => {
@@ -106,16 +134,17 @@ export default function ImportResumePage(): React.ReactElement {
         <div className="max-w-4xl mx-auto px-6 h-14 flex items-center gap-3">
           <button
             type="button"
-            onClick={() => router.push('/dashboard')}
+            onClick={() => router.push(isLoggedIn() ? '/dashboard' : '/')}
             className="flex items-center gap-1 text-sm text-gray-500 hover:text-[#8B5CF6] transition-colors"
           >
             <ChevronLeft className="w-4 h-4" />
             返回
           </button>
           <div className="w-px h-4 bg-gray-200" />
-          <h1 className="text-sm font-semibold text-gray-800">导入简历</h1>
+          <h1 className="text-sm font-semibold text-gray-800">AI 简历排版</h1>
         </div>
       </header>
+      <WxLoginDialog isOpen={isLoginOpen} onClose={handleLoginClose} onSuccess={handleLoginSuccess} />
 
       <div className="text-center pt-8 pb-2">
         <h2 className="text-xl font-bold text-gray-900">粘贴简历文本，一键格式化</h2>
@@ -233,10 +262,10 @@ export default function ImportResumePage(): React.ReactElement {
             <button
               type="button"
               onClick={handleImport}
-              disabled={!isValid}
+              disabled={!isValid || isLimitReached}
               className={cn(
                 'px-8 py-3 rounded-full text-lg font-medium flex items-center gap-2 shadow-lg transition-all',
-                isValid
+                isValid && !isLimitReached
                   ? 'bg-[#8B5CF6] hover:bg-[#7C3AED] text-white hover:shadow-xl'
                   : 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none',
               )}
@@ -244,6 +273,13 @@ export default function ImportResumePage(): React.ReactElement {
               <FileUp className="w-5 h-5" />
               开始解析导入
             </button>
+            {usage && (
+              <p className={cn('text-xs', isLimitReached ? 'text-red-500' : 'text-gray-400')}>
+                {isLimitReached
+                  ? `今日次数已用完（${usage.used}/${usage.limit}），${usage.isAuthenticated ? '请明天再试' : '登录后可获得更多次数'}`
+                  : `今日剩余 ${usage.remaining}/${usage.limit} 次${usage.isAuthenticated ? '' : '（登录后可获得更多次数）'}`}
+              </p>
+            )}
           </div>
         </div>
       </div>

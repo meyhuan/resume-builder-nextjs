@@ -13,6 +13,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Sparkles, Loader2, AlertTriangle, RefreshCw, HelpCircle } from 'lucide-react';
 import { usePolishSection } from '@/lib/ai/use-polish-section';
+import { useAiUsage } from '@/hooks/use-ai-usage';
 import type { SectionIdentity, SectionModuleType, PolishLevel } from '@/lib/ai/section-types';
 import {
   SECTION_IDENTITY_OPTIONS,
@@ -64,9 +65,10 @@ export default function AiPolishSheet(props: AiPolishSheetProps): ReactElement {
   }, [store]);
 
   const { isPolishing, streamedHtml, error, polish, reset } = usePolishSection();
+  const { usage, isLimitReached, refresh: refreshUsage } = useAiUsage();
 
   const canPolish: boolean =
-    originalContent.trim().length >= MIN_POLISH_CONTENT_LENGTH && !isPolishing;
+    originalContent.trim().length >= MIN_POLISH_CONTENT_LENGTH && !isPolishing && !isLimitReached;
 
   const handlePolish = useCallback(async (): Promise<void> => {
     setHasResult(false);
@@ -86,6 +88,7 @@ export default function AiPolishSheet(props: AiPolishSheetProps): ReactElement {
       jobDescription: jobDescription.trim() || undefined,
       realisticMode,
     });
+    await refreshUsage();
     if (result) {
       setEditedResult(result);
       setHasResult(true);
@@ -291,14 +294,23 @@ export default function AiPolishSheet(props: AiPolishSheetProps): ReactElement {
 
           {/* Start polish button */}
           {!isPolishing && (
-            <Button
-              onClick={hasResult ? handleRegenerate : handlePolish}
-              disabled={!canPolish && !hasResult}
-              className="w-full h-10 shrink-0 bg-gradient-to-r from-violet-600 to-fuchsia-500 text-white hover:from-violet-700 hover:to-fuchsia-600 rounded-lg font-medium text-sm shadow-sm disabled:opacity-40"
-            >
-              <Sparkles className="h-4 w-4 mr-2" />
-              {hasResult ? '重新润色' : '开始润色'}
-            </Button>
+            <div className="space-y-2">
+              <Button
+                onClick={hasResult ? handleRegenerate : handlePolish}
+                disabled={!canPolish && !hasResult}
+                className="w-full h-10 shrink-0 bg-gradient-to-r from-violet-600 to-fuchsia-500 text-white hover:from-violet-700 hover:to-fuchsia-600 rounded-lg font-medium text-sm shadow-sm disabled:opacity-40"
+              >
+                <Sparkles className="h-4 w-4 mr-2" />
+                {hasResult ? '重新润色' : '开始润色'}
+              </Button>
+              {usage && (
+                <p className={`text-center text-[10px] ${isLimitReached ? 'text-red-500' : 'text-slate-400'}`}>
+                  {isLimitReached
+                    ? `今日次数已用完（${usage.used}/${usage.limit}），${usage.isAuthenticated ? '请明天再试' : '登录后可获得更多次数'}`
+                    : `今日剩余 ${usage.remaining}/${usage.limit} 次`}
+                </p>
+              )}
+            </div>
           )}
 
           {/* Loading state */}

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { getModelByName, resolveApiKey } from '@/lib/ai/ai-config';
+import { applyRateLimit } from '@/lib/ai/with-rate-limit';
 import {
   buildSystemPrompt,
   buildResumePrompt,
@@ -23,6 +24,9 @@ interface GenerateResumeBody {
  */
 export async function POST(request: NextRequest): Promise<Response> {
   try {
+    const rateLimitResponse = await applyRateLimit(request);
+    if (rateLimitResponse) return rateLimitResponse;
+
     const body: GenerateResumeBody = await request.json();
     const { wizardData, model: modelName } = body;
 

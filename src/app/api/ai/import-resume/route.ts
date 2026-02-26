@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { getModelByName, resolveApiKey } from '@/lib/ai/ai-config';
+import { applyRateLimit } from '@/lib/ai/with-rate-limit';
 import {
   buildImportSystemPrompt,
   buildImportUserPrompt,
@@ -22,6 +23,9 @@ interface ImportResumeBody {
  */
 export async function POST(request: NextRequest): Promise<Response> {
   try {
+    const rateLimitResponse = await applyRateLimit(request);
+    if (rateLimitResponse) return rateLimitResponse;
+
     const body: ImportResumeBody = await request.json();
     const { rawText, model: modelName } = body;
 

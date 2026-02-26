@@ -79,6 +79,7 @@ export const metadata: Metadata = {
 };
 
 import { Toaster } from 'sonner';
+import { BaiduAnalytics } from '@/components/analytics/BaiduAnalytics';
 
 export default function RootLayout({
   children,
@@ -90,6 +91,7 @@ export default function RootLayout({
       <body className={`${inter.className} ${notoSansSC.className} antialiased`}>
         {children}
         <Toaster position="top-center" richColors />
+        <BaiduAnalytics />
       </body>
     </html>
   );

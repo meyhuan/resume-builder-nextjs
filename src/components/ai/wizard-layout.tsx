@@ -8,11 +8,16 @@ import { useWizardStore, getWizardInput } from '@/state/wizard-store';
 import { useAiGeneration } from '@/lib/ai/use-ai-generation';
 import { getAvailableModels } from '@/lib/ai/ai-config';
 import { mapExternalResume } from '@/io/external-resume-importer';
+import type { ResumeData } from '@/entities/resume/resume-data';
 import { parseStreamSections } from '@/lib/ai/json-to-markdown';
 import type { DisplaySection } from '@/lib/ai/json-to-markdown';
 import { Sparkles, Loader2, AlertCircle, ChevronDown, ChevronLeft, CircleStop } from 'lucide-react';
+import { useRequireAuth } from '@/hooks/use-require-auth';
+import { useAiUsage } from '@/hooks/use-ai-usage';
+import { WxLoginDialog } from '@/components/auth/WxLoginDialog';
 
 const AI_MODELS = getAvailableModels();
+const WIZARD_CACHE_KEY = 'wizard_pending_resume';
 
 export const WizardLayout = ({ children }: { children: React.ReactNode }) => {
   const router = useRouter();
@@ -21,30 +26,53 @@ export const WizardLayout = ({ children }: { children: React.ReactNode }) => {
   const [selectedModel, setSelectedModel] = useState<string>(AI_MODELS[0].name);
   const [showModelPicker, setShowModelPicker] = useState<boolean>(false);
   const [showGenPage, setShowGenPage] = useState<boolean>(false);
+  const { isLoginOpen, requireAuth, handleLoginSuccess, handleLoginClose, isLoggedIn } = useRequireAuth();
+  const { usage, isLimitReached, refresh: refreshUsage } = useAiUsage();
+
+  const saveResume = useCallback(async (resumeData: ResumeData): Promise<void> => {
+    try {
+      const res: Response = await fetch('/api/resumes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: resumeData.name || 'AI 生成简历',
+          content: resumeData,
+          template: 'simple',
+        }),
+      });
+      if (!res.ok) throw new Error('保存简历失败');
+      const saved: { id: string } = await res.json();
+      localStorage.removeItem(WIZARD_CACHE_KEY);
+      router.push(`/editor/${saved.id}`);
+    } catch (err) {
+      console.error('[AI] Failed to save resume:', err);
+    }
+  }, [router]);
+
+  // Auto-save cached result when user returns logged in
+  useEffect(() => {
+    const cached = localStorage.getItem(WIZARD_CACHE_KEY);
+    if (cached && isLoggedIn()) {
+      try {
+        const resumeData = JSON.parse(cached) as ResumeData;
+        saveResume(resumeData);
+      } catch {
+        localStorage.removeItem(WIZARD_CACHE_KEY);
+      }
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleGenerate = async (): Promise<void> => {
+    if (isLimitReached) return;
     const input = getWizardInput(wizardState);
     if (!input) return;
     setShowGenPage(true);
     const result = await generate(input, selectedModel);
+    await refreshUsage();
     if (result) {
-      try {
-        const resumeData = mapExternalResume(result);
-        const res: Response = await fetch('/api/resumes', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            title: resumeData.name || 'AI 生成简历',
-            content: resumeData,
-            template: 'simple',
-          }),
-        });
-        if (!res.ok) throw new Error('保存简历失败');
-        const saved: { id: string } = await res.json();
-        router.push(`/editor/${saved.id}`);
-      } catch (err) {
-        console.error('[AI] Failed to save resume:', err);
-      }
+      const resumeData = mapExternalResume(result);
+      localStorage.setItem(WIZARD_CACHE_KEY, JSON.stringify(resumeData));
+      requireAuth(() => { saveResume(resumeData); });
     }
   };
 
@@ -80,7 +108,7 @@ export const WizardLayout = ({ children }: { children: React.ReactNode }) => {
         <div className="max-w-4xl mx-auto px-6 h-14 flex items-center gap-3">
           <button
             type="button"
-            onClick={() => router.push('/dashboard')}
+            onClick={() => router.push(isLoggedIn() ? '/dashboard' : '/')}
             className="flex items-center gap-1 text-sm text-gray-500 hover:text-[#8B5CF6] transition-colors"
           >
             <ChevronLeft className="w-4 h-4" />
@@ -90,6 +118,7 @@ export const WizardLayout = ({ children }: { children: React.ReactNode }) => {
           <h1 className="text-sm font-semibold text-gray-800">AI 生成简历</h1>
         </div>
       </header>
+      <WxLoginDialog isOpen={isLoginOpen} onClose={handleLoginClose} onSuccess={handleLoginSuccess} />
 
       {/* Hero title */}
       <div className="text-center pt-8 pb-4">
@@ -139,11 +168,24 @@ export const WizardLayout = ({ children }: { children: React.ReactNode }) => {
             <button
               type="button"
               onClick={handleGenerate}
-              className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white px-8 py-3 rounded-full text-lg font-medium flex items-center gap-2 shadow-lg hover:shadow-xl transition-all"
+              disabled={isLimitReached}
+              className={cn(
+                'px-8 py-3 rounded-full text-lg font-medium flex items-center gap-2 shadow-lg transition-all',
+                isLimitReached
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed shadow-none'
+                  : 'bg-[#8B5CF6] hover:bg-[#7C3AED] text-white hover:shadow-xl',
+              )}
             >
               <Sparkles className="w-5 h-5" />
               生成简历
             </button>
+            {usage && (
+              <p className={cn('text-xs', isLimitReached ? 'text-red-500' : 'text-gray-400')}>
+                {isLimitReached
+                  ? `今日次数已用完（${usage.used}/${usage.limit}），${usage.isAuthenticated ? '请明天再试' : '登录后可获得更多次数'}`
+                  : `今日剩余 ${usage.remaining}/${usage.limit} 次${usage.isAuthenticated ? '' : '（登录后可获得更多次数）'}`}
+              </p>
+            )}
           </div>
         )}
       </div>

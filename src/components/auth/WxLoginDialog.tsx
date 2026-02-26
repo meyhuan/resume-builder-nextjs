@@ -9,6 +9,9 @@ import { syncUserAction } from '@/app/actions';
 import { X, Loader2, RefreshCw, AlertCircle } from 'lucide-react';
 import Image from 'next/image';
 import { setCookie } from 'cookies-next';
+import { LegalDialog } from '@/components/legal/LegalDialog';
+
+type LegalTab = 'privacy' | 'terms';
 
 interface WxLoginDialogProps {
   isOpen: boolean;
@@ -27,6 +30,13 @@ export const WxLoginDialog: React.FC<WxLoginDialogProps> = ({ isOpen, onClose, o
   const sceneStrRef = useRef('');
   const pollTimerRef = useRef<NodeJS.Timeout | null>(null);
   const expireTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const [legalOpen, setLegalOpen] = useState<boolean>(false);
+  const [legalTab, setLegalTab] = useState<LegalTab>('privacy');
+
+  const openLegal = (tab: LegalTab): void => {
+    setLegalTab(tab);
+    setLegalOpen(true);
+  };
 
   const { setToken, setUserInfo } = useAuthStore();
 
@@ -177,6 +187,7 @@ export const WxLoginDialog: React.FC<WxLoginDialogProps> = ({ isOpen, onClose, o
   };
 
   return (
+    <>
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-[420px] p-0 border-none overflow-hidden bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl ring-1 ring-white/50">
         <div className="relative p-8">
@@ -265,13 +276,16 @@ export const WxLoginDialog: React.FC<WxLoginDialogProps> = ({ isOpen, onClose, o
           <div className="mt-8 text-center relative z-10">
             <p className="text-xs text-slate-400">
               登录即代表同意{' '}
-              <a href="#" className="text-violet-600 hover:text-violet-700 hover:underline font-medium">隐私协议</a>
+              <button type="button" onClick={() => openLegal('privacy')} className="text-violet-600 hover:text-violet-700 hover:underline font-medium">隐私协议</button>
               {' '}与{' '}
-              <a href="#" className="text-violet-600 hover:text-violet-700 hover:underline font-medium">服务条款</a>
+              <button type="button" onClick={() => openLegal('terms')} className="text-violet-600 hover:text-violet-700 hover:underline font-medium">服务条款</button>
             </p>
           </div>
         </div>
       </DialogContent>
     </Dialog>
+
+    <LegalDialog isOpen={legalOpen} onClose={() => setLegalOpen(false)} initialTab={legalTab} />
+    </>
   );
 };

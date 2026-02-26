@@ -13,6 +13,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Wand2, Loader2, AlertTriangle, RefreshCw } from 'lucide-react';
 import { useGenerateSection } from '@/lib/ai/use-generate-section';
+import { useAiUsage } from '@/hooks/use-ai-usage';
 import { getGuidedQuestions } from '@/lib/ai/guided-questions';
 import type { SectionIdentity, SectionModuleType, JobCategory } from '@/lib/ai/section-types';
 import {
@@ -51,6 +52,7 @@ export default function AiGenerateSheet(props: AiGenerateSheetProps): ReactEleme
   const [prevOpen, setPrevOpen] = useState<boolean>(false);
 
   const { isGenerating, streamedHtml, error, generate, reset } = useGenerateSection();
+  const { usage, isLimitReached, refresh: refreshUsage } = useAiUsage();
 
   const questionSet = useMemo(
     () => getGuidedQuestions(moduleType, identity),
@@ -87,7 +89,7 @@ export default function AiGenerateSheet(props: AiGenerateSheetProps): ReactEleme
       .every((q) => (answers[q.label] ?? '').trim().length > 0);
   }, [questionSet, answers]);
 
-  const canGenerate: boolean = requiredComplete && !isGenerating;
+  const canGenerate: boolean = requiredComplete && !isGenerating && !isLimitReached;
 
   const handleAnswerChange = useCallback((label: string, value: string): void => {
     setAnswers((prev) => ({ ...prev, [label]: value }));
@@ -111,6 +113,7 @@ export default function AiGenerateSheet(props: AiGenerateSheetProps): ReactEleme
       jobCategory: moduleType === 'self-evaluation' ? jobCategory : undefined,
       realisticMode: store.realisticMode,
     });
+    await refreshUsage();
     if (result) {
       setEditedResult(result);
       setHasResult(true);
@@ -281,17 +284,26 @@ export default function AiGenerateSheet(props: AiGenerateSheetProps): ReactEleme
 
           {/* Generate button */}
           {!isGenerating && (
-            <Button
-              onClick={hasResult ? handleRegenerate : handleGenerate}
-              disabled={!canGenerate && !hasResult}
-              className="w-full h-10 shrink-0 bg-gradient-to-r from-violet-600 to-fuchsia-500 text-white hover:from-violet-700 hover:to-fuchsia-600 rounded-lg font-medium text-sm shadow-sm disabled:opacity-40"
-            >
-              <Wand2 className="h-4 w-4 mr-2" />
-              {hasResult ? '重新生成' : '生成内容'}
-              {!requiredComplete && !hasResult && (
-                <span className="ml-2 text-[10px] opacity-70">（请完成必填项）</span>
+            <div className="space-y-2">
+              <Button
+                onClick={hasResult ? handleRegenerate : handleGenerate}
+                disabled={!canGenerate && !hasResult}
+                className="w-full h-10 shrink-0 bg-gradient-to-r from-violet-600 to-fuchsia-500 text-white hover:from-violet-700 hover:to-fuchsia-600 rounded-lg font-medium text-sm shadow-sm disabled:opacity-40"
+              >
+                <Wand2 className="h-4 w-4 mr-2" />
+                {hasResult ? '重新生成' : '生成内容'}
+                {!requiredComplete && !hasResult && (
+                  <span className="ml-2 text-[10px] opacity-70">（请完成必填项）</span>
+                )}
+              </Button>
+              {usage && (
+                <p className={`text-center text-[10px] ${isLimitReached ? 'text-red-500' : 'text-slate-400'}`}>
+                  {isLimitReached
+                    ? `今日次数已用完（${usage.used}/${usage.limit}），${usage.isAuthenticated ? '请明天再试' : '登录后可获得更多次数'}`
+                    : `今日剩余 ${usage.remaining}/${usage.limit} 次`}
+                </p>
               )}
-            </Button>
+            </div>
           )}
 
           {/* Loading state */}
