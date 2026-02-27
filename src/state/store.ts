@@ -15,7 +15,7 @@ import { mapExternalResume } from '@/io/external-resume-importer'
 import { BLANK_RESUME_JSON, TEST_RESUME_JSON } from '@/io/default-resume-data'
 import { createDefaultBlock } from '@/entities/blocks/block-factory'
 
-const DEFAULT_FONT_SIZE: number = 14
+const DEFAULT_FONT_SIZE: number = 15
 const defaultTheme: ThemeTokens = {
   primaryColor: '#111827',
   textColor: '#111827',

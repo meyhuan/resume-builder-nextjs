@@ -35,7 +35,17 @@ export default function ThemePanel(props: {
   //   { label: 'System Sans', value: 'system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif' },
   //   { label: 'Georgia (serif)', value: 'Georgia, serif' },
   // ]
-  const fontSizes: readonly number[] = [12, 13, 14, 15, 16, 17, 18, 19, 20]
+  const fontSizes: readonly { value: number; label: string }[] = [
+    { value: 12, label: '极小' },
+    { value: 13, label: '偏小' },
+    { value: 14, label: '标准' },
+    { value: 15, label: '中等 (推荐)' },
+    { value: 16, label: '偏大' },
+    { value: 17, label: '大号' },
+    { value: 18, label: '特大' },
+    { value: 19, label: '超大' },
+    { value: 20, label: '巨型' }
+  ]
 
   function handlePrimaryColor(e: ChangeEvent<HTMLInputElement>): void {
     props.onUpdate({ primaryColor: e.target.value })
@@ -108,9 +118,9 @@ export default function ThemePanel(props: {
                 <SelectValue placeholder="字号" />
               </SelectTrigger>
               <SelectContent className="rounded-xl border-white bg-white/90 backdrop-blur-xl shadow-lg">
-                {fontSizes.map((size) => (
-                  <SelectItem key={size} value={String(size)} className="rounded-lg m-1 cursor-pointer hover:bg-black/5 focus:bg-[#8B5CF6]/10 focus:text-[#8B5CF6]">
-                    {size}px
+                {fontSizes.map((sizeOption) => (
+                  <SelectItem key={sizeOption.value} value={String(sizeOption.value)} className="rounded-lg m-1 cursor-pointer hover:bg-black/5 focus:bg-[#8B5CF6]/10 focus:text-[#8B5CF6]">
+                    {sizeOption.label}
                   </SelectItem>
                 ))}
               </SelectContent>
