@@ -3,43 +3,35 @@ import OpenAI from 'openai';
 import { getModelByName, resolveApiKey } from '@/lib/ai/ai-config';
 import { applyRateLimit } from '@/lib/ai/with-rate-limit';
 import {
-  buildGenerateSystemPrompt,
-  buildGenerateUserPrompt,
-} from '@/lib/ai/section-prompt-builder';
-import type { GenerateSectionRequest } from '@/lib/ai/section-types';
+  buildImportSystemPrompt,
+  buildImportUserPrompt,
+} from '@/lib/ai/import-prompt-builder';
 
 /**
- * POST /api/ai/generate-section
+ * Request body shape for the import-resume endpoint.
+ */
+interface ImportResumeBody {
+  readonly rawText: string;
+  readonly model?: string;
+}
+
+/**
+ * POST /next-api/ai/import-resume
  *
- * Accepts guided question answers + identity + module type + optional JD,
- * returns an SSE text stream of the generated HTML content.
+ * Accepts raw resume text, builds a parsing prompt, calls the AI model
+ * via streaming, and returns an SSE text stream of the parsed JSON resume.
  */
 export async function POST(request: NextRequest): Promise<Response> {
   try {
     const rateLimitResponse = await applyRateLimit(request);
     if (rateLimitResponse) return rateLimitResponse;
 
-    const body: GenerateSectionRequest = await request.json();
-    const {
-      identity,
-      moduleType,
-      answers,
-      jobDescription,
-      jobCategory,
-      realisticMode,
-      model: modelName,
-    } = body;
+    const body: ImportResumeBody = await request.json();
+    const { rawText, model: modelName } = body;
 
-    if (!identity || !moduleType) {
+    if (!rawText || rawText.trim().length < 10) {
       return NextResponse.json(
-        { error: '缺少必填字段：identity、moduleType' },
-        { status: 400 },
-      );
-    }
-
-    if (!answers || Object.keys(answers).length === 0) {
-      return NextResponse.json(
-        { error: '请至少填写一项信息' },
+        { error: '请粘贴至少10个字符的简历内容' },
         { status: 400 },
       );
     }
@@ -52,8 +44,8 @@ export async function POST(request: NextRequest): Promise<Response> {
       baseURL: modelConfig.baseUrl,
     });
 
-    const systemPrompt: string = buildGenerateSystemPrompt(identity, moduleType, jobCategory, realisticMode);
-    const userPrompt: string = buildGenerateUserPrompt(answers, jobDescription);
+    const systemPrompt: string = buildImportSystemPrompt();
+    const userPrompt: string = buildImportUserPrompt(rawText);
 
     const stream = await client.chat.completions.create({
       model: modelConfig.name,
@@ -62,7 +54,7 @@ export async function POST(request: NextRequest): Promise<Response> {
         { role: 'user', content: userPrompt },
       ],
       stream: true,
-      temperature: 0.7,
+      temperature: 0.3,
       max_tokens: 4096,
     });
 
@@ -72,10 +64,10 @@ export async function POST(request: NextRequest): Promise<Response> {
       async start(controller): Promise<void> {
         try {
           for await (const chunk of stream) {
-            const delta: string | null | undefined =
+            const content: string | null | undefined =
               chunk.choices[0]?.delta?.content;
-            if (delta) {
-              const sseData: string = `data: ${JSON.stringify({ content: delta })}\n\n`;
+            if (content) {
+              const sseData: string = `data: ${JSON.stringify({ content })}\n\n`;
               controller.enqueue(encoder.encode(sseData));
             }
           }
@@ -106,7 +98,7 @@ export async function POST(request: NextRequest): Promise<Response> {
   } catch (error) {
     const message: string =
       error instanceof Error ? error.message : '服务器内部错误';
-    console.error('[generate-section] Error:', message);
+    console.error('[import-resume] Error:', message);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

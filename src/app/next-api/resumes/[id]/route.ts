@@ -8,7 +8,7 @@ interface RouteParams {
   }>
 }
 
-// GET /api/resumes/[id] - Get a single resume
+// GET /next-api/resumes/[id] - Get a single resume
 export async function GET(req: Request, { params }: RouteParams) {
   try {
     const { id } = await params
@@ -36,7 +36,7 @@ export async function GET(req: Request, { params }: RouteParams) {
   }
 }
 
-// PUT /api/resumes/[id] - Update a resume
+// PUT /next-api/resumes/[id] - Update a resume
 export async function PUT(req: Request, { params }: RouteParams) {
   try {
     const { id } = await params
@@ -69,7 +69,7 @@ export async function PUT(req: Request, { params }: RouteParams) {
   }
 }
 
-// DELETE /api/resumes/[id] - Delete a resume
+// DELETE /next-api/resumes/[id] - Delete a resume
 export async function DELETE(req: Request, { params }: RouteParams) {
   try {
     const { id } = await params

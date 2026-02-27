@@ -3,7 +3,7 @@ import { peekRateLimit } from '@/lib/ai/rate-limiter';
 import { getRateLimitIdentity } from '@/lib/ai/get-rate-limit-identity';
 
 /**
- * GET /api/ai/usage
+ * GET /next-api/ai/usage
  *
  * Returns the current AI usage stats for the requesting user/IP.
  */

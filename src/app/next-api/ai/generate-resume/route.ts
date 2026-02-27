@@ -3,35 +3,36 @@ import OpenAI from 'openai';
 import { getModelByName, resolveApiKey } from '@/lib/ai/ai-config';
 import { applyRateLimit } from '@/lib/ai/with-rate-limit';
 import {
-  buildImportSystemPrompt,
-  buildImportUserPrompt,
-} from '@/lib/ai/import-prompt-builder';
+  buildSystemPrompt,
+  buildResumePrompt,
+} from '@/lib/ai/resume-prompt-builder';
+import type { WizardInput } from '@/lib/ai/resume-prompt-builder';
 
 /**
- * Request body shape for the import-resume endpoint.
+ * Request body shape for the generate-resume endpoint.
  */
-interface ImportResumeBody {
-  readonly rawText: string;
+interface GenerateResumeBody {
+  readonly wizardData: WizardInput;
   readonly model?: string;
 }
 
 /**
- * POST /api/ai/import-resume
+ * POST /next-api/ai/generate-resume
  *
- * Accepts raw resume text, builds a parsing prompt, calls the AI model
- * via streaming, and returns an SSE text stream of the parsed JSON resume.
+ * Accepts wizard data, builds a prompt, calls the AI model via streaming,
+ * and returns an SSE text stream of the generated JSON resume.
  */
 export async function POST(request: NextRequest): Promise<Response> {
   try {
     const rateLimitResponse = await applyRateLimit(request);
     if (rateLimitResponse) return rateLimitResponse;
 
-    const body: ImportResumeBody = await request.json();
-    const { rawText, model: modelName } = body;
+    const body: GenerateResumeBody = await request.json();
+    const { wizardData, model: modelName } = body;
 
-    if (!rawText || rawText.trim().length < 10) {
+    if (!wizardData?.identity || !wizardData?.targetRole) {
       return NextResponse.json(
-        { error: '请粘贴至少10个字符的简历内容' },
+        { error: '缺少必填字段：identity 和 targetRole' },
         { status: 400 },
       );
     }
@@ -44,8 +45,8 @@ export async function POST(request: NextRequest): Promise<Response> {
       baseURL: modelConfig.baseUrl,
     });
 
-    const systemPrompt: string = buildImportSystemPrompt();
-    const userPrompt: string = buildImportUserPrompt(rawText);
+    const systemPrompt: string = buildSystemPrompt();
+    const userPrompt: string = buildResumePrompt(wizardData);
 
     const stream = await client.chat.completions.create({
       model: modelConfig.name,
@@ -54,7 +55,7 @@ export async function POST(request: NextRequest): Promise<Response> {
         { role: 'user', content: userPrompt },
       ],
       stream: true,
-      temperature: 0.3,
+      temperature: 0.7,
       max_tokens: 4096,
     });
 
@@ -98,7 +99,7 @@ export async function POST(request: NextRequest): Promise<Response> {
   } catch (error) {
     const message: string =
       error instanceof Error ? error.message : '服务器内部错误';
-    console.error('[import-resume] Error:', message);
+    console.error('[generate-resume] Error:', message);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

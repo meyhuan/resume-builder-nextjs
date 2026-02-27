@@ -221,7 +221,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
           resume as unknown as Record<string, unknown>,
           editorMeta,
         )
-        const createRes = await fetch('/api/resumes', {
+        const createRes = await fetch('/next-api/resumes', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -255,7 +255,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
         editorMeta,
       )
       // 4. Save to DB
-      const res = await fetch(`/api/resumes/${currentId}`, {
+      const res = await fetch(`/next-api/resumes/${currentId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -395,7 +395,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
       const html = buildResumeHtml(printRef.current, { title: resume.name || 'Resume' })
       
       // 2. Call API
-      const response = await fetch('/api/generate-pdf', {
+      const response = await fetch('/next-api/generate-pdf', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ html }),

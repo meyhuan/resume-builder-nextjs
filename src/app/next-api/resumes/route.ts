@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { cookies } from 'next/headers'
 
-// GET /api/resumes - List all resumes for current user
+// GET /next-api/resumes - List all resumes for current user
 export async function GET() {
   try {
     const cookieStore = await cookies();
@@ -29,7 +29,7 @@ export async function GET() {
   }
 }
 
-// POST /api/resumes - Create a new resume
+// POST /next-api/resumes - Create a new resume
 export async function POST(req: Request) {
   try {
     const body = await req.json()

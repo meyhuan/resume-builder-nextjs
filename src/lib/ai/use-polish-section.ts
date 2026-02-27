@@ -33,7 +33,7 @@ export type UsePolishSectionReturn = PolishSectionState & PolishSectionActions;
 
 /**
  * Client hook for AI section-level polish with SSE streaming.
- * Calls `/api/ai/polish-section` and accumulates the streamed HTML result.
+ * Calls `/next-api/ai/polish-section` and accumulates the streamed HTML result.
  */
 export function usePolishSection(): UsePolishSectionReturn {
   const [isPolishing, setIsPolishing] = useState<boolean>(false);
@@ -64,7 +64,7 @@ export function usePolishSection(): UsePolishSectionReturn {
       abortRef.current = controller;
 
       try {
-        const response: Response = await fetch('/api/ai/polish-section', {
+        const response: Response = await fetch('/next-api/ai/polish-section', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(params),

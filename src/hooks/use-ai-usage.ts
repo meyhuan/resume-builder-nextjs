@@ -30,7 +30,7 @@ export function useAiUsage(): UseAiUsageReturn {
 
   const refresh = useCallback(async (): Promise<void> => {
     try {
-      const res: Response = await fetch('/api/ai/usage');
+      const res: Response = await fetch('/next-api/ai/usage');
       if (res.ok) {
         const data: AiUsageInfo = await res.json();
         setUsage(data);

@@ -3,36 +3,44 @@ import OpenAI from 'openai';
 import { getModelByName, resolveApiKey } from '@/lib/ai/ai-config';
 import { applyRateLimit } from '@/lib/ai/with-rate-limit';
 import {
-  buildSystemPrompt,
-  buildResumePrompt,
-} from '@/lib/ai/resume-prompt-builder';
-import type { WizardInput } from '@/lib/ai/resume-prompt-builder';
+  buildPolishSystemPrompt,
+  buildPolishUserPrompt,
+} from '@/lib/ai/section-prompt-builder';
+import type { PolishSectionRequest } from '@/lib/ai/section-types';
+import { MIN_POLISH_CONTENT_LENGTH } from '@/lib/ai/section-types';
 
 /**
- * Request body shape for the generate-resume endpoint.
- */
-interface GenerateResumeBody {
-  readonly wizardData: WizardInput;
-  readonly model?: string;
-}
-
-/**
- * POST /api/ai/generate-resume
+ * POST /next-api/ai/polish-section
  *
- * Accepts wizard data, builds a prompt, calls the AI model via streaming,
- * and returns an SSE text stream of the generated JSON resume.
+ * Accepts section content + identity + polish level + optional JD,
+ * returns an SSE text stream of the polished HTML content.
  */
 export async function POST(request: NextRequest): Promise<Response> {
   try {
     const rateLimitResponse = await applyRateLimit(request);
     if (rateLimitResponse) return rateLimitResponse;
 
-    const body: GenerateResumeBody = await request.json();
-    const { wizardData, model: modelName } = body;
+    const body: PolishSectionRequest = await request.json();
+    const {
+      content,
+      identity,
+      moduleType,
+      polishLevel,
+      jobDescription,
+      realisticMode = false,
+      model: modelName,
+    } = body;
 
-    if (!wizardData?.identity || !wizardData?.targetRole) {
+    if (!content || content.trim().length < MIN_POLISH_CONTENT_LENGTH) {
       return NextResponse.json(
-        { error: '缺少必填字段：identity 和 targetRole' },
+        { error: `内容不少于${MIN_POLISH_CONTENT_LENGTH}个字符` },
+        { status: 400 },
+      );
+    }
+
+    if (!identity || !moduleType || !polishLevel) {
+      return NextResponse.json(
+        { error: '缺少必填字段：identity、moduleType、polishLevel' },
         { status: 400 },
       );
     }
@@ -45,8 +53,13 @@ export async function POST(request: NextRequest): Promise<Response> {
       baseURL: modelConfig.baseUrl,
     });
 
-    const systemPrompt: string = buildSystemPrompt();
-    const userPrompt: string = buildResumePrompt(wizardData);
+    const systemPrompt: string = buildPolishSystemPrompt(
+      identity,
+      moduleType,
+      polishLevel,
+      realisticMode,
+    );
+    const userPrompt: string = buildPolishUserPrompt(content, jobDescription);
 
     const stream = await client.chat.completions.create({
       model: modelConfig.name,
@@ -55,7 +68,7 @@ export async function POST(request: NextRequest): Promise<Response> {
         { role: 'user', content: userPrompt },
       ],
       stream: true,
-      temperature: 0.7,
+      temperature: 0.6,
       max_tokens: 4096,
     });
 
@@ -65,10 +78,10 @@ export async function POST(request: NextRequest): Promise<Response> {
       async start(controller): Promise<void> {
         try {
           for await (const chunk of stream) {
-            const content: string | null | undefined =
+            const delta: string | null | undefined =
               chunk.choices[0]?.delta?.content;
-            if (content) {
-              const sseData: string = `data: ${JSON.stringify({ content })}\n\n`;
+            if (delta) {
+              const sseData: string = `data: ${JSON.stringify({ content: delta })}\n\n`;
               controller.enqueue(encoder.encode(sseData));
             }
           }
@@ -99,7 +112,7 @@ export async function POST(request: NextRequest): Promise<Response> {
   } catch (error) {
     const message: string =
       error instanceof Error ? error.message : '服务器内部错误';
-    console.error('[generate-resume] Error:', message);
+    console.error('[polish-section] Error:', message);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

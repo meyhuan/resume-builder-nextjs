@@ -3,44 +3,43 @@ import OpenAI from 'openai';
 import { getModelByName, resolveApiKey } from '@/lib/ai/ai-config';
 import { applyRateLimit } from '@/lib/ai/with-rate-limit';
 import {
-  buildPolishSystemPrompt,
-  buildPolishUserPrompt,
+  buildGenerateSystemPrompt,
+  buildGenerateUserPrompt,
 } from '@/lib/ai/section-prompt-builder';
-import type { PolishSectionRequest } from '@/lib/ai/section-types';
-import { MIN_POLISH_CONTENT_LENGTH } from '@/lib/ai/section-types';
+import type { GenerateSectionRequest } from '@/lib/ai/section-types';
 
 /**
- * POST /api/ai/polish-section
+ * POST /next-api/ai/generate-section
  *
- * Accepts section content + identity + polish level + optional JD,
- * returns an SSE text stream of the polished HTML content.
+ * Accepts guided question answers + identity + module type + optional JD,
+ * returns an SSE text stream of the generated HTML content.
  */
 export async function POST(request: NextRequest): Promise<Response> {
   try {
     const rateLimitResponse = await applyRateLimit(request);
     if (rateLimitResponse) return rateLimitResponse;
 
-    const body: PolishSectionRequest = await request.json();
+    const body: GenerateSectionRequest = await request.json();
     const {
-      content,
       identity,
       moduleType,
-      polishLevel,
+      answers,
       jobDescription,
-      realisticMode = false,
+      jobCategory,
+      realisticMode,
       model: modelName,
     } = body;
 
-    if (!content || content.trim().length < MIN_POLISH_CONTENT_LENGTH) {
+    if (!identity || !moduleType) {
       return NextResponse.json(
-        { error: `内容不少于${MIN_POLISH_CONTENT_LENGTH}个字符` },
+        { error: '缺少必填字段：identity、moduleType' },
         { status: 400 },
       );
     }
 
-    if (!identity || !moduleType || !polishLevel) {
+    if (!answers || Object.keys(answers).length === 0) {
       return NextResponse.json(
-        { error: '缺少必填字段：identity、moduleType、polishLevel' },
+        { error: '请至少填写一项信息' },
         { status: 400 },
       );
     }
@@ -53,13 +52,8 @@ export async function POST(request: NextRequest): Promise<Response> {
       baseURL: modelConfig.baseUrl,
     });
 
-    const systemPrompt: string = buildPolishSystemPrompt(
-      identity,
-      moduleType,
-      polishLevel,
-      realisticMode,
-    );
-    const userPrompt: string = buildPolishUserPrompt(content, jobDescription);
+    const systemPrompt: string = buildGenerateSystemPrompt(identity, moduleType, jobCategory, realisticMode);
+    const userPrompt: string = buildGenerateUserPrompt(answers, jobDescription);
 
     const stream = await client.chat.completions.create({
       model: modelConfig.name,
@@ -68,7 +62,7 @@ export async function POST(request: NextRequest): Promise<Response> {
         { role: 'user', content: userPrompt },
       ],
       stream: true,
-      temperature: 0.6,
+      temperature: 0.7,
       max_tokens: 4096,
     });
 
@@ -112,7 +106,7 @@ export async function POST(request: NextRequest): Promise<Response> {
   } catch (error) {
     const message: string =
       error instanceof Error ? error.message : '服务器内部错误';
-    console.error('[polish-section] Error:', message);
+    console.error('[generate-section] Error:', message);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

@@ -31,7 +31,7 @@ export const WizardLayout = ({ children }: { children: React.ReactNode }) => {
 
   const saveResume = useCallback(async (resumeData: ResumeData): Promise<void> => {
     try {
-      const res: Response = await fetch('/api/resumes', {
+      const res: Response = await fetch('/next-api/resumes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

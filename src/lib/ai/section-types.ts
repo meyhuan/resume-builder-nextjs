@@ -128,7 +128,7 @@ export const ACTION_VERB_BLACKLIST: Record<SectionIdentity, readonly string[]> =
 // API Request / Response Types
 // ---------------------------------------------------------------------------
 
-/** Request body for POST /api/ai/polish-section */
+/** Request body for POST /next-api/ai/polish-section */
 export interface PolishSectionRequest {
   readonly content: string;
   readonly identity: SectionIdentity;
@@ -139,7 +139,7 @@ export interface PolishSectionRequest {
   readonly model?: string;
 }
 
-/** Request body for POST /api/ai/generate-section */
+/** Request body for POST /next-api/ai/generate-section */
 export interface GenerateSectionRequest {
   readonly identity: SectionIdentity;
   readonly moduleType: SectionModuleType;

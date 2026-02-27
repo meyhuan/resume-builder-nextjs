@@ -22,7 +22,7 @@ export type UseImportGenerationReturn = ImportGenerationState & ImportGeneration
 /**
  * Client hook for AI resume import with streaming.
  *
- * Calls the `/api/ai/import-resume` endpoint, processes SSE chunks,
+ * Calls the `/next-api/ai/import-resume` endpoint, processes SSE chunks,
  * and parses the final accumulated text as ExternalResume JSON.
  */
 export function useImportGeneration(): UseImportGenerationReturn {
@@ -58,7 +58,7 @@ export function useImportGeneration(): UseImportGenerationReturn {
       abortRef.current = controller;
 
       try {
-        const response: Response = await fetch('/api/ai/import-resume', {
+        const response: Response = await fetch('/next-api/ai/import-resume', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ rawText, model }),

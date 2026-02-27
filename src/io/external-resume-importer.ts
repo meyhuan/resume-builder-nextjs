@@ -1,4 +1,4 @@
-﻿import type { ResumeData } from '@/entities/resume/resume-data';
+import type { ResumeData } from '@/entities/resume/resume-data';
 import type { BaseInfo } from '@/entities/user/base-info';
 import type { JobIntention } from '@/entities/user/job-intention';
 import type { Section } from '@/entities/resume/section';

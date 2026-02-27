@@ -33,7 +33,7 @@ export type UseGenerateSectionReturn = GenerateSectionState & GenerateSectionAct
 
 /**
  * Client hook for AI section-level content generation with SSE streaming.
- * Calls `/api/ai/generate-section` and accumulates the streamed HTML result.
+ * Calls `/next-api/ai/generate-section` and accumulates the streamed HTML result.
  */
 export function useGenerateSection(): UseGenerateSectionReturn {
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
@@ -64,7 +64,7 @@ export function useGenerateSection(): UseGenerateSectionReturn {
       abortRef.current = controller;
 
       try {
-        const response: Response = await fetch('/api/ai/generate-section', {
+        const response: Response = await fetch('/next-api/ai/generate-section', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(params),

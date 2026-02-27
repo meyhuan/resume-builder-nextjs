@@ -55,7 +55,7 @@ export default function ImportResumePage(): React.ReactElement {
   const saveResume = useCallback(async (resumeData: ResumeData): Promise<void> => {
     setIsSaving(true);
     try {
-      const res: Response = await fetch('/api/resumes', {
+      const res: Response = await fetch('/next-api/resumes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

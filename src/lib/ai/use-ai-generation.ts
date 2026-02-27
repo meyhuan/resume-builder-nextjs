@@ -29,7 +29,7 @@ export type UseAiGenerationReturn = AiGenerationState & AiGenerationActions;
 /**
  * Client hook for AI resume generation with streaming.
  *
- * Calls the `/api/ai/generate-resume` endpoint, processes SSE chunks,
+ * Calls the `/next-api/ai/generate-resume` endpoint, processes SSE chunks,
  * and parses the final accumulated text as ExternalResume JSON.
  */
 export function useAiGeneration(): UseAiGenerationReturn {
@@ -63,7 +63,7 @@ export function useAiGeneration(): UseAiGenerationReturn {
       abortRef.current = controller;
 
       try {
-        const response: Response = await fetch('/api/ai/generate-resume', {
+        const response: Response = await fetch('/next-api/ai/generate-resume', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ wizardData, model }),
