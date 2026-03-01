@@ -28,7 +28,10 @@ async function createResume() {
       content: JSON.parse(JSON.stringify(defaultResume)),
       template: "simple",
       user: {
-        connect: { wxId: userId }
+        connectOrCreate: {
+          where: { wxId: userId },
+          create: { wxId: userId }
+        }
       },
     },
   });

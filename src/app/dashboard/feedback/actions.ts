@@ -28,7 +28,10 @@ export async function submitFeedback(data: {
         attachment: data.attachment || null,
         ...(userId ? {
           user: {
-            connect: { wxId: userId }
+            connectOrCreate: {
+              where: { wxId: userId },
+              create: { wxId: userId }
+            }
           }
         } : {})
       },

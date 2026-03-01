@@ -49,7 +49,10 @@ export async function POST(req: Request) {
         content: content || {},
         template: template || 'simple',
         user: {
-          connect: { wxId: userId }
+          connectOrCreate: {
+            where: { wxId: userId },
+            create: { wxId: userId }
+          }
         }
       }
     })
