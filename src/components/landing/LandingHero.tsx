@@ -46,8 +46,8 @@ export const LandingHero = () => {
           </h1>
 
           {/* Subheading */}
-          <p className="text-base lg:text-lg text-slate-500 max-w-xl leading-relaxed mt-2 mx-auto">
-            深知新人求职的痛苦，我作为独立开发者为你做了这款工具：<strong className="text-slate-700 font-semibold">无需苦想措辞，AI 自动帮你挖掘经历亮点。</strong>微信扫码即用，无任何隐藏收费，连导出 PDF 都是免费的。
+          <p className="text-base lg:text-lg text-slate-500 max-w-2xl leading-relaxed mt-2 mx-auto">
+            深知新人求职的痛苦，我作为独立开发者为你做了这款工具：<strong className="text-slate-700 font-semibold">无需苦想措辞，AI 自动帮你挖掘经历亮点。</strong>支持在线编辑、一键智能排版，且承诺<strong className="text-slate-700 font-semibold">永久免费、导出高清 PDF 无水印</strong>。
           </p>
 
           {/* CTA Buttons */}

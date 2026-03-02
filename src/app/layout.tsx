@@ -70,7 +70,7 @@ export const metadata: Metadata = {
   verification: {
     // Add your verification codes here when ready
     // google: 'your-google-verification-code',
-    // other: { 'baidu-site-verification': 'your-baidu-code' },
+    other: { 'baidu-site-verification': 'codeva-182X8kpQVu' },
   },
 };
 
@@ -82,9 +82,29 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // JSON-LD 结构化数据，有助于百度和必应在搜索结果中展示更丰富的卡片（如软件评分、免费标签）
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": SITE_NAME,
+    "applicationCategory": "BusinessApplication",
+    "operatingSystem": "Web",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "CNY"
+    },
+    "description": SITE_DESCRIPTION,
+    "url": SITE_URL
+  };
+
   return (
     <html lang="zh-CN">
       <body className="antialiased text-slate-900 bg-white font-sans">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
         {children}
         <Toaster position="top-center" richColors />
         <BaiduAnalytics />
