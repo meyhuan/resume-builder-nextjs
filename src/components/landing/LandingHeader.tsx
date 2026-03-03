@@ -42,6 +42,7 @@ export const LandingHeader = ({ forceSolid = false }: LandingHeaderProps = {}) =
     { id: 'templates', label: '简历模板', href: '/#templates' },
     { id: 'articles', label: '求职攻略', href: '/articles' },
     { id: 'about', label: '关于开发者', href: '/about' },
+    { id: 'legacy', label: '找回旧版', href: 'https://w2025.aijianli.cn', external: true },
   ];
 
   return (
@@ -94,6 +95,15 @@ export const LandingHeader = ({ forceSolid = false }: LandingHeaderProps = {}) =
                       </div>
                     </div>
                   </>
+                ) : item.external ? (
+                  <a 
+                    href={item.href!} 
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center px-4 py-2 text-sm font-medium text-slate-600 hover:text-amber-600 rounded-full hover:bg-amber-50 transition-all"
+                  >
+                    {item.label}
+                  </a>
                 ) : (
                   <Link 
                     href={item.href!} 
@@ -178,6 +188,16 @@ export const LandingHeader = ({ forceSolid = false }: LandingHeaderProps = {}) =
                       ))}
                     </div>
                   </>
+                ) : item.external ? (
+                  <a 
+                    href={item.href!} 
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block text-amber-700 font-semibold text-lg" 
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    {item.label}
+                  </a>
                 ) : (
                   <Link href={item.href!} className="block text-slate-700 font-semibold text-lg" onClick={() => setMobileMenuOpen(false)}>
                     {item.label}
