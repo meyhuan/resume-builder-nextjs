@@ -87,6 +87,12 @@ export const LandingTemplates = ({ id }: TemplatesSectionProps) => {
             ))
           )}
         </div>
+        <div className="flex justify-center">
+          <Link href="/templates" className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white text-slate-700 font-semibold border border-slate-200 hover:border-violet-200 hover:text-violet-600 transition-colors shadow-sm">
+            查看更多岗位简历模板
+            <Wand2 className="w-4 h-4" />
+          </Link>
+        </div>
       </div>
     </section>
   );

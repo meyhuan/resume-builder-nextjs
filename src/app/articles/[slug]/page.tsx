@@ -14,8 +14,44 @@ import {
   getCategoryMeta,
 } from '@/lib/articles/article-data';
 import type { Article, TocHeading } from '@/lib/articles/article-types';
+import { templateRoleData } from '@/lib/templates/template-role-data';
 import '@/styles/article-prose.css';
 import { ArticleTocSidebar } from '@/components/articles/article-toc-sidebar';
+
+type TemplateRoleRecord = ReturnType<typeof templateRoleData.getAllTemplateRoles>[number];
+
+function getRelatedTemplateRolesForArticle(article: Article): TemplateRoleRecord[] {
+  const normalizedContent: string = `${article.title} ${article.abstract} ${article.tags.join(' ')} ${article.textContent}`.toLowerCase();
+  return templateRoleData
+    .getAllTemplateRoles()
+    .map((role: TemplateRoleRecord) => {
+      let relevanceScore: number = 0;
+      if (normalizedContent.includes(role.role.toLowerCase())) {
+        relevanceScore += 4;
+      }
+      if (normalizedContent.includes(role.category.toLowerCase())) {
+        relevanceScore += 2;
+      }
+      if (normalizedContent.includes(role.industry.toLowerCase())) {
+        relevanceScore += 1;
+      }
+      const keywordMatches: number = role.searchKeywords.reduce((score: number, keyword: string) => {
+        return normalizedContent.includes(keyword.toLowerCase()) ? score + 1 : score;
+      }, 0);
+      relevanceScore += keywordMatches;
+      if (article.category === role.articleCategoryId) {
+        relevanceScore += 2;
+      }
+      return {
+        role,
+        relevanceScore,
+      };
+    })
+    .filter((entry: { role: TemplateRoleRecord; relevanceScore: number }) => entry.relevanceScore > 0)
+    .sort((left: { role: TemplateRoleRecord; relevanceScore: number }, right: { role: TemplateRoleRecord; relevanceScore: number }) => right.relevanceScore - left.relevanceScore)
+    .slice(0, 6)
+    .map((entry: { role: TemplateRoleRecord; relevanceScore: number }) => entry.role);
+}
 
 // ---------------------------------------------------------------------------
 // Static params — enables SSG for all 140 articles (SEO-critical)
@@ -66,6 +102,7 @@ export default async function ArticleDetailPage({ params }: SlugPageProps): Prom
   const headings: TocHeading[] = extractHeadings(article.htmlContent);
   const htmlWithIds: string = injectHeadingIds(article.htmlContent);
   const catMeta = getCategoryMeta(article.category);
+  const relatedTemplateRoles: TemplateRoleRecord[] = getRelatedTemplateRolesForArticle(article);
 
   const articleJsonLd = {
     '@context': 'https://schema.org',
@@ -166,6 +203,27 @@ export default async function ArticleDetailPage({ params }: SlugPageProps): Prom
                   dangerouslySetInnerHTML={{ __html: htmlWithIds }}
                 />
               </div>
+
+              <section className="rounded-2xl bg-white/70 backdrop-blur-md border border-white shadow-sm p-6 md:p-8 mt-8">
+                <div className="flex items-center gap-2 text-slate-900">
+                  <BookOpen className="w-5 h-5 text-violet-500" />
+                  <h2 className="text-2xl font-extrabold">相关岗位模板</h2>
+                </div>
+                <p className="text-sm text-slate-500 mt-3 leading-relaxed">
+                  结合这篇文章的主题，下面这些岗位模板页更适合继续查看，方便你把攻略内容直接转化为可投递简历。
+                </p>
+                <div className="flex flex-wrap gap-3 mt-6">
+                  {relatedTemplateRoles.map((role: TemplateRoleRecord) => (
+                    <Link
+                      key={role.slug}
+                      href={`/templates/${role.slug}`}
+                      className="px-4 py-2 rounded-full bg-slate-50 text-slate-600 text-sm hover:bg-violet-50 hover:text-violet-600 transition-colors"
+                    >
+                      {role.role}简历模板
+                    </Link>
+                  ))}
+                </div>
+              </section>
 
               {/* Prev / Next */}
               <nav className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-10">

@@ -14,7 +14,7 @@ type FooterLinkItem = {
 
 const LONG_TAIL_LINKS: ReadonlyArray<FooterLinkItem> = [
   { href: '/ai', label: 'AI 简历在线润色' },
-  { href: '/#templates', label: 'ATS 友好简历模板' },
+  { href: '/templates', label: 'ATS 友好简历模板' },
   { href: '/import', label: 'AI 文本转简历生成器' },
   { href: '/ai', label: '免费 AI 简历优化工具' },
   { href: '/articles?category=resume-writing', label: '简历优化技巧大全' },
@@ -68,6 +68,7 @@ export const LandingFooter = () => {
             <h4 className="font-bold text-slate-900 mb-6">产品</h4>
             <ul className="space-y-3 text-sm text-slate-500">
               <li><Link href="/#templates" className="hover:text-violet-600 transition-colors">简历模板</Link></li>
+              <li><Link href="/templates" className="hover:text-violet-600 transition-colors">岗位简历模板</Link></li>
               <li><Link href="/ai" className="hover:text-violet-600 transition-colors">AI 简历生成</Link></li>
               <li><Link href="/import" className="hover:text-violet-600 transition-colors">AI 文本转简历</Link></li>
               <li><Link href="/articles" className="hover:text-violet-600 transition-colors">求职攻略</Link></li>
