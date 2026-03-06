@@ -6,7 +6,7 @@ import type {
   TocHeading,
   AdjacentArticles,
 } from './article-types';
-import rawArticles from '../../../files/resume.articles.json';
+import rawArticles from '../../../files/aijianli.articles.json';
 
 // ---------------------------------------------------------------------------
 // Category registry
@@ -31,10 +31,40 @@ export const ARTICLE_CATEGORIES: readonly ArticleCategoryMeta[] = [
 // Slug derivation
 // ---------------------------------------------------------------------------
 
-function deriveSlug(sourceUrl: string): string {
-  const parts = sourceUrl.split('/');
-  const filename = parts[parts.length - 1] ?? '';
-  return filename.replace('.html', '') || `article-${Math.random().toString(36).slice(2, 8)}`;
+const SLUG_MAX_LENGTH = 64;
+
+function hashString(value: string): string {
+  let hash = 5381;
+  for (const ch of value) {
+    hash = ((hash << 5) + hash) ^ ch.charCodeAt(0);
+  }
+  return (hash >>> 0).toString(36);
+}
+
+function normalizeSlug(value: string): string {
+  const normalized = value
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9\u4e00-\u9fa5-]/g, '')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+  return normalized.slice(0, SLUG_MAX_LENGTH);
+}
+
+function deriveSlug(raw: RawArticle): string {
+  const explicitSlug = raw.article_slug?.trim();
+  if (explicitSlug) return normalizeSlug(explicitSlug);
+  const sourceUrl = raw.source_url?.trim();
+  if (sourceUrl) {
+    const parts = sourceUrl.split('/');
+    const filename = parts[parts.length - 1] ?? '';
+    const slugFromFilename = filename.replace('.html', '').trim();
+    if (slugFromFilename) return normalizeSlug(slugFromFilename);
+  }
+  const titleSlug = normalizeSlug(raw.article_title);
+  if (titleSlug) return titleSlug;
+  return `article-${hashString(raw.article_title || 'untitled')}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -43,7 +73,7 @@ function deriveSlug(sourceUrl: string): string {
 
 function transformArticle(raw: RawArticle): Article {
   return {
-    slug: deriveSlug(raw.source_url),
+    slug: deriveSlug(raw),
     title: raw.article_title,
     abstract: raw.article_abstract,
     htmlContent: raw.article_html_content,
@@ -52,7 +82,7 @@ function transformArticle(raw: RawArticle): Article {
     category: CATEGORY_RAW_MAP[raw.article_category] ?? 'career-guide',
     cover: raw.article_cover,
     views: raw.article_views,
-    sourceUrl: raw.source_url,
+    sourceUrl: raw.source_url ?? '',
     createdAt: raw.createDate,
     updatedAt: raw.updateDate,
   };
@@ -62,7 +92,8 @@ function transformArticle(raw: RawArticle): Article {
 // Cached article list (built once at import time — fine for SSG/SSR)
 // ---------------------------------------------------------------------------
 
-const ALL_ARTICLES: Article[] = (rawArticles as RawArticle[]).map(transformArticle);
+const RAW_ARTICLES: RawArticle[] = Array.isArray(rawArticles) ? (rawArticles as RawArticle[]) : [];
+const ALL_ARTICLES: Article[] = RAW_ARTICLES.map(transformArticle);
 
 // ---------------------------------------------------------------------------
 // Public API

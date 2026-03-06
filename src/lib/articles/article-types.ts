@@ -1,5 +1,6 @@
 /** Raw shape of each item in resume.articles.json */
 export interface RawArticle {
+  article_slug?: string;
   article_title: string;
   article_auther_email: string;
   article_views: number;
@@ -14,7 +15,7 @@ export interface RawArticle {
   article_likes_users: string[];
   article_collection_users: string[];
   article_code_buy_code: boolean;
-  source_url: string;
+  source_url?: string;
   createDate: string;
   updateDate: string;
 }

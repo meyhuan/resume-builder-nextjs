@@ -69,8 +69,11 @@ export const metadata: Metadata = {
   },
   verification: {
     // Add your verification codes here when ready
-    // google: 'your-google-verification-code',
-    other: { 'baidu-site-verification': 'codeva-182X8kpQVu' },
+    google: 'cVe-KetUGJvP2TVefybZxWIy3YUxXXqQiiGErncNY9M',
+    other: {
+      'baidu-site-verification': 'codeva-182X8kpQVu',
+      'msvalidate.01': ['35C8C4B7C0CCF7E6A6D7B7F2477D48E0']
+     },
   },
 };
 

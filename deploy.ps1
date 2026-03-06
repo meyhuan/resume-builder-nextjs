@@ -48,7 +48,7 @@ rm deploy.zip
 pnpm install --prod
 
 # 重新生成 prisma client
-npx prisma generate
+pnpm exec prisma generate
 
 # 重启 PM2 服务 (如果不存在则启动)
 pm2 restart aijianli-nextjs || pm2 start pnpm --name `"aijianli-nextjs`" -- run start
