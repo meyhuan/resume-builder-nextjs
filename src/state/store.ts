@@ -23,9 +23,14 @@ const defaultTheme: ThemeTokens = {
   fontSize: DEFAULT_FONT_SIZE,
   lineHeight: 1.5,
   spacingScale: 1,
+  pagePaddingVertical: 22,
+  pagePaddingHorizontal: 15,
 }
 
-export const defaultResume = mapExternalResume(BLANK_RESUME_JSON)
+export const defaultResume: ResumeData = {
+  ...mapExternalResume(BLANK_RESUME_JSON),
+  jobIntentionVisible: true,
+}
 const testResume = mapExternalResume(TEST_RESUME_JSON)
 
 function createId(prefix: string): UUID {
@@ -316,6 +321,16 @@ export const useAppStore = create<AppState>()(
           draft.jobIntention = jobIntention
         }),
       }), false, 'resume/updateJobIntention')
+    },
+    setJobIntentionVisibility: (visible) => {
+      const state = get()
+      set(() => ({
+        pastStates: pushHistory(state.resume, state.pastStates),
+        futureStates: [],
+        resume: produce(state.resume, (draft) => {
+          draft.jobIntentionVisible = visible
+        }),
+      }), false, 'resume/setJobIntentionVisibility')
     },
   }))
 )

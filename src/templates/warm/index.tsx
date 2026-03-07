@@ -382,6 +382,7 @@ function WarmSectionView(props: {
 export default function WarmTemplate(props: WarmTemplateProps): ReactElement {
   const { resume, theme, sidebarSectionIds: externalIds, onSidebarSectionIdsChange } = props
   const accentColor = resolveAccent(theme.primaryColor)
+  const isJobIntentionVisible: boolean = resume.jobIntentionVisible ?? Boolean(resume.jobIntention)
 
   // Compute default sidebar IDs from section data
   const defaultIds = resume.sections.filter(shouldDefaultToLeft).map((s) => s.id)
@@ -471,42 +472,44 @@ export default function WarmTemplate(props: WarmTemplateProps): ReactElement {
               />
 
               {/* JobIntention (fixed, not draggable) */}
-              <div className="mb-0">
-                <div
-                  className="mb-6 w-full"
-                  style={{
-                    borderLeft: `2px solid ${accentColor}`,
-                    paddingLeft: '15px',
-                    background: `linear-gradient(90deg, ${hexToRgba(accentColor, 0.08)} 0%, #ffffff 100%)`,
-                  }}
-                >
-                  <SectionHeader
-                    sectionId="job-intention"
-                    title="求职意向"
-                    themeColor={darkenHex(accentColor, 0.65)}
+              {isJobIntentionVisible ? (
+                <div className="mb-0">
+                  <div
+                    className="mb-6 w-full"
+                    style={{
+                      borderLeft: `2px solid ${accentColor}`,
+                      paddingLeft: '15px',
+                      background: `linear-gradient(90deg, ${hexToRgba(accentColor, 0.08)} 0%, #ffffff 100%)`,
+                    }}
+                  >
+                    <SectionHeader
+                      sectionId="job-intention"
+                      title="求职意向"
+                      themeColor={darkenHex(accentColor, 0.65)}
+                      styles={{
+                        ...WARM_TEMPLATE_STYLES.sectionHeader,
+                        fontSize: '1.125em',
+                        lineHeight: '1.5',
+                        containerClassName: 'w-full',
+                      }}
+                    />
+                  </div>
+                  <JobIntentionSection
+                    jobIntention={resume.jobIntention ?? null}
+                    themeColor="#666"
                     styles={{
-                      ...WARM_TEMPLATE_STYLES.sectionHeader,
-                      fontSize: '1.125em',
-                      lineHeight: '1.5',
-                      containerClassName: 'w-full',
+                      ...WARM_TEMPLATE_STYLES.jobIntention,
+                      container: 'relative',
+                      header: 'hidden',
+                      fieldsLayout: {
+                        type: 'vertical',
+                        className: 'flex flex-col gap-2',
+                      },
+                      fieldItem: 'mb-2 text-gray-600 leading-relaxed',
                     }}
                   />
                 </div>
-                <JobIntentionSection
-                  jobIntention={resume.jobIntention ?? null}
-                  themeColor="#666"
-                  styles={{
-                    ...WARM_TEMPLATE_STYLES.jobIntention,
-                    container: 'relative',
-                    header: 'hidden',
-                    fieldsLayout: {
-                      type: 'vertical',
-                      className: 'flex flex-col gap-2',
-                    },
-                    fieldItem: 'mb-2 text-gray-600 leading-relaxed',
-                  }}
-                />
-              </div>
+              ) : null}
 
               {/* Left sidebar sections (TextBlock sections, sortable) */}
               {leftSections.map((section) => (

@@ -319,6 +319,8 @@ function BlockRendererWrapper(props: {
 export default function ElegantTemplate(props: ElegantTemplateProps): ReactElement {
   const { resume, theme } = props
   const accentColor = theme.primaryColor === '#111827' ? ACCENT_GOLD : theme.primaryColor
+  const isJobIntentionVisible: boolean = resume.jobIntentionVisible ?? Boolean(resume.jobIntention)
+  const bodyPadding: string = `${theme.pagePaddingVertical}mm ${theme.pagePaddingHorizontal}mm`
 
   return (
     <div
@@ -338,14 +340,16 @@ export default function ElegantTemplate(props: ElegantTemplateProps): ReactEleme
       />
 
       {/* Body content */}
-      <div style={{ padding: '16px 15mm 22mm 15mm' }}>
-        <div style={{ marginBottom: `${24 * theme.spacingScale}px` }}>
-          <JobIntentionSection
-            jobIntention={resume.jobIntention ?? null}
-            themeColor={accentColor}
-            styles={ELEGANT_TEMPLATE_STYLES.jobIntention}
-          />
-        </div>
+      <div style={{ padding: bodyPadding }}>
+        {isJobIntentionVisible ? (
+          <div style={{ marginBottom: `${24 * theme.spacingScale}px` }}>
+            <JobIntentionSection
+              jobIntention={resume.jobIntention ?? null}
+              themeColor={accentColor}
+              styles={ELEGANT_TEMPLATE_STYLES.jobIntention}
+            />
+          </div>
+        ) : null}
 
         <DragDropProvider
           resume={resume}

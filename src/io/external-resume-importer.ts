@@ -15,6 +15,7 @@ import type { ExternalResume } from './external-resume-types';
 export function mapExternalResume(ext: ExternalResume): ResumeData {
   const baseInfo: BaseInfo | undefined = mapBaseInfo(ext);
   const jobIntention: JobIntention | undefined = mapJobIntentionData(ext);
+  const jobIntentionVisible: boolean = Boolean(jobIntention) && ext.job_intention?.is_hide !== true;
   const sections: Section[] = [];
 
   // Job intention is now handled separately via jobIntention field, not as a section
@@ -69,6 +70,7 @@ export function mapExternalResume(ext: ExternalResume): ResumeData {
     name: ext.base_info.name,
     baseInfo,
     jobIntention,
+    jobIntentionVisible,
     sections,
   };
 }

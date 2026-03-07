@@ -8,6 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "import:supabase": "node scripts/import-supabase-csv.mjs",
     "postinstall": "prisma generate"
   },
   "dependencies": {

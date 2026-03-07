@@ -45,9 +45,11 @@ export default function SectionManager(props: SectionManagerProps): ReactElement
   const moveSection = useAppStore((s) => s.moveSection)
   const deleteSection = useAppStore((s) => s.deleteSection)
   const addSection = useAppStore((s) => s.addSection)
+  const setJobIntentionVisibility = useAppStore((s) => s.setJobIntentionVisibility)
   const [showPhotoAvatar, setShowPhotoAvatar] = useState<boolean>(
     Boolean(resume.baseInfo?.avatarUrl)
   )
+  const isJobIntentionVisible: boolean = resume.jobIntentionVisible ?? Boolean(resume.jobIntention)
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 4 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 5 } })
@@ -100,7 +102,15 @@ export default function SectionManager(props: SectionManagerProps): ReactElement
 
         {/* Pinned: 求职意向 */}
         <SectionRow label="求职意向">
-          <RemoveButton onClick={() => {/* TODO: toggle jobIntention visibility */}} />
+          <label className="flex items-center gap-1.5 text-xs font-medium text-slate-500 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              className="accent-[#8B5CF6] w-3.5 h-3.5 rounded-sm border-slate-300"
+              checked={isJobIntentionVisible}
+              onChange={(e) => setJobIntentionVisibility(e.target.checked)}
+            />
+            显示
+          </label>
         </SectionRow>
 
         {/* Draggable sections */}
@@ -157,19 +167,6 @@ function SectionRow(props: {
   )
 }
 
-/** Circular ⊖ remove button matching the screenshot. */
-function RemoveButton(props: { readonly onClick: () => void }): ReactElement {
-  return (
-    <button
-      type="button"
-      className="text-slate-300 hover:text-rose-500 transition-colors"
-      title="移除"
-      onClick={props.onClick}
-    >
-      <MinusCircle size={18} />
-    </button>
-  )
-}
 
 /** A draggable section row using @dnd-kit/sortable. */
 function SortableSectionRow(props: {

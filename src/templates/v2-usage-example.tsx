@@ -23,6 +23,7 @@ interface TemplateProps {
 // ============================================
 export function ExampleWithStyles(props: TemplateProps): ReactElement {
   const { resume, theme } = props
+  const isJobIntentionVisible: boolean = resume.jobIntentionVisible ?? Boolean(resume.jobIntention)
 
   return (
     <div className="resume-container">
@@ -35,11 +36,13 @@ export function ExampleWithStyles(props: TemplateProps): ReactElement {
       />
 
       {/* 求职意向 - 使用配置 */}
-      <JobIntentionSection
-        jobIntention={resume.jobIntention ?? null}
-        themeColor={theme.primaryColor}
-        styles={SIMPLE_TEMPLATE_STYLES.jobIntention}
-      />
+      {isJobIntentionVisible ? (
+        <JobIntentionSection
+          jobIntention={resume.jobIntention ?? null}
+          themeColor={theme.primaryColor}
+          styles={SIMPLE_TEMPLATE_STYLES.jobIntention}
+        />
+      ) : null}
 
       {/* Block 渲染 - 使用配置 */}
       {resume.sections.map((section) =>

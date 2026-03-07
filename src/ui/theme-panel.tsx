@@ -59,6 +59,14 @@ export default function ThemePanel(props: {
     props.onUpdate({ spacingScale: value[0] })
   }
 
+  function handlePagePaddingVertical(value: number[]): void {
+    props.onUpdate({ pagePaddingVertical: value[0] })
+  }
+
+  function handlePagePaddingHorizontal(value: number[]): void {
+    props.onUpdate({ pagePaddingHorizontal: value[0] })
+  }
+
   // function handleFont(value: string): void {
   //   props.onUpdate({ fontFamily: value })
   // }
@@ -196,6 +204,36 @@ export default function ThemePanel(props: {
               step={0.1}
               value={[theme.spacingScale]}
               onValueChange={handleSpacing}
+              className="py-1"
+            />
+          </div>
+          <div className="space-y-3">
+            <div className={sliderLabelClass}>
+              <span>页边距上下 (Top/Bottom)</span>
+              <span className="text-emerald-600 font-mono bg-emerald-500/10 px-1.5 rounded text-[10px]">{theme.pagePaddingVertical.toFixed(0)}mm</span>
+            </div>
+            <Slider
+              id="page-padding-vertical"
+              min={8}
+              max={35}
+              step={1}
+              value={[theme.pagePaddingVertical]}
+              onValueChange={handlePagePaddingVertical}
+              className="py-1"
+            />
+          </div>
+          <div className="space-y-3">
+            <div className={sliderLabelClass}>
+              <span>页边距左右 (Left/Right)</span>
+              <span className="text-cyan-600 font-mono bg-cyan-500/10 px-1.5 rounded text-[10px]">{theme.pagePaddingHorizontal.toFixed(0)}mm</span>
+            </div>
+            <Slider
+              id="page-padding-horizontal"
+              min={8}
+              max={25}
+              step={1}
+              value={[theme.pagePaddingHorizontal]}
+              onValueChange={handlePagePaddingHorizontal}
               className="py-1"
             />
           </div>

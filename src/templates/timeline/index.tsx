@@ -299,6 +299,8 @@ interface TimelineTemplateProps {
 
 export default function TimelineTemplate(props: TimelineTemplateProps): ReactElement {
   const { resume, theme } = props
+  const isJobIntentionVisible: boolean = resume.jobIntentionVisible ?? Boolean(resume.jobIntention)
+  const pagePadding: string = `${theme.pagePaddingVertical}mm ${theme.pagePaddingHorizontal}mm`
   return (
     <div
       className="resume-container bg-white text-black mx-auto rounded shadow-sm"
@@ -307,7 +309,7 @@ export default function TimelineTemplate(props: TimelineTemplateProps): ReactEle
         fontFamily: theme.fontFamily,
         fontSize: `${theme.fontSize}px`,
         lineHeight: theme.lineHeight,
-        padding: '22mm 15mm',
+        padding: pagePadding,
       }}
     >
       <div style={{ marginBottom: `${24 * theme.spacingScale}px` }}>
@@ -318,13 +320,15 @@ export default function TimelineTemplate(props: TimelineTemplateProps): ReactEle
           styles={TIMELINE_TEMPLATE_STYLES.baseInfo}
         />
       </div>
-      <div style={{ marginBottom: `${24 * theme.spacingScale}px` }}>
-        <JobIntentionSection
-          jobIntention={resume.jobIntention ?? null}
-          themeColor={theme.primaryColor}
-          styles={TIMELINE_TEMPLATE_STYLES.jobIntention}
-        />
-      </div>
+      {isJobIntentionVisible ? (
+        <div style={{ marginBottom: `${24 * theme.spacingScale}px` }}>
+          <JobIntentionSection
+            jobIntention={resume.jobIntention ?? null}
+            themeColor={theme.primaryColor}
+            styles={TIMELINE_TEMPLATE_STYLES.jobIntention}
+          />
+        </div>
+      ) : null}
       <DragDropProvider
         resume={resume}
         theme={theme}

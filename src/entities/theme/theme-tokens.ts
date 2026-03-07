@@ -8,4 +8,6 @@ export interface ThemeTokens {
   readonly fontSize: number; // px
   readonly lineHeight: number; // unitless
   readonly spacingScale: number; // multiplier
+  readonly pagePaddingVertical: number; // mm
+  readonly pagePaddingHorizontal: number; // mm
 }

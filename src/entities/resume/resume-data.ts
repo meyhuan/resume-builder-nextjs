@@ -14,5 +14,6 @@ export interface ResumeData {
   baseInfo?: BaseInfo;
   /** Optional job intention. */
   jobIntention?: JobIntention;
+  jobIntentionVisible?: boolean;
   sections: Section[];
 }
