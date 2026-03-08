@@ -457,9 +457,9 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
       </div>
 
       <header className="z-50 bg-white border-b border-slate-200 shrink-0 print:hidden">
-        <div className="px-3 h-10 flex items-center relative">
+        <div className="px-3 py-2 flex flex-col gap-2 lg:h-10 lg:flex-row lg:items-center lg:gap-0 relative">
           {/* Left: nav + title */}
-          <div className="flex items-center gap-1 shrink-0">
+          <div className="flex items-center gap-1 shrink-0 min-w-0">
             <Button
               variant="ghost"
               size="sm"
@@ -500,12 +500,14 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
           </div>
 
           {/* Center: toolbar actions (absolutely centered) */}
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-            <EditorToolbar activePanel={activePanel} onPanelChange={setActivePanel} />
+          <div className="order-last w-full overflow-x-auto lg:order-none lg:w-auto lg:absolute lg:left-1/2 lg:top-1/2 lg:-translate-x-1/2 lg:-translate-y-1/2">
+            <div className="min-w-max">
+              <EditorToolbar activePanel={activePanel} onPanelChange={setActivePanel} />
+            </div>
           </div>
 
           {/* Right: save + export */}
-          <div className="ml-auto flex items-center gap-1 shrink-0">
+          <div className="flex items-center gap-1 shrink-0 justify-between lg:justify-end lg:ml-auto">
             {lastSaved && !hasUnsavedChanges && (
               <span className="text-[10px] text-emerald-600 mr-1 hidden lg:inline">
                 已保存 {lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -538,6 +540,8 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
               variant="ghost"
               size="sm"
               onClick={handleExportPng}
+              title="导出 PNG"
+              aria-label="导出 PNG"
               className="h-7 px-2 text-xs text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded"
             >
               <ImageIcon className="h-3.5 w-3.5" />
@@ -546,6 +550,8 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
               variant="ghost"
               size="sm"
               onClick={handleExportHtml}
+              title="导出 HTML"
+              aria-label="导出 HTML"
               className="h-7 px-2 text-xs text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded"
             >
               <FileText className="h-3.5 w-3.5" />
@@ -606,7 +612,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
           </div>
         </div>
         {activePanel && (
-          <aside className="print:hidden w-[340px] border-l border-slate-100 bg-white/80 backdrop-blur-xl shrink-0 h-full overflow-y-auto custom-scrollbar shadow-[-4px_0_30px_rgba(0,0,0,0.02)]">
+          <aside className="print:hidden w-[400px] border-l border-slate-100 bg-white/80 backdrop-blur-xl shrink-0 h-full overflow-y-auto custom-scrollbar shadow-[-4px_0_30px_rgba(0,0,0,0.02)]">
             <RightSidebar
               activePanel={activePanel}
               onClose={() => setActivePanel(null)}

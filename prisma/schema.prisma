@@ -37,6 +37,10 @@ model Feedback {
   content     String   // The feedback text content
   contact     String?  // Optional contact info (email/phone/wechat)
   attachment  String?  // Optional base64 or URL for uploaded image/screenshot
+  status      String   @default("RECEIVED")
+  adminReply  String?
+  adminReplyAt DateTime?
+  likeCount   Int      @default(0)
   userId      String?  // Optional relation if user is logged in
   user        User?    @relation(fields: [userId], references: [id])
   createdAt   DateTime @default(now())

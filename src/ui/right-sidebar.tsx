@@ -52,7 +52,8 @@ export default function RightSidebar(props: RightSidebarProps): ReactElement {
           <h2 className="text-lg font-bold text-slate-800">{PANEL_TITLES[activePanel]}</h2>
           <button
             type="button"
-            className="text-slate-400 hover:text-slate-600 transition-colors"
+            aria-label="关闭侧边栏"
+            className="flex h-9 w-9 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
             onClick={onClose}
           >
             <X size={18} />
@@ -124,10 +125,10 @@ function LayoutPanel(props: LayoutPanelProps): ReactElement {
   return (
     <Tabs defaultValue="templates" className="flex-1 flex flex-col overflow-hidden">
       <div className="px-5 shrink-0">
-        <TabsList className="w-full h-10 bg-white/50 backdrop-blur-md rounded-xl p-1 gap-1 border border-white shadow-sm">
+        <TabsList className="w-full h-11 rounded-2xl p-1 gap-1 border border-slate-200 bg-slate-50 shadow-sm">
           <TabsTrigger
             value="templates"
-            className="flex-1 rounded-lg text-xs font-semibold
+            className="flex-1 rounded-xl text-sm font-semibold
               data-[state=active]:bg-white data-[state=active]:text-slate-800 data-[state=active]:shadow-sm
               text-slate-500 hover:text-slate-700 transition-all"
           >
@@ -135,7 +136,7 @@ function LayoutPanel(props: LayoutPanelProps): ReactElement {
           </TabsTrigger>
           <TabsTrigger
             value="settings"
-            className="flex-1 rounded-lg text-xs font-semibold
+            className="flex-1 rounded-xl text-sm font-semibold
               data-[state=active]:bg-white data-[state=active]:text-slate-800 data-[state=active]:shadow-sm
               text-slate-500 hover:text-slate-700 transition-all"
           >
@@ -149,58 +150,61 @@ function LayoutPanel(props: LayoutPanelProps): ReactElement {
         <div className="flex-1 px-4 py-4 overflow-y-auto custom-scrollbar">
           <div className="grid grid-cols-2 gap-4 pb-4">
             {templates.map((template) => (
-              <div
+              <button
                 key={template.id}
+                type="button"
+                aria-pressed={tpl === template.id}
+                aria-label={`选择模板 ${template.name}`}
                 className={`group relative cursor-pointer rounded-xl border transition-all duration-200 overflow-hidden ${
                   tpl === template.id
-                    ? 'border-[#8B5CF6] ring-1 ring-[#8B5CF6]/20 shadow-sm bg-white'
-                    : 'border-white bg-white/60 backdrop-blur-sm shadow-sm hover:border-[#8B5CF6]/50 hover:bg-white/90'
+                    ? 'border-violet-500 ring-2 ring-violet-100 shadow-sm bg-white'
+                    : 'border-slate-200 bg-white shadow-sm hover:border-slate-300 hover:-translate-y-0.5 hover:shadow-md'
                 }`}
                 onClick={(): void => props.onTplChange(template.id)}
               >
                 <div className="aspect-[3/4] bg-slate-50 overflow-hidden relative border-b border-slate-100">
-                   {template.preview ? (
-                     <Image
-                       src={template.preview}
-                       alt={template.name}
-                       fill
-                       className="object-cover object-top transition-transform duration-300 group-hover:scale-105"
-                       sizes="160px"
-                     />
-                   ) : (
-                     <div className="absolute inset-0 flex items-center justify-center text-slate-200">
-                       <Layout className="w-8 h-8 opacity-40" />
-                     </div>
-                   )}
-                   {tpl === template.id && (
-                     <div className="absolute inset-0 bg-[#8B5CF6]/5 transition-opacity" />
-                   )}
-                   {tpl === template.id && (
-                     <div className="absolute top-2 right-2 w-5 h-5 bg-[#8B5CF6] text-white rounded-full flex items-center justify-center shadow-sm animate-in zoom-in duration-200">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" className="w-3 h-3">
-                          <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l3.5 3.5a.3.3 0 0 0 .42-.02L13 5" />
-                        </svg>
-                     </div>
-                   )}
+                  {template.preview ? (
+                    <Image
+                      src={template.preview}
+                      alt={template.name}
+                      fill
+                      className="object-cover object-top transition-transform duration-300 group-hover:scale-105"
+                      sizes="160px"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center text-slate-200">
+                      <Layout className="w-8 h-8 opacity-40" />
+                    </div>
+                  )}
+                  {tpl === template.id && (
+                    <div className="absolute inset-0 bg-violet-500/5 transition-opacity" />
+                  )}
+                  {tpl === template.id && (
+                    <div className="absolute top-2 right-2 w-7 h-7 bg-violet-500 text-white rounded-full flex items-center justify-center shadow-sm animate-in zoom-in duration-200">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" className="w-3 h-3">
+                        <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l3.5 3.5a.3.3 0 0 0 .42-.02L13 5" />
+                      </svg>
+                    </div>
+                  )}
                 </div>
-                <div className="px-3 py-2 bg-white">
-                  <div className="font-semibold text-xs text-slate-800 line-clamp-1">{template.name}</div>
-                  <div className="text-[10px] font-medium text-slate-500 mt-0.5">
+                <div className="px-3 py-3 bg-white text-left">
+                  <div className="font-semibold text-[15px] leading-5 text-slate-800 line-clamp-1">{template.name}</div>
+                  <div className="text-xs font-medium text-slate-500 mt-1">
                     {template.tags?.[0] || '通用'}
                   </div>
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         </div>
-        <div className="p-4 border-t border-white bg-white/70 backdrop-blur-md shrink-0">
+        <div className="p-4 border-t border-slate-200 bg-white shrink-0">
           <Button
             variant="outline"
             size="sm"
-            className="w-full gap-2 text-xs font-semibold h-9 bg-white/80 backdrop-blur-sm rounded-lg border-white shadow-sm text-slate-600 hover:border-[#8B5CF6]/30 hover:text-[#8B5CF6] hover:bg-[#F5F3FF] transition-all"
+            className="w-full gap-2 text-sm font-semibold h-11 bg-slate-50 rounded-xl border-slate-200 shadow-none text-slate-700 hover:border-slate-300 hover:text-slate-900 hover:bg-white transition-all"
             onClick={handleImportClick}
           >
-            <Upload className="h-3.5 w-3.5" />
+            <Upload className="h-4 w-4" />
             导入 JSON 简历
           </Button>
         </div>
@@ -222,11 +226,11 @@ function LayoutPanel(props: LayoutPanelProps): ReactElement {
             </div>
           </div>
           {process.env.NODE_ENV === 'development' && (
-            <div className="p-4 border-t border-white bg-white/70 backdrop-blur-md shrink-0">
+            <div className="p-4 border-t border-slate-200 bg-white shrink-0">
               <Button
                 variant="outline"
                 size="sm"
-                className="w-full gap-2 text-xs font-semibold h-9 bg-white/80 backdrop-blur-sm rounded-lg border-white shadow-sm text-slate-600 hover:border-[#8B5CF6]/30 hover:text-[#8B5CF6] hover:bg-[#F5F3FF] transition-all"
+                className="w-full gap-2 text-sm font-semibold h-11 bg-slate-50 rounded-xl border-slate-200 shadow-none text-slate-700 hover:border-slate-300 hover:text-slate-900 hover:bg-white transition-all"
                 onClick={() => {
                   if (window.confirm('加载测试数据将覆盖当前所有内容，确定吗？')) {
                     useAppStore.getState().loadTestData()

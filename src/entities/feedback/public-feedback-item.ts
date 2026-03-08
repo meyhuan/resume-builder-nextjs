@@ -4,7 +4,7 @@
 export interface PublicFeedbackItem {
   readonly id: string;
   readonly content: string;
-  readonly status: string;
+  readonly status: 'RECEIVED' | 'PROCESSING' | 'COMPLETED';
   readonly displayName: string;
   readonly createdAt: string;
   readonly likeCount: number;
