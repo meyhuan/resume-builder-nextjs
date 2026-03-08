@@ -93,6 +93,7 @@ function FeedbackCard(props: { readonly item: PublicFeedbackItem }): ReactElemen
 export default function FeedbackPage() {
   const [content, setContent] = useState('');
   const [contact, setContact] = useState('');
+  const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
   const [attachment, setAttachment] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingFeedbackList, setIsLoadingFeedbackList] = useState(false);
@@ -167,13 +168,14 @@ export default function FeedbackPage() {
       toast.error(`附件大小不能超过 ${MAX_FILE_SIZE_MB}MB`);
       return;
     }
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const result = e.target?.result as string;
-      setAttachment(result);
-    };
-    reader.readAsDataURL(file);
+    const objectUrl: string = URL.createObjectURL(file);
+    setAttachmentFile(file);
+    setAttachment((currentAttachment: string | null) => {
+      if (currentAttachment?.startsWith('blob:')) {
+        URL.revokeObjectURL(currentAttachment);
+      }
+      return objectUrl;
+    });
   };
 
   const handleSubmit = async (): Promise<void> => {
@@ -184,11 +186,29 @@ export default function FeedbackPage() {
 
     setIsSubmitting(true);
     try {
-      const result = await submitFeedback({ content, contact, attachment: attachment || undefined });
+      let attachmentUrl: string | undefined;
+      if (attachmentFile) {
+        const formData: FormData = new FormData();
+        formData.append('file', attachmentFile);
+        const uploadResponse: Response = await fetch('/api/feedback/upload', {
+          method: 'POST',
+          body: formData,
+        });
+        const uploadPayload: { readonly url?: string; readonly error?: string } = await uploadResponse.json();
+        if (!uploadResponse.ok || !uploadPayload.url) {
+          throw new Error(uploadPayload.error || '上传附件失败，请稍后重试');
+        }
+        attachmentUrl = uploadPayload.url;
+      }
+      const result = await submitFeedback({ content, contact, attachment: attachmentUrl });
       if (result.success) {
         toast.success('反馈提交成功！感谢您的支持。');
         setContent('');
         setContact('');
+        setAttachmentFile(null);
+        if (attachment?.startsWith('blob:')) {
+          URL.revokeObjectURL(attachment);
+        }
         setAttachment(null);
         const items: readonly PublicFeedbackItem[] = await listPublicFeedback();
         setFeedbackList(items);
@@ -252,7 +272,13 @@ export default function FeedbackPage() {
                     <Image src={attachment} alt="Attachment" fill className="object-cover" />
                     <button
                       type="button"
-                      onClick={() => setAttachment(null)}
+                      onClick={() => {
+                        if (attachment.startsWith('blob:')) {
+                          URL.revokeObjectURL(attachment);
+                        }
+                        setAttachmentFile(null);
+                        setAttachment(null);
+                      }}
                       className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                       title="移除附件"
                     >

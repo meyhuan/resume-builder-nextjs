@@ -44,6 +44,13 @@ interface DbResumeRecord {
   [key: string]: unknown
 }
 
+interface ResumeSavePayload {
+  readonly title: string
+  readonly content: Record<string, unknown>
+  readonly template: string
+  readonly thumbnail?: string
+}
+
 interface ResumeEditorProps {
   resumeId?: string
   initialData?: DbResumeRecord | null
@@ -217,18 +224,19 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
           onePageSnapshot,
           sidebarSectionIds,
         }
-        const contentWithMeta = embedEditorMeta(
+        const contentWithMeta: Record<string, unknown> = embedEditorMeta(
           resume as unknown as Record<string, unknown>,
           editorMeta,
         )
+        const createPayload: ResumeSavePayload = {
+          title: resume.name || '未命名简历',
+          content: contentWithMeta,
+          template: tpl,
+        }
         const createRes = await fetch('/next-api/resumes', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            title: resume.name || '未命名简历',
-            content: contentWithMeta,
-            template: tpl,
-          }),
+          body: JSON.stringify(createPayload),
         })
         if (!createRes.ok) throw new Error('Failed to create resume')
         const created: { id: string } = await createRes.json()
@@ -238,10 +246,11 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
         window.history.replaceState(null, '', `/editor/${currentId}`)
       }
       // 2. Generate thumbnail (Base64)
-      const thumbnail = await exportImage(printRef, {
+      const thumbnail: string = await exportImage(printRef, {
         pixelRatio: 1,
         returnBase64: true,
-        backgroundColor: '#ffffff'
+        backgroundColor: '#ffffff',
+        clipFirstPage: true,
       }) as string
       // 3. Build content with editor metadata
       const editorMeta = {
@@ -250,20 +259,21 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
         onePageSnapshot,
         sidebarSectionIds,
       }
-      const contentWithMeta = embedEditorMeta(
+      const contentWithMeta: Record<string, unknown> = embedEditorMeta(
         resume as unknown as Record<string, unknown>,
         editorMeta,
       )
+      const savePayload: ResumeSavePayload = {
+        title: resume.name || 'Untitled Resume',
+        content: contentWithMeta,
+        template: tpl,
+        thumbnail,
+      }
       // 4. Save to DB
       const res = await fetch(`/next-api/resumes/${currentId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: resume.name || 'Untitled Resume',
-          content: contentWithMeta,
-          template: tpl,
-          thumbnail,
-        }),
+        body: JSON.stringify(savePayload),
       })
       if (!res.ok) throw new Error('Failed to save')
       setLastSaved(new Date())

@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
+import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { cookies } from 'next/headers'
+import { persistResumeAssets } from '@/lib/persist-resume-assets'
 
 interface RouteParams {
   params: Promise<{
@@ -49,6 +51,10 @@ export async function PUT(req: Request, { params }: RouteParams) {
 
     const body = await req.json()
     const { title, content, template, thumbnail } = body
+    const persistedAssets = await persistResumeAssets({
+      content,
+      thumbnail,
+    })
     
     const resume = await prisma.resume.update({
       where: { 
@@ -57,9 +63,9 @@ export async function PUT(req: Request, { params }: RouteParams) {
       },
       data: {
         title,
-        content,
+        content: persistedAssets.content as Prisma.InputJsonValue,
         template,
-        thumbnail
+        thumbnail: persistedAssets.thumbnail
       }
     })
     

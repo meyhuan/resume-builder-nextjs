@@ -9,6 +9,20 @@ interface ExportImageOptions {
   readonly pixelRatio?: number
   readonly backgroundColor?: string
   readonly returnBase64?: boolean
+  /** When true, clip the capture to the first A4 page (297 mm). */
+  readonly clipFirstPage?: boolean
+}
+
+/** Convert mm to px using a temporary DOM element. */
+function mmToPx(mm: number): number {
+  const el: HTMLDivElement = document.createElement('div')
+  el.style.width = `${mm}mm`
+  el.style.position = 'absolute'
+  el.style.visibility = 'hidden'
+  document.body.appendChild(el)
+  const px: number = el.offsetWidth
+  document.body.removeChild(el)
+  return px
 }
 
 /**
@@ -19,11 +33,20 @@ export async function exportImage<T extends HTMLElement>(contentRef: RefObject<T
   if (!node) {
     return
   }
-  const dataUrl: string = await toPng((node as unknown) as HTMLElement, {
+  const toPngOptions: Record<string, unknown> = {
     pixelRatio: options?.pixelRatio ?? 2,
     cacheBust: true,
     backgroundColor: options?.backgroundColor,
-  })
+  }
+  if (options?.clipFirstPage) {
+    const a4HeightPx: number = mmToPx(297)
+    const nodeHeight: number = node.scrollHeight
+    if (nodeHeight > a4HeightPx) {
+      toPngOptions.height = a4HeightPx
+      toPngOptions.style = { overflow: 'hidden', maxHeight: `${a4HeightPx}px` }
+    }
+  }
+  const dataUrl: string = await toPng((node as unknown) as HTMLElement, toPngOptions)
 
   if (options?.returnBase64) {
     return dataUrl

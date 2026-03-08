@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
+import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { cookies } from 'next/headers'
+import { persistResumeAssets } from '@/lib/persist-resume-assets'
 
 // GET /next-api/resumes - List all resumes for current user
 export async function GET() {
@@ -34,6 +36,10 @@ export async function POST(req: Request) {
   try {
     const body = await req.json()
     const { title, content, template } = body
+    const persistedAssets = await persistResumeAssets({
+      content,
+      thumbnail: null,
+    })
     
     const cookieStore = await cookies();
     const userId = cookieStore.get("auth_uid")?.value;
@@ -46,7 +52,7 @@ export async function POST(req: Request) {
     const resume = await prisma.resume.create({
       data: {
         title: title || 'Untitled Resume',
-        content: content || {},
+        content: persistedAssets.content as Prisma.InputJsonValue,
         template: template || 'simple',
         user: {
           connectOrCreate: {
