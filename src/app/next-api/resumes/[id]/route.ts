@@ -40,22 +40,29 @@ export async function GET(req: Request, { params }: RouteParams) {
 
 // PUT /next-api/resumes/[id] - Update a resume
 export async function PUT(req: Request, { params }: RouteParams) {
+  let resumeId: string = ''
+  let userId: string | undefined
+  let updateStep: string = 'init'
   try {
     const { id } = await params
+    resumeId = id
     const cookieStore = await cookies();
-    const userId = cookieStore.get("auth_uid")?.value;
+    userId = cookieStore.get("auth_uid")?.value;
 
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    updateStep = 'parse-body'
     const body = await req.json()
     const { title, content, template, thumbnail } = body
+    updateStep = 'persist-assets'
     const persistedAssets = await persistResumeAssets({
       content,
       thumbnail,
     })
     
+    updateStep = 'update-database'
     const resume = await prisma.resume.update({
       where: { 
         id,
@@ -70,7 +77,14 @@ export async function PUT(req: Request, { params }: RouteParams) {
     })
     
     return NextResponse.json(resume)
-  } catch {
+  } catch (error: unknown) {
+    console.error('resume-update-failed', {
+      resumeId,
+      userId,
+      updateStep,
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    })
     return NextResponse.json({ error: 'Failed to update resume' }, { status: 500 })
   }
 }
