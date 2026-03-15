@@ -10,7 +10,8 @@ import type { ReactElement } from 'react'
 import { useAppStore } from '@/state/store'
 import { getTemplate, getAllTemplates } from '@/templates/template-loader'
 import { exportImage } from '@/io/export-image'
-import { createResumeHtmlBlob, buildResumeHtml } from '@/io/html-export'
+import { buildResumeHtml } from '@/io/html-export'
+import { exportResumeToMarkdown } from '@/io/export-markdown'
 import RightSidebar from '@/ui/right-sidebar'
 import EditorToolbar from '@/ui/editor-toolbar'
 import type { PanelId } from '@/ui/editor-toolbar'
@@ -382,18 +383,24 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
     setSnapshot: setOnePageSnapshot,
   })
 
-  function handleExportHtml(): void {
-    if (!printRef.current) return
-    const blob: Blob = createResumeHtmlBlob(printRef.current, { title: 'Resume' })
-    const url: string = URL.createObjectURL(blob)
-    const anchor: HTMLAnchorElement = document.createElement('a')
-    anchor.href = url
-    anchor.download = 'resume.html'
-    document.body.appendChild(anchor)
-    anchor.click()
-    document.body.removeChild(anchor)
-    URL.revokeObjectURL(url)
-  }
+  const handleExportMarkdown = useCallback(() => {
+    requireAuth(() => {
+      try {
+        const markdownContent = exportResumeToMarkdown(resume)
+        const blob = new Blob([markdownContent], { type: 'text/markdown;charset=utf-8' })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `${resume.name || 'resume'}.md`
+        a.click()
+        URL.revokeObjectURL(url)
+        toast.success('Markdown导出成功')
+      } catch (error) {
+        console.error('Export markdown failed:', error)
+        toast.error('Markdown导出失败，请重试')
+      }
+    })
+  }, [resume, requireAuth])
 
   async function handleExportPng(): Promise<void> {
     await exportImage<HTMLDivElement>(printRef, { fileName: 'resume', pixelRatio: 2 })
@@ -568,9 +575,9 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
             <Button
               variant="ghost"
               size="sm"
-              onClick={handleExportHtml}
-              title="导出 HTML"
-              aria-label="导出 HTML"
+              onClick={handleExportMarkdown}
+              title="导出 Markdown"
+              aria-label="导出 Markdown"
               className="h-7 px-2 text-xs text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded"
             >
               <FileText className="h-3.5 w-3.5" />
