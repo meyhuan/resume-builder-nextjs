@@ -9,7 +9,6 @@ import { useEffect, useRef, useState, Suspense, useCallback, useMemo } from 'rea
 import type { ReactElement } from 'react'
 import { useAppStore } from '@/state/store'
 import { getTemplate, getAllTemplates } from '@/templates/template-loader'
-import { useExportPdf } from '@/io/export-pdf'
 import { exportImage } from '@/io/export-image'
 import { createResumeHtmlBlob, buildResumeHtml } from '@/io/html-export'
 import RightSidebar from '@/ui/right-sidebar'
@@ -26,6 +25,7 @@ import { toast } from 'sonner'
 import type { AdjustableTokens } from '@/entities/editor/editor-meta'
 import { extractEditorMeta, embedEditorMeta } from '@/entities/editor/editor-meta'
 import AiSectionProvider from '@/components/ai-section/ai-section-provider'
+import ExportPreviewDialog from '@/components/export-preview-dialog'
 import { useRequireAuth } from '@/hooks/use-require-auth'
 import { WxLoginDialog } from '@/components/auth/WxLoginDialog'
 import { useAuthStore } from '@/store/use-auth-store'
@@ -85,9 +85,6 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
   // Initialize template state from URL query param or 'simple' default
   const defaultTemplate = searchParams.get('template') || 'simple'
   const [tpl, setTpl] = useState<string>(defaultTemplate)
-  const currentPaddingV = useAppStore((s) => (s.themes[tpl] ?? s.getThemeForTemplate(tpl)).pagePaddingVertical)
-  const isBleedTemplate: boolean = tpl === 'elegant' || tpl === 'warm'
-  const handlePrint = useExportPdf<HTMLDivElement>(printRef, { documentTitle: 'resume', pagePaddingVertical: currentPaddingV, isBleed: isBleedTemplate })
   const [isSaving, setIsSaving] = useState(false)
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
   const [savedSnapshot, setSavedSnapshot] = useState<string>('')
@@ -99,6 +96,10 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
   const [onePageSnapshot, setOnePageSnapshot] = useState<AdjustableTokens | null>(null)
   const [sidebarSectionIds, setSidebarSectionIds] = useState<readonly string[] | undefined>(undefined)
   const hasUnsavedRef = useRef(false)
+  const [showPreview, setShowPreview] = useState(false)
+  const [pdfBlobUrl, setPdfBlobUrl] = useState<string>('')
+  const [pdfBlob, setPdfBlob] = useState<Blob | null>(null)
+  const [isGenerating, setIsGenerating] = useState(false)
 
   // Initialize from DB data if provided
   const initApplied = useRef(false)
@@ -398,42 +399,53 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
     await exportImage<HTMLDivElement>(printRef, { fileName: 'resume', pixelRatio: 2 })
   }
 
-  async function handleExportPdf() {
-    if (!printRef.current) return
-    
-    setIsSaving(true); // Re-using isSaving for export state or we could add isExporting
+  /** Generate the actual PDF via the API, then open preview dialog. */
+  async function handlePreviewPdf(): Promise<void> {
+    if (!printRef.current || isGenerating) return
+    setIsGenerating(true)
     try {
-      // 1. Get HTML content
-      const html = buildResumeHtml(printRef.current, { title: resume.name || 'Resume' })
-      
-      // 2. Call API
+      const html: string = buildResumeHtml(printRef.current, { title: resume.name || 'Resume' })
       const response = await fetch('/next-api/generate-pdf', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ html }),
       })
-      
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.details || 'PDF generation failed');
+        const errorData = await response.json()
+        throw new Error(errorData.details || 'PDF generation failed')
       }
-      
-      // 3. Download
-      const blob = await response.blob()
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `resume-${resume.name || 'export'}.pdf`
-      a.click()
-      window.URL.revokeObjectURL(url)
+      const blob: Blob = await response.blob()
+      const url: string = window.URL.createObjectURL(blob)
+      setPdfBlob(blob)
+      setPdfBlobUrl(url)
+      setShowPreview(true)
     } catch (e) {
-      console.error('Export failed:', e)
-      alert(e instanceof Error ? `Export failed: ${e.message}` : 'Export failed. Falling back to browser print.')
-      // Fallback to client-side print if API fails
-      handlePrint()
+      console.error('PDF generation failed:', e)
+      toast.error(e instanceof Error ? `PDF 生成失败: ${e.message}` : 'PDF 生成失败，请重试')
     } finally {
-      setIsSaving(false);
+      setIsGenerating(false)
     }
+  }
+
+  /** Download the already-generated PDF blob. */
+  function handleConfirmExport(): void {
+    if (!pdfBlob) return
+    const url: string = window.URL.createObjectURL(pdfBlob)
+    const a: HTMLAnchorElement = document.createElement('a')
+    a.href = url
+    a.download = `resume-${resume.name || 'export'}.pdf`
+    a.click()
+    window.URL.revokeObjectURL(url)
+    handleClosePreview()
+    toast.success('PDF 导出成功')
+  }
+
+  /** Clean up blob URL and close preview dialog. */
+  function handleClosePreview(): void {
+    if (pdfBlobUrl) window.URL.revokeObjectURL(pdfBlobUrl)
+    setPdfBlobUrl('')
+    setPdfBlob(null)
+    setShowPreview(false)
   }
 
   // Template switch guard: disable one-page mode before switching
@@ -532,11 +544,16 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
             <Button
               variant="ghost"
               size="sm"
-              onClick={handleExportPdf}
+              onClick={handlePreviewPdf}
+              disabled={isGenerating}
               className="h-7 px-2 text-xs text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded"
             >
-              <FileDown className="h-3.5 w-3.5 mr-1" />
-              PDF
+              {isGenerating ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
+              ) : (
+                <FileDown className="h-3.5 w-3.5 mr-1" />
+              )}
+              {isGenerating ? '生成中' : 'PDF'}
             </Button>
             <Button
               variant="ghost"
@@ -562,11 +579,17 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
             <div className="h-4 w-px bg-slate-200 mx-1" />
 
             <Button
-              onClick={handleExportPdf}
+              onClick={handlePreviewPdf}
+              disabled={isGenerating}
               size="sm"
               className="h-7 px-3 text-xs font-medium bg-gradient-to-r from-violet-600 to-fuchsia-500 text-white hover:from-violet-700 hover:to-fuchsia-600 rounded shadow-sm"
             >
-              下载简历
+              {isGenerating ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
+                  生成中...
+                </>
+              ) : '预览简历'}
             </Button>
           </div>
         </div>
@@ -656,6 +679,13 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
         onDiscard={() => {
           confirmLeave()
         }}
+      />
+      {/* PDF export preview dialog */}
+      <ExportPreviewDialog
+        open={showPreview}
+        onOpenChange={(next: boolean) => { if (!next) handleClosePreview() }}
+        pdfUrl={pdfBlobUrl}
+        onConfirmExport={handleConfirmExport}
       />
       {/* Forced login dialog for unauthenticated users */}
       <WxLoginDialog
