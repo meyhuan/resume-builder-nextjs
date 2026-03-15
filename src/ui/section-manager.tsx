@@ -6,7 +6,7 @@
  * Bottom: "添加模块" — 2-column grid of predefined section types
  *         that are NOT already present in the resume.
  */
-import { useState, useMemo } from 'react'
+import { useMemo } from 'react'
 import type { ReactElement, ReactNode } from 'react'
 import {
   DndContext,
@@ -45,10 +45,9 @@ export default function SectionManager(props: SectionManagerProps): ReactElement
   const moveSection = useAppStore((s) => s.moveSection)
   const deleteSection = useAppStore((s) => s.deleteSection)
   const addSection = useAppStore((s) => s.addSection)
+  const setAvatarVisibility = useAppStore((s) => s.setAvatarVisibility)
   const setJobIntentionVisibility = useAppStore((s) => s.setJobIntentionVisibility)
-  const [showPhotoAvatar, setShowPhotoAvatar] = useState<boolean>(
-    Boolean(resume.baseInfo?.avatarUrl)
-  )
+  const showPhotoAvatar: boolean = resume.baseInfo?.showAvatar !== false
   const isJobIntentionVisible: boolean = resume.jobIntentionVisible ?? Boolean(resume.jobIntention)
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 4 } }),
@@ -94,7 +93,7 @@ export default function SectionManager(props: SectionManagerProps): ReactElement
               type="checkbox"
               className="accent-[#8B5CF6] w-3.5 h-3.5 rounded-sm border-slate-300"
               checked={showPhotoAvatar}
-              onChange={(e) => setShowPhotoAvatar(e.target.checked)}
+              onChange={(e) => setAvatarVisibility(e.target.checked)}
             />
             照片
           </label>

@@ -325,6 +325,8 @@ export default function ElegantTemplate(props: ElegantTemplateProps): ReactEleme
   return (
     <div
       className="resume-container bg-white text-black mx-auto rounded overflow-hidden"
+      data-page-padding-vertical={theme.pagePaddingVertical}
+      data-bleed="true"
       style={{
         color: theme.textColor,
         fontFamily: theme.fontFamily,
@@ -340,7 +342,7 @@ export default function ElegantTemplate(props: ElegantTemplateProps): ReactEleme
       />
 
       {/* Body content */}
-      <div style={{ padding: bodyPadding }}>
+      <div className="resume-body-content" style={{ padding: bodyPadding }}>
         {isJobIntentionVisible ? (
           <div style={{ marginBottom: `${24 * theme.spacingScale}px` }}>
             <JobIntentionSection

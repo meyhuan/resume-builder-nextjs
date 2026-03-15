@@ -107,6 +107,7 @@ export default function SimpleTemplate(props: SimpleTemplateProps): ReactElement
   return (
     <div
       className="resume-container bg-white text-black mx-auto rounded shadow-sm"
+      data-page-padding-vertical={theme.pagePaddingVertical}
       style={{
         color: theme.textColor,
         fontFamily: theme.fontFamily,

@@ -124,10 +124,26 @@ export function getClientPaginationScript(): string {
   return `
     (function() {
       const PAGE_HEIGHT = 1123; // A4 at 96 DPI
-      const USABLE_HEIGHT = PAGE_HEIGHT; // Full page — @page margin is 0, templates have internal padding
+      const MM_TO_PX = 3.7795; // 1mm ≈ 3.7795px at 96 DPI
+      const container = document.querySelector('.resume-container');
+      const paddingV = parseFloat(container?.getAttribute('data-page-padding-vertical') || '0');
+      const isBleed = container?.getAttribute('data-bleed') === 'true';
+      const marginPx = paddingV * MM_TO_PX;
+      // Bleed templates: full page (margin=0), padding injected manually at break points
+      // Non-bleed templates: Puppeteer handles per-page margin, reduce usable height
+      const USABLE_HEIGHT = isBleed ? PAGE_HEIGHT : (PAGE_HEIGHT - 2 * marginPx);
       const HEADER_SAFETY = 100; // Don't put headers in last 100px
       
       let currentY = 0;
+      
+      function pushToNextPage(el) {
+        el.style.breakBefore = 'page';
+        el.style.pageBreakBefore = 'always';
+        if (isBleed) {
+          el.style.paddingTop = paddingV + 'mm';
+        }
+        currentY = Math.ceil(currentY / USABLE_HEIGHT) * USABLE_HEIGHT;
+      }
       
       // Get all major sections and items
       const sections = document.querySelectorAll('.resume-section, section');
@@ -138,14 +154,11 @@ export function getClientPaginationScript(): string {
         
         if (header) {
           const headerRect = header.getBoundingClientRect();
-          const headerBottom = currentY + headerRect.height;
           const pageRemaining = USABLE_HEIGHT - (currentY % USABLE_HEIGHT);
           
           // If header would be near bottom of page, force it to next page
           if (pageRemaining < HEADER_SAFETY + headerRect.height + 50) {
-            header.style.breakBefore = 'page';
-            header.style.pageBreakBefore = 'always';
-            currentY = Math.ceil(currentY / USABLE_HEIGHT) * USABLE_HEIGHT;
+            pushToNextPage(header);
           }
           
           currentY += headerRect.height;
@@ -157,9 +170,7 @@ export function getClientPaginationScript(): string {
           
           // If item doesn't fit on current page and isn't too tall, move to next page
           if (itemRect.height < USABLE_HEIGHT && itemRect.height > pageRemaining) {
-            item.style.breakBefore = 'page';
-            item.style.pageBreakBefore = 'always';
-            currentY = Math.ceil(currentY / USABLE_HEIGHT) * USABLE_HEIGHT;
+            pushToNextPage(item);
           }
           
           currentY += itemRect.height;

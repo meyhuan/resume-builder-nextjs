@@ -81,11 +81,13 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
   const canUndo = useAppStore((s) => s.pastStates.length > 0)
   const canRedo = useAppStore((s) => s.futureStates.length > 0)
   const printRef = useRef<HTMLDivElement>(null)
-  const handlePrint = useExportPdf<HTMLDivElement>(printRef, { documentTitle: 'resume' })
 
   // Initialize template state from URL query param or 'simple' default
   const defaultTemplate = searchParams.get('template') || 'simple'
   const [tpl, setTpl] = useState<string>(defaultTemplate)
+  const currentPaddingV = useAppStore((s) => (s.themes[tpl] ?? s.getThemeForTemplate(tpl)).pagePaddingVertical)
+  const isBleedTemplate: boolean = tpl === 'elegant' || tpl === 'warm'
+  const handlePrint = useExportPdf<HTMLDivElement>(printRef, { documentTitle: 'resume', pagePaddingVertical: currentPaddingV, isBleed: isBleedTemplate })
   const [isSaving, setIsSaving] = useState(false)
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
   const [savedSnapshot, setSavedSnapshot] = useState<string>('')

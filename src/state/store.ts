@@ -322,6 +322,19 @@ export const useAppStore = create<AppState>()(
         }),
       }), false, 'resume/updateJobIntention')
     },
+    setAvatarVisibility: (visible) => {
+      const state = get()
+      set(() => ({
+        pastStates: pushHistory(state.resume, state.pastStates),
+        futureStates: [],
+        resume: produce(state.resume, (draft) => {
+          draft.baseInfo = {
+            ...(draft.baseInfo ?? {}),
+            showAvatar: visible,
+          }
+        }),
+      }), false, 'resume/setAvatarVisibility')
+    },
     setJobIntentionVisibility: (visible) => {
       const state = get()
       set(() => ({

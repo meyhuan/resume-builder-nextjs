@@ -51,6 +51,8 @@ export interface AppState {
   updateBaseInfo: (baseInfo: BaseInfo, name: string) => void
   /** Update job intention. */
   updateJobIntention: (jobIntention: JobIntention) => void
+  /** Toggle whether the avatar is rendered in the resume header. */
+  setAvatarVisibility: (visible: boolean) => void
   /** Toggle whether the job intention section is rendered. */
   setJobIntentionVisibility: (visible: boolean) => void
   /** Load test data into the editor. */

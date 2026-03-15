@@ -415,6 +415,8 @@ export default function WarmTemplate(props: WarmTemplateProps): ReactElement {
   return (
     <div
       className="resume-container bg-white text-black mx-auto rounded overflow-hidden"
+      data-page-padding-vertical={theme.pagePaddingVertical}
+      data-bleed="true"
       style={{
         color: theme.textColor,
         fontFamily: theme.fontFamily,

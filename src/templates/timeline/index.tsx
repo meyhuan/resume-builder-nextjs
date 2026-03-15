@@ -304,6 +304,7 @@ export default function TimelineTemplate(props: TimelineTemplateProps): ReactEle
   return (
     <div
       className="resume-container bg-white text-black mx-auto rounded shadow-sm"
+      data-page-padding-vertical={theme.pagePaddingVertical}
       style={{
         color: theme.textColor,
         fontFamily: theme.fontFamily,

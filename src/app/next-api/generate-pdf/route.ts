@@ -11,8 +11,16 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'HTML content is required' }, { status: 400 });
     }
 
-    // Detect one-page mode from the HTML content
+    // Detect one-page mode and bleed templates from the HTML content
     const isOnePage = html.includes('data-one-page="true"');
+    const isBleed = html.includes('data-bleed="true"');
+
+    // Extract vertical page padding from template data attribute (default 22mm)
+    const DEFAULT_PADDING_V = 22;
+    const paddingMatch: RegExpMatchArray | null = (html as string).match(/data-page-padding-vertical="(\d+(?:\.\d+)?)"/);
+    const pagePaddingVertical: number = paddingMatch ? parseFloat(paddingMatch[1]) : DEFAULT_PADDING_V;
+    // Bleed templates (elegant/warm) keep margin 0 — page-break padding handled by pagination script
+    const verticalMargin: string = (isOnePage || isBleed) ? '0' : `${pagePaddingVertical}mm`;
 
     // Pre-process HTML with pagination hints (skip for one-page mode)
     const paginatedHtml = isOnePage ? html : paginateHtml(html);
@@ -52,9 +60,9 @@ export async function POST(req: Request) {
         format: 'A4',
         printBackground: true,
         margin: {
-          top: '0',
+          top: verticalMargin,
           right: '0',
-          bottom: '0',
+          bottom: verticalMargin,
           left: '0',
         },
         displayHeaderFooter: false,
