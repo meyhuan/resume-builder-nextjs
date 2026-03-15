@@ -342,7 +342,13 @@ export default function ElegantTemplate(props: ElegantTemplateProps): ReactEleme
       />
 
       {/* Body content */}
-      <div className="resume-body-content" style={{ padding: bodyPadding }}>
+      <div 
+        className="resume-body-content" 
+        style={{ 
+          padding: bodyPadding,
+          paddingTop: `calc(${theme.pagePaddingVertical}mm * ${theme.spacingScale})` 
+        }}
+      >
         {isJobIntentionVisible ? (
           <div style={{ marginBottom: `${24 * theme.spacingScale}px` }}>
             <JobIntentionSection
