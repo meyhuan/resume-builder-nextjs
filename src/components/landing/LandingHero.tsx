@@ -47,7 +47,7 @@ export const LandingHero = () => {
 
           {/* Subheading */}
           <p className="text-base lg:text-lg text-slate-500 max-w-2xl leading-relaxed mt-2 mx-auto">
-            深知新人求职的痛苦，我作为独立开发者为你做了这款工具：<strong className="text-slate-700 font-semibold">无需苦想措辞，AI 自动帮你挖掘经历亮点。</strong>支持在线编辑、一键智能排版，且承诺<strong className="text-slate-700 font-semibold">永久免费、导出高清 PDF 无水印</strong>。
+            深知新人求职的痛苦，我作为独立开发者为你做了这款极简简历工具：<strong className="text-slate-700 font-semibold">无需苦想措辞，AI 自动帮你挖掘经历亮点。</strong>支持在线制作，承诺<strong className="text-slate-700 font-semibold">永久免费、高清 PDF 与 Markdown 无套路导出</strong>。
           </p>
 
           {/* CTA Buttons */}

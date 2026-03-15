@@ -6,23 +6,21 @@ import "@/styles/theme-override.css";
 
 const SITE_URL = 'https://aijianli.cn';
 const SITE_NAME = '智简简历';
-const SITE_DESCRIPTION = '免费 AI 简历制作工具 —— 智能生成、可视化编辑、多格式导出。由独立开发者打造，永久免费，无水印，无付费墙。适合应届生、实习生、求职者。';
+const SITE_DESCRIPTION = '智简简历是完全免费的AI简历生成器与在线制作网站。提供极简简历模板，支持AI智能一键生成与润色优化，支持高清免费导出PDF与Markdown。无水印、无套路，是应届生、产品经理及各行业求职者的必备极简简历工具，也是超级简历等平台的完美免费平替。';
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: `${SITE_NAME} - 免费 AI 简历制作工具 | 智能生成 · 可视化编辑 · 多格式导出`,
+    default: `${SITE_NAME} - AI简历生成器 | 免费在线简历制作网站 · 极简简历模板导出PDF`,
     template: `%s | ${SITE_NAME}`,
   },
   description: SITE_DESCRIPTION,
   keywords: [
-    'AI简历', '免费简历', '简历制作', '简历模板', '智能简历',
-    '在线简历', '简历生成器', '求职简历', '应届生简历', '实习简历',
-    'AI简历生成', '简历排版', 'PDF简历', '免费简历模板', '智简简历',
-    'aijianli', '简历编辑器', 'AI写简历', '简历优化', '求职工具',
-    '豆包简历导入', 'ChatGPT简历', 'DeepSeek简历', '应届生AI简历',
-    '零经验简历', '简历AI润色', '简历导入工具', 'ATS简历',
-    '在校生简历', '转行简历', 'JD匹配简历', '免费PDF简历导出',
+    'AI简历', '免费简历', '简历制作网站免费', '在线简历制作', '极简简历',
+    '简历生成器', 'AI简历制作', '免费简历模板', '简历模板PDF下载', '智简简历',
+    '全民简历', '超级简历平替', '英文简历', '应届生简历', '产品经理简历',
+    '在线简历免费制作导出', 'AI写简历', '简历优化', '免费导出PDF', 'Markdown简历',
+    '完全免费', '在线简历制作', 'AI简历姬', '简历自动生成', '求职工具'
   ],
   authors: [{ name: SITE_NAME }],
   creator: SITE_NAME,

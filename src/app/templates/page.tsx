@@ -9,8 +9,8 @@ import { templateCatalog } from '@/lib/templates/template-catalog';
 import { templateRoleData } from '@/lib/templates/template-role-data';
 
 const SITE_URL: string = 'https://aijianli.cn';
-const PAGE_TITLE: string = '简历模板中心 - 岗位简历模板与 AI 简历生成';
-const PAGE_DESCRIPTION: string = '查看适合前端开发、产品经理、运营、新媒体、设计等岗位的简历模板和写作建议，快速找到适合自己的 AI 简历制作方案。';
+const PAGE_TITLE: string = '免费极简简历模板中心 - AI 简历生成与在线制作';
+const PAGE_DESCRIPTION: string = '提供最新、专业的极简简历模板，覆盖前端开发、产品经理、运营、新媒体等岗位。完全免费的 AI 简历制作在线网站，支持一键智能生成、PDF与Markdown免费导出。';
 
 type JsonLdPrimitive = string | number | boolean;
 
@@ -21,7 +21,7 @@ type JsonLdNode = {
 export const metadata: Metadata = {
   title: PAGE_TITLE,
   description: PAGE_DESCRIPTION,
-  keywords: ['简历模板', '岗位简历模板', 'AI 简历模板', '前端简历模板', '产品经理简历模板', '运营简历模板'],
+  keywords: ['极简简历模板', '简历模板免费', '免费简历在线制作', 'AI简历', '产品经理简历', '大学生简历制作', '秋招简历在线模版', '免费导出PDF', '智简简历'],
   alternates: {
     canonical: `${SITE_URL}/templates`,
   },

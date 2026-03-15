@@ -47,9 +47,11 @@ export const LandingFooter = () => {
               <Image src="/logo-aijianli.png" alt="智简简历" width={120} height={40} className="h-10 w-auto object-contain" />
             </Link>
             <p className="text-slate-500 text-sm leading-relaxed">
-              永久免费的 AI 简历工具。
+              <strong>aijianli.cn (智简简历)</strong>
               <br />
-              让求职变得简单、高效。
+              永久免费的 AI 极简简历在线制作工具。
+              <br />
+              让简历制作变得简单、免费、可导出。
             </p>
             <div className="flex gap-4 pt-2">
               <button className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-violet-100 hover:text-violet-600 transition-colors">
