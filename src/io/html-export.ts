@@ -23,13 +23,16 @@ export function buildResumeHtml(element: HTMLElement, options?: ResumeHtmlOption
   const onePageCss: string = isOnePage
     ? `\n    .page[data-one-page="true"] {\n      max-height: 297mm !important;\n      height: 297mm !important;\n      overflow: hidden !important;\n      page-break-after: avoid !important;\n      break-after: avoid !important;\n    }`
     : ''
-  const pageMarginCss: string = isBleed || isOnePage
+  const pageMarginCss: string = isOnePage
     ? 'margin: 0;'
     : `margin: ${pagePaddingVertical}mm 0;`
   const perPageMarginCss: string = (isOnePage || isBleed)
     ? ''
     : `\n    .resume-container,\n    .resume-body-content {\n      padding-top: 0 !important;\n      padding-bottom: 0 !important;\n    }`
-  return `${DOCUMENT_DOCTYPE}\n<html lang="en">\n<head>\n  <meta charset="UTF-8">\n  <meta http-equiv="X-UA-Compatible" content="IE=edge">\n  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n  <title>${title}</title>\n  ${fonts}\n  <style>\n  ${styles}\n  @media print {\n    @page {\n      size: A4;\n      ${pageMarginCss}\n    }\n    body {\n      margin: 0;\n      padding: 0;\n    }${onePageCss}${perPageMarginCss}\n  }\n  * {\n    -webkit-print-color-adjust: exact;\n    print-color-adjust: exact;\n  }\n  </style>\n</head>\n<body>\n${markup}\n</body>\n</html>`
+  const bleedFirstPageCss: string = isBleed
+    ? `\n    @page :first {\n      margin-top: 0;\n    }`
+    : ''
+  return `${DOCUMENT_DOCTYPE}\n<html lang="en">\n<head>\n  <meta charset="UTF-8">\n  <meta http-equiv="X-UA-Compatible" content="IE=edge">\n  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n  <title>${title}</title>\n  ${fonts}\n  <style>\n  ${styles}\n  @media print {\n    @page {\n      size: A4;\n      ${pageMarginCss}\n    }${bleedFirstPageCss}\n    body {\n      margin: 0;\n      padding: 0;\n    }${onePageCss}${perPageMarginCss}\n  }\n  * {\n    -webkit-print-color-adjust: exact;\n    print-color-adjust: exact;\n  }\n  </style>\n</head>\n<body>\n${markup}\n</body>\n</html>`
 }
 
 /**

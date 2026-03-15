@@ -127,11 +127,10 @@ export function getClientPaginationScript(): string {
       const MM_TO_PX = 3.7795; // 1mm ≈ 3.7795px at 96 DPI
       const container = document.querySelector('.resume-container');
       const paddingV = parseFloat(container?.getAttribute('data-page-padding-vertical') || '0');
-      const isBleed = container?.getAttribute('data-bleed') === 'true';
       const marginPx = paddingV * MM_TO_PX;
-      // Bleed templates: full page (margin=0), padding injected manually at break points
-      // Non-bleed templates: Puppeteer handles per-page margin, reduce usable height
-      const USABLE_HEIGHT = isBleed ? PAGE_HEIGHT : (PAGE_HEIGHT - 2 * marginPx);
+      // USABLE_HEIGHT is consistent for all pages and templates because
+      // native @page margins handle the visual spacing natively.
+      const USABLE_HEIGHT = PAGE_HEIGHT - (2 * marginPx);
       const HEADER_SAFETY = 100; // Don't put headers in last 100px
       
       let currentY = 0;
@@ -139,9 +138,6 @@ export function getClientPaginationScript(): string {
       function pushToNextPage(el) {
         el.style.breakBefore = 'page';
         el.style.pageBreakBefore = 'always';
-        if (isBleed) {
-          el.style.paddingTop = paddingV + 'mm';
-        }
         currentY = Math.ceil(currentY / USABLE_HEIGHT) * USABLE_HEIGHT;
       }
       
@@ -154,10 +150,10 @@ export function getClientPaginationScript(): string {
         
         if (header) {
           const headerRect = header.getBoundingClientRect();
-          const pageRemaining = USABLE_HEIGHT - (currentY % USABLE_HEIGHT);
+          const remaining = USABLE_HEIGHT - (currentY % USABLE_HEIGHT);
           
           // If header would be near bottom of page, force it to next page
-          if (pageRemaining < HEADER_SAFETY + headerRect.height + 50) {
+          if (remaining < HEADER_SAFETY + headerRect.height + 50) {
             pushToNextPage(header);
           }
           
@@ -166,10 +162,10 @@ export function getClientPaginationScript(): string {
         
         items.forEach(item => {
           const itemRect = item.getBoundingClientRect();
-          const pageRemaining = USABLE_HEIGHT - (currentY % USABLE_HEIGHT);
+          const remaining = USABLE_HEIGHT - (currentY % USABLE_HEIGHT);
           
           // If item doesn't fit on current page and isn't too tall, move to next page
-          if (itemRect.height < USABLE_HEIGHT && itemRect.height > pageRemaining) {
+          if (itemRect.height < USABLE_HEIGHT && itemRect.height > remaining) {
             pushToNextPage(item);
           }
           
