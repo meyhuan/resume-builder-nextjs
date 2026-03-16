@@ -440,7 +440,17 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
     const url: string = window.URL.createObjectURL(pdfBlob)
     const a: HTMLAnchorElement = document.createElement('a')
     a.href = url
-    a.download = `resume-${resume.name || 'export'}.pdf`
+    
+    // Auto-generate professional filename: Name-Position-Phone
+    const baseInfo = resume.baseInfo as Record<string, string> | undefined
+    const name = baseInfo?.fullName?.trim() || baseInfo?.name?.trim() || '简历'
+    const position = baseInfo?.title?.trim() || baseInfo?.position?.trim() || ''
+    const phone = baseInfo?.phone?.trim() || ''
+    
+    const nameParts = [name, position, phone].filter(Boolean)
+    const fileName = nameParts.length > 0 ? nameParts.join('-') : (resume.name || 'export')
+    
+    a.download = `${fileName}.pdf`
     a.click()
     window.URL.revokeObjectURL(url)
     handleClosePreview()
