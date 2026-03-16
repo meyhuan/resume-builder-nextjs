@@ -116,22 +116,22 @@ export function ResumeCardActions({
         <DropdownMenuContent align="end" className="w-40 rounded-xl">
           <DropdownMenuItem 
             onSelect={() => setIsRenameOpen(true)}
-            className="cursor-pointer gap-2 py-2"
+            className="cursor-pointer gap-2 py-2 group focus:bg-slate-50 focus:text-slate-900 hover:bg-slate-50 hover:text-slate-900"
           >
-            <Edit2 className="h-4 w-4 text-slate-500" />
+            <Edit2 className="h-4 w-4 text-slate-500 group-hover:text-slate-900 transition-colors" />
             <span>重命名</span>
           </DropdownMenuItem>
           <DropdownMenuItem 
             onSelect={() => handleDuplicate()}
-            className="cursor-pointer gap-2 py-2"
+            className="cursor-pointer gap-2 py-2 group focus:bg-slate-50 focus:text-slate-900 hover:bg-slate-50 hover:text-slate-900"
           >
-            <Copy className="h-4 w-4 text-slate-500" />
+            <Copy className="h-4 w-4 text-slate-500 group-hover:text-slate-900 transition-colors" />
             <span>复制副本</span>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem 
             onSelect={() => setIsDeleteOpen(true)}
-            className="cursor-pointer gap-2 py-2 text-rose-600 focus:text-rose-700 focus:bg-rose-50"
+            className="cursor-pointer gap-2 py-2 text-rose-600 focus:bg-rose-50 focus:text-rose-700 hover:bg-rose-50 hover:text-rose-700 group"
           >
             <Trash2 className="h-4 w-4" />
             <span>删除简历</span>
