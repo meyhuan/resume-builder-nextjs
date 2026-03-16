@@ -18,6 +18,11 @@ interface ParsedDataUrl {
   readonly extension: string
 }
 
+function appendCacheBuster(url: string): string {
+  const separator: string = url.includes('?') ? '&' : '?'
+  return `${url}${separator}v=${Date.now()}`
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
 }
@@ -92,11 +97,12 @@ async function persistAvatarUrl(content: Record<string, unknown>, customPrefix?:
     directory: 'avatar',
     customFileName: customPrefix ? `${customPrefix}_avatar` : undefined
   })
+  const cacheBustedUrl: string = appendCacheBuster(uploadResult.url)
   return {
     ...content,
     baseInfo: {
       ...baseInfoValue,
-      avatarUrl: uploadResult.url,
+      avatarUrl: cacheBustedUrl,
     },
   }
 }
@@ -125,7 +131,7 @@ async function persistThumbnail(thumbnail: string | null | undefined, customPref
     directory: 'thumbnail',
     customFileName: customPrefix ? `${customPrefix}_thumbnail` : undefined
   })
-  return uploadResult.url
+  return appendCacheBuster(uploadResult.url)
 }
 
 export async function persistResumeAssets(input: PersistResumeAssetsInput): Promise<PersistResumeAssetsResult> {
