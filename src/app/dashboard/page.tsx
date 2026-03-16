@@ -2,56 +2,18 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
-import { FileText, Plus, Clock, Sparkles, Wand2, FileDown } from "lucide-react";
-import { revalidatePath } from "next/cache";
+import { Plus, Clock, Sparkles, Wand2, FileDown, FileText } from "lucide-react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import Image from "next/image";
-import { defaultResume } from "@/state/store";
-import { DeleteResumeButton } from "@/components/dashboard/delete-resume-button";
+import { ResumeCardActions } from "@/components/dashboard/resume-card-actions";
+import { createResume, renameResume, duplicateResume, deleteResume } from "./actions";
 
 export const metadata: Metadata = {
   title: '我的简历 - 管理你的所有简历',
   description: '在智简简历控制台管理你的所有简历，一键创建新简历，使用 AI 智能生成专业内容，免费导出高清 PDF。',
   robots: { index: false, follow: false },
 };
-
-// Server Action for creating a new resume
-async function createResume() {
-  "use server";
-  const cookieStore = await cookies();
-  const userId = cookieStore.get("auth_uid")?.value;
-  if (!userId) throw new Error("Unauthorized");
-  const resume = await prisma.resume.create({
-    data: {
-      title: "未命名简历",
-      content: JSON.parse(JSON.stringify(defaultResume)),
-      template: "simple",
-      user: {
-        connectOrCreate: {
-          where: { wxId: userId },
-          create: { wxId: userId }
-        }
-      },
-    },
-  });
-  return resume.id;
-}
-
-// Server Action for deleting
-async function deleteResume(id: string) {
-  "use server";
-  const cookieStore = await cookies();
-  const userId = cookieStore.get("auth_uid")?.value;
-  if (!userId) throw new Error("Unauthorized");
-  await prisma.resume.delete({
-    where: {
-      id,
-      user: { wxId: userId }
-    }
-  });
-  revalidatePath("/dashboard");
-}
 
 export default async function DashboardPage() {
   const cookieStore = await cookies();
@@ -202,10 +164,13 @@ export default async function DashboardPage() {
                           })}
                         </span>
                       </div>
-                      <DeleteResumeButton onDelete={async () => {
-                        "use server"
-                        await deleteResume(resume.id)
-                      }} />
+                      <ResumeCardActions 
+                        resumeId={resume.id}
+                        currentTitle={resume.title}
+                        onRename={renameResume}
+                        onDuplicate={duplicateResume}
+                        onDelete={deleteResume}
+                      />
                     </div>
                   </div>
                 </div>
