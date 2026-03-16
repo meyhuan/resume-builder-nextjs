@@ -41,25 +41,25 @@ export default function sitemap(): MetadataRoute.Sitemap {
   }));
 
   const articlePages: MetadataRoute.Sitemap = allArticles.map((article) => ({
-    url: createAbsoluteUrl(`/articles/${article.slug}`),
+    url: createAbsoluteUrl(`/articles/${encodeURIComponent(article.slug)}`),
     lastModified: new Date(article.updatedAt || article.createdAt),
     changeFrequency: 'monthly',
     priority: 0.7,
   }));
   const templatePages: MetadataRoute.Sitemap = allTemplateRoles.map((role) => ({
-    url: createAbsoluteUrl(`/templates/${role.slug}`),
+    url: createAbsoluteUrl(`/templates/${encodeURIComponent(role.slug)}`),
     lastModified: now,
     changeFrequency: 'weekly',
     priority: 0.75,
   }));
   const templateCategoryPages: MetadataRoute.Sitemap = allTemplateCategories.map((categoryGroup) => ({
-    url: createAbsoluteUrl(`/templates/category/${categoryGroup.slug}`),
+    url: createAbsoluteUrl(`/templates/category/${encodeURIComponent(categoryGroup.slug)}`),
     lastModified: now,
     changeFrequency: 'weekly',
     priority: 0.72,
   }));
   const templateIndustryPages: MetadataRoute.Sitemap = allTemplateIndustries.map((industryGroup) => ({
-    url: createAbsoluteUrl(`/templates/industry/${industryGroup.slug}`),
+    url: createAbsoluteUrl(`/templates/industry/${encodeURIComponent(industryGroup.slug)}`),
     lastModified: now,
     changeFrequency: 'weekly',
     priority: 0.71,
