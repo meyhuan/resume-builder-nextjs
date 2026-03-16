@@ -5,6 +5,7 @@ interface UploadOssAssetInput {
   readonly mimeType: string
   readonly extension: string
   readonly directory: string
+  readonly customFileName?: string
 }
 
 interface UploadOssAssetResult {
@@ -29,11 +30,16 @@ function normalizeOssEndpoint(endpoint: string, bucket: string): string {
   return normalizedEndpoint
 }
 
-function buildObjectKey(directory: string, extension: string): string {
+function buildObjectKey(directory: string, extension: string, customFileName?: string): string {
+  const normalizedExtension: string = extension.replace(/^\./, '').toLowerCase() || 'bin'
+  
+  if (customFileName) {
+    return `${directory}/${customFileName}.${normalizedExtension}`
+  }
+  
   const now: Date = new Date()
   const year: string = String(now.getUTCFullYear())
   const month: string = String(now.getUTCMonth() + 1).padStart(2, '0')
-  const normalizedExtension: string = extension.replace(/^\./, '').toLowerCase() || 'bin'
   return `${directory}/${year}/${month}/${crypto.randomUUID()}.${normalizedExtension}`
 }
 
@@ -57,7 +63,7 @@ export async function uploadOssAsset(input: UploadOssAssetInput): Promise<Upload
     accessKeyId: getRequiredEnv('ALIYUN_OSS_ACCESS_KEY_ID'),
     accessKeySecret: getRequiredEnv('ALIYUN_OSS_ACCESS_KEY_SECRET'),
   })
-  const key: string = buildObjectKey(input.directory, input.extension)
+  const key: string = buildObjectKey(input.directory, input.extension, input.customFileName)
   await client.put(key, input.fileBuffer, {
     mime: input.mimeType,
     headers: {

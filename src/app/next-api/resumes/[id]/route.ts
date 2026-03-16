@@ -60,6 +60,7 @@ export async function PUT(req: Request, { params }: RouteParams) {
     const persistedAssets = await persistResumeAssets({
       content,
       thumbnail,
+      customPrefix: resumeId,
     })
     
     updateStep = 'update-database'

@@ -137,7 +137,7 @@ export default async function DashboardPage() {
               </Link>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
               {/* New Resume Card */}
               <form action={async () => {
                 "use server"
@@ -145,7 +145,7 @@ export default async function DashboardPage() {
                 const { redirect } = await import("next/navigation");
                 redirect(`/editor/${id}`);
               }}>
-                <button className="w-full h-[280px] bg-white/40 backdrop-blur-sm rounded-xl border border-dashed border-slate-300 hover:border-[#8B5CF6] hover:bg-white/80 transition-all duration-200 group flex flex-col items-center justify-center gap-3 text-slate-500 hover:text-[#8B5CF6]">
+                <button className="w-full aspect-[1/1.414] bg-white/40 backdrop-blur-sm rounded-xl border border-dashed border-slate-300 hover:border-[#8B5CF6] hover:bg-white/80 transition-all duration-200 group flex flex-col items-center justify-center gap-3 text-slate-500 hover:text-[#8B5CF6]">
                   <div className="w-12 h-12 rounded-full bg-slate-100 group-hover:bg-[#F5F3FF] flex items-center justify-center transition-colors">
                     <Plus className="w-6 h-6" />
                   </div>
@@ -156,7 +156,7 @@ export default async function DashboardPage() {
               {resumes.map((resume) => (
                 <div
                   key={resume.id}
-                  className="group relative bg-white rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col h-[280px] overflow-hidden"
+                  className="group relative bg-white rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col aspect-[1/1.414] overflow-hidden"
                 >
                   {/* Thumbnail Container */}
                   <Link href={`/editor/${resume.id}`} className="block relative flex-1 bg-slate-50 border-b border-slate-100 overflow-hidden">

@@ -1,6 +1,7 @@
 'use server';
 
 import { prisma } from '@/lib/prisma';
+import { unstable_noStore as noStore } from 'next/cache';
 import type { PublicFeedbackItem } from '@/entities/feedback/public-feedback-item';
 
 interface FeedbackRecord {
@@ -18,6 +19,7 @@ interface FeedbackRecord {
  * Load public feedback items for the feedback square.
  */
 export async function listPublicFeedback(): Promise<readonly PublicFeedbackItem[]> {
+  noStore();
   const feedbackList: readonly FeedbackRecord[] = await prisma.feedback.findMany({
     orderBy: {
       createdAt: 'desc',
