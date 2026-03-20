@@ -29,7 +29,7 @@ export const StepIdentity = ({ stepNumber = 1, onClickPast }: { stepNumber?: num
   };
 
   return (
-    <StepCard stepNumber={stepNumber} title="选择你的身份" onClickPast={onClickPast}>
+    <StepCard stepNumber={stepNumber} title="Select Your Identity" onClickPast={onClickPast}>
       <div className="grid grid-cols-3 gap-6 mt-8">
         {IDENTITY_OPTIONS.map((option) => {
           const isSelected = identity === option.id;

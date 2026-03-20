@@ -17,9 +17,9 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { key: 'resume', label: '我的简历', href: '/dashboard', icon: <FileText className="w-[18px] h-[18px]" /> },
-  // { key: 'ai', label: 'AI 简历', href: '/ai', icon: <Code2 className="w-[18px] h-[18px]" /> },
-  { key: 'feedback', label: '用户反馈', href: '/dashboard/feedback', icon: <MessageSquareHeart className="w-[18px] h-[18px]" /> },
+  { key: 'resume', label: 'My Resumes', href: '/dashboard', icon: <FileText className="w-[18px] h-[18px]" /> },
+  // { key: 'ai', label: 'AI Resume', href: '/ai', icon: <Code2 className="w-[18px] h-[18px]" /> },
+  { key: 'feedback', label: 'Feedback', href: '/dashboard/feedback', icon: <MessageSquareHeart className="w-[18px] h-[18px]" /> },
 ];
 
 const BRAND_COLOR = '#4F46E5';
@@ -52,7 +52,7 @@ export default function DashboardSidebar(): ReactElement {
         <Link href="/" className="block">
           <Image
             src="/logo-aijianli.png"
-            alt="智简简历"
+            alt="AI Resume Pass"
             width={120}
             height={40}
             className="h-9 w-auto object-contain"
@@ -95,14 +95,14 @@ export default function DashboardSidebar(): ReactElement {
               className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-white text-sm font-bold"
               style={{ background: `linear-gradient(135deg, ${BRAND_COLOR}, #7C3AED)` }}
             >
-              {userInfo?.name?.[0] || userInfo?.email?.[0] || '用'}
+              {userInfo?.name?.[0] || userInfo?.email?.[0] || 'U'}
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-slate-700 truncate">
-                {userInfo?.name || userInfo?.email || '用户'}
+                {userInfo?.name || userInfo?.email || 'User'}
               </p>
               <p className="text-[11px] text-slate-400 truncate">
-                {userInfo?.integral !== undefined ? `积分 ${userInfo.integral}` : '免费用户'}
+                {userInfo?.integral !== undefined ? `Credits: ${userInfo.integral}` : 'Free Plan'}
               </p>
             </div>
           </div>
@@ -116,13 +116,13 @@ export default function DashboardSidebar(): ReactElement {
             className="flex items-center gap-2 w-full px-4 py-2 rounded-lg text-xs font-medium text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-colors mb-3"
           >
             <LogOut className="w-3.5 h-3.5" />
-            退出登录
+            Sign Out
           </button>
         )}
 
         {/* Copyright */}
         <p className="text-[11px] text-slate-300 px-4">
-          @智简简历 {COPYRIGHT_YEAR}
+          @AI Resume Pass {COPYRIGHT_YEAR}
         </p>
       </div>
     </aside>

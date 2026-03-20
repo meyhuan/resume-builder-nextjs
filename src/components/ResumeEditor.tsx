@@ -3,7 +3,7 @@
 /**
  * ResumeEditor - Main Editor Component
  * App with Dynamic Template Loading
- * 使用 Suspense + lazy 实现模板按需加载
+ * Uses Suspense + lazy for on-demand template loading
  */
 import { useEffect, useRef, useState, Suspense, useCallback, useMemo } from 'react'
 import type { ReactElement } from 'react'
@@ -155,7 +155,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
     if (!cacheKey) return
     const cached = localStorage.getItem(cacheKey)
     if (!cached) {
-      toast.error('未找到缓存的简历数据')
+      toast.error('No cached resume data found')
       return
     }
     cachedDataApplied.current = true
@@ -163,9 +163,9 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
       const resumeData = JSON.parse(cached) as ResumeData
       setResume(() => resumeData)
       localStorage.removeItem(cacheKey)
-      toast.success(source === 'ai' ? '✨ AI 简历生成完毕，快来完善细节吧' : '✨ 简历解析成功，快来完善细节吧')
+      toast.success(source === 'ai' ? '✨ AI resume generated! Time to refine the details.' : '✨ Resume parsed successfully! Time to refine the details.')
     } catch {
-      toast.error('简历数据解析失败')
+      toast.error('Failed to parse resume data')
       localStorage.removeItem(cacheKey)
     }
   }, [initialData, searchParams, setResume])
@@ -233,7 +233,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
           editorMeta,
         )
         const createPayload: ResumeSavePayload = {
-          title: resume.name || '未命名简历',
+          title: resume.name || 'Untitled Resume',
           content: contentWithMeta,
           template: tpl,
         }
@@ -283,10 +283,10 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
       setLastSaved(new Date())
       setSavedSnapshot(JSON.stringify({ resume, theme, tpl, onePageMode, onePageSnapshot, sidebarSectionIds }))
       await revalidateDashboard()
-      toast.success('保存成功')
+      toast.success('Saved successfully')
     } catch (e) {
       console.error(e)
-      toast.error('保存失败，请重试')
+      toast.error('Save failed, please try again')
     } finally {
       setIsSaving(false)
     }
@@ -394,10 +394,10 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
         a.download = `${resume.name || 'resume'}.md`
         a.click()
         URL.revokeObjectURL(url)
-        toast.success('Markdown导出成功')
+        toast.success('Markdown exported successfully')
       } catch (error) {
         console.error('Export markdown failed:', error)
-        toast.error('Markdown导出失败，请重试')
+        toast.error('Markdown export failed, please try again')
       }
     })
   }, [resume, requireAuth])
@@ -428,7 +428,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
       setShowPreview(true)
     } catch (e) {
       console.error('PDF generation failed:', e)
-      toast.error(e instanceof Error ? `PDF 生成失败: ${e.message}` : 'PDF 生成失败，请重试')
+      toast.error(e instanceof Error ? `PDF generation failed: ${e.message}` : 'PDF generation failed, please try again')
     } finally {
       setIsGenerating(false)
     }
@@ -443,7 +443,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
     
     // Auto-generate professional filename: Name-Position-Phone
     const baseInfo = resume.baseInfo as Record<string, string> | undefined
-    const name = baseInfo?.fullName?.trim() || baseInfo?.name?.trim() || '简历'
+    const name = baseInfo?.fullName?.trim() || baseInfo?.name?.trim() || 'resume'
     const position = baseInfo?.title?.trim() || baseInfo?.position?.trim() || ''
     const phone = baseInfo?.phone?.trim() || ''
     
@@ -454,7 +454,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
     a.click()
     window.URL.revokeObjectURL(url)
     handleClosePreview()
-    toast.success('PDF 导出成功')
+    toast.success('PDF exported successfully')
   }
 
   /** Clean up blob URL and close preview dialog. */
@@ -470,12 +470,12 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
     if (onePageMode) {
       resetOnePage()
       setOnePageMode(false)
-      toast.info('已切换模板，一页模式已关闭')
+      toast.info('Template switched, one-page mode disabled')
     }
     setTpl(next)
   }, [onePageMode, resetOnePage])
 
-  // 获取当前模板组件
+  // Get current template component
   const templateConfig = getTemplate(tpl)
   const TemplateComponent = templateConfig?.component
 
@@ -498,7 +498,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
               className="h-7 px-2 text-xs text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded"
             >
               <ArrowLeft className="h-3.5 w-3.5 mr-1" />
-              返回
+              Back
             </Button>
             <div className="h-4 w-px bg-slate-200 mx-0.5" />
             <Button
@@ -507,7 +507,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
               onClick={undo}
               disabled={!canUndo}
               className="h-7 w-7 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded disabled:opacity-30 disabled:cursor-not-allowed"
-              title="撤销 (Ctrl+Z)"
+              title="Undo (Ctrl+Z)"
             >
               <Undo2 className="h-3.5 w-3.5" />
             </Button>
@@ -517,16 +517,16 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
               onClick={redo}
               disabled={!canRedo}
               className="h-7 w-7 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded disabled:opacity-30 disabled:cursor-not-allowed"
-              title="重做 (Ctrl+Shift+Z)"
+              title="Redo (Ctrl+Shift+Z)"
             >
               <Redo2 className="h-3.5 w-3.5" />
             </Button>
             <div className="h-4 w-px bg-slate-200 mx-0.5" />
             <span className="text-sm font-medium text-slate-700 truncate max-w-[180px]">
-              {resume.name || '未命名简历'}
+              {resume.name || 'Untitled Resume'}
             </span>
             {hasUnsavedChanges && (
-              <span className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse shrink-0" title="未保存" />
+              <span className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse shrink-0" title="Unsaved changes" />
             )}
           </div>
 
@@ -541,7 +541,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
           <div className="flex items-center gap-1 shrink-0 justify-between lg:justify-end lg:ml-auto">
             {lastSaved && !hasUnsavedChanges && (
               <span className="text-[10px] text-emerald-600 mr-1 hidden lg:inline">
-                已保存 {lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                Saved {lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </span>
             )}
             <Button
@@ -556,7 +556,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
               ) : (
                 <Save className="h-3.5 w-3.5 mr-1" />
               )}
-              {isSaving ? '保存中' : '保存'}
+              {isSaving ? 'Saving...' : 'Save'}
             </Button>
             <Button
               variant="ghost"
@@ -570,14 +570,14 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
               ) : (
                 <FileDown className="h-3.5 w-3.5 mr-1" />
               )}
-              {isGenerating ? '生成中' : 'PDF'}
+              {isGenerating ? 'Generating...' : 'PDF'}
             </Button>
             <Button
               variant="ghost"
               size="sm"
               onClick={handleExportPng}
-              title="导出 PNG"
-              aria-label="导出 PNG"
+              title="Export PNG"
+              aria-label="Export PNG"
               className="h-7 px-2 text-xs text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded"
             >
               <ImageIcon className="h-3.5 w-3.5" />
@@ -586,8 +586,8 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
               variant="ghost"
               size="sm"
               onClick={handleExportMarkdown}
-              title="导出 Markdown"
-              aria-label="导出 Markdown"
+              title="Export Markdown"
+              aria-label="Export Markdown"
               className="h-7 px-2 text-xs text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded"
             >
               <FileText className="h-3.5 w-3.5" />
@@ -604,9 +604,9 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
               {isGenerating ? (
                 <>
                   <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
-                  生成中...
+                  Generating...
                 </>
-              ) : '预览简历'}
+              ) : 'Preview Resume'}
             </Button>
           </div>
         </div>
@@ -621,13 +621,13 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
               className="page w-full bg-white shadow-[0_0_50px_rgba(0,0,0,0.05)] rounded-xl print:shadow-none overflow-hidden"
               {...(onePageMode ? { 'data-one-page': 'true' } : {})}
             >
-              {/* Suspense 包裹动态加载的模板 */}
+              {/* Suspense wraps dynamically loaded template */}
               <Suspense
                 fallback={
                   <div className="flex items-center justify-center h-[297mm] bg-white">
                     <div className="text-center">
                       <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4" />
-                      <p className="text-gray-600">正在加载模板...</p>
+                      <p className="text-gray-600">Loading template...</p>
                       <p className="text-xs text-gray-400 mt-2">{templateConfig?.name}</p>
                     </div>
                   </div>
@@ -643,8 +643,8 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
                 ) : (
                   <div className="flex items-center justify-center h-[297mm] bg-white">
                     <div className="text-center text-gray-500">
-                      <p className="text-lg mb-2">❌ 模板未找到</p>
-                      <p className="text-sm">模板 ID: {tpl}</p>
+                      <p className="text-lg mb-2">❌ Template not found</p>
+                      <p className="text-sm">Template ID: {tpl}</p>
                     </div>
                   </div>
                 )}
@@ -671,22 +671,22 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
                   const parsed = JSON.parse(json)
                   useAppStore.getState().importExternalResume(parsed)
                 } catch (e) {
-                  alert(`解析失败: ${e}`)
+                  alert(`Parse failed: ${e}`)
                 }
               }}
             />
           </aside>
         )}
       </main>
-      {/* 离开确认弹窗 */}
+      {/* Leave confirmation dialog */}
       <ConfirmDialog
         open={showLeaveDialog}
         onOpenChange={setShowLeaveDialog}
-        title="确认离开"
-        description="您有未保存的更改，保存后再离开吗？"
-        confirmText="保存并离开"
-        discardText="不保存直接离开"
-        cancelText="取消"
+        title="Leave Editor?"
+        description="You have unsaved changes. Would you like to save before leaving?"
+        confirmText="Save & Leave"
+        discardText="Leave without saving"
+        cancelText="Cancel"
         variant="default"
         loading={isSaving}
         onConfirm={async () => {
@@ -710,10 +710,10 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
         onClose={handleLoginClose}
         onSuccess={() => {
           handleLoginSuccess()
-          toast.success('登录成功，已自动为你保存简历进度')
+          toast.success('Logged in successfully. Your resume progress has been saved.')
         }}
         closeable={!needsForceLogin}
-        subtitle={needsForceLogin ? '登录后即可保存、导出，你的简历不会丢失' : undefined}
+        subtitle={needsForceLogin ? 'Sign in to save and export your resume. Your progress is safe.' : undefined}
       />
     </div>
   )

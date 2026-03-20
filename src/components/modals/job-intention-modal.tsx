@@ -67,53 +67,53 @@ export default function JobIntentionModal(props: JobIntentionModalProps): ReactE
     <Dialog open={true} onOpenChange={(open) => !open && props.onClose()}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>求职意向</DialogTitle>
+          <DialogTitle>Job Preference</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="position">意向岗位</Label>
+              <Label htmlFor="position">Target Position</Label>
               <Input
                 id="position"
                 value={position}
                 onChange={(e) => setPosition(e.target.value)}
-                placeholder="移动端开发工程师"
+                placeholder="e.g. Software Engineer"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="city">意向城市</Label>
+              <Label htmlFor="city">Preferred City</Label>
               <Input
                 id="city"
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
-                placeholder="武汉"
+                placeholder="e.g. New York"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="salary">期望薪水</Label>
+              <Label htmlFor="salary">Expected Salary</Label>
               <Input
                 id="salary"
                 value={salary}
                 onChange={(e) => setSalary(e.target.value)}
-                placeholder="面议"
+                placeholder="Negotiable"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="type">求职类型</Label>
+              <Label htmlFor="type">Job Type</Label>
               <Select value={type} onValueChange={setType}>
                 <SelectTrigger id="type">
-                  <SelectValue placeholder="请选择" />
+                  <SelectValue placeholder="Select" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="全职">全职</SelectItem>
-                  <SelectItem value="兼职">兼职</SelectItem>
-                  <SelectItem value="实习">实习</SelectItem>
-                  <SelectItem value="社招">社招</SelectItem>
-                  <SelectItem value="校招">校招</SelectItem>
+                  <SelectItem value="Full-time">Full-time</SelectItem>
+                  <SelectItem value="Part-time">Part-time</SelectItem>
+                  <SelectItem value="Internship">Internship</SelectItem>
+                  <SelectItem value="Contract">Contract</SelectItem>
+                  <SelectItem value="Freelance">Freelance</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -125,7 +125,7 @@ export default function JobIntentionModal(props: JobIntentionModalProps): ReactE
             onClick={() => setShowMoreFields(!showMoreFields)}
             className="w-full justify-start gap-2"
           >
-            <span>更多信息（选填）</span>
+            <span>More Info (Optional)</span>
             <ChevronDown 
               className={`h-4 w-4 transition-transform ${showMoreFields ? 'rotate-180' : ''}`}
             />
@@ -135,21 +135,21 @@ export default function JobIntentionModal(props: JobIntentionModalProps): ReactE
             <div className="space-y-4 pt-2 border-t">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="industry">期望行业</Label>
+                  <Label htmlFor="industry">Preferred Industry</Label>
                   <Input
                     id="industry"
                     value={industry}
                     onChange={(e) => setIndustry(e.target.value)}
-                    placeholder="请选择"
+                    placeholder="Enter here"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="currentStatus">当前状态</Label>
+                  <Label htmlFor="currentStatus">Current Status</Label>
                   <Input
                     id="currentStatus"
                     value={currentStatus}
                     onChange={(e) => setCurrentStatus(e.target.value)}
-                    placeholder="请选择"
+                    placeholder="Enter here"
                   />
                 </div>
               </div>
@@ -157,10 +157,10 @@ export default function JobIntentionModal(props: JobIntentionModalProps): ReactE
               {/* Custom fields */}
               <div className="space-y-3 pt-2 border-t">
                 <div className="flex items-center justify-between">
-                  <Label>自定义字段</Label>
+                  <Label>Custom Fields</Label>
                   <Button type="button" variant="ghost" size="sm" onClick={addCustomField} className="h-7 text-xs gap-1">
                     <Plus className="h-3 w-3" />
-                    <span>添加字段</span>
+                    <span>Add Field</span>
                   </Button>
                 </div>
                 {customFields.map((field, index) => (
@@ -168,13 +168,13 @@ export default function JobIntentionModal(props: JobIntentionModalProps): ReactE
                     <Input
                       value={field.label}
                       onChange={(e) => updateCustomField(index, 'label', e.target.value)}
-                      placeholder="字段名"
+                      placeholder="Field name"
                       className="w-28 shrink-0"
                     />
                     <Input
                       value={field.value}
                       onChange={(e) => updateCustomField(index, 'value', e.target.value)}
-                      placeholder="字段值"
+                      placeholder="Field value"
                     />
                     <Button type="button" variant="ghost" size="sm" onClick={() => removeCustomField(index)} className="h-8 w-8 p-0 shrink-0 text-red-500 hover:text-red-700 hover:bg-red-50">
                       <Trash2 className="h-3.5 w-3.5" />
@@ -188,10 +188,10 @@ export default function JobIntentionModal(props: JobIntentionModalProps): ReactE
 
         <DialogFooter>
           <Button variant="outline" onClick={props.onClose}>
-            取消
+            Cancel
           </Button>
           <Button onClick={handleSave}>
-            确定
+            Save
           </Button>
         </DialogFooter>
       </DialogContent>

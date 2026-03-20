@@ -72,12 +72,12 @@ interface SlugPageProps {
 export async function generateMetadata({ params }: SlugPageProps): Promise<Metadata> {
   const { slug } = await params;
   const article = getArticleBySlug(slug);
-  if (!article) return { title: '文章未找到' };
+  if (!article) return { title: 'Article Not Found' };
   const catMeta = getCategoryMeta(article.category);
   return {
     title: `${article.title} - ${catMeta.label}`,
     description: article.abstract.slice(0, 160),
-    keywords: [...article.tags, catMeta.label, '求职攻略', '智简简历'],
+    keywords: [...article.tags, catMeta.label, 'career advice', 'AI Resume Pass'],
     openGraph: {
       title: article.title,
       description: article.abstract.slice(0, 160),
@@ -111,9 +111,9 @@ export default async function ArticleDetailPage({ params }: SlugPageProps): Prom
     description: article.abstract,
     datePublished: article.createdAt,
     dateModified: article.updatedAt,
-    author: { '@type': 'Organization', name: '智简简历' },
-    publisher: { '@type': 'Organization', name: '智简简历', url: 'https://aijianli.cn' },
-    mainEntityOfPage: `https://aijianli.cn/articles/${slug}`,
+    author: { '@type': 'Organization', name: 'AI Resume Pass' },
+    publisher: { '@type': 'Organization', name: 'AI Resume Pass', url: 'https://airesumepass.com' },
+    mainEntityOfPage: `https://airesumepass.com/articles/${slug}`,
     keywords: article.tags.join(', '),
   };
 
@@ -121,9 +121,9 @@ export default async function ArticleDetailPage({ params }: SlugPageProps): Prom
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
-      { '@type': 'ListItem', position: 1, name: '首页', item: 'https://aijianli.cn' },
-      { '@type': 'ListItem', position: 2, name: '求职攻略', item: 'https://aijianli.cn/articles' },
-      { '@type': 'ListItem', position: 3, name: catMeta.label, item: `https://aijianli.cn/articles?category=${article.category}` },
+      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://airesumepass.com' },
+      { '@type': 'ListItem', position: 2, name: 'Career Advice', item: 'https://airesumepass.com/articles' },
+      { '@type': 'ListItem', position: 3, name: catMeta.label, item: `https://airesumepass.com/articles?category=${article.category}` },
       { '@type': 'ListItem', position: 4, name: article.title },
     ],
   };
@@ -150,9 +150,9 @@ export default async function ArticleDetailPage({ params }: SlugPageProps): Prom
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           {/* Breadcrumb */}
           <nav className="flex items-center gap-1.5 text-sm text-slate-400 mb-8 flex-wrap">
-            <Link href="/" className="hover:text-violet-600 transition-colors">首页</Link>
+            <Link href="/" className="hover:text-violet-600 transition-colors">Home</Link>
             <ChevronRight className="w-3.5 h-3.5" />
-            <Link href="/articles" className="hover:text-violet-600 transition-colors">求职攻略</Link>
+            <Link href="/articles" className="hover:text-violet-600 transition-colors">Career Advice</Link>
             <ChevronRight className="w-3.5 h-3.5" />
             <Link
               href={`/articles?category=${article.category}`}
@@ -175,7 +175,7 @@ export default async function ArticleDetailPage({ params }: SlugPageProps): Prom
                   </span>
                   <span className="flex items-center gap-1 text-xs text-slate-400">
                     <Calendar className="w-3.5 h-3.5" />
-                    {new Date(article.createdAt).toLocaleDateString('zh-CN')}
+                    {new Date(article.createdAt).toLocaleDateString('en-US')}
                   </span>
                 </div>
                 <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 leading-tight mb-4">
@@ -207,10 +207,10 @@ export default async function ArticleDetailPage({ params }: SlugPageProps): Prom
               <section className="rounded-2xl bg-white/70 backdrop-blur-md border border-white shadow-sm p-6 md:p-8 mt-8">
                 <div className="flex items-center gap-2 text-slate-900">
                   <BookOpen className="w-5 h-5 text-violet-500" />
-                  <h2 className="text-2xl font-extrabold">相关岗位模板</h2>
+                  <h2 className="text-2xl font-extrabold">Related Role Templates</h2>
                 </div>
                 <p className="text-sm text-slate-500 mt-3 leading-relaxed">
-                  结合这篇文章的主题，下面这些岗位模板页更适合继续查看，方便你把攻略内容直接转化为可投递简历。
+                  Based on this article's topic, these role template pages may help you turn advice into an actionable resume.
                 </p>
                 <div className="flex flex-wrap gap-3 mt-6">
                   {relatedTemplateRoles.map((role: TemplateRoleRecord) => (
@@ -219,7 +219,7 @@ export default async function ArticleDetailPage({ params }: SlugPageProps): Prom
                       href={`/templates/${role.slug}`}
                       className="px-4 py-2 rounded-full bg-slate-50 text-slate-600 text-sm hover:bg-violet-50 hover:text-violet-600 transition-colors"
                     >
-                      {role.role}简历模板
+                      {role.role} Resume
                     </Link>
                   ))}
                 </div>
@@ -238,7 +238,7 @@ export default async function ArticleDetailPage({ params }: SlugPageProps): Prom
                   className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-violet-600 bg-violet-50 hover:bg-violet-100 rounded-full transition-colors"
                 >
                   <BookOpen className="w-4 h-4" />
-                  查看全部攻略
+                  View All Articles
                 </Link>
               </div>
             </article>
@@ -280,7 +280,7 @@ function PrevNextCard({ article, direction }: PrevNextCardProps): React.ReactEle
         }
       </div>
       <div className="flex-1 min-w-0">
-        <div className="text-[11px] text-slate-400 mb-0.5">{isPrev ? '上一篇' : '下一篇'}</div>
+        <div className="text-[11px] text-slate-400 mb-0.5">{isPrev ? 'Previous' : 'Next'}</div>
         <div className="text-sm font-semibold text-slate-700 truncate group-hover:text-violet-600 transition-colors">
           {article.title}
         </div>

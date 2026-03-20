@@ -1,9 +1,9 @@
 /**
- * SectionManager — 模块管理面板
+ * SectionManager — Section Management Panel
  *
- * Top: current resume sections (个人信息 pinned with photo toggle,
- *      求职意向 + other sections with remove ⊖ buttons).
- * Bottom: "添加模块" — 2-column grid of predefined section types
+ * Top: current resume sections (Personal Info pinned with photo toggle,
+ *      Job Preference + other sections with remove ⊖ buttons).
+ * Bottom: "Add Section" — 2-column grid of predefined section types
  *         that are NOT already present in the resume.
  */
 import { useMemo } from 'react'
@@ -37,7 +37,7 @@ export interface SectionManagerProps {
 }
 
 /**
- * 模块管理 panel rendered inside the right sidebar.
+ * Section manager panel rendered inside the right sidebar.
  */
 export default function SectionManager(props: SectionManagerProps): ReactElement {
   const { onClose } = props
@@ -74,7 +74,7 @@ export default function SectionManager(props: SectionManagerProps): ReactElement
     <div className="flex flex-col h-full bg-transparent">
       {/* Header */}
       <div className="flex items-center justify-between px-5 pt-5 pb-3">
-        <h2 className="text-lg font-bold text-slate-800">模块管理</h2>
+        <h2 className="text-lg font-bold text-slate-800">Section Manager</h2>
         <button
           type="button"
           className="text-slate-400 hover:text-slate-600 transition-colors"
@@ -86,8 +86,8 @@ export default function SectionManager(props: SectionManagerProps): ReactElement
 
       {/* Scrollable content */}
       <div className="flex-1 overflow-y-auto px-4 pb-4 custom-scrollbar">
-        {/* Pinned: 个人信息 */}
-        <SectionRow label="个人信息">
+        {/* Pinned: Personal Info */}
+        <SectionRow label="Personal Info">
           <label className="flex items-center gap-1.5 text-xs font-medium text-slate-500 cursor-pointer select-none">
             <input
               type="checkbox"
@@ -95,12 +95,12 @@ export default function SectionManager(props: SectionManagerProps): ReactElement
               checked={showPhotoAvatar}
               onChange={(e) => setAvatarVisibility(e.target.checked)}
             />
-            照片
+            Photo
           </label>
         </SectionRow>
 
-        {/* Pinned: 求职意向 */}
-        <SectionRow label="求职意向">
+        {/* Pinned: Job Preference */}
+        <SectionRow label="Job Preference">
           <label className="flex items-center gap-1.5 text-xs font-medium text-slate-500 cursor-pointer select-none">
             <input
               type="checkbox"
@@ -108,7 +108,7 @@ export default function SectionManager(props: SectionManagerProps): ReactElement
               checked={isJobIntentionVisible}
               onChange={(e) => setJobIntentionVisibility(e.target.checked)}
             />
-            显示
+            Show
           </label>
         </SectionRow>
 
@@ -132,7 +132,7 @@ export default function SectionManager(props: SectionManagerProps): ReactElement
         {/* Add module grid */}
         {availableLabels.length > 0 && (
           <div className="mt-6">
-            <p className="text-sm font-semibold text-slate-700 mb-3">添加模块</p>
+            <p className="text-sm font-semibold text-slate-700 mb-3">Add Section</p>
             <div className="grid grid-cols-2 gap-2">
               {availableLabels.map((label) => (
                 <button
@@ -203,7 +203,7 @@ function SortableSectionRow(props: {
       <button
         type="button"
         className="text-slate-300 hover:text-rose-500 transition-colors"
-        title="移除"
+        title="Remove"
         onClick={(e) => {
           e.stopPropagation()
           onDelete()

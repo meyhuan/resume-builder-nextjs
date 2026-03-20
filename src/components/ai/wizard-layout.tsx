@@ -35,12 +35,12 @@ export const WizardLayout = ({ children }: { children: React.ReactNode }) => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          title: resumeData.name || 'AI 生成简历',
+          title: resumeData.name || 'AI Generated Resume',
           content: resumeData,
           template: 'simple',
         }),
       });
-      if (!res.ok) throw new Error('保存简历失败');
+      if (!res.ok) throw new Error('Failed to save resume');
       const saved: { id: string } = await res.json();
       localStorage.removeItem(WIZARD_CACHE_KEY);
       router.push(`/editor/${saved.id}`);
@@ -117,18 +117,18 @@ export const WizardLayout = ({ children }: { children: React.ReactNode }) => {
             className="flex items-center gap-1 text-sm text-gray-500 hover:text-[#8B5CF6] transition-colors"
           >
             <ChevronLeft className="w-4 h-4" />
-            返回
+            Back
           </button>
           <div className="w-px h-4 bg-gray-200" />
-          <h1 className="text-sm font-semibold text-gray-800">AI 生成简历</h1>
+          <h1 className="text-sm font-semibold text-gray-800">AI Resume Generator</h1>
         </div>
       </header>
       <WxLoginDialog isOpen={isLoginOpen} onClose={handleLoginClose} onSuccess={handleLoginSuccess} />
 
       {/* Hero title */}
       <div className="text-center pt-8 pb-4">
-        <h2 className="text-xl font-bold text-gray-900">一分钟，AI生成简历</h2>
-        <p className="text-sm text-gray-400 mt-1">输入关键信息，AI 一键生成匹配岗位的专业简历</p>
+        <h2 className="text-xl font-bold text-gray-900">Generate Your Resume in One Minute</h2>
+        <p className="text-sm text-gray-400 mt-1">Enter key info, and AI will create a professional resume tailored to your target role</p>
       </div>
 
       <div className="flex-1 flex flex-col items-center pb-10 px-4">
@@ -141,8 +141,8 @@ export const WizardLayout = ({ children }: { children: React.ReactNode }) => {
           <div className="flex flex-col items-center pt-8 gap-4">
             <p className="text-gray-400 text-sm">
               {wizardState.currentStep < wizardState.totalSteps
-                ? '已可生成简历，也可继续填写更多信息'
-                : '已收到你的信息，点击生成简历'}
+                ? 'Ready to generate! You can also continue adding more info.'
+                : 'All set! Click to generate your resume.'}
             </p>
 
             <div className="flex flex-col sm:flex-row items-center gap-4">
@@ -158,7 +158,7 @@ export const WizardLayout = ({ children }: { children: React.ReactNode }) => {
                 )}
               >
                 <Sparkles className="w-5 h-5" />
-                生成简历
+                Generate Resume
               </button>
               
               <Link
@@ -166,14 +166,14 @@ export const WizardLayout = ({ children }: { children: React.ReactNode }) => {
                 className="px-8 py-3 rounded-full text-lg font-medium flex items-center gap-2 border-2 border-gray-200 text-gray-600 hover:border-violet-300 hover:text-violet-600 hover:bg-violet-50 transition-all bg-white"
               >
                 <FileText className="w-5 h-5" />
-                跳过 AI，直接创建
+                Skip AI, Create Manually
               </Link>
             </div>
             {usage && (
               <p className={cn('text-xs', isLimitReached ? 'text-red-500' : 'text-gray-400')}>
                 {isLimitReached
-                  ? `今日次数已用完（${usage.used}/${usage.limit}），${usage.isAuthenticated ? '请明天再试' : '登录后可获得更多次数'}`
-                  : `今日剩余 ${usage.remaining}/${usage.limit} 次${usage.isAuthenticated ? '' : '（登录后可获得更多次数）'}`}
+                  ? `Daily limit reached (${usage.used}/${usage.limit}). ${usage.isAuthenticated ? 'Please try again tomorrow.' : 'Sign in for more.'}`
+                  : `${usage.remaining}/${usage.limit} remaining today${usage.isAuthenticated ? '' : ' (sign in for more)'}`}
               </p>
             )}
           </div>
@@ -213,7 +213,7 @@ function GenerationPage({
   const handleScroll = useCallback(() => {
     const el = scrollRef.current;
     if (!el) return;
-    // 如果距离底部小于 100px，认为用户在最底部，否则认为是用户主动向上滑动了
+    // If the distance to the bottom is less than 100px, treat the user as being at the bottom; otherwise assume they intentionally scrolled up.
     const isAtBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 100;
     isUserScrolled.current = !isAtBottom;
   }, []);
@@ -245,10 +245,10 @@ function GenerationPage({
             className="flex items-center gap-1 text-sm text-gray-500 hover:text-[#8B5CF6] transition-colors"
           >
             <ChevronLeft className="w-4 h-4" />
-            返回
+            Back
           </button>
           <div className="w-px h-4 bg-gray-200" />
-          <h1 className="text-sm font-semibold text-gray-800">AI 生成简历</h1>
+          <h1 className="text-sm font-semibold text-gray-800">AI Resume Generator</h1>
         </div>
       </header>
 
@@ -279,7 +279,7 @@ function GenerationPage({
                 className="flex flex-col items-center justify-center py-20 gap-4"
               >
                 <Loader2 className="w-8 h-8 text-[#8B5CF6] animate-spin" />
-                <p className="text-gray-400 text-sm">正在连接 AI 模型...</p>
+                <p className="text-gray-400 text-sm">Connecting to AI model...</p>
               </motion.div>
             )}
           </AnimatePresence>
@@ -310,7 +310,7 @@ function GenerationPage({
                 className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white px-6 py-2.5 rounded-full text-sm font-medium flex items-center gap-2 shadow-md transition-all"
               >
                 <Sparkles className="w-4 h-4" />
-                重新生成
+                Retry
               </button>
             </motion.div>
           )}
@@ -327,7 +327,7 @@ function GenerationPage({
           >
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <Loader2 className="w-4 h-4 text-[#8B5CF6] animate-spin" />
-              正在生成简历
+              Generating resume
             </div>
             <div className="w-px h-4 bg-gray-200" />
             <button
@@ -336,7 +336,7 @@ function GenerationPage({
               className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-red-500 transition-colors"
             >
               <CircleStop className="w-4 h-4" />
-              停止 Esc
+              Stop (Esc)
             </button>
           </motion.div>
         </div>
@@ -475,7 +475,7 @@ export const StepCard = ({
               onClick={onSkip}
               className="text-gray-400 hover:text-gray-600 text-sm font-medium"
             >
-              跳过
+              Skip
             </button>
           )}
         </div>

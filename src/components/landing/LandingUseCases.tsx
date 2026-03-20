@@ -23,50 +23,50 @@ interface UseCaseItem {
 const USE_CASES: readonly UseCaseItem[] = [
   {
     icon: <GraduationCap className="w-5 h-5" />,
-    tag: '应届生 / 在校生',
+    tag: 'Students & Graduates',
     tagColor: 'bg-emerald-50 text-emerald-600 border-emerald-100',
-    title: '零经验也能写出好简历',
-    pain: '没有实习经历、不知道简历写什么、打开 Word 无从下手。',
+    title: 'Great resumes, even with zero experience',
+    pain: 'No internships, no idea what to write, staring at a blank document.',
     solution:
-      '智简简历根据你的身份（在校生/应届生）自动调整 AI 引导流程，帮你挖掘课程项目、校园活动、社团经历，用 STAR 法则生成专业简历条目。',
-    features: ['身份定制 AI 引导', '校园经历结构化', '零经验专属模板'],
-    cta: '免费生成简历',
+      'AI adapts its guided flow based on your background (student or recent graduate), helping you highlight coursework, campus activities, and club experience using the STAR method.',
+    features: ['Identity-tailored AI flow', 'Campus experience structuring', 'Entry-level templates'],
+    cta: 'Build My Resume Free',
     href: '/ai',
   },
   {
     icon: <Briefcase className="w-5 h-5" />,
-    tag: '职场人 / 转行者',
+    tag: 'Professionals & Career Changers',
     tagColor: 'bg-blue-50 text-blue-600 border-blue-100',
-    title: '突出可迁移能力，精准匹配岗位',
-    pain: '转行不知道怎么包装经历，投了很多简历却没有回音。',
+    title: 'Highlight transferable skills, match any role',
+    pain: 'Switching careers but unsure how to reframe your experience. Sending resumes with no callbacks.',
     solution:
-      '选择目标岗位类别，AI 会根据岗位特点自动调整用词和重点。支持模块级 AI 润色，针对单条工作经历精准优化。',
-    features: ['岗位针对性生成', '模块级 AI 润色', 'JD 智能匹配'],
-    cta: '优化我的简历',
+      'Select your target role and AI adjusts tone, keywords, and emphasis automatically. Section-level AI polish refines each work entry for maximum impact.',
+    features: ['Role-specific generation', 'Section-level AI polish', 'JD smart matching'],
+    cta: 'Optimize My Resume',
     href: '/ai',
   },
   {
     icon: <Bot className="w-5 h-5" />,
-    tag: 'AI 工具用户',
+    tag: 'AI Tool Users',
     tagColor: 'bg-violet-50 text-violet-600 border-violet-100',
-    title: '有文字内容，一键变成专业简历',
-    pain: '用豆包、ChatGPT、DeepSeek 生成了简历内容，但排版丑、无法加头像、不能导出 PDF。',
+    title: 'Turn AI-generated text into a polished resume',
+    pain: 'Used ChatGPT or Claude to draft resume content, but the formatting is ugly and you can\'t export a proper PDF.',
     solution:
-      '粘贴任意文本简历内容，AI 自动解析结构、应用专业模板排版，一键导出高清 PDF。支持豆包、通义千问、ChatGPT、DeepSeek、Kimi 等平台生成的内容。',
-    features: ['AI 智能排版', '自动结构化解析', '专业模板 + PDF 导出'],
-    cta: '立即排版',
+      'Paste any text resume content and AI auto-parses the structure, applies professional templates, and exports a crisp PDF. Works with content from ChatGPT, Claude, Gemini, and more.',
+    features: ['AI smart formatting', 'Auto structure parsing', 'Pro templates + PDF export'],
+    cta: 'Format My Resume',
     href: '/import',
   },
   {
     icon: <Target className="w-5 h-5" />,
-    tag: '海投求职者',
+    tag: 'Active Job Seekers',
     tagColor: 'bg-amber-50 text-amber-600 border-amber-100',
-    title: '一份简历，多个版本，精准投递',
-    pain: '同时投运营、产品、市场多个方向，一份简历投所有岗位效果很差。',
+    title: 'One resume, multiple tailored versions',
+    pain: 'Applying to marketing, product, and ops roles with the same generic resume gets zero callbacks.',
     solution:
-      '粘贴不同岗位的 JD，AI 自动重写简历要点，一键派生多个针对性版本。每个版本都针对目标岗位关键词优化，大幅提升简历通过率。',
-    features: ['JD 自动匹配重写', '多版本一键派生', 'ATS 关键词优化'],
-    cta: '开始定制简历',
+      'Paste different job descriptions and AI rewrites your resume highlights for each. Generate multiple targeted versions, each optimized with role-specific keywords to boost your pass rate.',
+    features: ['Auto JD-matched rewriting', 'One-click version branching', 'ATS keyword optimization'],
+    cta: 'Customize My Resume',
     href: '/ai',
   },
 ];
@@ -83,14 +83,14 @@ export const LandingUseCases = ({ id }: UseCasesSectionProps): React.ReactElemen
         <div className="text-center mb-16 max-w-3xl mx-auto">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/80 backdrop-blur-sm border border-slate-100 rounded-full shadow-sm mb-6">
             <Target className="w-4 h-4 text-violet-500" />
-            <span className="text-sm font-semibold text-violet-600">场景解决方案</span>
+            <span className="text-sm font-semibold text-violet-600">Use Cases</span>
           </div>
           <h2 className="text-4xl md:text-5xl font-extrabold text-slate-900 mb-6 tracking-tight">
-            不管你是谁，
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-fuchsia-500">都能搞定简历</span>
+            Whoever You Are,
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-fuchsia-500"> We’ve Got You Covered</span>
           </h2>
           <p className="text-lg text-slate-500">
-            针对不同求职身份和场景，AI 自动调整策略，精准解决你的简历痛点。
+            AI adapts its strategy for different backgrounds and scenarios, solving your specific resume challenges.
           </p>
         </div>
 
@@ -110,7 +110,7 @@ export const LandingUseCases = ({ id }: UseCasesSectionProps): React.ReactElemen
               </div>
               <h3 className="text-xl font-bold text-slate-800 mb-2">{item.title}</h3>
               <p className="text-sm text-slate-400 mb-3 leading-relaxed">
-                <span className="font-medium text-rose-400">痛点：</span>{item.pain}
+                <span className="font-medium text-rose-400">Pain point: </span>{item.pain}
               </p>
               <p className="text-sm text-slate-600 leading-relaxed flex-1">{item.solution}</p>
               <div className="flex flex-wrap gap-2 mt-4 mb-5">

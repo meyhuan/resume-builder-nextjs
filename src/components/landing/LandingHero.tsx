@@ -7,9 +7,9 @@ import { EditorShowcase } from './EditorShowcase';
 import Link from 'next/link';
 
 const TRUST_STATS = [
-  { label: '求职者使用', value: '10,000+' },
-  { label: '永久免费', value: '100%' },
-  { label: '简历生成', value: '50,000+' },
+  { label: 'Job Seekers', value: '10,000+' },
+  { label: 'Free Forever', value: '100%' },
+  { label: 'Resumes Created', value: '50,000+' },
 ];
 
 export const LandingHero = () => {
@@ -32,22 +32,22 @@ export const LandingHero = () => {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-violet-500"></span>
               </span>
-              👋 独立开发者作品 · 承诺永久免费
+              ✨ Free Forever — No Watermarks, No Paywalls
             </div>
           </div>
 
           {/* Main Heading */}
           <h1 className="text-4xl lg:text-6xl font-extrabold text-slate-900 leading-[1.15] tracking-tight">
-            没经验，不知道简历怎么写？
+            Build a Professional Resume
             <br />
             <span className="bg-gradient-to-r from-violet-600 to-fuchsia-500 bg-clip-text text-transparent">
-              AI 帮你写出专业大厂范儿
+              in Minutes with AI
             </span>
           </h1>
 
           {/* Subheading */}
           <p className="text-base lg:text-lg text-slate-500 max-w-2xl leading-relaxed mt-2 mx-auto">
-            深知新人求职的痛苦，我作为独立开发者为你做了这款极简简历工具：<strong className="text-slate-700 font-semibold">无需苦想措辞，AI 自动帮你挖掘经历亮点。</strong>支持在线制作，承诺<strong className="text-slate-700 font-semibold">永久免费、高清 PDF 与 Markdown 无套路导出</strong>。
+            Stop staring at a blank page. <strong className="text-slate-700 font-semibold">AI writes tailored resume content based on your experience.</strong> ATS-friendly templates, real-time editing, and <strong className="text-slate-700 font-semibold">free HD PDF export — no watermarks, no tricks</strong>.
           </p>
 
           {/* CTA Buttons */}
@@ -55,13 +55,13 @@ export const LandingHero = () => {
             <Link href="/ai">
               <LandingButton size="lg" className="rounded-full shadow-[0_8px_20px_rgba(139,92,246,0.25)] hover:shadow-[0_10px_25px_rgba(139,92,246,0.35)] text-base px-8 h-12">
                 <Wand2 className="w-5 h-5 mr-2" />
-                免费生成简历
+                Build My Resume Free
               </LandingButton>
             </Link>
             <Link href="/editor/new">
               <LandingButton variant="outline" size="lg" className="rounded-full text-slate-700 hover:text-violet-700 bg-white border border-slate-200 shadow-sm hover:shadow-md hover:border-violet-200 h-12 px-8 transition-all duration-300">
                 <span className="flex items-center gap-2 font-medium">
-                  <FileText className="w-4 h-4" /> 创建空白简历
+                  <FileText className="w-4 h-4" /> Start from Scratch
                 </span>
               </LandingButton>
             </Link>

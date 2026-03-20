@@ -7,7 +7,7 @@ const ICON_SIZE = '1.25em';
  * Section icons for resume sections — custom WPS SVG icons using currentColor.
  */
 
-/** 工作经验 / Experience */
+/** Experience */
 export function IconBriefcase({ size = ICON_SIZE, className }: { readonly size?: string | number; readonly className?: string }): ReactElement {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" width={size} height={size} className={className}>
@@ -16,7 +16,7 @@ export function IconBriefcase({ size = ICON_SIZE, className }: { readonly size?:
   );
 }
 
-/** 教育背景 / Education */
+/** Education */
 export function IconGraduationCap({ size = ICON_SIZE, className }: { readonly size?: string | number; readonly className?: string }): ReactElement {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" width={size} height={size} className={className}>
@@ -25,7 +25,7 @@ export function IconGraduationCap({ size = ICON_SIZE, className }: { readonly si
   );
 }
 
-/** 项目经验 / Project */
+/** Project */
 export function IconCode({ size = ICON_SIZE, className }: { readonly size?: string | number; readonly className?: string }): ReactElement {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" width={size} height={size} className={className}>
@@ -34,7 +34,7 @@ export function IconCode({ size = ICON_SIZE, className }: { readonly size?: stri
   );
 }
 
-/** 技能 / Skill (puzzle piece) */
+/** Skill (puzzle piece) */
 export function IconAward({ size = ICON_SIZE, className }: { readonly size?: string | number; readonly className?: string }): ReactElement {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" width={size} height={size} className={className}>
@@ -43,7 +43,7 @@ export function IconAward({ size = ICON_SIZE, className }: { readonly size?: str
   );
 }
 
-/** 自我评价 / Self evaluation */
+/** Self Evaluation */
 export function IconUser({ size = ICON_SIZE, className }: { readonly size?: string | number; readonly className?: string }): ReactElement {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" width={size} height={size} className={className}>
@@ -52,7 +52,7 @@ export function IconUser({ size = ICON_SIZE, className }: { readonly size?: stri
   );
 }
 
-/** 求职意向 / Job intention */
+/** Job Intention */
 export function IconTarget({ size = ICON_SIZE, className }: { readonly size?: string | number; readonly className?: string }): ReactElement {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" width={size} height={size} className={className}>
@@ -61,7 +61,7 @@ export function IconTarget({ size = ICON_SIZE, className }: { readonly size?: st
   );
 }
 
-/** 资质证书 / Qualifications */
+/** Qualifications */
 export function IconStar({ size = ICON_SIZE, className }: { readonly size?: string | number; readonly className?: string }): ReactElement {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" width={size} height={size} className={className}>
@@ -70,7 +70,7 @@ export function IconStar({ size = ICON_SIZE, className }: { readonly size?: stri
   );
 }
 
-/** 校园经历 / School activities */
+/** Campus Activities */
 export function IconBook({ size = ICON_SIZE, className }: { readonly size?: string | number; readonly className?: string }): ReactElement {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" width={size} height={size} className={className}>
@@ -79,7 +79,7 @@ export function IconBook({ size = ICON_SIZE, className }: { readonly size?: stri
   );
 }
 
-/** 实习经历 / Internship */
+/** Internship */
 export function IconIntern({ size = ICON_SIZE, className }: { readonly size?: string | number; readonly className?: string }): ReactElement {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" width={size} height={size} className={className}>
@@ -88,7 +88,7 @@ export function IconIntern({ size = ICON_SIZE, className }: { readonly size?: st
   );
 }
 
-/** 其他 / Other */
+/** Other */
 export function IconOther({ size = ICON_SIZE, className }: { readonly size?: string | number; readonly className?: string }): ReactElement {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" width={size} height={size} className={className}>
@@ -97,7 +97,7 @@ export function IconOther({ size = ICON_SIZE, className }: { readonly size?: str
   );
 }
 
-/** 基本信息 / Base info (head/card) */
+/** Base Info (head/card) */
 export function IconHead({ size = ICON_SIZE, className }: { readonly size?: string | number; readonly className?: string }): ReactElement {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" width={size} height={size} className={className}>

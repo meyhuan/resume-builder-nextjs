@@ -12,23 +12,23 @@ interface WhyFreeSectionProps {
 const PROMISES = [
   {
     icon: <Heart className="w-5 h-5 text-rose-500" />,
-    title: '永久免费',
-    description: '所有功能、所有模板、所有导出，不收一分钱。没有 VIP，没有付费墙。',
+    title: 'Free Forever',
+    description: 'All features, all templates, all exports — completely free. No VIP tiers, no paywalls.',
   },
   {
     icon: <Shield className="w-5 h-5 text-violet-500" />,
-    title: '隐私安全',
-    description: '你的简历数据只属于你。不会被用于训练 AI，不会被分享给第三方。',
+    title: 'Privacy First',
+    description: 'Your resume data belongs to you. Never used for AI training, never shared with third parties.',
   },
   {
     icon: <Code2 className="w-5 h-5 text-cyan-500" />,
-    title: '持续迭代',
-    description: '作为独立开发者，我会持续听取用户反馈，不断优化产品体验。',
+    title: 'Always Improving',
+    description: 'As an indie developer, I continuously listen to feedback and ship improvements.',
   },
   {
     icon: <MessageCircle className="w-5 h-5 text-green-500" />,
-    title: '真人支持',
-    description: '遇到任何问题，通过公众号随时找到我。不是客服机器人，是开发者本人。',
+    title: 'Real Human Support',
+    description: 'Have a question? Reach out anytime. No chatbots — you\'ll hear directly from the developer.',
   },
 ];
 
@@ -44,32 +44,32 @@ export const LandingWhyFree = ({ id }: WhyFreeSectionProps) => {
           <div className="space-y-8">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-rose-50 border border-rose-100 rounded-full">
               <Heart className="w-4 h-4 text-rose-500" />
-              <span className="text-sm font-semibold text-rose-600">独立开发者的承诺</span>
+              <span className="text-sm font-semibold text-rose-600">Our Promise</span>
             </div>
 
             <h2 className="text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight leading-tight">
-              为什么
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-fuchsia-500"> 完全免费？</span>
+              Why Is It
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-fuchsia-500"> Completely Free?</span>
             </h2>
 
             <div className="space-y-4 text-lg text-slate-600 leading-relaxed">
               <p>
-                你好，我是智简简历的开发者。
+                Hi, I’m the developer behind AI Resume Pass.
               </p>
               <p>
-                我还记得自己刚毕业时投简历的焦虑 —— 打开 Word 不知道怎么排版，
-                搜到的简历工具要么丑、要么贵、要么导出带水印。
+                I remember the anxiety of job hunting after graduation — opening Word with no clue how to format a resume,
+                only to find tools that were either ugly, expensive, or slapped watermarks on exports.
               </p>
               <p>
-                所以我决定自己做一款：
-                <span className="font-semibold text-slate-900">好看、好用、完全免费</span>的简历工具，
-                让每一个求职路上的年轻人都能用上。
+                So I decided to build something different:
+                <span className="font-semibold text-slate-900"> beautiful, powerful, and completely free</span> —
+                so every job seeker can have a professional resume without barriers.
               </p>
             </div>
 
             <Link href="/ai">
               <LandingButton size="lg" className="rounded-full shadow-lg shadow-violet-500/30 text-lg px-8 mt-4">
-                免费生成简历
+                Build My Resume Free
               </LandingButton>
             </Link>
           </div>

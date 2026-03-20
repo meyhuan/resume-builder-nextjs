@@ -43,10 +43,10 @@ export default function BlockActions(props: BlockActionsProps): ReactElement {
           size="sm"
           onClick={onAdd}
           className="h-6 px-2 text-[11px] gap-1 text-slate-600 hover:!text-slate-900 hover:!bg-slate-100"
-          title={`添加${blockType}`}
+          title={`Add ${blockType}`}
         >
           <PlusCircle className="h-3 w-3" />
-          <span>添加{blockType}</span>
+          <span>Add {blockType}</span>
         </Button>
       ) : null}
 
@@ -56,10 +56,10 @@ export default function BlockActions(props: BlockActionsProps): ReactElement {
           size="sm"
           onClick={onPolish}
           className="h-6 px-2 text-[11px] gap-1 text-purple-600 hover:!text-purple-700 hover:!bg-purple-50"
-          title="AI润色"
+          title="AI Polish"
         >
           <Sparkles className="h-3 w-3" />
-          <span>AI润色</span>
+          <span>AI Polish</span>
         </Button>
       ) : null}
 
@@ -69,10 +69,10 @@ export default function BlockActions(props: BlockActionsProps): ReactElement {
           size="sm"
           onClick={onGenerate}
           className="h-6 px-2 text-[11px] gap-1 text-violet-600 hover:!text-violet-700 hover:!bg-violet-50"
-          title="AI帮我写"
+          title="AI Write"
         >
           <Wand2 className="h-3 w-3" />
-          <span>AI帮我写</span>
+          <span>AI Write</span>
         </Button>
       ) : null}
 
@@ -82,10 +82,10 @@ export default function BlockActions(props: BlockActionsProps): ReactElement {
           size="sm"
           onClick={onDelete}
           className="h-6 px-2 text-[11px] gap-1 text-slate-600 hover:!text-red-600 hover:!bg-red-50"
-          title="删除"
+          title="Delete"
         >
           <Trash2 className="h-3 w-3" />
-          <span>删除</span>
+          <span>Delete</span>
         </Button>
       ) : null}
       {onMoveUp ? (
@@ -95,7 +95,7 @@ export default function BlockActions(props: BlockActionsProps): ReactElement {
           onClick={onMoveUp}
           disabled={!onMoveUp}
           className="h-6 w-6 px-0 disabled:opacity-50 disabled:cursor-not-allowed hover:!bg-slate-100 hover:!text-slate-900"
-          title="上移"
+          title="Move up"
         >
           <ArrowUp className="h-3 w-3 text-slate-600" />
         </Button>
@@ -107,7 +107,7 @@ export default function BlockActions(props: BlockActionsProps): ReactElement {
           onClick={onMoveDown}
           disabled={!onMoveDown}
           className="h-6 w-6 px-0 disabled:opacity-50 disabled:cursor-not-allowed hover:!bg-slate-100 hover:!text-slate-900"
-          title="下移"
+          title="Move down"
         >
           <ArrowDown className="h-3 w-3 text-slate-600" />
         </Button>

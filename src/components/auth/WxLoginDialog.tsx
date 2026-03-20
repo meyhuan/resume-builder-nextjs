@@ -109,7 +109,7 @@ export const WxLoginDialog: React.FC<WxLoginDialogProps> = ({ isOpen, onClose, o
       startPolling();
     } catch (error: unknown) {
       logger.error('WxLogin', 'Failed to get QR code', error);
-      const msg = error instanceof Error ? error.message : '获取二维码失败，请检查网络或稍后重试';
+      const msg = error instanceof Error ? error.message : 'Failed to get QR code. Please check your network or try again later.';
       setErrorMessage(msg);
     } finally {
       setLoading(false);
@@ -153,7 +153,7 @@ export const WxLoginDialog: React.FC<WxLoginDialogProps> = ({ isOpen, onClose, o
           try {
             await syncUserAction({
               wxId: uid,
-              name: `用户_${uid}`,
+              name: `User_${uid}`,
             });
             logger.success('WxLogin', 'User synced to local database via Server Action');
           } catch (syncError) {
@@ -166,7 +166,7 @@ export const WxLoginDialog: React.FC<WxLoginDialogProps> = ({ isOpen, onClose, o
           setCookie('auth_uid', uid, { maxAge: 60 * 60 * 24 * 7 }); // Save UID in cookie for server-side access
           setUserInfo({
             id: uid,
-            name: `用户_${uid}`,
+            name: `User_${uid}`,
           });
 
           stopPolling();
@@ -226,9 +226,9 @@ export const WxLoginDialog: React.FC<WxLoginDialogProps> = ({ isOpen, onClose, o
               <span className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center text-white">
                 <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>
               </span>
-              微信扫码登录
+              WeChat QR Login
             </DialogTitle>
-            <p className="text-slate-500 mt-2 text-sm font-medium">{subtitle || '即刻解锁 AI 简历超能力'}</p>
+            <p className="text-slate-500 mt-2 text-sm font-medium">{subtitle || 'Unlock AI resume superpowers'}</p>
           </div>
 
           <div className="bg-white/50 rounded-2xl p-6 border border-white/60 shadow-inner flex flex-col items-center relative z-10 backdrop-blur-sm">
@@ -240,7 +240,7 @@ export const WxLoginDialog: React.FC<WxLoginDialogProps> = ({ isOpen, onClose, o
                   onClick={handleRefresh}
                   className="mt-2 text-xs font-bold text-rose-700 hover:underline flex items-center gap-1"
                 >
-                  <RefreshCw size={12} /> 重试
+                  <RefreshCw size={12} /> Retry
                 </button>
               </div>
             ) : (
@@ -251,7 +251,7 @@ export const WxLoginDialog: React.FC<WxLoginDialogProps> = ({ isOpen, onClose, o
                 {loading ? (
                   <div className="flex flex-col items-center gap-3">
                     <Loader2 className="animate-spin text-violet-600" size={36} />
-                    <span className="text-xs text-slate-400 font-medium animate-pulse">正在生成专属二维码...</span>
+                    <span className="text-xs text-slate-400 font-medium animate-pulse">Generating QR code...</span>
                   </div>
                 ) : qrcodeUrl ? (
                   <div className="relative w-full h-full">
@@ -269,7 +269,7 @@ export const WxLoginDialog: React.FC<WxLoginDialogProps> = ({ isOpen, onClose, o
                         >
                           <RefreshCw size={24} />
                         </button>
-                        <span className="text-sm font-bold text-slate-700">二维码已过期</span>
+                        <span className="text-sm font-bold text-slate-700">QR code expired</span>
                       </div>
                     )}
                   </div>
@@ -279,14 +279,14 @@ export const WxLoginDialog: React.FC<WxLoginDialogProps> = ({ isOpen, onClose, o
 
             <div className="mt-6 flex flex-col items-center justify-center gap-1 h-[44px]">
               <p className="text-sm font-bold bg-gradient-to-r from-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
-                {status === 'pending' && '请使用微信扫描上方二维码'}
-                {status === 'scanned' && '✅ 已扫码，请在手机上确认'}
-                {status === 'confirming' && '正在确认登录信息...'}
-                {status === 'expired' && '二维码已过期，请刷新'}
+                {status === 'pending' && 'Scan the QR code above with WeChat'}
+                {status === 'scanned' && '✅ Scanned! Please confirm on your phone'}
+                {status === 'confirming' && 'Confirming login...'}
+                {status === 'expired' && 'QR code expired. Please refresh'}
               </p>
               {expireIn > 0 && status !== 'expired' ? (
                 <span className="text-[10px] text-slate-400 font-medium bg-slate-100 px-2 py-0.5 rounded-full">
-                  有效期 {expireIn}s
+                  Expires in {expireIn}s
                 </span>
               ) : (
                 <div className="h-[20px]" /> /* Placeholder to maintain height */
@@ -296,10 +296,10 @@ export const WxLoginDialog: React.FC<WxLoginDialogProps> = ({ isOpen, onClose, o
 
           <div className="mt-8 text-center relative z-10">
             <p className="text-xs text-slate-400">
-              登录即代表同意{' '}
-              <button type="button" onClick={() => openLegal('privacy')} className="text-violet-600 hover:text-violet-700 hover:underline font-medium">隐私协议</button>
-              {' '}与{' '}
-              <button type="button" onClick={() => openLegal('terms')} className="text-violet-600 hover:text-violet-700 hover:underline font-medium">服务条款</button>
+              By logging in, you agree to our{' '}
+              <button type="button" onClick={() => openLegal('privacy')} className="text-violet-600 hover:text-violet-700 hover:underline font-medium">Privacy Policy</button>
+              {' '}and{' '}
+              <button type="button" onClick={() => openLegal('terms')} className="text-violet-600 hover:text-violet-700 hover:underline font-medium">Terms of Service</button>
             </p>
           </div>
         </div>

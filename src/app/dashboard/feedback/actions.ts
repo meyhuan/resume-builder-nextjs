@@ -24,11 +24,11 @@ export async function submitFeedback(data: {
     const userId = cookieStore.get('auth_uid')?.value;
 
     if (!data.content?.trim()) {
-      return { success: false, error: '反馈内容不能为空' };
+      return { success: false, error: 'Feedback content cannot be empty' };
     }
 
     if (data.attachment && !/^https?:\/\//.test(data.attachment)) {
-      return { success: false, error: '附件地址无效' };
+      return { success: false, error: 'Invalid attachment URL' };
     }
 
     await prisma.feedback.create({
@@ -50,16 +50,16 @@ export async function submitFeedback(data: {
     return { success: true };
   } catch (error) {
     console.error('Failed to submit feedback:', error);
-    return { success: false, error: '提交反馈失败，请稍后重试' };
+    return { success: false, error: 'Failed to submit feedback. Please try again later.' };
   }
 }
 
 export async function deleteFeedbackForDevelopment(id: string): Promise<FeedbackActionResult> {
   if (!isDevelopmentEnvironment()) {
-    return { success: false, error: '仅开发模式允许删除反馈' };
+    return { success: false, error: 'Deleting feedback is only allowed in development mode' };
   }
   if (!id) {
-    return { success: false, error: '反馈 ID 无效' };
+    return { success: false, error: 'Invalid feedback ID' };
   }
   try {
     await prisma.feedback.delete({
@@ -70,7 +70,7 @@ export async function deleteFeedbackForDevelopment(id: string): Promise<Feedback
     return { success: true };
   } catch (error) {
     console.error('Failed to delete feedback in development:', error);
-    return { success: false, error: '删除反馈失败，请稍后重试' };
+    return { success: false, error: 'Failed to delete feedback. Please try again later.' };
   }
 }
 
@@ -80,10 +80,10 @@ export async function saveFeedbackAdminReplyForDevelopment(data: {
   readonly adminReply: string;
 }): Promise<FeedbackActionResult> {
   if (!isDevelopmentEnvironment()) {
-    return { success: false, error: '仅开发模式允许管理反馈' };
+    return { success: false, error: 'Managing feedback is only allowed in development mode' };
   }
   if (!data.id) {
-    return { success: false, error: '反馈 ID 无效' };
+    return { success: false, error: 'Invalid feedback ID' };
   }
   try {
     const trimmedReply: string = data.adminReply.trim();
@@ -101,6 +101,6 @@ export async function saveFeedbackAdminReplyForDevelopment(data: {
     return { success: true };
   } catch (error) {
     console.error('Failed to save feedback admin reply in development:', error);
-    return { success: false, error: '保存回复失败，请稍后重试' };
+    return { success: false, error: 'Failed to save reply. Please try again later.' };
   }
 }

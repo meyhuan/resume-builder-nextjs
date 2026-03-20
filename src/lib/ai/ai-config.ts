@@ -17,21 +17,27 @@ export interface AiModelConfig {
  */
 const MODELS: readonly AiModelConfig[] = [
   {
+    name: 'gpt-4o-mini',
+    displayName: 'GPT-4o Mini',
+    baseUrl: 'https://api.openai.com/v1',
+    apiKeyEnv: 'OPENAI_API_KEY',
+  },
+  {
     name: 'qwen-plus',
-    displayName: '通义千问 Plus',
+    displayName: 'Qwen Plus',
     baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
     apiKeyEnv: 'DASHSCOPE_API_KEY',
   },
   {
     name: 'qwen-max',
-    displayName: '通义千问 Max',
+    displayName: 'Qwen Max',
     baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
     apiKeyEnv: 'DASHSCOPE_API_KEY',
   },
 ] as const;
 
 /** Default model used when none is specified. */
-const DEFAULT_MODEL_NAME = 'qwen-plus';
+const DEFAULT_MODEL_NAME = 'gpt-4o-mini';
 
 /**
  * Returns all available model configs (for UI model selector).

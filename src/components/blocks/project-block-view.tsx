@@ -59,7 +59,7 @@ export default function ProjectBlockView(props: ProjectBlockViewProps): ReactEle
         const foundBlock = section.blocks.find((b) => b.id === block.id);
         if (foundBlock && foundBlock.type === 'project') {
           if (editingField === 'name') {
-            foundBlock.name = tempValue || '未命名项目';
+            foundBlock.name = tempValue || 'Project Name';
           } else if (editingField === 'role') {
             foundBlock.role = tempValue || undefined;
           }
@@ -96,15 +96,15 @@ export default function ProjectBlockView(props: ProjectBlockViewProps): ReactEle
               onBlur={saveField}
               onKeyDown={handleKeyDown}
               className="px-1 py-0.5 border border-blue-500 rounded outline-none w-full text-sm font-bold"
-              placeholder="项目名称"
+              placeholder="Project Name"
             />
           ) : (
             <span
               className="cursor-pointer hover:underline rounded px-1 py-0.5 font-bold text-sm"
               onClick={(): void => startEditing('name')}
-              title="点击编辑项目名称"
+              title="Click to edit project name"
             >
-              {block.name || '项目名称'}
+              {block.name || 'Project Name'}
             </span>
           )}
         </div>
@@ -127,13 +127,13 @@ export default function ProjectBlockView(props: ProjectBlockViewProps): ReactEle
               onBlur={saveField}
               onKeyDown={handleKeyDown}
               className="px-1 py-0.5 border border-blue-500 rounded outline-none w-full"
-              placeholder="项目角色"
+              placeholder="Role"
             />
           ) : (
             <span
               className="cursor-pointer hover:underline rounded px-1 py-0.5"
               onClick={(): void => startEditing('role')}
-              title="点击编辑角色"
+              title="Click to edit role"
             >
               {block.role}
             </span>

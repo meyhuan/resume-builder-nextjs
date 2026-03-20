@@ -59,9 +59,9 @@ export default function CampusBlockView(props: CampusBlockViewProps): ReactEleme
         const foundBlock = section.blocks.find((b) => b.id === block.id);
         if (foundBlock && foundBlock.type === 'campus') {
           if (editingField === 'organization') {
-            foundBlock.organization = tempValue || '社团/活动名称';
+            foundBlock.organization = tempValue || 'Organization Name';
           } else if (editingField === 'position') {
-            foundBlock.position = tempValue || '职位';
+            foundBlock.position = tempValue || 'Role';
           }
           break;
         }
@@ -102,15 +102,15 @@ export default function CampusBlockView(props: CampusBlockViewProps): ReactEleme
               onBlur={saveField}
               onKeyDown={handleKeyDown}
               className="px-1 py-0.5 border border-blue-500 rounded outline-none w-full text-sm font-bold text-right"
-              placeholder="社团/活动名称"
+              placeholder="Organization Name"
             />
           ) : (
             <span
               className="cursor-pointer hover:underline rounded px-1 py-0.5 font-bold text-sm"
               onClick={(): void => startEditing('organization')}
-              title="点击编辑社团/活动名称"
+              title="Click to edit organization"
             >
-              {block.organization || '社团/活动名称'}
+              {block.organization || 'Organization Name'}
             </span>
           )}
         </div>
@@ -126,15 +126,15 @@ export default function CampusBlockView(props: CampusBlockViewProps): ReactEleme
             onBlur={saveField}
             onKeyDown={handleKeyDown}
             className="px-1 py-0.5 border border-blue-500 rounded outline-none w-full"
-            placeholder="职位"
+            placeholder="Role"
           />
         ) : (
           <span
             className="cursor-pointer hover:underline rounded px-1 py-0.5"
             onClick={(): void => startEditing('position')}
-            title="点击编辑职位"
+            title="Click to edit role"
           >
-            {block.position || '职位'}
+            {block.position || 'Role'}
           </span>
         )}
       </div>

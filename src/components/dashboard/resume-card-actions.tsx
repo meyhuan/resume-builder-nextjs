@@ -50,18 +50,18 @@ export function ResumeCardActions({
 
   const handleRenameSubmit = async () => {
     if (!newTitle.trim()) {
-      toast.error('简历名称不能为空');
+      toast.error('Resume name cannot be empty');
       return;
     }
     
     setIsRenaming(true);
     try {
       await onRename(resumeId, newTitle.trim());
-      toast.success('重命名成功');
+      toast.success('Renamed successfully');
       setIsRenameOpen(false);
     } catch (error) {
       console.error(error);
-      toast.error('重命名失败，请稍后重试');
+      toast.error('Rename failed, please try again');
     } finally {
       setIsRenaming(false);
     }
@@ -71,11 +71,11 @@ export function ResumeCardActions({
     setIsDuplicating(true);
     try {
       await onDuplicate(resumeId);
-      toast.success('已创建副本');
+      toast.success('Duplicate created');
       // router.push(`/editor/${newId}`); // Optional: redirect to new editor or just stay on dashboard
     } catch (error) {
       console.error(error);
-      toast.error('复制简历失败');
+      toast.error('Failed to duplicate resume');
     } finally {
       setIsDuplicating(false);
     }
@@ -85,11 +85,11 @@ export function ResumeCardActions({
     setIsDeleting(true);
     try {
       await onDelete(resumeId);
-      toast.success('简历已删除');
+      toast.success('Resume deleted');
       setIsDeleteOpen(false);
     } catch (error) {
       console.error(error);
-      toast.error('删除简历失败');
+      toast.error('Failed to delete resume');
     } finally {
       setIsDeleting(false);
     }
@@ -110,7 +110,7 @@ export function ResumeCardActions({
             ) : (
               <MoreVertical className="h-4 w-4" />
             )}
-            <span className="sr-only">更多选项</span>
+            <span className="sr-only">More options</span>
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-40 rounded-xl">
@@ -119,14 +119,14 @@ export function ResumeCardActions({
             className="cursor-pointer gap-2 py-2 group focus:bg-slate-50 focus:text-slate-900 hover:bg-slate-50 hover:text-slate-900"
           >
             <Edit2 className="h-4 w-4 text-slate-500 group-hover:text-slate-900 transition-colors" />
-            <span>重命名</span>
+            <span>Rename</span>
           </DropdownMenuItem>
           <DropdownMenuItem 
             onSelect={() => handleDuplicate()}
             className="cursor-pointer gap-2 py-2 group focus:bg-slate-50 focus:text-slate-900 hover:bg-slate-50 hover:text-slate-900"
           >
             <Copy className="h-4 w-4 text-slate-500 group-hover:text-slate-900 transition-colors" />
-            <span>复制副本</span>
+            <span>Duplicate</span>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem 
@@ -134,7 +134,7 @@ export function ResumeCardActions({
             className="cursor-pointer gap-2 py-2 text-rose-600 focus:bg-rose-50 focus:text-rose-700 hover:bg-rose-50 hover:text-rose-700 group"
           >
             <Trash2 className="h-4 w-4" />
-            <span>删除简历</span>
+            <span>Delete</span>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -143,9 +143,9 @@ export function ResumeCardActions({
       <Dialog open={isRenameOpen} onOpenChange={setIsRenameOpen}>
         <DialogContent className="sm:max-w-[425px] rounded-2xl">
           <DialogHeader>
-            <DialogTitle>重命名简历</DialogTitle>
+            <DialogTitle>Rename Resume</DialogTitle>
             <DialogDescription>
-              请输入新的简历名称。
+              Enter a new name for this resume.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
@@ -154,7 +154,7 @@ export function ResumeCardActions({
               value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)}
               className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              placeholder="例如：2026产品经理秋招"
+              placeholder="e.g.: Product Manager Resume 2026"
               autoFocus
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
@@ -166,11 +166,11 @@ export function ResumeCardActions({
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsRenameOpen(false)} disabled={isRenaming}>
-              取消
+              Cancel
             </Button>
             <Button onClick={handleRenameSubmit} disabled={isRenaming} className="bg-violet-600 hover:bg-violet-700 text-white">
               {isRenaming ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              保存
+              Save
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -182,20 +182,20 @@ export function ResumeCardActions({
           <DialogHeader>
             <DialogTitle className="text-rose-600 flex items-center gap-2">
               <Trash2 className="h-5 w-5" />
-              确认删除
+              Confirm Delete
             </DialogTitle>
             <DialogDescription className="pt-2">
-              你确定要删除简历 <strong>{currentTitle}</strong> 吗？
-              <br/>此操作无法撤销。
+              Are you sure you want to delete <strong>{currentTitle}</strong>?
+              <br/>This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="mt-4">
             <Button variant="outline" onClick={() => setIsDeleteOpen(false)} disabled={isDeleting}>
-              取消
+              Cancel
             </Button>
             <Button onClick={handleDeleteSubmit} disabled={isDeleting} variant="destructive" className="bg-rose-500 hover:bg-rose-600">
               {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              确认删除
+              Delete
             </Button>
           </DialogFooter>
         </DialogContent>

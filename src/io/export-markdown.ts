@@ -4,17 +4,17 @@ export function exportResumeToMarkdown(resume: ResumeData): string {
   const lines: string[] = []
 
   // 1. Header (Name + Base Info)
-  lines.push(`# ${resume.name || '姓名'}`)
+  lines.push(`# ${resume.name || 'Name'}`)
   lines.push('')
 
   if (resume.baseInfo) {
     const info = resume.baseInfo
     const parts = [
-      info.age ? `年龄: ${info.age}` : '',
-      info.gender ? `性别: ${info.gender}` : '',
-      info.phone ? `电话: ${info.phone}` : '',
-      info.email ? `邮箱: ${info.email}` : '',
-      info.location ? `所在地: ${info.location}` : '',
+      info.age ? `Age: ${info.age}` : '',
+      info.gender ? `Gender: ${info.gender}` : '',
+      info.phone ? `Phone: ${info.phone}` : '',
+      info.email ? `Email: ${info.email}` : '',
+      info.location ? `Location: ${info.location}` : '',
     ].filter(Boolean)
     
     if (parts.length > 0) {
@@ -25,14 +25,14 @@ export function exportResumeToMarkdown(resume: ResumeData): string {
 
   // 2. Job Intention
   if (resume.jobIntentionVisible && resume.jobIntention) {
-    lines.push('## 求职意向')
+    lines.push('## Job Preference')
     lines.push('')
     const intent = resume.jobIntention
     const parts = [
-      intent.position ? `意向岗位: ${intent.position}` : '',
-      intent.city ? `意向城市: ${intent.city}` : '',
-      intent.salary ? `期望薪资: ${intent.salary}` : '',
-      intent.type ? `求职类型: ${intent.type}` : '',
+      intent.position ? `Position: ${intent.position}` : '',
+      intent.city ? `City: ${intent.city}` : '',
+      intent.salary ? `Salary: ${intent.salary}` : '',
+      intent.type ? `Job Type: ${intent.type}` : '',
     ].filter(Boolean)
     
     if (parts.length > 0) {
@@ -44,7 +44,7 @@ export function exportResumeToMarkdown(resume: ResumeData): string {
   // 3. Sections
   if (resume.sections && resume.sections.length > 0) {
     resume.sections.forEach((section) => {
-      lines.push(`## ${section.title || '自定义模块'}`)
+      lines.push(`## ${section.title || 'Custom Section'}`)
       lines.push('')
       
       section.blocks.forEach((block) => {

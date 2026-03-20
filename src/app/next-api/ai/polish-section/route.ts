@@ -33,14 +33,14 @@ export async function POST(request: NextRequest): Promise<Response> {
 
     if (!content || content.trim().length < MIN_POLISH_CONTENT_LENGTH) {
       return NextResponse.json(
-        { error: `内容不少于${MIN_POLISH_CONTENT_LENGTH}个字符` },
+        { error: `Content must be at least ${MIN_POLISH_CONTENT_LENGTH} characters` },
         { status: 400 },
       );
     }
 
     if (!identity || !moduleType || !polishLevel) {
       return NextResponse.json(
-        { error: '缺少必填字段：identity、moduleType、polishLevel' },
+        { error: 'Missing required fields: identity, moduleType, polishLevel' },
         { status: 400 },
       );
     }
@@ -111,7 +111,7 @@ export async function POST(request: NextRequest): Promise<Response> {
     });
   } catch (error) {
     const message: string =
-      error instanceof Error ? error.message : '服务器内部错误';
+      error instanceof Error ? error.message : 'Internal server error';
     console.error('[polish-section] Error:', message);
     return NextResponse.json({ error: message }, { status: 500 });
   }

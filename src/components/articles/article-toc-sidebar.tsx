@@ -48,7 +48,7 @@ export function ArticleTocSidebar({ headings }: ArticleTocSidebarProps): React.R
       <div className="bg-white/70 backdrop-blur-md rounded-2xl border border-white shadow-sm p-5">
         <div className="flex items-center gap-2 mb-4">
             <List className="w-4 h-4 text-violet-500" />
-            <span className="text-sm font-bold text-slate-800">文章大纲</span>
+            <span className="text-sm font-bold text-slate-800">Table of Contents</span>
           </div>
           <nav className="space-y-0.5 max-h-[60vh] overflow-y-auto">
             {headings.map((h) => (

@@ -44,7 +44,7 @@ export const StepMajor = ({ stepNumber, onClickPast }: { stepNumber: number; onC
   };
 
   return (
-    <StepCard stepNumber={stepNumber} title="选择你所学的专业" onSkip={nextStep} onClickPast={onClickPast}>
+    <StepCard stepNumber={stepNumber} title="Select Your Major" onSkip={nextStep} onClickPast={onClickPast}>
       <div className="space-y-4 relative">
         {/* Search bar */}
         <div className="flex items-center gap-2 relative z-10">
@@ -52,7 +52,7 @@ export const StepMajor = ({ stepNumber, onClickPast }: { stepNumber: number; onC
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
             <input
               type="text"
-              placeholder="搜索专业"
+              placeholder="Search majors"
               value={searchValue}
               onFocus={() => setShowDropdown(true)}
               onChange={(e) => {
@@ -84,7 +84,7 @@ export const StepMajor = ({ stepNumber, onClickPast }: { stepNumber: number; onC
               onClick={handleConfirmSearch}
               className="shrink-0 bg-[#8B5CF6] hover:bg-[#7C3AED] text-white px-5 py-3 rounded-lg text-sm font-medium transition-colors"
             >
-              确认
+              Confirm
             </button>
           )}
         </div>
@@ -103,7 +103,7 @@ export const StepMajor = ({ stepNumber, onClickPast }: { stepNumber: number; onC
                 )}
               >
                 {idx === 0 && m === searchValue.trim() ? (
-                  <span className="text-[#7C3AED] font-medium">使用自定义: {m}</span>
+                  <span className="text-[#7C3AED] font-medium">Use custom: {m}</span>
                 ) : (
                   <HighlightText text={m} keyword={searchValue} />
                 )}

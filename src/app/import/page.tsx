@@ -31,12 +31,12 @@ const MIN_TEXT_LENGTH = 10;
 const IMPORT_CACHE_KEY = 'import_pending_resume';
 
 const PLATFORM_BADGES: readonly { label: string; color: string }[] = [
-  { label: '豆包', color: 'bg-sky-100 text-sky-700' },
-  { label: '通义千问', color: 'bg-violet-100 text-violet-700' },
   { label: 'ChatGPT', color: 'bg-emerald-100 text-emerald-700' },
+  { label: 'Claude', color: 'bg-violet-100 text-violet-700' },
   { label: 'DeepSeek', color: 'bg-blue-100 text-blue-700' },
-  { label: 'Kimi', color: 'bg-amber-100 text-amber-700' },
-  { label: '其他文本', color: 'bg-slate-100 text-slate-600' },
+  { label: 'Gemini', color: 'bg-sky-100 text-sky-700' },
+  { label: 'Copilot', color: 'bg-amber-100 text-amber-700' },
+  { label: 'Other Text', color: 'bg-slate-100 text-slate-600' },
 ];
 
 export default function ImportResumePage(): React.ReactElement {
@@ -59,12 +59,12 @@ export default function ImportResumePage(): React.ReactElement {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          title: resumeData.name || 'AI 排版简历',
+          title: resumeData.name || 'AI Formatted Resume',
           content: resumeData,
           template: 'simple',
         }),
       });
-      if (!res.ok) throw new Error('保存简历失败');
+      if (!res.ok) throw new Error('Failed to save resume');
       const saved: { id: string } = await res.json();
       localStorage.removeItem(IMPORT_CACHE_KEY);
       router.push(`/editor/${saved.id}`);
@@ -107,7 +107,7 @@ export default function ImportResumePage(): React.ReactElement {
       const resumeData = mapExternalResume(importResult);
       openEditorWithData(resumeData);
     }
-  }, [rawText, selectedModel, generate, openEditorWithData, isLimitReached, refreshUsage]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [rawText, selectedModel, generate, openEditorWithData, isLimitReached, refreshUsage]);
 
   const handleStop = useCallback((): void => { abort(); }, [abort]);
   const handleBack = useCallback((): void => {
@@ -143,18 +143,18 @@ export default function ImportResumePage(): React.ReactElement {
             className="flex items-center gap-1 text-sm text-gray-500 hover:text-[#8B5CF6] transition-colors"
           >
             <ChevronLeft className="w-4 h-4" />
-            返回
+            Back
           </button>
           <div className="w-px h-4 bg-gray-200" />
-          <h1 className="text-sm font-semibold text-gray-800">AI 文本转简历</h1>
+          <h1 className="text-sm font-semibold text-gray-800">AI Text to Resume</h1>
         </div>
       </header>
       <WxLoginDialog isOpen={isLoginOpen} onClose={handleLoginClose} onSuccess={handleLoginSuccess} />
 
       <div className="text-center pt-8 pb-2">
-        <h2 className="text-xl font-bold text-gray-900">粘贴简历文本，一键格式化</h2>
+        <h2 className="text-xl font-bold text-gray-900">Paste Resume Text, One-Click Format</h2>
         <p className="text-sm text-gray-400 mt-1">
-          支持从各大 AI 平台复制的简历内容，智能解析为专业排版简历
+          Supports resume content copied from AI platforms, intelligently parsed into professionally formatted resumes
         </p>
       </div>
 
@@ -162,7 +162,7 @@ export default function ImportResumePage(): React.ReactElement {
         <div className="w-full max-w-3xl space-y-6">
           {/* Platform badges */}
           <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
-            <span className="text-xs text-gray-400 mr-1">支持来源：</span>
+            <span className="text-xs text-gray-400 mr-1">Supported sources:</span>
             {PLATFORM_BADGES.map((badge) => (
               <span
                 key={badge.label}
@@ -181,19 +181,19 @@ export default function ImportResumePage(): React.ReactElement {
               </div>
               <div>
                 <h3 className="text-sm font-bold text-gray-800 mb-1">
-                  为什么用 AI 生成的简历还需要导入？
+                  Why import AI-generated resumes here?
                 </h3>
                 <p className="text-xs text-gray-500 leading-relaxed">
-                  豆包、千问、ChatGPT 等 AI 能写出好内容，但缺少排版、无法添加头像、不支持模块拖拽。
-                  粘贴到这里，<strong className="text-[#8B5CF6]">一键获得专业排版 + 免费 PDF 导出</strong>。
+                  ChatGPT, Claude, DeepSeek and other AI tools write great content, but lack formatting, avatars, and drag-and-drop.
+                  Paste here for <strong className="text-[#8B5CF6]">professional formatting + free PDF export</strong>.
                 </p>
               </div>
             </div>
             <div className="grid grid-cols-3 gap-3">
               {[
-                { icon: '📄', text: '专业排版' },
-                { icon: '🖼️', text: '支持头像' },
-                { icon: '🎨', text: '多套模板' },
+                { icon: '📄', text: 'Professional Layout' },
+                { icon: '🖼️', text: 'Avatar Support' },
+                { icon: '🎨', text: 'Multiple Templates' },
               ].map((item) => (
                 <div key={item.text} className="flex items-center gap-2 bg-[#F8F9FC] rounded-lg px-3 py-2">
                   <span className="text-base">{item.icon}</span>
@@ -206,15 +206,15 @@ export default function ImportResumePage(): React.ReactElement {
           {/* Textarea */}
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
             <div className="flex items-center justify-between mb-3">
-              <label className="text-sm font-bold text-gray-800 block">粘贴简历内容</label>
+              <label className="text-sm font-bold text-gray-800 block">Paste Resume Content</label>
               <span className="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded-md">
-                💡 如果只有文件格式，请使用豆包等工具转成文本格式
+                💡 If you only have a file, use an AI tool to convert it to text first
               </span>
             </div>
             <textarea
               value={rawText}
               onChange={(e) => setRawText(e.target.value)}
-              placeholder={'在此粘贴或输入简历文本...'}
+              placeholder={'Paste or type your resume text here...'}
               className="w-full h-60 resize-none rounded-xl border border-gray-200 bg-[#FAFBFC] px-4 py-3 text-sm text-gray-700 placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/30 focus:border-[#8B5CF6]/50 transition-all"
             />
             <div className="flex items-center justify-between mt-2">
@@ -223,13 +223,13 @@ export default function ImportResumePage(): React.ReactElement {
                 rawText.length > 0 && !isValid ? 'text-amber-500' : 'text-gray-300',
               )}>
                 {rawText.length > 0
-                  ? `已输入 ${rawText.length} 字符${!isValid ? '（至少需要10个字符）' : ''}`
-                  : '粘贴或输入简历文本'}
+                  ? `${rawText.length} characters entered${!isValid ? ' (minimum 10 characters)' : ''}`
+                  : 'Paste or type resume text'}
               </span>
               {isValid && (
                 <span className="flex items-center gap-1 text-xs text-emerald-500">
                   <CheckCircle2 className="w-3 h-3" />
-                  内容就绪
+                  Ready
                 </span>
               )}
             </div>
@@ -249,7 +249,7 @@ export default function ImportResumePage(): React.ReactElement {
                 )}
               >
                 <FileUp className="w-5 h-5" />
-                开始解析导入
+                Start Import
               </button>
               
               <Link
@@ -257,14 +257,14 @@ export default function ImportResumePage(): React.ReactElement {
                 className="px-8 py-3 rounded-full text-lg font-medium flex items-center gap-2 border-2 border-gray-200 text-gray-600 hover:border-violet-300 hover:text-violet-600 hover:bg-violet-50 transition-all bg-white"
               >
                 <FileText className="w-5 h-5" />
-                跳过导入，直接创建
+                Skip Import, Create Directly
               </Link>
             </div>
             {usage && (
               <p className={cn('text-xs', isLimitReached ? 'text-red-500' : 'text-gray-400')}>
                 {isLimitReached
-                  ? `今日次数已用完（${usage.used}/${usage.limit}），${usage.isAuthenticated ? '请明天再试' : '登录后可获得更多次数'}`
-                  : `今日剩余 ${usage.remaining}/${usage.limit} 次${usage.isAuthenticated ? '' : '（登录后可获得更多次数）'}`}
+                  ? `Daily limit reached (${usage.used}/${usage.limit}). ${usage.isAuthenticated ? 'Please try again tomorrow' : 'Log in for more uses'}`
+                  : `${usage.remaining}/${usage.limit} uses remaining today${usage.isAuthenticated ? '' : ' (log in for more)'}`}
               </p>
             )}
           </div>
@@ -325,10 +325,10 @@ function ImportGenerationPage({
         <div className="max-w-4xl mx-auto px-6 h-14 flex items-center gap-3">
           <button type="button" onClick={onBack} className="flex items-center gap-1 text-sm text-gray-500 hover:text-[#8B5CF6] transition-colors">
             <ChevronLeft className="w-4 h-4" />
-            返回
+            Back
           </button>
           <div className="w-px h-4 bg-gray-200" />
-          <h1 className="text-sm font-semibold text-gray-800">解析导入简历</h1>
+          <h1 className="text-sm font-semibold text-gray-800">Parsing Resume</h1>
         </div>
       </header>
 
@@ -348,7 +348,7 @@ function ImportGenerationPage({
             ) : (
               <motion.div key="placeholder" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center py-20 gap-4">
                 <Loader2 className="w-8 h-8 text-[#8B5CF6] animate-spin" />
-                <p className="text-gray-400 text-sm">正在解析简历内容...</p>
+                <p className="text-gray-400 text-sm">Parsing resume content...</p>
               </motion.div>
             )}
           </AnimatePresence>
@@ -364,7 +364,7 @@ function ImportGenerationPage({
           {isSaving && !isGenerating && (
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-8 flex flex-col items-center gap-3">
               <Loader2 className="w-6 h-6 text-[#8B5CF6] animate-spin" />
-              <p className="text-sm text-gray-500">正在保存简历...</p>
+              <p className="text-sm text-gray-500">Saving resume...</p>
             </motion.div>
           )}
 
@@ -375,7 +375,7 @@ function ImportGenerationPage({
                 <p className="text-sm font-medium">{error}</p>
               </div>
               <button type="button" onClick={onBack} className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white px-6 py-2.5 rounded-full text-sm font-medium shadow-md transition-all">
-                返回重新粘贴
+                Go Back and Retry
               </button>
             </motion.div>
           )}
@@ -388,7 +388,7 @@ function ImportGenerationPage({
               </div>
               <button type="button" onClick={onRetry} className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white px-6 py-2.5 rounded-full text-sm font-medium flex items-center gap-2 shadow-md transition-all">
                 <Sparkles className="w-4 h-4" />
-                重新解析
+                Retry Parsing
               </button>
             </motion.div>
           )}
@@ -400,12 +400,12 @@ function ImportGenerationPage({
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-4 px-5 py-2.5 bg-white/90 backdrop-blur-lg rounded-full shadow-lg border border-gray-100">
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <Loader2 className="w-4 h-4 text-[#8B5CF6] animate-spin" />
-              正在解析简历
+              Parsing resume
             </div>
             <div className="w-px h-4 bg-gray-200" />
             <button type="button" onClick={onStop} className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-red-500 transition-colors">
               <CircleStop className="w-4 h-4" />
-              停止 Esc
+              Stop (Esc)
             </button>
           </motion.div>
         </div>
@@ -427,7 +427,7 @@ function SectionBlock({ section }: { section: DisplaySection }): React.ReactElem
           {section.fields.map((f, i) => (
             <li key={i} className="flex items-baseline gap-2 text-sm text-gray-600">
               <span className="text-gray-400">•</span>
-              <span className="font-medium text-gray-700">{f.label}：</span>
+              <span className="font-medium text-gray-700">{f.label}: </span>
               <span>{f.value}</span>
             </li>
           ))}

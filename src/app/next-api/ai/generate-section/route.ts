@@ -32,14 +32,14 @@ export async function POST(request: NextRequest): Promise<Response> {
 
     if (!identity || !moduleType) {
       return NextResponse.json(
-        { error: '缺少必填字段：identity、moduleType' },
+        { error: 'Missing required fields: identity, moduleType' },
         { status: 400 },
       );
     }
 
     if (!answers || Object.keys(answers).length === 0) {
       return NextResponse.json(
-        { error: '请至少填写一项信息' },
+        { error: 'Please fill in at least one field' },
         { status: 400 },
       );
     }
@@ -105,7 +105,7 @@ export async function POST(request: NextRequest): Promise<Response> {
     });
   } catch (error) {
     const message: string =
-      error instanceof Error ? error.message : '服务器内部错误';
+      error instanceof Error ? error.message : 'Internal server error';
     console.error('[generate-section] Error:', message);
     return NextResponse.json({ error: message }, { status: 500 });
   }

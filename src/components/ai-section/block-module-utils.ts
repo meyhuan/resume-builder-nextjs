@@ -39,7 +39,7 @@ export function extractBlockContentHtml(block: ResumeBlock): string {
  * Returns empty string for falsy/placeholder values.
  */
 function formatDate(date: string | undefined): string {
-  if (!date || date === '至今') return date ?? '';
+  if (!date || date === 'Present' || date === 'PRESENT') return date ?? '';
   return date.replace(/-/g, '.');
 }
 
@@ -53,7 +53,7 @@ export function extractBlockPrefill(block: ResumeBlock): Record<string, string> 
     const company: string = block.company ?? '';
     const position: string = block.position ?? '';
     const start: string = formatDate(block.startDate);
-    const end: string = formatDate(block.endDate) || '至今';
+    const end: string = formatDate(block.endDate) || 'Present';
     if (company || position) {
       prefill['companyAndRole'] = [company, position, start && end ? `${start}-${end}` : ''].filter(Boolean).join(' ');
     }
@@ -61,7 +61,7 @@ export function extractBlockPrefill(block: ResumeBlock): Record<string, string> 
     const name: string = block.name ?? '';
     const role: string = ('role' in block ? block.role : '') ?? '';
     const start: string = formatDate(block.startDate);
-    const end: string = formatDate(block.endDate) || '至今';
+    const end: string = formatDate(block.endDate) || 'Present';
     if (name || role) {
       prefill['projectNameAndRole'] = [name, role, start && end ? `${start}-${end}` : ''].filter(Boolean).join(' ');
     }
@@ -69,7 +69,7 @@ export function extractBlockPrefill(block: ResumeBlock): Record<string, string> 
     const org: string = block.organization ?? '';
     const position: string = block.position ?? '';
     const start: string = formatDate(block.startDate);
-    const end: string = formatDate(block.endDate) || '至今';
+    const end: string = formatDate(block.endDate) || 'Present';
     if (org || position) {
       prefill['orgAndRole'] = [org, position, start && end ? `${start}-${end}` : ''].filter(Boolean).join(' ');
     }
@@ -78,21 +78,21 @@ export function extractBlockPrefill(block: ResumeBlock): Record<string, string> 
 }
 
 /**
- * Returns the label for a block type (Chinese).
+ * Returns the label for a block type.
  */
 export function getBlockTypeLabel(blockType: string): string {
   switch (blockType) {
     case 'experience':
-      return '工作经历';
+      return 'Work Experience';
     case 'project':
-      return '项目经历';
+      return 'Project Experience';
     case 'education':
-      return '教育经历';
+      return 'Education';
     case 'campus':
-      return '校园经历';
+      return 'Campus Experience';
     case 'text':
-      return '内容';
+      return 'Content';
     default:
-      return '内容';
+      return 'Content';
   }
 }

@@ -30,11 +30,11 @@ function isTextOnlySection(section: Section): boolean {
 
 /** Resolve a human-readable label from block type. */
 function getBlockTypeLabel(type: string): string {
-  if (type === 'experience') return '工作经历'
-  if (type === 'project') return '项目经历'
-  if (type === 'education') return '教育经历'
-  if (type === 'campus') return '校园经历'
-  return '内容'
+  if (type === 'experience') return 'Work Experience'
+  if (type === 'project') return 'Project Experience'
+  if (type === 'education') return 'Education'
+  if (type === 'campus') return 'Campus Experience'
+  return 'Content'
 }
 
 // ---------------------------------------------------------------------------
@@ -135,7 +135,7 @@ function TimelineBlockRow(props: TimelineBlockRowProps): ReactElement {
               fieldName="position"
               value={block.position}
               onUpdate={(val) => updateBlockField('position', val)}
-              placeholder="职位名称"
+              placeholder="Position"
             />
           )}
           {block.type === 'project' && (
@@ -144,7 +144,7 @@ function TimelineBlockRow(props: TimelineBlockRowProps): ReactElement {
               fieldName="role"
               value={block.role}
               onUpdate={(val) => updateBlockField('role', val)}
-              placeholder="担任角色"
+              placeholder="Role"
             />
           )}
           {block.type === 'education' && (
@@ -154,7 +154,7 @@ function TimelineBlockRow(props: TimelineBlockRowProps): ReactElement {
                 fieldName="major"
                 value={block.major}
                 onUpdate={(val) => updateBlockField('major', val)}
-                placeholder="专业"
+                placeholder="Major"
               />
               <span className="mx-1">/</span>
               <EditableFieldWrapper
@@ -162,7 +162,7 @@ function TimelineBlockRow(props: TimelineBlockRowProps): ReactElement {
                 fieldName="degree"
                 value={block.degree}
                 onUpdate={(val) => updateBlockField('degree', val)}
-                placeholder="学历"
+                placeholder="Degree"
               />
             </>
           )}
@@ -172,7 +172,7 @@ function TimelineBlockRow(props: TimelineBlockRowProps): ReactElement {
               fieldName="position"
               value={block.position}
               onUpdate={(val) => updateBlockField('position', val)}
-              placeholder="职务名称"
+              placeholder="Position"
             />
           )}
         </div>

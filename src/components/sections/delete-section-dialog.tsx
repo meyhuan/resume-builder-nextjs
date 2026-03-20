@@ -42,14 +42,14 @@ export default function DeleteSectionDialog(props: DeleteSectionDialogProps) {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-red-600" />
-            确认删除区块
+            Delete Section
           </DialogTitle>
           <DialogDescription className="text-left pt-4">
             <p className="mb-2">
-              确定要删除 <strong className="text-foreground">"{sectionTitle}"</strong> 区块吗？
+              Are you sure you want to delete the <strong className="text-foreground">"{sectionTitle}"</strong> section?
             </p>
             <p className="text-sm text-muted-foreground">
-              此操作将删除该区块内的所有内容，且无法撤销。
+              This will delete all content in this section and cannot be undone.
             </p>
           </DialogDescription>
         </DialogHeader>
@@ -59,14 +59,14 @@ export default function DeleteSectionDialog(props: DeleteSectionDialogProps) {
             variant="outline"
             onClick={handleCancel}
           >
-            取消
+            Cancel
           </Button>
           <Button
             type="button"
             variant="destructive"
             onClick={handleConfirm}
           >
-            确定删除
+            Delete
           </Button>
         </DialogFooter>
       </DialogContent>

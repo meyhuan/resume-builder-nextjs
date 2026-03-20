@@ -32,7 +32,7 @@ export const StepCertificates = ({ stepNumber, onClickPast }: { stepNumber: numb
   return (
     <StepCard 
       stepNumber={stepNumber} 
-      title="请填写你获得的资格证书 (可多选)"
+      title="Select your certifications (multi-select)"
       onSkip={handleConfirm}
       onClickPast={onClickPast}
     >
@@ -51,7 +51,7 @@ export const StepCertificates = ({ stepNumber, onClickPast }: { stepNumber: numb
                 onClick={handleConfirm}
                 className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white px-6 py-2 rounded-lg text-sm font-medium transition-colors"
              >
-                确认
+                Confirm
              </button>
           </div>
         )}

@@ -2,7 +2,7 @@
  * V2 BaseInfoSection - Style-Driven Architecture
  * 
  * Layout matches the reference design:
- * - Left: avatar with hover overlay (在线制作 / 本地上传)
+ * - Left: avatar with hover overlay (Edit Online / Upload Local)
  * - Right top: name (bold) + intention inline
  * - Right bottom: info fields in flowing grid, each with hover border + delete button
  * - Edit pencil at top-right on section hover
@@ -39,7 +39,7 @@ export interface BaseInfoSectionProps {
 }
 
 /**
- * V2 基础信息组件 - 样式配置驱动
+ * V2 Base Info Component - Style configuration driven.
  */
 export default function BaseInfoSection(props: BaseInfoSectionProps): ReactElement {
   const { name, baseInfo, themeColor, styles = {}, renderCustom, slots } = props
@@ -129,14 +129,14 @@ export default function BaseInfoSection(props: BaseInfoSectionProps): ReactEleme
                 className="px-3 py-1 text-xs font-bold text-white bg-blue-500 rounded hover:bg-blue-600 transition-colors"
                 onClick={(e) => { e.stopPropagation(); setShowModal(true) }}
               >
-                在线制作
+                Edit Online
               </button>
               <button
                 type="button"
                 className="px-3 py-1 text-xs font-bold text-white border border-white/80 rounded hover:bg-white/20 transition-colors"
                 onClick={(e) => { e.stopPropagation(); handleLocalUpload() }}
               >
-                本地上传
+                Upload Local
               </button>
             </div>
           )}
@@ -166,7 +166,7 @@ export default function BaseInfoSection(props: BaseInfoSectionProps): ReactEleme
             )}
             {baseInfo?.title && (
               <span className={styles.title?.className || "text-gray-500"} style={{ fontSize: styles.title?.fontSize || '0.9em' }}>
-                意向岗位: {baseInfo.title}
+                Target Position: {baseInfo.title}
               </span>
             )}
           </div>
@@ -243,7 +243,7 @@ function InfoField(props: {
           className: styles?.fieldIcon?.className
         })}
       </span>
-      <span className="text-gray-500">{field.label}：</span>
+      <span className="text-gray-500">{field.label}: </span>
       <span>{field.value}</span>
       {isHovered && (
         <button
@@ -265,37 +265,37 @@ function buildFieldDefs(baseInfo: BaseInfo | null): FieldDef[] {
   if (!baseInfo) return []
   const defs: FieldDef[] = []
   if (baseInfo.phone) {
-    defs.push({ key: 'phone', label: '电话', value: baseInfo.phone, icon: <IconPhone /> })
+    defs.push({ key: 'phone', label: 'Phone', value: baseInfo.phone, icon: <IconPhone /> })
   }
   if (baseInfo.email) {
-    defs.push({ key: 'email', label: '邮箱', value: baseInfo.email, icon: <IconMail /> })
+    defs.push({ key: 'email', label: 'Email', value: baseInfo.email, icon: <IconMail /> })
   }
   if (baseInfo.gender) {
-    defs.push({ key: 'gender', label: '性别', value: baseInfo.gender, icon: <IconGender /> })
+    defs.push({ key: 'gender', label: 'Gender', value: baseInfo.gender, icon: <IconGender /> })
   }
   if (baseInfo.age !== undefined && baseInfo.age !== null) {
-    defs.push({ key: 'age', label: '年龄', value: String(baseInfo.age), icon: <IconAge /> })
+    defs.push({ key: 'age', label: 'Age', value: String(baseInfo.age), icon: <IconAge /> })
   }
   if (baseInfo.currentLocation) {
-    defs.push({ key: 'currentLocation', label: '现居', value: baseInfo.currentLocation, icon: <IconLocation /> })
+    defs.push({ key: 'currentLocation', label: 'Location', value: baseInfo.currentLocation, icon: <IconLocation /> })
   }
   if (baseInfo.nation) {
-    defs.push({ key: 'nation', label: '民族', value: baseInfo.nation, icon: <IconInfo /> })
+    defs.push({ key: 'nation', label: 'Ethnicity', value: baseInfo.nation, icon: <IconInfo /> })
   }
   if (baseInfo.household) {
-    defs.push({ key: 'household', label: '户籍', value: baseInfo.household, icon: <IconInfo /> })
+    defs.push({ key: 'household', label: 'Hometown', value: baseInfo.household, icon: <IconInfo /> })
   }
   if (baseInfo.workStartTime) {
-    defs.push({ key: 'workStartTime', label: '工作时间', value: baseInfo.workStartTime, icon: <IconWorkYear /> })
+    defs.push({ key: 'workStartTime', label: 'Work Since', value: baseInfo.workStartTime, icon: <IconWorkYear /> })
   }
   if (baseInfo.politicalStatus) {
-    defs.push({ key: 'politicalStatus', label: '政治面貌', value: baseInfo.politicalStatus, icon: <IconInfo /> })
+    defs.push({ key: 'politicalStatus', label: 'Political Status', value: baseInfo.politicalStatus, icon: <IconInfo /> })
   }
   if (baseInfo.height) {
-    defs.push({ key: 'height', label: '身高', value: `${baseInfo.height}cm`, icon: <IconInfo /> })
+    defs.push({ key: 'height', label: 'Height', value: `${baseInfo.height}cm`, icon: <IconInfo /> })
   }
   if (baseInfo.weight) {
-    defs.push({ key: 'weight', label: '体重', value: `${baseInfo.weight}kg`, icon: <IconInfo /> })
+    defs.push({ key: 'weight', label: 'Weight', value: `${baseInfo.weight}kg`, icon: <IconInfo /> })
   }
   if (baseInfo.customFields) {
     for (const cf of baseInfo.customFields) {

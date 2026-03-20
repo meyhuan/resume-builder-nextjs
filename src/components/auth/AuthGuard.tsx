@@ -43,7 +43,7 @@ function AuthGuardContent({ children, fallback }: AuthGuardProps) {
         <div className="min-h-screen flex items-center justify-center bg-gray-50">
           <div className="text-center">
             <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
-            <p className="text-gray-600">验证登录状态...</p>
+            <p className="text-gray-600">Verifying authentication...</p>
           </div>
         </div>
       )
@@ -65,7 +65,7 @@ export default function AuthGuard(props: AuthGuardProps) {
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
-          <p className="text-gray-600">加载中...</p>
+          <p className="text-gray-600">Loading...</p>
         </div>
       </div>
     }>

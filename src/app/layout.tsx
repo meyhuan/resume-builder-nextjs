@@ -3,24 +3,20 @@ import "@/styles/tailwind.css";
 import "@/styles/print.css";
 import "@/styles/base.css";
 import "@/styles/theme-override.css";
-
-const SITE_URL = 'https://aijianli.cn';
-const SITE_NAME = '智简简历';
-const SITE_DESCRIPTION = '智简简历是完全免费的AI简历生成器与在线制作网站。提供极简简历模板，支持AI智能一键生成与润色优化，支持高清免费导出PDF与Markdown。无水印、无套路，是应届生、产品经理及各行业求职者的必备极简简历工具，也是超级简历等平台的完美免费平替。';
+import { SITE_URL, SITE_NAME, SITE_DESCRIPTION, SITE_LOCALE, SITE_LANG, SITE_CURRENCY } from '@/lib/site-config';
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: `${SITE_NAME} - AI简历生成器 | 免费在线简历制作网站 · 极简简历模板导出PDF`,
+    default: `${SITE_NAME} — Free AI Resume Builder | ATS-Friendly Templates & PDF Export`,
     template: `%s | ${SITE_NAME}`,
   },
   description: SITE_DESCRIPTION,
   keywords: [
-    'AI简历', '免费简历', '简历制作网站免费', '在线简历制作', '极简简历',
-    '简历生成器', 'AI简历制作', '免费简历模板', '简历模板PDF下载', '智简简历',
-    '全民简历', '超级简历平替', '英文简历', '应届生简历', '产品经理简历',
-    '在线简历免费制作导出', 'AI写简历', '简历优化', '免费导出PDF', 'Markdown简历',
-    '完全免费', '在线简历制作', 'AI简历姬', '简历自动生成', '求职工具'
+    'AI resume builder', 'free resume builder', 'resume maker', 'ATS-friendly resume',
+    'resume templates', 'AI resume generator', 'free resume templates', 'PDF resume export',
+    'professional resume', 'resume builder online', 'AI resume writer', 'resume creator',
+    'one-page resume', 'modern resume template', 'job application', 'career tools',
   ],
   authors: [{ name: SITE_NAME }],
   creator: SITE_NAME,
@@ -38,23 +34,23 @@ export const metadata: Metadata = {
   },
   openGraph: {
     type: 'website',
-    locale: 'zh_CN',
+    locale: SITE_LOCALE,
     url: SITE_URL,
     siteName: SITE_NAME,
-    title: `${SITE_NAME} - 免费 AI 简历制作工具`,
+    title: `${SITE_NAME} — Free AI Resume Builder`,
     description: SITE_DESCRIPTION,
     images: [
       {
         url: '/og-image.png',
         width: 1200,
         height: 630,
-        alt: `${SITE_NAME} - 免费 AI 简历制作工具`,
+        alt: `${SITE_NAME} — Free AI Resume Builder`,
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: `${SITE_NAME} - 免费 AI 简历制作工具`,
+    title: `${SITE_NAME} — Free AI Resume Builder`,
     description: SITE_DESCRIPTION,
     images: ['/og-image.png'],
   },
@@ -66,24 +62,21 @@ export const metadata: Metadata = {
     apple: '/apple-touch-icon.png',
   },
   verification: {
-    // Add your verification codes here when ready
     google: 'cVe-KetUGJvP2TVefybZxWIy3YUxXXqQiiGErncNY9M',
     other: {
-      'baidu-site-verification': 'codeva-182X8kpQVu',
-      'msvalidate.01': ['35C8C4B7C0CCF7E6A6D7B7F2477D48E0']
-     },
+      'msvalidate.01': ['35C8C4B7C0CCF7E6A6D7B7F2477D48E0'],
+    },
   },
 };
 
 import { Toaster } from 'sonner';
-import { BaiduAnalytics } from '@/components/analytics/BaiduAnalytics';
+import { GoogleAnalytics } from '@/components/analytics/GoogleAnalytics';
 
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // JSON-LD 结构化数据，有助于百度和必应在搜索结果中展示更丰富的卡片（如软件评分、免费标签）
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
@@ -93,14 +86,14 @@ export default function RootLayout({
     "offers": {
       "@type": "Offer",
       "price": "0",
-      "priceCurrency": "CNY"
+      "priceCurrency": SITE_CURRENCY
     },
     "description": SITE_DESCRIPTION,
     "url": SITE_URL
   };
 
   return (
-    <html lang="zh-CN">
+    <html lang={SITE_LANG}>
       <body className="antialiased text-slate-900 bg-white font-sans">
         <script
           type="application/ld+json"
@@ -108,7 +101,7 @@ export default function RootLayout({
         />
         {children}
         <Toaster position="top-center" richColors />
-        <BaiduAnalytics />
+        <GoogleAnalytics />
       </body>
     </html>
   );

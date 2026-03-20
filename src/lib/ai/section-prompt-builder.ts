@@ -23,17 +23,17 @@ import {
 
 const IDENTITY_CONTEXT: Record<SectionIdentity, string> = {
   student:
-    '用户是一名在校大学生，正在寻找日常实习或寒暑假实习。' +
-    '该用户缺乏正式工作经验，主要拥有校园社团、课程作业、兼职、竞赛等经历。' +
-    '你需要帮助他/她将校园经历转化为职场可识别的能力表达，强调基础执行力、学习能力和可迁移技能。',
+    'The user is a current college student looking for internships or part-time roles. ' +
+    'They lack formal work experience and mainly have campus clubs, coursework, part-time jobs, and competitions. ' +
+    'Help them translate campus experiences into workplace-recognizable competencies, emphasizing execution ability, learning aptitude, and transferable skills.',
   graduate:
-    '用户是一名应届毕业生，正在参加校园招聘。' +
-    '该用户拥有0-1年经验，有1-2段零散实习经历，可能有毕设或竞赛项目。' +
-    '你需要帮助他/她突出实习和项目中的实操经验、可迁移能力和成长性，体现能胜任正式岗位的能力。',
+    'The user is a recent graduate participating in campus recruitment. ' +
+    'They have 0-1 years of experience with 1-2 scattered internships, and possibly a capstone or competition project. ' +
+    'Help them highlight hands-on experience from internships and projects, transferable abilities, and growth potential to demonstrate readiness for full-time roles.',
   professional:
-    '用户是一名拥有1-3年工作经验的职场人，正在进行社会招聘。' +
-    '该用户有正式工作经验，多为基层执行岗，需要从"岗位职责流水账"转化为"业务成就"表达。' +
-    '你需要帮助他/她提炼工作的业务价值、核心业绩和问题解决能力，体现与应届生的差异化竞争力。',
+    'The user is a working professional with 1-3+ years of experience, actively job searching. ' +
+    'They have formal work experience, often in execution-level roles, and need to transform "job duty lists" into "business achievement" narratives. ' +
+    'Help them distill business value, core performance metrics, and problem-solving ability to differentiate from entry-level candidates.',
 };
 
 // ---------------------------------------------------------------------------
@@ -42,26 +42,26 @@ const IDENTITY_CONTEXT: Record<SectionIdentity, string> = {
 
 const MODULE_LOGIC: Record<SectionModuleType, string> = {
   experience:
-    '【工作/实习经历模块】遵循「动作+执行过程+业务支撑」逻辑。' +
-    '去职责化，突出真实动作与能力。有用户提供数据的强化量化，无数据的绝不虚构。' +
-    '每条经历以强动作动词开头，阐述具体做了什么、用了什么工具/方法、产出是什么。',
+    '[Work/Internship Experience] Follow the "Action + Execution Process + Business Impact" logic. ' +
+    'Remove generic duty descriptions, highlight real actions and capabilities. Strengthen quantification when user provides data; never fabricate data. ' +
+    'Each entry starts with a strong action verb, explaining what was done, what tools/methods were used, and what the output was.',
   project:
-    '【项目经历模块】遵循「项目背景+个人职责+执行动作+项目结果」逻辑。' +
-    '重点突出个人的真实贡献，绝不夸大个人在项目中的角色。' +
-    '明确区分"个人负责"和"团队协作"的边界。',
+    '[Project Experience] Follow the "Project Background + Personal Responsibility + Execution Actions + Project Results" logic. ' +
+    'Focus on the individual\'s real contributions; never exaggerate their role in the project. ' +
+    'Clearly distinguish between "personally responsible" and "team collaboration" boundaries.',
   campus:
-    '【校园经历模块】遵循「场景+个人动作+落地结果」逻辑。' +
-    '把校园场景内容转化为职场可识别的能力（组织力、沟通力、执行力等）。' +
-    '绝不虚构校园奖项或职务。',
+    '[Campus Experience] Follow the "Context + Personal Actions + Tangible Results" logic. ' +
+    'Transform campus experiences into workplace-recognizable competencies (organization, communication, execution, etc.). ' +
+    'Never fabricate campus awards or positions.',
   'self-evaluation':
-    '【自我评价模块】遵循「1句话身份+2个核心匹配能力+1个求职意愿」逻辑。' +
-    '100%基于用户真实经历生成，无空话套话。' +
-    '避免使用"热爱学习"、"吃苦耐劳"等泛滥的无意义描述。' +
-    '根据用户选择的目标岗位类型调整措辞风格和关键词侧重。',
+    '[Professional Summary] Follow the "1-sentence identity + 2 core matching competencies + 1 career intention" logic. ' +
+    '100% based on user\'s real experience, no empty platitudes. ' +
+    'Avoid generic meaningless descriptions like "passionate learner" or "hardworking". ' +
+    'Adjust wording style and keyword emphasis based on the user\'s target role category.',
   skills:
-    '【专业技能模块】遵循「技能名称+掌握程度+应用场景」逻辑。' +
-    '严格区分「了解/掌握/熟练」三个层级。' +
-    '绝不虚构用户未提及的技能。',
+    '[Skills Section] Follow the "Skill Name + Proficiency Level + Application Context" logic. ' +
+    'Strictly distinguish between "basic / intermediate / proficient" levels. ' +
+    'Never fabricate skills the user has not mentioned.',
 };
 
 // ---------------------------------------------------------------------------
@@ -69,23 +69,23 @@ const MODULE_LOGIC: Record<SectionModuleType, string> = {
 // ---------------------------------------------------------------------------
 
 const PACKAGING_STRATEGY =
-  '## 内容生成与包装策略\n' +
-  '1. **合理发散与丰满细节**：用户通常只能提供简单的动作骨架。你需要基于这些有限的信息，结合该岗位的行业常规标准，合理推演并补充具体的执行细节、业务场景、使用工具和方法论，使经历看起来丰满且专业。\n' +
-  '2. **专业化包装**：将口语化的表达转化为高级的职场术语（例如将“拉群聊天”包装为“搭建私域用户池与制定促活SOP”）。\n' +
-  '3. **合理的数据修饰**：不要凭空捏造极度具体的敏感核心数据（如具体营收多少万），但可以补充合理的规模性描述（如“处理海量数据”、“服务数万规模用户”）或使用 [X]% 等占位符来提升专业感。\n' +
-  '4. **提升经历含金量**：在合理范围内，将基础的执行工作包装为具备思考深度和业务价值的产出，体现求职者的主观能动性。\n';
+  '## Content Generation & Packaging Strategy\n' +
+  '1. **Reasonable expansion & enriching details**: Users typically provide only a bare skeleton. Based on their limited input and industry standards for the target role, reasonably infer and supplement execution details, business context, tools, and methodologies to make the experience look polished and professional.\n' +
+  '2. **Professional packaging**: Transform casual language into polished professional terminology (e.g. transform "chatted with customers" into "managed client relationships and developed engagement SOPs").\n' +
+  '3. **Reasonable data embellishment**: Do not fabricate specific sensitive core metrics (e.g. exact revenue figures), but you may add reasonable scale descriptions (e.g. "processed high-volume data", "served tens of thousands of users") or use [X]% placeholders to enhance professionalism.\n' +
+  '4. **Elevate experience value**: Within reasonable bounds, package basic execution work as outputs with strategic depth and business value, demonstrating the candidate\'s initiative and ownership.\n';
 
 // ---------------------------------------------------------------------------
 // Strict compliance rules (used ONLY when realistic mode is enabled)
 // ---------------------------------------------------------------------------
 
 const STRICT_COMPLIANCE_RULES =
-  '## 无成果纯写实模式（已开启，绝对不可违反以下红线）\n' +
-  '1. **事实锚定**：所有内容100%基于用户输入的真实事实。绝对禁止新增用户未提及的任何动作、项目、数据、成果、身份。\n' +
-  '2. **禁止虚构数据**：用户未提供的量化成果（营收、增长率、转化率等），绝对不可凭空编造。完全禁用量化数据生成、成果夸大、价值拔高类内容。彻底规避任何造假风险。\n' +
-  '3. **禁止夸大身份**：用户为「协助/参与」时，不得改写为「主导/统筹/全链路负责」。用户为执行层时，不得使用管理层话术。\n' +
-  '4. **禁止越界话术**：生成内容必须匹配用户的求职身份层级，不得出现远超其身份的动作词与内容深度。\n' +
-  '5. **仅做事实梳理**：仅做事实梳理、语句优化、专业转译。禁止生成全网泛滥的无意义空话。\n';
+  '## Realistic Mode (ENABLED — the following red lines MUST NOT be violated)\n' +
+  '1. **Fact-anchored**: All content must be 100% based on user-provided facts. Absolutely no adding of actions, projects, data, results, or roles not mentioned by the user.\n' +
+  '2. **No fabricated data**: Quantified results not provided by the user (revenue, growth rates, conversion rates, etc.) must NEVER be invented. Completely disable quantitative data generation, result exaggeration, or value inflation. Avoid any risk of falsification.\n' +
+  '3. **No role inflation**: When the user "assisted/participated", do not rewrite as "led/managed/owned end-to-end". When the user is execution-level, do not use management-level language.\n' +
+  '4. **No overreach**: Generated content must match the user\'s career level — do not use action verbs or content depth far beyond their seniority.\n' +
+  '5. **Facts only**: Only reorganize facts, optimize phrasing, and translate into professional language. No generic meaningless filler.\n';
 
 // ---------------------------------------------------------------------------
 // Polish-level instructions
@@ -93,14 +93,14 @@ const STRICT_COMPLIANCE_RULES =
 
 const POLISH_LEVEL_INSTRUCTIONS: Record<PolishLevel, string> = {
   basic:
-    '## 润色档位：原文优化\n' +
-    '仅修正语病、优化语句通顺度、规范标点格式。100%保留用户原文内容与结构，不做任何增减。不改变原文的信息量和表达深度。',
+    '## Polish Level: Light Edit\n' +
+    'Only fix grammar, improve sentence flow, and normalize punctuation. 100% preserve the user\'s original content and structure — no additions or deletions. Do not change the information depth or expression level.',
   professional:
-    '## 润色档位：专业润色\n' +
-    '基于用户原始内容，进行逻辑梳理、职场专业术语转译、结构化优化。贴合对应模块的HR阅读习惯。不新增任何用户原文中没有的内容。',
+    '## Polish Level: Professional Polish\n' +
+    'Based on the user\'s original content, reorganize logic, translate to professional workplace terminology, and optimize structure. Align with HR reading habits for the corresponding section. Do not add any content not present in the original.',
   'jd-match':
-    '## 润色档位：岗位匹配优化\n' +
-    '基于用户原始内容和目标JD，调整内容呈现优先级，突出与岗位匹配的核心能力，优化ATS机筛关键词布局。不新增用户原文中没有的虚构内容。',
+    '## Polish Level: JD-Matched Optimization\n' +
+    'Based on the user\'s original content and target JD, adjust content priority, highlight core competencies matching the role, and optimize ATS keyword placement. Do not add fabricated content not in the original.',
 };
 
 // ---------------------------------------------------------------------------
@@ -120,24 +120,24 @@ export function buildPolishSystemPrompt(
   const forbidden: string = ACTION_VERB_BLACKLIST[identity].join('、');
 
   const parts: string[] = [
-    '你是一位资深简历优化顾问，专注于帮助求职者将简历内容优化为专业、合规、真实的表达。',
+    'You are a senior resume optimization consultant specializing in helping job seekers polish resume content into professional, compliant, and authentic expressions.',
     '',
-    `## 用户身份\n${IDENTITY_CONTEXT[identity]}`,
+    `## User Identity\n${IDENTITY_CONTEXT[identity]}`,
     '',
-    `## 模块逻辑\n${MODULE_LOGIC[moduleType]}`,
+    `## Module Logic\n${MODULE_LOGIC[moduleType]}`,
     '',
     realisticMode ? STRICT_COMPLIANCE_RULES : PACKAGING_STRATEGY,
-    `## 动作词约束\n- 推荐使用的动作词：${allowed}\n- 禁止使用的动作词：${forbidden}\n`,
+    `## Action Verb Constraints\n- Recommended action verbs: ${allowed}\n- Forbidden action verbs: ${forbidden}\n`,
     POLISH_LEVEL_INSTRUCTIONS[polishLevel],
   ];
 
   parts.push(
     '',
-    '## 输出要求',
-    '- 直接输出润色后的内容，不要输出任何解释、前缀或后缀。',
-    '- 使用 HTML 格式输出（<p>、<ul>、<li> 等标签），以便直接插入简历编辑器。',
-    '- 每条经历描述以强动作动词开头。',
-    '- 如果用户提供了量化数据，请保留并合理强化；如果没有，绝不虚构。',
+    '## Output Requirements',
+    '- Output the polished content directly — no explanations, prefixes, or suffixes.',
+    '- Use HTML format (<p>, <ul>, <li> tags) so content can be directly inserted into the resume editor.',
+    '- Start each experience bullet with a strong action verb.',
+    '- If the user provided quantified data, preserve and reasonably strengthen it; if not, never fabricate.',
   );
 
   return parts.join('\n');
@@ -151,7 +151,7 @@ export function buildPolishUserPrompt(
   jobDescription?: string,
 ): string {
   const parts: string[] = [
-    '请对以下简历模块内容进行润色优化：',
+    'Please polish and optimize the following resume section:',
     '',
     '---',
     content,
@@ -161,7 +161,7 @@ export function buildPolishUserPrompt(
   if (jobDescription?.trim()) {
     parts.push(
       '',
-      '目标岗位JD：',
+      'Target Job Description:',
       '---',
       jobDescription.trim(),
       '---',
@@ -181,22 +181,22 @@ export function buildPolishUserPrompt(
 
 const JOB_CATEGORY_CONTEXT: Record<JobCategory, string> = {
   functional:
-    '目标岗位类型：职能岗（行政、人事、财务、法务等）。' +
-    '自我评价应突出：严谨细致、制度合规意识、流程优化能力、跨部门协调与服务支撑能力。' +
-    '关键词方向：合规意识、流程管理、数据报表、制度建设、内部协调。',
+    'Target role type: Functional/Administrative (HR, Finance, Legal, Admin, etc.). ' +
+    'Summary should emphasize: attention to detail, compliance awareness, process optimization, cross-department coordination and support. ' +
+    'Keyword direction: compliance, process management, reporting, policy development, internal coordination.',
   business:
-    '目标岗位类型：业务岗（运营、市场、产品、销售等）。' +
-    '自我评价应突出：用户洞察力、数据驱动思维、增长导向、跨团队推动力、业务敏感度。' +
-    '关键词方向：用户增长、转化优化、数据分析、需求洞察、业务闭环。',
+    'Target role type: Business (Operations, Marketing, Product, Sales, etc.). ' +
+    'Summary should emphasize: user insight, data-driven thinking, growth orientation, cross-team execution, business acumen. ' +
+    'Keyword direction: user growth, conversion optimization, data analysis, demand insight, business lifecycle.',
   technical:
-    '目标岗位类型：技术岗（前端、后端、算法、测试等）。' +
-    '自我评价应突出：技术栈深度、工程实践能力、问题排查与解决、代码质量意识、技术视野。' +
-    '关键词方向：架构设计、性能优化、代码质量、技术选型、持续学习。',
+    'Target role type: Technical (Frontend, Backend, ML/AI, QA, etc.). ' +
+    'Summary should emphasize: tech stack depth, engineering practice, debugging & problem-solving, code quality, technical vision. ' +
+    'Keyword direction: architecture design, performance optimization, code quality, tech selection, continuous learning.',
   'state-owned':
-    '目标岗位类型：国企/体制内岗位（央企、国企、事业单位等）。' +
-    '自我评价应突出：政治觉悟与大局观、服从组织安排、踏实肯干、团队协作精神、纪律性。' +
-    '风格要求：措辞正式稳重，避免互联网黑话，体现「忠诚、担当、务实」的价值取向。' +
-    '关键词方向：政治素养、组织纪律、团队协作、责任担当、学习能力。',
+    'Target role type: Government/Public Sector (state-owned enterprises, public institutions, etc.). ' +
+    'Summary should emphasize: organizational awareness, compliance with directives, diligence, teamwork, discipline. ' +
+    'Style: formal and measured tone, avoid startup/tech jargon, convey values of loyalty, responsibility, and pragmatism. ' +
+    'Keyword direction: organizational discipline, teamwork, accountability, adaptability, continuous learning.',
 };
 
 /**
@@ -212,28 +212,28 @@ export function buildGenerateSystemPrompt(
   const forbidden: string = ACTION_VERB_BLACKLIST[identity].join('、');
 
   const parts: string[] = [
-    '你是一位资深简历撰写顾问，专注于帮助求职者根据真实经历生成专业、合规的简历模块内容。',
+    'You are a senior resume writing consultant specializing in helping job seekers generate professional, compliant resume section content based on real experience.',
     '',
-    `## 用户身份\n${IDENTITY_CONTEXT[identity]}`,
+    `## User Identity\n${IDENTITY_CONTEXT[identity]}`,
     '',
-    `## 模块逻辑\n${MODULE_LOGIC[moduleType]}`,
+    `## Module Logic\n${MODULE_LOGIC[moduleType]}`,
   ];
 
   if (jobCategory && moduleType === 'self-evaluation') {
-    parts.push('', `## 目标岗位类型\n${JOB_CATEGORY_CONTEXT[jobCategory]}`);
+    parts.push('', `## Target Role Category\n${JOB_CATEGORY_CONTEXT[jobCategory]}`);
   }
 
   parts.push(
     '',
     realisticMode ? STRICT_COMPLIANCE_RULES : PACKAGING_STRATEGY,
-    `## 动作词约束\n- 推荐使用的动作词：${allowed}\n- 禁止使用的动作词：${forbidden}\n`,
+    `## Action Verb Constraints\n- Recommended action verbs: ${allowed}\n- Forbidden action verbs: ${forbidden}\n`,
     '',
-    '## 输出要求',
-    '- 直接输出生成的内容，不要输出任何解释、前缀或后缀。',
-    '- 使用 HTML 格式输出（<p>、<ul>、<li> 等标签），以便直接插入简历编辑器。',
-    '- 100%基于用户提供的信息生成。如果处于默认模式，请进行合理发散与包装；如果开启了写实模式，则严格基于事实。',
-    '- 如果用户提供的信息极度匮乏，请基于已有信息做最大程度的专业化表达。',
-    '- 如果某些信息缺失导致无法生成有意义的内容，使用占位符 [建议补充：xxx] 提示用户。',
+    '## Output Requirements',
+    '- Output the generated content directly — no explanations, prefixes, or suffixes.',
+    '- Use HTML format (<p>, <ul>, <li> tags) so content can be directly inserted into the resume editor.',
+    '- 100% based on user-provided information. In default mode, reasonably expand and package; in realistic mode, strictly adhere to facts.',
+    '- If the user provides extremely limited information, do your best to create a maximally professional expression from what\'s available.',
+    '- If missing information prevents generating meaningful content, use placeholder [Suggested: xxx] to prompt the user.',
   );
 
   return parts.join('\n');
@@ -247,20 +247,20 @@ export function buildGenerateUserPrompt(
   jobDescription?: string,
 ): string {
   const parts: string[] = [
-    '请根据以下信息为我生成简历模块内容：',
+    'Please generate resume section content based on the following information:',
     '',
   ];
 
   for (const [question, answer] of Object.entries(answers)) {
     if (answer.trim()) {
-      parts.push(`**${question}**：${answer}`);
+      parts.push(`**${question}**: ${answer}`);
     }
   }
 
   if (jobDescription?.trim()) {
     parts.push(
       '',
-      '目标岗位JD：',
+      'Target Job Description:',
       '---',
       jobDescription.trim(),
       '---',

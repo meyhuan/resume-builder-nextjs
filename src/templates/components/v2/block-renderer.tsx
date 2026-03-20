@@ -1,12 +1,12 @@
 /**
  * V2 BlockRenderer - Style-Driven Architecture
  * 
- * 完全解耦的 Block 渲染组件，支持：
- * 1. 样式配置驱动
- * 2. 自定义渲染函数
- * 3. 插槽模式
+ * Fully decoupled block rendering component supporting:
+ * 1. Style configuration driven
+ * 2. Custom render functions
+ * 3. Slot pattern
  * 
- * 新增模板无需修改此文件
+ * Adding new templates requires no changes to this file.
  */
 
 import type { ReactElement } from 'react'
@@ -25,23 +25,23 @@ export interface BlockRendererProps {
   readonly themeColor: string
   readonly onEditingChange?: (isEditing: boolean) => void
   
-  // 方案1: 样式配置（推荐用于大多数场景）
+  // Option 1: Style configuration (recommended for most cases)
   readonly styles?: BlockRendererStyles
   
-  // 方案2: 完全自定义渲染（用于完全不同的布局）
+  // Option 2: Fully custom render (for completely different layouts)
   readonly renderCustom?: (props: BlockRenderProps) => ReactElement
   
-  // 方案3: 插槽模式（用于部分自定义）
+  // Option 3: Slot pattern (for partial customization)
   readonly slots?: BlockSlots
 }
 
 /**
- * V2 Block 渲染器 - 样式配置驱动
+ * V2 Block Renderer - Style configuration driven.
  */
 export default function BlockRenderer(props: BlockRendererProps): ReactElement {
   const { block, themeColor, onEditingChange, styles = {}, renderCustom, slots } = props
 
-  // 方案2: 完全自定义渲染
+  // Option 2: Fully custom render
   if (renderCustom) {
     return renderCustom({
       block,
@@ -51,12 +51,12 @@ export default function BlockRenderer(props: BlockRendererProps): ReactElement {
     })
   }
 
-  // 根据样式配置选择布局
+  // Select layout based on style config
   // const layout = styles.layout || 'default' // Unused
   const containerClassName = styles.container || ''
   const spacingClassName = styles.spacing || ''
 
-  // 默认渲染：根据 block 类型和布局样式
+  // Default render: based on block type and layout style
   return (
     <div className={`${containerClassName} ${spacingClassName}`.trim()}>
       {slots?.header ? (
@@ -77,7 +77,7 @@ export default function BlockRenderer(props: BlockRendererProps): ReactElement {
 }
 
 /**
- * 渲染 Block 头部
+ * Render block header.
  */
 function renderBlockHeader(
   block: ResumeBlock,
@@ -87,7 +87,7 @@ function renderBlockHeader(
 ): ReactElement | null {
   const layout = styles.layout || 'default'
   
-  // 根据布局类型渲染不同的头部
+  // Render different headers based on layout type
   if (layout === 'card' || layout === 'default') {
     return renderCardHeader(block, themeColor, styles, onEditingChange)
   }
@@ -100,12 +100,12 @@ function renderBlockHeader(
     return renderMinimalHeader(block, themeColor, styles, onEditingChange)
   }
   
-  // 自定义布局：使用样式配置
+  // Custom layout: use style config
   return renderCardHeader(block, themeColor, styles, onEditingChange)
 }
 
 /**
- * 卡片样式头部
+ * Card-style header.
  */
 function renderCardHeader(
   block: ResumeBlock,
@@ -295,7 +295,7 @@ function renderCardHeader(
 }
 
 /**
- * 时间线样式头部
+ * Timeline-style header.
  */
 function renderTimelineHeader(
   block: ResumeBlock,
@@ -303,7 +303,7 @@ function renderTimelineHeader(
   styles: BlockRendererStyles,
   onEditingChange?: (isEditing: boolean) => void
 ): ReactElement | null {
-  // 复制 card header 的逻辑，但不渲染右侧的时间
+  // Same as card header logic but without the right-side date range
   if (block.type === 'experience') {
     return (
       <div className={styles.header || 'flex justify-between items-start mb-2'}>
@@ -454,7 +454,7 @@ function renderTimelineHeader(
 }
 
 /**
- * 极简样式头部
+ * Minimal-style header.
  */
 function renderMinimalHeader(
   block: ResumeBlock,
@@ -462,12 +462,12 @@ function renderMinimalHeader(
   styles: BlockRendererStyles,
   onEditingChange?: (isEditing: boolean) => void
 ): ReactElement | null {
-  // 极简布局的头部渲染
+  // Minimal layout header rendering
   return renderCardHeader(block, themeColor, styles, onEditingChange)
 }
 
 /**
- * 渲染 Block 内容
+ * Render block content.
  */
 function renderBlockContent(
   block: ResumeBlock,

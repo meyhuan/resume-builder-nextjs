@@ -28,7 +28,7 @@ interface EditableFieldWrapperProps {
  *   value={block.company}
  *   onUpdate={(value) => updateBlock({ company: value })}
  *   className="font-semibold"
- *   title="点击编辑公司名称"
+ *   title="Click to edit company name"
  * >
  *   {block.company}
  * </EditableFieldWrapper>
@@ -112,9 +112,9 @@ export default function EditableFieldWrapper(props: EditableFieldWrapperProps): 
     <span
       onClick={startEditing}
       className={`${props.className || ''} cursor-text hover:bg-gray-100 rounded px-1 leading-tight transition-colors border border-transparent`}
-      title={props.title || '点击编辑'}
+      title={props.title || 'Click to edit'}
     >
-      {props.value || props.placeholder || '点击编辑'}
+      {props.value || props.placeholder || 'Click to edit'}
     </span>
   )
 }

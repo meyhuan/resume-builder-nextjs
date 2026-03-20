@@ -67,14 +67,14 @@ export function useImportGeneration(): UseImportGenerationReturn {
 
         if (!response.ok) {
           const errorBody = await response.json().catch(() => null);
-          const msg: string = errorBody?.error ?? `请求失败 (${response.status})`;
+          const msg: string = errorBody?.error ?? `Request failed (${response.status})`;
           throw new Error(msg);
         }
 
         const reader: ReadableStreamDefaultReader<Uint8Array> | undefined =
           response.body?.getReader();
         if (!reader) {
-          throw new Error('无法读取响应流');
+          throw new Error('Unable to read response stream');
         }
 
         const decoder = new TextDecoder();
@@ -118,7 +118,7 @@ export function useImportGeneration(): UseImportGenerationReturn {
         // Check if AI flagged this as not a resume
         if (isErrorResponse(resumeJson)) {
           setIsNotResume(true);
-          setError(resumeJson.message || '输入内容不像是简历，请粘贴简历内容后重试');
+          setError(resumeJson.message || 'The input does not appear to be a resume. Please paste resume content and try again.');
           setIsGenerating(false);
           return null;
         }
@@ -131,7 +131,7 @@ export function useImportGeneration(): UseImportGenerationReturn {
           setIsGenerating(false);
           return null;
         }
-        const msg: string = err instanceof Error ? err.message : '解析失败，请重试';
+        const msg: string = err instanceof Error ? err.message : 'Parsing failed. Please try again.';
         setError(msg);
         setIsGenerating(false);
         return null;
@@ -179,6 +179,6 @@ function extractJson(raw: string): ExternalResume | ErrorResponse {
   try {
     return JSON.parse(cleaned);
   } catch {
-    throw new Error('AI返回的内容不是有效的JSON格式，请重试');
+    throw new Error('AI returned invalid JSON format. Please try again.');
   }
 }

@@ -46,7 +46,7 @@ export const LegalDialog: React.FC<LegalDialogProps> = ({
           {/* Header with tabs */}
           <div className="px-8 pt-8 pb-0 shrink-0">
             <DialogTitle className="text-xl font-bold text-slate-900 mb-6">
-              法律条款
+              Legal
             </DialogTitle>
             <div className="flex gap-1 bg-slate-100 p-1 rounded-xl">
               <button
@@ -59,7 +59,7 @@ export const LegalDialog: React.FC<LegalDialogProps> = ({
                 )}
               >
                 <Shield className="w-4 h-4" />
-                隐私协议
+                Privacy Policy
               </button>
               <button
                 onClick={() => setActiveTab('terms')}
@@ -71,7 +71,7 @@ export const LegalDialog: React.FC<LegalDialogProps> = ({
                 )}
               >
                 <FileText className="w-4 h-4" />
-                服务条款
+                Terms of Service
               </button>
             </div>
           </div>
@@ -80,9 +80,9 @@ export const LegalDialog: React.FC<LegalDialogProps> = ({
           <div className="flex-1 overflow-y-auto px-8 py-6 space-y-8 text-slate-600 leading-relaxed">
             {activeTab === 'privacy' ? <PrivacyContent /> : <TermsContent />}
             <div className="pt-4 border-t border-slate-100 text-center text-[11px] text-slate-400">
-              智简简历 (aijianli.cn) — 完全免费的在线 AI 简历制作平台
+              AI Resume Pass (airesumepass.com) — Free online AI resume builder
               <br />
-              最后更新：2025 年 2 月
+              Last updated: February 2025
             </div>
           </div>
         </div>
@@ -110,72 +110,72 @@ const SectionHeading: React.FC<SectionHeadingProps> = ({ index, title }) => (
 const PrivacyContent: React.FC = () => (
   <>
     <section>
-      <SectionHeading index={1} title="引言" />
+      <SectionHeading index={1} title="Introduction" />
       <p className="pl-8 text-sm">
-        欢迎使用智简简历（以下简称「本平台」，网址：aijianli.cn）。本协议是本平台与用户之间关于个人信息收集、使用、共享及保护的约定。用户注册或使用本平台服务，即表示同意本协议内容。
+        Welcome to AI Resume Pass (hereinafter referred to as &quot;the Platform&quot;, URL: airesumepass.com). This agreement governs the collection, use, sharing, and protection of personal information between the Platform and its users. By registering or using the Platform&apos;s services, you agree to the terms of this agreement.
       </p>
     </section>
 
     <section>
-      <SectionHeading index={2} title="个人信息收集与使用" />
+      <SectionHeading index={2} title="Personal Information Collection & Use" />
       <div className="space-y-3 pl-8">
         <div>
-          <h3 className="font-semibold text-slate-700 text-sm mb-1">收集范围</h3>
+          <h3 className="font-semibold text-slate-700 text-sm mb-1">Scope of Collection</h3>
           <ul className="list-disc pl-5 space-y-1 text-xs">
-            <li><strong>注册时：</strong>需提供微信授权等必要信息用于账号验证与登录。</li>
-            <li><strong>服务过程中：</strong>可能收集简历内容、模板使用记录、操作日志等信息，用于优化服务体验、提供 AI 功能（如智能生成简历、AI 润色）及账户安全管理。</li>
+            <li><strong>Registration:</strong> Required information such as authentication credentials for account verification and login.</li>
+            <li><strong>During use:</strong> Resume content, template usage records, and activity logs may be collected to optimize the experience, provide AI features (e.g., resume generation, AI polishing), and manage account security.</li>
           </ul>
         </div>
         <div>
-          <h3 className="font-semibold text-slate-700 text-sm mb-1">使用目的</h3>
+          <h3 className="font-semibold text-slate-700 text-sm mb-1">Purpose of Use</h3>
           <ul className="list-disc pl-5 space-y-1 text-xs">
-            <li>提供简历制作、模板选择、AI 生成/润色/排版、免费导出 PDF/图片/Markdown 等核心服务。</li>
-            <li>发送服务通知（如系统更新、功能上线）。</li>
-            <li>保障平台安全，防范欺诈或非法行为。</li>
+            <li>Provide core services including resume creation, template selection, AI generation/polishing/formatting, and free export to PDF/image/Markdown.</li>
+            <li>Send service notifications (e.g., system updates, new features).</li>
+            <li>Ensure platform security and prevent fraud or illegal activities.</li>
           </ul>
         </div>
         <div>
-          <h3 className="font-semibold text-slate-700 text-sm mb-1">信息共享与存储</h3>
+          <h3 className="font-semibold text-slate-700 text-sm mb-1">Information Sharing & Storage</h3>
           <ul className="list-disc pl-5 space-y-1 text-xs">
-            <li>不会向第三方出售用户个人信息，仅在必要时（如技术服务商）共享最小化必要信息，且要求第三方遵守保密义务。</li>
-            <li>个人信息存储期限为用户使用服务期间及法律规定的合理期限，过期后将匿名化处理或删除。</li>
+            <li>We do not sell personal information to third parties. Information is shared only when necessary (e.g., with technical service providers) on a minimal basis, and third parties are required to maintain confidentiality.</li>
+            <li>Personal information is retained for the duration of service use and a reasonable period as required by law. After expiration, data will be anonymized or deleted.</li>
           </ul>
         </div>
       </div>
     </section>
 
     <section>
-      <SectionHeading index={3} title="用户权利" />
+      <SectionHeading index={3} title="User Rights" />
       <ol className="list-decimal pl-12 space-y-2 text-xs">
-        <li>可随时登录账号查看、更正个人信息，或联系客服申请删除冗余信息（法律法规另有规定除外）。</li>
-        <li>可拒绝提供非必要信息，但可能影响部分功能使用（如未授权微信登录则无法注册）。</li>
+        <li>You may view and correct your personal information at any time by logging in, or contact support to request deletion of unnecessary data (except as required by law).</li>
+        <li>You may decline to provide non-essential information, though this may affect certain features.</li>
         <li>
-          发现个人信息泄露时，可立即联系本平台（邮箱：
-          <a href="mailto:627655140@qq.com" className="text-violet-600 hover:underline">627655140@qq.com</a>
-          ，微信：<span className="font-medium text-slate-700">kkyycc01</span>），我们将采取必要措施处理。
+          If you discover a personal information breach, contact the Platform immediately (email:
+          <a href="mailto:support@airesumepass.com" className="text-violet-600 hover:underline"> support@airesumepass.com</a>
+          ). We will take necessary measures to address the issue.
         </li>
       </ol>
     </section>
 
     <section>
-      <SectionHeading index={4} title="Cookie 与分析工具" />
+      <SectionHeading index={4} title="Cookies & Analytics" />
       <div className="pl-8 text-xs space-y-1.5">
-        <p>本平台使用 Cookie 来维持登录状态和记录必要的会话信息。</p>
-        <p>本平台可能使用百度统计等第三方分析工具收集匿名访问数据（如页面浏览量、设备类型），用于改善服务体验。这些工具不会收集您的个人身份信息。</p>
+        <p>The Platform uses cookies to maintain login status and record necessary session information.</p>
+        <p>The Platform may use third-party analytics tools (e.g., Google Analytics) to collect anonymous access data (such as page views and device types) to improve the service experience. These tools do not collect your personally identifiable information.</p>
       </div>
     </section>
 
     <section>
-      <SectionHeading index={5} title="未成年人保护" />
+      <SectionHeading index={5} title="Protection of Minors" />
       <p className="pl-8 text-xs">
-        若用户为未成年人，需在监护人同意下使用本平台服务。本平台不会主动收集未成年人个人信息，若发现违规注册，将依法删除相关数据。
+        Minors must use the Platform&apos;s services with the consent of a guardian. The Platform does not actively collect personal information from minors. If unauthorized registration is discovered, related data will be deleted in accordance with the law.
       </p>
     </section>
 
     <section>
-      <SectionHeading index={6} title="隐私协议更新" />
+      <SectionHeading index={6} title="Privacy Policy Updates" />
       <p className="pl-8 text-xs">
-        本平台有权根据法律法规或业务调整更新隐私协议，更新内容将通过官网公告通知用户。用户继续使用服务即视为接受更新后的协议。
+        The Platform reserves the right to update this privacy policy in accordance with legal or operational changes. Updates will be communicated via announcements on the website. Continued use of the service constitutes acceptance of the updated policy.
       </p>
     </section>
   </>
@@ -185,77 +185,75 @@ const PrivacyContent: React.FC = () => (
 const TermsContent: React.FC = () => (
   <>
     <section>
-      <SectionHeading index={1} title="服务内容与注册规则" />
+      <SectionHeading index={1} title="Service Description & Registration" />
       <div className="space-y-3 pl-8">
         <div>
-          <h3 className="font-semibold text-slate-700 text-sm mb-1">服务范围</h3>
-          <p className="text-xs">本平台提供完全免费的在线简历制作服务，包括但不限于：</p>
+          <h3 className="font-semibold text-slate-700 text-sm mb-1">Scope of Services</h3>
+          <p className="text-xs">The Platform provides free online resume building services, including but not limited to:</p>
           <ul className="list-disc pl-5 mt-1 space-y-1 text-xs">
-            <li>多款精美简历模板免费使用</li>
-            <li>AI 智能生成简历内容</li>
-            <li>AI 简历润色与优化</li>
-            <li>AI 文本转简历（导入已有简历并重新排版）</li>
-            <li>免费导出 PDF、图片、Markdown 格式</li>
-            <li>求职攻略与面试技巧分享</li>
+            <li>Multiple professionally designed resume templates</li>
+            <li>AI-powered resume content generation</li>
+            <li>AI resume polishing and optimization</li>
+            <li>AI text-to-resume (import existing resume and reformat)</li>
+            <li>Free export to PDF, image, and Markdown formats</li>
+            <li>Career tips and interview advice</li>
           </ul>
-          <p className="mt-1.5 text-xs font-medium text-violet-600">所有功能完全免费，无隐藏收费。</p>
+          <p className="mt-1.5 text-xs font-medium text-violet-600">All features are completely free with no hidden charges.</p>
         </div>
         <div>
-          <h3 className="font-semibold text-slate-700 text-sm mb-1">注册要求</h3>
-          <p className="text-xs">用户需提供真实有效信息注册，不得冒用他人身份或违反法律法规。账号仅限本人使用，不得出租、转让或共享，因账号泄露导致的损失由用户自行承担。</p>
+          <h3 className="font-semibold text-slate-700 text-sm mb-1">Registration Requirements</h3>
+          <p className="text-xs">Users must provide authentic information to register and must not impersonate others or violate any laws. Accounts are for personal use only and may not be rented, transferred, or shared. Users are responsible for any losses resulting from account compromise.</p>
         </div>
       </div>
     </section>
 
     <section>
-      <SectionHeading index={2} title="用户义务" />
+      <SectionHeading index={2} title="User Obligations" />
       <ol className="list-decimal pl-12 space-y-2 text-xs">
-        <li>不得利用本平台制作违法违规内容（如虚假简历、侵权信息），违者本平台有权封禁账号并追究法律责任。</li>
-        <li>尊重平台知识产权，不得篡改、反编译代码或复制模板用于商业用途。</li>
-        <li>遵守平台秩序，不得恶意刷取数据、滥用 AI 接口或干扰服务正常运行。</li>
-        <li>用户上传的简历内容应真实准确，因虚假信息导致的后果由用户自行承担。</li>
+        <li>Users must not use the Platform to create illegal or infringing content (e.g., fraudulent resumes). Violators may have their accounts suspended and may face legal action.</li>
+        <li>Users must respect the Platform&apos;s intellectual property and must not modify, decompile, or copy templates for commercial use.</li>
+        <li>Users must maintain platform order and must not abuse data, misuse AI APIs, or interfere with normal service operations.</li>
+        <li>Resume content uploaded by users should be truthful and accurate. Users are responsible for any consequences arising from false information.</li>
       </ol>
     </section>
 
     <section>
-      <SectionHeading index={3} title="知识产权声明" />
+      <SectionHeading index={3} title="Intellectual Property" />
       <ol className="list-decimal pl-12 space-y-2 text-xs">
-        <li>本平台提供的简历模板、UI 设计、AI 算法等均为平台知识产权，用户仅享有个人使用权。</li>
-        <li>用户创建的简历内容归用户所有，平台不会将用户简历内容用于商业目的。</li>
+        <li>Resume templates, UI designs, and AI algorithms provided by the Platform are the intellectual property of the Platform. Users have only a personal, non-commercial license to use them.</li>
+        <li>Resume content created by users belongs to the users. The Platform will not use user resume content for commercial purposes.</li>
       </ol>
     </section>
 
     <section>
-      <SectionHeading index={4} title="服务变更与终止" />
+      <SectionHeading index={4} title="Service Changes & Termination" />
       <ol className="list-decimal pl-12 space-y-2 text-xs">
-        <li>本平台有权根据技术升级或政策调整暂停、变更或终止部分服务，将提前通过官网公告通知用户。</li>
-        <li>若用户违反本条款，本平台有权采取警告、限制功能、封禁账号等措施。</li>
+        <li>The Platform reserves the right to suspend, modify, or terminate services due to technical upgrades or policy changes, with advance notice via website announcements.</li>
+        <li>If users violate these terms, the Platform may issue warnings, restrict features, or suspend accounts.</li>
       </ol>
     </section>
 
     <section>
-      <SectionHeading index={5} title="免责声明" />
+      <SectionHeading index={5} title="Disclaimer" />
       <ol className="list-decimal pl-12 space-y-2 text-xs">
-        <li>本平台提供的 AI 生成内容仅供参考，用户应自行核实简历信息的准确性和真实性。</li>
-        <li>因不可抗力（如网络故障、服务器维护、第三方服务中断）导致的服务中断，本平台不承担责任。</li>
-        <li>用户使用本平台制作的简历进行求职，求职结果由用户自行负责。</li>
+        <li>AI-generated content provided by the Platform is for reference only. Users should verify the accuracy and authenticity of resume information.</li>
+        <li>The Platform is not liable for service interruptions caused by force majeure (e.g., network failures, server maintenance, third-party service outages).</li>
+        <li>Users are solely responsible for the outcomes of job applications made using resumes created on the Platform.</li>
       </ol>
     </section>
 
     <section>
-      <SectionHeading index={6} title="争议解决" />
+      <SectionHeading index={6} title="Dispute Resolution" />
       <p className="pl-8 text-xs">
-        本协议适用中华人民共和国法律。若发生争议，双方应先友好协商；协商不成的，任何一方均有权向平台运营方所在地有管辖权的人民法院提起诉讼。
+        This agreement is governed by applicable law. In the event of a dispute, both parties shall first attempt to resolve it through friendly negotiation. If negotiation fails, either party may seek resolution through appropriate legal channels.
       </p>
     </section>
 
     <section>
-      <SectionHeading index={7} title="联系方式" />
+      <SectionHeading index={7} title="Contact Us" />
       <div className="pl-8 text-xs space-y-1">
-        <p>如有任何疑问，请通过以下方式联系我们：</p>
-        <p>客服邮箱：<a href="mailto:627655140@qq.com" className="text-violet-600 hover:underline">627655140@qq.com</a></p>
-        <p>客服微信：<span className="font-medium text-slate-700">kkyycc01</span></p>
-        <p>工作时间：周一至周日 9:00 – 21:00</p>
+        <p>If you have any questions, please contact us:</p>
+        <p>Email: <a href="mailto:support@airesumepass.com" className="text-violet-600 hover:underline">support@airesumepass.com</a></p>
       </div>
     </section>
   </>

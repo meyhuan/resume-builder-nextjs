@@ -165,17 +165,17 @@ export default function AiGenerateSheet(props: AiGenerateSheetProps): ReactEleme
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">
             <Wand2 className="h-5 w-5 text-violet-500" />
-            AI 帮你写模块内容
+            AI Content Writer
           </SheetTitle>
           <SheetDescription>
-            请如实填写以下信息，AI 将基于您的真实经历生成合规内容
+            Fill in the details below and AI will generate compliant content based on your real experience
           </SheetDescription>
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto px-6 space-y-5 custom-scrollbar">
           {/* Identity selector */}
           <section>
-            <label className="text-sm font-medium text-slate-700 mb-2 block">求职身份</label>
+            <label className="text-sm font-medium text-slate-700 mb-2 block">Job Seeker Identity</label>
             <div className="flex gap-2">
               {SECTION_IDENTITY_OPTIONS.map((opt) => (
                 <button
@@ -198,8 +198,8 @@ export default function AiGenerateSheet(props: AiGenerateSheetProps): ReactEleme
           {moduleType === 'self-evaluation' && (
             <section>
               <label className="text-sm font-medium text-slate-700 mb-2 block">
-                目标岗位类型
-                <span className="text-slate-400 font-normal ml-1">（影响自我评价风格和关键词）</span>
+                Target Role Category
+                <span className="text-slate-400 font-normal ml-1">(Affects self-evaluation style and keywords)</span>
               </label>
               <div className="grid grid-cols-2 gap-2">
                 {JOB_CATEGORY_OPTIONS.map((opt) => (
@@ -228,8 +228,8 @@ export default function AiGenerateSheet(props: AiGenerateSheetProps): ReactEleme
           {/* Guided questions */}
           <section className="space-y-4">
             <label className="text-sm font-medium text-slate-700 block">
-              请如实填写以下信息
-              <span className="text-red-500 text-xs ml-1">* 为必填项</span>
+              Please fill in the following
+              <span className="text-red-500 text-xs ml-1">* Required</span>
             </label>
             {questionSet.questions.map((q) => (
               <div key={q.key}>
@@ -237,7 +237,7 @@ export default function AiGenerateSheet(props: AiGenerateSheetProps): ReactEleme
                   {q.required && <span className="text-red-500 mr-0.5">*</span>}
                   {q.label}
                   {q.autoFillKey && blockPrefill?.[q.autoFillKey] && (
-                    <span className="text-[10px] text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded font-normal">已自动填充</span>
+                    <span className="text-[10px] text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded font-normal">Auto-filled</span>
                   )}
                 </label>
                 {q.multiline ? (
@@ -263,13 +263,13 @@ export default function AiGenerateSheet(props: AiGenerateSheetProps): ReactEleme
           {/* JD input */}
           <section>
             <label className="text-sm font-medium text-slate-700 mb-2 block">
-              目标岗位 JD
-              <span className="text-slate-400 font-normal ml-1">（选填，提升岗位匹配度）</span>
+              Target Job Description
+              <span className="text-slate-400 font-normal ml-1">(Optional, improves role alignment)</span>
             </label>
             <textarea
               value={jobDescription}
               onChange={(e): void => setJobDescription(e.target.value.slice(0, MAX_JD_LENGTH))}
-              placeholder="粘贴目标岗位JD"
+              placeholder="Paste target job description"
               className="w-full h-20 text-xs rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-700 placeholder:text-slate-400 focus:border-violet-400 focus:outline-none focus:ring-1 focus:ring-violet-400/30 resize-none"
             />
             <div className="text-right text-[10px] text-slate-400 mt-1">
@@ -286,16 +286,16 @@ export default function AiGenerateSheet(props: AiGenerateSheetProps): ReactEleme
                 className="w-full h-10 shrink-0 bg-gradient-to-r from-violet-600 to-fuchsia-500 text-white hover:from-violet-700 hover:to-fuchsia-600 rounded-lg font-medium text-sm shadow-sm disabled:opacity-40"
               >
                 <Wand2 className="h-4 w-4 mr-2" />
-                {hasResult ? '重新生成' : '生成内容'}
+                {hasResult ? 'Regenerate' : 'Generate Content'}
                 {!requiredComplete && !hasResult && (
-                  <span className="ml-2 text-[10px] opacity-70">（请完成必填项）</span>
+                  <span className="ml-2 text-[10px] opacity-70">(Please complete required fields)</span>
                 )}
               </Button>
               {usage && (
                 <p className={`text-center text-[10px] ${isLimitReached ? 'text-red-500' : 'text-slate-400'}`}>
                   {isLimitReached
-                    ? `今日次数已用完（${usage.used}/${usage.limit}），${usage.isAuthenticated ? '请明天再试' : '登录后可获得更多次数'}`
-                    : `今日剩余 ${usage.remaining}/${usage.limit} 次`}
+                    ? `Daily limit reached (${usage.used}/${usage.limit}). ${usage.isAuthenticated ? 'Please try again tomorrow.' : 'Sign in for more.'}`
+                    : `${usage.remaining}/${usage.limit} remaining today`}
                 </p>
               )}
             </div>
@@ -305,7 +305,7 @@ export default function AiGenerateSheet(props: AiGenerateSheetProps): ReactEleme
           {isGenerating && (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-6 w-6 animate-spin text-violet-500 mr-2" />
-              <span className="text-sm text-slate-500">AI 正在为您生成内容，请稍候...</span>
+              <span className="text-sm text-slate-500">AI is generating content, please wait...</span>
             </div>
           )}
 
@@ -322,7 +322,7 @@ export default function AiGenerateSheet(props: AiGenerateSheetProps): ReactEleme
                   className="h-7 text-xs text-red-600 hover:text-red-700 hover:bg-red-100 mt-1 px-2"
                 >
                   <RefreshCw className="h-3 w-3 mr-1" />
-                  重新生成
+                  Regenerate
                 </Button>
               </div>
             </div>
@@ -332,7 +332,7 @@ export default function AiGenerateSheet(props: AiGenerateSheetProps): ReactEleme
           {displayHtml && (
             <section className="pb-6">
               <div className="flex items-center justify-between mb-2">
-                <label className="text-sm font-medium text-slate-700">生成结果</label>
+                <label className="text-sm font-medium text-slate-700">Generated Result</label>
                 {hasResult && (
                   <Button
                     variant="ghost"
@@ -341,7 +341,7 @@ export default function AiGenerateSheet(props: AiGenerateSheetProps): ReactEleme
                     className="h-7 text-xs text-slate-500 hover:text-violet-600 px-2"
                   >
                     <RefreshCw className="h-3 w-3 mr-1" />
-                    重新生成
+                    Regenerate
                   </Button>
                 )}
               </div>
@@ -370,7 +370,7 @@ export default function AiGenerateSheet(props: AiGenerateSheetProps): ReactEleme
         {/* Footer */}
         <SheetFooter>
           <p className="text-[10px] text-slate-400 flex-1">
-            内容由 AI 生成，请基于真实经历核对修改
+            AI-generated content — please verify against your real experience
           </p>
           <Button
             variant="outline"
@@ -378,7 +378,7 @@ export default function AiGenerateSheet(props: AiGenerateSheetProps): ReactEleme
             onClick={handleClose}
             className="h-8 text-xs rounded-lg"
           >
-            取消
+            Cancel
           </Button>
           <Button
             size="sm"
@@ -386,7 +386,7 @@ export default function AiGenerateSheet(props: AiGenerateSheetProps): ReactEleme
             disabled={!displayHtml.trim() || isGenerating}
             className="h-8 text-xs rounded-lg bg-gradient-to-r from-violet-600 to-fuchsia-500 text-white hover:from-violet-700 hover:to-fuchsia-600 disabled:opacity-40"
           >
-            插入到简历
+            Insert to Resume
           </Button>
         </SheetFooter>
       </SheetContent>

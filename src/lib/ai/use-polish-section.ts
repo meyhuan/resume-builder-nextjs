@@ -73,14 +73,14 @@ export function usePolishSection(): UsePolishSectionReturn {
 
         if (!response.ok) {
           const errorBody = await response.json().catch(() => null);
-          const msg: string = errorBody?.error ?? `请求失败 (${response.status})`;
+          const msg: string = errorBody?.error ?? `Request failed (${response.status})`;
           throw new Error(msg);
         }
 
         const reader: ReadableStreamDefaultReader<Uint8Array> | undefined =
           response.body?.getReader();
         if (!reader) {
-          throw new Error('无法读取响应流');
+          throw new Error('Unable to read response stream');
         }
 
         const decoder = new TextDecoder();
@@ -126,7 +126,7 @@ export function usePolishSection(): UsePolishSectionReturn {
           setIsPolishing(false);
           return null;
         }
-        const msg: string = err instanceof Error ? err.message : '润色失败，请重试';
+        const msg: string = err instanceof Error ? err.message : 'Polishing failed. Please try again.';
         setError(msg);
         setIsPolishing(false);
         return null;

@@ -14,22 +14,22 @@ import {
 import type { ArticleCategoryId } from '@/lib/articles/article-types';
 
 export const metadata: Metadata = {
-  title: '求职攻略 - 简历写作·面试技巧·职场指南',
+  title: 'Career Advice - Resume Writing · Interview Tips · Career Guide',
   description:
-    '汇集简历写作技巧、应届生求职指南、面试攻略、职场发展建议等实用文章，助你高效求职，斩获理想 Offer。',
+    'A collection of practical articles on resume writing, graduate job hunting, interview strategies, and career development to help you land your dream offer.',
   keywords: [
-    '求职攻略', '简历写作', '面试技巧', '职场指南', '应届生求职',
-    '简历优化', '求职面试', '职业规划', '简历模板', '求职技巧',
+    'career advice', 'resume writing', 'interview tips', 'career guide', 'graduate job hunting',
+    'resume optimization', 'job interview', 'career planning', 'resume template', 'job search tips',
   ],
 };
 
 const ARTICLES_JSON_LD = {
   '@context': 'https://schema.org',
   '@type': 'CollectionPage',
-  name: '求职攻略 - 智简简历',
+  name: 'Career Advice - AI Resume Pass',
   description: metadata.description,
-  url: 'https://aijianli.cn/articles',
-  isPartOf: { '@type': 'WebSite', name: '智简简历', url: 'https://aijianli.cn' },
+  url: 'https://airesumepass.com/articles',
+  isPartOf: { '@type': 'WebSite', name: 'AI Resume Pass', url: 'https://airesumepass.com' },
 };
 
 interface ArticlesPageProps {
@@ -62,14 +62,14 @@ export default async function ArticlesPage({ searchParams }: ArticlesPageProps):
           <div className="text-center mb-12">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/80 backdrop-blur-sm border border-white rounded-full shadow-sm mb-5">
               <BookOpen className="w-4 h-4 text-violet-500" />
-              <span className="text-sm font-semibold text-violet-600">求职攻略</span>
+              <span className="text-sm font-semibold text-violet-600">Career Advice</span>
             </div>
             <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-4 tracking-tight">
-              助你高效求职，斩获理想
+              Land Your Dream
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-fuchsia-500"> Offer</span>
             </h1>
             <p className="text-base text-slate-500 max-w-2xl mx-auto">
-              汇集简历写作、面试技巧、职场指南等实用文章，覆盖求职全流程。
+              Practical articles on resume writing, interview tips, and career guides covering the entire job search journey.
             </p>
           </div>
 
@@ -116,7 +116,7 @@ export default async function ArticlesPage({ searchParams }: ArticlesPageProps):
                       </span>
                       <span className="flex items-center gap-1 text-[11px] text-slate-400">
                         <Calendar className="w-3 h-3" />
-                        {new Date(article.createdAt).toLocaleDateString('zh-CN')}
+                        {new Date(article.createdAt).toLocaleDateString('en-US')}
                       </span>
                     </div>
 
@@ -154,7 +154,7 @@ export default async function ArticlesPage({ searchParams }: ArticlesPageProps):
           {/* Empty state */}
           {articles.length === 0 && (
             <div className="text-center py-20">
-              <p className="text-slate-400 text-sm">暂无相关文章</p>
+              <p className="text-slate-400 text-sm">No articles found</p>
             </div>
           )}
         </div>

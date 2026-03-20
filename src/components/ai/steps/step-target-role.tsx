@@ -75,7 +75,7 @@ export const StepTargetRole = ({ stepNumber, onClickPast }: { stepNumber: number
   };
 
   return (
-    <StepCard stepNumber={stepNumber} title="请选择你的意向岗位" onClickPast={onClickPast}>
+    <StepCard stepNumber={stepNumber} title="Select Your Target Role" onClickPast={onClickPast}>
       <div className="space-y-4 relative">
         {/* Search bar */}
         <div className="flex items-center gap-2 relative z-10">
@@ -84,7 +84,7 @@ export const StepTargetRole = ({ stepNumber, onClickPast }: { stepNumber: number
             <input
               ref={inputRef}
               type="text"
-              placeholder="搜索岗位"
+              placeholder="Search roles"
               value={searchValue}
               onFocus={() => setShowDropdown(true)}
               onChange={(e) => {
@@ -116,7 +116,7 @@ export const StepTargetRole = ({ stepNumber, onClickPast }: { stepNumber: number
               onClick={handleConfirmSearch}
               className="shrink-0 bg-[#8B5CF6] hover:bg-[#7C3AED] text-white px-5 py-3 rounded-lg text-sm font-medium transition-colors"
             >
-              确认
+              Confirm
             </button>
           )}
         </div>
@@ -132,7 +132,7 @@ export const StepTargetRole = ({ stepNumber, onClickPast }: { stepNumber: number
                 className="w-full text-left px-4 py-2.5 text-sm hover:bg-[#F5F3FF] transition-colors text-gray-700"
               >
                 {idx === 0 && job === searchValue.trim() ? (
-                  <span className="text-[#7C3AED] font-medium">使用自定义: {job}</span>
+                  <span className="text-[#7C3AED] font-medium">Use custom: {job}</span>
                 ) : (
                   <HighlightText text={job} keyword={searchValue} />
                 )}
@@ -141,7 +141,7 @@ export const StepTargetRole = ({ stepNumber, onClickPast }: { stepNumber: number
           </div>
         )}
 
-        {/* Default view: hot picks + "更多岗位" */}
+        {/* Default view: hot picks + "More roles" */}
         {viewMode === 'default' && (
           <div className="flex flex-wrap gap-3">
             {JOB_HOT_PICKS.map((job) => (
@@ -164,7 +164,7 @@ export const StepTargetRole = ({ stepNumber, onClickPast }: { stepNumber: number
               onClick={openGrid}
               className="px-6 py-3 rounded-lg text-sm font-medium transition-colors border border-dashed border-[#8B5CF6] text-[#7C3AED] bg-[#F5F3FF]/50 hover:bg-[#F5F3FF]"
             >
-              更多岗位
+              More Roles
             </button>
           </div>
         )}
@@ -179,7 +179,7 @@ export const StepTargetRole = ({ stepNumber, onClickPast }: { stepNumber: number
                 className="flex items-center gap-1 text-sm text-gray-500 hover:text-[#8B5CF6] transition-colors"
               >
                 <ChevronLeft className="w-4 h-4" />
-                全部岗位分类
+                All Categories
               </button>
             </div>
             <div className="flex gap-4 min-h-[280px]">
@@ -238,7 +238,7 @@ export const StepTargetRole = ({ stepNumber, onClickPast }: { stepNumber: number
                     : "bg-gray-100 text-gray-400 cursor-not-allowed"
                 )}
               >
-                确认
+                Confirm
               </button>
             </div>
           </div>

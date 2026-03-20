@@ -1,15 +1,15 @@
 /**
- * Simple 模板样式配置
+ * Simple template style configuration.
  * 
- * 这个文件定义了 Simple 模板的所有样式
- * 修改此文件可以改变模板外观，无需修改共用组件
+ * This file defines all styles for the Simple template.
+ * Modify this file to change template appearance without touching shared components.
  */
 
 import type { TemplateStylesConfig } from '@/templates/components/v2/types'
 
 export const SIMPLE_TEMPLATE_STYLES: TemplateStylesConfig = {
   name: 'simple',
-  description: '简约风格 - 传统布局，清晰层次',
+  description: 'Simple style - traditional layout, clear hierarchy',
   
   baseInfo: {
     container: 'py-4 flex items-start gap-6 relative group cursor-pointer print:cursor-default',

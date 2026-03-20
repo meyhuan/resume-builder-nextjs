@@ -24,17 +24,17 @@ export interface WizardInput {
 
 /** Identity labels used inside prompts. */
 const IDENTITY_LABELS: Record<UserIdentity, string> = {
-  student: '在校生',
-  graduate: '应届生',
-  professional: '职场人',
+  student: 'Current Student',
+  graduate: 'Recent Graduate',
+  professional: 'Working Professional',
 };
 
 /**
  * Build the complete system prompt for resume generation.
  */
 export function buildSystemPrompt(): string {
-  return `你是一位拥有10年经验的专业简历撰写专家。你擅长根据用户的身份、意向岗位和个人经历，撰写高质量、专业的中文简历内容。
-你的输出必须是一个合法的JSON字符串，可以被JSON.parse直接解析。不得包含任何多余内容（如解释、注释、markdown标记、代码块标记等）。`;
+  return `You are a professional resume writer with 10 years of experience. You specialize in crafting high-quality, professional English resume content based on the user's background, target role, and personal experience.
+Your output MUST be a valid JSON string that can be directly parsed by JSON.parse. Do NOT include any extra content such as explanations, comments, markdown markers, or code block markers.`;
 }
 
 /**
@@ -61,10 +61,10 @@ export function buildModulePrompt(
   keywords: string,
   context: string,
 ): string {
-  return `上下文：根据以下关键词"${keywords}"生成内容。${context ? `补充信息：${context}` : ''}
-目标：根据提供的关键词生成简历模块"${moduleTitle}"的精炼内容。使用简历行业常用术语，确保内容简洁、专业且符合简历模块的规范，突出与"${moduleTitle}"相关的核心能力、工作经验或成就。
-风格：严谨且精炼的简历写作风格。避免口语化，注重用词准确，语言简洁清晰，确保内容高度专业且符合简历行业规范。
-响应：根据关键词和模块标题生成简历模块内容，直接返回最终结果，确保无多余解释或非必要信息，纯HTML格式返回（使用<ul><li>或<p>标签）。`;
+  return `Context: Generate content based on the following keywords "${keywords}".${context ? ` Additional info: ${context}` : ''}
+Goal: Generate polished resume content for the "${moduleTitle}" section using the provided keywords. Use industry-standard resume terminology. Ensure the content is concise, professional, and highlights core competencies, work experience, or achievements related to "${moduleTitle}".
+Style: Rigorous and concise resume writing style. Avoid casual language, use precise wording, and ensure the content is highly professional and follows resume industry standards.
+Response: Return the final content directly in pure HTML format (using <ul><li> or <p> tags). Do not include any explanations or unnecessary information.`;
 }
 
 /**
@@ -74,14 +74,14 @@ export function buildPolishPrompt(
   moduleTitle: string,
   content: string,
 ): string {
-  return `你是专业的简历优化顾问。请对简历中"${moduleTitle}"模块进行优化润色。
-要求：
-1. 仅润色原内容，不增加无关内容
-2. 保持严谨风格，使用专业简历用语
-3. 控制字数，保留核心价值，突出专业亮点
-4. 直接返回优化后的内容，纯HTML格式（使用<ul><li>或<p>标签），不要包含任何解释
+  return `You are a professional resume optimization consultant. Please polish and improve the "${moduleTitle}" section of this resume.
+Requirements:
+1. Only refine the existing content — do not add unrelated information
+2. Maintain a professional, rigorous tone using industry-standard resume language
+3. Keep it concise, preserve core value, and highlight professional strengths
+4. Return the polished content directly in pure HTML format (using <ul><li> or <p> tags) — do not include any explanations
 
-原内容：${content}`;
+Original content: ${content}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -90,216 +90,210 @@ export function buildPolishPrompt(
 
 function buildUserContext(input: WizardInput, identityLabel: string): string {
   const lines: string[] = [
-    `## 用户信息`,
-    `- 身份：${identityLabel}`,
-    `- 意向岗位：${input.targetRole}`,
+    `## User Information`,
+    `- Identity: ${identityLabel}`,
+    `- Target Role: ${input.targetRole}`,
   ];
-
   if (input.major) {
-    lines.push(`- 专业：${input.major}`);
+    lines.push(`- Major/Field: ${input.major}`);
   }
   if (input.identity === 'professional' && input.workYears) {
-    lines.push(`- 工作年限：${input.workYears}`);
+    lines.push(`- Years of Experience: ${input.workYears}`);
   }
   if (input.projects.length > 0) {
-    lines.push(`- 项目经验关键词：${input.projects.join('、')}`);
+    lines.push(`- Project Keywords: ${input.projects.join(', ')}`);
   }
   if (input.campusActivities.length > 0) {
-    lines.push(`- 校园活动经历：${input.campusActivities.join('、')}`);
+    lines.push(`- Campus Activities: ${input.campusActivities.join(', ')}`);
   }
   if (input.softSkills.length > 0) {
-    lines.push(`- 技能特长：${input.softSkills.join('、')}`);
+    lines.push(`- Skills: ${input.softSkills.join(', ')}`);
   }
   if (input.certificates.length > 0) {
-    lines.push(`- 资格证书：${input.certificates.join('、')}`);
+    lines.push(`- Certifications: ${input.certificates.join(', ')}`);
   }
   if (input.additionalInfo) {
-    lines.push(`- 补充说明：${input.additionalInfo}`);
+    lines.push(`- Additional Info: ${input.additionalInfo}`);
   }
-
   return lines.join('\n');
 }
 
 function buildSectionInstructions(input: WizardInput): string {
-  const lines: string[] = ['## 需要生成的简历模块'];
-
+  const lines: string[] = ['## Resume Sections to Generate'];
   switch (input.identity) {
     case 'student':
-      lines.push('请生成以下模块（按重要性排序）：');
-      lines.push('1. base_info — 基本信息（姓名用"姓名"占位，手机和邮箱用占位符）');
-      lines.push('2. job_intention — 求职意向');
-      lines.push('3. education — 教育经历（1条，根据专业生成合理的学校和课程）');
-      lines.push('4. self_evaluation — 自我评价');
+      lines.push('Generate the following sections (ordered by importance):');
+      lines.push('1. base_info — Basic info (use "Your Name" as placeholder, phone and email as placeholders)');
+      lines.push('2. job_intention — Job objective');
+      lines.push('3. education — Education (1 entry, generate a reasonable school and courses based on major)');
+      lines.push('4. self_evaluation — Professional summary');
       if (input.campusActivities.length > 0) {
-        lines.push('5. school_exps — 在校/校园经历（根据用户提供的校园活动关键词生成1-2条）');
+        lines.push('5. school_exps — Campus experience (generate 1-2 entries based on user\'s campus activity keywords)');
       }
-      lines.push(`${input.campusActivities.length > 0 ? '6' : '5'}. skills — 专业技能`);
+      lines.push(`${input.campusActivities.length > 0 ? '6' : '5'}. skills — Skills`);
       if (input.certificates.length > 0) {
-        lines.push(`${input.campusActivities.length > 0 ? '7' : '6'}. qualifications — 资质证书`);
+        lines.push(`${input.campusActivities.length > 0 ? '7' : '6'}. qualifications — Certifications`);
       }
-      lines.push('注意：在校生通常无正式工作经历，不要生成experience字段，可生成intern（实习经历）如果合理。');
+      lines.push('Note: Students typically have no formal work experience. Do not generate the experience field. You may generate intern (internship) entries if appropriate.');
       break;
-
     case 'graduate':
-      lines.push('请生成以下模块（按重要性排序）：');
-      lines.push('1. base_info — 基本信息');
-      lines.push('2. job_intention — 求职意向');
-      lines.push('3. education — 教育经历（1条）');
-      lines.push('4. self_evaluation — 自我评价');
+      lines.push('Generate the following sections (ordered by importance):');
+      lines.push('1. base_info — Basic info');
+      lines.push('2. job_intention — Job objective');
+      lines.push('3. education — Education (1 entry)');
+      lines.push('4. self_evaluation — Professional summary');
       if (input.projects.length > 0) {
-        lines.push('5. program_experience — 项目经历（根据用户提供的项目关键词生成1-2条）');
+        lines.push('5. program_experience — Project experience (generate 1-2 entries based on user\'s project keywords)');
       }
-      lines.push('6. intern — 实习经历（生成1条与意向岗位相关的实习经历）');
-      lines.push('7. skills — 专业技能');
+      lines.push('6. intern — Internship experience (generate 1 entry related to target role)');
+      lines.push('7. skills — Skills');
       if (input.certificates.length > 0) {
-        lines.push('8. qualifications — 资质证书');
+        lines.push('8. qualifications — Certifications');
       }
       break;
-
     case 'professional': {
       const years: number = parseWorkYears(input.workYears);
-      lines.push('请生成以下模块（按重要性排序）：');
-      lines.push('1. base_info — 基本信息');
-      lines.push('2. job_intention — 求职意向');
-      lines.push('3. self_evaluation — 自我评价');
-      lines.push(`4. experience — 工作经历（生成${years <= 3 ? '1-2' : '2-3'}条，最近的经历在前）`);
+      lines.push('Generate the following sections (ordered by importance):');
+      lines.push('1. base_info — Basic info');
+      lines.push('2. job_intention — Job objective');
+      lines.push('3. self_evaluation — Professional summary');
+      lines.push(`4. experience — Work experience (generate ${years <= 3 ? '1-2' : '2-3'} entries, most recent first)`);
       if (input.projects.length > 0) {
-        lines.push('5. program_experience — 项目经历（根据用户提供的项目关键词生成1-2条）');
+        lines.push('5. program_experience — Project experience (generate 1-2 entries based on user\'s project keywords)');
       }
-      lines.push('6. education — 教育经历（1条）');
-      lines.push('7. skills — 专业技能');
+      lines.push('6. education — Education (1 entry)');
+      lines.push('7. skills — Skills');
       if (input.certificates.length > 0) {
-        lines.push('8. qualifications — 资质证书');
+        lines.push('8. qualifications — Certifications');
       }
       break;
     }
   }
-
   return lines.join('\n');
 }
 
 function buildContentGuidelines(input: WizardInput, identityLabel: string): string {
   const years: number = parseWorkYears(input.workYears);
-  const lines: string[] = ['## 内容生成要求'];
+  const lines: string[] = ['## Content Generation Requirements'];
 
-  lines.push(`1. 所有内容必须严格围绕【${input.targetRole}】岗位生成，禁止出现无关内容`);
-  lines.push('2. 内容必须专业、清晰、详细，可适当扩展以丰富简历');
-  lines.push('3. 尽可能使用量化数据（百分比、数量、时间等）来体现成果');
-  lines.push('4. 使用专业术语，符合简历行业规范');
-  lines.push('5. HTML内容使用<ul><li>格式罗列要点，或使用<p>标签包裹段落');
-  lines.push('6. 时间格式统一使用"YYYY.MM"，如"2023.06"');
+  lines.push(`1. All content MUST be strictly tailored to the [${input.targetRole}] role — no irrelevant content`);
+  lines.push('2. Content must be professional, clear, and detailed — expand appropriately to enrich the resume');
+  lines.push('3. Use quantified data (percentages, numbers, timeframes) to demonstrate impact wherever possible');
+  lines.push('4. Use professional terminology that follows resume industry standards');
+  lines.push('5. HTML content should use <ul><li> format for bullet points, or <p> tags for paragraphs');
+  lines.push('6. Date format should be "YYYY.MM", e.g. "2023.06"');
 
   if (input.identity === 'professional') {
-    lines.push(`7. 【年限适配】根据${years}年工作经验调整内容深度：`);
+    lines.push(`7. [Experience-level adaptation] Adjust content depth for ${years} years of experience:`);
     lines.push(`   ${generateYearsGuidance(years)}`);
   } else if (input.identity === 'student') {
-    lines.push(`7. 作为${identityLabel}，突出学习能力、课程成绩、校园活动和技术热情`);
+    lines.push(`7. As a ${identityLabel}, emphasize learning ability, coursework, campus activities, and technical enthusiasm`);
   } else {
-    lines.push(`7. 作为${identityLabel}，突出实习经验、项目经历和专业基础`);
+    lines.push(`7. As a ${identityLabel}, emphasize internship experience, project work, and professional foundation`);
   }
 
   if (input.softSkills.length > 0) {
-    lines.push(`8. 在技能模块中融入以下技能关键词：${input.softSkills.join('、')}`);
+    lines.push(`8. Include the following skill keywords in the skills section: ${input.softSkills.join(', ')}`);
   }
   if (input.certificates.length > 0) {
-    lines.push(`9. 在资质证书模块中包含：${input.certificates.join('、')}`);
+    lines.push(`9. Include these certifications: ${input.certificates.join(', ')}`);
   }
 
   return lines.join('\n');
 }
 
 function buildOutputSchema(): string {
-  return `## 输出JSON结构要求
+  return `## Output JSON Schema
 
-请严格按照以下TypeScript接口生成JSON（仅包含需要的字段）：
+Generate JSON strictly following this TypeScript interface (only include necessary fields):
 
 \`\`\`
 interface ExternalResume {
   base_info: {
-    name: string;          // 使用"姓名"占位
-    gender?: string;       // "男" 或 "女" 或留空
-    age?: string;          // 如 "22"
-    phone?: string;        // 使用"电话号码"占位
-    mail?: string;         // 使用"邮箱"占位
+    name: string;          // Use "Your Name" as placeholder
+    gender?: string;       // "Male" or "Female" or leave empty
+    age?: string;          // e.g. "22"
+    phone?: string;        // Use "Phone Number" as placeholder
+    mail?: string;         // Use "email@example.com" as placeholder
     hide_avatar?: boolean; // false
   };
   job_intention: {
-    objective: string;     // 意向岗位名称
-    city?: string;         // 如 "不限"
-    salary?: string;       // 如 "面议"
-    type?: string;         // 如 "全职"
+    objective: string;     // Target role title
+    city?: string;         // e.g. "Open to relocation"
+    salary?: string;       // e.g. "Negotiable"
+    type?: string;         // e.g. "Full-time"
     is_hide?: boolean;     // false
   };
   self_evaluation?: {
-    content: string;       // HTML格式的自我评价，<p>标签包裹
+    content: string;       // HTML professional summary, wrapped in <p> tags
     is_hide?: boolean;
   };
   experience?: Array<{
-    id: string;            // 唯一ID如 "exp-1"
-    name: string;          // 公司名称
-    industry?: string;     // 行业
-    position: string;      // 职位名称
-    content: string;       // HTML格式的工作内容，用<ul><li>罗列
+    id: string;            // Unique ID e.g. "exp-1"
+    name: string;          // Company name
+    industry?: string;     // Industry
+    position: string;      // Job title
+    content: string;       // HTML work description, use <ul><li> for bullet points
     is_hide?: boolean;
-    period: { start: string; end: string; }; // "YYYY.MM" 格式
+    period: { start: string; end: string; }; // "YYYY.MM" format
   }>;
   intern?: Array<{
     id: string;
     name: string;
     industry?: string;
     position: string;
-    content: string;       // HTML格式
+    content: string;       // HTML format
     is_hide?: boolean;
     period: { start: string; end: string; };
   }>;
   education?: Array<{
     id: string;
-    name: string;          // 学校名称
-    major?: string;        // 专业
-    degree?: string;       // 如 "本科"、"硕士"
-    course?: string;       // HTML格式的课程信息
+    name: string;          // School name
+    major?: string;        // Major
+    degree?: string;       // e.g. "Bachelor's", "Master's"
+    course?: string;       // HTML format course info
     is_hide?: boolean;
     period: { start: string; end: string; };
     content?: string;
   }>;
   program_experience?: Array<{
     id: string;
-    name: string;          // 项目名称
-    role?: string;         // 项目角色
-    content: string;       // HTML格式
+    name: string;          // Project name
+    role?: string;         // Role in project
+    content: string;       // HTML format
     is_hide?: boolean;
     period: { start: string; end: string; };
   }>;
   school_exps?: Array<{
     id: string;
-    name: string;          // 组织名称
-    position?: string;     // 职务
-    content: string;       // HTML格式
+    name: string;          // Organization name
+    position?: string;     // Role/title
+    content: string;       // HTML format
     is_hide?: boolean;
     period: { start: string; end: string; };
   }>;
   skills?: {
-    content: string;       // HTML格式，用<ul><li>罗列技能
+    content: string;       // HTML format, use <ul><li> to list skills
     is_hide?: boolean;
   };
   qualifications?: {
-    content: string;       // HTML格式，用<p>包裹
+    content: string;       // HTML format, wrapped in <p>
     is_hide?: boolean;
   };
 }
 \`\`\`
 
-每条经历的id必须唯一，使用如 "exp-1"、"edu-1"、"proj-1"、"intern-1"、"campus-1" 的格式。
-不需要的模块字段直接省略，不要设置为空数组。`;
+Each entry's id must be unique, using formats like "exp-1", "edu-1", "proj-1", "intern-1", "campus-1".
+Omit unnecessary module fields entirely — do not set them to empty arrays.`;
 }
 
 function buildFinalInstructions(): string {
-  return `## 最终要求
-1. 必须返回可直接被JSON.parse解析的合法JSON字符串
-2. 不得包含任何多余内容（如解释、注释、markdown代码块标记\`\`\`等）
-3. 不得包含JSON之外的任何文字
-4. 返回前请自行检查JSON格式有效性
-5. 所有HTML内容字段不得留空，必须有实质性的专业内容`;
+  return `## Final Requirements
+1. You MUST return a valid JSON string that can be directly parsed by JSON.parse
+2. Do NOT include any extra content (explanations, comments, markdown code block markers \`\`\`, etc.)
+3. Do NOT include any text outside of the JSON
+4. Verify JSON format validity before returning
+5. All HTML content fields must contain substantive, professional content — never leave them empty`;
 }
 
 function parseWorkYears(workYears: string): number {
@@ -308,8 +302,8 @@ function parseWorkYears(workYears: string): number {
 }
 
 function generateYearsGuidance(years: number): string {
-  if (years < 1) return '▶ 突出学习能力/实习项目/技术热情';
-  if (years < 3) return '▶ 强调技术深度/独立负责模块/快速成长';
-  if (years < 5) return '▶ 展示架构能力/带人经验/核心业务负责';
-  return '▶ 突出技术决策/团队管理/跨部门协作/业务影响力';
+  if (years < 1) return '▶ Emphasize learning ability / internship projects / technical enthusiasm';
+  if (years < 3) return '▶ Highlight technical depth / independent ownership / rapid growth';
+  if (years < 5) return '▶ Showcase architecture skills / mentoring experience / core business ownership';
+  return '▶ Emphasize technical leadership / team management / cross-functional collaboration / business impact';
 }

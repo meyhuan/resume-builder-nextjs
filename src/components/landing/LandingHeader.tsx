@@ -6,7 +6,8 @@ import Image from 'next/image';
 import { LandingButton } from './LandingButton';
 import { cn } from '@/lib/utils';
 import { Menu, X, User, LogOut, ChevronDown, FileText, Wand2, FileUp } from 'lucide-react';
-import { WxLoginDialog } from '../auth/WxLoginDialog';
+// TODO: Replace with Clerk auth
+// import { WxLoginDialog } from '../auth/WxLoginDialog';
 import { useAuthStore } from '@/store/use-auth-store';
 
 interface LandingHeaderProps {
@@ -16,7 +17,6 @@ interface LandingHeaderProps {
 export const LandingHeader = ({ forceSolid = false }: LandingHeaderProps = {}) => {
   const [isScrolled, setIsScrolled] = useState(forceSolid);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [isLoginOpen, setIsLoginOpen] = useState(false);
 
   const { token, userInfo, logout } = useAuthStore();
 
@@ -32,17 +32,16 @@ export const LandingHeader = ({ forceSolid = false }: LandingHeaderProps = {}) =
   const navItems = [
     {
       id: 'create',
-      label: '制作简历',
+      label: 'Create Resume',
       children: [
-        { id: 'ai', label: 'AI 简历生成', href: '/ai', icon: <Wand2 className="w-4 h-4 text-fuchsia-500" />, desc: '几步生成专属简历' },
-        { id: 'import', label: 'AI 文本转简历', href: '/import', icon: <FileUp className="w-4 h-4 text-violet-500" />, desc: '一键生成精美简历' },
-        { id: 'blank', label: '创建空白简历', href: '/editor/new', icon: <FileText className="w-4 h-4 text-emerald-500" />, desc: '从零开始自由编辑' },
+        { id: 'ai', label: 'AI Resume Generator', href: '/ai', icon: <Wand2 className="w-4 h-4 text-fuchsia-500" />, desc: 'Build your resume in minutes' },
+        { id: 'import', label: 'Text to Resume', href: '/import', icon: <FileUp className="w-4 h-4 text-violet-500" />, desc: 'Paste text, get a polished resume' },
+        { id: 'blank', label: 'Blank Resume', href: '/editor/new', icon: <FileText className="w-4 h-4 text-emerald-500" />, desc: 'Start from scratch' },
       ]
     },
-    { id: 'templates', label: '简历模板', href: '/#templates' },
-    { id: 'articles', label: '求职攻略', href: '/articles' },
-    { id: 'about', label: '关于开发者', href: '/about' },
-    { id: 'legacy', label: '找回旧版', href: 'https://w2025.aijianli.cn', external: true },
+    { id: 'templates', label: 'Templates', href: '/#templates' },
+    { id: 'articles', label: 'Career Guide', href: '/articles' },
+    { id: 'about', label: 'About', href: '/about' },
   ];
 
   return (
@@ -57,7 +56,7 @@ export const LandingHeader = ({ forceSolid = false }: LandingHeaderProps = {}) =
           <Link href="/" className="flex items-center gap-2 group transition-transform hover:scale-105">
             <div className="relative">
               <div className="absolute inset-0 bg-violet-500 blur-lg opacity-20 group-hover:opacity-40 transition-opacity rounded-full"></div>
-              <Image src="/logo-aijianli.png" alt="智简简历" width={120} height={40} className="h-10 w-auto object-contain relative z-10" />
+              <Image src="/logo-aijianli.png" alt="AI Resume Pass" width={120} height={40} className="h-10 w-auto object-contain relative z-10" />
             </div>
           </Link>
 
@@ -95,15 +94,6 @@ export const LandingHeader = ({ forceSolid = false }: LandingHeaderProps = {}) =
                       </div>
                     </div>
                   </>
-                ) : item.external ? (
-                  <a 
-                    href={item.href!} 
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center px-4 py-2 text-sm font-medium text-slate-600 hover:text-amber-600 rounded-full hover:bg-amber-50 transition-all"
-                  >
-                    {item.label}
-                  </a>
                 ) : (
                   <Link 
                     href={item.href!} 
@@ -120,7 +110,7 @@ export const LandingHeader = ({ forceSolid = false }: LandingHeaderProps = {}) =
             {token ? (
               <div className="flex items-center gap-4">
                 <Link href="/dashboard">
-                  <LandingButton variant="glass" size="sm" className="rounded-full">进入控制台</LandingButton>
+                  <LandingButton variant="glass" size="sm" className="rounded-full">Dashboard</LandingButton>
                 </Link>
                 <div className="relative group/user">
                   <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 p-[2px] cursor-pointer hover:shadow-lg hover:shadow-violet-500/20 transition-all">
@@ -134,8 +124,8 @@ export const LandingHeader = ({ forceSolid = false }: LandingHeaderProps = {}) =
                   </div>
                   <div className="absolute right-0 top-full mt-2 w-64 p-2 bg-white/80 backdrop-blur-xl rounded-2xl shadow-[0_8px_32px_rgba(31,38,135,0.07)] border border-white/20 opacity-0 invisible group-hover/user:opacity-100 group-hover/user:visible transition-all translate-y-2">
                     <div className="px-4 py-3 mb-1">
-                      <p className="text-xs text-slate-400 uppercase tracking-widest font-bold mb-1">当前账号</p>
-                      <p className="text-sm font-semibold text-slate-800 truncate">{userInfo?.email || '用户'}</p>
+                      <p className="text-xs text-slate-400 uppercase tracking-widest font-bold mb-1">Account</p>
+                      <p className="text-sm font-semibold text-slate-800 truncate">{userInfo?.email || 'User'}</p>
                     </div>
                     <div className="h-px bg-slate-100 mx-2 mb-2"></div>
                     <button 
@@ -143,16 +133,18 @@ export const LandingHeader = ({ forceSolid = false }: LandingHeaderProps = {}) =
                       className="w-full flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-rose-500 hover:bg-rose-50 rounded-xl transition-colors"
                     >
                       <LogOut size={16} />
-                      退出登录
+                      Sign Out
                     </button>
                   </div>
                 </div>
               </div>
             ) : (
               <>
-                <LandingButton variant="ghost" size="sm" onClick={() => setIsLoginOpen(true)} className="rounded-full hover:bg-white/50">登录</LandingButton>
+                <Link href="/login">
+                  <LandingButton variant="ghost" size="sm" className="rounded-full hover:bg-white/50">Sign In</LandingButton>
+                </Link>
                 <Link href="/ai">
-                  <LandingButton size="sm" className="rounded-full shadow-lg shadow-violet-500/25">免费制作</LandingButton>
+                  <LandingButton size="sm" className="rounded-full shadow-lg shadow-violet-500/25">Get Started Free</LandingButton>
                 </Link>
               </>
             )}
@@ -188,16 +180,6 @@ export const LandingHeader = ({ forceSolid = false }: LandingHeaderProps = {}) =
                       ))}
                     </div>
                   </>
-                ) : item.external ? (
-                  <a 
-                    href={item.href!} 
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block text-amber-700 font-semibold text-lg" 
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    {item.label}
-                  </a>
                 ) : (
                   <Link href={item.href!} className="block text-slate-700 font-semibold text-lg" onClick={() => setMobileMenuOpen(false)}>
                     {item.label}
@@ -208,13 +190,15 @@ export const LandingHeader = ({ forceSolid = false }: LandingHeaderProps = {}) =
             <div className="flex flex-col gap-3 pt-4">
               {token ? (
                 <Link href="/dashboard" className="w-full">
-                  <LandingButton size="md" className="w-full rounded-xl">进入控制台</LandingButton>
+                  <LandingButton size="md" className="w-full rounded-xl">Dashboard</LandingButton>
                 </Link>
               ) : (
                 <>
-                  <LandingButton variant="outline" size="md" className="w-full rounded-xl" onClick={() => setIsLoginOpen(true)}>注册/登录</LandingButton>
+                  <Link href="/login" className="w-full" onClick={() => setMobileMenuOpen(false)}>
+                    <LandingButton variant="outline" size="md" className="w-full rounded-xl">Sign In</LandingButton>
+                  </Link>
                   <Link href="/ai" className="w-full" onClick={() => setMobileMenuOpen(false)}>
-                    <LandingButton size="md" className="w-full rounded-xl">免费制作</LandingButton>
+                    <LandingButton size="md" className="w-full rounded-xl">Get Started Free</LandingButton>
                   </Link>
                 </>
               )}
@@ -223,13 +207,7 @@ export const LandingHeader = ({ forceSolid = false }: LandingHeaderProps = {}) =
         )}
       </header>
 
-      <WxLoginDialog 
-        isOpen={isLoginOpen} 
-        onClose={() => setIsLoginOpen(false)} 
-        onSuccess={() => {
-          // Additional logic on success if needed
-        }}
-      />
+      {/* TODO: Replace with Clerk <SignIn /> modal */}
     </>
   );
 };

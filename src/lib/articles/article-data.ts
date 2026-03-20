@@ -17,14 +17,18 @@ const CATEGORY_RAW_MAP: Record<string, ArticleCategoryId> = {
   '应届生求职': 'fresh-graduate',
   '面试技巧': 'interview-tips',
   '职场指南': 'career-guide',
+  'Resume Writing': 'resume-writing',
+  'Fresh Graduate': 'fresh-graduate',
+  'Interview Tips': 'interview-tips',
+  'Career Guide': 'career-guide',
 };
 
 export const ARTICLE_CATEGORIES: readonly ArticleCategoryMeta[] = [
-  { id: 'all', label: '全部', rawLabel: '', color: 'text-violet-600', bgColor: 'bg-violet-50' },
-  { id: 'resume-writing', label: '简历写作', rawLabel: '简历写作', color: 'text-blue-600', bgColor: 'bg-blue-50' },
-  { id: 'fresh-graduate', label: '应届生求职', rawLabel: '应届生求职', color: 'text-emerald-600', bgColor: 'bg-emerald-50' },
-  { id: 'interview-tips', label: '面试技巧', rawLabel: '面试技巧', color: 'text-amber-600', bgColor: 'bg-amber-50' },
-  { id: 'career-guide', label: '职场指南', rawLabel: '职场指南', color: 'text-rose-600', bgColor: 'bg-rose-50' },
+  { id: 'all', label: 'All', rawLabel: '', color: 'text-violet-600', bgColor: 'bg-violet-50' },
+  { id: 'resume-writing', label: 'Resume Writing', rawLabel: '简历写作', color: 'text-blue-600', bgColor: 'bg-blue-50' },
+  { id: 'fresh-graduate', label: 'Fresh Graduate', rawLabel: '应届生求职', color: 'text-emerald-600', bgColor: 'bg-emerald-50' },
+  { id: 'interview-tips', label: 'Interview Tips', rawLabel: '面试技巧', color: 'text-amber-600', bgColor: 'bg-amber-50' },
+  { id: 'career-guide', label: 'Career Guide', rawLabel: '职场指南', color: 'text-rose-600', bgColor: 'bg-rose-50' },
 ];
 
 // ---------------------------------------------------------------------------

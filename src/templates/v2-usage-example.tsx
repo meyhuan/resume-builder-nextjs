@@ -1,7 +1,7 @@
 /**
- * V2 组件使用示例
+ * V2 Component Usage Examples
  * 
- * 演示如何使用 V2 样式配置驱动架构创建模板
+ * Demonstrates how to create templates using the V2 style-config-driven architecture
  */
 
 import type { ReactElement } from 'react'
@@ -19,7 +19,7 @@ interface TemplateProps {
 }
 
 // ============================================
-// 示例 1: 使用样式配置（最常用）
+// Example 1: Using style config (most common)
 // ============================================
 export function ExampleWithStyles(props: TemplateProps): ReactElement {
   const { resume, theme } = props
@@ -27,7 +27,7 @@ export function ExampleWithStyles(props: TemplateProps): ReactElement {
 
   return (
     <div className="resume-container">
-      {/* 基础信息 - 使用配置 */}
+      {/* Base info - using config */}
       <BaseInfoSection
         name={resume.name}
         baseInfo={resume.baseInfo ?? null}
@@ -35,7 +35,7 @@ export function ExampleWithStyles(props: TemplateProps): ReactElement {
         styles={SIMPLE_TEMPLATE_STYLES.baseInfo}
       />
 
-      {/* 求职意向 - 使用配置 */}
+      {/* Job intention - using config */}
       {isJobIntentionVisible ? (
         <JobIntentionSection
           jobIntention={resume.jobIntention ?? null}
@@ -44,7 +44,7 @@ export function ExampleWithStyles(props: TemplateProps): ReactElement {
         />
       ) : null}
 
-      {/* Block 渲染 - 使用配置 */}
+      {/* Block rendering - using config */}
       {resume.sections.map((section) =>
         section.blocks.map((block) => (
           <BlockRenderer
@@ -60,12 +60,12 @@ export function ExampleWithStyles(props: TemplateProps): ReactElement {
 }
 
 // ============================================
-// 示例 2: 自定义样式配置
+// Example 2: Custom style config
 // ============================================
 export function ExampleWithCustomStyles(props: TemplateProps): ReactElement {
   const { resume, theme } = props
 
-  // 自定义样式配置
+  // Custom style config
   const customStyles = {
     baseInfo: {
       container: 'bg-gradient-to-r from-purple-500 to-pink-500 p-10 rounded-3xl',
@@ -97,7 +97,7 @@ export function ExampleWithCustomStyles(props: TemplateProps): ReactElement {
 }
 
 // ============================================
-// 示例 3: 完全自定义渲染
+// Example 3: Fully custom rendering
 // ============================================
 export function ExampleWithCustomRender(props: TemplateProps): ReactElement {
   const { resume, theme } = props
@@ -111,7 +111,7 @@ export function ExampleWithCustomRender(props: TemplateProps): ReactElement {
         renderCustom={(renderProps) => (
           <header className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 flex items-center justify-center">
             <div className="text-center">
-              {/* 3D 头像 */}
+              {/* 3D Avatar */}
               <div className="w-48 h-48 mx-auto rounded-full border-8 border-white/30 shadow-2xl transform hover:scale-110 transition-transform mb-8">
                 {renderProps.baseInfo?.avatarUrl && (
                   <img
@@ -122,7 +122,7 @@ export function ExampleWithCustomRender(props: TemplateProps): ReactElement {
                 )}
               </div>
 
-              {/* 动画文字 */}
+              {/* Animated text */}
               <h1 className="text-7xl font-black text-white tracking-wider mb-4">
                 {renderProps.name}
               </h1>
@@ -133,12 +133,12 @@ export function ExampleWithCustomRender(props: TemplateProps): ReactElement {
                 </div>
               )}
 
-              {/* 编辑按钮 */}
+              {/* Edit button */}
               <button
                 onClick={renderProps.onEdit}
                 className="mt-8 px-6 py-3 bg-white/20 backdrop-blur-md rounded-full text-white hover:bg-white/30 transition-colors"
               >
-                编辑信息
+                Edit Info
               </button>
             </div>
           </header>
@@ -149,7 +149,7 @@ export function ExampleWithCustomRender(props: TemplateProps): ReactElement {
 }
 
 // ============================================
-// 示例 4: 插槽模式（部分自定义）
+// Example 4: Slot pattern (partial customization)
 // ============================================
 export function ExampleWithSlots(props: TemplateProps): ReactElement {
   const { resume, theme } = props
@@ -162,7 +162,7 @@ export function ExampleWithSlots(props: TemplateProps): ReactElement {
         themeColor={theme.primaryColor}
         styles={SIMPLE_TEMPLATE_STYLES.baseInfo}
         slots={{
-          // 只自定义头像
+          // Custom avatar only
           avatar: (baseInfo, themeColor) => (
             <div className="relative">
               <div
@@ -181,7 +181,7 @@ export function ExampleWithSlots(props: TemplateProps): ReactElement {
             </div>
           ),
 
-          // 只自定义姓名
+          // Custom name only
           name: (name, themeColor) => (
             <h1
               className="text-6xl font-black bg-clip-text text-transparent bg-gradient-to-r"
@@ -199,7 +199,7 @@ export function ExampleWithSlots(props: TemplateProps): ReactElement {
 }
 
 // ============================================
-// 示例 5: 运行时动态样式
+// Example 5: Runtime dynamic styles
 // ============================================
 export function ExampleWithDynamicStyles(props: TemplateProps): ReactElement {
   const { resume, theme } = props

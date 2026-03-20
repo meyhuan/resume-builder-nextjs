@@ -16,18 +16,18 @@ export interface MonthPickerProps {
 }
 
 const MONTHS: ReadonlyArray<{ number: number; name: string }> = [
-  { number: 1, name: '1月' },
-  { number: 2, name: '2月' },
-  { number: 3, name: '3月' },
-  { number: 4, name: '4月' },
-  { number: 5, name: '5月' },
-  { number: 6, name: '6月' },
-  { number: 7, name: '7月' },
-  { number: 8, name: '8月' },
-  { number: 9, name: '9月' },
-  { number: 10, name: '10月' },
-  { number: 11, name: '11月' },
-  { number: 12, name: '12月' },
+  { number: 1, name: 'Jan' },
+  { number: 2, name: 'Feb' },
+  { number: 3, name: 'Mar' },
+  { number: 4, name: 'Apr' },
+  { number: 5, name: 'May' },
+  { number: 6, name: 'Jun' },
+  { number: 7, name: 'Jul' },
+  { number: 8, name: 'Aug' },
+  { number: 9, name: 'Sep' },
+  { number: 10, name: 'Oct' },
+  { number: 11, name: 'Nov' },
+  { number: 12, name: 'Dec' },
 ]
 
 const DEFAULT_MIN_YEAR: number = 1980

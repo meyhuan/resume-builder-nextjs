@@ -62,50 +62,50 @@ export const ResumeWizard = () => {
   const STEPS: Record<string, WizardStepConfig> = {
     identity: {
       component: StepIdentity,
-      getHistoryContent: (s) => `我是${getIdentityLabel(s.identity)}`,
+      getHistoryContent: (s) => `I am a ${getIdentityLabel(s.identity)}`,
       isUserHistory: true,
     },
     workYears: {
       component: StepWorkYears,
-      getHistoryContent: (s) => `我的工作年限是${s.workYears}`,
+      getHistoryContent: (s) => `My experience level: ${s.workYears}`,
       isUserHistory: true,
     },
     targetRole: {
       component: StepTargetRole,
-      getHistoryContent: (s) => `我想要找${s.targetRole}方向相关的工作`,
+      getHistoryContent: (s) => `I'm looking for a role in ${s.targetRole}`,
       isUserHistory: true,
     },
     major: {
       component: StepMajor,
-      getHistoryContent: (s) => `所学专业是${s.major}`,
+      getHistoryContent: (s) => `My major is ${s.major}`,
       isUserHistory: true,
     },
     projects: {
       component: StepProjects,
       getHistoryContent: (s) =>
-        s.projects.length > 0 ? `我参与过${s.projects.join('、')}等项目` : '跳过',
+        s.projects.length > 0 ? `I've worked on: ${s.projects.join(', ')}` : 'Skipped',
       isUserHistory: true,
     },
     campusActivities: {
       component: StepCampusActivities,
       getHistoryContent: (s) =>
         s.campusActivities.length > 0
-          ? `我参加过${s.campusActivities.join('、')}等校园活动`
-          : '跳过',
+          ? `I've been involved in: ${s.campusActivities.join(', ')}`
+          : 'Skipped',
       isUserHistory: true,
     },
     skills: {
       component: StepSkills,
       getHistoryContent: (s) =>
-        s.softSkills.length > 0 ? `我具有${s.softSkills.join('、')}的技能` : '跳过',
+        s.softSkills.length > 0 ? `My skills: ${s.softSkills.join(', ')}` : 'Skipped',
       isUserHistory: true,
     },
     certificates: {
       component: StepCertificates,
       getHistoryContent: (s) =>
         s.certificates.length > 0
-          ? `我获得过${s.certificates.join('、')}的资格证书`
-          : '跳过',
+          ? `My certifications: ${s.certificates.join(', ')}`
+          : 'Skipped',
       isUserHistory: true,
     },
     additionalInfo: {

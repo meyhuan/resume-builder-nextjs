@@ -1,8 +1,8 @@
 /**
  * V2 Template Component Types - Style-Driven Architecture
  * 
- * 完全解耦的样式配置系统，支持无限模板扩展
- * 新增模板无需修改共用组件代码
+ * Fully decoupled style configuration system supporting unlimited template extensions.
+ * Adding new templates requires no changes to shared component code.
  */
 
 import type { ReactElement } from 'react'
@@ -11,7 +11,7 @@ import type { JobIntention } from '@/entities/user/job-intention'
 import type { ResumeBlock } from '@/entities/blocks/resume-block'
 
 /**
- * 头像样式配置
+ * Avatar style configuration.
  */
 export interface AvatarStyles {
   readonly size?: string
@@ -24,7 +24,7 @@ export interface AvatarStyles {
 }
 
 /**
- * 文本字段样式配置
+ * Text field style configuration.
  */
 export interface TextFieldStyles {
   readonly className?: string
@@ -38,7 +38,7 @@ export interface TextFieldStyles {
 }
 
 /**
- * 布局配置
+ * Layout configuration.
  */
 export type LayoutType = 'horizontal' | 'vertical' | 'grid' | 'flex'
 
@@ -51,7 +51,7 @@ export interface LayoutStyles {
 }
 
 /**
- * BaseInfoSection 样式配置
+ * BaseInfoSection style configuration.
  */
 export interface BaseInfoSectionStyles {
   readonly container?: string
@@ -71,18 +71,18 @@ export interface BaseInfoSectionStyles {
 }
 
 /**
- * JobIntentionSection 样式配置
+ * JobIntentionSection style configuration.
  */
 export interface JobIntentionSectionStyles {
   readonly container?: string
   readonly header?: string
-  /** 是否在头部添加底边框 */
+  /** Whether to add a bottom border to the header */
   readonly headerBorderBottom?: boolean
-  /** 头部容器布局类型 */
+  /** Header container layout type */
   readonly layout?: 'default' | 'ribbon'
-  /** 头部容器类名 */
+  /** Header container class name */
   readonly headerClassName?: string
-  /** 标题样式 */
+  /** Title styles */
   readonly title?: TextFieldStyles
   readonly fieldsLayout?: LayoutStyles
   readonly fieldItem?: string
@@ -97,7 +97,7 @@ export interface JobIntentionSectionStyles {
 }
 
 /**
- * BlockRenderer 样式配置
+ * BlockRenderer style configuration.
  */
 export interface BlockRendererStyles {
   readonly container?: string
@@ -114,7 +114,7 @@ export interface BlockRendererStyles {
 }
 
 /**
- * 自定义渲染函数类型
+ * Custom render function types.
  */
 export interface BaseInfoRenderProps {
   readonly name: string
@@ -138,7 +138,7 @@ export interface BlockRenderProps {
 }
 
 /**
- * 插槽渲染函数类型
+ * Slot render function types.
  */
 export interface BaseInfoSlots {
   readonly avatar?: (baseInfo: BaseInfo | null, themeColor: string) => ReactElement
@@ -169,7 +169,7 @@ export interface SectionHeaderStyles extends TextFieldStyles {
 }
 
 /**
- * 完整的样式配置包
+ * Complete style configuration bundle.
  */
 export interface TemplateStylesConfig {
   readonly name: string

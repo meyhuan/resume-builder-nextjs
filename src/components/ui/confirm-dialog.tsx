@@ -27,15 +27,15 @@ interface ConfirmDialogProps {
 }
 
 /**
- * 通用确认弹窗组件
+ * Generic confirmation dialog component
  * @example
  * <ConfirmDialog
  *   open={showDialog}
  *   onOpenChange={setShowDialog}
- *   title="确认删除"
- *   description="删除后无法恢复，确定要删除吗？"
- *   confirmText="删除"
- *   cancelText="取消"
+ *   title="Confirm Delete"
+ *   description="This cannot be undone. Are you sure?"
+ *   confirmText="Delete"
+ *   cancelText="Cancel"
  *   variant="destructive"
  *   onConfirm={handleDelete}
  * />
@@ -45,9 +45,9 @@ export function ConfirmDialog({
   onOpenChange,
   title,
   description,
-  confirmText = '确认',
-  cancelText = '取消',
-  discardText = '放弃修改',
+  confirmText = 'Confirm',
+  cancelText = 'Cancel',
+  discardText = 'Discard changes',
   variant = 'default',
   onConfirm,
   onCancel,
@@ -103,7 +103,7 @@ export function ConfirmDialog({
               onClick={handleConfirm}
               disabled={loading}
             >
-              {loading ? '处理中...' : confirmText}
+              {loading ? 'Processing...' : confirmText}
             </Button>
           </div>
         </DialogFooter>

@@ -42,13 +42,13 @@ function formatDate(date: Date): string {
 }
 
 function formatDisplay(val: string | undefined, presentLabel: string): string {
-  if (!val) return '选择'
+  if (!val) return 'Select'
   if (val === 'PRESENT') return presentLabel
   return val
 }
 
 export default function EditableDateField(props: EditableDateFieldProps): ReactElement {
-  const { blockId, fieldName, value, className, presentLabel = '至今', showIcon = false, onOpenChange } = props
+  const { blockId, fieldName, value, className, presentLabel = 'Present', showIcon = false, onOpenChange } = props
   const setResume = useAppStore((s) => s.setResume)
   const [open, setOpen] = useState(false)
 

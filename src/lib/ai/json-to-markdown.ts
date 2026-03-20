@@ -26,16 +26,16 @@ export interface DisplaySection {
 }
 
 const SECTION_TITLES: Record<string, string> = {
-  base_info: '基本信息',
-  job_intention: '求职意向',
-  self_evaluation: '自我评价',
-  experience: '工作经历',
-  intern: '实习经历',
-  education: '教育背景',
-  program_experience: '项目经历',
-  school_exps: '校园经历',
-  skills: '专业技能',
-  qualifications: '资质证书',
+  base_info: 'Basic Information',
+  job_intention: 'Job Preference',
+  self_evaluation: 'Self Evaluation',
+  experience: 'Work Experience',
+  intern: 'Internship',
+  education: 'Education',
+  program_experience: 'Project Experience',
+  school_exps: 'Campus Experience',
+  skills: 'Skills',
+  qualifications: 'Qualifications',
 };
 
 /**
@@ -69,11 +69,11 @@ function extractSection(raw: string, key: string, title: string): DisplaySection
 }
 
 const BASE_INFO_FIELDS: Record<string, string> = {
-  name: '姓名', gender: '性别', age: '年龄', phone: '手机', mail: '邮箱',
+  name: 'Name', gender: 'Gender', age: 'Age', phone: 'Phone', mail: 'Email',
 };
 
 const JOB_INTENTION_FIELDS: Record<string, string> = {
-  objective: '求职岗位', city: '意向城市', salary: '期望薪资', type: '求职类型',
+  objective: 'Position', city: 'City', salary: 'Salary', type: 'Job Type',
 };
 
 function buildFieldsSection(
@@ -137,7 +137,7 @@ function formatPeriod(raw: string): string {
   const start: string | null = extractStringField(raw, 'start');
   const end: string | null = extractStringField(raw, 'end');
   if (!start) return '';
-  return `${start} - ${end ?? '至今'}`;
+  return `${start} - ${end ?? 'Present'}`;
 }
 
 function stripHtml(html: string): string {

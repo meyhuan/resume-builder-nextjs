@@ -1,8 +1,8 @@
 /**
- * Warm 模板样式配置
+ * Warm template style configuration.
  *
- * 淡黄色双列布局，左侧边栏 + 右侧主内容
- * 修改此文件可以改变模板外观，无需修改共用组件
+ * Two-column layout with left sidebar and right main content.
+ * Modify this file to change template appearance without touching shared components.
  */
 
 import type { TemplateStylesConfig } from '@/templates/components/v2/types'
@@ -35,7 +35,7 @@ export function darkenHex(hex: string, factor: number): string {
 
 export const WARM_TEMPLATE_STYLES: TemplateStylesConfig = {
   name: 'warm',
-  description: '淡黄通用简历模板 - 双列布局，左侧边栏',
+  description: 'Warm two-column resume template with left sidebar',
 
   baseInfo: {
     container: 'flex flex-col items-center gap-3 relative group cursor-pointer print:cursor-default',

@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: '登录 - 微信扫码即用',
-  description: '微信扫码登录智简简历，免费使用 AI 简历制作工具。无需注册，扫码即用，简历数据多端同步。',
+  title: 'Login - AI Resume Pass',
+  description: 'Log in to AI Resume Pass, a free AI resume builder. No registration required, data synced across devices.',
   robots: { index: false, follow: false },
 };
 

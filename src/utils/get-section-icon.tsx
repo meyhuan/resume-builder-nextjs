@@ -17,15 +17,15 @@ import {
  */
 export function getSectionIcon(title: string): ReactElement {
   const t = title.toLowerCase();
-  if (t.includes('工作') || t.includes('experience')) return <IconBriefcase />;
-  if (t.includes('教育') || t.includes('education')) return <IconGraduationCap />;
-  if (t.includes('项目') || t.includes('project')) return <IconCode />;
-  if (t.includes('技能') || t.includes('skill')) return <IconAward />;
-  if (t.includes('自我') || t.includes('评价') || t.includes('self')) return <IconUser />;
-  if (t.includes('求职') || t.includes('意向') || t.includes('intention')) return <IconTarget />;
-  if (t.includes('实习') || t.includes('intern')) return <IconIntern />;
-  if (t.includes('校园') || t.includes('school')) return <IconBook />;
-  if (t.includes('资质') || t.includes('证书') || t.includes('qualif')) return <IconStar />;
-  if (t.includes('其他') || t.includes('other')) return <IconOther />;
+  if (t.includes('experience') || t.includes('work')) return <IconBriefcase />;
+  if (t.includes('education')) return <IconGraduationCap />;
+  if (t.includes('project')) return <IconCode />;
+  if (t.includes('skill')) return <IconAward />;
+  if (t.includes('self') || t.includes('evaluation') || t.includes('summary')) return <IconUser />;
+  if (t.includes('preference') || t.includes('intention') || t.includes('objective')) return <IconTarget />;
+  if (t.includes('intern')) return <IconIntern />;
+  if (t.includes('campus') || t.includes('school') || t.includes('activit')) return <IconBook />;
+  if (t.includes('qualif') || t.includes('certif')) return <IconStar />;
+  if (t.includes('other')) return <IconOther />;
   return <IconOther />;
 }

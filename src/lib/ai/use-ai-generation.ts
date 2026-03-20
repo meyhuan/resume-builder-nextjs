@@ -72,14 +72,14 @@ export function useAiGeneration(): UseAiGenerationReturn {
 
         if (!response.ok) {
           const errorBody = await response.json().catch(() => null);
-          const msg: string = errorBody?.error ?? `请求失败 (${response.status})`;
+          const msg: string = errorBody?.error ?? `Request failed (${response.status})`;
           throw new Error(msg);
         }
 
         const reader: ReadableStreamDefaultReader<Uint8Array> | undefined =
           response.body?.getReader();
         if (!reader) {
-          throw new Error('无法读取响应流');
+          throw new Error('Unable to read response stream');
         }
 
         const decoder = new TextDecoder();
@@ -127,7 +127,7 @@ export function useAiGeneration(): UseAiGenerationReturn {
           setIsGenerating(false);
           return null;
         }
-        const msg: string = err instanceof Error ? err.message : '生成失败，请重试';
+        const msg: string = err instanceof Error ? err.message : 'Generation failed. Please try again.';
         setError(msg);
         setIsGenerating(false);
         return null;
@@ -162,6 +162,6 @@ function extractJson(raw: string): ExternalResume {
   try {
     return JSON.parse(cleaned) as ExternalResume;
   } catch {
-    throw new Error('AI返回的内容不是有效的JSON格式，请重试');
+    throw new Error('AI returned invalid JSON format. Please try again.');
   }
 }

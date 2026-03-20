@@ -11,7 +11,7 @@ import type { Article } from '@/lib/articles/article-types';
 import { templateCatalog } from '@/lib/templates/template-catalog';
 import { templateRoleData } from '@/lib/templates/template-role-data';
 
-const SITE_URL: string = 'https://aijianli.cn';
+const SITE_URL: string = 'https://airesumepass.com';
 
 type JsonLdPrimitive = string | number | boolean;
 
@@ -56,42 +56,42 @@ type DeliverySuggestion = {
 };
 
 function createPageTitle(roleName: string): string {
-  return `${roleName}简历模板 - ${roleName}简历怎么写 | 智简简历`;
+  return `${roleName} Resume Template - How to Write a ${roleName} Resume | AI Resume Pass`;
 }
 
 function createPageDescription(roleName: string, industry: string): string {
-  return `查看适合${roleName}岗位的简历模板、写作重点、常见错误和 AI 简历生成建议，适用于${industry}求职场景，帮助你更快完成可投递简历。`;
+  return `Explore resume templates, writing tips, common mistakes, and AI resume generation advice for ${roleName} positions in ${industry}. Build a job-ready resume faster.`;
 }
 
 function createRoleSummary(roleName: string, industry: string, category: string): string {
-  if (category === '技术') {
-    return `${roleName}岗位通常会重点看技术栈匹配度、项目复杂度、问题解决能力，以及你是否能在${industry}场景下稳定完成交付。`;
+  if (category === 'Engineering') {
+    return `${roleName} roles typically focus on tech stack alignment, project complexity, problem-solving ability, and your capacity to deliver reliably in ${industry} environments.`;
   }
-  if (category === '产品') {
-    return `${roleName}岗位更关注需求分析、方案拆解、跨团队协作与版本推进能力，招聘方会在意你是否真正推动过业务结果。`;
+  if (category === 'Product') {
+    return `${roleName} roles emphasize requirement analysis, solution design, cross-team collaboration, and version delivery. Recruiters want to see that you've driven real business outcomes.`;
   }
-  if (category === '运营' || category === '市场') {
-    return `${roleName}岗位会更重视增长思路、执行拆解、数据复盘和结果指标，你的经历需要体现业务目标与实际产出。`;
+  if (category === 'Operations' || category === 'Marketing') {
+    return `${roleName} roles value growth mindset, execution planning, data-driven reviews, and measurable results. Your experience should reflect business goals and actual output.`;
   }
-  if (category === '设计') {
-    return `${roleName}岗位通常关注作品质量、设计逻辑、用户体验理解和跨部门协作能力，你的简历需要清楚传达方案价值。`;
+  if (category === 'Design') {
+    return `${roleName} roles focus on portfolio quality, design rationale, UX understanding, and cross-functional collaboration. Your resume should clearly convey the value of your solutions.`;
   }
-  return `${roleName}岗位招聘时通常会综合看岗位匹配度、专业能力、过往成果和稳定执行能力，你的简历要优先突出最相关的经历。`;
+  return `${roleName} hiring typically evaluates role fit, professional skills, past achievements, and consistent execution. Prioritize your most relevant experience.`;
 }
 
 function createWritingPoints(roleName: string, category: string): readonly WritingPoint[] {
   return [
     {
-      title: '先写岗位匹配度',
-      description: `${roleName}简历开头要先让招聘方看到你的岗位匹配度，优先突出与${category}相关的项目、成果和职责。`,
+      title: 'Lead with Role Fit',
+      description: `Start your ${roleName} resume by showing role alignment — prioritize projects, achievements, and responsibilities related to ${category}.`,
     },
     {
-      title: '经历写结果，不只写职责',
-      description: `不要只写“负责什么”，要写清楚你在${roleName}相关经历中做了什么、解决了什么问题、最终产出了什么结果。`,
+      title: 'Write Results, Not Just Duties',
+      description: `Don't just list responsibilities. Clearly state what you did in ${roleName}-related experiences, what problems you solved, and what results you delivered.`,
     },
     {
-      title: '关键词贴近 JD',
-      description: `把招聘 JD 里的核心关键词自然写进简历，例如工具栈、方法论、业务场景和成果指标，让${roleName}岗位更容易通过初筛。`,
+      title: 'Match Keywords to the JD',
+      description: `Naturally incorporate key terms from the job description — tools, methodologies, business contexts, and metrics — to help your ${roleName} resume pass initial screening.`,
     },
   ];
 }
@@ -140,287 +140,287 @@ function getRecommendedArticlesForRole(
 function createAudienceProfiles(roleName: string, industry: string, category: string): readonly AudienceProfile[] {
   return [
     {
-      title: `有 ${category} 相关经历的人`,
-      description: `如果你做过与${category}相关的项目、实习或正式工作，这个${roleName}页面更适合你直接提炼岗位匹配度和成果表达。`,
+      title: `People with ${category} experience`,
+      description: `If you have project, internship, or work experience related to ${category}, this ${roleName} page helps you highlight role fit and articulate achievements.`,
     },
     {
-      title: '准备转向更明确岗位方向的人',
-      description: `如果你正在从相近职能转向${roleName}，可以借这个页面梳理与${industry}场景更相关的经历、关键词和投递表达方式。`,
+      title: 'Career changers targeting this role',
+      description: `If you're transitioning from a related function to ${roleName}, use this page to organize experiences, keywords, and phrasing relevant to ${industry}.`,
     },
     {
-      title: '想快速产出可投递简历的人',
-      description: `如果你希望先得到一份结构清晰的简历初稿，再针对 JD 做优化，这个${roleName}模板页会更适合作为起点。`,
+      title: 'People who need a job-ready resume fast',
+      description: `If you want a well-structured resume draft first and then optimize for specific JDs, this ${roleName} template page is a great starting point.`,
     },
   ];
 }
 
 function createResumeSectionSuggestions(roleName: string, category: string): readonly ResumeSectionSuggestion[] {
-  if (category === '技术') {
+  if (category === 'Engineering') {
     return [
       {
-        title: '项目经历',
-        description: `优先写与你应聘${roleName}最接近的项目，明确技术栈、业务场景、个人职责和结果。`,
+        title: 'Project Experience',
+        description: `Prioritize projects most relevant to the ${roleName} role. Specify tech stack, business context, your responsibilities, and outcomes.`,
       },
       {
-        title: '技术栈与工具',
-        description: `把核心框架、语言、工程工具和协作方式单独列出，方便招聘方快速判断你是否匹配${roleName}岗位。`,
+        title: 'Tech Stack & Tools',
+        description: `List core frameworks, languages, engineering tools, and collaboration methods separately so recruiters can quickly assess your fit for ${roleName}.`,
       },
       {
-        title: '性能或效率优化成果',
-        description: '如果有稳定性、性能、上线效率或故障处理成果，建议量化写出，增强说服力。',
+        title: 'Performance & Efficiency Improvements',
+        description: 'If you have stability, performance, deployment efficiency, or incident response achievements, quantify them to strengthen your case.',
       },
     ];
   }
-  if (category === '设计') {
+  if (category === 'Design') {
     return [
       {
-        title: '作品或项目案例',
-        description: `围绕${roleName}常见场景挑选最能代表能力的案例，突出问题、方案和最终呈现效果。`,
+        title: 'Portfolio & Case Studies',
+        description: `Select cases that best demonstrate your abilities for ${roleName} scenarios. Highlight the problem, solution, and final outcome.`,
       },
       {
-        title: '设计方法与协作流程',
-        description: '说明你如何做调研、输出方案、与产品研发协作，以及如何推进方案落地。',
+        title: 'Design Process & Collaboration',
+        description: 'Explain how you conduct research, deliver solutions, collaborate with product and engineering, and drive implementation.',
       },
       {
-        title: '业务结果或体验改进',
-        description: '如果设计方案带来了转化、留存、满意度或效率提升，建议直接写进简历。',
+        title: 'Business Impact & UX Improvements',
+        description: 'If your designs improved conversion, retention, satisfaction, or efficiency, include those results directly in your resume.',
       },
     ];
   }
-  if (category === '运营' || category === '市场') {
+  if (category === 'Operations' || category === 'Marketing') {
     return [
       {
-        title: '业务目标与指标结果',
-        description: `应聘${roleName}时，最重要的是把增长、转化、留存、拉新或活动效果写清楚。`,
+        title: 'Business Goals & Metrics',
+        description: `When applying for ${roleName}, the most important thing is to clearly present growth, conversion, retention, acquisition, or campaign results.`,
       },
       {
-        title: '渠道与策略拆解',
-        description: '说明你负责过哪些渠道、做了哪些动作，以及为什么这样做。',
+        title: 'Channels & Strategy Breakdown',
+        description: 'Describe which channels you managed, what actions you took, and the rationale behind your approach.',
       },
       {
-        title: '复盘与优化能力',
-        description: '写出你如何根据数据反馈调整策略，这比单纯描述执行过程更有价值。',
+        title: 'Review & Optimization Ability',
+        description: 'Show how you adjusted strategies based on data feedback — this is more valuable than simply describing execution.',
       },
     ];
   }
   return [
     {
-      title: '核心工作经历',
-      description: `把最能证明你胜任${roleName}的经历放在前面，突出职责范围、处理问题和最终结果。`,
+      title: 'Core Work Experience',
+      description: `Put the experience that best proves your fit for ${roleName} first. Highlight scope, problem-solving, and outcomes.`,
     },
     {
-      title: '专业能力与工具',
-      description: `列出与${roleName}直接相关的方法、工具、系统或流程经验，帮助招聘方快速建立判断。`,
+      title: 'Professional Skills & Tools',
+      description: `List methods, tools, systems, and processes directly related to ${roleName} to help recruiters quickly assess your qualifications.`,
     },
     {
-      title: '可量化成果',
-      description: '尽量用数字呈现效率、准确率、交付质量、成本优化或团队协作结果。',
+      title: 'Quantifiable Results',
+      description: 'Use numbers to present efficiency, accuracy, delivery quality, cost optimization, or team collaboration outcomes wherever possible.',
     },
   ];
 }
 
 function createKeywordSuggestions(roleName: string, category: string, searchKeywords: readonly string[]): readonly string[] {
   const categoryKeywords: Record<string, readonly string[]> = {
-    技术: ['技术栈', '系统设计', '性能优化', '稳定性', '项目交付'],
-    产品: ['需求分析', '产品规划', '用户调研', '跨团队协作', '版本迭代'],
-    运营: ['增长', '转化率', '留存', '活动复盘', '渠道运营'],
-    设计: ['设计系统', '交互流程', '视觉规范', '用户体验', '方案落地'],
-    市场: ['品牌传播', '投放优化', '内容策划', '线索转化', '市场活动'],
+    Engineering: ['tech stack', 'system design', 'performance optimization', 'reliability', 'project delivery'],
+    Product: ['requirement analysis', 'product roadmap', 'user research', 'cross-team collaboration', 'iteration'],
+    Operations: ['growth', 'conversion rate', 'retention', 'campaign review', 'channel operations'],
+    Design: ['design system', 'interaction flow', 'visual standards', 'user experience', 'implementation'],
+    Marketing: ['brand awareness', 'ad optimization', 'content strategy', 'lead conversion', 'campaigns'],
   };
   const mergedKeywords: string[] = [...(categoryKeywords[category] ?? []), ...searchKeywords, roleName];
   return Array.from(new Set<string>(mergedKeywords)).slice(0, 8);
 }
 
 function createHiringFocusItems(roleName: string, industry: string, category: string): readonly HiringFocusItem[] {
-  if (category === '技术') {
+  if (category === 'Engineering') {
     return [
       {
-        title: '技术栈是否贴近岗位需求',
-        description: `招聘方会先看你掌握的语言、框架、工程化工具是否与${roleName}岗位要求接近。`,
+        title: 'Tech stack alignment with role requirements',
+        description: `Recruiters first check whether your languages, frameworks, and engineering tools match the ${roleName} job requirements.`,
       },
       {
-        title: '项目是否真实且有复杂度',
-        description: '相比泛泛而谈的职责描述，更重要的是你解决过什么问题、承担了哪一部分核心工作。',
+        title: 'Real projects with meaningful complexity',
+        description: 'Rather than generic duty descriptions, what matters is the problems you solved and the core work you owned.',
       },
       {
-        title: '交付结果与稳定性意识',
-        description: `如果你能说明在${industry}场景下如何做性能优化、问题排查或上线保障，会更有说服力。`,
+        title: 'Delivery outcomes and reliability mindset',
+        description: `If you can show how you handled performance optimization, debugging, or release stability in ${industry}, it adds significant credibility.`,
       },
     ];
   }
-  if (category === '产品') {
+  if (category === 'Product') {
     return [
       {
-        title: '需求判断与问题定义能力',
-        description: `招聘方会关注你是否真正理解过用户问题，并把它转化成${roleName}需要推进的方案。`,
+        title: 'Requirement judgment and problem definition',
+        description: `Recruiters want to see if you truly understood user problems and translated them into solutions a ${roleName} would drive.`,
       },
       {
-        title: '跨团队推动能力',
-        description: '只会写 PRD 不够，还要体现你如何和设计、研发、运营协作并推进落地。',
+        title: 'Cross-team driving ability',
+        description: 'Writing PRDs alone isn\'t enough — show how you collaborated with design, engineering, and operations to ship results.',
       },
       {
-        title: '业务结果是否明确',
-        description: '如果能写出版本上线后的转化、留存、效率或满意度变化，含金量会高很多。',
+        title: 'Clear business outcomes',
+        description: 'If you can cite conversion, retention, efficiency, or satisfaction changes after a release, it greatly increases your value.',
       },
     ];
   }
-  if (category === '运营' || category === '市场') {
+  if (category === 'Operations' || category === 'Marketing') {
     return [
       {
-        title: '指标意识是否足够强',
-        description: `应聘${roleName}时，招聘方通常会优先看增长、转化、线索、曝光或留存等结果指标。`,
+        title: 'Strong metrics awareness',
+        description: `When applying for ${roleName}, recruiters typically prioritize growth, conversion, leads, impressions, or retention metrics.`,
       },
       {
-        title: '策略与执行是否成体系',
-        description: '不仅要写做了什么，还要写为什么这样做，以及你如何拆解目标和复盘效果。',
+        title: 'Systematic strategy and execution',
+        description: 'Don\'t just state what you did — explain why you did it, how you broke down goals, and how you reviewed results.',
       },
       {
-        title: '资源协调与落地效率',
-        description: `如果你的经历能体现跨团队协作、资源整合和节奏推进，会更符合${industry}岗位预期。`,
+        title: 'Resource coordination and delivery efficiency',
+        description: `If your experience demonstrates cross-team collaboration, resource integration, and pacing, it aligns better with ${industry} role expectations.`,
       },
     ];
   }
-  if (category === '设计') {
+  if (category === 'Design') {
     return [
       {
-        title: '作品是否体现设计思考',
-        description: `招聘方会关注你的作品不是“好不好看”而已，而是是否真的解决了${roleName}场景中的问题。`,
+        title: 'Work that reflects design thinking',
+        description: `Recruiters look beyond aesthetics — they want to see if your work truly solved problems in ${roleName} scenarios.`,
       },
       {
-        title: '方案落地与协作能力',
-        description: '仅有视觉稿往往不够，能说明你如何推动方案上线，会更容易建立信任。',
+        title: 'Implementation and collaboration skills',
+        description: 'Visual mockups alone aren\'t enough. Showing how you drove designs to production builds more trust.',
       },
       {
-        title: '体验改进是否可被验证',
-        description: '如果能量化展示转化、满意度、任务完成率或效率提升，简历会明显更强。',
+        title: 'Verifiable UX improvements',
+        description: 'Quantified improvements in conversion, satisfaction, task completion, or efficiency make your resume significantly stronger.',
       },
     ];
   }
   return [
     {
-      title: '岗位匹配度是否清晰',
-      description: `招聘方首先会判断你过去的经历是否足以支撑${roleName}岗位要求。`,
+      title: 'Clear role fit',
+      description: `Recruiters first assess whether your past experience supports the ${roleName} role requirements.`,
     },
     {
-      title: '专业能力是否足够直接',
-      description: '你的简历需要尽量减少空泛描述，让人快速看到可迁移或可验证的能力。',
+      title: 'Direct professional competence',
+      description: 'Minimize vague descriptions — let people quickly see transferable or verifiable skills.',
     },
     {
-      title: '结果与稳定性是否可信',
-      description: `如果能用结果、流程和场景证明自己，更容易获得${industry}相关岗位面试机会。`,
+      title: 'Credible results and consistency',
+      description: `Proving yourself with outcomes, processes, and context makes it easier to land ${industry}-related interview opportunities.`,
     },
   ];
 }
 
 function createDeliverySuggestions(roleName: string, category: string): readonly DeliverySuggestion[] {
-  if (category === '技术') {
+  if (category === 'Engineering') {
     return [
       {
-        title: '把最强项目提前',
-        description: `将与你目标${roleName}最贴近的项目放在前两段经历里，先建立技术匹配感。`,
+        title: 'Put your strongest project first',
+        description: `Place the project closest to your target ${roleName} role in the first two entries to establish technical fit immediately.`,
       },
       {
-        title: '把职责改写成问题与结果',
-        description: '不要只写开发了什么，要写清楚解决了什么问题、如何实现、带来了什么结果。',
+        title: 'Rewrite duties as problems and results',
+        description: 'Don\'t just say what you developed — explain the problem you solved, how you implemented it, and the outcome.',
       },
       {
-        title: '针对 JD 替换关键词',
-        description: '投递前根据 JD 调整技术栈、业务词和工程关键词的出现顺序。',
+        title: 'Swap keywords to match the JD',
+        description: 'Before submitting, reorder tech stack, business terms, and engineering keywords based on the JD.',
       },
     ];
   }
-  if (category === '产品') {
+  if (category === 'Product') {
     return [
       {
-        title: '突出最懂业务的一段经历',
-        description: `优先把最能体现你定义问题、拆解需求和推进方案的经历放在前面。`,
+        title: 'Lead with your most business-savvy experience',
+        description: 'Prioritize the experience that best shows you defining problems, decomposing requirements, and driving solutions.',
       },
       {
-        title: '让版本推进过程更完整',
-        description: '从需求来源、方案判断、协作对象到上线结果，尽量形成闭环表达。',
+        title: 'Make the product lifecycle complete',
+        description: 'From requirement source, solution rationale, stakeholders, to launch results — form a closed-loop narrative.',
       },
       {
-        title: '少写流程名词，多写判断依据',
-        description: `相比“负责需求管理”，招聘方更想看到你为什么这么做，以及结果如何。`,
+        title: 'Write rationale, not just process labels',
+        description: 'Instead of "managed requirements", recruiters want to see why you made those decisions and the outcome.',
       },
     ];
   }
-  if (category === '运营' || category === '市场') {
+  if (category === 'Operations' || category === 'Marketing') {
     return [
       {
-        title: '先摆结果，再写动作',
-        description: `先用一句话概括曝光、转化、增长或留存结果，再补充你采取的动作。`,
+        title: 'Lead with results, then actions',
+        description: 'Start with a one-line summary of impressions, conversion, growth, or retention results, then detail your actions.',
       },
       {
-        title: '把渠道和策略分开写',
-        description: '这样更容易体现你既能执行，也能做策略判断和复盘。',
+        title: 'Separate channels from strategy',
+        description: 'This makes it easier to show you can both execute and make strategic judgment calls with post-mortem analysis.',
       },
       {
-        title: '补上复盘与优化动作',
-        description: '如果只写执行没有优化，会显得经历深度不够。',
+        title: 'Add review and optimization actions',
+        description: 'Execution without optimization suggests lack of depth in your experience.',
       },
     ];
   }
-  if (category === '设计') {
+  if (category === 'Design') {
     return [
       {
-        title: '用案例而不是任务清单表达',
-        description: `应聘${roleName}时，尽量围绕一个完整案例写问题、过程、方案和结果。`,
+        title: 'Use case studies, not task lists',
+        description: `When applying for ${roleName}, structure entries around complete cases: problem, process, solution, and result.`,
       },
       {
-        title: '让作品集与简历互相验证',
-        description: '简历里提到的重点项目，最好能在作品集中找到对应案例。',
+        title: 'Let portfolio and resume reinforce each other',
+        description: 'Key projects mentioned in your resume should have corresponding cases in your portfolio.',
       },
       {
-        title: '把设计价值说清楚',
-        description: '不要停留在视觉层面，尽量强调体验改善、业务影响和落地协同。',
+        title: 'Articulate the value of your design',
+        description: 'Go beyond visual aesthetics — emphasize UX improvements, business impact, and implementation collaboration.',
       },
     ];
   }
   return [
     {
-      title: '把目标岗位写得更明确',
-      description: `标题、简介和核心经历都要围绕${roleName}展开，避免投递方向发散。`,
+      title: 'Make your target role crystal clear',
+      description: `Title, summary, and key experiences should all center around ${roleName} — avoid a scattered focus.`,
     },
     {
-      title: '把最相关经历前置',
-      description: '招聘方通常只会快速浏览前半页内容，所以最关键的信息一定要先出现。',
+      title: 'Front-load your most relevant experience',
+      description: 'Recruiters typically skim only the top half of the page, so critical information must appear first.',
     },
     {
-      title: '把成果写成可验证表达',
-      description: '尽量用数字、场景和结果支撑你的能力，而不是只写抽象评价。',
+      title: 'Make achievements verifiable',
+      description: 'Use numbers, scenarios, and outcomes to support your abilities rather than abstract self-assessments.',
     },
   ];
 }
 
 function createTemplateReason(templateId: string, category: string): string {
   const templateReasonMap: Record<string, Record<string, string>> = {
-    技术: {
-      simple: '信息层级清楚，适合优先展示技术栈、项目经历和工程成果。',
-      timeline: '时间线表达更直观，适合展示连续项目与成长轨迹。',
-      warm: '在保持清晰结构的同时更有视觉识别度，适合强调综合表达。',
-      elegant: '适合需要兼顾专业感与精致感的技术管理或跨职能岗位。',
+    Engineering: {
+      simple: 'Clear information hierarchy, ideal for showcasing tech stack, project experience, and engineering outcomes.',
+      timeline: 'Timeline format is more intuitive for showing continuous projects and career growth.',
+      warm: 'Maintains clear structure with more visual identity, suitable for comprehensive expression.',
+      elegant: 'Great for technical management or cross-functional roles that need both professionalism and polish.',
     },
-    产品: {
-      warm: '版面更利于展示项目背景、需求拆解和业务成果。',
-      simple: '结构简洁，适合强调逻辑和跨团队协作经历。',
-      elegant: '适合需要更成熟职业感的产品方向岗位。',
-      timeline: '适合强调版本推进与岗位成长脉络。',
+    Product: {
+      warm: 'Layout is well-suited for presenting project context, requirement breakdowns, and business results.',
+      simple: 'Clean structure, ideal for emphasizing logic and cross-team collaboration.',
+      elegant: 'Fits product roles that need a more mature professional presence.',
+      timeline: 'Good for emphasizing version progression and career growth trajectory.',
     },
-    运营: {
-      warm: '更适合承载活动、增长、内容与数据结果等多维经历。',
-      simple: '适合突出指标结果，减少视觉干扰。',
-      elegant: '适合偏品牌、商务或对外表达要求更高的岗位。',
-      timeline: '适合展示运营策略和阶段性成果变化。',
+    Operations: {
+      warm: 'Best for accommodating campaigns, growth, content, and multi-dimensional data results.',
+      simple: 'Great for highlighting metric outcomes with minimal visual distraction.',
+      elegant: 'Suited for brand, business, or externally-facing roles requiring polished presentation.',
+      timeline: 'Works well for showing operational strategies and phased result changes.',
     },
-    设计: {
-      warm: '兼顾视觉表现和阅读效率，适合设计岗位展示个人风格。',
-      elegant: '整体更有质感，适合强调审美和成熟表达。',
-      simple: '适合作品集之外的清晰补充页，突出项目与能力本身。',
-      timeline: '适合展示不同阶段项目案例与成长轨迹。',
+    Design: {
+      warm: 'Balances visual expression and readability, ideal for design roles to showcase personal style.',
+      elegant: 'More refined overall, suitable for emphasizing aesthetics and mature expression.',
+      simple: 'Works as a clean complement to your portfolio, highlighting projects and skills directly.',
+      timeline: 'Good for showcasing project cases and growth trajectory across different stages.',
     },
   };
-  return templateReasonMap[category]?.[templateId] ?? '结构稳定、阅读负担低，适合快速生成并继续按目标岗位微调。';
+  return templateReasonMap[category]?.[templateId] ?? 'Stable structure with low reading burden, ideal for quick generation and tailoring to your target role.';
 }
 
 function createBreadcrumbSchema(roleName: string, roleSlug: string): JsonLdNode {
@@ -431,19 +431,19 @@ function createBreadcrumbSchema(roleName: string, roleSlug: string): JsonLdNode 
       {
         '@type': 'ListItem',
         position: 1,
-        name: '首页',
+        name: 'Home',
         item: SITE_URL,
       },
       {
         '@type': 'ListItem',
         position: 2,
-        name: '简历模板中心',
+        name: 'Resume Templates',
         item: `${SITE_URL}/templates`,
       },
       {
         '@type': 'ListItem',
         position: 3,
-        name: `${roleName}简历模板`,
+        name: `${roleName} Resume Template`,
         item: `${SITE_URL}/templates/${roleSlug}`,
       },
     ],
@@ -467,25 +467,25 @@ function createFaqSchema(faqItems: readonly FaqItem[]): JsonLdNode {
 
 function createMistakes(roleName: string): readonly string[] {
   return [
-    `${roleName}简历标题和求职方向不明确，招聘方看完第一页仍不知道你要投什么岗位。`,
-    `项目经历只有过程描述，没有量化结果，无法体现你胜任${roleName}岗位的价值。`,
-    '整份简历关键词太泛，没有针对目标 JD 做针对性优化。',
+    `Your ${roleName} resume title and career direction are unclear — recruiters can't tell what role you're targeting after reading the first page.`,
+    `Project descriptions are process-only with no quantified results, failing to demonstrate your value for the ${roleName} position.`,
+    'Keywords across the entire resume are too generic, with no targeted optimization for the specific job description.',
   ];
 }
 
 function createFaqItems(roleName: string): readonly FaqItem[] {
   return [
     {
-      question: `${roleName}简历模板应该优先选哪种风格？`,
-      answer: `建议优先选择结构清晰、信息密度适中的模板，让招聘方能快速定位你的核心经历和优势。`,
+      question: `Which resume template style should I choose for a ${roleName} role?`,
+      answer: 'Choose a template with a clear structure and balanced information density so recruiters can quickly locate your key experience and strengths.',
     },
     {
-      question: `${roleName}简历可以直接用 AI 生成吗？`,
-      answer: `可以先用 AI 生成初稿，再结合目标 JD 手动调整关键词、经历顺序和成果表达，效果会更好。`,
+      question: `Can I generate a ${roleName} resume directly with AI?`,
+      answer: 'Yes — start with an AI-generated draft, then manually adjust keywords, experience order, and achievement phrasing to match the target JD for best results.',
     },
     {
-      question: `${roleName}简历最容易被忽略的细节是什么？`,
-      answer: `最容易被忽略的是成果表达和岗位关键词匹配度，这两项往往直接影响简历初筛通过率。`,
+      question: `What's the most commonly overlooked detail in a ${roleName} resume?`,
+      answer: 'Achievement expression and keyword alignment with the role are most often overlooked — both directly impact your initial screening pass rate.',
     },
   ];
 }
@@ -499,7 +499,7 @@ export async function generateMetadata({ params }: RolePageParams): Promise<Meta
   const roleRecord = templateRoleData.getTemplateRoleBySlug(resolvedParams.role);
   if (!roleRecord) {
     return {
-      title: '岗位模板未找到',
+      title: 'Role Template Not Found',
     };
   }
   const title: string = createPageTitle(roleRecord.role);
@@ -508,10 +508,10 @@ export async function generateMetadata({ params }: RolePageParams): Promise<Meta
     title,
     description,
     keywords: [
-      `${roleRecord.role}简历模板`,
-      `${roleRecord.role}简历怎么写`,
-      `${roleRecord.role}AI简历`,
-      `${roleRecord.role}求职简历`,
+      `${roleRecord.role} resume template`,
+      `how to write a ${roleRecord.role} resume`,
+      `${roleRecord.role} AI resume`,
+      `${roleRecord.role} job resume`,
       ...roleRecord.searchKeywords,
     ],
     alternates: {
@@ -568,11 +568,11 @@ export default async function TemplateRolePage({ params }: RolePageParams): Prom
         </div>
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 space-y-10">
           <nav className="flex items-center gap-1.5 text-sm text-slate-400 flex-wrap">
-            <Link href="/" className="hover:text-violet-600 transition-colors">首页</Link>
+            <Link href="/" className="hover:text-violet-600 transition-colors">Home</Link>
             <ChevronRight className="w-3.5 h-3.5" />
-            <Link href="/templates" className="hover:text-violet-600 transition-colors">简历模板中心</Link>
+            <Link href="/templates" className="hover:text-violet-600 transition-colors">Resume Templates</Link>
             <ChevronRight className="w-3.5 h-3.5" />
-            <span className="text-slate-600 font-medium">{roleRecord.role}简历模板</span>
+            <span className="text-slate-600 font-medium">{roleRecord.role} Resume Template</span>
           </nav>
           <section className="rounded-3xl bg-white/80 backdrop-blur-sm border border-white shadow-sm p-6 md:p-8 lg:p-10">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-violet-50 text-violet-600 rounded-full text-sm font-semibold">
@@ -580,7 +580,7 @@ export default async function TemplateRolePage({ params }: RolePageParams): Prom
               {roleRecord.industry} / {roleRecord.category}
             </div>
             <h1 className="text-3xl md:text-5xl font-extrabold text-slate-900 tracking-tight mt-5">
-              {roleRecord.role}简历模板与写作建议
+              {roleRecord.role} Resume Template & Writing Tips
             </h1>
             <p className="text-base md:text-lg text-slate-500 mt-4 max-w-3xl leading-relaxed">
               {createPageDescription(roleRecord.role, roleRecord.industry)}
@@ -590,17 +590,17 @@ export default async function TemplateRolePage({ params }: RolePageParams): Prom
             </p>
             <div className="flex flex-wrap gap-3 mt-6">
               <Link href="/ai" className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-violet-600 text-white font-semibold shadow-lg shadow-violet-500/20 hover:bg-violet-700 transition-colors">
-                去 AI 生成 {roleRecord.role} 简历
+                AI Generate {roleRecord.role} Resume
                 <ArrowRight className="w-4 h-4" />
               </Link>
               <Link href="/editor" className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white text-slate-700 font-semibold border border-slate-200 hover:border-violet-200 hover:text-violet-600 transition-colors">
-                直接开始编辑
+                Start Editing
               </Link>
             </div>
           </section>
           <section className="grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-6">
             <div className="rounded-3xl bg-white/80 backdrop-blur-sm border border-white shadow-sm p-6 md:p-8">
-              <h2 className="text-2xl font-extrabold text-slate-900">{roleRecord.role}简历怎么写</h2>
+              <h2 className="text-2xl font-extrabold text-slate-900">How to Write a {roleRecord.role} Resume</h2>
               <div className="space-y-4 mt-6">
                 {writingPoints.map((point) => (
                   <div key={point.title} className="rounded-2xl bg-slate-50 p-5 border border-slate-100">
@@ -614,7 +614,7 @@ export default async function TemplateRolePage({ params }: RolePageParams): Prom
               </div>
             </div>
             <div className="rounded-3xl bg-white/80 backdrop-blur-sm border border-white shadow-sm p-6 md:p-8">
-              <h2 className="text-2xl font-extrabold text-slate-900">常见错误</h2>
+              <h2 className="text-2xl font-extrabold text-slate-900">Common Mistakes</h2>
               <div className="space-y-4 mt-6">
                 {commonMistakes.map((mistake) => (
                   <div key={mistake} className="rounded-2xl bg-rose-50 p-5 border border-rose-100">
@@ -631,7 +631,7 @@ export default async function TemplateRolePage({ params }: RolePageParams): Prom
             <div className="rounded-3xl bg-white/80 backdrop-blur-sm border border-white shadow-sm p-6 md:p-8">
               <div className="flex items-center gap-2 text-slate-900">
                 <Target className="w-5 h-5 text-violet-500" />
-                <h2 className="text-2xl font-extrabold">招聘方重点关注</h2>
+                <h2 className="text-2xl font-extrabold">What Recruiters Focus On</h2>
               </div>
               <div className="space-y-4 mt-6">
                 {hiringFocusItems.map((item: HiringFocusItem) => (
@@ -645,7 +645,7 @@ export default async function TemplateRolePage({ params }: RolePageParams): Prom
             <div className="rounded-3xl bg-white/80 backdrop-blur-sm border border-white shadow-sm p-6 md:p-8">
               <div className="flex items-center gap-2 text-slate-900">
                 <ClipboardList className="w-5 h-5 text-violet-500" />
-                <h2 className="text-2xl font-extrabold">投递优化建议</h2>
+                <h2 className="text-2xl font-extrabold">Application Optimization Tips</h2>
               </div>
               <div className="space-y-4 mt-6">
                 {deliverySuggestions.map((suggestion: DeliverySuggestion) => (
@@ -661,7 +661,7 @@ export default async function TemplateRolePage({ params }: RolePageParams): Prom
             <div className="rounded-3xl bg-white/80 backdrop-blur-sm border border-white shadow-sm p-6 md:p-8 lg:col-span-1">
               <div className="flex items-center gap-2 text-slate-900">
                 <Users className="w-5 h-5 text-violet-500" />
-                <h2 className="text-2xl font-extrabold">适合人群</h2>
+                <h2 className="text-2xl font-extrabold">Who This Is For</h2>
               </div>
               <div className="space-y-4 mt-6">
                 {audienceProfiles.map((profile: AudienceProfile) => (
@@ -675,7 +675,7 @@ export default async function TemplateRolePage({ params }: RolePageParams): Prom
             <div className="rounded-3xl bg-white/80 backdrop-blur-sm border border-white shadow-sm p-6 md:p-8 lg:col-span-1">
               <div className="flex items-center gap-2 text-slate-900">
                 <Layers3 className="w-5 h-5 text-violet-500" />
-                <h2 className="text-2xl font-extrabold">推荐简历模块</h2>
+                <h2 className="text-2xl font-extrabold">Recommended Resume Sections</h2>
               </div>
               <div className="space-y-4 mt-6">
                 {resumeSectionSuggestions.map((section: ResumeSectionSuggestion) => (
@@ -689,9 +689,9 @@ export default async function TemplateRolePage({ params }: RolePageParams): Prom
             <div className="rounded-3xl bg-white/80 backdrop-blur-sm border border-white shadow-sm p-6 md:p-8 lg:col-span-1">
               <div className="flex items-center gap-2 text-slate-900">
                 <Tags className="w-5 h-5 text-violet-500" />
-                <h2 className="text-2xl font-extrabold">岗位关键词建议</h2>
+                <h2 className="text-2xl font-extrabold">Keyword Suggestions</h2>
               </div>
-              <p className="text-sm text-slate-500 mt-3 leading-relaxed">这些关键词可以自然融入你的标题、项目经历和技能描述中，帮助 {roleRecord.role} 简历更贴近招聘 JD。</p>
+              <p className="text-sm text-slate-500 mt-3 leading-relaxed">Naturally incorporate these keywords into your title, project experience, and skill descriptions to better align your {roleRecord.role} resume with job descriptions.</p>
               <div className="flex flex-wrap gap-3 mt-6">
                 {keywordSuggestions.map((keyword: string) => (
                   <span key={keyword} className="px-4 py-2 rounded-full bg-violet-50 text-violet-600 text-sm font-medium">
@@ -702,8 +702,8 @@ export default async function TemplateRolePage({ params }: RolePageParams): Prom
             </div>
           </section>
           <section className="rounded-3xl bg-white/80 backdrop-blur-sm border border-white shadow-sm p-6 md:p-8">
-            <h2 className="text-2xl font-extrabold text-slate-900">推荐模板</h2>
-            <p className="text-sm text-slate-500 mt-2">根据 {roleRecord.role} 岗位常见的阅读偏好和表达重点，优先推荐这些模板。</p>
+            <h2 className="text-2xl font-extrabold text-slate-900">Recommended Templates</h2>
+            <p className="text-sm text-slate-500 mt-2">Based on common reading preferences and key highlights for {roleRecord.role} roles, we recommend these templates.</p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
               {recommendedTemplates.map((template) => (
                 <div key={template.id} className="rounded-2xl overflow-hidden bg-slate-50 border border-slate-100">
@@ -728,7 +728,7 @@ export default async function TemplateRolePage({ params }: RolePageParams): Prom
                       ))}
                     </div>
                     <Link href={`/editor?template=${template.id}`} className="inline-flex items-center gap-2 text-sm font-semibold text-violet-600 mt-4 hover:text-violet-700 transition-colors">
-                      使用这个模板
+                      Use This Template
                       <ArrowRight className="w-4 h-4" />
                     </Link>
                   </div>
@@ -740,7 +740,7 @@ export default async function TemplateRolePage({ params }: RolePageParams): Prom
             <div className="rounded-3xl bg-white/80 backdrop-blur-sm border border-white shadow-sm p-6 md:p-8">
               <div className="flex items-center gap-2 text-slate-900">
                 <BookOpen className="w-5 h-5 text-violet-500" />
-                <h2 className="text-2xl font-extrabold">相关文章</h2>
+                <h2 className="text-2xl font-extrabold">Related Articles</h2>
               </div>
               <div className="space-y-4 mt-6">
                 {recommendedArticles.map((article) => (
@@ -752,7 +752,7 @@ export default async function TemplateRolePage({ params }: RolePageParams): Prom
               </div>
             </div>
             <div className="rounded-3xl bg-white/80 backdrop-blur-sm border border-white shadow-sm p-6 md:p-8">
-              <h2 className="text-2xl font-extrabold text-slate-900">相关岗位模板</h2>
+              <h2 className="text-2xl font-extrabold text-slate-900">Related Role Templates</h2>
               <div className="flex flex-wrap gap-3 mt-6">
                 {relatedRoles.map((role) => (
                   <Link key={role.slug} href={`/templates/${role.slug}`} className="px-4 py-2 rounded-full bg-slate-50 text-slate-600 text-sm hover:bg-violet-50 hover:text-violet-600 transition-colors">
@@ -763,7 +763,7 @@ export default async function TemplateRolePage({ params }: RolePageParams): Prom
             </div>
           </section>
           <section className="rounded-3xl bg-white/80 backdrop-blur-sm border border-white shadow-sm p-6 md:p-8">
-            <h2 className="text-2xl font-extrabold text-slate-900">常见问题</h2>
+            <h2 className="text-2xl font-extrabold text-slate-900">FAQ</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
               {faqItems.map((item) => (
                 <div key={item.question} className="rounded-2xl bg-slate-50 border border-slate-100 p-5">

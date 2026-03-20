@@ -39,7 +39,7 @@ interface WarmTemplateProps {
 }
 
 /** Default sidebar sections by title keywords. */
-const LEFT_TITLE_KEYWORDS = ['自我', '评价', 'self']
+const LEFT_TITLE_KEYWORDS = ['self', 'evaluation', 'summary', 'about', 'profile']
 
 function shouldDefaultToLeft(section: Section): boolean {
   const t = section.title.toLowerCase()
@@ -58,37 +58,37 @@ function buildFieldDefs(baseInfo: BaseInfo | null): FieldDef[] {
   if (!baseInfo) return []
   const defs: FieldDef[] = []
   if (baseInfo.phone) {
-    defs.push({ key: 'phone', label: '电话', value: baseInfo.phone, icon: <IconPhone /> })
+    defs.push({ key: 'phone', label: 'Phone', value: baseInfo.phone, icon: <IconPhone /> })
   }
   if (baseInfo.email) {
-    defs.push({ key: 'email', label: '邮箱', value: baseInfo.email, icon: <IconMail /> })
+    defs.push({ key: 'email', label: 'Email', value: baseInfo.email, icon: <IconMail /> })
   }
   if (baseInfo.gender) {
-    defs.push({ key: 'gender', label: '性别', value: baseInfo.gender, icon: <IconGender /> })
+    defs.push({ key: 'gender', label: 'Gender', value: baseInfo.gender, icon: <IconGender /> })
   }
   if (baseInfo.age !== undefined && baseInfo.age !== null) {
-    defs.push({ key: 'age', label: '年龄', value: String(baseInfo.age), icon: <IconAge /> })
+    defs.push({ key: 'age', label: 'Age', value: String(baseInfo.age), icon: <IconAge /> })
   }
   if (baseInfo.currentLocation) {
-    defs.push({ key: 'currentLocation', label: '现居', value: baseInfo.currentLocation, icon: <IconLocation /> })
+    defs.push({ key: 'currentLocation', label: 'Location', value: baseInfo.currentLocation, icon: <IconLocation /> })
   }
   if (baseInfo.nation) {
-    defs.push({ key: 'nation', label: '民族', value: baseInfo.nation, icon: <IconInfo /> })
+    defs.push({ key: 'nation', label: 'Ethnicity', value: baseInfo.nation, icon: <IconInfo /> })
   }
   if (baseInfo.household) {
-    defs.push({ key: 'household', label: '户籍', value: baseInfo.household, icon: <IconInfo /> })
+    defs.push({ key: 'household', label: 'Hometown', value: baseInfo.household, icon: <IconInfo /> })
   }
   if (baseInfo.workStartTime) {
-    defs.push({ key: 'workStartTime', label: '工作时间', value: baseInfo.workStartTime, icon: <IconWorkYear /> })
+    defs.push({ key: 'workStartTime', label: 'Work Since', value: baseInfo.workStartTime, icon: <IconWorkYear /> })
   }
   if (baseInfo.politicalStatus) {
-    defs.push({ key: 'politicalStatus', label: '政治面貌', value: baseInfo.politicalStatus, icon: <IconInfo /> })
+    defs.push({ key: 'politicalStatus', label: 'Political Status', value: baseInfo.politicalStatus, icon: <IconInfo /> })
   }
   if (baseInfo.height) {
-    defs.push({ key: 'height', label: '身高', value: `${baseInfo.height}cm`, icon: <IconInfo /> })
+    defs.push({ key: 'height', label: 'Height', value: `${baseInfo.height}cm`, icon: <IconInfo /> })
   }
   if (baseInfo.weight) {
-    defs.push({ key: 'weight', label: '体重', value: `${baseInfo.weight}kg`, icon: <IconInfo /> })
+    defs.push({ key: 'weight', label: 'Weight', value: `${baseInfo.weight}kg`, icon: <IconInfo /> })
   }
   if (baseInfo.customFields) {
     for (const cf of baseInfo.customFields) {
@@ -186,14 +186,14 @@ function WarmSidebarHeader(props: {
                   className="px-3 py-1 text-xs font-bold text-white bg-blue-500 rounded hover:bg-blue-600 transition-colors"
                   onClick={(e) => { e.stopPropagation(); setShowModal(true) }}
                 >
-                  在线制作
+                  Edit Online
                 </button>
                 <button
                   type="button"
                   className="px-3 py-1 text-xs font-bold text-white border border-white/80 rounded hover:bg-white/20 transition-colors"
                   onClick={(e) => { e.stopPropagation(); handleLocalUpload() }}
                 >
-                  本地上传
+                  Upload Local
                 </button>
               </div>
             )}
@@ -276,11 +276,11 @@ function BlockRendererWrapper(props: {
   const { openPolish, openGenerate } = useAiSection()
   const moduleType = blockTypeToModuleType(block.type)
 
-  let blockTypeLabel = '内容'
-  if (block.type === 'experience') blockTypeLabel = '工作经历'
-  if (block.type === 'project') blockTypeLabel = '项目经历'
-  if (block.type === 'education') blockTypeLabel = '教育经历'
-  if (block.type === 'campus') blockTypeLabel = '校园经历'
+  let blockTypeLabel = 'Content'
+  if (block.type === 'experience') blockTypeLabel = 'Work Experience'
+  if (block.type === 'project') blockTypeLabel = 'Project Experience'
+  if (block.type === 'education') blockTypeLabel = 'Education'
+  if (block.type === 'campus') blockTypeLabel = 'Campus Experience'
 
   return (
     <div className="mb-2">
@@ -377,7 +377,7 @@ function WarmSectionView(props: {
 
 
 /**
- * Warm Template — 淡黄通用简历模板 (Two-column sidebar layout)
+ * Warm Template — Two-column sidebar layout.
  */
 export default function WarmTemplate(props: WarmTemplateProps): ReactElement {
   const { resume, theme, sidebarSectionIds: externalIds, onSidebarSectionIdsChange } = props
@@ -486,7 +486,7 @@ export default function WarmTemplate(props: WarmTemplateProps): ReactElement {
                   >
                     <SectionHeader
                       sectionId="job-intention"
-                      title="求职意向"
+                      title="Job Preference"
                       themeColor={darkenHex(accentColor, 0.65)}
                       styles={{
                         ...WARM_TEMPLATE_STYLES.sectionHeader,

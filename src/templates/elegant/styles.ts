@@ -1,8 +1,8 @@
 /**
- * Elegant 模板样式配置
+ * Elegant template style configuration.
  *
- * 深色头部 + 金色点缀风格，适合正式场合
- * 修改此文件可以改变模板外观，无需修改共用组件
+ * Dark header with gold accent style, suitable for formal occasions.
+ * Modify this file to change template appearance without touching shared components.
  */
 
 import type { TemplateStylesConfig } from '@/templates/components/v2/types'
@@ -14,7 +14,7 @@ export const ACCENT_GOLD = '#B8976A'
 
 export const ELEGANT_TEMPLATE_STYLES: TemplateStylesConfig = {
   name: 'elegant',
-  description: '深色头部 + 金色点缀，庄重大方',
+  description: 'Dark header with gold accents, formal and sophisticated',
 
   baseInfo: {
     container: 'flex items-start gap-6 relative group cursor-pointer print:cursor-default',

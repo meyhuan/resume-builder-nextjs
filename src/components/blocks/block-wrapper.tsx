@@ -79,7 +79,7 @@ export default function BlockWrapper(props: BlockWrapperProps): ReactElement {
           ref={dragHandleRef}
           {...dragHandleProps}
           className="absolute top-2 right-2 z-20 print:hidden cursor-grab active:cursor-grabbing p-1 h-7 w-7 border rounded bg-white shadow-sm hover:shadow-md flex items-center justify-center transition-all"
-          title="拖动"
+          title="Drag"
         >
           <GripHorizontal size={14} strokeWidth={2} />
         </button>

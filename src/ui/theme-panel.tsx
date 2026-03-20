@@ -36,15 +36,15 @@ export default function ThemePanel(props: {
   //   { label: 'Georgia (serif)', value: 'Georgia, serif' },
   // ]
   const fontSizes: readonly { value: number; label: string }[] = [
-    { value: 12, label: '极小' },
-    { value: 13, label: '偏小' },
-    { value: 14, label: '标准' },
-    { value: 15, label: '中等 (推荐)' },
-    { value: 16, label: '偏大' },
-    { value: 17, label: '大号' },
-    { value: 18, label: '特大' },
-    { value: 19, label: '超大' },
-    { value: 20, label: '巨型' }
+    { value: 12, label: 'Extra Small' },
+    { value: 13, label: 'Small' },
+    { value: 14, label: 'Standard' },
+    { value: 15, label: 'Medium (Recommended)' },
+    { value: 16, label: 'Large' },
+    { value: 17, label: 'Extra Large' },
+    { value: 18, label: 'XXL' },
+    { value: 19, label: 'XXXL' },
+    { value: 20, label: 'Huge' }
   ]
 
   function handlePrimaryColor(e: ChangeEvent<HTMLInputElement>): void {
@@ -117,17 +117,17 @@ export default function ThemePanel(props: {
       <section className={sectionClass}>
         <div className="flex items-start justify-between gap-3">
           <div className="space-y-1">
-            <h4 className="text-sm font-bold text-slate-800">文字排版</h4>
-            <p className="text-[11px] text-slate-500">调整整份简历的阅读节奏。</p>
+            <h4 className="text-sm font-bold text-slate-800">Typography</h4>
+            <p className="text-[11px] text-slate-500">Adjust the reading rhythm of your resume.</p>
           </div>
-          <span className="text-[10px] font-medium text-violet-700/80 bg-violet-50 px-1.5 py-0.5 rounded-md">字号</span>
+          <span className="text-[10px] font-medium text-violet-700/80 bg-violet-50 px-1.5 py-0.5 rounded-md">Font</span>
         </div>
         <div className="space-y-3">
           <div className={controlWrapperClass}>
-            <Label className={labelClass} htmlFor="font-size-select">全局字号</Label>
+            <Label className={labelClass} htmlFor="font-size-select">Font Size</Label>
             <Select value={String(theme.fontSize)} onValueChange={handleFontSizeSelect}>
               <SelectTrigger id="font-size-select" className="h-10 rounded-xl border-slate-200 bg-slate-50 shadow-none focus:ring-violet-200 transition-all">
-                <SelectValue placeholder="字号" />
+                <SelectValue placeholder="Size" />
               </SelectTrigger>
               <SelectContent className="rounded-xl border-slate-200 bg-white shadow-lg">
                 {fontSizes.map((sizeOption) => (
@@ -137,7 +137,7 @@ export default function ThemePanel(props: {
                 ))}
               </SelectContent>
             </Select>
-            <p className="text-[11px] text-slate-500">推荐 14-16，兼顾信息密度和可读性。</p>
+            <p className="text-[11px] text-slate-500">Recommended 14-16 for optimal density and readability.</p>
           </div>
         </div>
       </section>
@@ -145,10 +145,10 @@ export default function ThemePanel(props: {
       <section className={sectionClass}>
         <div className="flex items-start justify-between gap-3">
           <div className="space-y-1">
-            <h4 className="text-sm font-bold text-slate-800">间距布局</h4>
-            <p className="text-[11px] text-slate-500">控制留白与段落疏密，避免版面失衡。</p>
+            <h4 className="text-sm font-bold text-slate-800">Spacing & Layout</h4>
+            <p className="text-[11px] text-slate-500">Control whitespace and paragraph density for balanced layout.</p>
           </div>
-          <span className="text-[10px] font-medium text-sky-700/80 bg-sky-50 px-1.5 py-0.5 rounded-md">布局</span>
+          <span className="text-[10px] font-medium text-sky-700/80 bg-sky-50 px-1.5 py-0.5 rounded-md">Layout</span>
         </div>
         <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 space-y-3">
           <button
@@ -168,8 +168,8 @@ export default function ThemePanel(props: {
                 <FileText size={15} />
               </div>
               <div className="min-w-0">
-                <div className="text-sm font-semibold text-slate-800">一页模式</div>
-                <p className="text-[11px] text-slate-500">自动压缩排版参数，尽量收纳到一页内。</p>
+                <div className="text-sm font-semibold text-slate-800">One-Page Mode</div>
+                <p className="text-[11px] text-slate-500">Auto-compress layout to fit content on a single page.</p>
               </div>
             </div>
             <div className="flex items-center gap-2 shrink-0">
@@ -177,7 +177,7 @@ export default function ThemePanel(props: {
                 className="text-[10px] font-semibold"
                 style={{ color: props.onePage ? theme.primaryColor : '#64748b' }}
               >
-                {props.onePage ? '开启' : '关闭'}
+                {props.onePage ? 'On' : 'Off'}
               </span>
               <span
                 className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors"
@@ -198,30 +198,30 @@ export default function ThemePanel(props: {
                   backgroundColor: `${theme.primaryColor}14`
                 }}
               >
-                已开启
+                Enabled
               </span>
               {props.onePageStatus === 'fit' ? (
-                <span className="rounded-full px-2 py-1 text-[10px] font-medium text-emerald-700 bg-emerald-50">已适配</span>
+                <span className="rounded-full px-2 py-1 text-[10px] font-medium text-emerald-700 bg-emerald-50">Fitted</span>
               ) : null}
               {props.onePageStatus === 'fitting' ? (
                 <span className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-medium text-slate-600 bg-white border border-slate-200">
                   <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: theme.primaryColor }} />
-                  调整中
+                  Adjusting
                 </span>
               ) : null}
               {props.onePageStatus === 'overflow' ? (
-                <span className="rounded-full px-2 py-1 text-[10px] font-medium text-rose-700 bg-rose-50">仍然超出</span>
+                <span className="rounded-full px-2 py-1 text-[10px] font-medium text-rose-700 bg-rose-50">Still Overflows</span>
               ) : null}
             </div>
           ) : null}
         </div>
         {props.onePage && (
-          <p className="text-[11px] text-slate-500">关闭后将恢复为开启前的排版设置。</p>
+          <p className="text-[11px] text-slate-500">Disabling will restore layout settings from before enabling.</p>
         )}
         <div className="space-y-5 pt-2">
           <div className="space-y-2">
             <div className={sliderLabelClass}>
-              <span>行高</span>
+              <span>Line Height</span>
               <span className="text-violet-700 font-mono bg-violet-50 px-1.5 rounded text-[10px]">{theme.lineHeight.toFixed(1)}</span>
             </div>
             <Slider
@@ -233,11 +233,11 @@ export default function ThemePanel(props: {
               onValueChange={handleLineHeight}
               className="py-1"
             />
-            <p className="text-[11px] text-slate-500">越大越疏朗，但可容纳内容会减少。</p>
+            <p className="text-[11px] text-slate-500">Larger values are more spacious but fit less content.</p>
           </div>
           <div className="space-y-2">
             <div className={sliderLabelClass}>
-              <span>模块间距</span>
+              <span>Section Spacing</span>
               <span className="text-sky-700 font-mono bg-sky-50 px-1.5 rounded text-[10px]">{theme.spacingScale.toFixed(1)}x</span>
             </div>
             <Slider
@@ -249,11 +249,11 @@ export default function ThemePanel(props: {
               onValueChange={handleSpacing}
               className="py-1"
             />
-            <p className="text-[11px] text-slate-500">缩小更紧凑，放大更舒展。</p>
+            <p className="text-[11px] text-slate-500">Smaller is more compact, larger is more spacious.</p>
           </div>
           <div className="space-y-2">
             <div className={sliderLabelClass}>
-              <span>上下页边距</span>
+              <span>Vertical Margin</span>
               <span className="text-emerald-600 font-mono bg-emerald-500/10 px-1.5 rounded text-[10px]">{theme.pagePaddingVertical.toFixed(0)}mm</span>
             </div>
             <Slider
@@ -265,11 +265,11 @@ export default function ThemePanel(props: {
               onValueChange={handlePagePaddingVertical}
               className="py-1"
             />
-            <p className="text-[11px] text-slate-500">影响页面上下留白和内容容量。</p>
+            <p className="text-[11px] text-slate-500">Affects top/bottom whitespace and content capacity.</p>
           </div>
           <div className="space-y-2">
             <div className={sliderLabelClass}>
-              <span>左右页边距</span>
+              <span>Horizontal Margin</span>
               <span className="text-cyan-700 font-mono bg-cyan-50 px-1.5 rounded text-[10px]">{theme.pagePaddingHorizontal.toFixed(0)}mm</span>
             </div>
             <Slider
@@ -281,7 +281,7 @@ export default function ThemePanel(props: {
               onValueChange={handlePagePaddingHorizontal}
               className="py-1"
             />
-            <p className="text-[11px] text-slate-500">用于微调版心宽度和左右压迫感。</p>
+            <p className="text-[11px] text-slate-500">Fine-tune content width and side margins.</p>
           </div>
         </div>
       </section>
@@ -289,19 +289,19 @@ export default function ThemePanel(props: {
       <section className={sectionClass}>
         <div className="flex items-start justify-between gap-3">
           <div className="space-y-1">
-            <h4 className="text-sm font-bold text-slate-800">色彩风格</h4>
-            <p className="text-[11px] text-slate-500">主色会影响标题、强调信息和整体气质。</p>
+            <h4 className="text-sm font-bold text-slate-800">Color Style</h4>
+            <p className="text-[11px] text-slate-500">Primary color affects headings, highlights, and overall aesthetic.</p>
           </div>
-          <span className="text-[10px] font-medium text-rose-700/80 bg-rose-50 px-1.5 py-0.5 rounded-md">颜色</span>
+          <span className="text-[10px] font-medium text-rose-700/80 bg-rose-50 px-1.5 py-0.5 rounded-md">Color</span>
         </div>
         <div className="space-y-3">
           <div className="space-y-2">
-            <Label className={labelClass}>主题主色</Label>
+            <Label className={labelClass}>Primary Color</Label>
             <Popover.Root open={primaryPopoverOpen} onOpenChange={setPrimaryPopoverOpen}>
               <Popover.Trigger asChild>
                 <button
                   type="button"
-                  aria-label="选择主题主色"
+                  aria-label="Select primary color"
                   className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 cursor-pointer transition-colors hover:bg-white hover:border-slate-300"
                 >
                   <div
@@ -309,7 +309,7 @@ export default function ThemePanel(props: {
                     style={{ backgroundColor: theme.primaryColor }}
                   />
                   <div className="flex-1 text-left">
-                    <div className="text-xs font-medium text-slate-700">当前颜色</div>
+                    <div className="text-xs font-medium text-slate-700">Current Color</div>
                     <div className="text-[11px] font-mono text-slate-500">{selectedColor}</div>
                   </div>
                   <ChevronDown className="h-4 w-4 text-slate-400" />
@@ -322,8 +322,8 @@ export default function ThemePanel(props: {
                   align="end"
                 >
                   <div className="space-y-1">
-                    <div className="text-sm font-semibold text-slate-800">选择主色</div>
-                    <p className="text-xs text-slate-500">建议优先选择深色或中性色，打印和线上预览都更稳定。</p>
+                    <div className="text-sm font-semibold text-slate-800">Choose Primary Color</div>
+                    <p className="text-xs text-slate-500">Dark or neutral colors are recommended for stable print and screen rendering.</p>
                   </div>
                   <div className="grid grid-cols-6 gap-2.5">
                     {presetColors.map((color) => (
@@ -335,7 +335,7 @@ export default function ThemePanel(props: {
                           setPrimaryPopoverOpen(false)
                         }}
                         className="h-8 rounded-full border border-black/5 transition-all hover:scale-110"
-                        aria-label={`选择颜色 ${color}`}
+                        aria-label={`Select color ${color}`}
                         aria-pressed={theme.primaryColor === color}
                         style={{
                           backgroundColor: color,
@@ -351,11 +351,11 @@ export default function ThemePanel(props: {
                     className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-700 font-medium text-xs transition-colors hover:bg-white hover:border-slate-300"
                   >
                     <Palette className="h-3.5 w-3.5" />
-                    <span>自定义颜色</span>
+                    <span>Custom Color</span>
                   </button>
                   {showPrimaryCustom ? (
                     <div className="space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
-                      <Label className="text-[11px] font-medium text-slate-600" htmlFor="primary-color-input">输入十六进制颜色</Label>
+                      <Label className="text-[11px] font-medium text-slate-600" htmlFor="primary-color-input">Enter hex color</Label>
                       <div className="flex items-center gap-3">
                       <input
                         id="primary-color"

@@ -41,7 +41,7 @@ export default function JobIntentionView(props: JobIntentionViewProps): ReactEle
       >
         <div className="flex items-center gap-2 mb-3 relative">
           <Briefcase size={20} color={themeColor} strokeWidth={2} />
-          <h2 className="text-base font-bold" style={{ color: themeColor }}>求职意向</h2>
+          <h2 className="text-base font-bold" style={{ color: themeColor }}>Job Preference</h2>
           <button
             type="button"
             className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity print:hidden text-gray-400 hover:text-gray-600"
@@ -61,7 +61,7 @@ export default function JobIntentionView(props: JobIntentionViewProps): ReactEle
               onMouseEnter={(): void => setHoveredField('position')}
               onMouseLeave={(): void => setHoveredField(null)}
             >
-              <span className="text-gray-600">意向岗位: </span>
+              <span className="text-gray-600">Target Position: </span>
               <span className="text-gray-900">{jobIntention.position}</span>
               {hoveredField === 'position' ? (
                 <button
@@ -83,7 +83,7 @@ export default function JobIntentionView(props: JobIntentionViewProps): ReactEle
               onMouseEnter={(): void => setHoveredField('city')}
               onMouseLeave={(): void => setHoveredField(null)}
             >
-              <span className="text-gray-600">意向城市: </span>
+              <span className="text-gray-600">Preferred City: </span>
               <span className="text-gray-900">{jobIntention.city}</span>
               {hoveredField === 'city' ? (
                 <button
@@ -105,7 +105,7 @@ export default function JobIntentionView(props: JobIntentionViewProps): ReactEle
               onMouseEnter={(): void => setHoveredField('salary')}
               onMouseLeave={(): void => setHoveredField(null)}
             >
-              <span className="text-gray-600">期望薪资: </span>
+              <span className="text-gray-600">Expected Salary: </span>
               <span className="text-gray-900">{jobIntention.salary}</span>
               {hoveredField === 'salary' ? (
                 <button
@@ -127,7 +127,7 @@ export default function JobIntentionView(props: JobIntentionViewProps): ReactEle
               onMouseEnter={(): void => setHoveredField('type')}
               onMouseLeave={(): void => setHoveredField(null)}
             >
-              <span className="text-gray-600">求职类型: </span>
+              <span className="text-gray-600">Job Type: </span>
               <span className="text-gray-900">{jobIntention.type}</span>
               {hoveredField === 'type' ? (
                 <button
@@ -149,7 +149,7 @@ export default function JobIntentionView(props: JobIntentionViewProps): ReactEle
               onMouseEnter={(): void => setHoveredField('industry')}
               onMouseLeave={(): void => setHoveredField(null)}
             >
-              <span className="text-gray-600">期望行业: </span>
+              <span className="text-gray-600">Preferred Industry: </span>
               <span className="text-gray-900">{jobIntention.industry}</span>
               {hoveredField === 'industry' ? (
                 <button
@@ -171,7 +171,7 @@ export default function JobIntentionView(props: JobIntentionViewProps): ReactEle
               onMouseEnter={(): void => setHoveredField('currentStatus')}
               onMouseLeave={(): void => setHoveredField(null)}
             >
-              <span className="text-gray-600">当前状态: </span>
+              <span className="text-gray-600">Current Status: </span>
               <span className="text-gray-900">{jobIntention.currentStatus}</span>
               {hoveredField === 'currentStatus' ? (
                 <button

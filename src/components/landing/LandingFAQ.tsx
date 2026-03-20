@@ -23,7 +23,7 @@ export const LandingFAQ = ({ id }: FAQSectionProps) => {
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-6 tracking-tight">
-            FAQ <span className="text-slate-400 font-normal">常见问题</span>
+            FAQ <span className="text-slate-400 font-normal">Frequently Asked Questions</span>
           </h2>
         </div>
 

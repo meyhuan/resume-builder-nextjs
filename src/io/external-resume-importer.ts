@@ -105,7 +105,7 @@ function mapSelfEvaluation(ext: ExternalResume): Section | undefined {
   const blocks: TextBlock[] = [{ id: 'block-self-evaluation', type: 'text', html: se.content }];
   return {
     id: 'section-self-evaluation',
-    title: '自我评价',
+    title: 'Self Evaluation',
     columns: 1,
     blocks,
   };
@@ -126,7 +126,7 @@ function mapExperience(ext: ExternalResume): Section | undefined {
   }));
   return {
     id: 'section-experience',
-    title: '工作经历',
+    title: 'Work Experience',
     columns: 1,
     blocks,
   };
@@ -146,7 +146,7 @@ function mapProjects(ext: ExternalResume): Section | undefined {
   }));
   return {
     id: 'section-projects',
-    title: '项目经历',
+    title: 'Project Experience',
     columns: 1,
     blocks,
   };
@@ -167,7 +167,7 @@ function mapEducation(ext: ExternalResume): Section | undefined {
   }));
   return {
     id: 'section-education',
-    title: '教育经历',
+    title: 'Education',
     columns: 1,
     blocks,
   };
@@ -188,7 +188,7 @@ function mapInternship(ext: ExternalResume): Section | undefined {
   }));
   return {
     id: 'section-internship',
-    title: '实习经历',
+    title: 'Internship',
     columns: 1,
     blocks,
   };
@@ -200,7 +200,7 @@ function mapSkills(ext: ExternalResume): Section | undefined {
   const blocks: TextBlock[] = [{ id: 'block-skills', type: 'text', html: sc.content }];
   return {
     id: 'section-skills',
-    title: '专业技能',
+    title: 'Skills',
     columns: 1,
     blocks,
   };
@@ -212,7 +212,7 @@ function mapQualifications(ext: ExternalResume): Section | undefined {
   const blocks: TextBlock[] = [{ id: 'block-qualifications', type: 'text', html: q.content }];
   return {
     id: 'section-qualifications',
-    title: '资质证书',
+    title: 'Qualifications',
     columns: 1,
     blocks,
   };
@@ -225,14 +225,14 @@ function mapSchoolExps(ext: ExternalResume): Section | undefined {
     id: it.id,
     type: 'campus',
     organization: it.name,
-    position: it.position || '成员',
+    position: it.position || 'Member',
     startDate: it.period?.start || '',
     endDate: it.period?.end || '',
     contentHtml: it.content,
   }));
   return {
     id: 'section-school-exps',
-    title: '校园经历',
+    title: 'Campus Experience',
     columns: 1,
     blocks,
   };
@@ -248,7 +248,7 @@ function mapCustomModules(ext: ExternalResume): Section[] {
     };
     return {
       id: `section-custom-${idx}`,
-      title: m.module_name || m.name || '自定义模块',
+      title: m.module_name || m.name || 'Custom Section',
       columns: 1,
       blocks: [block],
     };

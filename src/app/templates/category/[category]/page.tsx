@@ -7,7 +7,7 @@ import { LandingFooter } from '@/components/landing/LandingFooter';
 import { LandingHeader } from '@/components/landing/LandingHeader';
 import { templateRoleData } from '@/lib/templates/template-role-data';
 
-const SITE_URL: string = 'https://aijianli.cn';
+const SITE_URL: string = 'https://airesumepass.com';
 
 type JsonLdPrimitive = string | number | boolean;
 
@@ -25,23 +25,23 @@ type CategoryPageParams = {
 };
 
 function createPageTitle(categoryName: string): string {
-  return `${categoryName}简历模板 - ${categoryName}岗位简历模板与写作建议 | 智简简历`;
+  return `${categoryName} Resume Templates - ${categoryName} Role Templates & Writing Tips | AI Resume Pass`;
 }
 
 function createPageDescription(categoryName: string, roleCount: number): string {
-  return `查看适合${categoryName}方向的简历模板、岗位入口与写作建议，覆盖 ${roleCount} 个相关岗位，帮助你更快找到适合自己的 AI 简历制作方案。`;
+  return `Browse resume templates, role pages, and writing tips for ${categoryName} positions. Covers ${roleCount} related roles to help you find the right AI resume building approach.`;
 }
 
 function createCategorySummary(categoryName: string, industries: readonly string[]): string {
-  const industryText: string = industries.slice(0, 3).join('、');
-  return `${categoryName}方向的岗位通常分布在${industryText}等场景中，招聘方会重点关注你的专业能力、项目成果、表达结构与岗位关键词匹配度。`;
+  const industryText: string = industries.slice(0, 3).join(', ');
+  return `${categoryName} roles are typically found across ${industryText} and similar industries. Recruiters focus on your professional skills, project outcomes, resume structure, and keyword alignment with the role.`;
 }
 
 function createCategoryHighlights(categoryName: string): readonly string[] {
   return [
-    `优先浏览与你目标${categoryName}岗位最接近的岗位页，再针对 JD 做定向调整。`,
-    `把${categoryName}相关项目、成果指标和协作经验放在简历前半部分。`,
-    `先用统一模板生成初稿，再针对不同岗位细化关键词和经历顺序。`,
+    `Start by browsing the role page closest to your target ${categoryName} position, then tailor for specific JDs.`,
+    `Place ${categoryName}-related projects, metrics, and collaboration experience in the top half of your resume.`,
+    `Generate a first draft with a unified template, then refine keywords and experience order for each role.`,
   ];
 }
 
@@ -53,19 +53,19 @@ function createBreadcrumbSchema(categoryGroup: TemplateRoleCategoryGroup): JsonL
       {
         '@type': 'ListItem',
         position: 1,
-        name: '首页',
+        name: 'Home',
         item: SITE_URL,
       },
       {
         '@type': 'ListItem',
         position: 2,
-        name: '简历模板中心',
+        name: 'Resume Templates',
         item: `${SITE_URL}/templates`,
       },
       {
         '@type': 'ListItem',
         position: 3,
-        name: `${categoryGroup.category}简历模板`,
+        name: `${categoryGroup.category} Resume Templates`,
         item: `${SITE_URL}/templates/category/${categoryGroup.slug}`,
       },
     ],
@@ -81,7 +81,7 @@ function createCollectionSchema(categoryGroup: TemplateRoleCategoryGroup): JsonL
     url: `${SITE_URL}/templates/category/${categoryGroup.slug}`,
     isPartOf: {
       '@type': 'WebSite',
-      name: '智简简历',
+      name: 'AI Resume Pass',
       url: SITE_URL,
     },
     mainEntity: {
@@ -90,7 +90,7 @@ function createCollectionSchema(categoryGroup: TemplateRoleCategoryGroup): JsonL
       itemListElement: categoryGroup.roles.slice(0, 24).map((role: TemplateRoleRecord, index: number) => ({
         '@type': 'ListItem',
         position: index + 1,
-        name: `${role.role}简历模板`,
+        name: `${role.role} Resume Template`,
         url: `${SITE_URL}/templates/${role.slug}`,
       })),
     },
@@ -108,7 +108,7 @@ export async function generateMetadata({ params }: CategoryPageParams): Promise<
   const categoryGroup = templateRoleData.getTemplateRoleCategoryBySlug(resolvedParams.category);
   if (!categoryGroup) {
     return {
-      title: '分类模板未找到',
+      title: 'Category Templates Not Found',
     };
   }
   const title: string = createPageTitle(categoryGroup.category);
@@ -117,10 +117,10 @@ export async function generateMetadata({ params }: CategoryPageParams): Promise<
     title,
     description,
     keywords: [
-      `${categoryGroup.category}简历模板`,
-      `${categoryGroup.category}岗位简历`,
-      `${categoryGroup.category}简历怎么写`,
-      `${categoryGroup.category}AI简历`,
+      `${categoryGroup.category} resume template`,
+      `${categoryGroup.category} job resume`,
+      `how to write a ${categoryGroup.category} resume`,
+      `${categoryGroup.category} AI resume`,
       ...categoryGroup.roles.slice(0, 6).map((role: TemplateRoleRecord) => role.role),
     ],
     alternates: {
@@ -160,19 +160,19 @@ export default async function TemplateCategoryPage({ params }: CategoryPageParam
         </div>
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 space-y-10">
           <nav className="flex items-center gap-1.5 text-sm text-slate-400 flex-wrap">
-            <Link href="/" className="hover:text-violet-600 transition-colors">首页</Link>
+            <Link href="/" className="hover:text-violet-600 transition-colors">Home</Link>
             <ChevronRight className="w-3.5 h-3.5" />
-            <Link href="/templates" className="hover:text-violet-600 transition-colors">简历模板中心</Link>
+            <Link href="/templates" className="hover:text-violet-600 transition-colors">Resume Templates</Link>
             <ChevronRight className="w-3.5 h-3.5" />
-            <span className="text-slate-600 font-medium">{categoryGroup.category}简历模板</span>
+            <span className="text-slate-600 font-medium">{categoryGroup.category} Resume Templates</span>
           </nav>
           <section className="rounded-3xl bg-white/80 backdrop-blur-sm border border-white shadow-sm p-6 md:p-8 lg:p-10">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-violet-50 text-violet-600 rounded-full text-sm font-semibold">
               <Layers3 className="w-4 h-4" />
-              {categoryGroup.category}方向岗位聚合页
+              {categoryGroup.category} Role Directory
             </div>
             <h1 className="text-3xl md:text-5xl font-extrabold text-slate-900 tracking-tight mt-5">
-              {categoryGroup.category}简历模板与岗位入口
+              {categoryGroup.category} Resume Templates & Role Directory
             </h1>
             <p className="text-base md:text-lg text-slate-500 mt-4 max-w-3xl leading-relaxed">
               {createPageDescription(categoryGroup.category, categoryGroup.roleCount)}
@@ -182,11 +182,11 @@ export default async function TemplateCategoryPage({ params }: CategoryPageParam
             </p>
             <div className="flex flex-wrap gap-3 mt-6">
               <Link href="/ai" className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-violet-600 text-white font-semibold shadow-lg shadow-violet-500/20 hover:bg-violet-700 transition-colors">
-                去 AI 生成简历
+                AI Resume Generator
                 <ArrowRight className="w-4 h-4" />
               </Link>
               <Link href="/templates" className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white text-slate-700 font-semibold border border-slate-200 hover:border-violet-200 hover:text-violet-600 transition-colors">
-                返回模板中心
+                Back to Templates
               </Link>
             </div>
           </section>
@@ -194,7 +194,7 @@ export default async function TemplateCategoryPage({ params }: CategoryPageParam
             <div className="rounded-3xl bg-white/80 backdrop-blur-sm border border-white shadow-sm p-6 md:p-8">
               <div className="flex items-center gap-2 text-slate-900">
                 <BriefcaseBusiness className="w-5 h-5 text-violet-500" />
-                <h2 className="text-2xl font-extrabold">浏览重点</h2>
+                <h2 className="text-2xl font-extrabold">Browsing Tips</h2>
               </div>
               <div className="space-y-4 mt-6">
                 {categoryHighlights.map((highlight: string) => (
@@ -205,15 +205,15 @@ export default async function TemplateCategoryPage({ params }: CategoryPageParam
               </div>
             </div>
             <div className="rounded-3xl bg-white/80 backdrop-blur-sm border border-white shadow-sm p-6 md:p-8">
-              <h2 className="text-2xl font-extrabold text-slate-900">相关岗位模板</h2>
-              <p className="text-sm text-slate-500 mt-2">当前分类共覆盖 {categoryGroup.roleCount} 个岗位，可直接进入具体岗位页查看模板、写作建议与投递优化内容。</p>
+              <h2 className="text-2xl font-extrabold text-slate-900">Related Role Templates</h2>
+              <p className="text-sm text-slate-500 mt-2">This category covers {categoryGroup.roleCount} roles. Visit specific role pages for templates, writing tips, and application optimization.</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
                 {categoryGroup.roles.map((role: TemplateRoleRecord) => (
                   <Link key={role.slug} href={`/templates/${role.slug}`} className="group rounded-2xl border border-slate-100 bg-slate-50 hover:bg-white hover:border-violet-200 hover:shadow-sm transition-all p-5">
                     <div className="text-xs font-semibold text-violet-600">{role.industry}</div>
-                    <h3 className="text-lg font-bold text-slate-900 mt-2 group-hover:text-violet-600 transition-colors">{role.role}简历模板</h3>
+                    <h3 className="text-lg font-bold text-slate-900 mt-2 group-hover:text-violet-600 transition-colors">{role.role} Resume</h3>
                     <p className="text-sm text-slate-500 mt-2 leading-relaxed line-clamp-2">
-                      查看适合 {role.role} 的模板推荐、表达重点与岗位关键词建议。
+                      View recommended templates, key highlights, and keyword suggestions for {role.role}.
                     </p>
                   </Link>
                 ))}
@@ -221,7 +221,7 @@ export default async function TemplateCategoryPage({ params }: CategoryPageParam
             </div>
           </section>
           <section className="rounded-3xl bg-white/80 backdrop-blur-sm border border-white shadow-sm p-6 md:p-8">
-            <h2 className="text-2xl font-extrabold text-slate-900">相关岗位大类</h2>
+            <h2 className="text-2xl font-extrabold text-slate-900">Related Categories</h2>
             <div className="flex flex-wrap gap-3 mt-6">
               {relatedCategories.map((group: TemplateRoleCategoryGroup) => (
                 <Link key={group.slug} href={`/templates/category/${group.slug}`} className="px-4 py-2 rounded-full bg-slate-50 text-slate-600 text-sm hover:bg-violet-50 hover:text-violet-600 transition-colors">

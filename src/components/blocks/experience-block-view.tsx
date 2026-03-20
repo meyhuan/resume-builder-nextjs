@@ -58,9 +58,9 @@ export default function ExperienceBlockView(props: ExperienceBlockViewProps): Re
         const foundBlock = section.blocks.find((b) => b.id === block.id);
         if (foundBlock && foundBlock.type === 'experience') {
           if (editingField === 'company') {
-            foundBlock.company = tempValue || '未命名公司';
+            foundBlock.company = tempValue || 'Company Name';
           } else if (editingField === 'position') {
-            foundBlock.position = tempValue || '职位名称';
+            foundBlock.position = tempValue || 'Job Title';
           } else if (editingField === 'industry') {
             foundBlock.industry = tempValue || undefined;
           }
@@ -103,16 +103,16 @@ export default function ExperienceBlockView(props: ExperienceBlockViewProps): Re
               onBlur={saveField}
               onKeyDown={handleKeyDown}
               className="px-1 py-0.5 border border-blue-500 rounded outline-none w-full font-bold text-right"
-              placeholder="公司名称"
+              placeholder="Company Name"
             />
           ) : (
             <span
               className="cursor-pointer hover:underline rounded px-1 py-0.5 font-bold"
               style={{ fontSize: '0.875em' }}
               onClick={(): void => startEditing('company')}
-              title="点击编辑公司"
+              title="Click to edit company"
             >
-              {block.company || '公司名称'}
+              {block.company || 'Company Name'}
             </span>
           )}
         </div>
@@ -128,15 +128,15 @@ export default function ExperienceBlockView(props: ExperienceBlockViewProps): Re
             onBlur={saveField}
             onKeyDown={handleKeyDown}
             className="px-1 py-0.5 border border-blue-500 rounded outline-none flex-1"
-            placeholder="职位名称"
+            placeholder="Job Title"
           />
         ) : (
           <span
             className="cursor-pointer hover:underline rounded px-1 py-0.5"
             onClick={(): void => startEditing('position')}
-            title="点击编辑职位"
+            title="Click to edit position"
           >
-            {block.position || '职位名称'}
+            {block.position || 'Job Title'}
           </span>
         )}
         
@@ -152,13 +152,13 @@ export default function ExperienceBlockView(props: ExperienceBlockViewProps): Re
                 onBlur={saveField}
                 onKeyDown={handleKeyDown}
                 className="px-1 py-0.5 border border-blue-500 rounded outline-none flex-1"
-                placeholder="行业"
+                placeholder="Industry"
               />
             ) : (
               <span
                 className="cursor-pointer hover:underline rounded px-1 py-0.5"
                 onClick={(): void => startEditing('industry')}
-                title="点击编辑行业"
+                title="Click to edit industry"
               >
                 {block.industry}
               </span>

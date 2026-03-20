@@ -59,7 +59,7 @@ export default function EducationBlockView(props: EducationBlockViewProps): Reac
         const foundBlock = section.blocks.find((b) => b.id === block.id);
         if (foundBlock && foundBlock.type === 'education') {
           if (editingField === 'school') {
-            foundBlock.school = tempValue || '未命名学校';
+            foundBlock.school = tempValue || 'School Name';
           } else if (editingField === 'major') {
             foundBlock.major = tempValue || undefined;
           } else if (editingField === 'degree') {
@@ -98,15 +98,15 @@ export default function EducationBlockView(props: EducationBlockViewProps): Reac
               onBlur={saveField}
               onKeyDown={handleKeyDown}
               className="px-1 py-0.5 border border-blue-500 rounded outline-none flex-1"
-              placeholder="学校名称"
+              placeholder="School Name"
             />
           ) : (
             <span
               className="cursor-pointer hover:underline rounded px-1 py-0.5"
               onClick={(): void => startEditing('school')}
-              title="点击编辑学校"
+              title="Click to edit school"
             >
-              {block.school || '点击输入学校'}
+              {block.school || 'School Name'}
             </span>
           )}
           
@@ -122,13 +122,13 @@ export default function EducationBlockView(props: EducationBlockViewProps): Reac
                   onBlur={saveField}
                   onKeyDown={handleKeyDown}
                   className="px-1 py-0.5 border border-blue-500 rounded outline-none flex-1"
-                  placeholder="专业"
+                  placeholder="Major"
                 />
               ) : (
                 <span
                   className="cursor-pointer hover:underline rounded px-1 py-0.5"
                   onClick={(): void => startEditing('major')}
-                  title="点击编辑专业"
+                  title="Click to edit major"
                 >
                   {block.major}
                 </span>
@@ -148,13 +148,13 @@ export default function EducationBlockView(props: EducationBlockViewProps): Reac
                   onBlur={saveField}
                   onKeyDown={handleKeyDown}
                   className="px-1 py-0.5 border border-blue-500 rounded outline-none w-20"
-                  placeholder="学历"
+                  placeholder="Degree"
                 />
               ) : (
                 <span
                   className="cursor-pointer hover:underline rounded px-1 py-0.5"
                   onClick={(): void => startEditing('degree')}
-                  title="点击编辑学历"
+                  title="Click to edit degree"
                 >
                   {block.degree}
                 </span>

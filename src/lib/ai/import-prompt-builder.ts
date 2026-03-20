@@ -9,15 +9,15 @@
  * Build the system prompt for resume import parsing.
  */
 export function buildImportSystemPrompt(): string {
-  return `你是一位专业的简历解析专家，拥有10年人力资源和简历分析经验。
-你的任务是将用户提供的简历原始文本（可能是纯文本、Markdown、或其他AI模型生成的内容）解析并结构化为标准JSON格式。
+  return `You are a professional resume parsing expert with 10 years of HR and resume analysis experience.
+Your task is to parse the user's raw resume text (which may be plain text, Markdown, or AI-generated content) and structure it into a standard JSON format.
 
-核心规则：
-1. 你的输出必须是一个合法的JSON字符串，可以被JSON.parse直接解析
-2. 不得包含任何多余内容（如解释、注释、markdown标记、代码块标记等）
-3. 如果输入内容明显不是简历（例如：小说、新闻、代码、聊天记录等），返回以下JSON：{"error": "NOT_RESUME", "message": "输入内容不像是简历，请粘贴简历内容后重试"}
-4. 尽最大努力从原始文本中提取所有有价值的信息
-5. 无法归类到标准模块的重要内容，放入 custom_module_info 数组中`;
+Core rules:
+1. Your output MUST be a valid JSON string that can be directly parsed by JSON.parse
+2. Do NOT include any extra content (explanations, comments, markdown markers, code block markers, etc.)
+3. If the input is clearly not a resume (e.g. fiction, news, code, chat logs), return: {"error": "NOT_RESUME", "message": "The input does not appear to be a resume. Please paste your resume content and try again."}
+4. Extract all valuable information from the raw text to the best of your ability
+5. Important content that cannot be classified into standard modules should go into the custom_module_info array`;
 }
 
 /**
@@ -36,23 +36,23 @@ export function buildImportUserPrompt(rawText: string): string {
 }
 
 function buildParsingInstructions(): string {
-  return `## 解析要求
+  return `## Parsing Requirements
 
-请从以下简历原始文本中提取信息，并按照指定JSON结构输出。
+Extract information from the following raw resume text and output it in the specified JSON structure.
 
-解析策略：
-1. 智能识别简历中的各个模块（基本信息、教育经历、工作经历、项目经历等）
-2. 即使格式混乱或使用不同的标题名称，也要尽力识别对应模块
-3. HTML内容字段使用<ul><li>罗列要点，或用<p>标签包裹段落
-4. 时间格式尽量统一为"YYYY.MM"，如原文为"2023年6月"则转为"2023.06"
-5. 如果某个字段信息缺失，直接省略该字段，不要填充占位符
-6. 保留原文中的所有实质性内容，不要丢弃任何有价值的信息`;
+Parsing strategy:
+1. Intelligently identify resume sections (basic info, education, work experience, projects, etc.)
+2. Even if formatting is messy or section headers differ, do your best to map content to the correct modules
+3. HTML content fields should use <ul><li> for bullet points, or <p> tags for paragraphs
+4. Normalize date formats to "YYYY.MM" where possible (e.g. "June 2023" becomes "2023.06")
+5. If a field's information is missing, omit the field entirely — do not fill with placeholders
+6. Preserve all substantive content from the original text — do not discard any valuable information`;
 }
 
 function buildOutputSchema(): string {
-  return `## 输出JSON结构
+  return `## Output JSON Schema
 
-请严格按照以下TypeScript接口生成JSON：
+Generate JSON strictly following this TypeScript interface:
 
 \`\`\`
 interface ExternalResume {
@@ -72,15 +72,15 @@ interface ExternalResume {
     is_hide?: boolean;
   };
   self_evaluation?: {
-    content: string;       // HTML格式
+    content: string;       // HTML format
     is_hide?: boolean;
   };
   experience?: Array<{
     id: string;
-    name: string;          // 公司名称
+    name: string;          // Company name
     industry?: string;
-    position: string;      // 职位
-    content: string;       // HTML格式，用<ul><li>罗列
+    position: string;      // Job title
+    content: string;       // HTML format, use <ul><li> for bullets
     is_hide?: boolean;
     period: { start: string; end: string; };
   }>;
@@ -95,19 +95,19 @@ interface ExternalResume {
   }>;
   education?: Array<{
     id: string;
-    name: string;          // 学校名称
+    name: string;          // School name
     major?: string;
     degree?: string;
-    course?: string;       // HTML格式
+    course?: string;       // HTML format
     is_hide?: boolean;
     period: { start: string; end: string; };
     content?: string;
   }>;
   program_experience?: Array<{
     id: string;
-    name: string;          // 项目名称
+    name: string;          // Project name
     role?: string;
-    content: string;       // HTML格式
+    content: string;       // HTML format
     is_hide?: boolean;
     period: { start: string; end: string; };
   }>;
@@ -120,52 +120,52 @@ interface ExternalResume {
     period: { start: string; end: string; };
   }>;
   skills?: {
-    content: string;       // HTML格式
+    content: string;       // HTML format
     is_hide?: boolean;
   };
   qualifications?: {
-    content: string;       // HTML格式
+    content: string;       // HTML format
     is_hide?: boolean;
   };
   custom_module_info?: Array<{
-    name: string;          // 自定义模块标题
-    content: string;       // HTML格式内容
-    module_name: string;   // 同name
+    name: string;          // Custom module title
+    content: string;       // HTML format content
+    module_name: string;   // Same as name
     is_hide?: boolean;
   }>;
 }
 \`\`\`
 
-每条经历的id必须唯一，使用如 "exp-1"、"edu-1"、"proj-1"、"intern-1"、"campus-1" 的格式。`;
+Each entry's id must be unique, using formats like "exp-1", "edu-1", "proj-1", "intern-1", "campus-1".`;
 }
 
 function buildCustomModuleInstructions(): string {
-  return `## 自定义模块处理
+  return `## Custom Module Handling
 
-以下内容如果在简历中出现但无法归入上述标准模块，请放入 custom_module_info 数组：
-- 获奖经历、荣誉奖项
-- 志愿者经历、社会实践
-- 个人作品集、开源贡献
-- 语言能力（非技能类）
-- 兴趣爱好
-- 发表论文、专利
-- 其他任何有价值但不属于标准模块的内容
+If the following types of content appear in the resume but cannot be classified into the standard modules above, place them in the custom_module_info array:
+- Awards and honors
+- Volunteer experience and community service
+- Portfolio and open-source contributions
+- Language proficiency (non-technical)
+- Hobbies and interests
+- Published papers and patents
+- Any other valuable content that doesn't fit standard modules
 
-每个自定义模块的 name 和 module_name 设置为该内容的类别名称（如"获奖经历"、"志愿者经历"等）。`;
+Set each custom module's name and module_name to the category name (e.g. "Awards", "Volunteer Experience", etc.).`;
 }
 
 function buildFinalInstructions(): string {
-  return `## 最终要求
-1. 必须返回可直接被JSON.parse解析的合法JSON字符串
-2. 不得包含JSON之外的任何文字、解释、markdown代码块标记
-3. 不需要的模块直接省略，不要设置为空数组
-4. 所有HTML内容字段必须有实质性内容
-5. 返回前请自行检查JSON格式有效性
-6. 如果输入不是简历内容，返回错误JSON：{"error": "NOT_RESUME", "message": "..."}`;
+  return `## Final Requirements
+1. You MUST return a valid JSON string that can be directly parsed by JSON.parse
+2. Do NOT include any text, explanations, or markdown code block markers outside the JSON
+3. Omit unnecessary modules entirely — do not set them to empty arrays
+4. All HTML content fields must contain substantive content
+5. Verify JSON format validity before returning
+6. If the input is not resume content, return error JSON: {"error": "NOT_RESUME", "message": "..."}`;
 }
 
 function buildRawTextSection(rawText: string): string {
-  return `## 待解析的简历原始文本
+  return `## Raw Resume Text to Parse
 
 ---
 ${rawText}

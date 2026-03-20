@@ -20,7 +20,7 @@ type FeedbackSortKey = 'hot' | 'latest';
 type FeedbackAdminStatus = 'RECEIVED' | 'PROCESSING' | 'COMPLETED';
 
 function formatFeedbackDate(value: string): string {
-  return new Intl.DateTimeFormat('zh-CN', {
+  return new Intl.DateTimeFormat('en-US', {
     year: 'numeric',
     month: 'numeric',
     day: 'numeric',
@@ -29,12 +29,12 @@ function formatFeedbackDate(value: string): string {
 
 function getStatusLabel(status: string): string {
   if (status === 'COMPLETED') {
-    return '已完成';
+    return 'Completed';
   }
   if (status === 'PROCESSING') {
-    return '处理中';
+    return 'Processing';
   }
-  return '已收到';
+  return 'Received';
 }
 
 function getStatusClassName(status: string): string {
@@ -64,9 +64,9 @@ function FeedbackCard(props: {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 flex-1">
           <div className="mb-2 inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-500">
-            用户反馈
+            User Feedback
           </div>
-          <h3 className="whitespace-pre-wrap break-words text-lg font-semibold leading-7 text-slate-900 sm:text-xl">{item.content || '用户反馈'}</h3>
+          <h3 className="whitespace-pre-wrap break-words text-lg font-semibold leading-7 text-slate-900 sm:text-xl">{item.content || 'User Feedback'}</h3>
         </div>
         <span className={`inline-flex shrink-0 items-center self-start rounded-full px-4 py-1 text-sm font-semibold ${getStatusClassName(item.status)}`}>
           {getStatusLabel(item.status)}
@@ -96,9 +96,9 @@ function FeedbackCard(props: {
       </div>
       {item.adminReply ? (
         <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm leading-7 text-slate-700">
-          <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">开发者回复</div>
+          <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">Developer Reply</div>
           <div className="mb-2 font-medium text-slate-900">
-            开发者回复 {item.adminReplyAt ? formatFeedbackDate(item.adminReplyAt) : ''}
+            Developer Reply {item.adminReplyAt ? formatFeedbackDate(item.adminReplyAt) : ''}
           </div>
           <p className="whitespace-pre-wrap break-words">{item.adminReply}</p>
         </div>
@@ -109,7 +109,7 @@ function FeedbackCard(props: {
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div className="inline-flex items-center gap-2 text-sm font-semibold text-violet-700">
                 <MessageSquareReply className="h-4 w-4" />
-                开发模式管理
+                Dev Mode Management
               </div>
               <div className="inline-flex flex-wrap items-center gap-2 self-start rounded-2xl bg-white p-1 shadow-sm">
                 <button
@@ -117,21 +117,21 @@ function FeedbackCard(props: {
                   onClick={(): void => props.onStatusChange(item.id, 'RECEIVED')}
                   className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${item.status === 'RECEIVED' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'}`}
                 >
-                  已收到
+                  Received
                 </button>
                 <button
                   type="button"
                   onClick={(): void => props.onStatusChange(item.id, 'PROCESSING')}
                   className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${item.status === 'PROCESSING' ? 'bg-amber-500 text-white' : 'text-slate-600 hover:text-slate-900'}`}
                 >
-                  处理中
+                  Processing
                 </button>
                 <button
                   type="button"
                   onClick={(): void => props.onStatusChange(item.id, 'COMPLETED')}
                   className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${item.status === 'COMPLETED' ? 'bg-emerald-500 text-white' : 'text-slate-600 hover:text-slate-900'}`}
                 >
-                  已完成
+                  Completed
                 </button>
               </div>
             </div>
@@ -140,10 +140,10 @@ function FeedbackCard(props: {
                 value={props.replyDraft}
                 onChange={(e: ChangeEvent<HTMLTextAreaElement>): void => props.onReplyDraftChange(item.id, e.target.value)}
                 className="min-h-[96px] w-full rounded-xl border border-violet-100 bg-white px-3 py-3 text-sm leading-6 text-slate-700 outline-none transition focus:border-violet-300 focus:ring-2 focus:ring-violet-100"
-                placeholder="开发模式下可快速模拟官方回复效果"
+                placeholder="Quickly simulate official reply in dev mode"
               />
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <p className="max-w-xl text-xs leading-5 text-slate-500">这里保存的回复和状态会写入数据库，并在公开反馈列表中展示给其他用户。删除操作也会真实移除数据库记录。</p>
+                <p className="max-w-xl text-xs leading-5 text-slate-500">Replies and status saved here are written to the database and displayed publicly. Delete operations also permanently remove database records.</p>
                 <div className="flex items-center gap-2 self-start sm:self-auto">
                   <Button
                     type="button"
@@ -153,7 +153,7 @@ function FeedbackCard(props: {
                     disabled={props.isDeleting}
                   >
                     <Trash2 className="mr-1.5 h-4 w-4" />
-                    {props.isDeleting ? '删除中...' : '删除反馈'}
+                    {props.isDeleting ? 'Deleting...' : 'Delete Feedback'}
                   </Button>
                   <Button
                     type="button"
@@ -161,7 +161,7 @@ function FeedbackCard(props: {
                     onClick={(): Promise<void> => props.onReplySave(item.id)}
                     disabled={props.isSavingReply}
                   >
-                    {props.isSavingReply ? '保存中...' : '保存回复'}
+                    {props.isSavingReply ? 'Saving...' : 'Save Reply'}
                   </Button>
                 </div>
               </div>
@@ -217,7 +217,7 @@ export default function FeedbackPage() {
         }
       } catch {
         if (isMounted) {
-          toast.error('反馈广场加载失败，请稍后重试');
+          toast.error('Failed to load feedback. Please try again later.');
         }
       } finally {
         if (isMounted) {
@@ -270,7 +270,7 @@ export default function FeedbackPage() {
 
   const processFile = (file: File): void => {
     if (file.size > MAX_FILE_SIZE_BYTES) {
-      toast.error(`附件大小不能超过 ${MAX_FILE_SIZE_MB}MB`);
+      toast.error(`Attachment size cannot exceed ${MAX_FILE_SIZE_MB}MB`);
       return;
     }
     const objectUrl: string = URL.createObjectURL(file);
@@ -285,7 +285,7 @@ export default function FeedbackPage() {
 
   const handleSubmit = async (): Promise<void> => {
     if (!content.trim()) {
-      toast.error('反馈内容不能为空');
+      toast.error('Feedback content cannot be empty');
       return;
     }
 
@@ -301,13 +301,13 @@ export default function FeedbackPage() {
         });
         const uploadPayload: { readonly url?: string; readonly error?: string } = await uploadResponse.json();
         if (!uploadResponse.ok || !uploadPayload.url) {
-          throw new Error(uploadPayload.error || '上传附件失败，请稍后重试');
+          throw new Error(uploadPayload.error || 'Failed to upload attachment. Please try again later.');
         }
         attachmentUrl = uploadPayload.url;
       }
       const result = await submitFeedback({ content, contact, attachment: attachmentUrl });
       if (result.success) {
-        toast.success('反馈提交成功！感谢您的支持。');
+        toast.success('Feedback submitted successfully! Thank you for your support.');
         setContent('');
         setContact('');
         setAttachmentFile(null);
@@ -318,10 +318,10 @@ export default function FeedbackPage() {
         const items: readonly PublicFeedbackItem[] = await listPublicFeedback();
         applyFeedbackList(items);
       } else {
-        toast.error(result.error || '提交失败，请重试');
+        toast.error(result.error || 'Submission failed. Please try again.');
       }
     } catch {
-      toast.error('提交发生异常，请稍后重试');
+      toast.error('An error occurred. Please try again later.');
     } finally {
       setIsSubmitting(false);
     }
@@ -342,7 +342,7 @@ export default function FeedbackPage() {
       ...currentDrafts,
       [id]: status,
     }));
-    toast.success(`已切换为${getStatusLabel(status)}`);
+    toast.success(`Status changed to ${getStatusLabel(status)}`);
   };
 
   const handleReplySave = async (id: string): Promise<void> => {
@@ -359,12 +359,12 @@ export default function FeedbackPage() {
         adminReply: replyDraft,
       });
       if (!result.success) {
-        toast.error(result.error || '保存回复失败');
+        toast.error(result.error || 'Failed to save reply');
         return;
       }
       const items: readonly PublicFeedbackItem[] = await listPublicFeedback();
       applyFeedbackList(items);
-      toast.success(replyDraft ? '回复已保存并公开展示' : '已清空回复并更新公开展示');
+      toast.success(replyDraft ? 'Reply saved and publicly displayed' : 'Reply cleared and public display updated');
     } finally {
       setPendingReplySaveId(null);
     }
@@ -374,7 +374,7 @@ export default function FeedbackPage() {
     if (!IS_DEVELOPMENT) {
       return;
     }
-    const shouldDelete: boolean = window.confirm('确认删除这条反馈吗？此操作会真实删除数据库记录。');
+    const shouldDelete: boolean = window.confirm('Are you sure you want to delete this feedback? This will permanently remove the database record.');
     if (!shouldDelete) {
       return;
     }
@@ -382,7 +382,7 @@ export default function FeedbackPage() {
     try {
       const result: { readonly success: boolean; readonly error?: string } = await deleteFeedbackForDevelopment(id);
       if (!result.success) {
-        toast.error(result.error || '删除反馈失败');
+        toast.error(result.error || 'Failed to delete feedback');
         return;
       }
       setFeedbackList((currentItems: readonly PublicFeedbackItem[]) => currentItems.filter((item: PublicFeedbackItem) => item.id !== id));
@@ -396,7 +396,7 @@ export default function FeedbackPage() {
         delete nextDrafts[id];
         return nextDrafts;
       });
-      toast.success('反馈已删除');
+      toast.success('Feedback deleted');
     } finally {
       setPendingDeleteId(null);
     }
@@ -406,32 +406,32 @@ export default function FeedbackPage() {
     <div className="w-full px-6 py-8 sm:px-8 sm:py-10 lg:px-10">
       <div className="mb-6 max-w-4xl space-y-2">
         <div className="inline-flex items-center rounded-full bg-violet-50 px-3 py-1 text-xs font-semibold text-violet-700">
-          产品反馈中心
+          Feedback Center
         </div>
-        <h1 className="text-2xl font-bold text-slate-900">用户反馈</h1>
-        <p className="text-sm leading-6 text-slate-600">提交问题或建议，我会尽快跟进处理。</p>
+        <h1 className="text-2xl font-bold text-slate-900">User Feedback</h1>
+        <p className="text-sm leading-6 text-slate-600">Submit issues or suggestions. We will follow up as soon as possible.</p>
       </div>
 
       <div className="max-w-4xl space-y-8">
         <section className="rounded-2xl border border-slate-200 bg-white px-4 py-5 shadow-sm sm:px-6 sm:py-6">
           <div className="mb-5 space-y-1">
             <div>
-              <h2 className="text-lg font-semibold text-slate-900">提交新的反馈</h2>
-              <p className="mt-1 text-sm text-slate-500">支持文字和截图附件。</p>
+              <h2 className="text-lg font-semibold text-slate-900">Submit New Feedback</h2>
+              <p className="mt-1 text-sm text-slate-500">Supports text and screenshot attachments.</p>
             </div>
           </div>
-        {/* 反馈内容区 */}
+        {/* Feedback content area */}
         <div className="flex flex-col gap-3 sm:gap-4">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold text-slate-700">反馈内容</span>
+            <span className="text-sm font-semibold text-slate-700">Feedback Content</span>
             <span className="text-rose-500">*</span>
-            <span className="text-xs text-slate-400">最多 {MAX_CHARS} 字</span>
+            <span className="text-xs text-slate-400">Max {MAX_CHARS} characters</span>
           </div>
           <div>
             <div className="border border-slate-200 rounded-lg overflow-hidden focus-within:border-indigo-400 focus-within:ring-1 focus-within:ring-indigo-400 transition-all bg-white">
               <textarea
                 className="w-full min-h-[180px] p-4 outline-none resize-none text-slate-700 placeholder:text-slate-400 leading-relaxed"
-                placeholder="请描述你在操作过程中遇到的问题。信息越详细，越有助于我们为你解决问题哦"
+                placeholder="Please describe the issue you encountered. The more detail, the better we can help."
                 value={content}
                 onChange={(e) => setContent(e.target.value.slice(0, MAX_CHARS))}
                 onPaste={handlePaste}
@@ -450,7 +450,7 @@ export default function FeedbackPage() {
                   className="flex items-center gap-1.5 text-indigo-600 hover:text-indigo-700 text-sm font-medium px-2 py-1 rounded hover:bg-indigo-50 transition-colors"
                 >
                   <Paperclip className="w-4 h-4" />
-                  <span>添加附件</span>
+                  <span>Add Attachment</span>
                 </button>
                 <input
                   type="file"
@@ -474,7 +474,7 @@ export default function FeedbackPage() {
                         setAttachment(null);
                       }}
                       className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                      title="移除附件"
+                      title="Remove attachment"
                     >
                       <X className="w-5 h-5 text-white" />
                     </button>
@@ -482,40 +482,40 @@ export default function FeedbackPage() {
                 )}
                 
                 <div className="text-xs leading-5 text-slate-400 ml-auto flex-1 min-w-[200px] text-right">
-                  支持粘贴截图，限制 {MAX_FILE_SIZE_MB}MB 内
+                  Supports pasting screenshots, max {MAX_FILE_SIZE_MB}MB
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* 联系方式 */}
+        {/* Contact info */}
         <div className="flex flex-col gap-3 sm:gap-4 mt-6">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold text-slate-700">联系方式</span>
-            <span className="text-xs text-slate-400">选填</span>
+            <span className="text-sm font-semibold text-slate-700">Contact Info</span>
+            <span className="text-xs text-slate-400">Optional</span>
           </div>
           <div>
             <input
               type="text"
               className="w-full px-4 py-3 border border-slate-200 rounded-lg outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 transition-all text-slate-700 placeholder:text-slate-400 bg-white"
-              placeholder="可留下您的邮箱、手机号或微信号"
+              placeholder="Leave your email or phone number"
               value={contact}
               onChange={(e) => setContact(e.target.value)}
             />
           </div>
         </div>
 
-        {/* 提交按钮 */}
+        {/* Submit button */}
         <div className="flex flex-col gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:items-center sm:justify-between">
-          <div className="text-sm text-slate-500">提交后会显示在反馈广场中。</div>
+          <div className="text-sm text-slate-500">Your feedback will appear in the public feedback board.</div>
           <div className="text-center sm:text-left">
             <Button
               onClick={handleSubmit}
               disabled={isSubmitting || !content.trim()}
               className="w-full sm:w-40 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl h-11 shadow-sm"
             >
-              {isSubmitting ? '提交中...' : '提交反馈'}
+              {isSubmitting ? 'Submitting...' : 'Submit Feedback'}
             </Button>
           </div>
         </div>
@@ -525,15 +525,15 @@ export default function FeedbackPage() {
           <div className="mb-6 flex flex-col gap-4 border-t border-slate-200 pt-6 sm:flex-row sm:items-start sm:justify-between">
             <div className="space-y-2">
               <div className="flex flex-wrap items-center gap-2">
-                <h2 className="text-xl font-semibold text-slate-900">共 {feedbackList.length} 条反馈</h2>
+                <h2 className="text-xl font-semibold text-slate-900">{feedbackList.length} Feedback Items</h2>
                 {IS_DEVELOPMENT ? (
                   <span className="inline-flex items-center rounded-full border border-violet-200 bg-violet-50 px-3 py-1 text-xs font-semibold text-violet-700">
-                    开发模式管理已启用
+                    Dev Mode Management Enabled
                   </span>
                 ) : null}
               </div>
               {IS_DEVELOPMENT ? (
-                <p className="text-sm text-slate-500">你可以在每条反馈卡片中直接测试回复与状态展示，并执行真实删除操作。</p>
+                <p className="text-sm text-slate-500">You can test replies and status display directly in each feedback card, and perform real delete operations.</p>
               ) : null}
             </div>
             <div className="inline-flex items-center gap-2 self-start rounded-full bg-slate-100 p-1">
@@ -542,14 +542,14 @@ export default function FeedbackPage() {
                   onClick={(): void => setSortKey('hot')}
                   className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${sortKey === 'hot' ? 'bg-slate-300 text-slate-900' : 'text-slate-600 hover:text-slate-900'}`}
                 >
-                  热度
+                  Hot
                 </button>
                 <button
                   type="button"
                   onClick={(): void => setSortKey('latest')}
                   className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${sortKey === 'latest' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
                 >
-                  最新
+                  Latest
                 </button>
             </div>
           </div>
@@ -557,13 +557,13 @@ export default function FeedbackPage() {
           <div className="space-y-5">
             {isLoadingFeedbackList ? (
               <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-6 py-12 text-center text-slate-500">
-                正在加载反馈广场...
+                Loading feedback...
               </div>
             ) : null}
 
             {!isLoadingFeedbackList && sortedFeedbackList.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-6 py-12 text-center text-slate-500">
-                暂无公开反馈，提交后即可在这里查看动态。
+                No public feedback yet. Submit feedback to see it here.
               </div>
             ) : null}
 

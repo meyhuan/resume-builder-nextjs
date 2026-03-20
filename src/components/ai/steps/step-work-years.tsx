@@ -21,7 +21,7 @@ export const StepWorkYears = ({ stepNumber, onClickPast }: { stepNumber: number;
   };
 
   return (
-    <StepCard stepNumber={stepNumber} title="请选择经历的工作年限" onClickPast={onClickPast}>
+    <StepCard stepNumber={stepNumber} title="Select Your Experience Level" onClickPast={onClickPast}>
        <div className="space-y-6">
         <ChipGroup
           options={WORK_YEARS_OPTIONS}

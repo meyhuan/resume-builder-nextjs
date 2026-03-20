@@ -30,7 +30,7 @@ export default function SortableBlockWrapper(props: SortableBlockWrapperProps): 
     <div ref={setNodeRef} style={style}>
       {isDragging ? (
         <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded p-4 flex items-center justify-center min-h-[60px]">
-          <span className="text-gray-400 font-medium text-xs">移动到此处</span>
+          <span className="text-gray-400 font-medium text-xs">Drop here</span>
         </div>
       ) : (
         children({

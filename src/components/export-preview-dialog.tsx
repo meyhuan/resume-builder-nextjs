@@ -39,10 +39,10 @@ export default function ExportPreviewDialog({
         <DialogHeader className="px-5 pt-4 pb-3 border-b border-slate-200 shrink-0">
           <div className="flex items-center gap-2">
             <Eye className="h-4 w-4 text-violet-500" />
-            <DialogTitle className="text-base">导出效果预览</DialogTitle>
+            <DialogTitle className="text-base">Export Preview</DialogTitle>
           </div>
           <DialogDescription className="text-xs text-slate-400 mt-1">
-            以下为实际生成的 PDF，确认无误后点击导出
+            Preview of the generated PDF. Confirm before exporting.
           </DialogDescription>
         </DialogHeader>
 
@@ -52,7 +52,7 @@ export default function ExportPreviewDialog({
             <iframe
               src={pdfUrl}
               className="w-full h-full border-0"
-              title="PDF 预览"
+              title="PDF Preview"
             />
           ) : null}
         </div>
@@ -60,7 +60,7 @@ export default function ExportPreviewDialog({
         {/* Footer */}
         <DialogFooter className="px-5 py-3 border-t border-slate-200 shrink-0 bg-white/80 flex-row items-center">
           <p className="text-[11px] text-slate-400 mr-auto hidden sm:block">
-            提示：每次导出都会消耗导出次数，请确认后再导出
+            Tip: Please review the PDF carefully before exporting.
           </p>
           <Button
             variant="ghost"
@@ -68,7 +68,7 @@ export default function ExportPreviewDialog({
             className="h-8 px-3 text-xs"
             onClick={() => onOpenChange(false)}
           >
-            取消
+            Cancel
           </Button>
           <Button
             size="sm"
@@ -76,7 +76,7 @@ export default function ExportPreviewDialog({
             onClick={onConfirmExport}
           >
             <Download className="h-3.5 w-3.5 mr-1.5" />
-            确认导出 PDF
+            Export PDF
           </Button>
         </DialogFooter>
       </DialogContent>

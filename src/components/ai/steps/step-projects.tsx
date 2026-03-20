@@ -28,7 +28,7 @@ export const StepProjects = ({ stepNumber, title, options, onClickPast }: StepPr
   return (
     <StepCard 
       stepNumber={stepNumber} 
-      title={title || "请选出您参与过哪些项目 (可多选)"}
+      title={title || "Select projects you've worked on (multi-select)"}
       onSkip={handleNext}
       onClickPast={onClickPast}
     >
@@ -62,7 +62,7 @@ export const StepProjects = ({ stepNumber, title, options, onClickPast }: StepPr
                 onClick={handleNext}
                 className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white px-6 py-2 rounded-lg text-sm font-medium transition-colors"
              >
-                确认
+                Confirm
              </button>
           </div>
         )}

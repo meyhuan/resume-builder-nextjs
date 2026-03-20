@@ -1,18 +1,18 @@
 /**
  * V2 Template Components - Style-Driven Architecture
  * 
- * 完全解耦的组件系统，支持无限模板扩展
+ * Fully decoupled component system supporting unlimited template extensions.
  */
 
-// 组件导出
+// Component exports
 export { default as BaseInfoSection } from './base-info-section'
 export { default as JobIntentionSection } from './job-intention-section'
 export { default as BlockRenderer } from './block-renderer'
 export { default as SectionContainer } from './section-container'
 
-// 类型导出
+// Type exports
 export type {
-  // 样式配置类型
+  // Style configuration types
   BaseInfoSectionStyles,
   JobIntentionSectionStyles,
   BlockRendererStyles,
@@ -22,18 +22,18 @@ export type {
   LayoutStyles,
   LayoutType,
   
-  // 渲染函数类型
+  // Render function types
   BaseInfoRenderProps,
   JobIntentionRenderProps,
   BlockRenderProps,
   
-  // 插槽类型
+  // Slot types
   BaseInfoSlots,
   JobIntentionSlots,
   BlockSlots,
 } from './types'
 
-// Props 类型导出
+// Props type exports
 export type { BaseInfoSectionProps } from './base-info-section'
 export type { JobIntentionSectionProps } from './job-intention-section'
 export type { BlockRendererProps } from './block-renderer'

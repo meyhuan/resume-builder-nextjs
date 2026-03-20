@@ -9,7 +9,7 @@ type BlockCreator = (idFn: (prefix: string) => UUID) => ResumeBlock;
 /**
  * A single entry in the section-type registry.
  *
- * - `label`    — display name shown in the UI (e.g. "工作经历")
+ * - `label`    — display name shown in the UI (e.g. "Work Experience")
  * - `keywords` — substrings matched against a section title (case-insensitive)
  * - `create`   — factory that produces a default placeholder block
  */
@@ -28,98 +28,98 @@ export interface SectionTypeEntry {
  */
 const SECTION_TYPE_REGISTRY: readonly SectionTypeEntry[] = [
   {
-    label: '工作经历',
-    keywords: ['工作', 'work', 'experience'],
+    label: 'Work Experience',
+    keywords: ['work', 'experience'],
     create: (idFn) => ({
       id: idFn('exp'),
       type: 'experience',
-      company: '公司名称',
-      position: '职位名称',
-      industry: '行业',
-      startDate: '开始时间',
-      endDate: '结束时间',
-      contentHtml: '<p>详细描述你的职责范围、工作内容和工作成果。</p>',
+      company: 'Company Name',
+      position: 'Job Title',
+      industry: 'Industry',
+      startDate: 'Start Date',
+      endDate: 'End Date',
+      contentHtml: '<p>Describe your responsibilities, tasks, and achievements in detail.</p>',
     }),
   },
   {
-    label: '实习经历',
-    keywords: ['实习', 'intern'],
+    label: 'Internship',
+    keywords: ['intern'],
     create: (idFn) => ({
       id: idFn('exp'),
       type: 'experience',
-      company: '公司名称',
-      position: '实习岗位',
-      industry: '行业',
-      startDate: '开始时间',
-      endDate: '结束时间',
-      contentHtml: '<p>描述你的实习内容和收获。</p>',
+      company: 'Company Name',
+      position: 'Intern Title',
+      industry: 'Industry',
+      startDate: 'Start Date',
+      endDate: 'End Date',
+      contentHtml: '<p>Describe your internship responsibilities and what you learned.</p>',
     }),
   },
   {
-    label: '教育经历',
-    keywords: ['教育', 'education'],
+    label: 'Education',
+    keywords: ['education'],
     create: (idFn) => ({
       id: idFn('edu'),
       type: 'education',
-      school: '学校名称',
-      major: '专业',
-      degree: '学历',
-      startDate: '开始时间',
-      endDate: '结束时间',
-      courseHtml: '<p>大学之前的教育经历建议不写，尽量写与求职行业或者求职岗位相关的课程。</p>',
+      school: 'School Name',
+      major: 'Major',
+      degree: 'Degree',
+      startDate: 'Start Date',
+      endDate: 'End Date',
+      courseHtml: '<p>List relevant coursework related to your target industry or role.</p>',
     }),
   },
   {
-    label: '项目经历',
-    keywords: ['项目', 'project'],
+    label: 'Projects',
+    keywords: ['project'],
     create: (idFn) => ({
       id: idFn('proj'),
       type: 'project',
-      name: '项目名称',
-      role: '项目角色',
-      startDate: '开始时间',
-      endDate: '结束时间',
-      contentHtml: '<p>描述你参与的项目及你在项目中所做的工作。</p>',
+      name: 'Project Name',
+      role: 'Your Role',
+      startDate: 'Start Date',
+      endDate: 'End Date',
+      contentHtml: '<p>Describe the project and your contributions.</p>',
     }),
   },
   {
-    label: '在校经历',
-    keywords: ['在校', '校园', 'school', 'campus'],
+    label: 'Campus Experience',
+    keywords: ['school', 'campus'],
     create: (idFn) => ({
       id: idFn('campus'),
       type: 'campus',
-      organization: '组织名称',
-      position: '职务',
-      startDate: '开始时间',
-      endDate: '结束时间',
-      contentHtml: '<p>描述你在校园活动中的角色和贡献。</p>',
+      organization: 'Organization Name',
+      position: 'Role',
+      startDate: 'Start Date',
+      endDate: 'End Date',
+      contentHtml: '<p>Describe your role and contributions in campus activities.</p>',
     }),
   },
   {
-    label: '相关技能',
-    keywords: ['技能', 'skill'],
+    label: 'Skills',
+    keywords: ['skill'],
     create: (idFn) => ({
       id: idFn('text'),
       type: 'text',
-      html: '<ul><li>技能1：描述你的熟练程度</li><li>技能2：描述你的熟练程度</li></ul>',
+      html: '<ul><li>Skill 1: Describe your proficiency level</li><li>Skill 2: Describe your proficiency level</li></ul>',
     }),
   },
   {
-    label: '荣誉证书',
-    keywords: ['荣誉', '证书', '资质', 'qualif', 'honor'],
+    label: 'Certifications',
+    keywords: ['qualif', 'honor', 'certif', 'award'],
     create: (idFn) => ({
       id: idFn('text'),
       type: 'text',
-      html: '<p>列出你获得的荣誉证书和资质认证。</p>',
+      html: '<p>List your certifications, honors, and awards.</p>',
     }),
   },
   {
-    label: '自定义模块',
-    keywords: ['自定义', 'custom'],
+    label: 'Custom Section',
+    keywords: ['custom'],
     create: (idFn) => ({
       id: idFn('text'),
       type: 'text',
-      html: '<p>在此输入内容。</p>',
+      html: '<p>Enter your content here.</p>',
     }),
   },
 ];
@@ -151,12 +151,12 @@ export function findSectionType(title: string): SectionTypeEntry | undefined {
 
 /**
  * Returns true if the section is user-renamable (custom or unknown type).
- * Built-in types like 工作经历, 教育经历 etc. are NOT renamable.
+ * Built-in types like Work Experience, Education etc. are NOT renamable.
  */
 export function isCustomSection(title: string): boolean {
   const entry: SectionTypeEntry | undefined = findSectionType(title);
   if (!entry) return true;
-  return entry.label === '自定义模块';
+  return entry.label === 'Custom Section';
 }
 
 /**
@@ -169,5 +169,5 @@ export function createDefaultBlock(
 ): ResumeBlock {
   const entry: SectionTypeEntry | undefined = findSectionType(title);
   if (entry) return entry.create(idFn);
-  return { id: idFn('text'), type: 'text', html: '<p>在此输入内容。</p>' };
+  return { id: idFn('text'), type: 'text', html: '<p>Enter your content here.</p>' };
 }

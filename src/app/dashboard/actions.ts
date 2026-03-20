@@ -12,7 +12,7 @@ export async function createResume() {
   
   const resume = await prisma.resume.create({
     data: {
-      title: "未命名简历",
+      title: "Untitled Resume",
       content: {} as Prisma.InputJsonValue,
       user: { connect: { wxId: userId } },
     }
@@ -53,7 +53,7 @@ export async function duplicateResume(id: string) {
   
   const newResume = await prisma.resume.create({
     data: {
-      title: `${existingResume.title} - 副本`,
+      title: `${existingResume.title} - Copy`,
       content: existingResume.content as Prisma.InputJsonValue,
       template: existingResume.template,
       thumbnail: existingResume.thumbnail,

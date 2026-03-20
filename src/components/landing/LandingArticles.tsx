@@ -38,14 +38,14 @@ export const LandingArticles = ({ id }: ArticlesSectionProps): React.ReactElemen
         <div className="text-center mb-12">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/80 backdrop-blur-sm border border-slate-100 rounded-full shadow-sm mb-5">
             <BookOpen className="w-4 h-4 text-violet-500" />
-            <span className="text-sm font-semibold text-violet-600">求职攻略</span>
+            <span className="text-sm font-semibold text-violet-600">Career Advice</span>
           </div>
           <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-4 tracking-tight">
-            求职路上，
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-fuchsia-500">不走弯路</span>
+            Your Career,
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-fuchsia-500"> Fast-Tracked</span>
           </h2>
           <p className="text-base text-slate-500 max-w-2xl mx-auto">
-            覆盖简历写作、面试技巧、应届求职、职场发展全流程，助你快速拿到心仪 Offer。
+            Covering resume writing, interview tips, graduate job hunting, and career development to help you land your dream offer.
           </p>
         </div>
 
@@ -89,7 +89,7 @@ export const LandingArticles = ({ id }: ArticlesSectionProps): React.ReactElemen
                     </span>
                     <span className="flex items-center gap-1 text-[11px] text-slate-400">
                       <Calendar className="w-3 h-3" />
-                      {new Date(article.createdAt).toLocaleDateString('zh-CN')}
+                      {new Date(article.createdAt).toLocaleDateString('en-US')}
                     </span>
                   </div>
 
@@ -105,7 +105,7 @@ export const LandingArticles = ({ id }: ArticlesSectionProps): React.ReactElemen
 
                   {/* Read more */}
                   <div className="flex items-center gap-1 mt-3 text-xs font-medium text-violet-500 opacity-0 group-hover:opacity-100 transition-opacity">
-                    阅读全文
+                    Read more
                     <ChevronRight className="w-3.5 h-3.5" />
                   </div>
                 </div>
@@ -118,7 +118,7 @@ export const LandingArticles = ({ id }: ArticlesSectionProps): React.ReactElemen
         <div className="text-center mt-12">
           <Link href="/articles">
             <LandingButton variant="glass" size="md" className="rounded-full px-8 inline-flex items-center gap-2">
-              查看全部攻略
+              View All Articles
               <ArrowRight className="w-4 h-4" />
             </LandingButton>
           </Link>

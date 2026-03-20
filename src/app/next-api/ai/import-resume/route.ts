@@ -31,7 +31,7 @@ export async function POST(request: NextRequest): Promise<Response> {
 
     if (!rawText || rawText.trim().length < 10) {
       return NextResponse.json(
-        { error: '请粘贴至少10个字符的简历内容' },
+        { error: 'Please paste at least 10 characters of resume content' },
         { status: 400 },
       );
     }
@@ -97,7 +97,7 @@ export async function POST(request: NextRequest): Promise<Response> {
     });
   } catch (error) {
     const message: string =
-      error instanceof Error ? error.message : '服务器内部错误';
+      error instanceof Error ? error.message : 'Internal server error';
     console.error('[import-resume] Error:', message);
     return NextResponse.json({ error: message }, { status: 500 });
   }

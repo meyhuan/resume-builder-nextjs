@@ -2,7 +2,7 @@
  * RightSidebar — Panel-based sidebar driven by the active toolbar action.
  *
  * Each panel has a title bar with a close (×) button.
- * The 排版美化 panel contains sub-tabs for template switching and theme settings.
+ * The Layout panel contains sub-tabs for template switching and theme settings.
  */
 import type { ReactElement } from 'react'
 import type { ThemeTokens } from '@/entities/theme/theme-tokens'
@@ -33,12 +33,12 @@ export interface RightSidebarProps {
 
 /** Map panel IDs to display titles. */
 const PANEL_TITLES: Record<PanelId, string> = {
-  sections: '模块管理',
-  layout: '排版美化',
-  examples: '参考案例',
-  photo: '证件照',
-  analysis: '智能分析',
-  ai: 'AI一键优化',
+  sections: 'Sections',
+  layout: 'Layout',
+  examples: 'Examples',
+  photo: 'Photo',
+  analysis: 'Analysis',
+  ai: 'AI Optimize',
 }
 
 export default function RightSidebar(props: RightSidebarProps): ReactElement {
@@ -52,7 +52,7 @@ export default function RightSidebar(props: RightSidebarProps): ReactElement {
           <h2 className="text-lg font-bold text-slate-800">{PANEL_TITLES[activePanel]}</h2>
           <button
             type="button"
-            aria-label="关闭侧边栏"
+            aria-label="Close sidebar"
             className="flex h-9 w-9 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
             onClick={onClose}
           >
@@ -78,10 +78,10 @@ export default function RightSidebar(props: RightSidebarProps): ReactElement {
           onImportJson={props.onImportJson}
         />
       )}
-      {activePanel === 'examples' && <PlaceholderPanel text="参考案例功能即将上线" />}
-      {activePanel === 'photo' && <PlaceholderPanel text="证件照功能即将上线" />}
-      {activePanel === 'analysis' && <PlaceholderPanel text="智能分析功能即将上线" />}
-      {activePanel === 'ai' && <PlaceholderPanel text="AI一键优化功能即将上线" />}
+      {activePanel === 'examples' && <PlaceholderPanel text="Examples coming soon" />}
+      {activePanel === 'photo' && <PlaceholderPanel text="Photo feature coming soon" />}
+      {activePanel === 'analysis' && <PlaceholderPanel text="Analysis feature coming soon" />}
+      {activePanel === 'ai' && <PlaceholderPanel text="AI Optimize feature coming soon" />}
     </div>
   )
 }
@@ -95,7 +95,7 @@ function PlaceholderPanel(props: { readonly text: string }): ReactElement {
   )
 }
 
-/** 排版美化 panel — contains template grid + theme settings as sub-tabs. */
+/** Layout panel — contains template grid + theme settings as sub-tabs. */
 interface LayoutPanelProps {
   readonly theme: ThemeTokens
   readonly tpl: string
@@ -112,12 +112,12 @@ function LayoutPanel(props: LayoutPanelProps): ReactElement {
   const { theme, tpl, templates } = props
 
   function handleImportClick(): void {
-    const json = prompt('粘贴 JSON 简历数据：')
+    const json = prompt('Paste JSON resume data:')
     if (json) {
       try {
         props.onImportJson?.(json)
       } catch (e) {
-        alert(`导入失败: ${e}`)
+        alert(`Import failed: ${e}`)
       }
     }
   }
@@ -132,7 +132,7 @@ function LayoutPanel(props: LayoutPanelProps): ReactElement {
               data-[state=active]:bg-white data-[state=active]:text-slate-800 data-[state=active]:shadow-sm
               text-slate-500 hover:text-slate-700 transition-all"
           >
-            切换模板
+            Templates
           </TabsTrigger>
           <TabsTrigger
             value="settings"
@@ -140,7 +140,7 @@ function LayoutPanel(props: LayoutPanelProps): ReactElement {
               data-[state=active]:bg-white data-[state=active]:text-slate-800 data-[state=active]:shadow-sm
               text-slate-500 hover:text-slate-700 transition-all"
           >
-            排版设置
+            Settings
           </TabsTrigger>
         </TabsList>
       </div>
@@ -154,7 +154,7 @@ function LayoutPanel(props: LayoutPanelProps): ReactElement {
                 key={template.id}
                 type="button"
                 aria-pressed={tpl === template.id}
-                aria-label={`选择模板 ${template.name}`}
+                aria-label={`Select template ${template.name}`}
                 className={`group relative cursor-pointer rounded-xl border transition-all duration-200 overflow-hidden ${
                   tpl === template.id
                     ? 'border-violet-500 ring-2 ring-violet-100 shadow-sm bg-white'
@@ -190,7 +190,7 @@ function LayoutPanel(props: LayoutPanelProps): ReactElement {
                 <div className="px-3 py-3 bg-white text-left">
                   <div className="font-semibold text-[15px] leading-5 text-slate-800 line-clamp-1">{template.name}</div>
                   <div className="text-xs font-medium text-slate-500 mt-1">
-                    {template.tags?.[0] || '通用'}
+                    {template.tags?.[0] || 'General'}
                   </div>
                 </div>
               </button>
@@ -205,7 +205,7 @@ function LayoutPanel(props: LayoutPanelProps): ReactElement {
             onClick={handleImportClick}
           >
             <Upload className="h-4 w-4" />
-            导入 JSON 简历
+            Import JSON Resume
           </Button>
         </div>
       </TabsContent>
@@ -232,13 +232,13 @@ function LayoutPanel(props: LayoutPanelProps): ReactElement {
                 size="sm"
                 className="w-full gap-2 text-sm font-semibold h-11 bg-slate-50 rounded-xl border-slate-200 shadow-none text-slate-700 hover:border-slate-300 hover:text-slate-900 hover:bg-white transition-all"
                 onClick={() => {
-                  if (window.confirm('加载测试数据将覆盖当前所有内容，确定吗？')) {
+                  if (window.confirm('Loading test data will overwrite all current content. Are you sure?')) {
                     useAppStore.getState().loadTestData()
                   }
                 }}
               >
                 <Database className="h-3.5 w-3.5" />
-                加载测试数据
+                Load Test Data
               </Button>
             </div>
           )}

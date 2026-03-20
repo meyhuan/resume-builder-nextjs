@@ -1,8 +1,7 @@
 import type { MetadataRoute } from 'next';
 import { getAllArticles } from '@/lib/articles/article-data';
 import { templateRoleData } from '@/lib/templates/template-role-data';
-
-const SITE_URL = 'https://aijianli.cn';
+import { SITE_URL } from '@/lib/site-config';
 const STATIC_ROUTES: ReadonlyArray<{
   path: string;
   changeFrequency: MetadataRoute.Sitemap[number]['changeFrequency'];

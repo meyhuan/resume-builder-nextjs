@@ -22,7 +22,7 @@ const AVATAR_ASPECT = 3 / 4
 
 /**
  * Modal dialog that displays an image cropper for avatar selection.
- * Matches the reference design: title "上传头像", crop area, 取消/保存 buttons.
+ * Matches the reference design: title "Upload Avatar", crop area, Cancel/Save buttons.
  */
 export default function AvatarCropModal(props: AvatarCropModalProps): ReactElement {
   const { imageSrc, onSave, onClose } = props
@@ -52,7 +52,7 @@ export default function AvatarCropModal(props: AvatarCropModalProps): ReactEleme
     <Dialog open={true} onOpenChange={(open) => { if (!open) onClose() }}>
       <DialogContent className="max-w-lg p-0 overflow-hidden">
         <DialogHeader className="px-6 pt-5 pb-0 flex flex-row items-center justify-between">
-          <DialogTitle className="text-base font-semibold">上传头像</DialogTitle>
+          <DialogTitle className="text-base font-semibold">Upload Avatar</DialogTitle>
           <button
             type="button"
             className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -79,10 +79,10 @@ export default function AvatarCropModal(props: AvatarCropModalProps): ReactEleme
         {/* Footer buttons */}
         <div className="flex justify-end gap-3 px-6 py-4">
           <Button variant="outline" onClick={onClose} disabled={saving}>
-            取消
+            Cancel
           </Button>
           <Button onClick={handleSave} disabled={saving}>
-            {saving ? '处理中...' : '保存'}
+            {saving ? 'Processing...' : 'Save'}
           </Button>
         </div>
       </DialogContent>

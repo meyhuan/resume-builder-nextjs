@@ -29,13 +29,13 @@ export async function POST(request: Request): Promise<Response> {
     const formData: FormData = await request.formData()
     const fileEntry: FormDataEntryValue | null = formData.get('file')
     if (!(fileEntry instanceof File)) {
-      return NextResponse.json({ error: '未检测到上传文件' }, { status: 400 })
+      return NextResponse.json({ error: 'No file detected' }, { status: 400 })
     }
     if (!ALLOWED_MIME_TYPES.includes(fileEntry.type)) {
-      return NextResponse.json({ error: '仅支持 PNG、JPG、WEBP、GIF 图片' }, { status: 400 })
+      return NextResponse.json({ error: 'Only PNG, JPG, WEBP, and GIF images are supported' }, { status: 400 })
     }
     if (fileEntry.size > MAX_FILE_SIZE_BYTES) {
-      return NextResponse.json({ error: '附件大小不能超过 10MB' }, { status: 400 })
+      return NextResponse.json({ error: 'File size cannot exceed 10MB' }, { status: 400 })
     }
     const arrayBuffer: ArrayBuffer = await fileEntry.arrayBuffer()
     const uploadResult = await uploadFeedbackAttachment({
@@ -46,6 +46,6 @@ export async function POST(request: Request): Promise<Response> {
     return NextResponse.json({ url: uploadResult.url })
   } catch (error) {
     console.error('Failed to upload feedback attachment:', error)
-    return NextResponse.json({ error: '上传附件失败，请稍后重试' }, { status: 500 })
+    return NextResponse.json({ error: 'Failed to upload attachment. Please try again later.' }, { status: 500 })
   }
 }

@@ -32,7 +32,7 @@ export async function POST(request: NextRequest): Promise<Response> {
 
     if (!wizardData?.identity || !wizardData?.targetRole) {
       return NextResponse.json(
-        { error: '缺少必填字段：identity 和 targetRole' },
+        { error: 'Missing required fields: identity and targetRole' },
         { status: 400 },
       );
     }
@@ -98,7 +98,7 @@ export async function POST(request: NextRequest): Promise<Response> {
     });
   } catch (error) {
     const message: string =
-      error instanceof Error ? error.message : '服务器内部错误';
+      error instanceof Error ? error.message : 'Internal server error';
     console.error('[generate-resume] Error:', message);
     return NextResponse.json({ error: message }, { status: 500 });
   }

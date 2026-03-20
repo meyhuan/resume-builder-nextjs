@@ -25,10 +25,10 @@ interface PhaseConfig {
 type ShowcasePhase = 'ai-generate' | 'theme-switch' | 'template-switch' | 'section-manage';
 
 const PHASES: readonly PhaseConfig[] = [
-  { id: 'ai-generate', label: 'AI 智能生成', icon: Wand2 },
-  { id: 'theme-switch', label: '主题配色', icon: Palette },
-  { id: 'template-switch', label: '模板切换', icon: Layers },
-  { id: 'section-manage', label: '模块管理', icon: LayoutList },
+  { id: 'ai-generate', label: 'AI Generate', icon: Wand2 },
+  { id: 'theme-switch', label: 'Theme Colors', icon: Palette },
+  { id: 'template-switch', label: 'Templates', icon: Layers },
+  { id: 'section-manage', label: 'Sections', icon: LayoutList },
 ];
 
 const PHASE_DURATION_MS = 5000;
@@ -43,26 +43,26 @@ interface ResumeLine {
 }
 
 const RESUME_LINES: readonly ResumeLine[] = [
-  { type: 'name', text: '张小明' },
-  { type: 'subtitle', text: '前端开发工程师 · 3年经验' },
-  { type: 'contact', text: 'xiaoming@email.com · 138-0000-0000 · 北京' },
-  { type: 'section', text: '教育背景' },
-  { type: 'entry', text: '北京大学 — 计算机科学与技术 (本科)' },
+  { type: 'name', text: 'John Smith' },
+  { type: 'subtitle', text: 'Frontend Developer · 3 Years Experience' },
+  { type: 'contact', text: 'john@email.com · +1 555-0100 · San Francisco' },
+  { type: 'section', text: 'Education' },
+  { type: 'entry', text: 'Stanford University — Computer Science (B.S.)' },
   { type: 'detail', text: '2018.09 - 2022.06  |  GPA: 3.8/4.0' },
-  { type: 'section', text: '工作经历' },
-  { type: 'entry', text: '字节跳动 — 高级前端工程师' },
-  { type: 'detail', text: '• 负责抖音创作者后台核心模块开发与性能优化' },
-  { type: 'detail', text: '• 主导前端架构升级，首屏加载速度提升 40%' },
-  { type: 'detail', text: '• 带领 5 人小组完成直播数据看板从 0 到 1 搭建' },
-  { type: 'section', text: '技能特长' },
+  { type: 'section', text: 'Work Experience' },
+  { type: 'entry', text: 'Google — Senior Frontend Engineer' },
+  { type: 'detail', text: '• Led core module development and performance optimization for creator dashboard' },
+  { type: 'detail', text: '• Spearheaded frontend architecture upgrade, improving initial load speed by 40%' },
+  { type: 'detail', text: '• Led a 5-person team to build live data dashboard from scratch' },
+  { type: 'section', text: 'Skills' },
   { type: 'skill', text: 'React · TypeScript · Next.js · Vue · Node.js · TailwindCSS' },
 ];
 
 /** Section names for drag demo */
-const SECTIONS: readonly string[] = ['个人信息', '教育背景', '工作经历', '项目经历', '技能特长'];
+const SECTIONS: readonly string[] = ['Personal Info', 'Education', 'Work Experience', 'Projects', 'Skills'];
 
 /** Template names */
-const TEMPLATE_NAMES: readonly string[] = ['简约', '专业', '现代', '创意'];
+const TEMPLATE_NAMES: readonly string[] = ['Simple', 'Professional', 'Modern', 'Creative'];
 
 /** Toolbar item definition */
 interface ToolbarItem {
@@ -70,10 +70,10 @@ interface ToolbarItem {
 }
 
 const TOOLBAR_ITEMS: readonly ToolbarItem[] = [
-  { label: '模块管理' },
-  { label: '排版美化' },
-  { label: '参考案例' },
-  { label: 'AI优化' },
+  { label: 'Sections' },
+  { label: 'Styling' },
+  { label: 'Examples' },
+  { label: 'AI Optimize' },
 ];
 
 /**
@@ -144,11 +144,11 @@ export const EditorShowcase = (): ReactElement => {
   // Determine which toolbar item is highlighted based on phase
   const activeToolbar: string =
     phase.id === 'section-manage'
-      ? '模块管理'
+      ? 'Sections'
       : phase.id === 'theme-switch' || phase.id === 'template-switch'
-        ? '排版美化'
+        ? 'Styling'
         : phase.id === 'ai-generate'
-          ? 'AI优化'
+          ? 'AI Optimize'
           : '';
 
   return (
@@ -167,7 +167,7 @@ export const EditorShowcase = (): ReactElement => {
               <svg className="w-3 h-3 text-green-500" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
               </svg>
-              aijianli.cn/editor
+              airesumepass.com/editor
             </div>
           </div>
         </div>
@@ -177,13 +177,13 @@ export const EditorShowcase = (): ReactElement => {
           {/* Left: nav + title */}
           <div className="flex items-center gap-1 shrink-0">
             <span className="text-slate-400 text-[10px] flex items-center gap-0.5 px-1.5 py-0.5 rounded">
-              <ArrowLeft className="w-3 h-3" /> 返回
+              <ArrowLeft className="w-3 h-3" /> Back
             </span>
             <div className="h-3.5 w-px bg-slate-200 mx-0.5" />
             <Undo2 className="w-3 h-3 text-slate-300 mx-0.5" />
             <Redo2 className="w-3 h-3 text-slate-300 mx-0.5" />
             <div className="h-3.5 w-px bg-slate-200 mx-0.5" />
-            <span className="text-[10px] font-medium text-slate-600 truncate hidden sm:inline">张小明的简历</span>
+            <span className="text-[10px] font-medium text-slate-600 truncate hidden sm:inline">John's Resume</span>
             <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full ml-0.5" />
           </div>
           {/* Center: toolbar actions */}
@@ -205,10 +205,10 @@ export const EditorShowcase = (): ReactElement => {
           </div>
           {/* Right: save + export */}
           <div className="flex items-center gap-1 shrink-0">
-            <span className="text-[9px] text-emerald-500 hidden lg:inline mr-0.5">已保存</span>
+            <span className="text-[9px] text-emerald-500 hidden lg:inline mr-0.5">Saved</span>
             <Save className="w-3 h-3 text-slate-300" />
             <FileDown className="w-3 h-3 text-slate-300" />
-            <span className="px-2 py-0.5 text-[9px] font-medium bg-[#8B5CF6] text-white rounded hidden sm:inline">下载简历</span>
+            <span className="px-2 py-0.5 text-[9px] font-medium bg-[#8B5CF6] text-white rounded hidden sm:inline">Download</span>
           </div>
         </div>
 
@@ -242,7 +242,7 @@ export const EditorShowcase = (): ReactElement => {
                             className="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0 transition-colors duration-700"
                             style={{ backgroundColor: themeColor }}
                           >
-                            张
+                            J
                           </div>
                           <div className="text-sm font-bold text-slate-800">{line.text}</div>
                         </div>
@@ -301,11 +301,11 @@ export const EditorShowcase = (): ReactElement => {
             {/* AI Generate sidebar */}
             {phase.id === 'ai-generate' && (
               <div className="space-y-3 animate-in fade-in duration-300">
-                <div className="text-[11px] font-semibold text-slate-700">AI 智能生成</div>
+                <div className="text-[11px] font-semibold text-slate-700">AI Generation</div>
                 <div className="bg-[#8B5CF6]/5 border border-[#8B5CF6]/20 rounded-xl p-3 space-y-2">
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-[#8B5CF6] rounded-full animate-pulse" />
-                    <span className="text-[10px] font-medium text-[#8B5CF6]">AI 正在生成内容...</span>
+                    <span className="text-[10px] font-medium text-[#8B5CF6]">AI is generating content...</span>
                   </div>
                   <div className="w-full bg-[#8B5CF6]/10 rounded-full h-1.5 overflow-hidden">
                     <div
@@ -314,11 +314,11 @@ export const EditorShowcase = (): ReactElement => {
                     />
                   </div>
                   <div className="text-[9px] text-slate-400 leading-relaxed">
-                    基于你的信息，AI 正在为你生成专业简历内容
+                    Based on your info, AI is generating professional resume content
                   </div>
                 </div>
                 <div className="space-y-1.5">
-                  {['分析岗位需求', '匹配个人优势', '优化措辞表达'].map((step, i) => {
+                  {['Analyzing job requirements', 'Matching strengths', 'Optimizing wording'].map((step, i) => {
                     const completed: boolean = i <= Math.floor(typingLine / 4);
                     return (
                       <div key={step} className="flex items-center gap-2 text-[10px]">
@@ -342,8 +342,8 @@ export const EditorShowcase = (): ReactElement => {
             {/* Theme switch sidebar */}
             {phase.id === 'theme-switch' && (
               <div className="space-y-3 animate-in fade-in duration-300">
-                <div className="text-[11px] font-semibold text-slate-700">色彩风格</div>
-                <div className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">主题主色</div>
+                <div className="text-[11px] font-semibold text-slate-700">Color Style</div>
+                <div className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">Theme Color</div>
                 <div className="grid grid-cols-5 gap-2">
                   {THEME_COLORS.map((color, i) => (
                     <div
@@ -361,7 +361,7 @@ export const EditorShowcase = (): ReactElement => {
                 <div className="space-y-3 pt-2">
                   <div>
                     <div className="flex items-center justify-between text-[10px] mb-1.5">
-                      <span className="font-medium text-slate-600">行高</span>
+                      <span className="font-medium text-slate-600">Line Height</span>
                       <span className="text-[#8B5CF6] font-mono bg-[#8B5CF6]/10 px-1 rounded text-[9px]">1.6</span>
                     </div>
                     <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
@@ -370,7 +370,7 @@ export const EditorShowcase = (): ReactElement => {
                   </div>
                   <div>
                     <div className="flex items-center justify-between text-[10px] mb-1.5">
-                      <span className="font-medium text-slate-600">间距</span>
+                      <span className="font-medium text-slate-600">Spacing</span>
                       <span className="text-blue-500 font-mono bg-blue-500/10 px-1 rounded text-[9px]">1.2x</span>
                     </div>
                     <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
@@ -384,7 +384,7 @@ export const EditorShowcase = (): ReactElement => {
             {/* Template switch sidebar */}
             {phase.id === 'template-switch' && (
               <div className="space-y-3 animate-in fade-in duration-300">
-                <div className="text-[11px] font-semibold text-slate-700">切换模板</div>
+                <div className="text-[11px] font-semibold text-slate-700">Switch Template</div>
                 <div className="grid grid-cols-2 gap-2">
                   {TEMPLATE_NAMES.map((name, i) => (
                     <div
@@ -425,7 +425,7 @@ export const EditorShowcase = (): ReactElement => {
             {/* Section manage sidebar */}
             {phase.id === 'section-manage' && (
               <div className="space-y-3 animate-in fade-in duration-300">
-                <div className="text-[11px] font-semibold text-slate-700">模块管理</div>
+                <div className="text-[11px] font-semibold text-slate-700">Section Manager</div>
                 <div className="space-y-1.5">
                   {SECTIONS.map((section, i) => (
                     <div
@@ -441,7 +441,7 @@ export const EditorShowcase = (): ReactElement => {
                     </div>
                   ))}
                 </div>
-                <div className="text-[9px] text-slate-400 text-center font-medium">拖拽调整模块顺序</div>
+                <div className="text-[9px] text-slate-400 text-center font-medium">Drag to reorder sections</div>
               </div>
             )}
           </div>
@@ -459,8 +459,8 @@ export const EditorShowcase = (): ReactElement => {
             <Wand2 className="w-4 h-4 text-[#8B5CF6]" />
           </div>
           <div>
-            <div className="text-[10px] text-slate-500">生成耗时</div>
-            <div className="text-xs font-bold text-slate-800">仅需 3 分钟</div>
+            <div className="text-[10px] text-slate-500">Generation time</div>
+            <div className="text-xs font-bold text-slate-800">Just 3 minutes</div>
           </div>
         </div>
       </div>
@@ -475,8 +475,8 @@ export const EditorShowcase = (): ReactElement => {
             <Palette className="w-4 h-4 text-blue-500" />
           </div>
           <div>
-            <div className="text-[10px] text-slate-500">自由定制</div>
-            <div className="text-xs font-bold text-slate-800">一键换色</div>
+            <div className="text-[10px] text-slate-500">Customize freely</div>
+            <div className="text-xs font-bold text-slate-800">One-click colors</div>
           </div>
         </div>
       </div>
@@ -491,8 +491,8 @@ export const EditorShowcase = (): ReactElement => {
             <Layers className="w-4 h-4 text-emerald-500" />
           </div>
           <div>
-            <div className="text-[10px] text-slate-500">多款模板</div>
-            <div className="text-xs font-bold text-slate-800">随心切换</div>
+            <div className="text-[10px] text-slate-500">Multiple templates</div>
+            <div className="text-xs font-bold text-slate-800">Switch freely</div>
           </div>
         </div>
       </div>
@@ -507,8 +507,8 @@ export const EditorShowcase = (): ReactElement => {
             <LayoutList className="w-4 h-4 text-amber-500" />
           </div>
           <div>
-            <div className="text-[10px] text-slate-500">拖拽排序</div>
-            <div className="text-xs font-bold text-slate-800">灵活管理</div>
+            <div className="text-[10px] text-slate-500">Drag & drop</div>
+            <div className="text-xs font-bold text-slate-800">Flexible management</div>
           </div>
         </div>
       </div>

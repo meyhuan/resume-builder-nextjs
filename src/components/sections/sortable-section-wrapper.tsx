@@ -47,7 +47,7 @@ export default function SortableSectionWrapper(props: SortableSectionWrapperProp
           className="bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center"
           style={{ height: contentHeight > 0 ? `${contentHeight}px` : '80px' }}
         >
-          <span className="text-gray-500 font-medium text-sm">移动到此处</span>
+          <span className="text-gray-500 font-medium text-sm">Drop here</span>
         </div>
       ) : (
         <div ref={contentRef}>

@@ -1,15 +1,15 @@
 /**
- * Timeline 模板样式配置
+ * Timeline template style configuration.
  *
- * 时间轴风格：左侧日期 + 右侧内容，竖线贯穿，
- * 灰色调简洁排版，参考经典中文简历时间轴设计。
+ * Timeline style: left dates + right content, vertical line through,
+ * gray-toned clean layout, classic timeline design.
  */
 
 import type { TemplateStylesConfig } from '@/templates/components/v2/types'
 
 export const TIMELINE_TEMPLATE_STYLES: TemplateStylesConfig = {
   name: 'timeline',
-  description: '时间轴风格 - 左侧日期 + 右侧内容，竖线贯穿',
+  description: 'Timeline style - left dates + right content, vertical line through',
 
   baseInfo: {
     container: 'pb-5 flex items-start gap-6 relative group cursor-pointer print:cursor-default',

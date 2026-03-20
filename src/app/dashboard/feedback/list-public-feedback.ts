@@ -30,7 +30,7 @@ export async function listPublicFeedback(): Promise<readonly PublicFeedbackItem[
     id: item.id,
     content: item.content,
     status: item.status ?? 'RECEIVED',
-    displayName: '微信用户',
+    displayName: 'User',
     createdAt: item.createdAt.toISOString(),
     likeCount: item.likeCount ?? 0,
     attachment: item.attachment,

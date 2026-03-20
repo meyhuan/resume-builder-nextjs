@@ -30,12 +30,12 @@ interface ToolbarAction {
 }
 
 const TOOLBAR_ACTIONS: ToolbarAction[] = [
-  { id: 'sections', label: '模块管理', icon: <LayoutList className="h-3.5 w-3.5" /> },
-  { id: 'layout', label: '排版美化', icon: <Sparkles className="h-3.5 w-3.5" /> },
-  { id: 'examples', label: '参考案例', icon: <BookOpen className="h-3.5 w-3.5" /> },
-  { id: 'photo', label: '证件照', icon: <ImageIcon className="h-3.5 w-3.5" /> },
-  { id: 'analysis', label: '智能分析', icon: <BarChart3 className="h-3.5 w-3.5" /> },
-  { id: 'ai', label: 'AI一键优化', icon: <Wand2 className="h-3.5 w-3.5" /> },
+  { id: 'sections', label: 'Sections', icon: <LayoutList className="h-3.5 w-3.5" /> },
+  { id: 'layout', label: 'Layout', icon: <Sparkles className="h-3.5 w-3.5" /> },
+  { id: 'examples', label: 'Examples', icon: <BookOpen className="h-3.5 w-3.5" /> },
+  { id: 'photo', label: 'Photo', icon: <ImageIcon className="h-3.5 w-3.5" /> },
+  { id: 'analysis', label: 'Analysis', icon: <BarChart3 className="h-3.5 w-3.5" /> },
+  { id: 'ai', label: 'AI Optimize', icon: <Wand2 className="h-3.5 w-3.5" /> },
 ]
 
 export interface EditorToolbarProps {

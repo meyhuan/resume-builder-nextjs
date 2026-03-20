@@ -61,20 +61,20 @@ type TemplateRoleDataApi = {
 };
 
 const CURATED_ROLE_NAMES: readonly string[] = [
-  '产品助理', '产品策划', '产品经理', '游戏策划', '前端开发', '后端开发', '测试', '移动开发', '运维', 'DBA',
-  '硬件开发', 'UI交互设计', '平面设计', '网页设计', '游戏原画', '游戏场景', '游戏特效设计', '产品运营', '内容运营', '新媒体运营', '活动运营', '用户运营', '客服',
-  '品牌公关', '商务合作', '市场调研', '营销推广', '广告优化', '广告执行', '广告设计', '文案策划', '编辑',
-  '美术编辑', '记者', '主编', '摄影师', '会展策划', '导演', '导演助理', '后期制作', '影视制作', '编导', '美术指导', 'HRBP', '人力资源',
-  '招聘', '培训', '绩效考核', '企业文化', '猎头', '薪酬福利', '前台', '总助', '行政', '文员', '文秘', '课程设计', '课程顾问', '培训讲师', '教务助理', '客户经理', '销售代表',
-  '财务', '会计', '出纳', '审计', '税务', '采购', '供应链', '仓库管理', '物流管理', '跟单', '项目管理',
-  '理财规划', '风险控制', '投资顾问', '证券分析', '银行柜员',
+  'Product Assistant', 'Product Planner', 'Product Manager', 'Game Designer', 'Frontend Developer', 'Backend Developer', 'QA Engineer', 'Mobile Developer', 'DevOps Engineer', 'DBA',
+  'Hardware Engineer', 'UI/UX Designer', 'Graphic Designer', 'Web Designer', 'Game Artist', 'Environment Artist', 'VFX Designer', 'Product Operations', 'Content Operations', 'Social Media Manager', 'Event Manager', 'User Operations', 'Customer Service',
+  'Brand & PR', 'Business Development', 'Market Research', 'Marketing', 'Ad Optimization', 'Ad Operations', 'Ad Designer', 'Copywriter', 'Editor',
+  'Art Editor', 'Journalist', 'Editor-in-Chief', 'Photographer', 'Event Planner', 'Director', 'Director Assistant', 'Post-production', 'Film Production', 'Producer', 'Art Director', 'HRBP', 'Human Resources',
+  'Recruiter', 'Trainer', 'Performance Analyst', 'Culture Specialist', 'Headhunter', 'Compensation & Benefits', 'Receptionist', 'Executive Assistant', 'Admin', 'Clerk', 'Secretary', 'Curriculum Designer', 'Enrollment Advisor', 'Training Instructor', 'Academic Assistant', 'Account Manager', 'Sales Representative',
+  'Finance', 'Accountant', 'Cashier', 'Auditor', 'Tax Specialist', 'Procurement', 'Supply Chain', 'Warehouse Manager', 'Logistics Manager', 'Order Coordinator', 'Project Manager',
+  'Financial Planner', 'Risk Analyst', 'Investment Advisor', 'Securities Analyst', 'Bank Teller',
 ];
 
 const CATEGORY_KEYWORD_MAP: Record<TemplateRoleRecord['articleCategoryId'], readonly string[]> = {
-  'resume-writing': ['简历模板', '项目经历', '工作经历', '亮点表达', '简历优化'],
-  'fresh-graduate': ['应届生简历', '实习经历', '校园经历', '校招求职', '零经验'],
-  'interview-tips': ['面试问题', '自我介绍', '项目复盘', '面试准备', '面试技巧'],
-  'career-guide': ['岗位发展', '职业规划', '转行求职', '行业认知', '职场成长'],
+  'resume-writing': ['resume template', 'project experience', 'work experience', 'highlight skills', 'resume optimization'],
+  'fresh-graduate': ['graduate resume', 'internship experience', 'campus experience', 'campus recruiting', 'no experience'],
+  'interview-tips': ['interview questions', 'self introduction', 'project review', 'interview preparation', 'interview tips'],
+  'career-guide': ['career development', 'career planning', 'career change', 'industry insights', 'professional growth'],
 };
 
 const TEMPLATE_IDS: readonly string[] = templateCatalog.map((template) => template.id);
@@ -101,34 +101,34 @@ function normalizeIncomingSlug(value: string): string {
 }
 
 function buildRoleArticleCategory(industry: string, category: string, role: string): TemplateRoleRecord['articleCategoryId'] {
-  const freshGraduateKeywords: readonly string[] = ['助理', '实习', '校招', '应届'];
-  const interviewKeywords: readonly string[] = ['产品', '开发', '测试', '运维', '设计', '运营', '经理'];
+  const freshGraduateKeywords: readonly string[] = ['Assistant', 'Intern', 'Campus', 'Graduate'];
+  const interviewKeywords: readonly string[] = ['Product', 'Developer', 'QA', 'DevOps', 'Designer', 'Operations', 'Manager'];
   if (freshGraduateKeywords.some((keyword) => role.includes(keyword))) {
     return 'fresh-graduate';
   }
-  if (industry === '互联网通信' || interviewKeywords.some((keyword) => role.includes(keyword))) {
+  if (industry === 'Tech & Internet' || interviewKeywords.some((keyword) => role.includes(keyword))) {
     return 'interview-tips';
   }
-  if (industry === '管理/人力/行政' || industry === '金融投资') {
+  if (industry === 'Management & HR' || industry === 'Finance & Investment') {
     return 'career-guide';
   }
-  if (category === '设计' || category === '媒体' || category === '广告') {
+  if (category === 'Design' || category === 'Media' || category === 'Advertising') {
     return 'resume-writing';
   }
   return 'resume-writing';
 }
 
 function buildRecommendedTemplateIds(industry: string, category: string): readonly string[] {
-  if (industry === '互联网通信' && category === '技术') {
+  if (industry === 'Tech & Internet' && category === 'Engineering') {
     return ['simple', 'timeline', 'warm'];
   }
-  if (industry === '互联网通信' && (category === '产品' || category === '运营')) {
+  if (industry === 'Tech & Internet' && (category === 'Product' || category === 'Operations')) {
     return ['warm', 'simple', 'elegant'];
   }
-  if (category === '设计' || industry === '广告/传媒/设计') {
+  if (category === 'Design' || industry === 'Advertising & Design') {
     return ['warm', 'elegant', 'simple'];
   }
-  if (industry === '管理/人力/行政' || industry === '教育/咨询/翻译') {
+  if (industry === 'Management & HR' || industry === 'Education & Consulting') {
     return ['elegant', 'simple', 'timeline'];
   }
   return DEFAULT_TEMPLATE_IDS;
@@ -190,7 +190,7 @@ function buildTemplateRoleRecords(): TemplateRoleRecord[] {
   for (const emergingRole of emergingTemplateRoles as readonly EmergingTemplateRole[]) {
     records.push(createTemplateRoleRecord(emergingRole.role, emergingRole.industry, emergingRole.category, usedSlugs));
   }
-  return records.sort((left: TemplateRoleRecord, right: TemplateRoleRecord) => left.slug.localeCompare(right.slug, 'zh-CN'));
+  return records.sort((left: TemplateRoleRecord, right: TemplateRoleRecord) => left.slug.localeCompare(right.slug, 'en'));
 }
 
 const TEMPLATE_ROLE_RECORDS: readonly TemplateRoleRecord[] = buildTemplateRoleRecords();

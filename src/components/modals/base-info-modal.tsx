@@ -85,13 +85,13 @@ export default function BaseInfoModal(props: BaseInfoModalProps): ReactElement {
     <Dialog open={true} onOpenChange={(open) => !open && props.onClose()}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>基本信息</DialogTitle>
+          <DialogTitle>Basic Information</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="name">姓名</Label>
+              <Label htmlFor="name">Full Name</Label>
               <Input
                 id="name"
                 value={name}
@@ -99,31 +99,31 @@ export default function BaseInfoModal(props: BaseInfoModalProps): ReactElement {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="title">意向岗位</Label>
+              <Label htmlFor="title">Target Position</Label>
               <Input
                 id="title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="移动端开发工程师"
+                placeholder="e.g. Software Engineer"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="gender">性别</Label>
+              <Label htmlFor="gender">Gender</Label>
               <Select value={gender} onValueChange={setGender}>
                 <SelectTrigger id="gender">
-                  <SelectValue placeholder="请选择" />
+                  <SelectValue placeholder="Select" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="男">男</SelectItem>
-                  <SelectItem value="女">女</SelectItem>
+                  <SelectItem value="Male">Male</SelectItem>
+                  <SelectItem value="Female">Female</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="avatar">头像</Label>
+              <Label htmlFor="avatar">Avatar</Label>
               <Select
                 value={showAvatar ? 'show' : 'hide'}
                 onValueChange={(val) => setShowAvatar(val === 'show')}
@@ -132,8 +132,8 @@ export default function BaseInfoModal(props: BaseInfoModalProps): ReactElement {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="show">显示</SelectItem>
-                  <SelectItem value="hide">隐藏</SelectItem>
+                  <SelectItem value="show">Show</SelectItem>
+                  <SelectItem value="hide">Hide</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -141,7 +141,7 @@ export default function BaseInfoModal(props: BaseInfoModalProps): ReactElement {
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="email">邮箱</Label>
+              <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
                 type="email"
@@ -150,7 +150,7 @@ export default function BaseInfoModal(props: BaseInfoModalProps): ReactElement {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="phone">电话</Label>
+              <Label htmlFor="phone">Phone</Label>
               <Input
                 id="phone"
                 type="tel"
@@ -162,7 +162,7 @@ export default function BaseInfoModal(props: BaseInfoModalProps): ReactElement {
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="age">年龄</Label>
+              <Label htmlFor="age">Age</Label>
               <Input
                 id="age"
                 type="number"
@@ -179,7 +179,7 @@ export default function BaseInfoModal(props: BaseInfoModalProps): ReactElement {
             onClick={() => setShowMoreFields(!showMoreFields)}
             className="w-full justify-start gap-2"
           >
-            <span>更多信息（选填）</span>
+            <span>More Info (Optional)</span>
             <ChevronDown 
               className={`h-4 w-4 transition-transform ${showMoreFields ? 'rotate-180' : ''}`}
             />
@@ -189,75 +189,75 @@ export default function BaseInfoModal(props: BaseInfoModalProps): ReactElement {
             <div className="space-y-4 pt-2 border-t">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="nation">民族</Label>
+                  <Label htmlFor="nation">Nationality</Label>
                   <Input
                     id="nation"
                     value={nation}
                     onChange={(e) => setNation(e.target.value)}
-                    placeholder="请输入"
+                    placeholder="Enter here"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="household">户籍</Label>
+                  <Label htmlFor="household">Hometown</Label>
                   <Input
                     id="household"
                     value={household}
                     onChange={(e) => setHousehold(e.target.value)}
-                    placeholder="请输入"
+                    placeholder="Enter here"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="currentLocation">现所在地</Label>
+                  <Label htmlFor="currentLocation">Current Location</Label>
                   <Input
                     id="currentLocation"
                     value={currentLocation}
                     onChange={(e) => setCurrentLocation(e.target.value)}
-                    placeholder="请输入"
+                    placeholder="Enter here"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="workStartTime">开始工作时间</Label>
+                  <Label htmlFor="workStartTime">Work Start Date</Label>
                   <Input
                     id="workStartTime"
                     value={workStartTime}
                     onChange={(e) => setWorkStartTime(e.target.value)}
-                    placeholder="请输入"
+                    placeholder="Enter here"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="politicalStatus">政治面貌</Label>
+                  <Label htmlFor="politicalStatus">Political Status</Label>
                   <Input
                     id="politicalStatus"
                     value={politicalStatus}
                     onChange={(e) => setPoliticalStatus(e.target.value)}
-                    placeholder="请输入"
+                    placeholder="Enter here"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="height">身高</Label>
+                  <Label htmlFor="height">Height</Label>
                   <Input
                     id="height"
                     value={height}
                     onChange={(e) => setHeight(e.target.value)}
-                    placeholder="身高(cm)"
+                    placeholder="Height (cm)"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="weight">体重</Label>
+                  <Label htmlFor="weight">Weight</Label>
                   <Input
                     id="weight"
                     value={weight}
                     onChange={(e) => setWeight(e.target.value)}
-                    placeholder="体重(kg)"
+                    placeholder="Weight (kg)"
                   />
                 </div>
               </div>
@@ -265,10 +265,10 @@ export default function BaseInfoModal(props: BaseInfoModalProps): ReactElement {
               {/* Custom fields */}
               <div className="space-y-3 pt-2 border-t">
                 <div className="flex items-center justify-between">
-                  <Label>自定义字段</Label>
+                  <Label>Custom Fields</Label>
                   <Button type="button" variant="ghost" size="sm" onClick={addCustomField} className="h-7 text-xs gap-1">
                     <Plus className="h-3 w-3" />
-                    <span>添加字段</span>
+                    <span>Add Field</span>
                   </Button>
                 </div>
                 {customFields.map((field, index) => (
@@ -276,13 +276,13 @@ export default function BaseInfoModal(props: BaseInfoModalProps): ReactElement {
                     <Input
                       value={field.label}
                       onChange={(e) => updateCustomField(index, 'label', e.target.value)}
-                      placeholder="字段名"
+                      placeholder="Field name"
                       className="w-28 shrink-0"
                     />
                     <Input
                       value={field.value}
                       onChange={(e) => updateCustomField(index, 'value', e.target.value)}
-                      placeholder="字段值"
+                      placeholder="Field value"
                     />
                     <Button type="button" variant="ghost" size="sm" onClick={() => removeCustomField(index)} className="h-8 w-8 p-0 shrink-0 text-red-500 hover:text-red-700 hover:bg-red-50">
                       <Trash2 className="h-3.5 w-3.5" />
@@ -296,10 +296,10 @@ export default function BaseInfoModal(props: BaseInfoModalProps): ReactElement {
 
         <DialogFooter>
           <Button variant="outline" onClick={props.onClose}>
-            取消
+            Cancel
           </Button>
           <Button onClick={handleSave}>
-            确定
+            Save
           </Button>
         </DialogFooter>
       </DialogContent>

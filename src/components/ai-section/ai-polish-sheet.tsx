@@ -134,17 +134,17 @@ export default function AiPolishSheet(props: AiPolishSheetProps): ReactElement {
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-violet-500" />
-            AI 内容润色
+            AI Content Polish
           </SheetTitle>
           <SheetDescription>
-            基于您的原始内容进行合规优化，不新增任何无依据内容
+            Optimize your original content compliantly without adding unsubstantiated claims
           </SheetDescription>
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto px-6 space-y-5 custom-scrollbar">
           {/* Identity selector */}
           <section>
-            <label className="text-sm font-medium text-slate-700 mb-2 block">求职身份</label>
+            <label className="text-sm font-medium text-slate-700 mb-2 block">Job Seeker Identity</label>
             <div className="flex gap-2">
               {SECTION_IDENTITY_OPTIONS.map((opt) => (
                 <button
@@ -165,7 +165,7 @@ export default function AiPolishSheet(props: AiPolishSheetProps): ReactElement {
 
           {/* Original content preview */}
           <section>
-            <label className="text-sm font-medium text-slate-700 mb-2 block">原始内容</label>
+            <label className="text-sm font-medium text-slate-700 mb-2 block">Original Content</label>
             <div className="bg-slate-50 rounded-lg border border-slate-200 p-3 max-h-32 overflow-y-auto text-xs text-slate-600 leading-relaxed">
               <div dangerouslySetInnerHTML={{ __html: originalContent }} />
             </div>
@@ -174,13 +174,13 @@ export default function AiPolishSheet(props: AiPolishSheetProps): ReactElement {
           {/* JD input */}
           <section>
             <label className="text-sm font-medium text-slate-700 mb-2 block">
-              目标岗位 JD
-              <span className="text-slate-400 font-normal ml-1">（选填）</span>
+              Target Job Description
+              <span className="text-slate-400 font-normal ml-1">(Optional)</span>
             </label>
             <textarea
               value={jobDescription}
               onChange={(e): void => setJobDescription(e.target.value.slice(0, MAX_JD_LENGTH))}
-              placeholder="粘贴目标岗位JD，AI将优先匹配岗位需求"
+              placeholder="Paste target job description for better alignment"
               className="w-full h-20 text-xs rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-700 placeholder:text-slate-400 focus:border-violet-400 focus:outline-none focus:ring-1 focus:ring-violet-400/30 resize-none"
             />
             <div className="text-right text-[10px] text-slate-400 mt-1">
@@ -190,7 +190,7 @@ export default function AiPolishSheet(props: AiPolishSheetProps): ReactElement {
 
           {/* Polish level selector */}
           <section className="space-y-3">
-            <label className="text-sm font-medium text-slate-700">润色档位</label>
+            <label className="text-sm font-medium text-slate-700">Polish Level</label>
             <div className="grid grid-cols-1 gap-2">
               {POLISH_LEVEL_OPTIONS.map((opt) => (
                 <div
@@ -217,11 +217,11 @@ export default function AiPolishSheet(props: AiPolishSheetProps): ReactElement {
                         {/* Hover Tooltip (Pure CSS) */}
                         <div className="absolute left-0 bottom-full mb-2 hidden w-[260px] flex-col gap-1.5 rounded-lg bg-slate-800 p-3 text-[11px] text-slate-100 opacity-0 shadow-xl transition-all group-hover:flex group-hover:opacity-100 z-50 pointer-events-none">
                           <div className="flex gap-2">
-                            <span className="text-slate-400 shrink-0 font-medium mt-0.5">原句:</span>
+                            <span className="text-slate-400 shrink-0 font-medium mt-0.5">Before:</span>
                             <span className="line-through decoration-slate-500">{opt.exampleBefore}</span>
                           </div>
                           <div className="flex gap-2">
-                            <span className="text-violet-300 shrink-0 font-medium mt-0.5">改后:</span>
+                            <span className="text-violet-300 shrink-0 font-medium mt-0.5">After:</span>
                             <span className="font-medium text-white">{opt.exampleAfter}</span>
                           </div>
                           {/* Triangle arrow */}
@@ -261,24 +261,24 @@ export default function AiPolishSheet(props: AiPolishSheetProps): ReactElement {
               />
               <div className="flex-1">
                 <div className="flex items-center gap-1.5 text-xs font-medium text-slate-700">
-                  无成果纯写实模式
+                  Fact-Only Realistic Mode
                   <div className="group relative flex items-center">
                     <HelpCircle className="h-3.5 w-3.5 text-slate-400 hover:text-violet-500 transition-colors" />
                     
                     {/* Hover Tooltip (Pure CSS) */}
                     <div className="absolute left-0 bottom-full mb-2 hidden w-[240px] flex-col gap-1.5 rounded-lg bg-slate-800 p-3 text-[11px] text-slate-100 opacity-0 shadow-xl transition-all group-hover:flex group-hover:opacity-100 z-50 pointer-events-none">
-                      <div className="text-slate-300 mb-1">开启后，AI 将完全禁止凭空捏造数据和夸大业务成果。</div>
+                      <div className="text-slate-300 mb-1">When enabled, AI will strictly avoid fabricating data or exaggerating results.</div>
                       <div className="flex gap-2">
-                        <span className="text-slate-400 shrink-0 font-medium mt-0.5">原句:</span>
-                        <span className="line-through decoration-slate-500">负责新媒体运营，数据很好</span>
+                        <span className="text-slate-400 shrink-0 font-medium mt-0.5">Before:</span>
+                        <span className="line-through decoration-slate-500">Managed social media, great results</span>
                       </div>
                       <div className="flex gap-2">
-                        <span className="text-violet-300 shrink-0 font-medium mt-0.5">普通:</span>
-                        <span className="text-slate-300">负责新媒体运营，粉丝量增长200%</span>
+                        <span className="text-violet-300 shrink-0 font-medium mt-0.5">Normal:</span>
+                        <span className="text-slate-300">Managed social media, grew followers by 200%</span>
                       </div>
                       <div className="flex gap-2">
-                        <span className="text-emerald-300 shrink-0 font-medium mt-0.5">写实:</span>
-                        <span className="font-medium text-white">独立负责新媒体矩阵的日常运营与内容分发，提升内容曝光量。</span>
+                        <span className="text-emerald-300 shrink-0 font-medium mt-0.5">Realistic:</span>
+                        <span className="font-medium text-white">Independently managed social media operations and content distribution, improving content reach.</span>
                       </div>
                       {/* Triangle arrow */}
                       <div className="absolute -bottom-1 left-1.5 border-4 border-transparent border-t-slate-800" />
@@ -286,7 +286,7 @@ export default function AiPolishSheet(props: AiPolishSheetProps): ReactElement {
                   </div>
                 </div>
                 <div className="text-[11px] text-slate-500 mt-1">
-                  开启后仅基于事实优化，完全禁止虚构数据和成果夸大
+                  When enabled, only fact-based optimization — no fabricated data or exaggerated results
                 </div>
               </div>
             </label>
@@ -301,13 +301,13 @@ export default function AiPolishSheet(props: AiPolishSheetProps): ReactElement {
                 className="w-full h-10 shrink-0 bg-gradient-to-r from-violet-600 to-fuchsia-500 text-white hover:from-violet-700 hover:to-fuchsia-600 rounded-lg font-medium text-sm shadow-sm disabled:opacity-40"
               >
                 <Sparkles className="h-4 w-4 mr-2" />
-                {hasResult ? '重新润色' : '开始润色'}
+                {hasResult ? 'Re-polish' : 'Start Polish'}
               </Button>
               {usage && (
                 <p className={`text-center text-[10px] ${isLimitReached ? 'text-red-500' : 'text-slate-400'}`}>
                   {isLimitReached
-                    ? `今日次数已用完（${usage.used}/${usage.limit}），${usage.isAuthenticated ? '请明天再试' : '登录后可获得更多次数'}`
-                    : `今日剩余 ${usage.remaining}/${usage.limit} 次`}
+                    ? `Daily limit reached (${usage.used}/${usage.limit}). ${usage.isAuthenticated ? 'Please try again tomorrow.' : 'Sign in for more.'}`
+                    : `${usage.remaining}/${usage.limit} remaining today`}
                 </p>
               )}
             </div>
@@ -317,7 +317,7 @@ export default function AiPolishSheet(props: AiPolishSheetProps): ReactElement {
           {isPolishing && (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-6 w-6 animate-spin text-violet-500 mr-2" />
-              <span className="text-sm text-slate-500">AI 正在为您优化内容，请稍候...</span>
+              <span className="text-sm text-slate-500">AI is optimizing your content, please wait...</span>
             </div>
           )}
 
@@ -334,7 +334,7 @@ export default function AiPolishSheet(props: AiPolishSheetProps): ReactElement {
                   className="h-7 text-xs text-red-600 hover:text-red-700 hover:bg-red-100 mt-1 px-2"
                 >
                   <RefreshCw className="h-3 w-3 mr-1" />
-                  重新生成
+                  Regenerate
                 </Button>
               </div>
             </div>
@@ -344,7 +344,7 @@ export default function AiPolishSheet(props: AiPolishSheetProps): ReactElement {
           {displayHtml && (
             <section className="pb-6">
               <div className="flex items-center justify-between mb-2">
-                <label className="text-sm font-medium text-slate-700">润色结果</label>
+                <label className="text-sm font-medium text-slate-700">Polished Result</label>
                 {hasResult && (
                   <Button
                     variant="ghost"
@@ -353,7 +353,7 @@ export default function AiPolishSheet(props: AiPolishSheetProps): ReactElement {
                     className="h-7 text-xs text-slate-500 hover:text-violet-600 px-2"
                   >
                     <RefreshCw className="h-3 w-3 mr-1" />
-                    重新生成
+                    Regenerate
                   </Button>
                 )}
               </div>
@@ -382,7 +382,7 @@ export default function AiPolishSheet(props: AiPolishSheetProps): ReactElement {
         {/* Footer */}
         <SheetFooter>
           <p className="text-[10px] text-slate-400 flex-1">
-            内容由 AI 生成，请基于真实经历核对修改
+            AI-generated content — please verify against your real experience
           </p>
           <Button
             variant="outline"
@@ -390,7 +390,7 @@ export default function AiPolishSheet(props: AiPolishSheetProps): ReactElement {
             onClick={handleClose}
             className="h-8 text-xs rounded-lg"
           >
-            取消
+            Cancel
           </Button>
           <Button
             size="sm"
@@ -398,7 +398,7 @@ export default function AiPolishSheet(props: AiPolishSheetProps): ReactElement {
             disabled={!displayHtml.trim() || isPolishing}
             className="h-8 text-xs rounded-lg bg-gradient-to-r from-violet-600 to-fuchsia-500 text-white hover:from-violet-700 hover:to-fuchsia-600 disabled:opacity-40"
           >
-            插入到简历
+            Insert to Resume
           </Button>
         </SheetFooter>
       </SheetContent>

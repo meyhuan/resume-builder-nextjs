@@ -116,7 +116,7 @@ export const ChipGroup = ({
           className="px-6 py-3 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 border border-dashed border-[#8B5CF6] text-[#7C3AED] bg-[#F5F3FF]/50 hover:bg-[#F5F3FF]"
         >
           <Plus className="w-4 h-4" />
-          添加其他...
+          Add other...
         </motion.button>
       )}
 
@@ -129,7 +129,7 @@ export const ChipGroup = ({
             onChange={(e) => setCustomValue(e.target.value)}
             onBlur={commitCustomValue}
             onKeyDown={handleCustomKeyDown}
-            placeholder="输入自定义内容"
+            placeholder="Enter custom value"
             className="text-sm outline-none w-32 text-gray-700 placeholder:text-gray-400"
           />
         </div>

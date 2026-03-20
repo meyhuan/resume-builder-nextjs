@@ -1,12 +1,12 @@
 /**
  * V2 JobIntentionSection - Style-Driven Architecture
  * 
- * 完全解耦的求职意向组件，支持：
- * 1. 样式配置驱动
- * 2. 自定义渲染函数
- * 3. 插槽模式
+ * Fully decoupled job intention component supporting:
+ * 1. Style configuration driven
+ * 2. Custom render functions
+ * 3. Slot pattern
  * 
- * 新增模板无需修改此文件
+ * Adding new templates requires no changes to this file.
  */
 
 import { useState, type ReactElement } from 'react'
@@ -25,18 +25,18 @@ export interface JobIntentionSectionProps {
   readonly jobIntention: JobIntention | null
   readonly themeColor: string
   
-  // 方案1: 样式配置（推荐用于大多数场景）
+  // Option 1: Style configuration (recommended for most cases)
   readonly styles?: JobIntentionSectionStyles
   
-  // 方案2: 完全自定义渲染（用于完全不同的布局）
+  // Option 2: Fully custom render (for completely different layouts)
   readonly renderCustom?: (props: JobIntentionRenderProps) => ReactElement
   
-  // 方案3: 插槽模式（用于部分自定义）
+  // Option 3: Slot pattern (for partial customization)
   readonly slots?: JobIntentionSlots
 }
 
 /**
- * V2 求职意向组件 - 样式配置驱动
+ * V2 Job Intention Component - Style configuration driven.
  */
 export default function JobIntentionSection(props: JobIntentionSectionProps): ReactElement | null {
   const { jobIntention, themeColor, styles = {}, renderCustom, slots } = props
@@ -58,7 +58,7 @@ export default function JobIntentionSection(props: JobIntentionSectionProps): Re
     updateJobIntention(updated)
   }
 
-  // 方案2: 完全自定义渲染
+  // Option 2: Fully custom render
   if (renderCustom) {
     return (
       <>
@@ -79,13 +79,13 @@ export default function JobIntentionSection(props: JobIntentionSectionProps): Re
     )
   }
 
-  // 默认渲染：使用样式配置和插槽
+  // Default render: use style config and slots
   const containerClassName = styles.container || 'mb-5 relative group cursor-pointer print:cursor-default'
   const headerClassName = styles.header || 'flex items-center gap-2 mb-3 relative py-1 rounded border border-transparent'
   
-  // 处理标题渲染
+  // Render header
   const renderHeader = () => {
-    // 如果配置了特殊布局，比如 ribbon（带底色的横幅样式）
+    // If a special layout is configured, e.g. ribbon (banner style with background)
     if (styles.layout === 'ribbon') {
       return (
         <div 
@@ -103,10 +103,10 @@ export default function JobIntentionSection(props: JobIntentionSectionProps): Re
             {/* Title part */}
             <div className="bg-[#f8f8f8] h-full flex items-center pl-3 pr-2 z-10 relative border-y border-[#ddd]">
               {slots?.header ? (
-                slots.header('求职意向', '#333')
+                slots.header('Job Preference', '#333')
               ) : (
                 <h2 className={`font-bold tracking-widest ${styles.title?.className || ''}`} style={{ color: '#333' }}>
-                  求职意向
+                  Job Preference
                 </h2>
               )}
               
@@ -119,7 +119,7 @@ export default function JobIntentionSection(props: JobIntentionSectionProps): Re
           {/* Horizontal Line */}
           <div className="flex-1 h-[6px] bg-[#f0f0f0] ml-6 rounded-r"></div>
 
-          {/* 编辑按钮 */}
+          {/* Edit button */}
           {slots?.editButton ? (
             slots.editButton(() => setShowModal(true))
           ) : (
@@ -138,7 +138,7 @@ export default function JobIntentionSection(props: JobIntentionSectionProps): Re
       );
     }
 
-    // 默认布局
+    // Default layout
     return (
       <div 
         className={headerClassName}
@@ -148,7 +148,7 @@ export default function JobIntentionSection(props: JobIntentionSectionProps): Re
           ...(styles.headerBorderBottom ? { borderBottom: `2px solid ${themeColor}` } : {}),
         }}
       >
-        {/* 图标 */}
+        {/* Icon */}
         <span style={{ color: styles.icon?.color || themeColor }}>
           <IconTarget 
             size={styles.icon?.size} 
@@ -156,19 +156,19 @@ export default function JobIntentionSection(props: JobIntentionSectionProps): Re
           />
         </span>
         
-        {/* 标题 */}
+        {/* Title */}
         {slots?.header ? (
-          slots.header('求职意向', themeColor)
+          slots.header('Job Preference', themeColor)
         ) : (
           <h2 
             className={styles.title?.className || 'font-bold'}
             style={{ color: styles.title?.color || themeColor }}
           >
-            求职意向
+            Job Preference
           </h2>
         )}
         
-        {/* 编辑按钮 */}
+        {/* Edit button */}
         {slots?.editButton ? (
           slots.editButton(() => setShowModal(true))
         ) : (
@@ -195,7 +195,7 @@ export default function JobIntentionSection(props: JobIntentionSectionProps): Re
       >
         {renderHeader()}
 
-        {/* 字段列表 */}
+        {/* Fields list */}
         <div className={getFieldsLayoutClassName(styles.fieldsLayout)}>
           {renderJobFields(
             jobIntention,
@@ -221,7 +221,7 @@ export default function JobIntentionSection(props: JobIntentionSectionProps): Re
 }
 
 /**
- * 获取字段布局类名
+ * Get fields layout class name.
  */
 function getFieldsLayoutClassName(layout?: JobIntentionSectionStyles['fieldsLayout']): string {
   if (!layout) return 'grid grid-cols-2 gap-y-2 gap-x-6 text-[0.875em]'
@@ -241,7 +241,7 @@ function getFieldsLayoutClassName(layout?: JobIntentionSectionStyles['fieldsLayo
 }
 
 /**
- * 渲染求职意向字段
+ * Render job intention fields.
  */
 function renderJobFields(
   jobIntention: JobIntention,
@@ -263,12 +263,12 @@ function renderJobFields(
     label: string
     value?: string
   }> = [
-    { key: 'position', label: '意向岗位', value: jobIntention.position },
-    { key: 'city', label: '意向城市', value: jobIntention.city },
-    { key: 'salary', label: '期望薪资', value: jobIntention.salary },
-    { key: 'type', label: '求职类型', value: jobIntention.type },
-    { key: 'industry', label: '期望行业', value: jobIntention.industry },
-    { key: 'currentStatus', label: '当前状态', value: jobIntention.currentStatus },
+    { key: 'position', label: 'Position', value: jobIntention.position },
+    { key: 'city', label: 'City', value: jobIntention.city },
+    { key: 'salary', label: 'Salary', value: jobIntention.salary },
+    { key: 'type', label: 'Job Type', value: jobIntention.type },
+    { key: 'industry', label: 'Industry', value: jobIntention.industry },
+    { key: 'currentStatus', label: 'Status', value: jobIntention.currentStatus },
   ]
   if (jobIntention.customFields) {
     for (const cf of jobIntention.customFields) {
@@ -288,7 +288,7 @@ function renderJobFields(
         onMouseEnter={() => setHoveredField(field.key)}
         onMouseLeave={() => setHoveredField(null)}
       >
-        {/* 使用插槽或默认渲染 */}
+        {/* Use slot or default render */}
         {slots?.field ? (
           slots.field(field.label, field.value, themeColor)
         ) : (
@@ -302,7 +302,7 @@ function renderJobFields(
           </div>
         )}
         
-        {/* 删除按钮 - absolute positioned to prevent layout shift */}
+        {/* Delete button - absolute positioned to prevent layout shift */}
         {hoveredField === field.key && (
           <button
             type="button"

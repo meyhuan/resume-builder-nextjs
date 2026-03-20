@@ -4,7 +4,7 @@
  */
 
 // ---------------------------------------------------------------------------
-// User Identity (求职身份)
+// User Identity
 // ---------------------------------------------------------------------------
 
 /** The three target user groups for resume content adaptation. */
@@ -17,13 +17,13 @@ export interface SectionIdentityOption {
 }
 
 export const SECTION_IDENTITY_OPTIONS: readonly SectionIdentityOption[] = [
-  { id: 'student', label: '大学生实习', description: '在校学生，寻找日常/寒暑假实习' },
-  { id: 'graduate', label: '应届生校招', description: '应届毕业生，有少量实习或项目经验' },
-  { id: 'professional', label: '初入职场社招', description: '1-3年工作经验，寻求同岗进阶或跨岗跳槽' },
+  { id: 'student', label: 'Student Intern', description: 'Current student seeking internships' },
+  { id: 'graduate', label: 'Recent Graduate', description: 'New grad with limited internship or project experience' },
+  { id: 'professional', label: 'Working Professional', description: '1-3+ years of experience, seeking career advancement' },
 ] as const;
 
 // ---------------------------------------------------------------------------
-// Polish Level (润色档位)
+// Polish Level
 // ---------------------------------------------------------------------------
 
 /** Three compliance-safe polish tiers. */
@@ -40,29 +40,29 @@ export interface PolishLevelOption {
 export const POLISH_LEVEL_OPTIONS: readonly PolishLevelOption[] = [
   {
     id: 'basic',
-    label: '基础纠错',
-    description: '修正错别字与语病，保持原文原意',
-    exampleBefore: '我做了一个活动，带了100个用户',
-    exampleAfter: '我策划了一场线上活动，吸引了100名用户参与。',
+    label: 'Light Edit',
+    description: 'Fix typos and grammar while preserving original meaning',
+    exampleBefore: 'I did an event and got 100 users',
+    exampleAfter: 'Organized an online event that attracted 100 participants.',
   },
   {
     id: 'professional',
-    label: '专业表达',
-    description: '转化为职场术语，增强专业度',
-    exampleBefore: '给老板写PPT，总结了上个月的数据',
-    exampleAfter: '负责部门月度经营数据的整理与分析，产出复盘报告。',
+    label: 'Professional Polish',
+    description: 'Transform into professional workplace language',
+    exampleBefore: 'Made a PPT for my boss summarizing last month data',
+    exampleAfter: 'Compiled and analyzed monthly business performance data, delivering executive summary reports.',
   },
   {
     id: 'jd-match',
-    label: 'JD匹配',
-    description: '贴合目标岗位JD，突出相关能力',
-    exampleBefore: '负责小红书账号运营，涨粉500',
-    exampleAfter: '【JD：需具备内容网感】独立负责小红书矩阵运营，网感敏锐，实现粉丝数净增500+。',
+    label: 'JD Match',
+    description: 'Align with target job description, highlight relevant skills',
+    exampleBefore: 'Managed Instagram account, gained 500 followers',
+    exampleAfter: '[JD: content marketing expertise] Independently managed social media presence, growing follower base by 500+ through data-driven content strategy.',
   },
 ] as const;
 
 // ---------------------------------------------------------------------------
-// Section Module Type (简历模块类型)
+// Section Module Type
 // ---------------------------------------------------------------------------
 
 /** Resume module types that support AI polish/generation. */
@@ -79,15 +79,15 @@ export interface SectionModuleOption {
 }
 
 export const SECTION_MODULE_OPTIONS: readonly SectionModuleOption[] = [
-  { id: 'experience', label: '工作经历' },
-  { id: 'project', label: '项目经历' },
-  { id: 'campus', label: '校园经历' },
-  { id: 'self-evaluation', label: '自我评价' },
-  { id: 'skills', label: '专业技能' },
+  { id: 'experience', label: 'Work Experience' },
+  { id: 'project', label: 'Projects' },
+  { id: 'campus', label: 'Campus Experience' },
+  { id: 'self-evaluation', label: 'Professional Summary' },
+  { id: 'skills', label: 'Skills' },
 ] as const;
 
 // ---------------------------------------------------------------------------
-// Job Category (求职岗位类型) — for self-evaluation tailoring
+// Job Category — for self-evaluation tailoring
 // ---------------------------------------------------------------------------
 
 /** Job category types that affect self-evaluation tone and keywords. */
@@ -100,10 +100,10 @@ export interface JobCategoryOption {
 }
 
 export const JOB_CATEGORY_OPTIONS: readonly JobCategoryOption[] = [
-  { id: 'functional', label: '职能岗', description: '行政、人事、财务、法务等' },
-  { id: 'business', label: '业务岗', description: '运营、市场、产品、销售等' },
-  { id: 'technical', label: '技术岗', description: '前端、后端、算法、测试等' },
-  { id: 'state-owned', label: '国企体制内', description: '央企、国企、事业单位等' },
+  { id: 'functional', label: 'Administrative', description: 'HR, Finance, Legal, Admin, etc.' },
+  { id: 'business', label: 'Business', description: 'Operations, Marketing, Product, Sales, etc.' },
+  { id: 'technical', label: 'Technical', description: 'Frontend, Backend, ML/AI, QA, etc.' },
+  { id: 'state-owned', label: 'Public Sector', description: 'Government, public institutions, etc.' },
 ] as const;
 
 // ---------------------------------------------------------------------------
@@ -112,16 +112,16 @@ export const JOB_CATEGORY_OPTIONS: readonly JobCategoryOption[] = [
 
 /** Allowed action verbs per identity to enforce tone compliance. */
 export const ACTION_VERB_WHITELIST: Record<SectionIdentity, readonly string[]> = {
-  student: ['协助', '参与', '执行', '配合', '整理', '落地', '学习', '支持', '完成', '记录'],
-  graduate: ['独立负责', '落地', '优化', '推动', '搭建', '参与', '执行', '复盘', '梳理', '整理'],
-  professional: ['主导', '统筹', '搭建', '优化', '推动', '攻克', '落地', '负责', '复盘', '策划'],
+  student: ['Assisted', 'Participated', 'Executed', 'Supported', 'Organized', 'Completed', 'Learned', 'Contributed', 'Documented', 'Coordinated'],
+  graduate: ['Owned', 'Implemented', 'Optimized', 'Drove', 'Built', 'Participated', 'Executed', 'Analyzed', 'Streamlined', 'Organized'],
+  professional: ['Led', 'Managed', 'Architected', 'Optimized', 'Drove', 'Resolved', 'Delivered', 'Owned', 'Analyzed', 'Spearheaded'],
 } as const;
 
 /** Forbidden action verbs per identity to prevent tone escalation. */
 export const ACTION_VERB_BLACKLIST: Record<SectionIdentity, readonly string[]> = {
-  student: ['主导', '统筹', '全链路负责', '核心决策', '操盘', '战略'],
-  graduate: ['操盘', '核心战略制定', '公司级决策'],
-  professional: ['非自身负责的公司级成果'],
+  student: ['Led', 'Managed', 'Owned end-to-end', 'Made strategic decisions', 'Directed', 'Oversaw'],
+  graduate: ['Directed company-wide', 'Set corporate strategy', 'Made C-level decisions'],
+  professional: ['Claimed company-level results not personally owned'],
 } as const;
 
 // ---------------------------------------------------------------------------

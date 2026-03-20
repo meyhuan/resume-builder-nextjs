@@ -14,7 +14,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
           <div className="p-6 border-b">
             <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
               <LayoutDashboard className="w-5 h-5 text-blue-600" />
-              管理后台
+              Admin Panel
             </h2>
           </div>
           <nav className="flex-1 p-4 space-y-2">
@@ -23,7 +23,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
               className="flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors mt-auto"
             >
               <ArrowLeft className="w-4 h-4" />
-              返回用户端
+              Back to Dashboard
             </Link>
           </nav>
         </aside>
@@ -31,7 +31,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         {/* Main Content */}
         <main className="flex-1 overflow-auto bg-gray-50">
           <header className="bg-white border-b px-8 py-4 sticky top-0 z-10">
-            <h1 className="text-lg font-semibold text-gray-800">模板快照管理</h1>
+            <h1 className="text-lg font-semibold text-gray-800">Template Snapshot Management</h1>
           </header>
           <div className="p-8">
             {children}

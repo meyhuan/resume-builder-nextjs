@@ -113,7 +113,7 @@ export function CrossColumnPlaceholder(props: {
       className="border-2 border-dashed border-violet-400/60 rounded-lg flex items-center justify-center bg-violet-50/40 pointer-events-none"
       style={{ height: '80px' }}
     >
-      <span className="text-violet-500 text-xs font-medium">释放以移动到此列</span>
+      <span className="text-violet-500 text-xs font-medium">Drop to move to this column</span>
     </div>
   )
 }

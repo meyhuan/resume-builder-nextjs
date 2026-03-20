@@ -123,7 +123,7 @@ export function useOnePageMode(opts: UseOnePageModeOptions): UseOnePageModeRetur
   useEffect(() => {
     if (prevEnabled.current && !enabled) {
       restoreSnapshot()
-      toast.info('已关闭一页模式，已恢复原始设置')
+      toast.info('One-page mode disabled. Original settings restored.')
     }
     prevEnabled.current = enabled
   }, [enabled, restoreSnapshot])
@@ -149,7 +149,7 @@ export function useOnePageMode(opts: UseOnePageModeOptions): UseOnePageModeRetur
     if (contentH <= targetH) {
       setStatus('fit')
       if (!adjustedToastShown.current) {
-        toast.success('已开启一页模式')
+        toast.success('One-page mode enabled.')
         adjustedToastShown.current = true
       }
       fittingRef.current = false
@@ -185,12 +185,12 @@ export function useOnePageMode(opts: UseOnePageModeOptions): UseOnePageModeRetur
       setStatus('fitting')
       patchTheme({ spacingScale, lineHeight, fontSize })
       if (!adjustedToastShown.current) {
-        toast.info('正在自动调整间距以适应一页...')
+        toast.info('Auto-adjusting spacing to fit one page...')
         adjustedToastShown.current = true
       }
     } else {
       setStatus('overflow')
-      toast.warning('内容过多，建议精简内容或减少模块以适应一页')
+      toast.warning('Too much content. Consider simplifying or removing sections to fit one page.')
     }
 
     fittingRef.current = false

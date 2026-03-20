@@ -27,7 +27,7 @@ export async function syncUserAction(userData: {
       },
       create: {
         wxId,
-        name: name || `用户_${wxId}`,
+        name: name || `User_${wxId}`,
         avatar,
         email,
       },

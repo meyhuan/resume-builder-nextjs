@@ -90,15 +90,15 @@ export default function SectionHeader(props: SectionHeaderProps): ReactElement {
       onMouseLeave={handleMouseLeave}
     >
       {onAdd && (
-        <Button variant="ghost" size="sm" onClick={onAdd} className="h-6 px-2 text-[11px] gap-1 text-slate-600 hover:!text-slate-900 hover:!bg-slate-100" title="添加">
+        <Button variant="ghost" size="sm" onClick={onAdd} className="h-6 px-2 text-[11px] gap-1 text-slate-600 hover:!text-slate-900 hover:!bg-slate-100" title="Add">
           <PlusCircle className="h-3 w-3" />
-          <span>添加</span>
+          <span>Add</span>
         </Button>
       )}
       {onDelete && (
-        <Button variant="ghost" size="sm" onClick={onDelete} className="h-6 px-2 text-[11px] gap-1 text-slate-600 hover:!text-red-600 hover:!bg-red-50" title="删除">
+        <Button variant="ghost" size="sm" onClick={onDelete} className="h-6 px-2 text-[11px] gap-1 text-slate-600 hover:!text-red-600 hover:!bg-red-50" title="Delete">
           <Trash2 className="h-3 w-3" />
-          <span>删除</span>
+          <span>Delete</span>
         </Button>
       )}
       {!!dragHandleAttributes && !!dragHandleListeners && !!dragHandleRef && (
@@ -108,10 +108,10 @@ export default function SectionHeader(props: SectionHeaderProps): ReactElement {
           {...(dragHandleAttributes as Record<string, any>)}
           {...(dragHandleListeners as Record<string, any>)}
           /* eslint-enable @typescript-eslint/no-explicit-any */
-          className="h-6 w-6 px-0 text-[11px] gap-1 cursor-grab active:cursor-grabbing text-slate-600 hover:!text-slate-900 hover:!bg-slate-100" title="拖动"
+          className="h-6 w-6 px-0 text-[11px] gap-1 cursor-grab active:cursor-grabbing text-slate-600 hover:!text-slate-900 hover:!bg-slate-100" title="Drag"
         >
           <GripVertical className="h-3 w-3" />
-          {/* <span>拖动</span> */}
+          <span>Drag</span>
         </Button>
       )}
     </div>

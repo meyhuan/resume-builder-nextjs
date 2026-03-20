@@ -1,6 +1,6 @@
 /**
- * Template Loader - 动态加载模板，支持代码分割
- * 每个模板会被打包成独立的chunk，按需加载
+ * Template Loader - Dynamic template loading with code splitting.
+ * Each template is bundled as an independent chunk, loaded on demand.
  */
 import { lazy, type ComponentType } from 'react'
 import type { ResumeData } from '@/entities/resume/resume-data'
@@ -26,60 +26,60 @@ export interface TemplateConfig {
 }
 
 /**
- * 模板注册表
- * 使用动态import，每个模板会被Vite自动分割成独立chunk
+ * Template Registry
+ * Uses dynamic imports; each template is auto-split into an independent chunk by Vite.
  */
 export const TEMPLATE_REGISTRY: Record<string, TemplateConfig> = {
   simple: {
     id: 'simple',
-    name: '简约',
-    description: '简洁大方，适合所有场景',
+    name: 'Simple',
+    description: 'Clean and versatile, suitable for all scenarios',
     preview: '/thumbnails/template_simple.webp',
-    tags: ['通用', '简洁'],
+    tags: ['General', 'Clean'],
     component: lazy(() => import('@/templates/simple')),
   },
   elegant: {
     id: 'elegant',
-    name: '典雅',
-    description: '深色头部 + 金色点缀，庄重大方，适合正式场合',
+    name: 'Elegant',
+    description: 'Dark header with gold accents, formal and sophisticated',
     preview: '/thumbnails/template_elegant.webp',
-    tags: ['正式', '庄重', '典雅', '金色'],
+    tags: ['Formal', 'Sophisticated', 'Elegant', 'Gold'],
     component: lazy(() => import('@/templates/elegant')),
   },
   warm: {
     id: 'warm',
-    name: '双栏',
-    description: '双列布局，左侧边栏 + 右侧主内容，淡黄色点缀',
+    name: 'Two-Column',
+    description: 'Two-column layout with left sidebar and right main content',
     preview: '/thumbnails/template_warm.webp',
-    tags: ['通用', '双列', '淡黄', '侧边栏'],
+    tags: ['General', 'Two-Column', 'Warm', 'Sidebar'],
     component: lazy(() => import('@/templates/warm')),
   },
   timeline: {
     id: 'timeline',
-    name: '时间轴',
-    description: '左侧日期 + 右侧内容，竖线贯穿，经典时间轴风格',
+    name: 'Timeline',
+    description: 'Left dates + right content, classic timeline style',
     preview: '/thumbnails/template_timeline.webp',
-    tags: ['通用', '时间轴', '经典', '简洁'],
+    tags: ['General', 'Timeline', 'Classic', 'Clean'],
     component: lazy(() => import('@/templates/timeline')),
   },
 }
 
 /**
- * 获取所有模板列表
+ * Get all available templates.
  */
 export function getAllTemplates(): TemplateConfig[] {
   return Object.values(TEMPLATE_REGISTRY)
 }
 
 /**
- * 根据ID获取模板
+ * Get a template by ID.
  */
 export function getTemplate(id: string): TemplateConfig | undefined {
   return TEMPLATE_REGISTRY[id]
 }
 
 /**
- * 根据标签搜索模板
+ * Search templates by tag.
  */
 export function searchTemplatesByTag(tag: string): TemplateConfig[] {
   return getAllTemplates().filter((t) => t.tags?.includes(tag))

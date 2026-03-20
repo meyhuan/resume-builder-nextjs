@@ -19,7 +19,7 @@ export function DeleteResumeButton({ onDelete }: DeleteResumeButtonProps) {
         variant="ghost"
         size="sm"
         className="h-7 w-7 p-0 rounded-md text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"
-        title="删除简历"
+        title="Delete resume"
         onClick={(e) => {
           e.preventDefault()
           setOpen(true)
@@ -30,10 +30,10 @@ export function DeleteResumeButton({ onDelete }: DeleteResumeButtonProps) {
       <ConfirmDialog
         open={open}
         onOpenChange={setOpen}
-        title="确认删除简历"
-        description="删除后无法恢复，确定要删除这份简历吗？"
-        confirmText="删除"
-        cancelText="取消"
+        title="Delete Resume"
+        description="This action cannot be undone. Are you sure you want to delete this resume?"
+        confirmText="Delete"
+        cancelText="Cancel"
         variant="destructive"
         loading={loading}
         onConfirm={async () => {

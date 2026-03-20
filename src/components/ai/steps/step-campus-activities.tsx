@@ -25,7 +25,7 @@ export const StepCampusActivities = ({ stepNumber, onClickPast }: StepCampusActi
   return (
     <StepCard 
       stepNumber={stepNumber} 
-      title="请问你曾参与过哪些校园活动 (可多选)"
+      title="Which campus activities have you been involved in? (multi-select)"
       onSkip={handleNext}
       onClickPast={onClickPast}
     >
@@ -59,7 +59,7 @@ export const StepCampusActivities = ({ stepNumber, onClickPast }: StepCampusActi
                 onClick={handleNext}
                 className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white px-6 py-2 rounded-lg text-sm font-medium transition-colors"
              >
-                确认
+                Confirm
              </button>
           </div>
         )}

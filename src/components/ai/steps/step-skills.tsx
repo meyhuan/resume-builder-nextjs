@@ -36,7 +36,7 @@ export const StepSkills = ({ stepNumber, onClickPast }: { stepNumber: number; on
   return (
     <StepCard 
       stepNumber={stepNumber} 
-      title="请选择下方符合你的软技能 (可多选)"
+      title="Select your soft skills (multi-select)"
       onSkip={handleConfirm}
       onClickPast={onClickPast}
     >
@@ -55,7 +55,7 @@ export const StepSkills = ({ stepNumber, onClickPast }: { stepNumber: number; on
                 onClick={handleConfirm}
                 className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white px-6 py-2 rounded-lg text-sm font-medium transition-colors"
              >
-                确认
+                Confirm
              </button>
           </div>
         )}

@@ -10,7 +10,7 @@ export interface BaseInfo {
   readonly phone?: string;
   /** Email address. */
   readonly email?: string;
-  /** Gender text (e.g., 男/女). */
+  /** Gender text (e.g., male/female). */
   readonly gender?: string;
   /** Age in years. */
   readonly age?: number;

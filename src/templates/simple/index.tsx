@@ -31,7 +31,7 @@ interface SimpleTemplateProps {
 }
 
 /**
- * Block 渲染包装器 - 添加操作按钮和拖拽功能
+ * Block renderer wrapper - adds action buttons and drag functionality.
  */
 function BlockRendererWrapper(props: { 
   block: ResumeBlock; 
@@ -69,11 +69,11 @@ function BlockRendererWrapper(props: {
     openGenerate(block.id, moduleType, block)
   }
   
-  let blockTypeLabel = '内容'
-  if (block.type === 'experience') blockTypeLabel = '工作经历'
-  if (block.type === 'project') blockTypeLabel = '项目经历'
-  if (block.type === 'education') blockTypeLabel = '教育经历'
-  if (block.type === 'campus') blockTypeLabel = '校园经历'
+  let blockTypeLabel = 'Content'
+  if (block.type === 'experience') blockTypeLabel = 'Work Experience'
+  if (block.type === 'project') blockTypeLabel = 'Project Experience'
+  if (block.type === 'education') blockTypeLabel = 'Education'
+  if (block.type === 'campus') blockTypeLabel = 'Campus Experience'
   
   return (
     <div style={{ marginBottom: blockIndex < totalBlocks - 1 ? `${16 * spacingScale}px` : '0' }}>

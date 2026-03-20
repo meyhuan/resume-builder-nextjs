@@ -12,11 +12,11 @@ const AiGenerateVisual = (): React.ReactElement => (
   <div className="mt-3 flex gap-3 flex-1 min-h-0">
     {/* Left: User input form */}
     <div className="flex-1 bg-white/60 backdrop-blur-sm rounded-xl border border-white shadow-sm p-3 space-y-2 flex flex-col">
-      <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">输入信息</div>
+      <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Your Info</div>
       {[
-        { label: '姓名', value: '张小明' },
-        { label: '目标岗位', value: '前端开发工程师' },
-        { label: '学历', value: '北京大学 · 本科' },
+        { label: 'Name', value: 'Alex Johnson' },
+        { label: 'Target Role', value: 'Frontend Developer' },
+        { label: 'Education', value: 'MIT · B.S.' },
       ].map((field) => (
         <div key={field.label} className="space-y-0.5">
           <div className="text-[9px] text-slate-400">{field.label}</div>
@@ -25,14 +25,14 @@ const AiGenerateVisual = (): React.ReactElement => (
       ))}
       <div className="flex items-center gap-1.5 mt-auto pt-1">
         <div className="w-2 h-2 bg-[#8B5CF6] rounded-full animate-pulse" />
-        <span className="text-[10px] font-medium text-[#8B5CF6]">AI 正在分析...</span>
+        <span className="text-[10px] font-medium text-[#8B5CF6]">AI analyzing...</span>
       </div>
     </div>
     {/* Right: Generated resume output */}
     <div className="flex-1 bg-white/60 backdrop-blur-sm rounded-xl border border-white shadow-sm p-3 space-y-2 flex flex-col">
-      <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">生成结果</div>
+      <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Result</div>
       <div className="flex items-center gap-2">
-        <div className="w-6 h-6 rounded-full bg-[#8B5CF6] flex items-center justify-center text-white text-[9px] font-bold shrink-0">张</div>
+        <div className="w-6 h-6 rounded-full bg-[#8B5CF6] flex items-center justify-center text-white text-[9px] font-bold shrink-0">AJ</div>
         <div className="space-y-0.5">
           <div className="h-2 w-12 bg-slate-200 rounded" />
           <div className="h-1.5 w-20 bg-slate-100 rounded" />
@@ -57,15 +57,15 @@ const AiGenerateVisual = (): React.ReactElement => (
 const PolishVisual = (): React.ReactElement => (
   <div className="mt-3 space-y-2">
     <div className="bg-rose-50/80 rounded-lg px-3 py-1 border border-rose-100">
-      <div className="text-[10px] text-rose-400 font-medium mb-1">优化前</div>
-      <div className="text-[11px] text-slate-500 line-through decoration-rose-300">负责项目前端开发工作</div>
+      <div className="text-[10px] text-rose-400 font-medium mb-1">Before</div>
+      <div className="text-[11px] text-slate-500 line-through decoration-rose-300">Responsible for frontend development</div>
     </div>
     <div className="flex justify-center">
       <ArrowRight className="w-3.5 h-3.5 text-fuchsia-400 rotate-90" />
     </div>
     <div className="bg-emerald-50/80 rounded-lg px-3 py-1 border border-emerald-100">
-      <div className="text-[10px] text-emerald-500 font-medium mb-1">优化后</div>
-      <div className="text-[11px] text-slate-700 font-medium">主导前端架构升级，首屏加载提速 40%</div>
+      <div className="text-[10px] text-emerald-500 font-medium mb-1">After</div>
+      <div className="text-[11px] text-slate-700 font-medium">Led frontend architecture migration, cutting load time by 40%</div>
     </div>
   </div>
 );
@@ -83,7 +83,7 @@ const MatchVisual = (): React.ReactElement => (
       </div>
     </div>
     <div className="space-y-1.5 flex-1">
-      {['技能匹配', '经验契合', '学历符合'].map((label) => (
+      {['Skills Match', 'Experience Fit', 'Education Match'].map((label) => (
         <div key={label} className="flex items-center gap-1.5">
           <div className="w-3 h-3 rounded-full bg-amber-100 flex items-center justify-center">
             <Check className="w-2 h-2 text-amber-600" />
@@ -98,7 +98,7 @@ const MatchVisual = (): React.ReactElement => (
 /** Mini visual: ATS checklist */
 const AtsVisual = (): React.ReactElement => (
   <div className="mt-3 space-y-2">
-    {['PDF 格式正确', '关键词覆盖', '结构化信息'].map((item) => (
+    {['PDF Format Valid', 'Keyword Coverage', 'Structured Data'].map((item) => (
       <div key={item} className="flex items-center gap-2 bg-white/60 backdrop-blur-sm rounded-lg px-3 py-1.5 border border-white shadow-sm">
         <div className="w-4 h-4 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
           <Check className="w-2.5 h-2.5 text-emerald-600" />
@@ -113,14 +113,14 @@ const AtsVisual = (): React.ReactElement => (
 const LanguageVisual = (): React.ReactElement => (
   <div className="mt-3 space-y-2.5">
     <div className="flex items-center gap-2">
-      <span className="text-[10px] font-bold text-cyan-600 bg-cyan-50 px-2 py-0.5 rounded-md border border-cyan-100">中文</span>
+      <span className="text-[10px] font-bold text-cyan-600 bg-cyan-50 px-2 py-0.5 rounded-md border border-cyan-100">EN</span>
       <ArrowRight className="w-3 h-3 text-slate-300" />
-      <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100">English</span>
+      <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100">ES</span>
     </div>
     <div className="bg-white/60 backdrop-blur-sm rounded-lg px-3 py-2 border border-white shadow-sm space-y-1.5">
-      <div className="text-[10px] text-slate-400">教育背景 → Education</div>
-      <div className="text-[10px] text-slate-400">工作经历 → Work Experience</div>
-      <div className="text-[10px] text-slate-400">技能特长 → Skills</div>
+      <div className="text-[10px] text-slate-400">Education → Educación</div>
+      <div className="text-[10px] text-slate-400">Experience → Experiencia</div>
+      <div className="text-[10px] text-slate-400">Skills → Habilidades</div>
     </div>
   </div>
 );
@@ -130,7 +130,7 @@ const LanguageVisual = (): React.ReactElement => (
 const ImportVisual = (): React.ReactElement => (
   <div className="mt-3 space-y-2">
     <div className="flex flex-wrap gap-1.5">
-      {['豆包', 'ChatGPT', 'DeepSeek', 'Kimi', '通义千问'].map((name) => (
+      {['ChatGPT', 'Claude', 'Gemini', 'DeepSeek', 'Copilot'].map((name) => (
         <span key={name} className="text-[9px] font-semibold px-2 py-0.5 rounded-md bg-white/60 border border-white shadow-sm text-slate-600">{name}</span>
       ))}
     </div>
@@ -141,7 +141,7 @@ const ImportVisual = (): React.ReactElement => (
       <div className="w-4 h-4 rounded-full bg-rose-100 flex items-center justify-center shrink-0">
         <Check className="w-2.5 h-2.5 text-rose-500" />
       </div>
-      <span className="text-[10px] font-medium text-slate-700">专业排版 + 免费 PDF 导出</span>
+      <span className="text-[10px] font-medium text-slate-700">Pro layout + Free PDF export</span>
     </div>
   </div>
 );
@@ -160,48 +160,48 @@ interface FeatureItem {
 
 const AI_FEATURES: readonly FeatureItem[] = [
   {
-    title: 'AI 一键生成',
-    description: '根据你的身份（在校生/应届生/职场人）和目标岗位，AI 自动调整引导流程，生成完整、专业的简历内容。',
+    title: 'AI Resume Generation',
+    description: 'Based on your background (student, graduate, or professional) and target role, AI tailors the flow and generates polished, complete resume content.',
     icon: <Brain className="w-5 h-5" />,
     color: 'text-[#8B5CF6]',
     bgColor: 'bg-[#8B5CF6]/10',
     span: 'md:col-span-2 md:row-span-2',
   },
   {
-    title: 'AI 内容润色',
-    description: '模块级 AI 润色，针对单条经历精准优化措辞，支持按岗位类别定制。',
+    title: 'AI Content Polish',
+    description: 'Section-level AI polish — refine wording for each experience entry, tailored to your target role.',
     icon: <Sparkles className="w-5 h-5" />,
     color: 'text-fuchsia-500',
     bgColor: 'bg-fuchsia-500/10',
     span: 'md:col-span-1 md:row-span-1',
   },
   {
-    title: 'JD 智能匹配',
-    description: '粘贴职位描述，AI 自动调整简历重点。',
+    title: 'JD Smart Match',
+    description: 'Paste a job description and AI rewrites your resume highlights to match.',
     icon: <Target className="w-5 h-5" />,
     color: 'text-amber-500',
     bgColor: 'bg-amber-500/10',
     span: 'md:col-span-1 md:row-span-1',
   },
   {
-    title: 'ATS 格式优化',
-    description: 'PDF 可被主流招聘系统完美解析。',
+    title: 'ATS Optimization',
+    description: 'PDFs are parsed perfectly by major applicant tracking systems.',
     icon: <FileCheck className="w-5 h-5" />,
     color: 'text-emerald-500',
     bgColor: 'bg-emerald-500/10',
     span: 'md:col-span-1 md:row-span-1',
   },
   {
-    title: '多语言生成',
-    description: '中英文一键切换，外企投递不再愁。',
+    title: 'Multi-Language',
+    description: 'Generate resume content in multiple languages with one click.',
     icon: <Languages className="w-5 h-5" />,
     color: 'text-cyan-500',
     bgColor: 'bg-cyan-500/10',
     span: 'md:col-span-1 md:row-span-1',
   },
   {
-    title: 'AI 文本转简历',
-    description: '粘贴文本内容，AI 自动解析结构并应用专业模板排版，支持豆包、ChatGPT 等来源。',
+    title: 'Text to Resume',
+    description: 'Paste any text and AI parses it into a structured, beautifully formatted resume — works with ChatGPT, Claude, and more.',
     icon: <FileUp className="w-5 h-5" />,
     color: 'text-rose-500',
     bgColor: 'bg-rose-500/10',
@@ -222,14 +222,14 @@ export const LandingFeatures = ({ id }: FeaturesSectionProps): React.ReactElemen
         <div className="text-center mb-16 max-w-3xl mx-auto">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/80 backdrop-blur-sm border border-white rounded-full shadow-sm mb-6">
             <Wand2 className="w-4 h-4 text-[#8B5CF6]" />
-            <span className="text-sm font-semibold text-[#8B5CF6]">AI 加持</span>
+            <span className="text-sm font-semibold text-[#8B5CF6]">AI-Powered</span>
           </div>
           <h2 className="text-4xl md:text-5xl font-extrabold text-slate-900 mb-6 tracking-tight">
-            不仅好用，
-            <span className="text-[#8B5CF6]">还很聪明</span>
+            Not Just Easy,
+            <span className="text-[#8B5CF6]"> Seriously Smart</span>
           </h2>
           <p className="text-lg text-slate-500">
-            AI 贯穿简历制作全流程，从生成到润色到投递优化，帮你节省 90% 的时间。
+            AI powers the entire resume workflow — from generation to polishing to job matching — saving you 90% of the time.
           </p>
         </div>
 

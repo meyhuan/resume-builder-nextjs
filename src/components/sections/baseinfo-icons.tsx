@@ -7,7 +7,7 @@ const DEFAULT_ICON_SIZE = '1.14em';
  * Base info field icons — custom WPS SVG icons using currentColor.
  */
 
-/** 手机 / Phone */
+/** Phone */
 export function IconPhone({ size = DEFAULT_ICON_SIZE, className }: { readonly size?: string | number; readonly className?: string }): ReactElement {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" width={size} height={size} className={className}>
@@ -22,7 +22,7 @@ export function IconPhone({ size = DEFAULT_ICON_SIZE, className }: { readonly si
   );
 }
 
-/** 邮箱 / Email */
+/** Email */
 export function IconMail({ size = DEFAULT_ICON_SIZE, className }: { readonly size?: string | number; readonly className?: string }): ReactElement {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" width={size} height={size} className={className}>
@@ -37,7 +37,7 @@ export function IconMail({ size = DEFAULT_ICON_SIZE, className }: { readonly siz
   );
 }
 
-/** 性别 / Gender */
+/** Gender */
 export function IconGender({ size = DEFAULT_ICON_SIZE, className }: { readonly size?: string | number; readonly className?: string }): ReactElement {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" width={size} height={size} className={className}>
@@ -52,7 +52,7 @@ export function IconGender({ size = DEFAULT_ICON_SIZE, className }: { readonly s
   );
 }
 
-/** 年龄/生日 / Age/Birthday */
+/** Age/Birthday */
 export function IconAge({ size = DEFAULT_ICON_SIZE, className }: { readonly size?: string | number; readonly className?: string }): ReactElement {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" width={size} height={size} className={className}>
@@ -71,7 +71,7 @@ export function IconAge({ size = DEFAULT_ICON_SIZE, className }: { readonly size
   );
 }
 
-/** 所在地 / Location */
+/** Location */
 export function IconLocation({ size = DEFAULT_ICON_SIZE, className }: { readonly size?: string | number; readonly className?: string }): ReactElement {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" width={size} height={size} className={className}>
@@ -86,7 +86,7 @@ export function IconLocation({ size = DEFAULT_ICON_SIZE, className }: { readonly
   );
 }
 
-/** 通用信息 / Generic info */
+/** Generic info */
 export function IconInfo({ size = DEFAULT_ICON_SIZE, className }: { readonly size?: string | number; readonly className?: string }): ReactElement {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" width={size} height={size} className={className}>
@@ -96,7 +96,7 @@ export function IconInfo({ size = DEFAULT_ICON_SIZE, className }: { readonly siz
   );
 }
 
-/** 工作年限 / Work years */
+/** Work years */
 export function IconWorkYear({ size = DEFAULT_ICON_SIZE, className }: { readonly size?: string | number; readonly className?: string }): ReactElement {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" width={size} height={size} className={className}>

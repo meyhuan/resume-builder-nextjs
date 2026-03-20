@@ -15,8 +15,8 @@ export async function applyRateLimit(
 
   if (!result.allowed) {
     const message = isAuthenticated
-      ? `今日 AI 使用次数已达上限（${result.limit} 次/天），请明天再试`
-      : `未登录用户每天可使用 ${result.limit} 次 AI 功能，登录后可获得更多次数`;
+      ? `Daily AI usage limit reached (${result.limit} uses/day). Please try again tomorrow.`
+      : `Guest users can use AI features ${result.limit} times per day. Log in for more uses.`;
 
     return NextResponse.json(
       {

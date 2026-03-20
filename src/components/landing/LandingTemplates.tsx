@@ -22,16 +22,16 @@ export const LandingTemplates = ({ id }: TemplatesSectionProps) => {
         <div className="text-center mb-16 animate-in slide-in-from-bottom duration-700">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/50 backdrop-blur-md border border-white/60 rounded-full mb-6 shadow-sm">
             <Gem className="w-4 h-4 text-violet-500" />
-            <span className="text-sm font-semibold text-slate-600">极简简历模板</span>
+            <span className="text-sm font-semibold text-slate-600">Resume Templates</span>
           </div>
           
           <h2 className="text-4xl md:text-5xl font-extrabold text-slate-900 mb-6 tracking-tight">
-            不求多，<span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-fuchsia-500">但求精</span>
+            Quality Over <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-fuchsia-500">Quantity</span>
           </h2>
           <p className="text-lg text-slate-500 max-w-2xl mx-auto">
-            每一套极简简历模板都经过反复打磨，覆盖应届生、互联网、商务等主流求职场景。
+            Every template is carefully crafted for real-world job applications — clean, ATS-friendly, and professional.
             <br className="hidden md:block" />
-            支持在线制作，全部免费使用，高清 PDF 免费导出不收一分钱。
+            All templates are free to use with free HD PDF export.
           </p>
         </div>
 
@@ -58,7 +58,7 @@ export const LandingTemplates = ({ id }: TemplatesSectionProps) => {
                     <Link href={`/editor?template=${item.id}`} className="w-full flex justify-center translate-y-4 group-hover:translate-y-0 transition-all duration-500">
                       <div className="flex items-center gap-2 px-6 py-3 bg-white/90 backdrop-blur-md rounded-2xl shadow-xl shadow-slate-200/50 border border-white text-violet-600 font-bold hover:bg-white hover:scale-105 hover:shadow-2xl hover:shadow-violet-500/20 transition-all">
                         <Wand2 className="w-4 h-4" />
-                        免费使用此模板
+                        Use This Template
                       </div>
                     </Link>
                   </div>
@@ -67,7 +67,7 @@ export const LandingTemplates = ({ id }: TemplatesSectionProps) => {
                 <div className="p-5 flex items-center justify-between bg-white relative z-10">
                   <div>
                     <h3 className="text-base font-bold text-slate-800 mb-1">{item.name}</h3>
-                    <p className="text-xs text-slate-400 truncate">免费使用 · 免费导出</p>
+                    <p className="text-xs text-slate-400 truncate">Free to use · Free export</p>
                   </div>
                   <span className="px-3 py-1 bg-emerald-50 text-emerald-500 border border-emerald-100 text-[10px] font-extrabold rounded-full">
                     FREE
@@ -89,7 +89,7 @@ export const LandingTemplates = ({ id }: TemplatesSectionProps) => {
         </div>
         <div className="flex justify-center">
           <Link href="/templates" className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white text-slate-700 font-semibold border border-slate-200 hover:border-violet-200 hover:text-violet-600 transition-colors shadow-sm">
-            查看更多岗位简历模板
+            Browse All Templates
             <Wand2 className="w-4 h-4" />
           </Link>
         </div>

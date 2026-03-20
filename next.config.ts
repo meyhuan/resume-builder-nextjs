@@ -15,11 +15,6 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       ...(aliyunOssRemotePattern ? [aliyunOssRemotePattern] : []),
-      {
-        protocol: 'https',
-        hostname: 'mp.weixin.qq.com',
-        pathname: '/cgi-bin/**',
-      },
     ],
   },
   experimental: {
