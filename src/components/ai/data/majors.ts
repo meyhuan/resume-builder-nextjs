@@ -172,7 +172,7 @@ const MAJORS: readonly string[] = [
   'Pediatrics', 'Forensic Medicine', 'Obstetrics and Gynecology', 'Nursing', 'Stomatology', 'Clinical Medicine', 'Anesthesiology',
   'Immunology', 'Internal Medicine', 'Dermatology and Venereology', 'Neurology', 'Surgery', 'Ophthalmology',
   'Medical Laboratory Science', 'Medical Imaging Engineering', 'Imaging and Nuclear Medicine', 'Sports Medicine',
-  'Acupuncture and Tuina', 'Integrated Chinese and Western Medicine', 'Clinical Medicine of Integrated Chinese and Western Medicine', 'Traditional Chinese Medicine', 'Oncology',
+  'Acupuncture and Manual Therapy', 'Integrative Medicine', 'Integrative Clinical Medicine', 'East Asian Medicine', 'Oncology',
   'Measurement and Control Technology and Instruments', 'Instrument Science and Technology',
   'Performance', 'Sculpture', 'Animation', 'Painting', 'Fine Arts', 'Photography', 'Digital Media Art',
   'Dance Choreography', 'Dance Studies', 'Drama, Film and Television Literature', 'Art Design', 'Art Design Studies', 'Art Studies',
@@ -182,7 +182,7 @@ const MAJORS: readonly string[] = [
   'Comparative Literature and World Literature', 'Teaching Chinese as a Foreign Language', 'International Chinese Education', 'Chinese Language', 'Chinese Language and Literature',
   'Chinese Philology', 'Literary Theory', 'Applied Linguistics', 'Linguistics and Applied Linguistics',
   'Ancient Chinese Literature', 'Chinese Ethnic Minority Languages and Literature', 'Modern and Contemporary Chinese Literature',
-  'Mechatronics Technology', 'Supply Chain Management', 'Chinese Secretarial Studies', 'Financial Accounting', 'Nuclear Chemical Engineering and Nuclear Fuel',
+  'Mechatronics Technology', 'Supply Chain Management', 'Professional Secretarial Studies', 'Financial Accounting', 'Nuclear Chemical Engineering and Nuclear Fuel',
   'Food Processing and Safety', 'Viticulture and Enology Engineering', 'Environmental Art Design',
 ];
 

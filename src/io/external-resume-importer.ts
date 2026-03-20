@@ -1,6 +1,5 @@
 import type { ResumeData } from '@/entities/resume/resume-data';
 import type { BaseInfo } from '@/entities/user/base-info';
-import type { JobIntention } from '@/entities/user/job-intention';
 import type { Section } from '@/entities/resume/section';
 import type { ExperienceBlock } from '@/entities/blocks/experience-block';
 import type { EducationBlock } from '@/entities/blocks/education-block';
@@ -14,11 +13,7 @@ import type { ExternalResume } from './external-resume-types';
  */
 export function mapExternalResume(ext: ExternalResume): ResumeData {
   const baseInfo: BaseInfo | undefined = mapBaseInfo(ext);
-  const jobIntention: JobIntention | undefined = mapJobIntentionData(ext);
-  const jobIntentionVisible: boolean = Boolean(jobIntention) && ext.job_intention?.is_hide !== true;
   const sections: Section[] = [];
-
-  // Job intention is now handled separately via jobIntention field, not as a section
 
   if (ext.self_evaluation && !ext.self_evaluation.is_hide) {
     const selfSection = mapSelfEvaluation(ext);
@@ -69,20 +64,7 @@ export function mapExternalResume(ext: ExternalResume): ResumeData {
     id: 'resume-imported',
     name: ext.base_info.name,
     baseInfo,
-    jobIntention,
-    jobIntentionVisible,
     sections,
-  };
-}
-
-function mapJobIntentionData(ext: ExternalResume): JobIntention | undefined {
-  const ji = ext.job_intention;
-  if (!ji || ji.is_hide) return undefined;
-  return {
-    position: ji.objective,
-    city: ji.city,
-    salary: ji.salary,
-    type: ji.type,
   };
 }
 
@@ -96,6 +78,7 @@ function mapBaseInfo(ext: ExternalResume): BaseInfo | undefined {
     email: bi.mail,
     gender: bi.gender,
     age: bi.age ? parseInt(bi.age, 10) : undefined,
+    showAvatar: false,
   };
 }
 
@@ -105,7 +88,7 @@ function mapSelfEvaluation(ext: ExternalResume): Section | undefined {
   const blocks: TextBlock[] = [{ id: 'block-self-evaluation', type: 'text', html: se.content }];
   return {
     id: 'section-self-evaluation',
-    title: 'Self Evaluation',
+    title: 'Professional Summary',
     columns: 1,
     blocks,
   };

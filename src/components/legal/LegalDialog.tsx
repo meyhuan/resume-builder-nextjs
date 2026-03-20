@@ -147,8 +147,8 @@ const PrivacyContent: React.FC = () => (
     <section>
       <SectionHeading index={3} title="User Rights" />
       <ol className="list-decimal pl-12 space-y-2 text-xs">
-        <li>You may view and correct your personal information at any time by logging in, or contact support to request deletion of unnecessary data (except as required by law).</li>
-        <li>You may decline to provide non-essential information, though this may affect certain features.</li>
+        <li>You may view and correct your personal information at any time by logging in, or contact support to request access, correction, export, or deletion of your account data, subject to legal retention requirements.</li>
+        <li>You may decline to provide non-essential information, and you may decline optional analytics cookies without losing access to core resume-building features.</li>
         <li>
           If you discover a personal information breach, contact the Platform immediately (email:
           <a href="mailto:support@airesumepass.com" className="text-violet-600 hover:underline"> support@airesumepass.com</a>
@@ -161,7 +161,8 @@ const PrivacyContent: React.FC = () => (
       <SectionHeading index={4} title="Cookies & Analytics" />
       <div className="pl-8 text-xs space-y-1.5">
         <p>The Platform uses cookies to maintain login status and record necessary session information.</p>
-        <p>The Platform may use third-party analytics tools (e.g., Google Analytics) to collect anonymous access data (such as page views and device types) to improve the service experience. These tools do not collect your personally identifiable information.</p>
+        <p>The Platform uses optional analytics tools (e.g., Google Analytics) only after you provide consent through the cookie banner. These tools collect aggregated usage information such as page views, approximate location, device type, and referrer data.</p>
+        <p>You can decline analytics tracking or change your choice later by clearing your browser storage and revisiting the site. Core product functionality is available even if you decline analytics.</p>
       </div>
     </section>
 
@@ -173,7 +174,16 @@ const PrivacyContent: React.FC = () => (
     </section>
 
     <section>
-      <SectionHeading index={6} title="Privacy Policy Updates" />
+      <SectionHeading index={6} title="Data Deletion Requests" />
+      <p className="pl-8 text-xs">
+        If you want your account data removed, contact
+        <a href="mailto:support@airesumepass.com" className="text-violet-600 hover:underline"> support@airesumepass.com</a>
+        {' '}from your account email address with the subject line &quot;Delete My Data&quot;. We will review and process eligible requests within a reasonable time.
+      </p>
+    </section>
+
+    <section>
+      <SectionHeading index={7} title="Privacy Policy Updates" />
       <p className="pl-8 text-xs">
         The Platform reserves the right to update this privacy policy in accordance with legal or operational changes. Updates will be communicated via announcements on the website. Continued use of the service constitutes acceptance of the updated policy.
       </p>

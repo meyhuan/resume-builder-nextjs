@@ -116,8 +116,8 @@ export function buildPolishSystemPrompt(
   polishLevel: PolishLevel,
   realisticMode: boolean,
 ): string {
-  const allowed: string = ACTION_VERB_WHITELIST[identity].join('、');
-  const forbidden: string = ACTION_VERB_BLACKLIST[identity].join('、');
+  const allowed: string = ACTION_VERB_WHITELIST[identity].join(', ');
+  const forbidden: string = ACTION_VERB_BLACKLIST[identity].join(', ');
 
   const parts: string[] = [
     'You are a senior resume optimization consultant specializing in helping job seekers polish resume content into professional, compliant, and authentic expressions.',
@@ -192,11 +192,11 @@ const JOB_CATEGORY_CONTEXT: Record<JobCategory, string> = {
     'Target role type: Technical (Frontend, Backend, ML/AI, QA, etc.). ' +
     'Summary should emphasize: tech stack depth, engineering practice, debugging & problem-solving, code quality, technical vision. ' +
     'Keyword direction: architecture design, performance optimization, code quality, tech selection, continuous learning.',
-  'state-owned':
-    'Target role type: Government/Public Sector (state-owned enterprises, public institutions, etc.). ' +
-    'Summary should emphasize: organizational awareness, compliance with directives, diligence, teamwork, discipline. ' +
-    'Style: formal and measured tone, avoid startup/tech jargon, convey values of loyalty, responsibility, and pragmatism. ' +
-    'Keyword direction: organizational discipline, teamwork, accountability, adaptability, continuous learning.',
+  'public-sector':
+    'Target role type: Public Sector (government, education, non-profit, and public institutions). ' +
+    'Summary should emphasize: public service orientation, accountability, compliance awareness, stakeholder communication, and reliability. ' +
+    'Style: formal and measured tone, avoid startup jargon, and highlight mission alignment, responsibility, and professionalism. ' +
+    'Keyword direction: public service, accountability, policy compliance, cross-functional coordination, community impact.',
 };
 
 /**
@@ -208,8 +208,8 @@ export function buildGenerateSystemPrompt(
   jobCategory?: JobCategory,
   realisticMode: boolean = false,
 ): string {
-  const allowed: string = ACTION_VERB_WHITELIST[identity].join('、');
-  const forbidden: string = ACTION_VERB_BLACKLIST[identity].join('、');
+  const allowed: string = ACTION_VERB_WHITELIST[identity].join(', ');
+  const forbidden: string = ACTION_VERB_BLACKLIST[identity].join(', ');
 
   const parts: string[] = [
     'You are a senior resume writing consultant specializing in helping job seekers generate professional, compliant resume section content based on real experience.',

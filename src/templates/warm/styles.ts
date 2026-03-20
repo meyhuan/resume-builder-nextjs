@@ -72,27 +72,6 @@ export const WARM_TEMPLATE_STYLES: TemplateStylesConfig = {
     editButton: 'absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity print:hidden text-gray-400 hover:text-gray-600',
   },
 
-  jobIntention: {
-    container: 'py-2 relative group cursor-pointer print:cursor-default',
-    header: 'flex items-center gap-2 pb-1 relative',
-    title: {
-      className: 'font-bold',
-      fontSize: '1.15em',
-      fontWeight: 'bold',
-    },
-    fieldsLayout: {
-      type: 'vertical',
-      className: 'flex flex-col gap-2 text-[0.8125em]',
-    },
-    fieldItem: 'mb-2',
-    fieldLabel: 'text-gray-500',
-    fieldValue: 'text-gray-800',
-    icon: {
-      size: '1.3em',
-    },
-    editButton: 'ml-auto opacity-0 group-hover:opacity-100 transition-opacity print:hidden text-gray-400 hover:text-gray-600',
-  },
-
   sectionHeader: {
     fontSize: '1.125em',
     fontWeight: 'bold',

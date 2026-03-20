@@ -50,32 +50,6 @@ export const TIMELINE_TEMPLATE_STYLES: TemplateStylesConfig = {
       'absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity print:hidden text-gray-400 hover:text-gray-600',
   },
 
-  jobIntention: {
-    container: 'py-0 relative group cursor-pointer print:cursor-default',
-    layout: 'ribbon',
-    headerClassName: 'mb-4 mt-2',
-    header: 'flex items-center gap-2 pb-1 relative',
-    title: {
-      className: 'font-bold',
-      fontSize: '1.285em',
-      fontWeight: 'bold',
-    },
-    fieldsLayout: {
-      type: 'grid',
-      columns: 2,
-      gap: '4',
-      className: 'grid grid-cols-2 gap-y-2.5 gap-x-10 text-[1em]',
-    },
-    fieldItem: 'hover:bg-gray-50 rounded px-2 py-1 pr-6 transition-colors relative',
-    fieldLabel: 'text-gray-500',
-    fieldValue: 'text-gray-900',
-    icon: {
-      size: '1.5em',
-    },
-    editButton:
-      'ml-auto opacity-0 group-hover:opacity-100 transition-opacity print:hidden text-gray-400 hover:text-gray-600',
-  },
-
   sectionHeader: {
     fontSize: '1.285em',
     fontWeight: 'bold',

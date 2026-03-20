@@ -54,30 +54,6 @@ export const ELEGANT_TEMPLATE_STYLES: TemplateStylesConfig = {
     editButton: 'absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity print:hidden text-white/50 hover:text-white z-10',
   },
 
-  jobIntention: {
-    container: 'py-3 relative group cursor-pointer print:cursor-default',
-    header: 'flex items-center gap-2.5 pb-2 mb-3 relative',
-    headerBorderBottom: true,
-    title: {
-      className: 'font-bold',
-      fontSize: '1.285em',
-      fontWeight: 'bold',
-    },
-    fieldsLayout: {
-      type: 'grid',
-      columns: 2,
-      gap: '4',
-      className: 'grid grid-cols-2 gap-y-2.5 gap-x-10 text-[1em]',
-    },
-    fieldItem: 'hover:bg-gray-50 rounded px-2 py-1 pr-6 transition-colors relative',
-    fieldLabel: 'text-gray-500',
-    fieldValue: 'text-gray-800',
-    icon: {
-      size: '1.5em',
-    },
-    editButton: 'ml-auto opacity-0 group-hover:opacity-100 transition-opacity print:hidden text-gray-400 hover:text-gray-600',
-  },
-
   sectionHeader: {
     fontSize: '1.285em',
     fontWeight: 'bold',

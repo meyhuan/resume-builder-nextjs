@@ -8,7 +8,6 @@ import type { ReactElement } from 'react'
 import type { ResumeData, ThemeTokens } from '@/entities'
 import {
   BaseInfoSection,
-  JobIntentionSection,
   BlockRenderer,
 } from '@/templates/components/v2'
 import { SIMPLE_TEMPLATE_STYLES } from '@/templates/simple/styles'
@@ -23,7 +22,6 @@ interface TemplateProps {
 // ============================================
 export function ExampleWithStyles(props: TemplateProps): ReactElement {
   const { resume, theme } = props
-  const isJobIntentionVisible: boolean = resume.jobIntentionVisible ?? Boolean(resume.jobIntention)
 
   return (
     <div className="resume-container">
@@ -34,15 +32,6 @@ export function ExampleWithStyles(props: TemplateProps): ReactElement {
         themeColor={theme.primaryColor}
         styles={SIMPLE_TEMPLATE_STYLES.baseInfo}
       />
-
-      {/* Job intention - using config */}
-      {isJobIntentionVisible ? (
-        <JobIntentionSection
-          jobIntention={resume.jobIntention ?? null}
-          themeColor={theme.primaryColor}
-          styles={SIMPLE_TEMPLATE_STYLES.jobIntention}
-        />
-      ) : null}
 
       {/* Block rendering - using config */}
       {resume.sections.map((section) =>

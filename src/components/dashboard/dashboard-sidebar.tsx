@@ -1,11 +1,11 @@
 'use client';
 
 import type { ReactElement } from 'react';
+import { useAuth, useUser } from '@clerk/nextjs';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { FileText, MessageSquareHeart, LogOut } from 'lucide-react';
-import { useAuthStore } from '@/store/use-auth-store';
 import { useState, useEffect } from 'react';
 
 /** Navigation item definition. */
@@ -32,7 +32,8 @@ const COPYRIGHT_YEAR = new Date().getFullYear();
 export default function DashboardSidebar(): ReactElement {
   const pathname = usePathname();
   const router = useRouter();
-  const { userInfo, logout } = useAuthStore();
+  const { isSignedIn, signOut } = useAuth();
+  const { user } = useUser();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -95,24 +96,24 @@ export default function DashboardSidebar(): ReactElement {
               className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-white text-sm font-bold"
               style={{ background: `linear-gradient(135deg, ${BRAND_COLOR}, #7C3AED)` }}
             >
-              {userInfo?.name?.[0] || userInfo?.email?.[0] || 'U'}
+              {user?.fullName?.[0] || user?.primaryEmailAddress?.emailAddress?.[0] || 'U'}
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-slate-700 truncate">
-                {userInfo?.name || userInfo?.email || 'User'}
+                {user?.fullName || user?.primaryEmailAddress?.emailAddress || 'User'}
               </p>
               <p className="text-[11px] text-slate-400 truncate">
-                {userInfo?.integral !== undefined ? `Credits: ${userInfo.integral}` : 'Free Plan'}
+                {isSignedIn ? 'Free Plan' : 'Guest'}
               </p>
             </div>
           </div>
         )}
 
         {/* Logout */}
-        {mounted && userInfo && (
+        {mounted && isSignedIn && (
           <button
             type="button"
-            onClick={() => { logout(); router.push('/'); }}
+            onClick={() => { void signOut({ redirectUrl: '/' }); router.push('/'); }}
             className="flex items-center gap-2 w-full px-4 py-2 rounded-lg text-xs font-medium text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-colors mb-3"
           >
             <LogOut className="w-3.5 h-3.5" />

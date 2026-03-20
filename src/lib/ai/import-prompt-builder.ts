@@ -44,7 +44,7 @@ Parsing strategy:
 1. Intelligently identify resume sections (basic info, education, work experience, projects, etc.)
 2. Even if formatting is messy or section headers differ, do your best to map content to the correct modules
 3. HTML content fields should use <ul><li> for bullet points, or <p> tags for paragraphs
-4. Normalize date formats to "YYYY.MM" where possible (e.g. "June 2023" becomes "2023.06")
+4. Normalize date formats to "MM/YYYY" where possible (e.g. "June 2023" becomes "06/2023")
 5. If a field's information is missing, omit the field entirely — do not fill with placeholders
 6. Preserve all substantive content from the original text — do not discard any valuable information`;
 }
@@ -63,13 +63,6 @@ interface ExternalResume {
     phone?: string;
     mail?: string;
     hide_avatar?: boolean;
-  };
-  job_intention?: {
-    objective?: string;
-    city?: string;
-    salary?: string;
-    type?: string;
-    is_hide?: boolean;
   };
   self_evaluation?: {
     content: string;       // HTML format

@@ -10,7 +10,7 @@
 
 import { useState, useRef, useCallback, cloneElement, type ReactElement, type ChangeEvent } from 'react'
 import { Pencil, XCircle } from 'lucide-react'
-import { IconPhone, IconMail, IconGender, IconAge, IconLocation, IconWorkYear, IconInfo } from '@/components/sections/baseinfo-icons'
+import { IconPhone, IconMail, IconLocation, IconWorkYear, IconInfo } from '@/components/sections/baseinfo-icons'
 import type { BaseInfo } from '@/entities/user/base-info'
 import BaseInfoModal from '@/components/modals/base-info-modal'
 import AvatarCropModal from '@/components/modals/avatar-crop-modal'
@@ -166,7 +166,7 @@ export default function BaseInfoSection(props: BaseInfoSectionProps): ReactEleme
             )}
             {baseInfo?.title && (
               <span className={styles.title?.className || "text-gray-500"} style={{ fontSize: styles.title?.fontSize || '0.9em' }}>
-                Target Position: {baseInfo.title}
+                Professional Title: {baseInfo.title}
               </span>
             )}
           </div>
@@ -269,12 +269,6 @@ function buildFieldDefs(baseInfo: BaseInfo | null): FieldDef[] {
   }
   if (baseInfo.email) {
     defs.push({ key: 'email', label: 'Email', value: baseInfo.email, icon: <IconMail /> })
-  }
-  if (baseInfo.gender) {
-    defs.push({ key: 'gender', label: 'Gender', value: baseInfo.gender, icon: <IconGender /> })
-  }
-  if (baseInfo.age !== undefined && baseInfo.age !== null) {
-    defs.push({ key: 'age', label: 'Age', value: String(baseInfo.age), icon: <IconAge /> })
   }
   if (baseInfo.currentLocation) {
     defs.push({ key: 'currentLocation', label: 'Location', value: baseInfo.currentLocation, icon: <IconLocation /> })

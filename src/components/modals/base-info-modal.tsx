@@ -31,7 +31,7 @@ export default function BaseInfoModal(props: BaseInfoModalProps): ReactElement {
   const [gender, setGender] = useState(props.baseInfo?.gender ?? '');
   const [age, setAge] = useState(props.baseInfo?.age?.toString() ?? '');
   const [avatarUrl] = useState(props.baseInfo?.avatarUrl ?? '');
-  const [showAvatar, setShowAvatar] = useState(props.baseInfo?.showAvatar !== false);
+  const [showAvatar, setShowAvatar] = useState(props.baseInfo?.showAvatar ?? false);
   const [nation, setNation] = useState(props.baseInfo?.nation ?? '');
   const [household, setHousehold] = useState(props.baseInfo?.household ?? '');
   const [currentLocation, setCurrentLocation] = useState(props.baseInfo?.currentLocation ?? '');
@@ -99,7 +99,7 @@ export default function BaseInfoModal(props: BaseInfoModalProps): ReactElement {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="title">Target Position</Label>
+              <Label htmlFor="title">Professional Title</Label>
               <Input
                 id="title"
                 value={title}
@@ -109,34 +109,20 @@ export default function BaseInfoModal(props: BaseInfoModalProps): ReactElement {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="gender">Gender</Label>
-              <Select value={gender} onValueChange={setGender}>
-                <SelectTrigger id="gender">
-                  <SelectValue placeholder="Select" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Male">Male</SelectItem>
-                  <SelectItem value="Female">Female</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="avatar">Avatar</Label>
-              <Select
-                value={showAvatar ? 'show' : 'hide'}
-                onValueChange={(val) => setShowAvatar(val === 'show')}
-              >
-                <SelectTrigger id="avatar">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="show">Show</SelectItem>
-                  <SelectItem value="hide">Hide</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="avatar">Photo</Label>
+            <Select
+              value={showAvatar ? 'show' : 'hide'}
+              onValueChange={(val) => setShowAvatar(val === 'show')}
+            >
+              <SelectTrigger id="avatar">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="show">Show</SelectItem>
+                <SelectItem value="hide">Hide</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -160,19 +146,6 @@ export default function BaseInfoModal(props: BaseInfoModalProps): ReactElement {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="age">Age</Label>
-              <Input
-                id="age"
-                type="number"
-                value={age}
-                onChange={(e) => setAge(e.target.value)}
-                placeholder="33"
-              />
-            </div>
-          </div>
-
           <Button
             type="button"
             variant="ghost"
@@ -187,6 +160,31 @@ export default function BaseInfoModal(props: BaseInfoModalProps): ReactElement {
 
           {showMoreFields && (
             <div className="space-y-4 pt-2 border-t">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="gender">Gender</Label>
+                  <Select value={gender} onValueChange={setGender}>
+                    <SelectTrigger id="gender">
+                      <SelectValue placeholder="Select" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Male">Male</SelectItem>
+                      <SelectItem value="Female">Female</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="age">Age</Label>
+                  <Input
+                    id="age"
+                    type="number"
+                    value={age}
+                    onChange={(e) => setAge(e.target.value)}
+                    placeholder="33"
+                  />
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="nation">Nationality</Label>

@@ -1,4 +1,4 @@
-const SITE_URL: string = 'https://aijianli.cn';
+const SITE_URL: string = 'https://airesumepass.com';
 const INDEX_NOW_ENDPOINT: string = 'https://api.indexnow.org/indexnow';
 
 type IndexNowResult = {

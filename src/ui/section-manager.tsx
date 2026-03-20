@@ -2,7 +2,7 @@
  * SectionManager — Section Management Panel
  *
  * Top: current resume sections (Personal Info pinned with photo toggle,
- *      Job Preference + other sections with remove ⊖ buttons).
+ *      plus other sections with remove ⊖ buttons).
  * Bottom: "Add Section" — 2-column grid of predefined section types
  *         that are NOT already present in the resume.
  */
@@ -46,9 +46,7 @@ export default function SectionManager(props: SectionManagerProps): ReactElement
   const deleteSection = useAppStore((s) => s.deleteSection)
   const addSection = useAppStore((s) => s.addSection)
   const setAvatarVisibility = useAppStore((s) => s.setAvatarVisibility)
-  const setJobIntentionVisibility = useAppStore((s) => s.setJobIntentionVisibility)
   const showPhotoAvatar: boolean = resume.baseInfo?.showAvatar !== false
-  const isJobIntentionVisible: boolean = resume.jobIntentionVisible ?? Boolean(resume.jobIntention)
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 4 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 5 } })
@@ -96,19 +94,6 @@ export default function SectionManager(props: SectionManagerProps): ReactElement
               onChange={(e) => setAvatarVisibility(e.target.checked)}
             />
             Photo
-          </label>
-        </SectionRow>
-
-        {/* Pinned: Job Preference */}
-        <SectionRow label="Job Preference">
-          <label className="flex items-center gap-1.5 text-xs font-medium text-slate-500 cursor-pointer select-none">
-            <input
-              type="checkbox"
-              className="accent-[#8B5CF6] w-3.5 h-3.5 rounded-sm border-slate-300"
-              checked={isJobIntentionVisible}
-              onChange={(e) => setJobIntentionVisibility(e.target.checked)}
-            />
-            Show
           </label>
         </SectionRow>
 

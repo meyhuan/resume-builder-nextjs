@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ClerkProvider } from '@clerk/nextjs';
 import "@/styles/tailwind.css";
 import "@/styles/print.css";
 import "@/styles/base.css";
@@ -70,7 +71,8 @@ export const metadata: Metadata = {
 };
 
 import { Toaster } from 'sonner';
-import { GoogleAnalytics } from '@/components/analytics/GoogleAnalytics';
+import { GoogleAnalytics } from '../components/analytics/GoogleAnalytics';
+import { CookieConsentBanner } from '../components/legal/cookie-consent-banner';
 
 export default function RootLayout({
   children,
@@ -95,13 +97,16 @@ export default function RootLayout({
   return (
     <html lang={SITE_LANG}>
       <body className="antialiased text-slate-900 bg-white font-sans">
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-        />
-        {children}
-        <Toaster position="top-center" richColors />
-        <GoogleAnalytics />
+        <ClerkProvider>
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          />
+          {children}
+          <CookieConsentBanner />
+          <Toaster position="top-center" richColors />
+          <GoogleAnalytics />
+        </ClerkProvider>
       </body>
     </html>
   );

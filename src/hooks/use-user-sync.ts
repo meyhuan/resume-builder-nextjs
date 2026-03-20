@@ -4,9 +4,9 @@ import { syncUserAction } from '@/app/actions';
 import { logger } from '@/utils/logger';
 
 export const useUserSync = () => {
-  const syncUser = async (userData: { wxId: string; name?: string; avatar?: string; email?: string }) => {
+  const syncUser = async (userData: { clerkId: string; name?: string; avatar?: string; email?: string }) => {
     try {
-      logger.info('Sync', `Syncing user to DB: ${userData.wxId}`);
+      logger.info('Sync', `Syncing user to DB: ${userData.clerkId}`);
       const result = await syncUserAction(userData);
       
       if (result.success) {

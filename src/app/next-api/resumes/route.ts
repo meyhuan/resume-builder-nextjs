@@ -1,21 +1,19 @@
 import { NextResponse } from 'next/server'
 import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
-import { cookies } from 'next/headers'
+import { getCurrentUserRecord } from '@/lib/auth/get-current-user-record'
 import { persistResumeAssets } from '@/lib/persist-resume-assets'
 
 // GET /next-api/resumes - List all resumes for current user
 export async function GET() {
   try {
-    const cookieStore = await cookies();
-    const userId = cookieStore.get("auth_uid")?.value;
-
-    if (!userId) {
+    const currentUser = await getCurrentUserRecord()
+    if (!currentUser.dbUser) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const resumes = await prisma.resume.findMany({
-      where: { user: { wxId: userId } },
+      where: { userId: currentUser.dbUser.id },
       orderBy: { updatedAt: 'desc' },
       select: {
         id: true,
@@ -40,11 +38,9 @@ export async function POST(req: Request) {
       content,
       thumbnail: null,
     })
-    
-    const cookieStore = await cookies();
-    const userId = cookieStore.get("auth_uid")?.value;
 
-    if (!userId) {
+    const currentUser = await getCurrentUserRecord()
+    if (!currentUser.dbUser) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -55,10 +51,7 @@ export async function POST(req: Request) {
         content: persistedAssets.content as Prisma.InputJsonValue,
         template: template || 'simple',
         user: {
-          connectOrCreate: {
-            where: { wxId: userId },
-            create: { wxId: userId }
-          }
+          connect: { id: currentUser.dbUser.id }
         }
       }
     })

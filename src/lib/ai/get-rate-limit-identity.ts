@@ -1,4 +1,4 @@
-import { cookies } from 'next/headers';
+import { auth } from '@clerk/nextjs/server';
 import { NextRequest } from 'next/server';
 
 export interface RateLimitIdentity {
@@ -8,13 +8,13 @@ export interface RateLimitIdentity {
 
 /**
  * Extract rate-limit identity from a Next.js API request.
- * Uses userId (from auth_uid cookie) if logged in, otherwise falls back to IP.
+ * Uses Clerk userId if logged in, otherwise falls back to IP.
  */
 export async function getRateLimitIdentity(
   request: NextRequest,
 ): Promise<RateLimitIdentity> {
-  const cookieStore = await cookies();
-  const userId: string | undefined = cookieStore.get('auth_uid')?.value;
+  const authResult = await auth();
+  const userId: string | null = authResult.userId;
 
   if (userId) {
     return { identifier: `user:${userId}`, isAuthenticated: true };

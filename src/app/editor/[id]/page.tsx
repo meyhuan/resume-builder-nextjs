@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import ResumeEditor from "@/components/ResumeEditor";
 import { prisma } from "@/lib/prisma";
+import { getCurrentUserRecord } from "@/lib/auth/get-current-user-record";
 import { notFound, redirect } from "next/navigation";
-import { cookies } from "next/headers";
 
 export const metadata: Metadata = {
   title: 'Edit Resume',
@@ -18,21 +18,16 @@ interface PageParams {
 
 export default async function EditorPage({ params }: PageParams) {
   const { id } = await params;
-  const cookieStore = await cookies();
-  const userId = cookieStore.get("auth_uid")?.value;
-
-  if (!userId) {
+  const currentUser = await getCurrentUserRecord();
+  if (!currentUser.dbUser) {
     redirect(`/login?redirect=/editor/${id}`);
   }
   
   const resume = await prisma.resume.findUnique({
-    where: { 
-      id,
-      user: { wxId: userId }
-    },
+    where: { id },
   });
 
-  if (!resume) {
+  if (!resume || resume.userId !== currentUser.dbUser.id) {
     notFound();
   }
 

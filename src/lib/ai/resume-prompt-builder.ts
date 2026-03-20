@@ -124,47 +124,44 @@ function buildSectionInstructions(input: WizardInput): string {
     case 'student':
       lines.push('Generate the following sections (ordered by importance):');
       lines.push('1. base_info — Basic info (use "Your Name" as placeholder, phone and email as placeholders)');
-      lines.push('2. job_intention — Job objective');
+      lines.push('2. self_evaluation — Professional summary');
       lines.push('3. education — Education (1 entry, generate a reasonable school and courses based on major)');
-      lines.push('4. self_evaluation — Professional summary');
       if (input.campusActivities.length > 0) {
-        lines.push('5. school_exps — Campus experience (generate 1-2 entries based on user\'s campus activity keywords)');
+        lines.push('4. school_exps — Campus experience (generate 1-2 entries based on user\'s campus activity keywords)');
       }
-      lines.push(`${input.campusActivities.length > 0 ? '6' : '5'}. skills — Skills`);
+      lines.push(`${input.campusActivities.length > 0 ? '5' : '4'}. skills — Skills`);
       if (input.certificates.length > 0) {
-        lines.push(`${input.campusActivities.length > 0 ? '7' : '6'}. qualifications — Certifications`);
+        lines.push(`${input.campusActivities.length > 0 ? '6' : '5'}. qualifications — Certifications`);
       }
       lines.push('Note: Students typically have no formal work experience. Do not generate the experience field. You may generate intern (internship) entries if appropriate.');
       break;
     case 'graduate':
       lines.push('Generate the following sections (ordered by importance):');
       lines.push('1. base_info — Basic info');
-      lines.push('2. job_intention — Job objective');
+      lines.push('2. self_evaluation — Professional summary');
       lines.push('3. education — Education (1 entry)');
-      lines.push('4. self_evaluation — Professional summary');
       if (input.projects.length > 0) {
-        lines.push('5. program_experience — Project experience (generate 1-2 entries based on user\'s project keywords)');
+        lines.push('4. program_experience — Project experience (generate 1-2 entries based on user\'s project keywords)');
       }
-      lines.push('6. intern — Internship experience (generate 1 entry related to target role)');
-      lines.push('7. skills — Skills');
+      lines.push(`${input.projects.length > 0 ? '5' : '4'}. intern — Internship experience (generate 1 entry related to target role)`);
+      lines.push(`${input.projects.length > 0 ? '6' : '5'}. skills — Skills`);
       if (input.certificates.length > 0) {
-        lines.push('8. qualifications — Certifications');
+        lines.push(`${input.projects.length > 0 ? '7' : '6'}. qualifications — Certifications`);
       }
       break;
     case 'professional': {
       const years: number = parseWorkYears(input.workYears);
       lines.push('Generate the following sections (ordered by importance):');
       lines.push('1. base_info — Basic info');
-      lines.push('2. job_intention — Job objective');
-      lines.push('3. self_evaluation — Professional summary');
-      lines.push(`4. experience — Work experience (generate ${years <= 3 ? '1-2' : '2-3'} entries, most recent first)`);
+      lines.push('2. self_evaluation — Professional summary');
+      lines.push(`3. experience — Work experience (generate ${years <= 3 ? '1-2' : '2-3'} entries, most recent first)`);
       if (input.projects.length > 0) {
-        lines.push('5. program_experience — Project experience (generate 1-2 entries based on user\'s project keywords)');
+        lines.push('4. program_experience — Project experience (generate 1-2 entries based on user\'s project keywords)');
       }
-      lines.push('6. education — Education (1 entry)');
-      lines.push('7. skills — Skills');
+      lines.push(`${input.projects.length > 0 ? '5' : '4'}. education — Education (1 entry)`);
+      lines.push(`${input.projects.length > 0 ? '6' : '5'}. skills — Skills`);
       if (input.certificates.length > 0) {
-        lines.push('8. qualifications — Certifications');
+        lines.push(`${input.projects.length > 0 ? '7' : '6'}. qualifications — Certifications`);
       }
       break;
     }
@@ -179,24 +176,25 @@ function buildContentGuidelines(input: WizardInput, identityLabel: string): stri
   lines.push(`1. All content MUST be strictly tailored to the [${input.targetRole}] role — no irrelevant content`);
   lines.push('2. Content must be professional, clear, and detailed — expand appropriately to enrich the resume');
   lines.push('3. Use quantified data (percentages, numbers, timeframes) to demonstrate impact wherever possible');
-  lines.push('4. Use professional terminology that follows resume industry standards');
-  lines.push('5. HTML content should use <ul><li> format for bullet points, or <p> tags for paragraphs');
-  lines.push('6. Date format should be "YYYY.MM", e.g. "2023.06"');
+  lines.push('4. Use professional terminology that follows resume industry standards and ATS-friendly keywords');
+  lines.push('5. Prefer concise, achievement-oriented bullet points following Action + Scope + Result logic');
+  lines.push('6. HTML content should use <ul><li> format for bullet points, or <p> tags for paragraphs');
+  lines.push('7. Date format should be "MM/YYYY", e.g. "06/2023"');
 
   if (input.identity === 'professional') {
-    lines.push(`7. [Experience-level adaptation] Adjust content depth for ${years} years of experience:`);
+    lines.push(`8. [Experience-level adaptation] Adjust content depth for ${years} years of experience:`);
     lines.push(`   ${generateYearsGuidance(years)}`);
   } else if (input.identity === 'student') {
-    lines.push(`7. As a ${identityLabel}, emphasize learning ability, coursework, campus activities, and technical enthusiasm`);
+    lines.push(`8. As a ${identityLabel}, emphasize learning ability, coursework, campus activities, and technical enthusiasm`);
   } else {
-    lines.push(`7. As a ${identityLabel}, emphasize internship experience, project work, and professional foundation`);
+    lines.push(`8. As a ${identityLabel}, emphasize internship experience, project work, and professional foundation`);
   }
 
   if (input.softSkills.length > 0) {
-    lines.push(`8. Include the following skill keywords in the skills section: ${input.softSkills.join(', ')}`);
+    lines.push(`9. Include the following skill keywords in the skills section: ${input.softSkills.join(', ')}`);
   }
   if (input.certificates.length > 0) {
-    lines.push(`9. Include these certifications: ${input.certificates.join(', ')}`);
+    lines.push(`10. Include these certifications: ${input.certificates.join(', ')}`);
   }
 
   return lines.join('\n');
@@ -211,18 +209,9 @@ Generate JSON strictly following this TypeScript interface (only include necessa
 interface ExternalResume {
   base_info: {
     name: string;          // Use "Your Name" as placeholder
-    gender?: string;       // "Male" or "Female" or leave empty
-    age?: string;          // e.g. "22"
     phone?: string;        // Use "Phone Number" as placeholder
     mail?: string;         // Use "email@example.com" as placeholder
-    hide_avatar?: boolean; // false
-  };
-  job_intention: {
-    objective: string;     // Target role title
-    city?: string;         // e.g. "Open to relocation"
-    salary?: string;       // e.g. "Negotiable"
-    type?: string;         // e.g. "Full-time"
-    is_hide?: boolean;     // false
+    hide_avatar?: boolean; // true
   };
   self_evaluation?: {
     content: string;       // HTML professional summary, wrapped in <p> tags
@@ -235,7 +224,7 @@ interface ExternalResume {
     position: string;      // Job title
     content: string;       // HTML work description, use <ul><li> for bullet points
     is_hide?: boolean;
-    period: { start: string; end: string; }; // "YYYY.MM" format
+    period: { start: string; end: string; }; // "MM/YYYY" format
   }>;
   intern?: Array<{
     id: string;
@@ -293,7 +282,8 @@ function buildFinalInstructions(): string {
 2. Do NOT include any extra content (explanations, comments, markdown code block markers \`\`\`, etc.)
 3. Do NOT include any text outside of the JSON
 4. Verify JSON format validity before returning
-5. All HTML content fields must contain substantive, professional content — never leave them empty`;
+5. All HTML content fields must contain substantive, professional content — never leave them empty
+6. Do NOT generate a job preference or job intention section`;
 }
 
 function parseWorkYears(workYears: string): number {

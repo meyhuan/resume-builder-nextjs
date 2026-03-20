@@ -7,6 +7,7 @@
  */
 import { useEffect, useRef, useState, Suspense, useCallback, useMemo } from 'react'
 import type { ReactElement } from 'react'
+import { useAuth } from '@clerk/nextjs'
 import { useAppStore } from '@/state/store'
 import { getTemplate, getAllTemplates } from '@/templates/template-loader'
 import { exportImage } from '@/io/export-image'
@@ -29,7 +30,6 @@ import AiSectionProvider from '@/components/ai-section/ai-section-provider'
 import ExportPreviewDialog from '@/components/export-preview-dialog'
 import { useRequireAuth } from '@/hooks/use-require-auth'
 import { WxLoginDialog } from '@/components/auth/WxLoginDialog'
-import { useAuthStore } from '@/store/use-auth-store'
 import type { ResumeData } from '@/entities/resume/resume-data'
 
 const AI_CACHE_KEYS: Record<string, string> = {
@@ -60,18 +60,18 @@ interface ResumeEditorProps {
 export default function ResumeEditor({ resumeId: initialResumeId, initialData }: ResumeEditorProps): ReactElement {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { isSignedIn } = useAuth()
   const resume = useAppStore((s) => s.resume)
   // Mutable resumeId — starts undefined in guest mode, set after first save
   const [resumeId, setResumeId] = useState<string | undefined>(initialResumeId)
   const { isLoginOpen, requireAuth, handleLoginSuccess, handleLoginClose } = useRequireAuth()
-  const { token } = useAuthStore()
   
   // Hydration check to prevent SSR mismatch for auth state
   const [isHydrated, setIsHydrated] = useState(false)
   useEffect(() => {
     setIsHydrated(true)
   }, [])
-  const needsForceLogin = isHydrated && !token
+  const needsForceLogin = isHydrated && !isSignedIn
 
   const setResume = useAppStore((s) => s.setResume)
   const setThemeForTemplate = useAppStore((s) => s.setThemeForTemplate)
@@ -346,7 +346,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
   }, [])
 
   // Determine back destination based on auth state
-  const backPath = token ? '/dashboard' : '/'
+  const backPath = isSignedIn ? '/dashboard' : '/'
   // Handle back navigation with unsaved changes warning
   const handleBack = useCallback(() => {
     if (hasUnsavedChanges && resumeId) {
@@ -358,13 +358,13 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
 
   // Confirm leave action
   const confirmLeave = useCallback(() => {
-    if (!token) {
+    if (!isSignedIn) {
       // Guest users who abandon unsaved changes just get router back
       router.back()
     } else {
       router.push('/dashboard')
     }
-  }, [router, token])
+  }, [router, isSignedIn])
 
   // Stable callback to patch the current template's theme
   const patchTheme = useCallback((patch: Partial<ThemeTokens>): void => {

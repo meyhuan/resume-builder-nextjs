@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
-import { Plus, Clock, Sparkles, Wand2, FileDown, FileText } from "lucide-react";
-import { cookies } from "next/headers";
+import { getCurrentUserRecord } from "@/lib/auth/get-current-user-record";
+import { Plus, Sparkles, Wand2, FileDown, FileText } from "lucide-react";
 import { redirect } from "next/navigation";
 import Image from "next/image";
 import { ResumeCardActions } from "@/components/dashboard/resume-card-actions";
@@ -16,14 +16,13 @@ export const metadata: Metadata = {
 };
 
 export default async function DashboardPage() {
-  const cookieStore = await cookies();
-  const userId = cookieStore.get("auth_uid")?.value;
-  if (!userId) {
+  const currentUser = await getCurrentUserRecord();
+  if (!currentUser.dbUser) {
     redirect('/login?redirect=/dashboard');
   }
   try {
     const resumes = await prisma.resume.findMany({
-      where: { user: { wxId: userId } },
+      where: { userId: currentUser.dbUser.id },
       orderBy: { updatedAt: "desc" },
     });
     return (
@@ -35,18 +34,8 @@ export default async function DashboardPage() {
         </div>
 
         {/* Page Title & Old Version Notice */}
-        <div className="relative z-10 pt-8 pb-2 px-6 sm:px-10 lg:px-12 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="relative z-10 pt-8 pb-2 px-6 sm:px-10 lg:px-12 flex flex-col gap-4">
           <h1 className="text-2xl font-bold text-slate-800">My Resumes</h1>
-          
-          <a 
-            href="https://w2025.aijianli.cn" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-amber-50 border border-amber-200 text-amber-700 rounded-lg text-sm hover:bg-amber-100 transition-colors shadow-sm w-fit"
-          >
-            <Clock className="w-4 h-4" />
-            <span>Can&apos;t find your old resumes? Click to recover (legacy version)</span>
-          </a>
         </div>
 
         {/* Main Content */}

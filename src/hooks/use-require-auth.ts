@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
-import { getCookie } from 'cookies-next';
+import { useAuth } from '@clerk/nextjs';
 
 /**
  * Hook for progressive authentication — delays login until the user
@@ -9,18 +9,18 @@ import { getCookie } from 'cookies-next';
  * is replayed on success.
  */
 export function useRequireAuth() {
+  const { isSignedIn } = useAuth();
   const [isLoginOpen, setIsLoginOpen] = useState<boolean>(false);
   const pendingAction = useRef<(() => void) | null>(null);
 
   const requireAuth = useCallback((action: () => void): void => {
-    const authToken = getCookie('auth_uid');
-    if (authToken) {
+    if (isSignedIn) {
       action();
     } else {
       pendingAction.current = action;
       setIsLoginOpen(true);
     }
-  }, []);
+  }, [isSignedIn]);
 
   const handleLoginSuccess = useCallback((): void => {
     setIsLoginOpen(false);
@@ -34,8 +34,8 @@ export function useRequireAuth() {
   }, []);
 
   const isLoggedIn = useCallback((): boolean => {
-    return !!getCookie('auth_uid');
-  }, []);
+    return Boolean(isSignedIn);
+  }, [isSignedIn]);
 
   return { isLoginOpen, requireAuth, handleLoginSuccess, handleLoginClose, isLoggedIn };
 }

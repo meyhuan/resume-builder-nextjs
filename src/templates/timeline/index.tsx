@@ -18,7 +18,7 @@ import { useAiSection } from '@/components/ai-section/ai-section-provider'
 import { blockTypeToModuleType, extractBlockContentHtml } from '@/components/ai-section/block-module-utils'
 import DragDropProvider from '@/dnd/drag-drop-provider'
 import { DndIds } from '@/dnd/ids'
-import { BaseInfoSection, JobIntentionSection, BlockRenderer, SectionContainer } from '@/templates/components/v2'
+import { BaseInfoSection, BlockRenderer, SectionContainer } from '@/templates/components/v2'
 import { TIMELINE_TEMPLATE_STYLES } from './styles'
 
 import EditableFieldWrapper from '@/editor/editable-field-wrapper'
@@ -299,7 +299,6 @@ interface TimelineTemplateProps {
 
 export default function TimelineTemplate(props: TimelineTemplateProps): ReactElement {
   const { resume, theme } = props
-  const isJobIntentionVisible: boolean = resume.jobIntentionVisible ?? Boolean(resume.jobIntention)
   const pagePadding: string = `${theme.pagePaddingVertical}mm ${theme.pagePaddingHorizontal}mm`
   return (
     <div
@@ -321,15 +320,6 @@ export default function TimelineTemplate(props: TimelineTemplateProps): ReactEle
           styles={TIMELINE_TEMPLATE_STYLES.baseInfo}
         />
       </div>
-      {isJobIntentionVisible ? (
-        <div style={{ marginBottom: `${24 * theme.spacingScale}px` }}>
-          <JobIntentionSection
-            jobIntention={resume.jobIntention ?? null}
-            themeColor={theme.primaryColor}
-            styles={TIMELINE_TEMPLATE_STYLES.jobIntention}
-          />
-        </div>
-      ) : null}
       <DragDropProvider
         resume={resume}
         theme={theme}

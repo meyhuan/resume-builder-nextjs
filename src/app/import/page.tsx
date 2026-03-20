@@ -24,7 +24,7 @@ import {
 import Link from 'next/link';
 import { useRequireAuth } from '@/hooks/use-require-auth';
 import { useAiUsage } from '@/hooks/use-ai-usage';
-import { WxLoginDialog } from '@/components/auth/WxLoginDialog';
+import { WxLoginDialog as AuthDialog } from '@/components/auth/WxLoginDialog';
 
 const AI_MODELS = getAvailableModels();
 const MIN_TEXT_LENGTH = 10;
@@ -149,7 +149,7 @@ export default function ImportResumePage(): React.ReactElement {
           <h1 className="text-sm font-semibold text-gray-800">AI Text to Resume</h1>
         </div>
       </header>
-      <WxLoginDialog isOpen={isLoginOpen} onClose={handleLoginClose} onSuccess={handleLoginSuccess} />
+      <AuthDialog isOpen={isLoginOpen} onClose={handleLoginClose} onSuccess={handleLoginSuccess} />
 
       <div className="text-center pt-8 pb-2">
         <h2 className="text-xl font-bold text-gray-900">Paste Resume Text, One-Click Format</h2>

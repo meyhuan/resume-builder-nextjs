@@ -15,7 +15,7 @@ import { Sparkles, Loader2, AlertCircle, ChevronLeft, CircleStop, FileText } fro
 import Link from 'next/link';
 import { useRequireAuth } from '@/hooks/use-require-auth';
 import { useAiUsage } from '@/hooks/use-ai-usage';
-import { WxLoginDialog } from '@/components/auth/WxLoginDialog';
+import { WxLoginDialog as AuthDialog } from '@/components/auth/WxLoginDialog';
 
 const AI_MODELS = getAvailableModels();
 const WIZARD_CACHE_KEY = 'wizard_pending_resume';
@@ -123,7 +123,7 @@ export const WizardLayout = ({ children }: { children: React.ReactNode }) => {
           <h1 className="text-sm font-semibold text-gray-800">AI Resume Generator</h1>
         </div>
       </header>
-      <WxLoginDialog isOpen={isLoginOpen} onClose={handleLoginClose} onSuccess={handleLoginSuccess} />
+      <AuthDialog isOpen={isLoginOpen} onClose={handleLoginClose} onSuccess={handleLoginSuccess} />
 
       {/* Hero title */}
       <div className="text-center pt-8 pb-4">

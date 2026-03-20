@@ -27,8 +27,7 @@ export interface DisplaySection {
 
 const SECTION_TITLES: Record<string, string> = {
   base_info: 'Basic Information',
-  job_intention: 'Job Preference',
-  self_evaluation: 'Self Evaluation',
+  self_evaluation: 'Professional Summary',
   experience: 'Work Experience',
   intern: 'Internship',
   education: 'Education',
@@ -58,7 +57,6 @@ function extractSection(raw: string, key: string, title: string): DisplaySection
   if (!match) return null;
   const remaining: string = raw.slice(match.index + match[0].length);
   if (key === 'base_info') return buildFieldsSection(title, remaining, BASE_INFO_FIELDS);
-  if (key === 'job_intention') return buildFieldsSection(title, remaining, JOB_INTENTION_FIELDS);
   if (key === 'self_evaluation' || key === 'skills' || key === 'qualifications') {
     return buildTextSection(title, remaining);
   }
@@ -70,10 +68,6 @@ function extractSection(raw: string, key: string, title: string): DisplaySection
 
 const BASE_INFO_FIELDS: Record<string, string> = {
   name: 'Name', gender: 'Gender', age: 'Age', phone: 'Phone', mail: 'Email',
-};
-
-const JOB_INTENTION_FIELDS: Record<string, string> = {
-  objective: 'Position', city: 'City', salary: 'Salary', type: 'Job Type',
 };
 
 function buildFieldsSection(

@@ -138,7 +138,7 @@ export interface ExternalExtra {
 
 export interface ExternalResume {
   readonly base_info: ExternalBaseInfo;
-  readonly job_intention: ExternalJobIntention;
+  readonly job_intention?: ExternalJobIntention;
   readonly experience?: ExternalExperience[];
   readonly intern?: ExternalIntern[];
   readonly education?: ExternalEducation[];

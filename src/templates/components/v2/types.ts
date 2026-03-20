@@ -7,7 +7,6 @@
 
 import type { ReactElement } from 'react'
 import type { BaseInfo } from '@/entities/user/base-info'
-import type { JobIntention } from '@/entities/user/job-intention'
 import type { ResumeBlock } from '@/entities/blocks/resume-block'
 
 /**
@@ -71,32 +70,6 @@ export interface BaseInfoSectionStyles {
 }
 
 /**
- * JobIntentionSection style configuration.
- */
-export interface JobIntentionSectionStyles {
-  readonly container?: string
-  readonly header?: string
-  /** Whether to add a bottom border to the header */
-  readonly headerBorderBottom?: boolean
-  /** Header container layout type */
-  readonly layout?: 'default' | 'ribbon'
-  /** Header container class name */
-  readonly headerClassName?: string
-  /** Title styles */
-  readonly title?: TextFieldStyles
-  readonly fieldsLayout?: LayoutStyles
-  readonly fieldItem?: string
-  readonly fieldLabel?: string
-  readonly fieldValue?: string
-  readonly editButton?: string
-  readonly icon?: {
-    size?: string | number
-    className?: string
-    color?: string
-  }
-}
-
-/**
  * BlockRenderer style configuration.
  */
 export interface BlockRendererStyles {
@@ -123,13 +96,6 @@ export interface BaseInfoRenderProps {
   readonly onEdit: () => void
 }
 
-export interface JobIntentionRenderProps {
-  readonly jobIntention: JobIntention
-  readonly themeColor: string
-  readonly onEdit: () => void
-  readonly onDeleteField: (field: string) => void
-}
-
 export interface BlockRenderProps {
   readonly block: ResumeBlock
   readonly themeColor: string
@@ -145,12 +111,6 @@ export interface BaseInfoSlots {
   readonly name?: (name: string, themeColor: string) => ReactElement
   readonly title?: (title: string | undefined) => ReactElement
   readonly fields?: (baseInfo: BaseInfo | null, themeColor: string) => ReactElement
-  readonly editButton?: (onClick: () => void) => ReactElement
-}
-
-export interface JobIntentionSlots {
-  readonly header?: (title: string, themeColor: string) => ReactElement
-  readonly field?: (label: string, value: string, themeColor: string) => ReactElement
   readonly editButton?: (onClick: () => void) => ReactElement
 }
 
@@ -175,7 +135,6 @@ export interface TemplateStylesConfig {
   readonly name: string
   readonly description?: string
   readonly baseInfo?: BaseInfoSectionStyles
-  readonly jobIntention?: JobIntentionSectionStyles
   readonly sectionHeader?: SectionHeaderStyles
   readonly blockRenderer?: BlockRendererStyles
 }

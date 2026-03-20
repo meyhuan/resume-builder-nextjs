@@ -21,7 +21,7 @@ const JOB_TREE: JobCategory[] = [
   {
     name: 'Public Services',
     jobs: [
-      'State-Owned Enterprise Staff', 'Police Officer', 'Public Institution Staff', 'Civil Servant',
+      'Public Sector Staff', 'Police Officer', 'Public Service Staff', 'Government Officer',
       'Agronomist', 'Animal Breeding Specialist', 'Horticulturist', 'Livestock Specialist', 'Animal Caretaker', 'Feed R&D Specialist',
       'University Professor', 'Researcher', 'Volunteer',
     ],
@@ -35,7 +35,7 @@ const JOB_TREE: JobCategory[] = [
     jobs: [
       'Chemical Analyst', 'Pharmaceutical Sales Representative', 'Pharma Business Development', 'Drug Registration Specialist', 'Drug R&D Specialist',
       'Medical Device R&D Specialist', 'Medical Device Technician', 'Medical Device Buyer', 'Medical Device Sales', 'Quality Manager',
-      'Traditional Chinese Medicine Doctor', 'Veterinarian', 'Internal Medicine Doctor', 'Surgeon', 'Psychologist', 'Nurse',
+      'Integrative Medicine Doctor', 'Veterinarian', 'Internal Medicine Doctor', 'Surgeon', 'Psychologist', 'Nurse',
       'Radiologist', 'Lab Technician', 'Physical Therapist', 'Pharmacist', 'Anesthesiologist',
     ],
   },

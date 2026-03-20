@@ -18,7 +18,7 @@ const PROMISES = [
   {
     icon: <Shield className="w-5 h-5 text-violet-500" />,
     title: 'Privacy First',
-    description: 'Your resume data belongs to you. Never used for AI training, never shared with third parties.',
+    description: 'Your resume data belongs to you. Never used for AI training, never sold to third parties, and analytics stays optional.',
   },
   {
     icon: <Code2 className="w-5 h-5 text-cyan-500" />,

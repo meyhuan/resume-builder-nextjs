@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState, type ReactNode, Suspense } from 'react';
+import { useEffect, type ReactNode, Suspense } from 'react';
+import { useAuth } from '@clerk/nextjs';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
-import { getCookie } from 'cookies-next';
 import { Loader2 } from 'lucide-react';
 
 interface AuthGuardProps {
@@ -11,30 +11,21 @@ interface AuthGuardProps {
 }
 
 function AuthGuardContent({ children, fallback }: AuthGuardProps) {
+  const { isLoaded, isSignedIn } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [isChecking, setIsChecking] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    const checkAuth = () => {
-      const authToken = getCookie('auth_uid');
-      
-      if (!authToken) {
-        // Not authenticated, redirect to login with current path
-        const loginUrl = `/login?redirect=${encodeURIComponent(pathname + (searchParams.toString() ? `?${searchParams.toString()}` : ''))}`;
-        router.push(loginUrl);
-        return;
-      }
+    if (!isLoaded) return;
+    if (!isSignedIn) {
+      const loginUrl = `/login?redirect=${encodeURIComponent(pathname + (searchParams.toString() ? `?${searchParams.toString()}` : ''))}`;
+      router.push(loginUrl);
+    }
+  }, [isLoaded, isSignedIn, pathname, searchParams, router]);
 
-      // Authenticated
-      setIsAuthenticated(true);
-      setIsChecking(false);
-    };
-
-    checkAuth();
-  }, [pathname, searchParams, router]);
+  const isChecking: boolean = !isLoaded;
+  const isAuthenticated: boolean = isLoaded && Boolean(isSignedIn);
 
   // Show loading state while checking authentication
   if (isChecking) {

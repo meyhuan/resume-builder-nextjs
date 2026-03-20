@@ -19,10 +19,10 @@ import { useAiSection } from '@/components/ai-section/ai-section-provider'
 import { blockTypeToModuleType, extractBlockContentHtml } from '@/components/ai-section/block-module-utils'
 import DragDropProvider from '@/dnd/drag-drop-provider'
 import { DndIds } from '@/dnd/ids'
-import { JobIntentionSection, BlockRenderer, SectionContainer } from '@/templates/components/v2'
+import { BlockRenderer, SectionContainer } from '@/templates/components/v2'
 import BaseInfoModal from '@/components/modals/base-info-modal'
 import AvatarCropModal from '@/components/modals/avatar-crop-modal'
-import { IconPhone, IconMail, IconGender, IconAge, IconLocation, IconWorkYear, IconInfo } from '@/components/sections/baseinfo-icons'
+import { IconPhone, IconMail, IconLocation, IconWorkYear, IconInfo } from '@/components/sections/baseinfo-icons'
 import { ELEGANT_TEMPLATE_STYLES, HEADER_BG, ACCENT_GOLD } from './styles'
 
 /** Check if every block in a section is a TextBlock. */
@@ -49,12 +49,6 @@ interface FieldDef {
 function buildFieldDefs(baseInfo: BaseInfo | null): FieldDef[] {
   if (!baseInfo) return []
   const defs: FieldDef[] = []
-  if (baseInfo.gender) {
-    defs.push({ key: 'gender', label: 'Gender', value: baseInfo.gender, icon: <IconGender /> })
-  }
-  if (baseInfo.age !== undefined && baseInfo.age !== null) {
-    defs.push({ key: 'age', label: 'Age', value: String(baseInfo.age), icon: <IconAge /> })
-  }
   if (baseInfo.phone) {
     defs.push({ key: 'phone', label: 'Phone', value: baseInfo.phone, icon: <IconPhone /> })
   }
@@ -319,7 +313,6 @@ function BlockRendererWrapper(props: {
 export default function ElegantTemplate(props: ElegantTemplateProps): ReactElement {
   const { resume, theme } = props
   const accentColor = theme.primaryColor === '#111827' ? ACCENT_GOLD : theme.primaryColor
-  const isJobIntentionVisible: boolean = resume.jobIntentionVisible ?? Boolean(resume.jobIntention)
   const bodyPadding: string = `${theme.pagePaddingVertical}mm ${theme.pagePaddingHorizontal}mm`
 
   return (
@@ -349,16 +342,6 @@ export default function ElegantTemplate(props: ElegantTemplateProps): ReactEleme
           paddingTop: `calc(${theme.pagePaddingVertical}mm * ${theme.spacingScale})` 
         }}
       >
-        {isJobIntentionVisible ? (
-          <div style={{ marginBottom: `${24 * theme.spacingScale}px` }}>
-            <JobIntentionSection
-              jobIntention={resume.jobIntention ?? null}
-              themeColor={accentColor}
-              styles={ELEGANT_TEMPLATE_STYLES.jobIntention}
-            />
-          </div>
-        ) : null}
-
         <DragDropProvider
           resume={resume}
           theme={theme}

@@ -1,33 +1,42 @@
 'use server'
 
+import { auth, currentUser } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
 
 import { revalidatePath } from 'next/cache'
 
 export async function syncUserAction(userData: {
-  wxId: string;
+  clerkId?: string;
   name?: string;
   avatar?: string;
   email?: string;
 }) {
   try {
-    const { wxId, name, avatar, email } = userData;
-
-    if (!wxId) {
-      return { success: false, error: 'wxId is required' };
+    const authResult = await auth()
+    const clerkUserId: string | null = userData.clerkId ?? authResult.userId
+    if (!clerkUserId) {
+      return { success: false, error: 'clerkId is required' };
     }
 
+    const clerkUser = await currentUser()
+    const fallbackEmail: string | undefined = clerkUser?.emailAddresses[0]?.emailAddress ?? undefined
+    const fallbackName: string | undefined = [clerkUser?.firstName, clerkUser?.lastName].filter(Boolean).join(' ').trim() || clerkUser?.username || undefined
+    const fallbackAvatar: string | undefined = clerkUser?.imageUrl ?? undefined
+    const name: string | undefined = userData.name || fallbackName
+    const avatar: string | undefined = userData.avatar || fallbackAvatar
+    const email: string | undefined = userData.email || fallbackEmail
+
     const user = await prisma.user.upsert({
-      where: { wxId },
+      where: { clerkId: clerkUserId },
       update: {
         name: name || undefined,
         avatar: avatar || undefined,
         email: email || undefined,
       },
       create: {
-        wxId,
-        name: name || `User_${wxId}`,
+        clerkId: clerkUserId,
+        name: name || email || 'User',
         avatar,
         email,
       },

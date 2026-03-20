@@ -91,7 +91,7 @@ export const SECTION_MODULE_OPTIONS: readonly SectionModuleOption[] = [
 // ---------------------------------------------------------------------------
 
 /** Job category types that affect self-evaluation tone and keywords. */
-export type JobCategory = 'functional' | 'business' | 'technical' | 'state-owned';
+export type JobCategory = 'functional' | 'business' | 'technical' | 'public-sector';
 
 export interface JobCategoryOption {
   readonly id: JobCategory;
@@ -103,7 +103,7 @@ export const JOB_CATEGORY_OPTIONS: readonly JobCategoryOption[] = [
   { id: 'functional', label: 'Administrative', description: 'HR, Finance, Legal, Admin, etc.' },
   { id: 'business', label: 'Business', description: 'Operations, Marketing, Product, Sales, etc.' },
   { id: 'technical', label: 'Technical', description: 'Frontend, Backend, ML/AI, QA, etc.' },
-  { id: 'state-owned', label: 'Public Sector', description: 'Government, public institutions, etc.' },
+  { id: 'public-sector', label: 'Public Sector', description: 'Government, education, non-profit, and public institutions.' },
 ] as const;
 
 // ---------------------------------------------------------------------------

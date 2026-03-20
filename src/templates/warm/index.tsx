@@ -18,10 +18,10 @@ import { useAppStore } from '@/state/store'
 import { useAiSection } from '@/components/ai-section/ai-section-provider'
 import { blockTypeToModuleType, extractBlockContentHtml } from '@/components/ai-section/block-module-utils'
 import { DndIds } from '@/dnd/ids'
-import { JobIntentionSection, BlockRenderer, SectionContainer } from '@/templates/components/v2'
+import { BlockRenderer, SectionContainer } from '@/templates/components/v2'
 import BaseInfoModal from '@/components/modals/base-info-modal'
 import AvatarCropModal from '@/components/modals/avatar-crop-modal'
-import { IconPhone, IconMail, IconGender, IconAge, IconLocation, IconWorkYear, IconInfo } from '@/components/sections/baseinfo-icons'
+import { IconPhone, IconMail, IconLocation, IconWorkYear, IconInfo } from '@/components/sections/baseinfo-icons'
 import TwoColumnDndProvider, {
   ColumnDroppable,
   CrossColumnPlaceholder,
@@ -62,12 +62,6 @@ function buildFieldDefs(baseInfo: BaseInfo | null): FieldDef[] {
   }
   if (baseInfo.email) {
     defs.push({ key: 'email', label: 'Email', value: baseInfo.email, icon: <IconMail /> })
-  }
-  if (baseInfo.gender) {
-    defs.push({ key: 'gender', label: 'Gender', value: baseInfo.gender, icon: <IconGender /> })
-  }
-  if (baseInfo.age !== undefined && baseInfo.age !== null) {
-    defs.push({ key: 'age', label: 'Age', value: String(baseInfo.age), icon: <IconAge /> })
   }
   if (baseInfo.currentLocation) {
     defs.push({ key: 'currentLocation', label: 'Location', value: baseInfo.currentLocation, icon: <IconLocation /> })
@@ -382,7 +376,6 @@ function WarmSectionView(props: {
 export default function WarmTemplate(props: WarmTemplateProps): ReactElement {
   const { resume, theme, sidebarSectionIds: externalIds, onSidebarSectionIdsChange } = props
   const accentColor = resolveAccent(theme.primaryColor)
-  const isJobIntentionVisible: boolean = resume.jobIntentionVisible ?? Boolean(resume.jobIntention)
 
   // Compute default sidebar IDs from section data
   const defaultIds = resume.sections.filter(shouldDefaultToLeft).map((s) => s.id)
@@ -472,46 +465,6 @@ export default function WarmTemplate(props: WarmTemplateProps): ReactElement {
                 baseInfo={resume.baseInfo ?? null}
                 accentColor={accentColor}
               />
-
-              {/* JobIntention (fixed, not draggable) */}
-              {isJobIntentionVisible ? (
-                <div className="mb-0">
-                  <div
-                    className="mb-6 w-full"
-                    style={{
-                      borderLeft: `2px solid ${accentColor}`,
-                      paddingLeft: '15px',
-                      background: `linear-gradient(90deg, ${hexToRgba(accentColor, 0.08)} 0%, #ffffff 100%)`,
-                    }}
-                  >
-                    <SectionHeader
-                      sectionId="job-intention"
-                      title="Job Preference"
-                      themeColor={darkenHex(accentColor, 0.65)}
-                      styles={{
-                        ...WARM_TEMPLATE_STYLES.sectionHeader,
-                        fontSize: '1.125em',
-                        lineHeight: '1.5',
-                        containerClassName: 'w-full',
-                      }}
-                    />
-                  </div>
-                  <JobIntentionSection
-                    jobIntention={resume.jobIntention ?? null}
-                    themeColor="#666"
-                    styles={{
-                      ...WARM_TEMPLATE_STYLES.jobIntention,
-                      container: 'relative',
-                      header: 'hidden',
-                      fieldsLayout: {
-                        type: 'vertical',
-                        className: 'flex flex-col gap-2',
-                      },
-                      fieldItem: 'mb-2 text-gray-600 leading-relaxed',
-                    }}
-                  />
-                </div>
-              ) : null}
 
               {/* Left sidebar sections (TextBlock sections, sortable) */}
               {leftSections.map((section) => (

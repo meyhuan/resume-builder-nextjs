@@ -19,7 +19,7 @@ const DEFAULT_FONT_SIZE: number = 15
 const defaultTheme: ThemeTokens = {
   primaryColor: '#111827',
   textColor: '#111827',
-  fontFamily: 'Inter, Noto Sans SC, system-ui, sans-serif',
+  fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif',
   fontSize: DEFAULT_FONT_SIZE,
   lineHeight: 1.5,
   spacingScale: 1,
@@ -27,10 +27,7 @@ const defaultTheme: ThemeTokens = {
   pagePaddingHorizontal: 15,
 }
 
-export const defaultResume: ResumeData = {
-  ...mapExternalResume(BLANK_RESUME_JSON),
-  jobIntentionVisible: true,
-}
+export const defaultResume: ResumeData = mapExternalResume(BLANK_RESUME_JSON)
 const testResume = mapExternalResume(TEST_RESUME_JSON)
 
 function createId(prefix: string): UUID {
@@ -312,16 +309,6 @@ export const useAppStore = create<AppState>()(
         }),
       }), false, 'resume/updateBaseInfo')
     },
-    updateJobIntention: (jobIntention) => {
-      const state = get()
-      set(() => ({
-        pastStates: pushHistory(state.resume, state.pastStates),
-        futureStates: [],
-        resume: produce(state.resume, (draft) => {
-          draft.jobIntention = jobIntention
-        }),
-      }), false, 'resume/updateJobIntention')
-    },
     setAvatarVisibility: (visible) => {
       const state = get()
       set(() => ({
@@ -334,16 +321,6 @@ export const useAppStore = create<AppState>()(
           }
         }),
       }), false, 'resume/setAvatarVisibility')
-    },
-    setJobIntentionVisibility: (visible) => {
-      const state = get()
-      set(() => ({
-        pastStates: pushHistory(state.resume, state.pastStates),
-        futureStates: [],
-        resume: produce(state.resume, (draft) => {
-          draft.jobIntentionVisible = visible
-        }),
-      }), false, 'resume/setJobIntentionVisibility')
     },
   }))
 )

@@ -1,7 +1,7 @@
 'use server';
 
 import { prisma } from '@/lib/prisma';
-import { cookies } from 'next/headers';
+import { getCurrentUserRecord } from '@/lib/auth/get-current-user-record';
 
 type FeedbackAdminStatus = 'RECEIVED' | 'PROCESSING' | 'COMPLETED';
 
@@ -20,8 +20,7 @@ export async function submitFeedback(data: {
   attachment?: string;
 }): Promise<FeedbackActionResult> {
   try {
-    const cookieStore = await cookies();
-    const userId = cookieStore.get('auth_uid')?.value;
+    const currentUser = await getCurrentUserRecord();
 
     if (!data.content?.trim()) {
       return { success: false, error: 'Feedback content cannot be empty' };
@@ -36,12 +35,9 @@ export async function submitFeedback(data: {
         content: data.content,
         contact: data.contact || null,
         attachment: data.attachment || null,
-        ...(userId ? {
+        ...(currentUser.dbUser ? {
           user: {
-            connectOrCreate: {
-              where: { wxId: userId },
-              create: { wxId: userId }
-            }
+            connect: { id: currentUser.dbUser.id }
           }
         } : {})
       },

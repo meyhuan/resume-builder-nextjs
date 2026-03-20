@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
-import { cookies } from 'next/headers'
+import { getCurrentUserRecord } from '@/lib/auth/get-current-user-record'
 import { persistResumeAssets } from '@/lib/persist-resume-assets'
 
 interface RouteParams {
@@ -14,21 +14,16 @@ interface RouteParams {
 export async function GET(req: Request, { params }: RouteParams) {
   try {
     const { id } = await params
-    const cookieStore = await cookies();
-    const userId = cookieStore.get("auth_uid")?.value;
-
-    if (!userId) {
+    const currentUser = await getCurrentUserRecord()
+    if (!currentUser.dbUser) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const resume = await prisma.resume.findUnique({
-      where: { 
-        id,
-        user: { wxId: userId }
-      }
+      where: { id }
     })
     
-    if (!resume) {
+    if (!resume || resume.userId !== currentUser.dbUser.id) {
       return NextResponse.json({ error: 'Resume not found' }, { status: 404 })
     }
     
@@ -46,10 +41,9 @@ export async function PUT(req: Request, { params }: RouteParams) {
   try {
     const { id } = await params
     resumeId = id
-    const cookieStore = await cookies();
-    userId = cookieStore.get("auth_uid")?.value;
-
-    if (!userId) {
+    const currentUser = await getCurrentUserRecord()
+    userId = currentUser.dbUser?.id
+    if (!currentUser.dbUser) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -62,13 +56,18 @@ export async function PUT(req: Request, { params }: RouteParams) {
       thumbnail,
       customPrefix: resumeId,
     })
+    updateStep = 'verify-ownership'
+    const existingResume = await prisma.resume.findUnique({
+      where: { id },
+      select: { userId: true },
+    })
+    if (!existingResume || existingResume.userId !== currentUser.dbUser.id) {
+      return NextResponse.json({ error: 'Resume not found' }, { status: 404 })
+    }
     
     updateStep = 'update-database'
     const resume = await prisma.resume.update({
-      where: { 
-        id,
-        user: { wxId: userId }
-      },
+      where: { id },
       data: {
         title,
         content: persistedAssets.content as Prisma.InputJsonValue,
@@ -94,18 +93,21 @@ export async function PUT(req: Request, { params }: RouteParams) {
 export async function DELETE(req: Request, { params }: RouteParams) {
   try {
     const { id } = await params
-    const cookieStore = await cookies();
-    const userId = cookieStore.get("auth_uid")?.value;
-
-    if (!userId) {
+    const currentUser = await getCurrentUserRecord()
+    if (!currentUser.dbUser) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const existingResume = await prisma.resume.findUnique({
+      where: { id },
+      select: { userId: true },
+    })
+    if (!existingResume || existingResume.userId !== currentUser.dbUser.id) {
+      return NextResponse.json({ error: 'Resume not found' }, { status: 404 })
+    }
+
     await prisma.resume.delete({
-      where: { 
-        id,
-        user: { wxId: userId }
-      }
+      where: { id }
     })
     
     return NextResponse.json({ success: true })

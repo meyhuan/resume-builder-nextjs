@@ -23,25 +23,7 @@ export function exportResumeToMarkdown(resume: ResumeData): string {
     }
   }
 
-  // 2. Job Intention
-  if (resume.jobIntentionVisible && resume.jobIntention) {
-    lines.push('## Job Preference')
-    lines.push('')
-    const intent = resume.jobIntention
-    const parts = [
-      intent.position ? `Position: ${intent.position}` : '',
-      intent.city ? `City: ${intent.city}` : '',
-      intent.salary ? `Salary: ${intent.salary}` : '',
-      intent.type ? `Job Type: ${intent.type}` : '',
-    ].filter(Boolean)
-    
-    if (parts.length > 0) {
-      lines.push(parts.join(' | '))
-      lines.push('')
-    }
-  }
-
-  // 3. Sections
+  // 2. Sections
   if (resume.sections && resume.sections.length > 0) {
     resume.sections.forEach((section) => {
       lines.push(`## ${section.title || 'Custom Section'}`)

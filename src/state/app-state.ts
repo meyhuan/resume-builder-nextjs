@@ -4,7 +4,6 @@
 import type { ResumeData } from '@/entities/resume/resume-data'
 import type { ThemeTokens } from '@/entities/theme/theme-tokens'
 import type { BaseInfo } from '@/entities/user/base-info'
-import type { JobIntention } from '@/entities/user/job-intention'
 import type { Draft } from 'immer'
 import type { UUID } from '@/entities/common/uuid'
 import type { ExternalResume } from '@/io/external-resume-types'
@@ -49,12 +48,8 @@ export interface AppState {
   importExternalResume: (external: ExternalResume) => void
   /** Update base info and name. */
   updateBaseInfo: (baseInfo: BaseInfo, name: string) => void
-  /** Update job intention. */
-  updateJobIntention: (jobIntention: JobIntention) => void
   /** Toggle whether the avatar is rendered in the resume header. */
   setAvatarVisibility: (visible: boolean) => void
-  /** Toggle whether the job intention section is rendered. */
-  setJobIntentionVisibility: (visible: boolean) => void
   /** Load test data into the editor. */
   loadTestData: () => void
 }

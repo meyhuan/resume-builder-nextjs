@@ -1,24 +1,22 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useAuth, useUser } from '@clerk/nextjs';
 import Link from 'next/link';
 import Image from 'next/image';
 import { LandingButton } from './LandingButton';
 import { cn } from '@/lib/utils';
 import { Menu, X, User, LogOut, ChevronDown, FileText, Wand2, FileUp } from 'lucide-react';
-// TODO: Replace with Clerk auth
-// import { WxLoginDialog } from '../auth/WxLoginDialog';
-import { useAuthStore } from '@/store/use-auth-store';
 
 interface LandingHeaderProps {
   forceSolid?: boolean;
 }
 
 export const LandingHeader = ({ forceSolid = false }: LandingHeaderProps = {}) => {
+  const { isSignedIn, signOut } = useAuth();
+  const { user } = useUser();
   const [isScrolled, setIsScrolled] = useState(forceSolid);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  const { token, userInfo, logout } = useAuthStore();
 
   useEffect(() => {
     if (forceSolid) return;
@@ -107,7 +105,7 @@ export const LandingHeader = ({ forceSolid = false }: LandingHeaderProps = {}) =
           </nav>
 
           <div className="hidden md:flex items-center gap-4">
-            {token ? (
+            {isSignedIn ? (
               <div className="flex items-center gap-4">
                 <Link href="/dashboard">
                   <LandingButton variant="glass" size="sm" className="rounded-full">Dashboard</LandingButton>
@@ -115,8 +113,8 @@ export const LandingHeader = ({ forceSolid = false }: LandingHeaderProps = {}) =
                 <div className="relative group/user">
                   <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 p-[2px] cursor-pointer hover:shadow-lg hover:shadow-violet-500/20 transition-all">
                     <div className="w-full h-full rounded-full bg-white flex items-center justify-center overflow-hidden">
-                      {userInfo?.avatar ? (
-                        <Image src={userInfo.avatar} alt="Avatar" width={36} height={36} className="rounded-full" />
+                      {user?.imageUrl ? (
+                        <Image src={user.imageUrl} alt="Avatar" width={36} height={36} className="rounded-full" />
                       ) : (
                         <User size={20} className="text-violet-500" />
                       )}
@@ -125,11 +123,11 @@ export const LandingHeader = ({ forceSolid = false }: LandingHeaderProps = {}) =
                   <div className="absolute right-0 top-full mt-2 w-64 p-2 bg-white/80 backdrop-blur-xl rounded-2xl shadow-[0_8px_32px_rgba(31,38,135,0.07)] border border-white/20 opacity-0 invisible group-hover/user:opacity-100 group-hover/user:visible transition-all translate-y-2">
                     <div className="px-4 py-3 mb-1">
                       <p className="text-xs text-slate-400 uppercase tracking-widest font-bold mb-1">Account</p>
-                      <p className="text-sm font-semibold text-slate-800 truncate">{userInfo?.email || 'User'}</p>
+                      <p className="text-sm font-semibold text-slate-800 truncate">{user?.primaryEmailAddress?.emailAddress || user?.fullName || 'User'}</p>
                     </div>
                     <div className="h-px bg-slate-100 mx-2 mb-2"></div>
                     <button 
-                      onClick={() => logout()}
+                      onClick={() => { void signOut({ redirectUrl: '/' }); }}
                       className="w-full flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-rose-500 hover:bg-rose-50 rounded-xl transition-colors"
                     >
                       <LogOut size={16} />
@@ -188,7 +186,7 @@ export const LandingHeader = ({ forceSolid = false }: LandingHeaderProps = {}) =
               </div>
             ))}
             <div className="flex flex-col gap-3 pt-4">
-              {token ? (
+              {isSignedIn ? (
                 <Link href="/dashboard" className="w-full">
                   <LandingButton size="md" className="w-full rounded-xl">Dashboard</LandingButton>
                 </Link>
