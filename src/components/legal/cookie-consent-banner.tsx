@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useSyncExternalStore } from 'react';
 import type { ReactElement } from 'react';
 import { Button } from '@/components/ui/button';
 
@@ -14,30 +14,43 @@ function shouldShowCookieBanner(): boolean {
   return storedConsent !== ANALYTICS_CONSENT_ACCEPTED && storedConsent !== ANALYTICS_CONSENT_DECLINED;
 }
 
+function subscribeToConsentStore(onStoreChange: () => void): () => void {
+  if (typeof window === 'undefined') {
+    return (): void => undefined;
+  }
+  const handleConsentChange = (): void => {
+    onStoreChange();
+  };
+  window.addEventListener('storage', handleConsentChange);
+  window.addEventListener('analytics-consent-updated', handleConsentChange as EventListener);
+  return (): void => {
+    window.removeEventListener('storage', handleConsentChange);
+    window.removeEventListener('analytics-consent-updated', handleConsentChange as EventListener);
+  };
+}
+
+function getCookieBannerSnapshot(): boolean {
+  return shouldShowCookieBanner();
+}
+
+function getCookieBannerServerSnapshot(): boolean {
+  return false;
+}
+
 /**
  * Cookie consent banner for analytics preferences.
  */
 export function CookieConsentBanner(): ReactElement | null {
-  const [isVisible, setIsVisible] = useState<boolean>(() => shouldShowCookieBanner());
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const handleConsentChange = (): void => {
-      setIsVisible(shouldShowCookieBanner());
-    };
-    window.addEventListener('storage', handleConsentChange);
-    window.addEventListener('analytics-consent-updated', handleConsentChange as EventListener);
-    return (): void => {
-      window.removeEventListener('storage', handleConsentChange);
-      window.removeEventListener('analytics-consent-updated', handleConsentChange as EventListener);
-    };
-  }, []);
+  const isVisible: boolean = useSyncExternalStore(
+    subscribeToConsentStore,
+    getCookieBannerSnapshot,
+    getCookieBannerServerSnapshot,
+  );
 
   const updateConsent = (value: string): void => {
     if (typeof window === 'undefined') return;
     window.localStorage.setItem(ANALYTICS_CONSENT_KEY, value);
     window.dispatchEvent(new Event('analytics-consent-updated'));
-    setIsVisible(false);
   };
   if (!isVisible) return null;
   return (

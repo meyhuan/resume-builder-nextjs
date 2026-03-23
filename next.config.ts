@@ -14,6 +14,11 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   images: {
     remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'img.clerk.com',
+        pathname: '/**',
+      },
       ...(aliyunOssRemotePattern ? [aliyunOssRemotePattern] : []),
     ],
   },

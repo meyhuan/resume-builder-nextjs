@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import { ClerkProvider } from '@clerk/nextjs';
 import "@/styles/tailwind.css";
 import "@/styles/print.css";
 import "@/styles/base.css";
 import "@/styles/theme-override.css";
 import { SITE_URL, SITE_NAME, SITE_DESCRIPTION, SITE_LOCALE, SITE_LANG, SITE_CURRENCY } from '@/lib/site-config';
+import { AuthProvider } from '@/components/providers/auth-provider';
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -97,7 +97,7 @@ export default function RootLayout({
   return (
     <html lang={SITE_LANG}>
       <body className="antialiased text-slate-900 bg-white font-sans">
-        <ClerkProvider>
+        <AuthProvider>
           <script
             type="application/ld+json"
             dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -106,7 +106,7 @@ export default function RootLayout({
           <CookieConsentBanner />
           <Toaster position="top-center" richColors />
           <GoogleAnalytics />
-        </ClerkProvider>
+        </AuthProvider>
       </body>
     </html>
   );
