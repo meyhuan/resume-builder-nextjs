@@ -1,10 +1,10 @@
 import type { NextConfig } from "next";
 
-const aliyunOssPublicBaseUrl: string | undefined = process.env.ALIYUN_OSS_PUBLIC_BASE_URL;
-const aliyunOssRemotePattern: { protocol: 'https'; hostname: string; pathname: '/**' } | null = aliyunOssPublicBaseUrl
+const supabaseUrl: string | undefined = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseRemotePattern: { protocol: 'https'; hostname: string; pathname: '/**' } | null = supabaseUrl
   ? {
       protocol: 'https',
-      hostname: new URL(aliyunOssPublicBaseUrl).hostname,
+      hostname: new URL(supabaseUrl).hostname,
       pathname: '/**',
     }
   : null;
@@ -19,7 +19,7 @@ const nextConfig: NextConfig = {
         hostname: 'img.clerk.com',
         pathname: '/**',
       },
-      ...(aliyunOssRemotePattern ? [aliyunOssRemotePattern] : []),
+      ...(supabaseRemotePattern ? [supabaseRemotePattern] : []),
     ],
   },
   experimental: {

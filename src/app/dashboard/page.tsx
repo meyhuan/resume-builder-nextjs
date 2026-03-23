@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUserRecord } from "@/lib/auth/get-current-user-record";
-import { Plus, Sparkles, Wand2, FileDown, FileText } from "lucide-react";
+import { Plus, Sparkles, Wand2, FileDown, FileText, Clock } from "lucide-react";
 import { redirect } from "next/navigation";
 import Image from "next/image";
 import { ResumeCardActions } from "@/components/dashboard/resume-card-actions";
@@ -169,7 +169,8 @@ export default async function DashboardPage() {
         </div>
       </div>
     );
-  } catch {
+  } catch (error) {
+    console.error('[Dashboard] Database connection error:', error);
     return (
       <div className="min-h-screen flex items-center justify-center bg-white relative overflow-hidden">
         <div className="absolute top-[-20%] right-[-10%] w-[500px] h-[500px] bg-violet-500/10 rounded-full blur-[120px] pointer-events-none" />

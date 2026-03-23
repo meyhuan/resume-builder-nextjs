@@ -1,4 +1,4 @@
-import { uploadOssAsset } from '@/lib/upload-oss-asset'
+import { uploadAsset } from '@/lib/upload-asset'
 
 interface UploadFeedbackAttachmentInput {
   readonly fileBuffer: Buffer
@@ -12,7 +12,7 @@ interface UploadFeedbackAttachmentResult {
 }
 
 export async function uploadFeedbackAttachment(input: UploadFeedbackAttachmentInput): Promise<UploadFeedbackAttachmentResult> {
-  return uploadOssAsset({
+  return uploadAsset({
     fileBuffer: input.fileBuffer,
     mimeType: input.mimeType,
     extension: input.extension,

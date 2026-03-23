@@ -1,4 +1,4 @@
-import { uploadOssAsset } from '@/lib/upload-oss-asset'
+import { uploadAsset } from '@/lib/upload-asset'
 import sharp from 'sharp'
 
 interface PersistResumeAssetsInput {
@@ -90,14 +90,14 @@ async function persistAvatarUrl(content: Record<string, unknown>, customPrefix?:
   
   const optimized = await optimizeImage(parsedDataUrl.fileBuffer, 'avatar')
   
-  const uploadResult = await uploadOssAsset({
+  const result = await uploadAsset({
     fileBuffer: optimized.buffer,
     mimeType: optimized.mimeType,
     extension: optimized.extension,
-    directory: 'avatar',
-    customFileName: customPrefix ? `${customPrefix}_avatar` : undefined
+    directory: 'resume-assets/images',
+    customFileName: customPrefix ? `${customPrefix}_base_info_avatar` : undefined
   })
-  const cacheBustedUrl: string = appendCacheBuster(uploadResult.url)
+  const cacheBustedUrl: string = appendCacheBuster(result.url)
   return {
     ...content,
     baseInfo: {
@@ -124,14 +124,14 @@ async function persistThumbnail(thumbnail: string | null | undefined, customPref
   
   const optimized = await optimizeImage(parsedDataUrl.fileBuffer, 'thumbnail')
   
-  const uploadResult = await uploadOssAsset({
+  const result = await uploadAsset({
     fileBuffer: optimized.buffer,
     mimeType: optimized.mimeType,
     extension: optimized.extension,
-    directory: 'thumbnail',
+    directory: 'resume-assets/thumbnails',
     customFileName: customPrefix ? `${customPrefix}_thumbnail` : undefined
   })
-  return appendCacheBuster(uploadResult.url)
+  return appendCacheBuster(result.url)
 }
 
 export async function persistResumeAssets(input: PersistResumeAssetsInput): Promise<PersistResumeAssetsResult> {
