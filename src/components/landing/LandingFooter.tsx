@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Github, Twitter, MessageCircle } from 'lucide-react';
 import { LegalDialog } from '@/components/legal/LegalDialog';
 import { BrandLogo } from '@/components/ui/brand-logo';
 
@@ -11,6 +10,8 @@ type FooterLinkItem = {
   href: string;
   label: string;
 };
+
+const COPYRIGHT_YEAR: string = '2026';
 
 const LONG_TAIL_LINKS: ReadonlyArray<FooterLinkItem> = [
   { href: '/ai', label: 'AI Resume Polish Online' },
@@ -51,17 +52,6 @@ export const LandingFooter = () => {
               <br />
               Simple, beautiful, and exportable.
             </p>
-            <div className="flex gap-4 pt-2">
-              <button className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-violet-100 hover:text-violet-600 transition-colors">
-                <Github className="w-4 h-4" />
-              </button>
-              <button className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-sky-100 hover:text-sky-500 transition-colors">
-                <Twitter className="w-4 h-4" />
-              </button>
-              <button className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-green-100 hover:text-green-600 transition-colors">
-                <MessageCircle className="w-4 h-4" />
-              </button>
-            </div>
           </div>
 
           <div>
@@ -102,7 +92,10 @@ export const LandingFooter = () => {
               <p className="text-xs font-semibold text-slate-900 mb-2">Get in Touch</p>
               <p className="text-[10px] text-slate-500 leading-relaxed">
                 Have feedback or questions?<br />
-                Reach out via the feedback page or email us directly.
+                Email:{' '}
+                <a href="mailto:support@airesumepass.com" className="text-violet-600 hover:underline">
+                  support@airesumepass.com
+                </a>
               </p>
             </div>
           </div>
@@ -111,7 +104,7 @@ export const LandingFooter = () => {
         <div className="pt-8 border-t border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex flex-col items-center gap-2 text-xs text-slate-400 md:items-start">
             <p>
-              © {new Date().getFullYear()} AI Resume Pass. All rights reserved.
+              © {COPYRIGHT_YEAR} AI Resume Pass. All rights reserved.
             </p>
           </div>
           <div className="flex gap-6 text-xs text-slate-400">

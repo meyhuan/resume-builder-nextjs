@@ -3,11 +3,9 @@ import type { ReactElement } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowRight, BookOpen, BriefcaseBusiness, ChevronRight, CircleCheckBig, ClipboardList, Layers3, Tags, Target, TriangleAlert, Users } from 'lucide-react';
+import { ArrowRight, BriefcaseBusiness, ChevronRight, CircleCheckBig, ClipboardList, Layers3, Tags, Target, TriangleAlert, Users } from 'lucide-react';
 import { LandingFooter } from '@/components/landing/LandingFooter';
 import { LandingHeader } from '@/components/landing/LandingHeader';
-import { getAllArticles } from '@/lib/articles/article-data';
-import type { Article } from '@/lib/articles/article-types';
 import { templateCatalog } from '@/lib/templates/template-catalog';
 import { templateRoleData } from '@/lib/templates/template-role-data';
 
@@ -94,47 +92,6 @@ function createWritingPoints(roleName: string, category: string): readonly Writi
       description: `Naturally incorporate key terms from the job description — tools, methodologies, business contexts, and metrics — to help your ${roleName} resume pass initial screening.`,
     },
   ];
-}
-
-function countKeywordMatches(content: string, keywords: readonly string[]): number {
-  return keywords.reduce((score: number, keyword: string) => {
-    if (!keyword) {
-      return score;
-    }
-    return content.includes(keyword.toLowerCase()) ? score + 1 : score;
-  }, 0);
-}
-
-function getRecommendedArticlesForRole(
-  roleName: string,
-  industry: string,
-  category: string,
-  searchKeywords: readonly string[],
-): Article[] {
-  const allArticles: Article[] = getAllArticles();
-  const relevanceKeywords: string[] = [roleName, industry, category, ...searchKeywords];
-  return allArticles
-    .map((article: Article) => {
-      const normalizedContent: string = `${article.title} ${article.abstract} ${article.tags.join(' ')} ${article.textContent}`.toLowerCase();
-      let relevanceScore: number = countKeywordMatches(normalizedContent, relevanceKeywords.map((keyword: string) => keyword.toLowerCase()));
-      if (article.title.includes(roleName)) {
-        relevanceScore += 4;
-      }
-      if (article.abstract.includes(roleName)) {
-        relevanceScore += 2;
-      }
-      if (article.tags.some((tag: string) => roleName.includes(tag) || tag.includes(roleName) || searchKeywords.includes(tag))) {
-        relevanceScore += 2;
-      }
-      return {
-        article,
-        relevanceScore,
-      };
-    })
-    .filter((entry: { article: Article; relevanceScore: number }) => entry.relevanceScore > 0)
-    .sort((left: { article: Article; relevanceScore: number }, right: { article: Article; relevanceScore: number }) => right.relevanceScore - left.relevanceScore)
-    .slice(0, 4)
-    .map((entry: { article: Article; relevanceScore: number }) => entry.article);
 }
 
 function createAudienceProfiles(roleName: string, industry: string, category: string): readonly AudienceProfile[] {
@@ -538,12 +495,6 @@ export default async function TemplateRolePage({ params }: RolePageParams): Prom
       ...template,
       fitReason: createTemplateReason(template.id, roleRecord.category),
     }));
-  const recommendedArticles: Article[] = getRecommendedArticlesForRole(
-    roleRecord.role,
-    roleRecord.industry,
-    roleRecord.category,
-    roleRecord.searchKeywords,
-  );
   const relatedRoles = templateRoleData.getRelatedTemplateRoles(roleRecord.slug, 8);
   const writingPoints = createWritingPoints(roleRecord.role, roleRecord.category);
   const roleSummary = createRoleSummary(roleRecord.role, roleRecord.industry, roleRecord.category);
@@ -736,21 +687,7 @@ export default async function TemplateRolePage({ params }: RolePageParams): Prom
               ))}
             </div>
           </section>
-          <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="rounded-3xl bg-white/80 backdrop-blur-sm border border-white shadow-sm p-6 md:p-8">
-              <div className="flex items-center gap-2 text-slate-900">
-                <BookOpen className="w-5 h-5 text-violet-500" />
-                <h2 className="text-2xl font-extrabold">Related Articles</h2>
-              </div>
-              <div className="space-y-4 mt-6">
-                {recommendedArticles.map((article) => (
-                  <Link key={article.slug} href={`/articles/${article.slug}`} className="block rounded-2xl bg-slate-50 border border-slate-100 p-5 hover:bg-white hover:border-violet-200 transition-all">
-                    <h3 className="text-base font-bold text-slate-900 hover:text-violet-600 transition-colors">{article.title}</h3>
-                    <p className="text-sm text-slate-500 mt-2 leading-relaxed line-clamp-2">{article.abstract}</p>
-                  </Link>
-                ))}
-              </div>
-            </div>
+          <section>
             <div className="rounded-3xl bg-white/80 backdrop-blur-sm border border-white shadow-sm p-6 md:p-8">
               <h2 className="text-2xl font-extrabold text-slate-900">Related Role Templates</h2>
               <div className="flex flex-wrap gap-3 mt-6">

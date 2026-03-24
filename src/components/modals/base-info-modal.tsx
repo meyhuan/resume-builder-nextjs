@@ -31,7 +31,7 @@ export default function BaseInfoModal(props: BaseInfoModalProps): ReactElement {
   const [gender, setGender] = useState(props.baseInfo?.gender ?? '');
   const [age, setAge] = useState(props.baseInfo?.age?.toString() ?? '');
   const [avatarUrl] = useState(props.baseInfo?.avatarUrl ?? '');
-  const [showAvatar, setShowAvatar] = useState(props.baseInfo?.showAvatar ?? false);
+  const [showAvatar, setShowAvatar] = useState(props.baseInfo?.showAvatar ?? true);
   const [nation, setNation] = useState(props.baseInfo?.nation ?? '');
   const [household, setHousehold] = useState(props.baseInfo?.household ?? '');
   const [currentLocation, setCurrentLocation] = useState(props.baseInfo?.currentLocation ?? '');
