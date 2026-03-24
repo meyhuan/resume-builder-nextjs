@@ -8,6 +8,7 @@
 import type { ReactElement } from 'react'
 import type { BaseInfo } from '@/entities/user/base-info'
 import type { ResumeBlock } from '@/entities/blocks/resume-block'
+import type { JobIntention } from '@/entities/user/job-intention'
 
 /**
  * Avatar style configuration.
@@ -103,6 +104,12 @@ export interface BlockRenderProps {
   readonly onEditingChange: (isEditing: boolean) => void
 }
 
+export interface JobIntentionRenderProps {
+  readonly jobIntention: JobIntention
+  readonly themeColor: string
+  readonly styles?: JobIntentionSectionStyles
+}
+
 /**
  * Slot render function types.
  */
@@ -118,6 +125,20 @@ export interface BlockSlots {
   readonly header?: (block: ResumeBlock, themeColor: string) => ReactElement
   readonly content?: (block: ResumeBlock) => ReactElement
   readonly footer?: (block: ResumeBlock) => ReactElement
+}
+
+export interface JobIntentionSlots {
+  readonly title?: (jobIntention: JobIntention, themeColor: string) => ReactElement
+  readonly fields?: (jobIntention: JobIntention, themeColor: string) => ReactElement
+}
+
+export interface JobIntentionSectionStyles {
+  readonly container?: string
+  readonly title?: TextFieldStyles
+  readonly item?: string
+  readonly label?: TextFieldStyles
+  readonly value?: TextFieldStyles
+  readonly layout?: LayoutStyles
 }
 
 export interface SectionHeaderStyles extends TextFieldStyles {
