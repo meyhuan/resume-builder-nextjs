@@ -39,7 +39,6 @@ export const LandingHeader = ({ forceSolid = false }: LandingHeaderProps = {}) =
       ]
     },
     { id: 'templates', label: 'Templates', href: '/#templates' },
-    { id: 'articles', label: 'Career Guide', href: '/articles' },
     { id: 'about', label: 'About', href: '/about' },
   ];
 

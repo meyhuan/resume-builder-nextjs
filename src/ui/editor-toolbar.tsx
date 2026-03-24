@@ -8,10 +8,10 @@ import type { ReactElement } from 'react'
 import {
   LayoutList,
   Sparkles,
-  BookOpen,
-  ImageIcon,
-  BarChart3,
-  Wand2,
+  // BookOpen,
+  // ImageIcon,
+  // BarChart3,
+  // Wand2,
 } from 'lucide-react'
 
 /** All possible panel identifiers. */
@@ -32,10 +32,10 @@ interface ToolbarAction {
 const TOOLBAR_ACTIONS: ToolbarAction[] = [
   { id: 'sections', label: 'Sections', icon: <LayoutList className="h-3.5 w-3.5" /> },
   { id: 'layout', label: 'Layout', icon: <Sparkles className="h-3.5 w-3.5" /> },
-  { id: 'examples', label: 'Examples', icon: <BookOpen className="h-3.5 w-3.5" /> },
-  { id: 'photo', label: 'Photo', icon: <ImageIcon className="h-3.5 w-3.5" /> },
-  { id: 'analysis', label: 'Analysis', icon: <BarChart3 className="h-3.5 w-3.5" /> },
-  { id: 'ai', label: 'AI Optimize', icon: <Wand2 className="h-3.5 w-3.5" /> },
+  // { id: 'examples', label: 'Examples', icon: <BookOpen className="h-3.5 w-3.5" /> },
+  // { id: 'photo', label: 'Photo', icon: <ImageIcon className="h-3.5 w-3.5" /> },
+  // { id: 'analysis', label: 'Analysis', icon: <BarChart3 className="h-3.5 w-3.5" /> },
+  // { id: 'ai', label: 'AI Optimize', icon: <Wand2 className="h-3.5 w-3.5" /> },
 ]
 
 export interface EditorToolbarProps {

@@ -1,6 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import { BookOpen, ChevronRight, Calendar, Tag } from 'lucide-react';
 import { LandingHeader } from '@/components/landing/LandingHeader';
 import { LandingFooter } from '@/components/landing/LandingFooter';
@@ -37,6 +38,8 @@ interface ArticlesPageProps {
 }
 
 export default async function ArticlesPage({ searchParams }: ArticlesPageProps): Promise<React.ReactElement> {
+  void searchParams;
+  notFound();
   const params = await searchParams;
   const activeCat = (params.category as ArticleCategoryId) || 'all';
   const articles = activeCat === 'all' ? getAllArticles() : getArticlesByCategory(activeCat);

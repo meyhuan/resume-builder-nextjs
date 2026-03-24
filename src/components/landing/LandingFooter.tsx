@@ -17,11 +17,6 @@ const LONG_TAIL_LINKS: ReadonlyArray<FooterLinkItem> = [
   { href: '/templates', label: 'ATS-Friendly Resume Templates' },
   { href: '/import', label: 'AI Text to Resume Generator' },
   { href: '/ai', label: 'Free AI Resume Optimizer' },
-  { href: '/articles?category=resume-writing', label: 'Resume Writing Tips' },
-  { href: '/articles?category=interview-tips', label: 'Interview Tips & Templates' },
-  { href: '/articles?category=fresh-graduate', label: 'Graduate Resume Guide' },
-  { href: '/articles?category=career-guide', label: 'Career Change Resume Tips' },
-  { href: '/articles', label: 'Career Guides & Tutorials' },
   { href: '/about', label: 'About the Developer' },
 ];
 
@@ -76,7 +71,6 @@ export const LandingFooter = () => {
               <li><Link href="/templates" className="hover:text-violet-600 transition-colors">Role-Specific Templates</Link></li>
               <li><Link href="/ai" className="hover:text-violet-600 transition-colors">AI Resume Generator</Link></li>
               <li><Link href="/import" className="hover:text-violet-600 transition-colors">Text to Resume</Link></li>
-              <li><Link href="/articles" className="hover:text-violet-600 transition-colors">Career Guide</Link></li>
             </ul>
           </div>
 
