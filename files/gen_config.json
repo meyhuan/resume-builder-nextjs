@@ -2,7 +2,7 @@
     "data": [
         {
             "id": 18001,
-            "name": "【桌面】简历AI智能创建",
+            "name": "AI Resume Creation",
             "channel_code": "ZMJLAIZNCJ1001",
             "system_id": "mk",
             "ab_group": "",
@@ -12,156 +12,148 @@
                 "material": [
                     {
                         "id": 94935,
-                        "name": "【桌面】简历AI智能创建_调整宽度版",
+                        "name": "AI Resume Creation_Global",
                         "style_id": 1526,
                         "element": {
                             "ai_create_open": true,
                             "certificate": [
-                                "大学英语四级",
-                                "大学英语六级",
-                                "初级会计证",
-                                "教师资格证",
-                                "普通话水平测试",
-                                "计算机二级",
-                                "医师资格证"
+                                "PMP (Project Management)",
+                                "AWS Certified Solutions Architect",
+                                "CFA (Chartered Financial Analyst)",
+                                "Registered Nurse (RN)",
+                                "IELTS / TOEFL",
+                                "CPA (Certified Public Accountant)",
+                                "Google Analytics Certification"
                             ],
                             "character": [
-                                "责任感强",
-                                "积极主动",
-                                "善于沟通",
-                                "勤奋好学",
-                                "成熟稳重",
-                                "创意丰富",
-                                "高效协作",
-                                "耐心细心"
+                                "Results-Driven",
+                                "Proactive",
+                                "Excellent Communicator",
+                                "Fast Learner",
+                                "Detail-Oriented",
+                                "Creative Thinker",
+                                "Team Player",
+                                "Adaptable"
                             ],
                             "default_tab": "chat",
                             "extra": {
                                 "graduate": [
-                                    "结合实际经历，重点体现结果导向和解决问题能力",
-                                    "无应聘岗位相关工作经验，突出较强的学习力",
-                                    "突出与岗位匹配的个人能力：[贴入岗位要求]",
-                                    "独立收集客户需求，理解需求，维护合作关系",
-                                    "在指导下，推动中型项目落地，有效带来商业价值"
+                                    "Focus on relevant coursework, internships, and quantifiable academic achievements.",
+                                    "Highlight strong learning ability, adaptability, and campus leadership.",
+                                    "Align academic projects with the core requirements of the target position.",
+                                    "Demonstrate problem-solving skills using the STAR (Situation, Task, Action, Result) method.",
+                                    "Showcase ability to work independently and collaboratively in diverse teams."
                                 ],
                                 "high": [
-                                    "以高难度、大规模、创新性项目成果佐证",
-                                    "聚焦近年主导核心项目，突出解决复杂问题的能力",
-                                    "依托原有生态伙伴，持续拓展客户资源构建生态圈",
-                                    "举例具备敏锐商业洞察力，发掘并推动商机落地",
-                                    "在所管理组织内建立有效的人才培养体系和流程",
-                                    "客户分层策略，拓展生态客户并创造需求实现双赢",
-                                    "策略性沟通，解决团队问题，管理进度并按时交付",
-                                    "举证舆情预警及把控，优化服务并保障用户体验"
+                                    "Highlight complex, large-scale projects and innovative solutions delivered.",
+                                    "Focus on recent core contributions that directly impacted business metrics.",
+                                    "Demonstrate proven ability to expand client portfolios and build strategic partnerships.",
+                                    "Showcase keen business acumen, identifying market gaps and driving revenue growth.",
+                                    "Highlight experience in mentoring, team building, and cross-functional leadership.",
+                                    "Emphasize data-driven decision making and strategic planning capabilities."
                                 ],
                                 "low": [
-                                    "聚焦主导工作项目，突出可量化成果",
-                                    "重点突出与岗位匹配的核心能力：[贴入岗位要求]",
-                                    "举证有效协调各种资源促讲所承担项目的目标达成",
-                                    "提炼工作共性规律，形成可复制的经验或案例",
-                                    "举证进行创新性尝试，提高工作效率",
-                                    "掌握核心要点，制定目标，提出具体手段及方案",
-                                    "对相关数据进行分析，并推导出相应的洞察结果",
-                                    "独立管理项目，制定计划、资源分配及风险管理"
+                                    "Focus on primary responsibilities and highlight quantifiable daily achievements.",
+                                    "Highlight core skills that directly match the job description: [Insert keywords].",
+                                    "Demonstrate effective coordination of resources to meet project deadlines.",
+                                    "Showcase process improvements or efficiency gains implemented in your role.",
+                                    "Highlight specific software, tools, or methodologies mastered on the job.",
+                                    "Emphasize reliability, time management, and consistent high-quality output."
                                 ],
                                 "mid": [
-                                    "聚焦近年主导核心项目，突出可量化成果",
-                                    "重点突出与岗位匹配的核心能力：[贴入岗位要求]",
-                                    "空窗期用于自学和创业尝试，突出成长经验",
-                                    "独立负责大型项目，制定全面的风险控制策略",
-                                    "举例具备敏锐商业洞察力，发掘并推动商机落地",
-                                    "举例结合公司实际，持续提出改进方案的能力",
-                                    "策略性沟通，解决团队问题，管理进度并按时交付",
-                                    "举证深入了解用户/客户，并挖掘潜在的服务需求"
+                                    "Focus on recent core projects, highlighting significant and quantifiable results.",
+                                    "Emphasize technical or domain expertise relevant to the target role.",
+                                    "Explain any career gaps positively, highlighting freelance work, upskilling, or sabbaticals.",
+                                    "Showcase experience in leading mid-sized projects and managing risk.",
+                                    "Demonstrate ability to propose and implement continuous process improvements.",
+                                    "Highlight strategic communication skills in resolving team conflicts and managing stakeholders."
                                 ],
                                 "senior": [
-                                    "以资源整合与战略洞察能力，彰显不可替代性",
-                                    "聚焦近年主导核心项目，突出个人能力及行业影响力",
-                                    "举例面对复杂问题时，可提供创新性解决方案",
-                                    "客户分层策略，拓展生态客户并创造需求实现双赢",
-                                    "举例对公司业务策略问题上，作敏锐、全局性判断",
-                                    "通过演讲/文章发表等形式，定期对外传播专业洞见",
-                                    "举证人才培养机制与文化搭建的实践及突出成绩",
-                                    "依托原有生态伙伴，持续拓展客户资源构建生态圈"
+                                    "Demonstrate executive presence, strategic vision, and enterprise-level impact.",
+                                    "Focus on P&L responsibility, organizational transformation, and industry leadership.",
+                                    "Showcase ability to navigate ambiguity and provide innovative solutions to complex challenges.",
+                                    "Highlight success in scaling businesses, expanding into new markets, or leading M&A.",
+                                    "Emphasize thought leadership, keynote speaking, and industry publications.",
+                                    "Demonstrate outstanding track record in executive mentoring and building high-performance cultures."
                                 ],
                                 "student": [
-                                    "无应聘岗位相关工作经验，突出较强的学习力",
-                                    "突出与岗位匹配的个人能力：[贴入岗位要求]",
-                                    "突出学习与执行力，快速成长的成果量化",
-                                    "熟悉市场调研的理论、方法、流程和工具",
-                                    "有一定数据分析基础，对某产品做信息搜集及分析"
+                                    "Highlight academic excellence, relevant coursework, and strong foundational knowledge.",
+                                    "Focus on extracurricular leadership, volunteer work, and transferable soft skills.",
+                                    "Demonstrate quick learning, high execution capability, and passion for the industry.",
+                                    "Showcase proficiency in research, data analysis, and academic writing.",
+                                    "Highlight technical skills, coding bootcamps, or relevant personal projects."
                                 ]
                             },
                             "major": [
-                                "行政助理",
-                                "护士",
-                                "幼儿教师",
-                                "销售代表",
-                                "会计",
-                                "新媒体运营",
-                                "客服",
-                                "客户经理"
+                                "Software Engineer",
+                                "Product Manager",
+                                "Marketing Specialist",
+                                "Registered Nurse",
+                                "Data Analyst",
+                                "Financial Analyst",
+                                "Sales Manager",
+                                "HR Generalist"
                             ],
                             "profession": [
-                                "工商管理",
-                                "护理学",
-                                "学前教育",
-                                "电子商务",
-                                "会计学",
-                                "市场营销",
-                                "财务管理",
-                                "临床医学"
+                                "Computer Science",
+                                "Business Administration",
+                                "Nursing",
+                                "Finance",
+                                "Marketing",
+                                "Mechanical Engineering",
+                                "Psychology",
+                                "Graphic Design"
                             ],
                             "program": [
-                                "大型活动策划",
-                                "财务报表分析",
-                                "产品推广方案",
-                                "网站/APP开发",
-                                "幼儿课程研究",
-                                "行业竞品分析",
-                                "患者康复护理计划"
+                                "E-commerce Platform Development",
+                                "Quarterly Financial Audit",
+                                "Go-to-Market Strategy",
+                                "Mobile App Redesign",
+                                "Customer Churn Analysis",
+                                "Supply Chain Optimization",
+                                "Agile Transformation"
                             ],
                             "school": [
-                                "学生会",
-                                "文艺汇演策划",
-                                "青年志愿者协会",
-                                "创新创业大赛",
-                                "人工智能研究小组",
-                                "学生社团",
-                                "校园公众号"
+                                "Student Government Association",
+                                "Model United Nations",
+                                "University Debate Team",
+                                "Hackathon Club",
+                                "Volunteer Network",
+                                "Campus Newspaper",
+                                "Women in STEM"
                             ],
                             "senior_skill": [
-                                "团队协作",
-                                "行业洞察",
-                                "创新思维",
-                                "决策分析",
-                                "项目管理",
-                                "变革管理",
-                                "批判思维",
-                                "战略思维"
+                                "Strategic Planning",
+                                "P&L Management",
+                                "Cross-functional Leadership",
+                                "Stakeholder Management",
+                                "Agile Methodology",
+                                "Change Management",
+                                "Data-Driven Decision Making",
+                                "Business Development"
                             ],
                             "skill": [
-                                "沟通协作",
-                                "创新思维",
-                                "学习能力",
-                                "批判思维",
-                                "执行能力",
-                                "适应应变",
-                                "自我驱动",
-                                "时间管理"
+                                "Communication",
+                                "Problem Solving",
+                                "Project Management",
+                                "Data Analysis",
+                                "Time Management",
+                                "Adaptability",
+                                "Critical Thinking",
+                                "Team Collaboration"
                             ],
                             "word_rec": [
-                                "零经验「市场营销」实习",
-                                "应届生校招「产品经理」",
-                                "3年经验跳槽「行政主管」",
-                                "学前教育专业应聘「幼师」",
-                                "护理专业「三甲医院」实习",
-                                "申请「985 院校」研究生",
-                                "大三申请「UI 设计」实习",
-                                "应届生秋招「Java 开发」",
-                                "跨行业转岗「新媒体运营」"
+                                "Entry-level Software Engineer",
+                                "Marketing Manager with 5 years experience",
+                                "Career change to Data Analytics",
+                                "Nursing student clinical internship",
+                                "Applying for Ivy League MBA",
+                                "Senior Product Manager SaaS",
+                                "Junior Graphic Designer portfolio",
+                                "Recent Business grad seeking consulting role",
+                                "Administrative Assistant job hop"
                             ],
-                            "word_rec_type": "长关键词"
+                            "word_rec_type": "Suggested Prompts"
                         },
                         "mk_key": "JkVKOyNG1BrotdvXUVAVTPP8GmGm55G5kOfI",
                         "cdn_url": ""
@@ -181,5 +173,5 @@
     ],
     "result": "ok",
     "code": 1000000,
-    "msg": "成功"
+    "msg": "success"
 }

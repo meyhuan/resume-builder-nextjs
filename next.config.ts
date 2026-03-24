@@ -19,6 +19,11 @@ const nextConfig: NextConfig = {
         hostname: 'img.clerk.com',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: '*.supabase.co',
+        pathname: '/**',
+      },
       ...(supabaseRemotePattern ? [supabaseRemotePattern] : []),
     ],
   },

@@ -7,6 +7,7 @@ import Image from 'next/image';
 import { LandingButton } from './LandingButton';
 import { cn } from '@/lib/utils';
 import { Menu, X, User, LogOut, ChevronDown, FileText, Wand2, FileUp } from 'lucide-react';
+import { BrandLogo } from '@/components/ui/brand-logo';
 
 interface LandingHeaderProps {
   forceSolid?: boolean;
@@ -52,10 +53,10 @@ export const LandingHeader = ({ forceSolid = false }: LandingHeaderProps = {}) =
       )}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 group transition-transform hover:scale-105">
-            <div className="relative">
-              <div className="absolute inset-0 bg-violet-500 blur-lg opacity-20 group-hover:opacity-40 transition-opacity rounded-full"></div>
-              <Image src="/logo-aijianli.png" alt="AI Resume Pass" width={120} height={40} className="h-10 w-auto object-contain relative z-10" />
-            </div>
+            <BrandLogo className="w-10 h-10 drop-shadow-[0_0_15px_rgba(139,92,246,0.3)] group-hover:drop-shadow-[0_0_20px_rgba(139,92,246,0.5)] transition-all" />
+            <span className="font-bold text-xl tracking-tight text-slate-900 group-hover:text-violet-600 transition-colors">
+              AI Resume Pass
+            </span>
           </Link>
 
           {/* Desktop Nav */}

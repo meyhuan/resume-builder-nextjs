@@ -3,10 +3,10 @@
 import type { ReactElement } from 'react';
 import { useAuth, useUser } from '@clerk/nextjs';
 import Link from 'next/link';
-import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { FileText, MessageSquareHeart, LogOut } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { BrandLogo } from '@/components/ui/brand-logo';
 
 /** Navigation item definition. */
 interface NavItem {
@@ -50,14 +50,11 @@ export default function DashboardSidebar(): ReactElement {
     <aside className="fixed left-0 top-0 bottom-0 w-[200px] bg-white border-r border-slate-100 flex flex-col z-40 print:hidden">
       {/* Logo */}
       <div className="px-5 pt-6 pb-4">
-        <Link href="/" className="block">
-          <Image
-            src="/logo-aijianli.png"
-            alt="AI Resume Pass"
-            width={120}
-            height={40}
-            className="h-9 w-auto object-contain"
-          />
+        <Link href="/" className="flex items-center gap-2">
+          <BrandLogo className="w-8 h-8" />
+          <span className="font-bold text-lg tracking-tight text-slate-900">
+            AI Resume Pass
+          </span>
         </Link>
       </div>
 

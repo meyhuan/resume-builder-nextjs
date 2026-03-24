@@ -46,10 +46,10 @@ export const StepIdentity = ({ stepNumber = 1, onClickPast }: { stepNumber?: num
                   : "border-gray-200 bg-white hover:border-[#8B5CF6]/50 hover:bg-gray-50"
               )}
             >
-              {/* Label Section - Left aligned */}
-              <div className="flex-1 pl-8 z-10">
+              {/* Label Section - Left aligned with right padding to avoid image */}
+              <div className="flex-1 pl-4 pr-20 z-10">
                 <span className={cn(
-                  "text-lg font-bold block mb-1",
+                  "text-lg font-bold block mb-1 whitespace-nowrap",
                   isSelected ? "text-[#7C3AED]" : "text-gray-900"
                 )}>
                   {option.label}

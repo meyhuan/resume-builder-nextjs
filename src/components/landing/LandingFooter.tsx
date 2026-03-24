@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { Github, Twitter, MessageCircle } from 'lucide-react';
 import { LegalDialog } from '@/components/legal/LegalDialog';
+import { BrandLogo } from '@/components/ui/brand-logo';
 
 type LegalTab = 'privacy' | 'terms';
 type FooterLinkItem = {
@@ -43,8 +43,11 @@ export const LandingFooter = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="grid md:grid-cols-5 gap-12 mb-16">
           <div className="col-span-1 space-y-4">
-            <Link href="/" className="inline-block">
-              <Image src="/logo-aijianli.png" alt="AI Resume Pass" width={120} height={40} className="h-10 w-auto object-contain" />
+            <Link href="/" className="flex items-center gap-2 group transition-transform hover:scale-105">
+              <BrandLogo className="w-10 h-10 drop-shadow-[0_0_15px_rgba(139,92,246,0.3)] group-hover:drop-shadow-[0_0_20px_rgba(139,92,246,0.5)] transition-all" />
+              <span className="font-bold text-xl tracking-tight text-slate-900 group-hover:text-violet-600 transition-colors">
+                AI Resume Pass
+              </span>
             </Link>
             <p className="text-slate-500 text-sm leading-relaxed">
               <strong>AI Resume Pass</strong>
