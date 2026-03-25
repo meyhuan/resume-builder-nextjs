@@ -7,7 +7,12 @@ export default clerkMiddleware(async (auth, request) => {
   const { pathname, search } = request.nextUrl;
   const { userId } = await auth();
   if (isProtectedRoute(request)) {
-    await auth.protect();
+    if (!userId) {
+      const redirectTarget: string = `${pathname}${search}`;
+      const loginUrl: URL = new URL('/login', request.url);
+      loginUrl.searchParams.set('redirect', redirectTarget);
+      return NextResponse.redirect(loginUrl);
+    }
   }
   if (pathname === '/login' && userId) {
     return NextResponse.redirect(new URL('/dashboard', request.url));

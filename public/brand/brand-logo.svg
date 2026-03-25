@@ -1,0 +1,15 @@
+<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="brandLogoGradient" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#7C3AED" />
+      <stop offset="1" stop-color="#E879F9" />
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="48" height="48" rx="15" fill="url(#brandLogoGradient)" />
+  <rect x="10.5" y="9" width="24" height="30" rx="4.5" fill="white" fill-opacity="0.92" />
+  <rect x="15" y="16.5" width="12" height="2.25" rx="1.125" fill="url(#brandLogoGradient)" fill-opacity="0.45" />
+  <rect x="15" y="22.5" width="15" height="2.25" rx="1.125" fill="url(#brandLogoGradient)" fill-opacity="0.3" />
+  <rect x="15" y="28.5" width="9" height="2.25" rx="1.125" fill="url(#brandLogoGradient)" fill-opacity="0.2" />
+  <circle cx="37.5" cy="33" r="9" fill="#059669" />
+  <path d="M33.75 33L36.3 35.55L41.25 30.75" stroke="white" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round" />
+</svg>

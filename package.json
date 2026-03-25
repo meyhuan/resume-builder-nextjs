@@ -8,6 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "generate:brand-assets": "node scripts/generate-brand-assets.mjs",
     "import:supabase": "node scripts/import-supabase-csv.mjs",
     "migrate:oss-assets": "node scripts/migrate-oss-assets.mjs",
     "postinstall": "prisma generate"
@@ -51,6 +52,7 @@
     "openai": "^6.22.0",
     "puppeteer": "^22.0.0",
     "puppeteer-core": "^24.36.0",
+    "png-to-ico": "^2.1.8",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-easy-crop": "^5.5.6",

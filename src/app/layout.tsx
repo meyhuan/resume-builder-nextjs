@@ -6,6 +6,9 @@ import "@/styles/theme-override.css";
 import { SITE_URL, SITE_NAME, SITE_DESCRIPTION, SITE_LOCALE, SITE_LANG, SITE_CURRENCY } from '@/lib/site-config';
 import { AuthProvider } from '@/components/providers/auth-provider';
 
+const DEFAULT_SHARE_TITLE = `${SITE_NAME} — Free AI Resume Builder with ATS-Friendly Templates`;
+const DEFAULT_SHARE_IMAGE_ALT = `${SITE_NAME} social preview showing the AI resume builder and approval-stamp logo`;
+
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
@@ -38,20 +41,20 @@ export const metadata: Metadata = {
     locale: SITE_LOCALE,
     url: SITE_URL,
     siteName: SITE_NAME,
-    title: `${SITE_NAME} — Free AI Resume Builder`,
+    title: DEFAULT_SHARE_TITLE,
     description: SITE_DESCRIPTION,
     images: [
       {
         url: '/og-image.png',
         width: 1200,
         height: 630,
-        alt: `${SITE_NAME} — Free AI Resume Builder`,
+        alt: DEFAULT_SHARE_IMAGE_ALT,
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: `${SITE_NAME} — Free AI Resume Builder`,
+    title: DEFAULT_SHARE_TITLE,
     description: SITE_DESCRIPTION,
     images: ['/og-image.png'],
   },
