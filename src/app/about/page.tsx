@@ -3,10 +3,29 @@ import { LandingFooter } from "@/components/landing/LandingFooter";
 import Link from "next/link";
 import { Heart, Code2, Coffee, MessageCircle, Mail, Users, Wand2, ArrowRight } from "lucide-react";
 import { Metadata } from "next";
+import { SITE_NAME, SITE_URL } from '@/lib/site-config';
+
+const PAGE_TITLE: string = `About ${SITE_NAME} | Free AI Resume Builder`;
+const PAGE_DESCRIPTION: string = 'Learn the story behind AI Resume Pass, the free AI resume builder created by an indie developer. See the product mission, free forever promise, and support contact.';
 
 export const metadata: Metadata = {
-  title: 'About — AI Resume Pass',
-  description: 'Built by an indie developer. Free forever AI resume builder.',
+  title: PAGE_TITLE,
+  description: PAGE_DESCRIPTION,
+  alternates: {
+    canonical: `${SITE_URL}/about`,
+  },
+  openGraph: {
+    title: PAGE_TITLE,
+    description: PAGE_DESCRIPTION,
+    url: `${SITE_URL}/about`,
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: PAGE_TITLE,
+    description: PAGE_DESCRIPTION,
+    images: ['/og-image.png'],
+  },
 };
 
 export default function AboutPage(): React.ReactElement {

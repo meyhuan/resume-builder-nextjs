@@ -6,10 +6,9 @@ import { notFound } from 'next/navigation';
 import { ArrowRight, BriefcaseBusiness, ChevronRight, CircleCheckBig, ClipboardList, Layers3, Tags, Target, TriangleAlert, Users } from 'lucide-react';
 import { LandingFooter } from '@/components/landing/LandingFooter';
 import { LandingHeader } from '@/components/landing/LandingHeader';
+import { SITE_URL } from '@/lib/site-config';
 import { templateCatalog } from '@/lib/templates/template-catalog';
 import { templateRoleData } from '@/lib/templates/template-role-data';
-
-const SITE_URL: string = 'https://airesumepass.com';
 
 type JsonLdPrimitive = string | number | boolean;
 

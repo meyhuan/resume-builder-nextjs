@@ -5,9 +5,8 @@ import { notFound } from 'next/navigation';
 import { ArrowRight, BriefcaseBusiness, ChevronRight, Layers3 } from 'lucide-react';
 import { LandingFooter } from '@/components/landing/LandingFooter';
 import { LandingHeader } from '@/components/landing/LandingHeader';
+import { SITE_URL } from '@/lib/site-config';
 import { templateRoleData } from '@/lib/templates/template-role-data';
-
-const SITE_URL: string = 'https://airesumepass.com';
 
 type JsonLdPrimitive = string | number | boolean;
 

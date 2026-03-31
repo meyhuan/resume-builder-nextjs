@@ -5,10 +5,9 @@ import Link from 'next/link';
 import { ArrowRight, BriefcaseBusiness, Sparkles } from 'lucide-react';
 import { LandingFooter } from '@/components/landing/LandingFooter';
 import { LandingHeader } from '@/components/landing/LandingHeader';
+import { SITE_URL } from '@/lib/site-config';
 import { templateCatalog } from '@/lib/templates/template-catalog';
 import { templateRoleData } from '@/lib/templates/template-role-data';
-
-const SITE_URL: string = 'https://airesumepass.com';
 const PAGE_TITLE: string = 'Free Resume Template Center - AI Resume Generator & Online Builder';
 const PAGE_DESCRIPTION: string = 'Professional resume templates for various roles including developers, product managers, marketers, designers, and more. Free AI-powered resume builder with one-click generation and PDF export.';
 

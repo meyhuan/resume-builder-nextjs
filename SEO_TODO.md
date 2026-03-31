@@ -1,93 +1,123 @@
-# 智简简历 SEO/AEO 增长行动计划 (TODO List)
- 
- 这份文档记录了为了提升 `aijianli.cn` 在传统搜索引擎（百度、必应）和 AI 搜索引擎（豆包、DeepSeek 等）中的排名与转化率，接下来需要执行的各项任务。
- 
- ROI 标注说明：
- - **[ROI: 高]** 通常 1-7 天内对收录/排名/转化有明显提升
- - **[ROI: 中]** 通常 2-8 周内逐步提升（或对长期权重更关键）
- 
- ## 阶段一：基础建设与爬虫友好 (Infrastructure & Crawlability)
- - [x] 配置 `robots.txt` 允许 AI 爬虫抓取。
- - [x] 在 `layout.tsx` 中添加 `JSON-LD` 结构化数据 (声明 SoftwareApplication 免费属性)。
- - [x] 在首页 `Hero` 和 `FAQ` 中埋入高转化关键词（"无水印"、"在线编辑"、"免费下载"）。
- - [x] 配置百度站长平台验证 (`baidu-site-verification`)。
- - [x] **[ROI: 高]** 开发自动生成 `sitemap.xml` 的功能，包含所有文章和静态路由。
- - [x] **[ROI: 高]** 优化网站底部页脚 (Footer)，增加带有长尾关键词的内链矩阵（如"AI 简历在线润色", "ATS 友好简历模板"）。
- 
- ## 阶段二：长尾流量收割机 (Programmatic SEO)
- - [x] **[ROI: 高]** 设计并开发针对不同职业的批量落地页模板路由（例如 `/templates/[role]`）。
- - [x] **[ROI: 高]** 整理首批岗位模板数据，并落地到模板角色数据源与聚合页中。
- - [ ] 利用 AI 批量生成这些职业的"简历撰写要点"和"模版预览"，作为落地页内容。
- - [x] **[ROI: 高]** 将这些动态路由自动加入到 `sitemap.xml` 中。
- - [ ] **[ROI: 高]** 编写 Node.js 脚本：每当生成新的落地页或文章时，自动调用百度 API 推送收录 (`Baidu Push API`)。
- 
- ## 阶段三：AEO 与品牌语料建设 (AI Engine Optimization)
- - [x] 在网站增加一个标准化的 `/about` 页面，用最直接的"百科体"描述产品，专门喂给 AI 爬虫（已上线 About 页面，后续继续补强品牌承诺文案）。
- - [ ] 在知乎、掘金、V2EX 等高权重平台发布包含品牌关键词的软文，建立大模型的检索数据源（RAG 语料池）。
- - [ ] 策划并开发极轻量级的"引流微工具"（如"JD 核心词提取器"或"简历 ATS 匹配度打分"），并在微工具中引流到主编辑器。
- 
- ## 阶段四：跨端引流与裂变 (Cross-platform Growth)
- - [ ] 在小程序端增加强引导提示："排版功能在电脑端体验更佳，请使用电脑浏览器访问 aijianli.cn 扫码登录查看"。
- - [ ] 制作《2026 届秋招 AI 简历自救指南.pdf》并在校园渠道分发，内嵌主站链接。
- - [ ] （可选）在 Web 端实现简单的分享裂变机制。
- 
- ## 阶段五：外链建设与域名权重 (Backlinks & Domain Authority)
- - [ ] **[ROI: 中]** **高权重社区软文（技术/求职导向）**：在 V2EX、掘金、CSDN、知乎发布《独立开发者：我做了一个完全免费的AI简历工具》等文章，并在文章中和个人主页留下 `aijianli.cn` 的超链接。
- - [ ] **[ROI: 中]** **导航站与AI工具库提交**：将网站提交至"创造者导航"、"发现导航"、"AI 工具集"、"导航犬"等各大工具收录平台，获取高质量单向外链。
- - [ ] **[ROI: 中]** **GitHub 开源引流**：在 GitHub 开源简历的某个非核心模块（如 `resume-json-schema` 或 `tailwind-resume-templates`），在 README 顶部加上官网反向链接（GitHub 外链权重极高）。
- - [ ] **[ROI: 中]** **友情链接互换**：在网站 Footer 增加"友情链接"模块，寻找其他非竞品的独立开发者工具（如：面试八股文刷题站、证件照生成工具等）进行友链互换。
- - [ ] **[ROI: 中]** **校园 BBS/论坛铺设**：通过校园大使或自己在北邮人、水木清华等高校 BBS 论坛发布简历模板分享帖，带上官网链接。
- 
- ## 阶段六：多搜索引擎收录与主动推送 (Indexing & Submission)
- - [ ] **[ROI: 高]** **必做：百度资源平台**：完成站点属性校验、提交 `sitemap.xml`、开启自动/手动推送（优先级最高）。
- - [x] **[ROI: 高]** **必做：Bing Webmaster Tools**：已完成站点校验码接入（`msvalidate.01`），下一步是平台侧提交站点地图并启用 IndexNow。
- - [ ] **[ROI: 中]** **覆盖更多国内引擎**：按实际流量优先级逐步接入 360 搜索、搜狗、神马（如果未来移动端/小程序导流较多，神马值得做）。
- - [ ] **[ROI: 高]** **IndexNow 支持（推荐）**：已准备 `submit-index-now.ts` 提交逻辑，待部署 `/.well-known/` key 文件并接入页面发布后的自动 ping。
- - [ ] **[ROI: 中]** **收录质量治理**：定期在各站长平台查看“抓取异常/死链/重复标题/软404”，建立修复清单。
- 
- ## 阶段七：结构化数据矩阵与 SERP 富摘要 (Schema & Rich Snippets)
- - [x] **[ROI: 中]** 完善 JSON-LD 类型：首页已补齐 `Organization`/`WebSite`/`HowTo`，文章页已补齐 `Article`，模板聚合页已补齐 `BreadcrumbList`；后续继续补 `SearchAction` 与全站一致性。
- - [x] **[ROI: 中]** FAQPage 结构化数据：FAQ 已复用统一数据源输出 JSON-LD，覆盖无水印、在线编辑、ATS 等核心问法。
- - [ ] **[ROI: 中]** sitelinks 与站点名：已统一基础 `Site Name` 与 `logo`，后续补全 `sameAs`（知乎、掘金、GitHub、公众号等）以增强品牌实体。
- - [ ] **[ROI: 低]** OpenGraph 细化：文章页、模板页输出独立 OG 图片与标题，提高分享点击率（间接提升外链与自然点击）。
- 
- ## 阶段八：站内信息架构与内链网 (IA & Internal Linking)
- - [x] **栏目体系**：已建立“模板总览 -> 岗位 -> 行业/类别”结构，形成可被爬虫理解的导航层级；后续可继续补“级别”维度。
- - [x] **[ROI: 高]** **聚合页（Hub Pages）**：已上线 `/templates` 总览、`/templates/industry/[x]`、`/templates/category/[x]` 等聚合页。
- - [ ] **文章关联推荐**：在文章详情页添加“相关推荐/同标签文章/同岗位模板”，提高爬虫深度和用户停留。
- - [ ] **面包屑导航**：模板页已接入 `BreadcrumbList` JSON-LD，后续补页面可见 Breadcrumb 与文章页 Breadcrumb。
- - [ ] **站内搜索页 SEO 化（谨慎）**：如果有搜索功能，避免无限组合 URL 被收录；只放出精选的可索引结果页。
- 
- ## 阶段九：技术 SEO（性能、可访问性、稳定性）
-- [ ] **[ROI: 中]** **Core Web Vitals**：重点优化 LCP/INP/CLS（首屏图片、字体、关键 CSS、避免布局抖动），国内新站非常吃性能。
-- [ ] **缓存策略**：静态资源强缓存（`Cache-Control`）、启用 gzip/brotli、图片使用 WebP/AVIF。
-- [ ] **规范化 URL**：全站 canonical、尾斜杠规则统一、避免重复内容（同内容多 URL）。
-- [ ] **404/重定向治理**：把常见错误路径 301 到正确页面；对“旧版入口”提供明确跳转说明，减少软404。
-- [ ] **日志与告警**：记录爬虫 UA（Baiduspider、Bingbot、Bytespider 等）访问日志，发现抓取失败及时修复。
+# AI Resume Pass SEO Roadmap
 
-## 阶段十：E-E-A-T 与信任页（国内转化 & AEO 极重要）
-- [ ] **隐私政策与数据声明**：单独页面明确“不会用于训练/可删除/加密传输”，并在 FAQ 与 Footer 内链。
-- [ ] **产品更新日志 / Changelog**：持续更新（哪怕很短），让搜索引擎和 AI 看到产品在迭代。
-- [ ] **[ROI: 高]** **案例页/成功样例**：收集匿名化“简历前后对比”与“拿到面试”的案例，做成可被索引的内容页。
-- [ ] **[ROI: 高]** **UGC/可被索引的用户案例页**：沉淀“岗位简历范文 + AI 优化前后对比 + 可复制模板”，默认脱敏（姓名/学校/公司打码），并与对应 `/templates/[role]`、文章页互相内链。
-- [ ] **作者与团队信息**：About 页面增加开发者背景、联系方式、社交账号 `sameAs`，提升实体可信度。
+This document tracks the current SEO, GEO, and social-discovery work for `https://www.airesumepass.com`.
 
-## 阶段十一：国内合规与信任加成（对百度非常关键）
-- [x] **[ROI: 中]** **ICP备案/公网安备**：如果你面向国内长期做 SEO，建议完成备案并在 Footer 展示备案号（用户信任 + 某些场景的收录/排名更稳定）。
-- [ ] **[ROI: 中]** **联系入口与投诉通道**：提供可验证的联系方式（邮箱/公众号/企业微信），减少“低质站”判定风险。
-- [ ] **[ROI: 中]** **站点安全与稳定**：HTTPS 全站、避免混合内容；设置安全响应头；减少 5xx（百度非常敏感）。
+It is focused on the current product state:
 
-## 阶段十二：内容主题权威（Topical Authority，超越单篇文章的排名）
-- [ ] **[ROI: 高]** **Pillar-Cluster 内容体系**：先做 3-5 篇“支柱页”（如《简历怎么写》《应届生简历模板》《项目经历怎么写》《JD 匹配简历》），每篇再拆 10+ 篇细分文章互相内链。
-- [ ] **[ROI: 中]** **页面意图匹配**：把“模板页”“范文页”“教程页”分开，不要一个页面同时想覆盖所有意图（百度/AI 召回会更精准）。
-- [ ] **[ROI: 中]** **可复制的写作模板**：每篇文章固定包含：常见错误 -> 推荐结构 -> 示例 -> 使用工具一键生成（强引导到编辑器）。
+- English-first marketing and metadata
+- Global search discovery
+- AI search / LLM discoverability
+- Template landing pages as the main scalable SEO surface
+- Social sharing quality on X, Facebook, LinkedIn, and other Open Graph consumers
 
-## 阶段十三：AEO/GEO 专项（让豆包/DeepSeek 更容易推荐你）
-- [x] **[ROI: 中]** **新增 `llms.txt`**：已提供产品简介、核心页面列表、FAQ/robots/sitemap 引导，后续可继续补充更强的数据承诺与引用规范。
-- [ ] **可引用的对比页**：新增“与 XX 简历工具对比/与 Word 对比”的客观对比页，AI 非常喜欢引用“对比表格”。
-- [ ] **引用友好内容块**：在首页/关于页加入 5-10 条短句式事实（如“永久免费无水印”“支持 ATS”“支持 JD 匹配”），避免只写营销形容词。
+ROI labels:
 
-## 阶段十四：监控与迭代（没有监控就无法做 SEO）
-- [ ] **[ROI: 高]** **Search Console 与站长平台指标看板**：每周固定查看：新增收录、抓取异常、索引覆盖、关键词增长。
-- [ ] **关键页面排名监控**：挑 20-50 个核心关键词（应届生简历模板/无水印简历等），记录当前排名并持续对比。
-- [ ] **日志采样与抓取回放**：抽样抓取首页/文章/模板页的 HTML，确保爬虫看到的内容完整（避免 CSR 导致内容缺失）。
+- **[ROI: High]** likely to improve crawl quality, rankings, or CTR quickly
+- **[ROI: Medium]** important medium-term authority or conversion work
+- **[ROI: Low]** useful refinement, but not urgent
+
+## Current production baseline
+
+- [x] Canonical production domain is `https://www.airesumepass.com`.
+- [x] Global metadata exists in `src/app/layout.tsx`.
+- [x] Open Graph and Twitter image metadata exist and point to `/og-image.png`.
+- [x] `favicon.ico`, `apple-touch-icon.png`, and generated brand assets are in place.
+- [x] `robots.txt` exists at `src/app/robots.ts`.
+- [x] `sitemap.xml` exists at `src/app/sitemap.ts`.
+- [x] `llms.txt` exists at `src/app/llms.txt/route.ts`.
+- [x] The sitemap no longer includes disabled article routes.
+- [x] `llms.txt` now uses the current `www` domain and current public page inventory.
+
+## Phase 1: Crawlability and indexing hygiene
+
+- [x] **[ROI: High]** Keep `robots.txt` index-friendly for public pages and disallow private surfaces like `/editor`, `/admin`, and API routes.
+- [x] **[ROI: High]** Keep `sitemap.xml` aligned with currently indexable routes only.
+- [x] **[ROI: High]** Keep canonical URLs aligned to the `www` production domain.
+- [x] **[ROI: High]** Verify that the non-`www` domain permanently redirects to `https://www.airesumepass.com`.
+- [ ] **[ROI: High]** Submit the current sitemap to Google Search Console and Bing Webmaster Tools.
+- [ ] **[ROI: Medium]** Review Search Console coverage for soft 404, duplicate canonical, and excluded-by-noindex issues after deployment.
+
+## Phase 2: Page-level metadata quality
+
+- [x] **[ROI: High]** Global metadata exists for the site root layout.
+- [ ] **[ROI: High]** Add dedicated metadata for `/ai`.
+- [ ] **[ROI: High]** Add dedicated metadata for `/import`.
+- [ ] **[ROI: High]** Add dedicated metadata for `/templates`.
+- [ ] **[ROI: High]** Add dedicated metadata for `/about`.
+- [ ] **[ROI: High]** Add dedicated metadata for `/templates/[role]` pages based on template content.
+- [ ] **[ROI: Medium]** Add dedicated metadata for `/templates/category/[category]` and `/templates/industry/[industry]` pages.
+- [ ] **[ROI: Medium]** Ensure every major landing page has a unique title and description with no duplication.
+
+## Phase 3: Structured data and entity clarity
+
+- [x] **[ROI: Medium]** Global `SoftwareApplication` JSON-LD exists.
+- [ ] **[ROI: High]** Add `Organization` JSON-LD with brand name, URL, logo, and support email.
+- [ ] **[ROI: Medium]** Add `WebSite` JSON-LD with a consistent site name and canonical URL.
+- [ ] **[ROI: Medium]** Add `sameAs` links once public brand profiles exist.
+- [ ] **[ROI: Medium]** Add page-specific structured data where appropriate, such as `BreadcrumbList` on visible template pages.
+- [ ] **[ROI: Low]** Evaluate `FAQPage` structured data for homepage or support/trust content if the visible content justifies it.
+
+## Phase 4: Programmatic SEO for templates
+
+- [x] **[ROI: High]** Template hub pages exist.
+- [x] **[ROI: High]** Role, category, and industry template routes are included in the sitemap.
+- [ ] **[ROI: High]** Expand template landing pages with role-specific intro copy, writing tips, and keyword-aligned summaries.
+- [ ] **[ROI: High]** Add stronger internal links between related roles, categories, and industries.
+- [ ] **[ROI: Medium]** Add visible breadcrumbs to template pages, not only structured data.
+- [ ] **[ROI: Medium]** Ensure template pages expose enough static content for crawlers beyond UI chrome.
+
+## Phase 5: Trust, E-E-A-T, and conversion-supporting pages
+
+- [x] **[ROI: Medium]** About page exists.
+- [ ] **[ROI: High]** Add a dedicated Privacy Policy page.
+- [ ] **[ROI: High]** Add a dedicated Terms of Service page.
+- [ ] **[ROI: High]** Add a dedicated Contact or Support page using `support@airesumepass.com`.
+- [ ] **[ROI: Medium]** Add a Changelog or Updates page to show ongoing product maintenance.
+- [ ] **[ROI: Medium]** Expand the About page with founder, product mission, and trust details.
+- [ ] **[ROI: Medium]** Link trust pages from the footer and other crawlable public pages.
+
+## Phase 6: Social discovery and share quality
+
+- [x] **[ROI: High]** Shared Open Graph image generation is in place.
+- [x] **[ROI: High]** Favicon and Apple touch icon generation is in place.
+- [ ] **[ROI: Medium]** Add page-specific Open Graph titles and descriptions for the highest-value landing pages.
+- [ ] **[ROI: Medium]** Consider role-specific Open Graph images for template detail pages if social sharing becomes a traffic channel.
+- [ ] **[ROI: Low]** Validate previews on X, Facebook, LinkedIn, and Discord after each major metadata update.
+
+## Phase 7: GEO / AI search readiness
+
+- [x] **[ROI: Medium]** `llms.txt` exists and points to current public routes.
+- [ ] **[ROI: High]** Add short factual product claims to the homepage and About page, such as “100% free”, “ATS-friendly”, and “watermark-free PDF export”.
+- [ ] **[ROI: Medium]** Create comparison content that is factual and citation-friendly.
+- [ ] **[ROI: Medium]** Add stronger source-of-truth wording to trust pages so AI systems can summarize product facts more reliably.
+- [ ] **[ROI: Low]** Periodically review `llms.txt` so it reflects the current public information architecture.
+
+## Phase 8: Content roadmap
+
+- [ ] **[ROI: High]** Build an English-first pillar and cluster content strategy around resume writing, ATS optimization, job-targeted resumes, and resume examples.
+- [ ] **[ROI: High]** Create high-intent pages such as “how to write a resume”, “ATS resume template”, and “resume summary examples”.
+- [ ] **[ROI: Medium]** Reintroduce article content only if the content quality, language quality, and internal-linking strategy are strong enough to support indexation.
+- [ ] **[ROI: Medium]** If article pages return, ensure they get unique metadata, structured data, and related-template linking before re-adding them to the sitemap.
+
+## Phase 9: Technical SEO follow-up
+
+- [ ] **[ROI: High]** Review Core Web Vitals for homepage and major landing pages.
+- [ ] **[ROI: Medium]** Audit image delivery and caching strategy for public assets.
+- [ ] **[ROI: Medium]** Confirm there are no mixed-content, hydration, or rendering issues affecting crawler-visible HTML.
+- [ ] **[ROI: Medium]** Review redirect behavior for login/protected routes to ensure crawlers are not sent into auth loops.
+- [ ] **[ROI: Low]** Add recurring checks for broken links, orphan pages, and metadata regressions.
+
+## Phase 10: Monitoring and operating rhythm
+
+- [ ] **[ROI: High]** Check Google Search Console weekly for coverage, impressions, CTR, and top landing pages.
+- [ ] **[ROI: High]** Check Bing Webmaster Tools weekly for crawl and index issues.
+- [ ] **[ROI: Medium]** Track rankings for a small set of target keywords tied to landing pages.
+- [ ] **[ROI: Medium]** Keep a changelog of SEO-impacting edits such as metadata, sitemap, robots, and route visibility changes.
+- [ ] **[ROI: Low]** Revalidate social previews after brand or metadata updates.
+
+## Immediate next actions
+
+- [ ] Add dedicated metadata for `/ai`, `/import`, `/templates`, and `/about`.
+- [ ] Add trust pages: Privacy Policy, Terms, and Contact/Support.
+- [ ] Verify `www` redirect behavior in production.
+- [ ] Submit and monitor the current sitemap in Search Console and Bing Webmaster Tools.
