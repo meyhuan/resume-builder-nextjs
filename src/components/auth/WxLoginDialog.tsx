@@ -163,7 +163,7 @@ export const WxLoginDialog: React.FC<WxLoginDialogProps> = ({ isOpen, onClose, o
           // Since this direct Java API returns a UID instead of a full JWT,
           // we treat the UID as our session token/identifier for now.
           setToken(uid);
-          setCookie('auth_uid', uid, { maxAge: 60 * 60 * 24 * 7 }); // Save UID in cookie for server-side access
+          setCookie('auth_uid', uid, { maxAge: 60 * 60 * 24 * 30 }); // Save UID in cookie for server-side access
           setUserInfo({
             id: uid,
             name: `用户_${uid}`,

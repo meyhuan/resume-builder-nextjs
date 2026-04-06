@@ -30,6 +30,8 @@ import ExportPreviewDialog from '@/components/export-preview-dialog'
 import { useRequireAuth } from '@/hooks/use-require-auth'
 import { WxLoginDialog } from '@/components/auth/WxLoginDialog'
 import { useAuthStore } from '@/store/use-auth-store'
+import { useVipCheck } from '@/hooks/use-vip-check'
+import VipUpgradeDialog from '@/components/vip/vip-upgrade-dialog'
 import type { ResumeData } from '@/entities/resume/resume-data'
 
 const AI_CACHE_KEYS: Record<string, string> = {
@@ -65,6 +67,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
   const [resumeId, setResumeId] = useState<string | undefined>(initialResumeId)
   const { isLoginOpen, requireAuth, handleLoginSuccess, handleLoginClose } = useRequireAuth()
   const { token } = useAuthStore()
+  const { requireVip, showUpgrade, setShowUpgrade } = useVipCheck()
   
   // Hydration check to prevent SSR mismatch for auth state
   const [isHydrated, setIsHydrated] = useState(false)
@@ -384,6 +387,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
   })
 
   const handleExportMarkdown = useCallback(() => {
+    if (!requireVip()) return
     requireAuth(() => {
       try {
         const markdownContent = exportResumeToMarkdown(resume)
@@ -400,15 +404,17 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
         toast.error('Markdown导出失败，请重试')
       }
     })
-  }, [resume, requireAuth])
+  }, [resume, requireAuth, requireVip])
 
   async function handleExportPng(): Promise<void> {
+    if (!requireVip()) return
     await exportImage<HTMLDivElement>(printRef, { fileName: 'resume', pixelRatio: 2 })
   }
 
   /** Generate the actual PDF via the API, then open preview dialog. */
   async function handlePreviewPdf(): Promise<void> {
     if (!printRef.current || isGenerating) return
+    if (!requireVip()) return
     setIsGenerating(true)
     try {
       const html: string = buildResumeHtml(printRef.current, { title: resume.name || 'Resume' })
@@ -467,13 +473,14 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
 
   // Template switch guard: disable one-page mode before switching
   const handleTplChange = useCallback((next: string): void => {
+    if (!requireVip()) return
     if (onePageMode) {
       resetOnePage()
       setOnePageMode(false)
       toast.info('已切换模板，一页模式已关闭')
     }
     setTpl(next)
-  }, [onePageMode, resetOnePage])
+  }, [onePageMode, resetOnePage, requireVip])
 
   // 获取当前模板组件
   const templateConfig = getTemplate(tpl)
@@ -615,7 +622,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
       <main className="flex-1 flex overflow-hidden relative z-10">
         <div className="flex-1 overflow-auto p-6 md:p-12 custom-scrollbar bg-slate-50/30">
           <div className="mx-auto max-w-[210mm] transition-all duration-500">
-            <AiSectionProvider>
+            <AiSectionProvider requireVip={requireVip}>
             <div
               ref={printRef}
               className="page w-full bg-white shadow-[0_0_50px_rgba(0,0,0,0.05)] rounded-xl print:shadow-none overflow-hidden"
@@ -715,6 +722,8 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
         closeable={!needsForceLogin}
         subtitle={needsForceLogin ? '登录后即可保存、导出，你的简历不会丢失' : undefined}
       />
+      {/* VIP upgrade dialog */}
+      <VipUpgradeDialog open={showUpgrade} onOpenChange={setShowUpgrade} />
     </div>
   )
 }

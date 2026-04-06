@@ -38,6 +38,7 @@ export function useAiSection(): AiSectionContextValue {
 interface AiSectionProviderProps {
   readonly children: ReactNode;
   readonly defaultIdentity?: SectionIdentity;
+  readonly requireVip?: () => boolean;
 }
 
 /**
@@ -45,7 +46,7 @@ interface AiSectionProviderProps {
  * Place this high in the component tree (e.g. wrapping the template area).
  */
 export default function AiSectionProvider(props: AiSectionProviderProps): ReactElement {
-  const { children, defaultIdentity = 'student' } = props;
+  const { children, defaultIdentity = 'student', requireVip } = props;
 
   const setResume = useAppStore((s) => s.setResume);
 
@@ -63,22 +64,24 @@ export default function AiSectionProvider(props: AiSectionProviderProps): ReactE
 
   const openPolish = useCallback(
     (blockId: string, contentHtml: string, moduleType: SectionModuleType): void => {
+      if (requireVip && !requireVip()) return;
       setPolishBlockId(blockId);
       setPolishContent(contentHtml);
       setPolishModule(moduleType);
       setPolishOpen(true);
     },
-    [],
+    [requireVip],
   );
 
   const openGenerate = useCallback(
     (blockId: string, moduleType: SectionModuleType, block?: ResumeBlock): void => {
+      if (requireVip && !requireVip()) return;
       setGenerateBlockId(blockId);
       setGenerateModule(moduleType);
       setGeneratePrefill(block ? extractBlockPrefill(block) : {});
       setGenerateOpen(true);
     },
-    [],
+    [requireVip],
   );
 
   const handlePolishInsert = useCallback(

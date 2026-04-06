@@ -7,7 +7,7 @@ import { LandingButton } from './LandingButton';
 import { cn } from '@/lib/utils';
 import { Menu, X, User, LogOut, ChevronDown, FileText, Wand2, FileUp } from 'lucide-react';
 import { WxLoginDialog } from '../auth/WxLoginDialog';
-import { useAuthStore } from '@/store/use-auth-store';
+import { useAuth } from '@/hooks/use-auth';
 
 interface LandingHeaderProps {
   forceSolid?: boolean;
@@ -18,7 +18,7 @@ export const LandingHeader = ({ forceSolid = false }: LandingHeaderProps = {}) =
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
 
-  const { token, userInfo, logout } = useAuthStore();
+  const { isLoggedIn, userInfo, logout } = useAuth();
 
   useEffect(() => {
     if (forceSolid) return;
@@ -117,7 +117,7 @@ export const LandingHeader = ({ forceSolid = false }: LandingHeaderProps = {}) =
           </nav>
 
           <div className="hidden md:flex items-center gap-4">
-            {token ? (
+            {isLoggedIn ? (
               <div className="flex items-center gap-4">
                 <Link href="/dashboard">
                   <LandingButton variant="glass" size="sm" className="rounded-full">进入控制台</LandingButton>
@@ -206,7 +206,7 @@ export const LandingHeader = ({ forceSolid = false }: LandingHeaderProps = {}) =
               </div>
             ))}
             <div className="flex flex-col gap-3 pt-4">
-              {token ? (
+              {isLoggedIn ? (
                 <Link href="/dashboard" className="w-full">
                   <LandingButton size="md" className="w-full rounded-xl">进入控制台</LandingButton>
                 </Link>

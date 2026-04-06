@@ -16,6 +16,8 @@ dist
 # env files
 .env
 .env*.local
+.env.china
+.env.oversee
 
 # Prisma
 /prisma/migrations/

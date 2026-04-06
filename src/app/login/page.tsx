@@ -66,7 +66,7 @@ function LoginForm(): React.ReactElement {
 
   const handleLoginSuccess = useCallback((uid: string): void => {
     setToken(uid);
-    setCookie('auth_uid', uid, { maxAge: 60 * 60 * 24 * 7 });
+    setCookie('auth_uid', uid, { maxAge: 60 * 60 * 24 * 30 });
     setUserInfo({ id: uid, name: `用户_${uid}` });
     stopPolling();
     stopExpireCountdown();
