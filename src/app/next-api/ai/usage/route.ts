@@ -1,20 +1,20 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { peekRateLimit } from '@/lib/ai/rate-limiter';
-import { getRateLimitIdentity } from '@/lib/ai/get-rate-limit-identity';
+import { NextResponse } from 'next/server';
+import { peekQuota } from '@/lib/quota/quota-checker';
 
 /**
  * GET /next-api/ai/usage
  *
- * Returns the current AI usage stats for the requesting user/IP.
+ * Returns the current AI usage quota for the requesting user.
  */
-export async function GET(request: NextRequest): Promise<NextResponse> {
-  const { identifier, isAuthenticated } = await getRateLimitIdentity(request);
-  const result = peekRateLimit(identifier, isAuthenticated);
+export async function GET(): Promise<NextResponse> {
+  const quota = await peekQuota('ai');
 
   return NextResponse.json({
-    used: result.used,
-    limit: result.limit,
-    remaining: result.remaining,
-    isAuthenticated,
+    allowed: quota.allowed,
+    isVip: quota.isVip,
+    used: quota.used,
+    limit: quota.isVip ? null : quota.limit,
+    remaining: quota.isVip ? 'unlimited' : quota.remaining,
+    message: quota.message,
   });
 }

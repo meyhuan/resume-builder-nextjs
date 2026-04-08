@@ -3,10 +3,11 @@
 import type { ReactElement } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { usePathname, useRouter } from 'next/navigation';
-import { FileText, MessageSquareHeart, LogOut } from 'lucide-react';
+import { usePathname } from 'next/navigation';
+import { FileText, MessageSquareHeart, Crown, Sparkles } from 'lucide-react';
 import { useAuthStore } from '@/store/use-auth-store';
 import { useState, useEffect } from 'react';
+import { VipExpirationReminder } from '@/components/vip/vip-expiration-reminder';
 
 /** Navigation item definition. */
 interface NavItem {
@@ -18,7 +19,7 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { key: 'resume', label: '我的简历', href: '/dashboard', icon: <FileText className="w-[18px] h-[18px]" /> },
-  // { key: 'ai', label: 'AI 简历', href: '/ai', icon: <Code2 className="w-[18px] h-[18px]" /> },
+  { key: 'membership', label: '会员中心', href: '/dashboard/membership', icon: <Sparkles className="w-[18px] h-[18px]" /> },
   { key: 'feedback', label: '用户反馈', href: '/dashboard/feedback', icon: <MessageSquareHeart className="w-[18px] h-[18px]" /> },
 ];
 
@@ -31,8 +32,7 @@ const COPYRIGHT_YEAR = new Date().getFullYear();
  */
 export default function DashboardSidebar(): ReactElement {
   const pathname = usePathname();
-  const router = useRouter();
-  const { userInfo, logout } = useAuthStore();
+  const { userInfo } = useAuthStore();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -87,37 +87,46 @@ export default function DashboardSidebar(): ReactElement {
 
       {/* Bottom: User Info + Copyright */}
       <div className="px-3 pb-4 mt-auto">
-        {/* User Card */}
+        {/* User Card with VIP upgrade for non-VIP */}
         {mounted && (
-          <div className="flex items-center gap-3 px-3 py-3 rounded-xl bg-slate-50 mb-3">
-            {/* Avatar */}
-            <div
-              className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-white text-sm font-bold"
-              style={{ background: `linear-gradient(135deg, ${BRAND_COLOR}, #7C3AED)` }}
-            >
-              {userInfo?.name?.[0] || userInfo?.email?.[0] || '用'}
+          <div className="rounded-xl bg-slate-50 mb-3 overflow-hidden">
+            {/* User Info Row */}
+            <div className="flex items-center gap-3 px-3 py-3">
+              {/* Avatar */}
+              <div
+                className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-white text-sm font-bold"
+                style={{ background: `linear-gradient(135deg, ${BRAND_COLOR}, #7C3AED)` }}
+              >
+                {userInfo?.name?.[0] || userInfo?.email?.[0] || '用'}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <p className="text-sm font-medium text-slate-700 truncate">
+                    {userInfo?.name || userInfo?.email || '用户'}
+                  </p>
+                  {userInfo?.vip?.isVip && (
+                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-gradient-to-r from-amber-400 to-orange-400 text-white text-[10px] font-bold">
+                      <Crown className="w-3 h-3" />
+                      VIP
+                    </span>
+                  )}
+                </div>
+                <p className="text-[11px] text-slate-400 truncate">
+                  {userInfo?.integral !== undefined ? `积分 ${userInfo.integral}` : '免费用户'}
+                </p>
+              </div>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-slate-700 truncate">
-                {userInfo?.name || userInfo?.email || '用户'}
-              </p>
-              <p className="text-[11px] text-slate-400 truncate">
-                {userInfo?.integral !== undefined ? `积分 ${userInfo.integral}` : '免费用户'}
-              </p>
-            </div>
+            {/* VIP Upgrade Row for non-VIP */}
+            {!userInfo?.vip?.isVip && (
+              <Link
+                href="/dashboard/membership"
+                className="flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium text-rose-600 bg-rose-50/80 hover:bg-rose-50 border-t border-slate-100/50 transition-colors"
+              >
+                <Crown className="w-3.5 h-3.5" />
+                升级 VIP · 解锁无限
+              </Link>
+            )}
           </div>
-        )}
-
-        {/* Logout */}
-        {mounted && userInfo && (
-          <button
-            type="button"
-            onClick={() => { logout(); router.push('/'); }}
-            className="flex items-center gap-2 w-full px-4 py-2 rounded-lg text-xs font-medium text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-colors mb-3"
-          >
-            <LogOut className="w-3.5 h-3.5" />
-            退出登录
-          </button>
         )}
 
         {/* Copyright */}
@@ -125,6 +134,11 @@ export default function DashboardSidebar(): ReactElement {
           @智简简历 {COPYRIGHT_YEAR}
         </p>
       </div>
+
+      <VipExpirationReminder
+        isVip={userInfo?.vip?.isVip ?? false}
+        vipExpireTime={userInfo?.vip?.vipExpireTime ?? null}
+      />
     </aside>
   );
 }

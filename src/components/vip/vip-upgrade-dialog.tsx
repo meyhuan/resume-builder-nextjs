@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
-import { Crown, Loader2, CheckCircle, RefreshCw, Sparkles } from 'lucide-react';
+import { Crown, Loader2, CheckCircle, RefreshCw, Sparkles, Check, X, Infinity as InfinityIcon } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -22,10 +22,10 @@ interface ComparisonFeature {
 }
 
 const COMPARISON_FEATURES: ComparisonFeature[] = [
-  { feature: '简历模板', nonVip: '仅基础款', vip: '全站精品免费用' },
-  { feature: 'AI 辅写能力', nonVip: '消耗次数', vip: '不限次持续用' },
-  { feature: 'PDF 高清导出', nonVip: '需消耗次数', vip: '无限次免费导出' },
-  { feature: '去除底部水印', nonVip: '不可用', vip: '一键去除水印' },
+  { feature: '精品模版', nonVip: 'cross', vip: 'check' },
+  { feature: 'AI 智能生成', nonVip: '3', vip: 'infinity' },
+  { feature: 'PDF 导出', nonVip: '1', vip: 'infinity' },
+  { feature: '无水印导出', nonVip: 'cross', vip: 'check' },
 ];
 
 interface VipPlan {
@@ -64,9 +64,10 @@ type DialogStep = 'loading' | 'qrcode' | 'success' | 'error';
 interface VipUpgradeDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  hidePlanOptions?: boolean;
 }
 
-export default function VipUpgradeDialog({ open, onOpenChange }: VipUpgradeDialogProps): React.ReactElement {
+export default function VipUpgradeDialog({ open, onOpenChange, hidePlanOptions = false }: VipUpgradeDialogProps): React.ReactElement {
   const { updateVipStatus } = useAuthStore();
   const [step, setStep] = useState<DialogStep>('loading');
   const [userId, setUserId] = useState<number | null>(null);
@@ -92,6 +93,11 @@ export default function VipUpgradeDialog({ open, onOpenChange }: VipUpgradeDialo
       const json: VipInfoResponse = await res.json();
       const data = json.data;
       if (!data) throw new Error('Invalid response');
+      wasVipRef.current = data.isVip;
+      setUserId(data.userId);
+      const sortedPlans = (data.plans || []).sort((a: VipPlan, b: VipPlan) => (b.sort || 0) - (a.sort || 0));
+      setPlans(sortedPlans);
+      setSelectedVipType(sortedPlans[0]?.vipType ?? null);
       if (data.isVip) {
         updateVipStatus({
           vipStatus: data.vipStatus,
@@ -99,14 +105,7 @@ export default function VipUpgradeDialog({ open, onOpenChange }: VipUpgradeDialo
           vipExpireTime: data.vipExpireTime,
           isVip: true,
         });
-        setStep('success');
-        return;
       }
-      wasVipRef.current = data.isVip;
-      setUserId(data.userId);
-      const sortedPlans = (data.plans || []).sort((a: VipPlan, b: VipPlan) => (b.sort || 0) - (a.sort || 0));
-      setPlans(sortedPlans);
-      setSelectedVipType(sortedPlans[0]?.vipType ?? null);
       setStep('qrcode');
     } catch (err: unknown) {
       setErrorMsg(err instanceof Error ? err.message : 'Unknown error');
@@ -209,8 +208,39 @@ export default function VipUpgradeDialog({ open, onOpenChange }: VipUpgradeDialo
                     {COMPARISON_FEATURES.map((item, idx) => (
                       <div key={idx} className="flex flex-1 items-center px-4 py-2 hover:bg-rose-50/30 transition-colors">
                         <div className="flex-1 text-sm font-bold text-slate-700">{item.feature}</div>
-                        <div className="w-20 text-center text-xs text-slate-500">{item.nonVip}</div>
-                        <div className="w-36 text-center text-xs font-bold text-rose-600 bg-rose-50/50 rounded-lg py-2 ring-1 ring-rose-100/50 shadow-sm shadow-rose-100/20">{item.vip}</div>
+                        <div className="w-20 flex items-center justify-center">
+                          {item.nonVip === 'cross' ? (
+                            <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center">
+                              <X className="w-3.5 h-3.5 text-slate-400" />
+                            </div>
+                          ) : item.nonVip === 'check' ? (
+                            <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center">
+                              <Check className="w-3.5 h-3.5 text-emerald-500" />
+                            </div>
+                          ) : item.nonVip === 'infinity' ? (
+                            <InfinityIcon className="w-5 h-5 text-rose-500" />
+                          ) : (
+                            <span className="text-xs text-slate-500 font-medium">{item.nonVip}次</span>
+                          )}
+                        </div>
+                        <div className="w-36 flex items-center justify-center">
+                          {item.vip === 'cross' ? (
+                            <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center">
+                              <X className="w-3.5 h-3.5 text-slate-400" />
+                            </div>
+                          ) : item.vip === 'check' ? (
+                            <div className="w-6 h-6 rounded-full bg-rose-100 flex items-center justify-center">
+                              <Check className="w-3.5 h-3.5 text-rose-500" />
+                            </div>
+                          ) : item.vip === 'infinity' ? (
+                            <div className="inline-flex items-center gap-1 px-3 py-1.5 bg-rose-50 rounded-full">
+                              <InfinityIcon className="w-4 h-4 text-rose-500" />
+                              <span className="text-xs font-bold text-rose-600">无限次</span>
+                            </div>
+                          ) : (
+                            <span className="text-xs font-bold text-rose-600 bg-rose-50 px-3 py-1.5 rounded-full">{item.vip}</span>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -219,7 +249,7 @@ export default function VipUpgradeDialog({ open, onOpenChange }: VipUpgradeDialo
 
               {/* Right: Plans & QR */}
               <div className="w-full md:w-[340px] shrink-0 flex flex-col gap-5">
-                {plans.length > 0 && (
+                {!hidePlanOptions && plans.length > 0 && (
                   <div className="grid w-full grid-cols-3 gap-2">
                     {plans.map((plan, index) => {
                       const isRecommended = index === 0;
@@ -236,7 +266,7 @@ export default function VipUpgradeDialog({ open, onOpenChange }: VipUpgradeDialo
                             : 'relative overflow-hidden cursor-pointer rounded-2xl border-2 border-slate-100 bg-white px-1 py-3 text-center transition-all hover:border-rose-200 hover:bg-rose-50/30 flex flex-col justify-center'}
                         >
                           {isRecommended && (
-                            <div className="absolute top-0 left-0 bg-gradient-to-r from-orange-500 to-rose-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-br-lg z-10 shadow-sm shadow-orange-500/30">限时优惠</div>
+                            <div className="absolute top-0 left-0 bg-gradient-to-r from-orange-500 to-rose-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-br-lg z-10 shadow-sm shadow-orange-500/30">限时特惠</div>
                           )}
                           {selectedVipType === plan.vipType && (
                              <div className="absolute top-0 right-0 bg-rose-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-bl-lg z-10">已选</div>
@@ -256,30 +286,32 @@ export default function VipUpgradeDialog({ open, onOpenChange }: VipUpgradeDialo
                   </div>
                 )}
 
-                <div className="flex flex-col items-center gap-4 rounded-3xl border border-rose-100 bg-gradient-to-b from-white to-rose-50/30 p-5 shadow-lg shadow-rose-100/40">
-                  <div className="rounded-2xl bg-white p-3 shadow-sm ring-1 ring-slate-100">
-                    <QRCodeSVG
-                      value={payUrl}
-                      size={160}
-                      level="M"
-                      includeMargin={false}
-                    />
-                  </div>
-                  <div className="text-center space-y-1.5">
-                    <p className="text-sm font-bold text-slate-700 flex items-center justify-center gap-1.5">
-                      <Sparkles className="w-4 h-4 text-rose-500" />
-                      微信扫码，立即开通
-                    </p>
-                    <p className="text-[11px] text-slate-500">已锁定优惠，支付后自动生效</p>
-                    <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-medium text-emerald-600">
-                      <span className="relative flex h-2 w-2">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-                      </span>
-                      等待支付结果...
+                {!hidePlanOptions && (
+                  <div className="flex flex-col items-center gap-4 rounded-3xl border border-rose-100 bg-gradient-to-b from-white to-rose-50/30 p-5 shadow-lg shadow-rose-100/40">
+                    <div className="rounded-2xl bg-white p-3 shadow-sm ring-1 ring-slate-100">
+                      <QRCodeSVG
+                        value={payUrl}
+                        size={160}
+                        level="M"
+                        includeMargin={false}
+                      />
+                    </div>
+                    <div className="text-center space-y-1.5">
+                      <p className="text-sm font-bold text-slate-700 flex items-center justify-center gap-1.5">
+                        <Sparkles className="w-4 h-4 text-rose-500" />
+                        微信扫码，立即开通
+                      </p>
+                      <p className="text-[11px] text-slate-500">已锁定优惠，支付后自动生效</p>
+                      <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-medium text-emerald-600">
+                        <span className="relative flex h-2 w-2">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                          <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                        </span>
+                        等待支付结果...
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
               </div>
             </div>
           )}

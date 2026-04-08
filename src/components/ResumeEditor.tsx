@@ -18,7 +18,7 @@ import type { PanelId } from '@/ui/editor-toolbar'
 import type { ThemeTokens } from '@/entities/theme/theme-tokens'
 import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
-import { Loader2, ArrowLeft, Save, FileDown, FileText, Image as ImageIcon, Undo2, Redo2 } from 'lucide-react'
+import { Loader2, ArrowLeft, Save, FileText, Image as ImageIcon, Undo2, Redo2 } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { revalidateDashboard } from '@/app/actions'
 import { useOnePageMode } from '@/hooks/use-one-page-mode'
@@ -67,7 +67,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
   const [resumeId, setResumeId] = useState<string | undefined>(initialResumeId)
   const { isLoginOpen, requireAuth, handleLoginSuccess, handleLoginClose } = useRequireAuth()
   const { token } = useAuthStore()
-  const { requireVip, showUpgrade, setShowUpgrade } = useVipCheck()
+  const { isVip, quota, refreshQuota, requireVip, requirePdf, requireAi, showUpgrade, setShowUpgrade } = useVipCheck()
   
   // Hydration check to prevent SSR mismatch for auth state
   const [isHydrated, setIsHydrated] = useState(false)
@@ -387,7 +387,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
   })
 
   const handleExportMarkdown = useCallback(() => {
-    if (!requireVip()) return
+    if (!requirePdf()) return
     requireAuth(() => {
       try {
         const markdownContent = exportResumeToMarkdown(resume)
@@ -404,24 +404,24 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
         toast.error('Markdown导出失败，请重试')
       }
     })
-  }, [resume, requireAuth, requireVip])
+  }, [resume, requireAuth, requirePdf])
 
   async function handleExportPng(): Promise<void> {
-    if (!requireVip()) return
+    if (!requirePdf()) return
     await exportImage<HTMLDivElement>(printRef, { fileName: 'resume', pixelRatio: 2 })
   }
 
-  /** Generate the actual PDF via the API, then open preview dialog. */
+  /** Generate PDF preview WITHOUT consuming quota. */
   async function handlePreviewPdf(): Promise<void> {
     if (!printRef.current || isGenerating) return
-    if (!requireVip()) return
+    // Preview is unlimited - no quota check
     setIsGenerating(true)
     try {
       const html: string = buildResumeHtml(printRef.current, { title: resume.name || 'Resume' })
       const response = await fetch('/next-api/generate-pdf', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ html }),
+        body: JSON.stringify({ html, preview: true }),
       })
       if (!response.ok) {
         const errorData = await response.json()
@@ -440,9 +440,24 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
     }
   }
 
-  /** Download the already-generated PDF blob. */
-  function handleConfirmExport(): void {
+  /** Confirm export: consume quota and download PDF. */
+  async function handleConfirmExport(): Promise<void> {
     if (!pdfBlob) return
+    
+    // Consume quota on actual export
+    try {
+      const quotaRes = await fetch('/next-api/consume-pdf-quota', { method: 'POST' })
+      if (!quotaRes.ok) {
+        const errorData = await quotaRes.json()
+        toast.error(errorData.error || '导出次数已用完，升级VIP可无限导出')
+        setShowUpgrade(true)
+        return
+      }
+    } catch {
+      toast.error('配额检查失败，请重试')
+      return
+    }
+    
     const url: string = window.URL.createObjectURL(pdfBlob)
     const a: HTMLAnchorElement = document.createElement('a')
     a.href = url
@@ -461,6 +476,8 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
     window.URL.revokeObjectURL(url)
     handleClosePreview()
     toast.success('PDF 导出成功')
+    // 刷新额度显示
+    await refreshQuota()
   }
 
   /** Clean up blob URL and close preview dialog. */
@@ -568,20 +585,6 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
             <Button
               variant="ghost"
               size="sm"
-              onClick={handlePreviewPdf}
-              disabled={isGenerating}
-              className="h-7 px-2 text-xs text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded"
-            >
-              {isGenerating ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
-              ) : (
-                <FileDown className="h-3.5 w-3.5 mr-1" />
-              )}
-              {isGenerating ? '生成中' : 'PDF'}
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
               onClick={handleExportPng}
               title="导出 PNG"
               aria-label="导出 PNG"
@@ -613,7 +616,16 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
                   <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
                   生成中...
                 </>
-              ) : '预览简历'}
+              ) : (
+                <>
+                  预览/导出
+                  {!isVip && quota.pdf.remaining !== 'unlimited' && (
+                    <span className="ml-1 text-[9px] text-white/80">
+                      ({quota.pdf.remaining}次)
+                    </span>
+                  )}
+                </>
+              )}
             </Button>
           </div>
         </div>
@@ -622,7 +634,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
       <main className="flex-1 flex overflow-hidden relative z-10">
         <div className="flex-1 overflow-auto p-6 md:p-12 custom-scrollbar bg-slate-50/30">
           <div className="mx-auto max-w-[210mm] transition-all duration-500">
-            <AiSectionProvider requireVip={requireVip}>
+            <AiSectionProvider requireVip={requireAi}>
             <div
               ref={printRef}
               className="page w-full bg-white shadow-[0_0_50px_rgba(0,0,0,0.05)] rounded-xl print:shadow-none overflow-hidden"
@@ -710,6 +722,8 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
         onOpenChange={(next: boolean) => { if (!next) handleClosePreview() }}
         pdfUrl={pdfBlobUrl}
         onConfirmExport={handleConfirmExport}
+        remainingQuota={quota.pdf.remaining}
+        isVip={isVip}
       />
       {/* Forced login dialog for unauthenticated users */}
       <WxLoginDialog

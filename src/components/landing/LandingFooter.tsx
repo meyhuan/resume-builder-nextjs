@@ -1,12 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Github, Twitter, MessageCircle } from 'lucide-react';
-import { LegalDialog } from '@/components/legal/LegalDialog';
 
-type LegalTab = 'privacy' | 'terms';
 type FooterLinkItem = {
   href: string;
   label: string;
@@ -26,16 +24,7 @@ const LONG_TAIL_LINKS: ReadonlyArray<FooterLinkItem> = [
 ];
 
 export const LandingFooter = () => {
-  const [legalOpen, setLegalOpen] = useState<boolean>(false);
-  const [legalTab, setLegalTab] = useState<LegalTab>('privacy');
-
-  const openLegal = (tab: LegalTab): void => {
-    setLegalTab(tab);
-    setLegalOpen(true);
-  };
-
   return (
-    <>
     <footer className="bg-white border-t border-slate-100 pt-16 pb-8 relative overflow-hidden">
       {/* Footer Glow */}
       <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[800px] h-[300px] bg-violet-500/5 rounded-full blur-[100px] pointer-events-none" />
@@ -136,14 +125,11 @@ export const LandingFooter = () => {
             </p>
           </div>
           <div className="flex gap-6 text-xs text-slate-400">
-            <button type="button" onClick={() => openLegal('privacy')} className="hover:text-slate-600 transition-colors">隐私政策</button>
-            <button type="button" onClick={() => openLegal('terms')} className="hover:text-slate-600 transition-colors">服务条款</button>
+            <Link href="/privacy" className="hover:text-slate-600 transition-colors">隐私政策</Link>
+            <Link href="/terms" className="hover:text-slate-600 transition-colors">服务条款</Link>
           </div>
         </div>
       </div>
     </footer>
-
-    <LegalDialog isOpen={legalOpen} onClose={() => setLegalOpen(false)} initialTab={legalTab} />
-    </>
   );
 };

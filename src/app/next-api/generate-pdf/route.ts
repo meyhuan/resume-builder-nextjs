@@ -2,10 +2,26 @@ import { NextResponse } from 'next/server';
 import puppeteerCore from 'puppeteer-core';
 import chromium from '@sparticuz/chromium';
 import { paginateHtml, getClientPaginationScript } from '@/utils/paginate-html';
+import { checkQuota } from '@/lib/quota/quota-checker';
 
 export async function POST(req: Request) {
   try {
-    const { html } = await req.json();
+    const { html, preview = false } = await req.json();
+
+    // Check PDF quota (preview = unlimited, export = limited)
+    if (!preview) {
+      const quota = await checkQuota('pdf');
+      if (!quota.allowed) {
+        return NextResponse.json(
+          {
+            error: quota.message,
+            quotaExceeded: true,
+            remaining: quota.remaining,
+          },
+          { status: 429 },
+        );
+      }
+    }
 
     if (!html) {
       return NextResponse.json({ error: 'HTML content is required' }, { status: 400 });

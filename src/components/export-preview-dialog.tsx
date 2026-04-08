@@ -15,13 +15,15 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { Download, Eye } from 'lucide-react'
+import { Download, Eye, AlertCircle } from 'lucide-react'
 
 interface ExportPreviewDialogProps {
   readonly open: boolean
   readonly onOpenChange: (open: boolean) => void
   readonly pdfUrl: string
   readonly onConfirmExport: () => void
+  readonly remainingQuota?: number | 'unlimited'
+  readonly isVip?: boolean
 }
 
 export default function ExportPreviewDialog({
@@ -29,7 +31,11 @@ export default function ExportPreviewDialog({
   onOpenChange,
   pdfUrl,
   onConfirmExport,
+  remainingQuota,
+  isVip,
 }: ExportPreviewDialogProps): ReactElement {
+  const showLowQuotaWarning = !isVip && typeof remainingQuota === 'number' && remainingQuota <= 1
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
@@ -50,7 +56,7 @@ export default function ExportPreviewDialog({
         <div className="flex-1 overflow-hidden">
           {pdfUrl ? (
             <iframe
-              src={pdfUrl}
+              src={`${pdfUrl}#toolbar=0`}
               className="w-full h-full border-0"
               title="PDF 预览"
             />
@@ -59,9 +65,23 @@ export default function ExportPreviewDialog({
 
         {/* Footer */}
         <DialogFooter className="px-5 py-3 border-t border-slate-200 shrink-0 bg-white/80 flex-row items-center">
-          <p className="text-[11px] text-slate-400 mr-auto hidden sm:block">
-            提示：每次导出都会消耗导出次数，请确认后再导出
-          </p>
+          <div className="mr-auto flex items-center gap-3">
+            {!isVip && (
+              <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] ${showLowQuotaWarning ? 'bg-rose-50 text-rose-600 border border-rose-200' : 'bg-slate-100 text-slate-600'}`}>
+                {showLowQuotaWarning && <AlertCircle className="w-3 h-3" />}
+                <span>
+                  今日剩余导出次数：
+                  <span className={showLowQuotaWarning ? 'font-bold' : 'font-medium'}>
+                    {remainingQuota === 0 ? '0' : remainingQuota ?? '1'}
+                  </span>
+                  次
+                </span>
+              </div>
+            )}
+            <p className="text-[11px] text-slate-400">
+              {isVip ? 'VIP 会员无限导出' : '本次导出将消耗 1 次导出次数'}
+            </p>
+          </div>
           <Button
             variant="ghost"
             size="sm"

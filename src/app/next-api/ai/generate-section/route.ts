@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { getModelByName, resolveApiKey } from '@/lib/ai/ai-config';
-import { applyRateLimit } from '@/lib/ai/with-rate-limit';
+import { checkQuota } from '@/lib/quota/quota-checker';
 import {
   buildGenerateSystemPrompt,
   buildGenerateUserPrompt,
@@ -16,8 +16,18 @@ import type { GenerateSectionRequest } from '@/lib/ai/section-types';
  */
 export async function POST(request: NextRequest): Promise<Response> {
   try {
-    const rateLimitResponse = await applyRateLimit(request);
-    if (rateLimitResponse) return rateLimitResponse;
+    // Check AI quota (VIP users bypass)
+    const quota = await checkQuota('ai');
+    if (!quota.allowed) {
+      return NextResponse.json(
+        {
+          error: quota.message,
+          quotaExceeded: true,
+          remaining: quota.remaining,
+        },
+        { status: 429 },
+      );
+    }
 
     const body: GenerateSectionRequest = await request.json();
     const {
