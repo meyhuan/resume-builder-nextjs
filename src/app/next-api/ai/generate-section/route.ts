@@ -16,8 +16,8 @@ import type { GenerateSectionRequest } from '@/lib/ai/section-types';
  */
 export async function POST(request: NextRequest): Promise<Response> {
   try {
-    // Check AI quota (VIP users bypass)
-    const quota = await checkQuota('ai');
+    // Check AI quota for generate-section (VIP users bypass)
+    const quota = await checkQuota('ai:generate-section');
     if (!quota.allowed) {
       return NextResponse.json(
         {

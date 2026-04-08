@@ -21,10 +21,17 @@ interface ComparisonFeature {
   vip: string;
 }
 
+/**
+ * Membership benefits comparison
+ * Source of truth: src/lib/quota/membership-benefits.ts
+ */
 const COMPARISON_FEATURES: ComparisonFeature[] = [
-  { feature: '精品模版', nonVip: 'cross', vip: 'check' },
-  { feature: 'AI 智能生成', nonVip: '3', vip: 'infinity' },
-  { feature: 'PDF 导出', nonVip: '1', vip: 'infinity' },
+  { feature: 'AI 生成简历', nonVip: '3', vip: 'infinity' },
+  { feature: 'AI 导入优化', nonVip: '3', vip: 'infinity' },
+  { feature: 'AI 续写内容', nonVip: '5', vip: 'infinity' },
+  { feature: 'AI 润色文本', nonVip: '5', vip: 'infinity' },
+  { feature: 'PDF 高清导出', nonVip: '1', vip: 'infinity' },
+  { feature: '精品模板', nonVip: 'cross', vip: 'check' },
   { feature: '无水印导出', nonVip: 'cross', vip: 'check' },
 ];
 
@@ -164,11 +171,14 @@ export default function VipUpgradeDialog({ open, onOpenChange, hidePlanOptions =
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[880px] w-[90vw] gap-0 overflow-hidden rounded-3xl border border-rose-100 bg-white p-0 shadow-2xl shadow-rose-100/60">
-        <div className="bg-gradient-to-br from-rose-500 via-pink-500 to-fuchsia-500 px-6 pt-6 pb-5 text-white">
+      <DialogContent
+        overlayClassName="bg-slate-950/25 backdrop-blur-[1px]"
+        className="max-w-[880px] w-[90vw] gap-0 overflow-hidden rounded-2xl border border-violet-200 bg-white p-0 shadow-xl shadow-violet-100/50"
+      >
+        <div className="px-6 pt-5 pb-4 text-white" style={{ background: 'linear-gradient(135deg, #D946EF 0%, #8B5CF6 100%)' }}>
           <DialogHeader>
-            <DialogTitle className="text-white flex items-center gap-2 text-xl">
-              <Crown className="w-5 h-5" />
+            <DialogTitle className="text-white flex items-center gap-2 text-lg font-semibold">
+              <Crown className="w-5 h-5 text-white" />
               升级会员
             </DialogTitle>
             <DialogDescription className="mt-1 text-sm text-white/85">
@@ -177,37 +187,36 @@ export default function VipUpgradeDialog({ open, onOpenChange, hidePlanOptions =
           </DialogHeader>
         </div>
 
-        <div className="bg-gradient-to-b from-rose-50/70 via-white to-white px-8 py-8">
-          <div className="min-h-[400px]">
+        <div className="bg-gradient-to-b from-slate-50/50 via-white to-white px-8 py-6 h-[460px]">
           {step === 'loading' && (
-            <div className="flex min-h-[400px] flex-col items-center justify-center gap-3">
-              <Loader2 className="h-8 w-8 animate-spin text-rose-500" />
+            <div className="flex h-full flex-col items-center justify-center gap-3">
+              <Loader2 className="h-8 w-8 animate-spin text-violet-500" />
               <span className="text-sm text-slate-500">正在加载...</span>
             </div>
           )}
 
           {step === 'qrcode' && payUrl && (
-            <div className="flex flex-col md:flex-row gap-8">
+            <div className="flex flex-col md:flex-row gap-8 h-full">
               {/* Left: Comparison */}
               <div className="flex-1 flex flex-col">
-                <h3 className="mb-4 text-base font-bold text-slate-800 flex items-center gap-2">
-                  <Crown className="w-5 h-5 text-rose-500" />
+                <h3 className="mb-3 text-sm font-semibold text-slate-700 flex items-center gap-2">
+                  <Crown className="w-4 h-4 text-amber-500" />
                   会员权益对比
                 </h3>
-                <div className="flex-1 rounded-2xl border border-rose-100 bg-white shadow-sm overflow-hidden flex flex-col">
+                <div className="flex-1 rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden flex flex-col">
                   {/* Header */}
-                  <div className="flex items-center bg-rose-50/60 px-4 py-3 border-b border-rose-100/60">
+                  <div className="flex items-center bg-slate-50 px-4 py-2.5 border-b border-slate-100">
                     <div className="flex-1 text-xs font-bold text-slate-500">特权项</div>
                     <div className="w-20 text-center text-xs font-bold text-slate-400">非会员</div>
-                    <div className="w-36 text-center text-xs font-bold text-rose-600 flex items-center justify-center gap-1">
-                      <Crown className="w-3.5 h-3.5" /> VIP 会员
+                    <div className="w-36 text-center text-xs font-semibold text-violet-600 flex items-center justify-center gap-1">
+                      <Crown className="w-3.5 h-3.5 text-amber-500" /> VIP 会员
                     </div>
                   </div>
                   {/* Body */}
-                  <div className="flex-1 flex flex-col divide-y divide-rose-50">
+                  <div className="flex-1 flex flex-col divide-y divide-slate-100">
                     {COMPARISON_FEATURES.map((item, idx) => (
-                      <div key={idx} className="flex flex-1 items-center px-4 py-2 hover:bg-rose-50/30 transition-colors">
-                        <div className="flex-1 text-sm font-bold text-slate-700">{item.feature}</div>
+                      <div key={idx} className="flex flex-1 items-center px-4 py-2 hover:bg-slate-50/50 transition-colors">
+                        <div className="flex-1 text-sm text-slate-600">{item.feature}</div>
                         <div className="w-20 flex items-center justify-center">
                           {item.nonVip === 'cross' ? (
                             <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center">
@@ -218,7 +227,7 @@ export default function VipUpgradeDialog({ open, onOpenChange, hidePlanOptions =
                               <Check className="w-3.5 h-3.5 text-emerald-500" />
                             </div>
                           ) : item.nonVip === 'infinity' ? (
-                            <InfinityIcon className="w-5 h-5 text-rose-500" />
+                            <InfinityIcon className="w-5 h-5 text-slate-300" />
                           ) : (
                             <span className="text-xs text-slate-500 font-medium">{item.nonVip}次</span>
                           )}
@@ -229,16 +238,16 @@ export default function VipUpgradeDialog({ open, onOpenChange, hidePlanOptions =
                               <X className="w-3.5 h-3.5 text-slate-400" />
                             </div>
                           ) : item.vip === 'check' ? (
-                            <div className="w-6 h-6 rounded-full bg-rose-100 flex items-center justify-center">
-                              <Check className="w-3.5 h-3.5 text-rose-500" />
+                            <div className="w-6 h-6 rounded-full bg-violet-50 flex items-center justify-center">
+                              <Check className="w-3.5 h-3.5 text-violet-600" />
                             </div>
                           ) : item.vip === 'infinity' ? (
-                            <div className="inline-flex items-center gap-1 px-3 py-1.5 bg-rose-50 rounded-full">
-                              <InfinityIcon className="w-4 h-4 text-rose-500" />
-                              <span className="text-xs font-bold text-rose-600">无限次</span>
+                            <div className="inline-flex items-center gap-1 px-2.5 py-1 bg-violet-50 rounded-full">
+                              <InfinityIcon className="w-3.5 h-3.5 text-violet-600" />
+                              <span className="text-xs font-medium text-violet-600">无限次</span>
                             </div>
                           ) : (
-                            <span className="text-xs font-bold text-rose-600 bg-rose-50 px-3 py-1.5 rounded-full">{item.vip}</span>
+                            <span className="text-xs font-medium text-violet-600 bg-violet-50 px-2.5 py-1 rounded-full">{item.vip}</span>
                           )}
                         </div>
                       </div>
@@ -262,21 +271,24 @@ export default function VipUpgradeDialog({ open, onOpenChange, hidePlanOptions =
                           key={plan.id}
                           onClick={(): void => setSelectedVipType(plan.vipType)}
                           className={selectedVipType === plan.vipType
-                            ? 'relative overflow-hidden cursor-pointer rounded-2xl border-2 border-rose-500 bg-rose-50/50 px-1 py-3 text-center shadow-md shadow-rose-100 transition-all flex flex-col justify-center'
-                            : 'relative overflow-hidden cursor-pointer rounded-2xl border-2 border-slate-100 bg-white px-1 py-3 text-center transition-all hover:border-rose-200 hover:bg-rose-50/30 flex flex-col justify-center'}
+                            ? 'relative overflow-hidden cursor-pointer rounded-xl border border-violet-500 bg-violet-50/50 px-1 py-3 text-center shadow-sm shadow-violet-100 transition-all flex flex-col justify-center'
+                            : 'relative overflow-hidden cursor-pointer rounded-xl border border-slate-200 bg-white px-1 py-3 text-center transition-all hover:border-violet-200 hover:bg-violet-50/20 flex flex-col justify-center'}
                         >
                           {isRecommended && (
-                            <div className="absolute top-0 left-0 bg-gradient-to-r from-orange-500 to-rose-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-br-lg z-10 shadow-sm shadow-orange-500/30">限时特惠</div>
+                            <div className="absolute top-0 left-0 bg-violet-600 text-white text-[9px] font-medium px-2 py-0.5 rounded-br-lg z-10">限时特惠</div>
+                          )}
+                          {plan.duration >= 30000 && (
+                            <div className="absolute top-0 right-0 bg-fuchsia-500 text-white text-[9px] font-medium px-1.5 py-0.5 rounded-bl-lg z-10">终身</div>
                           )}
                           {selectedVipType === plan.vipType && (
-                             <div className="absolute top-0 right-0 bg-rose-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-bl-lg z-10">已选</div>
+                             <div className="absolute top-0 right-0 bg-violet-500 text-white text-[9px] font-medium px-1.5 py-0.5 rounded-bl-lg z-10">已选</div>
                           )}
-                          <div className={selectedVipType === plan.vipType ? 'text-xs font-bold text-rose-600 mt-1' : 'text-xs font-medium text-slate-500 mt-1'}>{plan.vipName}</div>
-                          <div className={selectedVipType === plan.vipType ? 'mt-1 text-2xl font-black text-rose-600 tracking-tight' : 'mt-1 text-2xl font-bold text-slate-700 tracking-tight'}>
-                            <span className="text-sm font-semibold mr-0.5">¥</span>{plan.price}
+                          <div className={selectedVipType === plan.vipType ? 'text-xs font-medium text-violet-700 mt-1' : 'text-xs font-medium text-slate-500 mt-1'}>{plan.vipName}</div>
+                          <div className={selectedVipType === plan.vipType ? 'mt-1 text-2xl font-bold text-violet-700 tracking-tight' : 'mt-1 text-2xl font-bold text-slate-700 tracking-tight'}>
+                            <span className="text-sm font-medium mr-0.5">¥</span>{plan.price}
                           </div>
-                          <div className={selectedVipType === plan.vipType ? 'mt-0.5 flex flex-col items-center gap-0.5 text-[9px] font-medium text-rose-500' : 'mt-0.5 flex flex-col items-center gap-0.5 text-[9px] text-slate-400'}>
-                            <span className={selectedVipType === plan.vipType ? "rounded-full bg-rose-100 px-1.5 py-0.5 mt-0.5 scale-95" : "rounded-full bg-slate-100 px-1.5 py-0.5 mt-0.5 scale-95"}>
+                          <div className={selectedVipType === plan.vipType ? 'mt-0.5 flex flex-col items-center gap-0.5 text-[9px] font-medium text-violet-600' : 'mt-0.5 flex flex-col items-center gap-0.5 text-[9px] text-slate-400'}>
+                            <span className={selectedVipType === plan.vipType ? "rounded-full bg-violet-100 px-1.5 py-0.5 mt-0.5 scale-95" : "rounded-full bg-slate-100 px-1.5 py-0.5 mt-0.5 scale-95"}>
                               约 {dailyPrice}元/天
                             </span>
                           </div>
@@ -287,8 +299,8 @@ export default function VipUpgradeDialog({ open, onOpenChange, hidePlanOptions =
                 )}
 
                 {!hidePlanOptions && (
-                  <div className="flex flex-col items-center gap-4 rounded-3xl border border-rose-100 bg-gradient-to-b from-white to-rose-50/30 p-5 shadow-lg shadow-rose-100/40">
-                    <div className="rounded-2xl bg-white p-3 shadow-sm ring-1 ring-slate-100">
+                  <div className="flex flex-col items-center gap-4 rounded-xl border border-violet-100 bg-violet-50/30 p-4 shadow-sm">
+                    <div className="rounded-lg bg-white p-3 shadow-sm ring-1 ring-violet-100">
                       <QRCodeSVG
                         value={payUrl}
                         size={160}
@@ -296,16 +308,16 @@ export default function VipUpgradeDialog({ open, onOpenChange, hidePlanOptions =
                         includeMargin={false}
                       />
                     </div>
-                    <div className="text-center space-y-1.5">
-                      <p className="text-sm font-bold text-slate-700 flex items-center justify-center gap-1.5">
-                        <Sparkles className="w-4 h-4 text-rose-500" />
+                    <div className="text-center space-y-2">
+                      <p className="text-sm font-medium text-slate-700 flex items-center justify-center gap-1.5">
+                        <Sparkles className="w-4 h-4 text-violet-500" />
                         微信扫码，立即开通
                       </p>
-                      <p className="text-[11px] text-slate-500">已锁定优惠，支付后自动生效</p>
-                      <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-medium text-emerald-600">
+                      <p className="text-xs text-slate-500">已锁定优惠，支付后自动生效</p>
+                      <div className="mt-2 inline-flex items-center gap-2 rounded-full bg-violet-50 px-4 py-1.5 text-xs font-medium text-violet-600 border border-violet-100">
                         <span className="relative flex h-2 w-2">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                          <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75" />
+                          <span className="relative inline-flex rounded-full h-2 w-2 bg-violet-500" />
                         </span>
                         等待支付结果...
                       </div>
@@ -317,17 +329,17 @@ export default function VipUpgradeDialog({ open, onOpenChange, hidePlanOptions =
           )}
 
           {step === 'success' && (
-            <div className="flex min-h-[400px] flex-col items-center justify-center gap-4 py-6">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
-                <CheckCircle className="w-8 h-8 text-green-600" />
+            <div className="flex h-full flex-col items-center justify-center gap-4">
+              <div className="w-16 h-16 bg-violet-100 rounded-full flex items-center justify-center">
+                <CheckCircle className="w-8 h-8 text-violet-600" />
               </div>
               <div className="text-center">
-                <h3 className="text-lg font-bold text-slate-800">会员已生效!</h3>
+                <h3 className="text-lg font-semibold text-slate-800">会员已生效</h3>
                 <p className="text-sm text-slate-500 mt-1">尽享全部高级功能</p>
               </div>
               <button
                 onClick={() => onOpenChange(false)}
-                className="mt-2 rounded-full bg-gradient-to-r from-rose-500 to-fuchsia-500 px-6 py-2 text-sm font-medium text-white transition-shadow hover:shadow-lg"
+                className="mt-2 rounded-full bg-gradient-to-r from-violet-600 to-fuchsia-600 px-6 py-2 text-sm font-medium text-white transition-all hover:shadow-lg"
               >
                 开始使用
               </button>
@@ -335,18 +347,17 @@ export default function VipUpgradeDialog({ open, onOpenChange, hidePlanOptions =
           )}
 
           {step === 'error' && (
-            <div className="flex min-h-[400px] flex-col items-center justify-center gap-4 py-8">
-              <div className="text-sm text-rose-600 text-center">{errorMsg}</div>
+            <div className="flex h-full flex-col items-center justify-center gap-4">
+              <div className="text-sm text-slate-600 text-center">{errorMsg}</div>
               <button
                 onClick={fetchVipInfo}
-                className="flex items-center gap-1.5 px-4 py-2 border border-slate-200 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+                className="flex items-center gap-1.5 px-4 py-2 border border-slate-300 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
                 重试
               </button>
             </div>
           )}
-          </div>
         </div>
       </DialogContent>
     </Dialog>

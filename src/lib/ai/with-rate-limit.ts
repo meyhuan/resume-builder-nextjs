@@ -15,7 +15,7 @@ export async function applyRateLimit(
 
   if (!result.allowed) {
     const message = isAuthenticated
-      ? `今日 AI 使用次数已达上限（${result.limit} 次/天），请明天再试`
+      ? `今日 AI 使用次数已达上限（${result.limit} 次/天），升级会员可无限使用`
       : `未登录用户每天可使用 ${result.limit} 次 AI 功能，登录后可获得更多次数`;
 
     return NextResponse.json(

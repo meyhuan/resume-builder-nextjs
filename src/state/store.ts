@@ -80,6 +80,12 @@ export const useAppStore = create<AppState>()(
     themes: {},
     pastStates: [],
     futureStates: [],
+    resetResume: () =>
+      set(() => ({
+        resume: defaultResume,
+        pastStates: [],
+        futureStates: [],
+      }), false, 'resume/reset'),
     undo: () =>
       set((state) => {
         if (state.pastStates.length === 0) return state

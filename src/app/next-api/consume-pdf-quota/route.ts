@@ -9,7 +9,7 @@ import { checkQuota } from '@/lib/quota/quota-checker';
  */
 export async function POST(): Promise<NextResponse> {
   try {
-    const quota = await checkQuota('pdf');
+    const quota = await checkQuota('pdf:export');
     
     if (!quota.allowed) {
       return NextResponse.json(

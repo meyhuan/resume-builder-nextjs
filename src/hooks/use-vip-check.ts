@@ -1,77 +1,44 @@
 'use client';
 
-import { useEffect, useCallback, useState } from 'react';
+import { useEffect, useCallback } from 'react';
+import type { VipQuotaStatus } from '@/lib/quota/vip-types';
 import { useAuthStore } from '@/store/use-auth-store';
+import { useVipStore } from '@/store/use-vip-store';
 
-interface QuotaStatus {
-  ai: { allowed: boolean; remaining: number | 'unlimited'; isVip: boolean };
-  pdf: { allowed: boolean; remaining: number | 'unlimited'; isVip: boolean };
-}
+/** Complete quota status for all features */
+type QuotaStatus = VipQuotaStatus;
 
 /**
  * Hook that syncs VIP status and quota from backend.
- * Returns { isVip, isLoading, refreshVip, refreshQuota, quota, requireVip, requireAi, requirePdf, showUpgrade, setShowUpgrade }.
+ * Returns { isVip, isLoading, quotaLoaded, refreshVip, refreshQuota, quota, requireVip, requireAi, requirePdf, showUpgrade, setShowUpgrade }.
  */
 export const useVipCheck = () => {
-  const { token, userInfo, updateVipStatus } = useAuthStore();
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [showUpgrade, setShowUpgrade] = useState<boolean>(false);
-  const [quota, setQuota] = useState<QuotaStatus>({
-    ai: { allowed: true, remaining: 3, isVip: false },
-    pdf: { allowed: true, remaining: 1, isVip: false },
-  });
-
-  const refreshQuota = useCallback(async (): Promise<void> => {
-    if (!token) return;
-    try {
-      const res = await fetch('/next-api/quota');
-      if (!res.ok) return;
-      const data = await res.json();
-      setQuota({
-        ai: {
-          allowed: data.ai.allowed,
-          remaining: data.ai.remaining,
-          isVip: data.ai.isVip,
-        },
-        pdf: {
-          allowed: data.pdf.allowed,
-          remaining: data.pdf.remaining,
-          isVip: data.pdf.isVip,
-        },
-      });
-    } catch {
-      // silent fail
-    }
-  }, [token]);
+  const { token, userInfo } = useAuthStore();
+  const isLoading = useVipStore((state) => state.isLoading);
+  const quotaLoaded = useVipStore((state) => state.quotaLoaded);
+  const quota = useVipStore((state) => state.quota);
+  const showUpgrade = useVipStore((state) => state.showUpgrade);
+  const setShowUpgrade = useVipStore((state) => state.setShowUpgrade);
+  const initialize = useVipStore((state) => state.initialize);
+  const refreshVipStore = useVipStore((state) => state.refreshVip);
+  const refreshQuotaStore = useVipStore((state) => state.refreshQuota);
+  const reset = useVipStore((state) => state.reset);
 
   const refreshVip = useCallback(async (): Promise<void> => {
-    if (!token) return;
-    setIsLoading(true);
-    try {
-      const res = await fetch('/next-api/vip/poll');
-      if (!res.ok) return;
-      const json = await res.json();
-      const data = json.data;
-      if (data) {
-        updateVipStatus({
-          vipStatus: data.vipStatus,
-          vipType: data.vipType,
-          vipExpireTime: data.vipExpireTime,
-          isVip: data.isVip,
-        });
-      }
-      // Also refresh quota after VIP update
-      await refreshQuota();
-    } catch {
-      // silent fail — VIP check is non-critical
-    } finally {
-      setIsLoading(false);
-    }
-  }, [token, updateVipStatus, refreshQuota]);
+    await refreshVipStore(token);
+  }, [refreshVipStore, token]);
+
+  const refreshQuota = useCallback(async (): Promise<void> => {
+    await refreshQuotaStore(token);
+  }, [refreshQuotaStore, token]);
 
   useEffect(() => {
-    refreshVip();
-  }, [refreshVip]);
+    if (!token) {
+      reset();
+      return;
+    }
+    initialize(token);
+  }, [initialize, reset, token]);
 
   const isVip = userInfo?.vip?.isVip ?? false;
 
@@ -83,36 +50,51 @@ export const useVipCheck = () => {
     if (isVip) return true;
     setShowUpgrade(true);
     return false;
-  }, [isVip]);
+  }, [isVip, setShowUpgrade]);
 
   /**
-   * Check AI quota.
+   * Check specific AI feature quota.
    * Returns true if allowed (VIP or has quota), false and opens upgrade dialog if not.
    */
-  const requireAi = useCallback((): boolean => {
-    if (quota.ai.isVip || quota.ai.allowed) return true;
+  const requireAiFeature = useCallback((feature: keyof QuotaStatus): boolean => {
+    const featureQuota = quota[feature];
+    if (featureQuota.isVip || featureQuota.allowed) return true;
     setShowUpgrade(true);
     return false;
-  }, [quota.ai]);
+  }, [quota, setShowUpgrade]);
 
   /**
-   * Check PDF quota.
+   * Check if any AI feature has quota remaining (legacy support).
+   * Returns true if user is VIP or has any AI quota.
+   */
+  const requireAi = useCallback((): boolean => {
+    if (isVip) return true;
+    const hasAnyQuota = Object.values(quota).some((q) => q.allowed);
+    if (hasAnyQuota) return true;
+    setShowUpgrade(true);
+    return false;
+  }, [quota, isVip, setShowUpgrade]);
+
+  /**
+   * Check PDF export quota.
    * Returns true if allowed (VIP or has quota), false and opens upgrade dialog if not.
    */
   const requirePdf = useCallback((): boolean => {
-    if (quota.pdf.isVip || quota.pdf.allowed) return true;
+    if (quota.pdfExport.isVip || quota.pdfExport.allowed) return true;
     setShowUpgrade(true);
     return false;
-  }, [quota.pdf]);
+  }, [quota.pdfExport, setShowUpgrade]);
 
   return {
     isVip,
     isLoading,
+    quotaLoaded,
     refreshVip,
     refreshQuota,
     quota,
     requireVip,
     requireAi,
+    requireAiFeature,
     requirePdf,
     showUpgrade,
     setShowUpgrade,

@@ -8,15 +8,15 @@
  */
 
 import { cookies } from 'next/headers';
+import {
+  getQuotaLimit,
+  getFeatureDisplayName,
+  QUOTA_WINDOW_MS,
+  QUOTA_CLEANUP_INTERVAL_MS,
+  type QuotaFeatureKey,
+} from './membership-benefits';
 
 const JAVA_API_BASE = process.env.JAVA_API_BASE_URL || 'https://aijianli.cn/api';
-
-/** Daily quota limits for non-VIP users. */
-const QUOTA_AI_NON_VIP_DAILY = 3;
-const QUOTA_PDF_NON_VIP_DAILY = 1;
-
-/** Duration of quota window in milliseconds (24 hours). */
-const WINDOW_MS = 24 * 60 * 60 * 1000;
 
 interface QuotaEntry {
   timestamps: number[];
@@ -26,19 +26,17 @@ interface QuotaEntry {
 const quotaStore = new Map<string, QuotaEntry>();
 
 /** Clean up expired entries periodically. */
-const CLEANUP_INTERVAL_MS = 10 * 60 * 1000;
-
 function cleanupQuotas(): void {
   const now = Date.now();
   for (const [key, entry] of quotaStore.entries()) {
-    entry.timestamps = entry.timestamps.filter((t) => now - t < WINDOW_MS);
+    entry.timestamps = entry.timestamps.filter((t) => now - t < QUOTA_WINDOW_MS);
     if (entry.timestamps.length === 0) {
       quotaStore.delete(key);
     }
   }
 }
 
-setInterval(cleanupQuotas, CLEANUP_INTERVAL_MS);
+setInterval(cleanupQuotas, QUOTA_CLEANUP_INTERVAL_MS);
 
 export interface QuotaCheckResult {
   /** Whether the action is allowed. */
@@ -50,9 +48,11 @@ export interface QuotaCheckResult {
   /** Maximum allowed in window. */
   readonly limit: number;
   /** Remaining uses. */
-  readonly remaining: number;
+  readonly remaining: number | 'unlimited';
   /** Human-readable quota message. */
   readonly message: string;
+  /** Feature key that was checked. */
+  readonly feature: QuotaFeatureKey;
 }
 
 /**
@@ -89,11 +89,11 @@ async function checkVipStatus(): Promise<{ isVip: boolean; userId?: string }> {
 /**
  * Check and consume quota for a feature.
  *
- * @param feature - 'ai' or 'pdf'
+ * @param feature - Quota feature key (e.g., 'ai:generate-resume', 'pdf:export')
  * @param skipConsume - if true, only peek at quota without consuming
  */
 export async function checkQuota(
-  feature: 'ai' | 'pdf',
+  feature: QuotaFeatureKey,
   skipConsume = false,
 ): Promise<QuotaCheckResult> {
   const { isVip, userId } = await checkVipStatus();
@@ -105,14 +105,15 @@ export async function checkQuota(
       isVip: true,
       used: 0,
       limit: Infinity,
-      remaining: Infinity,
+      remaining: 'unlimited',
       message: 'VIP用户 unlimited',
+      feature,
     };
   }
 
   // Non-VIP users check quota
-  const limit = feature === 'ai' ? QUOTA_AI_NON_VIP_DAILY : QUOTA_PDF_NON_VIP_DAILY;
-  const featureName = feature === 'ai' ? 'AI生成' : 'PDF导出';
+  const limit = getQuotaLimit(feature);
+  const featureName = getFeatureDisplayName(feature);
 
   // Use IP-based fallback if no userId
   const identifier = userId || 'anonymous';
@@ -126,7 +127,7 @@ export async function checkQuota(
   }
 
   // Remove expired timestamps
-  entry.timestamps = entry.timestamps.filter((t) => now - t < WINDOW_MS);
+  entry.timestamps = entry.timestamps.filter((t) => now - t < QUOTA_WINDOW_MS);
   const used = entry.timestamps.length;
 
   if (used >= limit) {
@@ -137,6 +138,7 @@ export async function checkQuota(
       limit,
       remaining: 0,
       message: `今日${featureName}次数已达上限（${limit}次/天），升级VIP可无限使用`,
+      feature,
     };
   }
 
@@ -154,12 +156,29 @@ export async function checkQuota(
     limit,
     remaining: Math.max(0, remaining),
     message: `今日剩余${remaining}次${featureName}（非VIP用户每日${limit}次）`,
+    feature,
   };
 }
 
 /**
  * Peek at current quota without consuming.
  */
-export async function peekQuota(feature: 'ai' | 'pdf'): Promise<QuotaCheckResult> {
+export async function peekQuota(feature: QuotaFeatureKey): Promise<QuotaCheckResult> {
   return checkQuota(feature, true);
+}
+
+/**
+ * Get all quota statuses for the current user.
+ * Useful for displaying usage dashboard.
+ */
+export async function getAllQuotas(): Promise<QuotaCheckResult[]> {
+  const features: QuotaFeatureKey[] = [
+    'ai:generate-resume',
+    'ai:import-section',
+    'ai:generate-section',
+    'ai:polish-section',
+    'pdf:export',
+  ];
+
+  return Promise.all(features.map((f) => peekQuota(f)));
 }

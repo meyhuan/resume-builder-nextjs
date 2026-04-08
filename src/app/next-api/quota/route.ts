@@ -1,37 +1,49 @@
 import { NextResponse } from 'next/server';
-import { peekQuota } from '@/lib/quota/quota-checker';
+import { getAllQuotas } from '@/lib/quota/quota-checker';
+import type { QuotaCheckResult } from '@/lib/quota/quota-checker';
+
+interface QuotaResponse {
+  allowed: boolean;
+  isVip: boolean;
+  used: number;
+  limit: number | null;
+  remaining: number | 'unlimited';
+  message: string;
+}
+
+function formatQuotaResponse(quota: QuotaCheckResult): QuotaResponse {
+  return {
+    allowed: quota.allowed,
+    isVip: quota.isVip,
+    used: quota.used,
+    limit: quota.isVip ? null : quota.limit,
+    remaining: quota.isVip ? 'unlimited' : quota.remaining,
+    message: quota.message,
+  };
+}
 
 /**
  * GET /next-api/quota
  *
- * Returns current quota status for AI and PDF features.
+ * Returns current quota status for all features.
  * Includes VIP status and remaining uses.
  */
 export async function GET(): Promise<NextResponse> {
   try {
-    const [aiQuota, pdfQuota] = await Promise.all([
-      peekQuota('ai'),
-      peekQuota('pdf'),
-    ]);
+    const allQuotas = await getAllQuotas();
 
-    return NextResponse.json({
-      ai: {
-        allowed: aiQuota.allowed,
-        isVip: aiQuota.isVip,
-        used: aiQuota.used,
-        limit: aiQuota.isVip ? null : aiQuota.limit,
-        remaining: aiQuota.isVip ? 'unlimited' : aiQuota.remaining,
-        message: aiQuota.message,
-      },
-      pdf: {
-        allowed: pdfQuota.allowed,
-        isVip: pdfQuota.isVip,
-        used: pdfQuota.used,
-        limit: pdfQuota.isVip ? null : pdfQuota.limit,
-        remaining: pdfQuota.isVip ? 'unlimited' : pdfQuota.remaining,
-        message: pdfQuota.message,
-      },
-    });
+    const response: Record<string, QuotaResponse> = {};
+
+    for (const quota of allQuotas) {
+      // Extract short name from feature key (e.g., 'ai:generate-resume' -> 'generateResume')
+      const key = quota.feature.replace(/[:]/g, '-').split('-').map((part, i) => {
+        if (i === 0) return part;
+        return part.charAt(0).toUpperCase() + part.slice(1);
+      }).join('');
+      response[key] = formatQuotaResponse(quota);
+    }
+
+    return NextResponse.json(response);
   } catch (error) {
     console.error('[quota] Error:', error);
     return NextResponse.json(

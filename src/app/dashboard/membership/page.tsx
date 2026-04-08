@@ -43,16 +43,14 @@ function getDaysRemaining(expireTime: string | null): number | null {
 export default function MembershipPage(): React.ReactElement {
   const router = useRouter();
   const { logout } = useAuthStore();
-  const { isVip, quota, refreshVip } = useVipCheck();
+  const { isVip, quota } = useVipCheck();
   const [showUpgrade, setShowUpgrade] = useState(false);
   const [hidePlanOptions, setHidePlanOptions] = useState(false);
   const [vipInfo, setVipInfo] = useState<VipInfo | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    refreshVip();
     fetchVipInfo();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function fetchVipInfo(): Promise<void> {
@@ -173,24 +171,41 @@ export default function MembershipPage(): React.ReactElement {
             {!isVip && (
               <div className="bg-white rounded-2xl p-6 border border-slate-200">
                 <h3 className="font-bold text-slate-800 mb-4">今日使用额度</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="p-4 bg-slate-50 rounded-xl">
-                    <div className="text-sm text-slate-500 mb-1">AI 生成</div>
-                    <div className="text-2xl font-bold text-slate-800">
-                      {quota.ai.isVip ? '∞' : `${quota.ai.remaining}次`}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-3 bg-slate-50 rounded-xl">
+                    <div className="text-sm text-slate-500 mb-1">AI 生成简历</div>
+                    <div className="text-xl font-bold text-slate-800">
+                      {quota.aiGenerateResume?.remaining ?? '-'}
                     </div>
-                    {!quota.ai.isVip && (
-                      <div className="text-xs text-slate-400 mt-1">每日限制 3 次</div>
-                    )}
+                    <div className="text-xs text-slate-400 mt-1">每日 3 次</div>
                   </div>
-                  <div className="p-4 bg-slate-50 rounded-xl">
-                    <div className="text-sm text-slate-500 mb-1">PDF 导出</div>
-                    <div className="text-2xl font-bold text-slate-800">
-                      {quota.pdf.isVip ? '∞' : `${quota.pdf.remaining}次`}
+                  <div className="p-3 bg-slate-50 rounded-xl">
+                    <div className="text-sm text-slate-500 mb-1">AI 导入优化</div>
+                    <div className="text-xl font-bold text-slate-800">
+                      {quota.aiImportSection?.remaining ?? '-'}
                     </div>
-                    {!quota.pdf.isVip && (
-                      <div className="text-xs text-slate-400 mt-1">每日限制 1 次</div>
-                    )}
+                    <div className="text-xs text-slate-400 mt-1">每日 3 次</div>
+                  </div>
+                  <div className="p-3 bg-slate-50 rounded-xl">
+                    <div className="text-sm text-slate-500 mb-1">AI 续写内容</div>
+                    <div className="text-xl font-bold text-slate-800">
+                      {quota.aiGenerateSection?.remaining ?? '-'}
+                    </div>
+                    <div className="text-xs text-slate-400 mt-1">每日 5 次</div>
+                  </div>
+                  <div className="p-3 bg-slate-50 rounded-xl">
+                    <div className="text-sm text-slate-500 mb-1">AI 润色文本</div>
+                    <div className="text-xl font-bold text-slate-800">
+                      {quota.aiPolishSection?.remaining ?? '-'}
+                    </div>
+                    <div className="text-xs text-slate-400 mt-1">每日 5 次</div>
+                  </div>
+                  <div className="p-3 bg-slate-50 rounded-xl col-span-2">
+                    <div className="text-sm text-slate-500 mb-1">PDF 导出</div>
+                    <div className="text-xl font-bold text-slate-800">
+                      {quota.pdfExport?.remaining ?? '-'}
+                    </div>
+                    <div className="text-xs text-slate-400 mt-1">每日 1 次</div>
                   </div>
                 </div>
               </div>
@@ -201,10 +216,13 @@ export default function MembershipPage(): React.ReactElement {
               <h3 className="font-bold text-slate-800 mb-4">会员权益</h3>
               <div className="space-y-3">
                 {[
-                  { icon: Sparkles, text: '无限次 AI 简历生成' },
+                  { icon: Sparkles, text: 'AI 生成简历 · 无限次' },
+                  { icon: Sparkles, text: 'AI 导入优化 · 无限次' },
+                  { icon: Sparkles, text: 'AI 续写内容 · 无限次' },
+                  { icon: Sparkles, text: 'AI 润色文本 · 无限次' },
+                  { icon: Calendar, text: 'PDF 高清导出 · 无限次' },
                   { icon: Crown, text: '全站精品模板免费用' },
-                  { icon: Calendar, text: '无限次 PDF 高清导出' },
-                  { icon: Clock, text: '去除简历底部水印' },
+                  { icon: Clock, text: '导出无水印' },
                 ].map((benefit, idx) => (
                   <div key={idx} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
                     <div className="w-10 h-10 bg-gradient-to-br from-amber-400 to-orange-400 rounded-lg flex items-center justify-center">

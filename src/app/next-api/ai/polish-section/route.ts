@@ -17,8 +17,8 @@ import { MIN_POLISH_CONTENT_LENGTH } from '@/lib/ai/section-types';
  */
 export async function POST(request: NextRequest): Promise<Response> {
   try {
-    // Check AI quota (VIP users bypass)
-    const quota = await checkQuota('ai');
+    // Check AI quota for polish-section (VIP users bypass)
+    const quota = await checkQuota('ai:polish-section');
     if (!quota.allowed) {
       return NextResponse.json(
         {

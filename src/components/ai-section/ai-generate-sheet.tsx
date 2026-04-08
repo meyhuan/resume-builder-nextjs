@@ -11,9 +11,10 @@ import {
   SheetFooter,
 } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { Wand2, Loader2, AlertTriangle, RefreshCw } from 'lucide-react';
+import { Wand2, Loader2, AlertTriangle, RefreshCw, Sparkles } from 'lucide-react';
 import { useGenerateSection } from '@/lib/ai/use-generate-section';
-import { useAiUsage } from '@/hooks/use-ai-usage';
+import { useVipCheck } from '@/hooks/use-vip-check';
+import VipUpgradeDialog from '@/components/vip/vip-upgrade-dialog';
 import { getGuidedQuestions } from '@/lib/ai/guided-questions';
 import type { SectionIdentity, SectionModuleType, JobCategory } from '@/lib/ai/section-types';
 import {
@@ -23,6 +24,7 @@ import {
 } from '@/lib/ai/section-types';
 import { useAiSectionStore } from '@/state/ai-section-store';
 import InlineEditor from '@/editor/inline-editor';
+import { toast } from 'sonner';
 
 export interface AiGenerateSheetProps {
   readonly open: boolean;
@@ -52,7 +54,9 @@ export default function AiGenerateSheet(props: AiGenerateSheetProps): ReactEleme
   const [prevOpen, setPrevOpen] = useState<boolean>(false);
 
   const { isGenerating, streamedHtml, error, generate, reset } = useGenerateSection();
-  const { usage, isLimitReached, refresh: refreshUsage } = useAiUsage();
+  const { showUpgrade, setShowUpgrade, quota, refreshQuota } = useVipCheck();
+  const sectionQuota = quota.aiGenerateSection;
+  const isLimitReached = sectionQuota.remaining === 0;
 
   const questionSet = useMemo(
     () => getGuidedQuestions(moduleType, identity),
@@ -109,11 +113,11 @@ export default function AiGenerateSheet(props: AiGenerateSheetProps): ReactEleme
         answers,
       });
       // Refresh usage after generation
-      refreshUsage();
+      await refreshQuota();
     } catch (error) {
       console.error('Failed to generate:', error);
     }
-  }, [identity, moduleType, answers, jobDescription, jobCategory, generate, store, refreshUsage]);
+  }, [identity, moduleType, answers, jobDescription, jobCategory, generate, store, refreshQuota]);
 
   useEffect(() => {
     if (isGenerating) {
@@ -291,13 +295,24 @@ export default function AiGenerateSheet(props: AiGenerateSheetProps): ReactEleme
                   <span className="ml-2 text-[10px] opacity-70">（请完成必填项）</span>
                 )}
               </Button>
-              {usage && (
-                <p className={`text-center text-[10px] ${isLimitReached ? 'text-red-500' : 'text-slate-400'}`}>
-                  {isLimitReached
-                    ? `今日次数已用完（${usage.used}/${usage.limit}），${usage.isAuthenticated ? '请明天再试' : '登录后可获得更多次数'}`
-                    : `今日剩余 ${usage.remaining}/${usage.limit} 次`}
-                </p>
-              )}
+              <div className="flex items-center justify-center gap-1 text-[10px]">
+                {isLimitReached ? (
+                  <>
+                    <span className="text-red-500">今日次数已用完，</span>
+                    <button
+                      type="button"
+                      onClick={() => setShowUpgrade(true)}
+                      className="text-violet-600 hover:text-violet-700 font-medium underline underline-offset-2"
+                    >
+                      升级会员可无限使用 →
+                    </button>
+                  </>
+                ) : (
+                  <span className="text-slate-400">
+                    今日剩余 {sectionQuota.remaining}/{sectionQuota.limit} 次
+                  </span>
+                )}
+              </div>
             </div>
           )}
 
@@ -309,21 +324,36 @@ export default function AiGenerateSheet(props: AiGenerateSheetProps): ReactEleme
             </div>
           )}
 
-          {/* Error state */}
+          {/* Error state - Auto show VIP dialog on quota exceeded */}
           {error && (
             <div className="flex items-start gap-2 p-3 rounded-lg bg-red-50 border border-red-100">
               <AlertTriangle className="h-4 w-4 text-red-500 mt-0.5 shrink-0" />
-              <div>
+              <div className="flex-1">
                 <div className="text-xs text-red-700 font-medium">{error}</div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleRegenerate}
-                  className="h-7 text-xs text-red-600 hover:text-red-700 hover:bg-red-100 mt-1 px-2"
-                >
-                  <RefreshCw className="h-3 w-3 mr-1" />
-                  重新生成
-                </Button>
+                {error.includes('VIP') || error.includes('次数已达上限') ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      toast.error('今日免费额度已用完，升级VIP可无限使用');
+                      setShowUpgrade(true);
+                    }}
+                    className="h-7 text-xs bg-gradient-to-r from-amber-400 to-orange-400 text-white hover:from-amber-500 hover:to-orange-500 mt-1 px-3"
+                  >
+                    <Sparkles className="h-3 w-3 mr-1" />
+                    升级VIP无限使用
+                  </Button>
+                ) : (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleRegenerate}
+                    className="h-7 text-xs text-red-600 hover:text-red-700 hover:bg-red-100 mt-1 px-2"
+                  >
+                    <RefreshCw className="h-3 w-3 mr-1" />
+                    重新生成
+                  </Button>
+                )}
               </div>
             </div>
           )}
@@ -390,6 +420,12 @@ export default function AiGenerateSheet(props: AiGenerateSheetProps): ReactEleme
           </Button>
         </SheetFooter>
       </SheetContent>
+
+      {/* VIP Upgrade Dialog for quota exceeded */}
+      <VipUpgradeDialog
+        open={showUpgrade}
+        onOpenChange={setShowUpgrade}
+      />
     </Sheet>
   );
 }

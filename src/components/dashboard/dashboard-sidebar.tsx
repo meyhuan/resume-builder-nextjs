@@ -112,7 +112,11 @@ export default function DashboardSidebar(): ReactElement {
                   )}
                 </div>
                 <p className="text-[11px] text-slate-400 truncate">
-                  {userInfo?.integral !== undefined ? `积分 ${userInfo.integral}` : '免费用户'}
+                  {userInfo?.vip?.isVip
+                    ? 'VIP 会员'
+                    : userInfo?.integral !== undefined
+                      ? `积分 ${userInfo.integral}`
+                      : '免费用户'}
                 </p>
               </div>
             </div>

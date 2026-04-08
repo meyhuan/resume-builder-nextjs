@@ -77,6 +77,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
   const needsForceLogin = isHydrated && !token
 
   const setResume = useAppStore((s) => s.setResume)
+  const resetResume = useAppStore((s) => s.resetResume)
   const setThemeForTemplate = useAppStore((s) => s.setThemeForTemplate)
   const getThemeForTemplate = useAppStore((s) => s.getThemeForTemplate)
   const loadTestData = useAppStore((s) => s.loadTestData)
@@ -172,6 +173,14 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
       localStorage.removeItem(cacheKey)
     }
   }, [initialData, searchParams, setResume])
+
+  const blankResumeInitialized = useRef(false)
+  useEffect(() => {
+    if (blankResumeInitialized.current || initialData) return
+    if (searchParams.has('source')) return
+    blankResumeInitialized.current = true
+    resetResume()
+  }, [initialData, resetResume, searchParams])
 
   // Set initial snapshot for new resumes (no initialData) so changes are detected
   const initialSnapshotSet = useRef(false)
@@ -619,9 +628,9 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
               ) : (
                 <>
                   预览/导出
-                  {!isVip && quota.pdf.remaining !== 'unlimited' && (
+                  {!isVip && quota.pdfExport.remaining !== 'unlimited' && (
                     <span className="ml-1 text-[9px] text-white/80">
-                      ({quota.pdf.remaining}次)
+                      ({quota.pdfExport.remaining}次)
                     </span>
                   )}
                 </>
@@ -722,7 +731,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
         onOpenChange={(next: boolean) => { if (!next) handleClosePreview() }}
         pdfUrl={pdfBlobUrl}
         onConfirmExport={handleConfirmExport}
-        remainingQuota={quota.pdf.remaining}
+        remainingQuota={quota.pdfExport.remaining}
         isVip={isVip}
       />
       {/* Forced login dialog for unauthenticated users */}

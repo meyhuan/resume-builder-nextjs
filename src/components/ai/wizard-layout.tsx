@@ -14,8 +14,10 @@ import type { DisplaySection } from '@/lib/ai/json-to-markdown';
 import { Sparkles, Loader2, AlertCircle, ChevronLeft, CircleStop, FileText } from 'lucide-react';
 import Link from 'next/link';
 import { useRequireAuth } from '@/hooks/use-require-auth';
-import { useAiUsage } from '@/hooks/use-ai-usage';
+import { useVipCheck } from '@/hooks/use-vip-check';
 import { WxLoginDialog } from '@/components/auth/WxLoginDialog';
+import VipUpgradeDialog from '@/components/vip/vip-upgrade-dialog';
+import { toast } from 'sonner';
 
 const AI_MODELS = getAvailableModels();
 const WIZARD_CACHE_KEY = 'wizard_pending_resume';
@@ -27,7 +29,9 @@ export const WizardLayout = ({ children }: { children: React.ReactNode }) => {
   const selectedModel: string = AI_MODELS[0].name;
   const [showGenPage, setShowGenPage] = useState<boolean>(false);
   const { isLoginOpen, handleLoginSuccess, handleLoginClose, isLoggedIn } = useRequireAuth();
-  const { usage, isLimitReached, refresh: refreshUsage } = useAiUsage();
+  const { showUpgrade, setShowUpgrade, quota, refreshQuota } = useVipCheck();
+  const resumeQuota = quota.aiGenerateResume;
+  const isLimitReached = resumeQuota.remaining === 0;
 
   const saveResume = useCallback(async (resumeData: ResumeData): Promise<void> => {
     try {
@@ -72,12 +76,16 @@ export const WizardLayout = ({ children }: { children: React.ReactNode }) => {
   }, [isLoggedIn, saveResume, router]);
 
   const handleGenerate = async (): Promise<void> => {
-    if (isLimitReached) return;
+    if (isLimitReached) {
+      toast.error('今日免费额度已用完，升级VIP可无限使用');
+      setShowUpgrade(true);
+      return;
+    }
     const input = getWizardInput(wizardState);
     if (!input) return;
     setShowGenPage(true);
     const result = await generate(input, selectedModel);
-    await refreshUsage();
+    await refreshQuota();
     if (result) {
       const resumeData = mapExternalResume(result);
       openEditorWithData(resumeData);
@@ -102,6 +110,7 @@ export const WizardLayout = ({ children }: { children: React.ReactNode }) => {
         onStop={handleStop}
         onBack={handleBack}
         onRetry={handleGenerate}
+        setShowUpgrade={setShowUpgrade}
       />
     );
   }
@@ -124,6 +133,12 @@ export const WizardLayout = ({ children }: { children: React.ReactNode }) => {
         </div>
       </header>
       <WxLoginDialog isOpen={isLoginOpen} onClose={handleLoginClose} onSuccess={handleLoginSuccess} />
+
+      {/* VIP Upgrade Dialog */}
+      <VipUpgradeDialog
+        open={showUpgrade}
+        onOpenChange={setShowUpgrade}
+      />
 
       {/* Hero title */}
       <div className="text-center pt-8 pb-4">
@@ -169,17 +184,34 @@ export const WizardLayout = ({ children }: { children: React.ReactNode }) => {
                 跳过 AI，直接创建
               </Link>
             </div>
-            {usage && (
-              <p className={cn('text-xs', isLimitReached ? 'text-red-500' : 'text-gray-400')}>
-                {isLimitReached
-                  ? `今日次数已用完（${usage.used}/${usage.limit}），${usage.isAuthenticated ? '请明天再试' : '登录后可获得更多次数'}`
-                  : `今日剩余 ${usage.remaining}/${usage.limit} 次${usage.isAuthenticated ? '' : '（登录后可获得更多次数）'}`}
-              </p>
-            )}
+            <div className="flex items-center justify-center gap-1 text-xs">
+              {isLimitReached ? (
+                <>
+                  <span className="text-red-500">今日次数已用完，</span>
+                  <button
+                    type="button"
+                    onClick={() => setShowUpgrade(true)}
+                    className="text-violet-600 hover:text-violet-700 font-medium underline underline-offset-2"
+                  >
+                    升级会员可无限使用 →
+                  </button>
+                </>
+              ) : (
+                <span className="text-gray-400">
+                  今日剩余 {resumeQuota.remaining}/{resumeQuota.limit} 次
+                </span>
+              )}
+            </div>
           </div>
         )}
       </div>
       </div>
+
+      {/* VIP Upgrade Dialog */}
+      <VipUpgradeDialog
+        open={showUpgrade}
+        onOpenChange={setShowUpgrade}
+      />
     </div>
   );
 };
@@ -195,6 +227,7 @@ interface GenerationPageProps {
   readonly onStop: () => void;
   readonly onBack: () => void;
   readonly onRetry: () => void;
+  readonly setShowUpgrade: (show: boolean) => void;
 }
 
 function GenerationPage({
@@ -204,6 +237,7 @@ function GenerationPage({
   onStop,
   onBack,
   onRetry,
+  setShowUpgrade,
 }: GenerationPageProps): React.ReactElement {
   const scrollRef = useRef<HTMLDivElement>(null);
   const isUserScrolled = useRef<boolean>(false);
@@ -293,7 +327,7 @@ function GenerationPage({
             </div>
           )}
 
-          {/* Error state */}
+          {/* Error state - Show VIP upgrade on quota exceeded */}
           {error && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
@@ -304,14 +338,28 @@ function GenerationPage({
                 <AlertCircle className="w-5 h-5" />
                 <p className="text-sm font-medium">{error}</p>
               </div>
-              <button
-                type="button"
-                onClick={onRetry}
-                className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white px-6 py-2.5 rounded-full text-sm font-medium flex items-center gap-2 shadow-md transition-all"
-              >
-                <Sparkles className="w-4 h-4" />
-                重新生成
-              </button>
+              {error.includes('VIP') || error.includes('次数已达上限') ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    toast.error('今日免费额度已用完，升级VIP可无限使用');
+                    setShowUpgrade(true);
+                  }}
+                  className="bg-gradient-to-r from-amber-400 to-orange-400 hover:from-amber-500 hover:to-orange-500 text-white px-6 py-2.5 rounded-full text-sm font-medium flex items-center gap-2 shadow-md transition-all"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  升级VIP无限使用
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={onRetry}
+                  className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white px-6 py-2.5 rounded-full text-sm font-medium flex items-center gap-2 shadow-md transition-all"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  重新生成
+                </button>
+              )}
             </motion.div>
           )}
         </div>

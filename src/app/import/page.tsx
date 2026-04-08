@@ -23,8 +23,9 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRequireAuth } from '@/hooks/use-require-auth';
-import { useAiUsage } from '@/hooks/use-ai-usage';
+import { useVipCheck } from '@/hooks/use-vip-check';
 import { WxLoginDialog } from '@/components/auth/WxLoginDialog';
+import VipUpgradeDialog from '@/components/vip/vip-upgrade-dialog';
 
 const AI_MODELS = getAvailableModels();
 const MIN_TEXT_LENGTH = 10;
@@ -50,7 +51,9 @@ export default function ImportResumePage(): React.ReactElement {
     generate, abort, reset,
   } = useImportGeneration();
   const { isLoginOpen, handleLoginSuccess, handleLoginClose, isLoggedIn } = useRequireAuth();
-  const { usage, isLimitReached, refresh: refreshUsage } = useAiUsage();
+  const { showUpgrade, setShowUpgrade, quota, refreshQuota } = useVipCheck();
+  const importQuota = quota.aiImportSection;
+  const isLimitReached = importQuota.remaining === 0;
 
   const saveResume = useCallback(async (resumeData: ResumeData): Promise<void> => {
     setIsSaving(true);
@@ -102,12 +105,12 @@ export default function ImportResumePage(): React.ReactElement {
     if (rawText.trim().length < MIN_TEXT_LENGTH) return;
     setShowGenPage(true);
     const importResult = await generate(rawText, selectedModel);
-    await refreshUsage();
+    await refreshQuota();
     if (importResult) {
       const resumeData = mapExternalResume(importResult);
       openEditorWithData(resumeData);
     }
-  }, [rawText, selectedModel, generate, openEditorWithData, isLimitReached, refreshUsage]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [rawText, selectedModel, generate, openEditorWithData, isLimitReached, refreshQuota]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleStop = useCallback((): void => { abort(); }, [abort]);
   const handleBack = useCallback((): void => {
@@ -127,6 +130,7 @@ export default function ImportResumePage(): React.ReactElement {
         onStop={handleStop}
         onBack={handleBack}
         onRetry={handleImport}
+        setShowUpgrade={setShowUpgrade}
       />
     );
   }
@@ -260,16 +264,33 @@ export default function ImportResumePage(): React.ReactElement {
                 跳过导入，直接创建
               </Link>
             </div>
-            {usage && (
-              <p className={cn('text-xs', isLimitReached ? 'text-red-500' : 'text-gray-400')}>
-                {isLimitReached
-                  ? `今日次数已用完（${usage.used}/${usage.limit}），${usage.isAuthenticated ? '请明天再试' : '登录后可获得更多次数'}`
-                  : `今日剩余 ${usage.remaining}/${usage.limit} 次${usage.isAuthenticated ? '' : '（登录后可获得更多次数）'}`}
-              </p>
-            )}
+            <div className="flex items-center justify-center gap-1 text-xs">
+              {isLimitReached ? (
+                <>
+                  <span className="text-red-500">今日次数已用完，</span>
+                  <button
+                    type="button"
+                    onClick={() => setShowUpgrade(true)}
+                    className="text-violet-600 hover:text-violet-700 font-medium underline underline-offset-2"
+                  >
+                    升级会员可无限使用 →
+                  </button>
+                </>
+              ) : (
+                <span className="text-gray-400">
+                  今日剩余 {importQuota.remaining}/{importQuota.limit} 次
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </div>
+
+      {/* VIP Upgrade Dialog */}
+      <VipUpgradeDialog
+        open={showUpgrade}
+        onOpenChange={setShowUpgrade}
+      />
     </div>
   );
 }
@@ -287,11 +308,12 @@ interface ImportGenerationPageProps {
   readonly onStop: () => void;
   readonly onBack: () => void;
   readonly onRetry: () => void;
+  readonly setShowUpgrade?: (show: boolean) => void;
 }
 
 function ImportGenerationPage({
   isGenerating, isSaving, streamedText, error, isNotResume,
-  onStop, onBack, onRetry,
+  onStop, onBack, onRetry, setShowUpgrade,
 }: ImportGenerationPageProps): React.ReactElement {
   const scrollRef = useRef<HTMLDivElement>(null);
   const isUserScrolled = useRef<boolean>(false);
@@ -386,10 +408,21 @@ function ImportGenerationPage({
                 <AlertCircle className="w-5 h-5" />
                 <p className="text-sm font-medium">{error}</p>
               </div>
-              <button type="button" onClick={onRetry} className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white px-6 py-2.5 rounded-full text-sm font-medium flex items-center gap-2 shadow-md transition-all">
-                <Sparkles className="w-4 h-4" />
-                重新解析
-              </button>
+              {error.includes('VIP') || error.includes('升级会员') ? (
+                <button
+                  type="button"
+                  onClick={() => setShowUpgrade?.(true)}
+                  className="bg-gradient-to-r from-amber-400 to-orange-400 hover:from-amber-500 hover:to-orange-500 text-white px-6 py-2.5 rounded-full text-sm font-medium flex items-center gap-2 shadow-md transition-all"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  升级VIP无限使用
+                </button>
+              ) : (
+                <button type="button" onClick={onRetry} className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white px-6 py-2.5 rounded-full text-sm font-medium flex items-center gap-2 shadow-md transition-all">
+                  <Sparkles className="w-4 h-4" />
+                  重新解析
+                </button>
+              )}
             </motion.div>
           )}
         </div>

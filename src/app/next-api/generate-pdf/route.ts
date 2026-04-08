@@ -10,7 +10,7 @@ export async function POST(req: Request) {
 
     // Check PDF quota (preview = unlimited, export = limited)
     if (!preview) {
-      const quota = await checkQuota('pdf');
+      const quota = await checkQuota('pdf:export');
       if (!quota.allowed) {
         return NextResponse.json(
           {
