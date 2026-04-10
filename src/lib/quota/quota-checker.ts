@@ -11,7 +11,6 @@ import { cookies } from 'next/headers';
 import {
   getQuotaLimit,
   getFeatureDisplayName,
-  QUOTA_WINDOW_MS,
   QUOTA_CLEANUP_INTERVAL_MS,
   type QuotaFeatureKey,
 } from './membership-benefits';
@@ -19,18 +18,26 @@ import {
 const JAVA_API_BASE = process.env.JAVA_API_BASE_URL || 'https://aijianli.cn/api';
 
 interface QuotaEntry {
-  timestamps: number[];
+  dateKey: string;
+  used: number;
 }
 
 /** In-memory quota store keyed by userId_feature. */
 const quotaStore = new Map<string, QuotaEntry>();
 
+function getDateKey(timestamp: number): string {
+  const date = new Date(timestamp);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 /** Clean up expired entries periodically. */
 function cleanupQuotas(): void {
-  const now = Date.now();
+  const todayKey = getDateKey(Date.now());
   for (const [key, entry] of quotaStore.entries()) {
-    entry.timestamps = entry.timestamps.filter((t) => now - t < QUOTA_WINDOW_MS);
-    if (entry.timestamps.length === 0) {
+    if (entry.dateKey !== todayKey) {
       quotaStore.delete(key);
     }
   }
@@ -119,16 +126,15 @@ export async function checkQuota(
   const identifier = userId || 'anonymous';
   const key = `${identifier}_${feature}`;
   const now = Date.now();
+  const todayKey = getDateKey(now);
 
   let entry = quotaStore.get(key);
-  if (!entry) {
-    entry = { timestamps: [] };
+  if (!entry || entry.dateKey !== todayKey) {
+    entry = { dateKey: todayKey, used: 0 };
     quotaStore.set(key, entry);
   }
 
-  // Remove expired timestamps
-  entry.timestamps = entry.timestamps.filter((t) => now - t < QUOTA_WINDOW_MS);
-  const used = entry.timestamps.length;
+  const used = entry.used;
 
   if (used >= limit) {
     return {
@@ -144,7 +150,7 @@ export async function checkQuota(
 
   // Consume one quota if not peeking
   if (!skipConsume) {
-    entry.timestamps.push(now);
+    entry.used += 1;
   }
 
   const remaining = limit - used - (skipConsume ? 0 : 1);
