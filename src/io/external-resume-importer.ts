@@ -67,7 +67,7 @@ export function mapExternalResume(ext: ExternalResume): ResumeData {
 
   return {
     id: 'resume-imported',
-    name: ext.base_info.name,
+    name: ext.base_info?.name ?? '',
     baseInfo,
     jobIntention,
     jobIntentionVisible,
