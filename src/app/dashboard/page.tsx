@@ -180,7 +180,31 @@ export default async function DashboardPage() {
         </div>
       </div>
     );
-  } catch {
+  } catch (err: unknown) {
+    const rawMessage = err instanceof Error ? err.message : String(err);
+    console.error("[DashboardPage] Database error:", err);
+
+    type ErrorInfo = { title: string; desc: string; code: string };
+    const getErrorInfo = (msg: string): ErrorInfo => {
+      if (msg.includes("P1001") || msg.includes("Can't reach database") || msg.includes("ECONNREFUSED"))
+        return { title: "服务器暂时不可用", desc: "数据库服务未响应，可能正在重启，请稍等片刻后刷新重试。", code: "ERR_DB_CONNECT" };
+      if (msg.includes("P1002") || msg.includes("timed out"))
+        return { title: "连接超时", desc: "服务器响应超时，可能是网络波动或服务器负载过高，请稍后重试。", code: "ERR_DB_TIMEOUT" };
+      if (msg.includes("P1008"))
+        return { title: "操作超时", desc: "数据库操作耗时过长，请刷新页面重试。", code: "ERR_DB_OP_TIMEOUT" };
+      if (msg.includes("P1017") || msg.includes("Server has closed the connection"))
+        return { title: "连接已断开", desc: "与数据库的连接已断开，请刷新页面重新连接。", code: "ERR_DB_CLOSED" };
+      if (msg.includes("P2002") || msg.includes("Unique constraint"))
+        return { title: "数据冲突", desc: "操作与现有数据冲突，请刷新页面后重试。", code: "ERR_DB_CONFLICT" };
+      if (msg.includes("P2025") || msg.includes("Record to update not found"))
+        return { title: "数据不存在", desc: "请求的简历数据不存在，可能已被删除。", code: "ERR_DB_NOT_FOUND" };
+      if (msg.includes("NEXT_REDIRECT"))
+        return { title: "页面跳转异常", desc: "页面跳转时发生错误，请刷新页面重试。", code: "ERR_REDIRECT" };
+      return { title: "服务暂时不可用", desc: "加载数据时遇到未知错误，请刷新页面或联系客服。", code: "ERR_UNKNOWN" };
+    };
+
+    const { title, desc, code } = getErrorInfo(rawMessage);
+
     return (
       <div className="min-h-screen flex items-center justify-center bg-white relative overflow-hidden">
         <div className="absolute top-[-20%] right-[-10%] w-[500px] h-[500px] bg-violet-500/10 rounded-full blur-[120px] pointer-events-none" />
@@ -188,8 +212,10 @@ export default async function DashboardPage() {
           <div className="w-16 h-16 bg-rose-100 text-rose-500 rounded-2xl flex items-center justify-center mx-auto mb-5">
             <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
           </div>
-          <h3 className="text-xl font-bold text-slate-900 mb-2">无法连接服务</h3>
-          <p className="text-slate-500 text-sm mb-8 leading-relaxed">数据库连接失败，请稍后重试。</p>
+          <h3 className="text-xl font-bold text-slate-900 mb-2">{title}</h3>
+          <p className="text-slate-500 text-sm mb-5 leading-relaxed">{desc}</p>
+          <p className="text-[11px] text-slate-300 mb-4 font-mono">错误码：{code}</p>
+          <p className="text-xs text-slate-400 mb-6">如持续出现，请截图并添加微信 <span className="font-semibold text-slate-600 select-all">kkyycc01</span> 联系客服</p>
           <Link href="/dashboard">
             <Button variant="outline" className="rounded-full px-6 border-slate-200 hover:border-violet-400 hover:text-violet-600 transition-colors">
               刷新页面
