@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { Readable } from 'stream';
 import DocmindApi, {
   SubmitDocStructureJobAdvanceRequest,
@@ -148,74 +148,113 @@ async function parseTextWithLLM(resumeText: string): Promise<unknown> {
 // Route handler
 // ---------------------------------------------------------------------------
 
+function sseEvent(type: string, data: unknown): string {
+  return `data: ${JSON.stringify({ type, ...( typeof data === 'object' && data !== null ? data : { value: data }) })}
+
+`;
+}
+
 /**
  * POST /next-api/ai/import-resume-file
  *
- * Accepts multipart form upload (field: "file").
- * 1. Submits file to Aliyun DocMind SDK for text extraction.
- * 2. Polls until job completes and extracts text from layouts.
- * 3. Sends extracted text to LLM to parse into ExternalResume JSON.
- * 4. Returns { resumeData } to the frontend.
+ * Returns a Server-Sent Events stream with staged progress:
+ *   { type: 'stage', label: string, progress: number }
+ *   { type: 'extracted', text: string }
+ *   { type: 'done', resumeData: object }
+ *   { type: 'error', error: string, quotaExceeded?: boolean }
  */
 export async function POST(request: NextRequest): Promise<Response> {
-  try {
-    const quota = await checkQuota('ai:import-section');
-    if (!quota.allowed) {
-      return NextResponse.json(
-        { error: quota.message, quotaExceeded: true, remaining: quota.remaining },
-        { status: 429 },
-      );
+  const encoder = new TextEncoder();
+  const stream = new TransformStream<string, Uint8Array>({
+    transform(chunk, controller) {
+      controller.enqueue(encoder.encode(chunk));
+    },
+  });
+  const writer = stream.writable.getWriter();
+
+  const send = async (type: string, data: Record<string, unknown>): Promise<void> => {
+    await writer.write(sseEvent(type, data));
+  };
+
+  const run = async (): Promise<void> => {
+    try {
+      const quota = await checkQuota('ai:import-section');
+      if (!quota.allowed) {
+        await send('error', { error: quota.message, quotaExceeded: true, remaining: quota.remaining });
+        return;
+      }
+
+      const rateLimitResponse = await applyRateLimit(request);
+      if (rateLimitResponse) {
+        await send('error', { error: '请求过于频繁，请稍后重试' });
+        return;
+      }
+
+      const accessKeyId = process.env.ALIYUN_DOCMIND_ACCESS_KEY_ID ?? '';
+      const accessKeySecret = process.env.ALIYUN_DOCMIND_ACCESS_KEY_SECRET ?? '';
+      if (!accessKeyId || !accessKeySecret) {
+        await send('error', { error: '文档解析服务未配置，请联系管理员' });
+        return;
+      }
+
+      const formData = await request.formData();
+      const file = formData.get('file');
+      if (!file || !(file instanceof File)) {
+        await send('error', { error: '请上传简历文件' });
+        return;
+      }
+
+      const fileName = file.name;
+      const ext = fileName.split('.').pop()?.toLowerCase() ?? '';
+      if (!ALLOWED_EXTENSIONS.has(ext)) {
+        await send('error', { error: '不支持的文件格式，请上传 Word、PDF 或图片文件' });
+        return;
+      }
+      if (file.size > MAX_FILE_SIZE) {
+        await send('error', { error: '文件大小不能超过 8MB' });
+        return;
+      }
+
+      const fileBuffer = Buffer.from(await file.arrayBuffer());
+      const docmindClient = createDocmindClient(accessKeyId, accessKeySecret);
+
+      await send('stage', { label: '正在提交文件解析任务…', progress: 10 });
+      console.log(`[import-resume-file] Submitting DocMind job: ${fileName}`);
+      const jobId = await submitDocmindJob(docmindClient, fileBuffer, fileName);
+
+      await send('stage', { label: '文档识别中，正在等待结果…', progress: 30 });
+      console.log(`[import-resume-file] Polling DocMind job: ${jobId}`);
+      const extractedText = await pollDocmindResult(docmindClient, jobId);
+
+      if (!extractedText.trim()) {
+        await send('error', { error: '简历内容为空，请检查文件是否正确' });
+        return;
+      }
+
+      await send('stage', { label: `已提取 ${extractedText.length} 个字符，AI 解析中…`, progress: 60 });
+      await send('extracted', { text: extractedText });
+
+      console.log(`[import-resume-file] Extracted ${extractedText.length} chars, calling LLM`);
+      const resumeData = await parseTextWithLLM(extractedText);
+
+      await send('stage', { label: '解析完成，正在生成简历…', progress: 95 });
+      await send('done', { resumeData });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '服务器内部错误';
+      console.error('[import-resume-file] Error:', error);
+      await send('error', { error: message });
+    } finally {
+      await writer.close();
     }
+  };
 
-    const rateLimitResponse = await applyRateLimit(request);
-    if (rateLimitResponse) return rateLimitResponse;
+  void run();
 
-    const accessKeyId = process.env.ALIYUN_DOCMIND_ACCESS_KEY_ID ?? '';
-    const accessKeySecret = process.env.ALIYUN_DOCMIND_ACCESS_KEY_SECRET ?? '';
-    if (!accessKeyId || !accessKeySecret) {
-      return NextResponse.json({ error: '文档解析服务未配置，请联系管理员' }, { status: 503 });
-    }
-
-    const formData = await request.formData();
-    const file = formData.get('file');
-
-    if (!file || !(file instanceof File)) {
-      return NextResponse.json({ error: '请上传简历文件' }, { status: 400 });
-    }
-
-    const fileName = file.name;
-    const ext = fileName.split('.').pop()?.toLowerCase() ?? '';
-    if (!ALLOWED_EXTENSIONS.has(ext)) {
-      return NextResponse.json(
-        { error: '不支持的文件格式，请上传 Word、PDF 或图片文件' },
-        { status: 400 },
-      );
-    }
-
-    if (file.size > MAX_FILE_SIZE) {
-      return NextResponse.json({ error: '文件大小不能超过 8MB' }, { status: 400 });
-    }
-
-    const fileBuffer = Buffer.from(await file.arrayBuffer());
-    const docmindClient = createDocmindClient(accessKeyId, accessKeySecret);
-
-    console.log(`[import-resume-file] Submitting DocMind job: ${fileName} (${fileBuffer.byteLength} bytes)`);
-    const jobId = await submitDocmindJob(docmindClient, fileBuffer, fileName);
-
-    console.log(`[import-resume-file] Polling DocMind job: ${jobId}`);
-    const extractedText = await pollDocmindResult(docmindClient, jobId);
-
-    if (!extractedText.trim()) {
-      return NextResponse.json({ error: '简历内容为空，请检查文件是否正确' }, { status: 422 });
-    }
-
-    console.log(`[import-resume-file] Extracted ${extractedText.length} chars, calling LLM`);
-    const resumeData = await parseTextWithLLM(extractedText);
-
-    return NextResponse.json({ resumeData });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : '服务器内部错误';
-    console.error('[import-resume-file] Error:', error);
-    return NextResponse.json({ error: message }, { status: 500 });
-  }
+  return new Response(stream.readable, {
+    headers: {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+    },
+  });
 }

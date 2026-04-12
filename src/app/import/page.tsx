@@ -47,6 +47,9 @@ export default function ImportResumePage(): React.ReactElement {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
   const [isFileImporting, setIsFileImporting] = useState<boolean>(false);
+  const [fileProgress, setFileProgress] = useState<number>(0);
+  const [fileStage, setFileStage] = useState<string>('');
+  const [extractedText, setExtractedText] = useState<string>('');
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -116,7 +119,7 @@ export default function ImportResumePage(): React.ReactElement {
       const resumeData = mapExternalResume(importResult);
       openEditorWithData(resumeData);
     }
-  }, [rawText, selectedModel, generate, openEditorWithData, isLimitReached, refreshQuota]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [rawText, selectedModel, generate, openEditorWithData, isLimitReached, refreshQuota]);
 
   const handleFileSelect = useCallback((file: File): void => {
     setFileError(null);
@@ -137,6 +140,9 @@ export default function ImportResumePage(): React.ReactElement {
     if (!selectedFile || isLimitReached) return;
     setIsFileImporting(true);
     setFileError(null);
+    setFileProgress(0);
+    setFileStage('');
+    setExtractedText('');
     try {
       const formData = new FormData();
       formData.append('file', selectedFile);
@@ -144,24 +150,55 @@ export default function ImportResumePage(): React.ReactElement {
         method: 'POST',
         body: formData,
       });
-      const json = await res.json();
-      if (!res.ok || json.error) {
-        setFileError(json.error ?? '解析失败，请稍后重试');
+      if (!res.ok || !res.body) {
+        setFileError('解析失败，请稍后重试');
         return;
       }
-      await refreshQuota();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const externalResume = json.resumeData as any;
-      const resumeData = mapExternalResume(externalResume);
-      const parsedName: string = externalResume?.base_info?.name ?? '';
-      if (parsedName) resumeData.name = parsedName;
-      openEditorWithData(resumeData);
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n\n');
+        buffer = lines.pop() ?? '';
+        for (const line of lines) {
+          const dataLine = line.split('\n').find((l) => l.startsWith('data: '));
+          if (!dataLine) continue;
+          try {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const event = JSON.parse(dataLine.slice(6)) as Record<string, any>;
+            if (event.type === 'stage') {
+              setFileStage(event.label as string);
+              setFileProgress(event.progress as number);
+            } else if (event.type === 'extracted') {
+              setExtractedText(event.text as string);
+            } else if (event.type === 'done') {
+              setFileProgress(100);
+              await refreshQuota();
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const externalResume = event.resumeData as any;
+              const resumeData = mapExternalResume(externalResume);
+              const parsedName: string = externalResume?.base_info?.name ?? '';
+              if (parsedName) resumeData.name = parsedName;
+              openEditorWithData(resumeData);
+              return;
+            } else if (event.type === 'error') {
+              setFileError(event.error as string);
+              return;
+            }
+          } catch {
+            // skip malformed events
+          }
+        }
+      }
     } catch (err) {
       setFileError(err instanceof Error ? err.message : '解析失败，请稍后重试');
     } finally {
       setIsFileImporting(false);
     }
-  }, [selectedFile, isLimitReached, openEditorWithData, refreshQuota]);
+  }, [selectedFile, isLimitReached, openEditorWithData, refreshQuota, setFileStage, setExtractedText]);
 
   const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>): void => {
     e.preventDefault();
@@ -226,7 +263,7 @@ export default function ImportResumePage(): React.ReactElement {
 
       {/* Two-column layout on desktop, single column on mobile */}
       <div className="flex-1 max-w-6xl mx-auto w-full px-6 py-10 lg:py-16">
-        <div className="flex flex-col lg:flex-row lg:gap-12 gap-8">
+        <div className="flex flex-col lg:flex-row lg:items-start lg:gap-12 gap-8">
 
           {/* ── LEFT: Action panel (主操作区) ── */}
           <div className="flex-1 min-w-0 bg-white rounded-3xl p-6 lg:p-8 shadow-sm border border-violet-100/60">
@@ -249,24 +286,24 @@ export default function ImportResumePage(): React.ReactElement {
               ))}
             </div>
 
-            <AnimatePresence mode="wait">
+            <AnimatePresence mode="wait" initial={false}>
               {/* ── TEXT MODE ── */}
               {mode === 'text' && (
                 <motion.div
                   key="text"
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
-                  transition={{ duration: 0.18 }}
-                  className="flex flex-col gap-5"
+                  initial={{ opacity: 0, x: -8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 8 }}
+                  transition={{ duration: 0.15 }}
+                  className="flex flex-col gap-5 min-h-[340px]"
                 >
-                  <div className="relative">
+                  <div className="relative flex-1 flex flex-col">
                     <textarea
                       ref={textareaRef}
                       value={rawText}
                       onChange={(e) => setRawText(e.target.value)}
                       placeholder="在此粘贴来自豆包、ChatGPT 等 AI 生成的简历文本..."
-                      className="w-full h-72 lg:h-80 resize-none rounded-2xl border border-violet-100 bg-violet-50/30 px-5 py-4 text-sm text-gray-700 placeholder:text-violet-300/60 focus:outline-none focus:ring-2 focus:ring-violet-500/25 focus:border-violet-400 focus:bg-white transition-all leading-relaxed"
+                      className="flex-1 w-full h-[220px] resize-none rounded-2xl border border-violet-100 bg-violet-50/30 px-5 py-4 text-sm text-gray-700 placeholder:text-violet-300/60 focus:outline-none focus:ring-2 focus:ring-violet-500/25 focus:border-violet-400 focus:bg-white transition-all leading-relaxed"
                     />
                     {isTextValid && (
                       <div className="absolute bottom-3 right-4 flex items-center gap-1 text-xs text-emerald-500">
@@ -304,11 +341,11 @@ export default function ImportResumePage(): React.ReactElement {
               {mode === 'file' && (
                 <motion.div
                   key="file"
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
-                  transition={{ duration: 0.18 }}
-                  className="flex flex-col gap-5"
+                  initial={{ opacity: 0, x: 8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -8 }}
+                  transition={{ duration: 0.15 }}
+                  className="flex flex-col gap-5 min-h-[340px] justify-between"
                 >
                   <div
                     onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
@@ -316,12 +353,12 @@ export default function ImportResumePage(): React.ReactElement {
                     onDrop={handleDrop}
                     onClick={() => !selectedFile && fileInputRef.current?.click()}
                     className={cn(
-                      'relative rounded-2xl border-2 border-dashed transition-all overflow-hidden',
+                      'relative rounded-2xl border-2 border-dashed transition-all overflow-hidden h-[180px] flex items-center justify-center px-5',
                       selectedFile
-                        ? 'border-violet-200 bg-violet-50/50 cursor-default p-5'
+                        ? 'border-violet-200 bg-violet-50/50 cursor-default'
                         : isDragging
-                          ? 'border-violet-400 bg-violet-50 cursor-copy p-14'
-                          : 'border-gray-200 bg-white hover:border-violet-300 hover:bg-gray-50/50 cursor-pointer p-14',
+                          ? 'border-violet-400 bg-violet-50 cursor-copy'
+                          : 'border-gray-200 bg-white hover:border-violet-300 hover:bg-gray-50/50 cursor-pointer',
                     )}
                   >
                     <input
@@ -332,7 +369,7 @@ export default function ImportResumePage(): React.ReactElement {
                       onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFileSelect(f); }}
                     />
                     {selectedFile ? (
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 w-full">
                         <div className="w-10 h-10 rounded-xl bg-violet-100 flex items-center justify-center shrink-0">
                           <FileText className="w-5 h-5 text-violet-600" />
                         </div>
@@ -389,29 +426,39 @@ export default function ImportResumePage(): React.ReactElement {
                   )}
 
                   <div className="flex flex-col gap-3">
-                    <button
-                      type="button"
-                      onClick={handleFileImport}
-                      disabled={!canSubmitFile}
-                      className={cn(
-                        'w-full py-3.5 rounded-2xl text-sm font-semibold flex items-center justify-center gap-2 transition-all',
-                        canSubmitFile
-                          ? 'bg-violet-600 hover:bg-violet-700 text-white shadow-md shadow-violet-200 hover:shadow-lg hover:shadow-violet-200 active:scale-[0.99]'
-                          : 'bg-gray-100 text-gray-300 cursor-not-allowed',
-                      )}
-                    >
-                      {isFileImporting ? (
-                        <>
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                          正在解析文件…
-                        </>
-                      ) : (
-                        <>
-                          <FileUp className="w-4 h-4" />
-                          {selectedFile ? 'AI 解析并生成简历' : '选择文件后开始解析'}
-                        </>
-                      )}
-                    </button>
+                    {isFileImporting && extractedText && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        className="rounded-xl bg-violet-50 border border-violet-100 overflow-hidden"
+                      >
+                        <div className="px-4 py-2 border-b border-violet-100 flex items-center gap-1.5">
+                          <FileText className="w-3.5 h-3.5 text-violet-400" />
+                          <span className="text-xs font-medium text-violet-600">已提取文本内容</span>
+                        </div>
+                        <div className="px-4 py-3 max-h-36 overflow-y-auto">
+                          <p className="text-xs text-gray-600 leading-relaxed whitespace-pre-line">{extractedText}</p>
+                        </div>
+                      </motion.div>
+                    )}
+                    {isFileImporting ? (
+                      <FileProgressButton progress={fileProgress} stage={fileStage} />
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={handleFileImport}
+                        disabled={!canSubmitFile}
+                        className={cn(
+                          'w-full py-3.5 rounded-2xl text-sm font-semibold flex items-center justify-center gap-2 transition-all',
+                          canSubmitFile
+                            ? 'bg-violet-600 hover:bg-violet-700 text-white shadow-md shadow-violet-200 hover:shadow-lg hover:shadow-violet-200 active:scale-[0.99]'
+                            : 'bg-gray-100 text-gray-300 cursor-not-allowed',
+                        )}
+                      >
+                        <FileUp className="w-4 h-4" />
+                        {selectedFile ? 'AI 解析并生成简历' : '选择文件后开始解析'}
+                      </button>
+                    )}
                     <QuotaNote remaining={importQuota.remaining} limit={importQuota.limit} isLimitReached={isLimitReached} onUpgrade={() => setShowUpgrade(true)} />
                   </div>
                 </motion.div>
@@ -590,21 +637,18 @@ function ImportGenerationPage({
                 ))}
               </motion.div>
             ) : (
-              <motion.div key="placeholder" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center py-24 gap-5">
+              <motion.div key="placeholder" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center py-20 gap-6">
                 <div className="relative">
-                  <div className="w-12 h-12 rounded-2xl bg-violet-50 flex items-center justify-center">
-                    <Sparkles className="w-6 h-6 text-violet-400" />
+                  <div className="w-14 h-14 rounded-2xl bg-violet-50 flex items-center justify-center">
+                    <Sparkles className="w-7 h-7 text-violet-400" />
                   </div>
                   <motion.div
                     className="absolute inset-0 rounded-2xl border-2 border-violet-300"
-                    animate={{ scale: [1, 1.15, 1], opacity: [0.6, 0, 0.6] }}
+                    animate={{ scale: [1, 1.18, 1], opacity: [0.5, 0, 0.5] }}
                     transition={{ duration: 2, repeat: Infinity }}
                   />
                 </div>
-                <div className="text-center">
-                  <p className="text-sm font-medium text-gray-700">正在解析简历内容</p>
-                  <p className="text-xs text-gray-400 mt-1">通常需要 10–20 秒</p>
-                </div>
+                <GenerationSteps />
               </motion.div>
             )}
           </AnimatePresence>
@@ -752,5 +796,89 @@ function ShimmerBar({ width, delay }: { width: string; delay: number }): React.R
         }}
       />
     </motion.div>
+  );
+}
+
+const FILE_PROGRESS_LABELS: readonly string[] = [
+  '正在上传文件…',
+  '正在识别内容…',
+  'AI 解析结构中…',
+  '即将完成…',
+];
+
+function FileProgressButton({ progress, stage }: { progress: number; stage: string }): React.ReactElement {
+  const fallbackIdx = Math.min(Math.floor(progress / 25), FILE_PROGRESS_LABELS.length - 1);
+  const label = stage || FILE_PROGRESS_LABELS[fallbackIdx];
+  return (
+    <div className="w-full rounded-2xl bg-violet-50 border border-violet-100 overflow-hidden relative h-[52px]">
+      <motion.div
+        className="absolute inset-y-0 left-0 bg-violet-200/60 rounded-2xl"
+        animate={{ width: `${progress}%` }}
+        transition={{ duration: 0.4, ease: 'easeOut' }}
+      />
+      <div className="absolute inset-0 flex items-center justify-center gap-2">
+        <Loader2 className="w-4 h-4 text-violet-600 animate-spin relative z-10" />
+        <AnimatePresence mode="wait">
+          <motion.span
+            key={label}
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.2 }}
+            className="text-sm font-semibold text-violet-700 relative z-10"
+          >
+            {label}
+          </motion.span>
+        </AnimatePresence>
+        <span className="text-xs text-violet-600/70 tabular-nums relative z-10 ml-1">
+          {Math.round(progress)}%
+        </span>
+      </div>
+    </div>
+  );
+}
+
+const GENERATION_STEPS: readonly string[] = [
+  '读取简历文本内容…',
+  '识别姓名、联系方式…',
+  '提取工作经历与项目…',
+  '整理教育背景与技能…',
+  '生成专业排版结构…',
+];
+
+function GenerationSteps(): React.ReactElement {
+  const [activeStep, setActiveStep] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => {
+      setActiveStep((prev) => (prev + 1) % GENERATION_STEPS.length);
+    }, 2200);
+    return () => clearInterval(id);
+  }, []);
+  return (
+    <div className="flex flex-col items-center gap-3">
+      <AnimatePresence mode="wait">
+        <motion.p
+          key={activeStep}
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -6 }}
+          transition={{ duration: 0.25 }}
+          className="text-sm font-medium text-gray-700"
+        >
+          {GENERATION_STEPS[activeStep]}
+        </motion.p>
+      </AnimatePresence>
+      <div className="flex gap-1.5">
+        {GENERATION_STEPS.map((_, i) => (
+          <motion.div
+            key={i}
+            className="h-1 rounded-full bg-violet-300"
+            animate={{ width: i === activeStep ? 20 : 6, opacity: i === activeStep ? 1 : 0.35 }}
+            transition={{ duration: 0.3 }}
+          />
+        ))}
+      </div>
+      <p className="text-xs text-gray-400 mt-1">通常需要 10–20 秒，请稍候</p>
+    </div>
   );
 }
