@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Crown, Search, RotateCcw, User, CheckCircle, AlertCircle, LogIn, Shield } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 const JAVA_API = process.env.NEXT_PUBLIC_JAVA_API_BASE_URL || 'https://aijianli.cn/api';
 
@@ -22,6 +23,16 @@ interface VipFormData {
 }
 
 const VIP_TYPES = ['', '月卡', '年卡', '终身'] as const;
+
+const QUICK_PRESETS: Array<{ label: string; vipType: number; days: number }> = [
+  { label: '月卡 30天', vipType: 1, days: 30 },
+  { label: '年卡 365天', vipType: 2, days: 365 },
+  { label: '终身', vipType: 3, days: 36500 },
+];
+
+function getExpiryDate(days: number): string {
+  return new Date(Date.now() + days * 86400000).toISOString().slice(0, 16);
+}
 
 export default function AdminPage(): React.ReactElement {
   const [password, setPassword] = useState('');
@@ -72,7 +83,8 @@ export default function AdminPage(): React.ReactElement {
     setMessage(null);
     setUser(null);
     try {
-      const res = await fetch(`${JAVA_API}/admin/users/${searchValue.trim()}`, { headers: adminHeaders() });
+      const url = `${JAVA_API}/admin/users/${searchValue.trim()}`;
+      const res = await fetch(url, { headers: adminHeaders() });
       const json = await res.json();
       if (!res.ok || json.status !== 100) {
         setMessage({ type: 'error', text: json.message || '用户未找到' });
@@ -282,6 +294,31 @@ export default function AdminPage(): React.ReactElement {
 
             {showVipForm && (
               <div className="mt-4 p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
+                {/* Quick presets */}
+                <div>
+                  <p className="text-xs text-slate-500 mb-2">快速选择</p>
+                  <div className="flex gap-2 flex-wrap">
+                    {QUICK_PRESETS.map((preset) => (
+                      <button
+                        key={preset.label}
+                        type="button"
+                        onClick={() => setVipForm((f) => ({
+                          ...f,
+                          vipType: preset.vipType,
+                          expiryDate: getExpiryDate(preset.days),
+                        }))}
+                        className={cn(
+                          'px-3 py-1.5 rounded-lg text-sm font-medium border transition-all',
+                          vipForm.vipType === preset.vipType
+                            ? 'bg-violet-600 text-white border-violet-600'
+                            : 'bg-white text-slate-600 border-slate-200 hover:border-violet-400 hover:text-violet-600',
+                        )}
+                      >
+                        {preset.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 <div>
                   <label className="block text-xs text-slate-500 mb-1">VIP 类型</label>
                   <select
