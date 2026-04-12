@@ -11,7 +11,7 @@ import { mapExternalResume } from '@/io/external-resume-importer';
 import type { ResumeData } from '@/entities/resume/resume-data';
 import { parseStreamSections } from '@/lib/ai/json-to-markdown';
 import type { DisplaySection } from '@/lib/ai/json-to-markdown';
-import { Sparkles, Loader2, AlertCircle, ChevronLeft, CircleStop, FileText } from 'lucide-react';
+import { Sparkles, Loader2, AlertCircle, ChevronLeft, CircleStop, FileText, Check, Pencil } from 'lucide-react';
 import Link from 'next/link';
 import { useRequireAuth } from '@/hooks/use-require-auth';
 import { useVipCheck } from '@/hooks/use-vip-check';
@@ -115,103 +115,116 @@ export const WizardLayout = ({ children }: { children: React.ReactNode }) => {
     );
   }
 
+  const canGenerate = wizardState.currentStep >= 3 && wizardState.identity && wizardState.targetRole;
+
   return (
-    <div className="min-h-screen bg-[#F8F9FC] flex flex-col">
-      {/* Page header */}
-      <header className="sticky top-0 z-20 bg-white/70 backdrop-blur-xl border-b border-gray-100">
-        <div className="max-w-4xl mx-auto px-6 h-14 flex items-center gap-3">
+    <div className="min-h-screen bg-[#F7F6FB] flex flex-col">
+      <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-xl border-b border-gray-100/80">
+        <div className="max-w-6xl mx-auto px-6 h-13 flex items-center justify-between">
           <button
             type="button"
             onClick={() => router.push(isLoggedIn() ? '/dashboard' : '/')}
-            className="flex items-center gap-1 text-sm text-gray-500 hover:text-[#8B5CF6] transition-colors"
+            className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-violet-600 transition-colors"
           >
             <ChevronLeft className="w-4 h-4" />
             返回
           </button>
-          <div className="w-px h-4 bg-gray-200" />
-          <h1 className="text-sm font-semibold text-gray-800">AI 生成简历</h1>
+          <span className="text-sm font-semibold text-gray-800">AI 生成简历</span>
+          <Link
+            href="/editor/new"
+            className="text-xs text-gray-400 hover:text-gray-600 transition-colors flex items-center gap-1"
+          >
+            跳过，直接创建
+            <FileText className="w-3 h-3" />
+          </Link>
         </div>
       </header>
+
       <WxLoginDialog isOpen={isLoginOpen} onClose={handleLoginClose} onSuccess={handleLoginSuccess} />
+      <VipUpgradeDialog open={showUpgrade} onOpenChange={setShowUpgrade} />
 
-      {/* VIP Upgrade Dialog */}
-      <VipUpgradeDialog
-        open={showUpgrade}
-        onOpenChange={setShowUpgrade}
-      />
+      <div className="flex-1 max-w-6xl mx-auto w-full px-6 py-10 lg:py-12">
+        <div className="flex flex-col lg:flex-row lg:gap-12 gap-8">
 
-      {/* Hero title */}
-      <div className="text-center pt-8 pb-4">
-        <h2 className="text-xl font-bold text-gray-900">一分钟，AI生成简历</h2>
-        <p className="text-sm text-gray-400 mt-1">输入关键信息，AI 一键生成匹配岗位的专业简历</p>
-      </div>
+          {/* LEFT: step cards (main action area) */}
+          <div className="flex-1 min-w-0 flex flex-col gap-5">
+            {children}
 
-      <div className="flex-1 flex flex-col items-center pb-10 px-4">
-      <div className="w-full max-w-3xl space-y-6">
-        <div className="space-y-6">
-          {children}
-        </div>
+            {/* CTA — below step cards, always visible on all breakpoints */}
+            {canGenerate && (
+              <div className="flex flex-col gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={handleGenerate}
+                  disabled={isLimitReached}
+                  className={cn(
+                    'w-full py-3.5 rounded-2xl text-sm font-semibold flex items-center justify-center gap-2 transition-all',
+                    isLimitReached
+                      ? 'bg-gray-100 text-gray-300 cursor-not-allowed'
+                      : 'bg-violet-600 hover:bg-violet-700 text-white shadow-md shadow-violet-200 hover:shadow-lg active:scale-[0.99]',
+                  )}
+                >
+                  <Sparkles className="w-4 h-4" />
+                  {wizardState.currentStep < wizardState.totalSteps ? '已可生成，立即生成' : 'AI 生成简历'}
+                </button>
+                <QuotaHint
+                  remaining={resumeQuota.remaining}
+                  limit={resumeQuota.limit}
+                  isLimitReached={isLimitReached}
+                  onUpgrade={() => setShowUpgrade(true)}
+                />
+              </div>
+            )}
+          </div>
 
-        {wizardState.currentStep >= 3 && wizardState.identity && wizardState.targetRole && (
-          <div className="flex flex-col items-center pt-8 gap-4">
-            <p className="text-gray-400 text-sm">
-              {wizardState.currentStep < wizardState.totalSteps
-                ? '已可生成简历，也可继续填写更多信息'
-                : '已收到你的信息，点击生成简历'}
-            </p>
+          {/* RIGHT: sticky info + progress panel */}
+          <div className="lg:w-[280px] lg:shrink-0 hidden lg:block">
+            <div className="sticky top-20 flex flex-col gap-6 bg-gradient-to-b from-violet-50/80 to-transparent rounded-3xl px-6 py-8">
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-6 h-6 rounded-lg bg-violet-600 flex items-center justify-center">
+                    <Sparkles className="w-3.5 h-3.5 text-white" />
+                  </div>
+                  <span className="text-xs font-semibold text-violet-700 bg-violet-100 px-2 py-0.5 rounded-full">AI 生成</span>
+                </div>
+                <h2 className="text-lg font-bold text-gray-900 leading-snug">一分钟<br />AI 生成简历</h2>
+                <p className="text-xs text-violet-900/40 mt-2 leading-relaxed">填写关键信息，AI 自动匹配岗位生成专业内容。</p>
+              </div>
 
-            <div className="flex flex-col sm:flex-row items-center gap-4">
-              <button
-                type="button"
-                onClick={handleGenerate}
-                disabled={isLimitReached}
-                className={cn(
-                  'px-8 py-3 rounded-full text-lg font-medium flex items-center gap-2 shadow-lg transition-all',
-                  isLimitReached
-                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed shadow-none'
-                    : 'bg-[#8B5CF6] hover:bg-[#7C3AED] text-white hover:shadow-xl',
-                )}
-              >
-                <Sparkles className="w-5 h-5" />
-                生成简历
-              </button>
-              
-              <Link
-                href="/editor/new"
-                className="px-8 py-3 rounded-full text-lg font-medium flex items-center gap-2 border-2 border-gray-200 text-gray-600 hover:border-violet-300 hover:text-violet-600 hover:bg-violet-50 transition-all bg-white"
-              >
-                <FileText className="w-5 h-5" />
-                跳过 AI，直接创建
-              </Link>
-            </div>
-            <div className="flex items-center justify-center gap-1 text-xs">
-              {isLimitReached ? (
-                <>
-                  <span className="text-red-500">今日次数已用完，</span>
-                  <button
-                    type="button"
-                    onClick={() => setShowUpgrade(true)}
-                    className="text-violet-600 hover:text-violet-700 font-medium underline underline-offset-2"
-                  >
-                    升级会员可无限使用 →
-                  </button>
-                </>
-              ) : (
-                <span className="text-gray-400">
-                  今日剩余 {resumeQuota.remaining}/{resumeQuota.limit} 次
-                </span>
-              )}
+              {/* Step progress indicator */}
+              <div className="flex flex-col gap-2">
+                {Array.from({ length: wizardState.totalSteps }, (_, i) => i + 1).map((step) => (
+                  <div key={step} className="flex items-center gap-2.5">
+                    <div className={cn(
+                      'w-5 h-5 rounded-full flex items-center justify-center shrink-0 transition-all',
+                      step < wizardState.currentStep
+                        ? 'bg-violet-600'
+                        : step === wizardState.currentStep
+                          ? 'bg-violet-100 ring-2 ring-violet-400'
+                          : 'bg-gray-100',
+                    )}>
+                      {step < wizardState.currentStep
+                        ? <Check className="w-3 h-3 text-white" />
+                        : <span className={cn(
+                            'text-[10px] font-bold',
+                            step === wizardState.currentStep ? 'text-violet-700' : 'text-gray-400',
+                          )}>{step}</span>
+                      }
+                    </div>
+                    <span className={cn(
+                      'text-xs transition-colors',
+                      step < wizardState.currentStep ? 'text-violet-600 font-medium' :
+                      step === wizardState.currentStep ? 'font-semibold text-gray-800' : 'text-gray-400',
+                    )}>
+                      {['基本身份', '目标岗位', '工作经历', '教育背景', '技能亮点'][step - 1] ?? `步骤 ${step}`}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
-        )}
+        </div>
       </div>
-      </div>
-
-      {/* VIP Upgrade Dialog */}
-      <VipUpgradeDialog
-        open={showUpgrade}
-        onOpenChange={setShowUpgrade}
-      />
     </div>
   );
 };
@@ -269,24 +282,36 @@ function GenerationPage({
   }, [isGenerating, onStop]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#F0EAFF]/40 via-[#F8F9FC] to-[#F8F9FC] flex flex-col">
-      {/* Header */}
-      <header className="sticky top-0 z-20 bg-white/70 backdrop-blur-xl border-b border-gray-100">
-        <div className="max-w-4xl mx-auto px-6 h-14 flex items-center gap-3">
+    <div className="min-h-screen bg-[#F7F6FB] flex flex-col">
+      <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-xl border-b border-gray-100/80">
+        <div className="max-w-6xl mx-auto px-6 h-13 flex items-center gap-3">
           <button
             type="button"
             onClick={onBack}
-            className="flex items-center gap-1 text-sm text-gray-500 hover:text-[#8B5CF6] transition-colors"
+            className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-violet-600 transition-colors"
           >
             <ChevronLeft className="w-4 h-4" />
             返回
           </button>
           <div className="w-px h-4 bg-gray-200" />
-          <h1 className="text-sm font-semibold text-gray-800">AI 生成简历</h1>
+          <span className="text-sm font-semibold text-gray-800">AI 生成简历</span>
+          <span className="text-sm text-gray-400">·</span>
+          <span className="text-sm text-gray-500">{isGenerating ? '正在生成…' : '生成完成'}</span>
+          {isGenerating && (
+            <div className="flex gap-1 ml-1">
+              {[0, 0.15, 0.3].map((d) => (
+                <motion.div
+                  key={d}
+                  className="w-1 h-1 rounded-full bg-violet-400"
+                  animate={{ opacity: [0.3, 1, 0.3] }}
+                  transition={{ duration: 1.2, delay: d, repeat: Infinity }}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </header>
 
-      {/* Content area */}
       <div
         ref={scrollRef}
         onScroll={handleScroll}
@@ -310,51 +335,58 @@ function GenerationPage({
                 key="placeholder"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="flex flex-col items-center justify-center py-20 gap-4"
+                className="flex flex-col items-center justify-center py-24 gap-5"
               >
-                <Loader2 className="w-8 h-8 text-[#8B5CF6] animate-spin" />
-                <p className="text-gray-400 text-sm">正在连接 AI 模型...</p>
+                <div className="relative">
+                  <div className="w-12 h-12 rounded-2xl bg-violet-50 flex items-center justify-center">
+                    <Sparkles className="w-6 h-6 text-violet-400" />
+                  </div>
+                  <motion.div
+                    className="absolute inset-0 rounded-2xl border-2 border-violet-300"
+                    animate={{ scale: [1, 1.15, 1], opacity: [0.6, 0, 0.6] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  />
+                </div>
+                <div className="text-center">
+                  <p className="text-sm font-medium text-gray-700">正在生成简历内容</p>
+                  <p className="text-xs text-gray-400 mt-1">通常需要 15–30 秒</p>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
 
-          {/* Animated gradient loading bars */}
           {isGenerating && hasSections && (
-            <div className="mt-6 space-y-3">
-              <ShimmerBar width="90%" delay={0} />
-              <ShimmerBar width="100%" delay={0.15} />
-              <ShimmerBar width="75%" delay={0.3} />
+            <div className="mt-5 space-y-2.5">
+              <ShimmerBar width="88%" delay={0} />
+              <ShimmerBar width="100%" delay={0.12} />
+              <ShimmerBar width="72%" delay={0.24} />
             </div>
           )}
 
-          {/* Error state - Show VIP upgrade on quota exceeded */}
           {error && (
             <motion.div
-              initial={{ opacity: 0, y: 10 }}
+              initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               className="mt-8 flex flex-col items-center gap-4"
             >
-              <div className="flex items-center gap-2 text-red-500">
-                <AlertCircle className="w-5 h-5" />
-                <p className="text-sm font-medium">{error}</p>
+              <div className="bg-red-50 border border-red-100 rounded-2xl px-5 py-4 flex items-start gap-3 max-w-sm w-full">
+                <AlertCircle className="w-4 h-4 text-red-400 mt-0.5 shrink-0" />
+                <p className="text-sm text-red-600">{error}</p>
               </div>
               {error.includes('VIP') || error.includes('次数已达上限') ? (
                 <button
                   type="button"
-                  onClick={() => {
-                    toast.error('今日免费额度已用完，升级VIP可无限使用');
-                    setShowUpgrade(true);
-                  }}
-                  className="bg-gradient-to-r from-amber-400 to-orange-400 hover:from-amber-500 hover:to-orange-500 text-white px-6 py-2.5 rounded-full text-sm font-medium flex items-center gap-2 shadow-md transition-all"
+                  onClick={() => { toast.error('今日免费额度已用完，升级VIP可无限使用'); setShowUpgrade(true); }}
+                  className="bg-amber-500 hover:bg-amber-600 text-white px-6 py-2.5 rounded-full text-sm font-medium flex items-center gap-2 transition-all"
                 >
                   <Sparkles className="w-4 h-4" />
-                  升级VIP无限使用
+                  升级 VIP 无限使用
                 </button>
               ) : (
                 <button
                   type="button"
                   onClick={onRetry}
-                  className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white px-6 py-2.5 rounded-full text-sm font-medium flex items-center gap-2 shadow-md transition-all"
+                  className="bg-violet-600 hover:bg-violet-700 text-white px-6 py-2.5 rounded-full text-sm font-medium flex items-center gap-2 transition-all"
                 >
                   <Sparkles className="w-4 h-4" />
                   重新生成
@@ -365,26 +397,25 @@ function GenerationPage({
         </div>
       </div>
 
-      {/* Floating status bar */}
       {isGenerating && (
-        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-30">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex items-center gap-4 px-5 py-2.5 bg-white/90 backdrop-blur-lg rounded-full shadow-lg border border-gray-100"
+            className="flex items-center gap-3 px-5 py-2.5 bg-white rounded-full shadow-lg shadow-gray-200/80 border border-gray-100"
           >
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <Loader2 className="w-4 h-4 text-[#8B5CF6] animate-spin" />
-              正在生成简历
+            <div className="flex items-center gap-2 text-xs text-gray-600">
+              <Loader2 className="w-3.5 h-3.5 text-violet-500 animate-spin" />
+              正在生成
             </div>
-            <div className="w-px h-4 bg-gray-200" />
+            <div className="w-px h-3.5 bg-gray-200" />
             <button
               type="button"
               onClick={onStop}
-              className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-red-500 transition-colors"
+              className="flex items-center gap-1 text-xs text-gray-400 hover:text-red-500 transition-colors"
             >
-              <CircleStop className="w-4 h-4" />
-              停止 Esc
+              <CircleStop className="w-3.5 h-3.5" />
+              停止
             </button>
           </motion.div>
         </div>
@@ -399,43 +430,38 @@ function GenerationPage({
 
 function SectionBlock({ section }: { section: DisplaySection }): React.ReactElement {
   return (
-    <div className="border-b border-gray-100 pb-5 last:border-b-0">
-      <h3 className="text-base font-bold text-gray-800 mb-3">{section.title}</h3>
+    <div className="bg-white rounded-2xl border border-gray-100 p-5">
+      <h3 className="text-xs font-semibold text-violet-600 uppercase tracking-wider mb-3">{section.title}</h3>
       {section.type === 'fields' && section.fields && (
-        <ul className="space-y-1.5">
+        <ul className="space-y-2">
           {section.fields.map((f, i) => (
-            <li key={i} className="flex items-baseline gap-2 text-sm text-gray-600">
-              <span className="text-gray-400">•</span>
-              <span className="font-medium text-gray-700">{f.label}：</span>
-              <span>{f.value}</span>
+            <li key={i} className="flex gap-2 text-sm">
+              <span className="font-medium text-gray-500 shrink-0 min-w-14">{f.label}</span>
+              <span className="text-gray-800">{f.value}</span>
             </li>
           ))}
         </ul>
       )}
       {section.type === 'text' && section.text && (
-        <div className="text-sm text-gray-600 leading-relaxed whitespace-pre-line">
-          {section.text}
-        </div>
+        <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">{section.text}</p>
       )}
       {section.type === 'experience' && section.items && (
         <div className="space-y-4">
           {section.items.map((item, i) => (
             <div key={i}>
-              <div className="flex items-baseline gap-2 flex-wrap">
-                <span className="font-semibold text-gray-700 text-sm">{item.name}</span>
-                {item.subtitle && (
-                  <span className="text-sm text-gray-500">{item.subtitle}</span>
-                )}
-                {item.period && (
-                  <span className="text-xs text-gray-400 ml-auto">{item.period}</span>
-                )}
+              <div className="flex items-baseline justify-between gap-2 flex-wrap mb-1.5">
+                <div className="flex items-baseline gap-2">
+                  <span className="font-semibold text-gray-800 text-sm">{item.name}</span>
+                  {item.subtitle && <span className="text-xs text-gray-500">{item.subtitle}</span>}
+                </div>
+                {item.period && <span className="text-xs text-gray-400">{item.period}</span>}
               </div>
               {item.lines.length > 0 && (
-                <ul className="mt-1.5 space-y-1">
+                <ul className="space-y-1">
                   {item.lines.map((line, j) => (
                     <li key={j} className="flex items-start gap-2 text-sm text-gray-600">
-                      <span className="text-gray-400 mt-0.5">•</span>
-                      <span>{line}</span>
+                      <span className="w-1 h-1 rounded-full bg-gray-300 mt-2 shrink-0" />
+                      <span className="leading-relaxed">{line}</span>
                     </li>
                   ))}
                 </ul>
@@ -458,13 +484,13 @@ function ShimmerBar({ width, delay }: { width: string; delay: number }): React.R
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ delay }}
-      className="h-3 rounded-full overflow-hidden"
+      className="h-2.5 rounded-full overflow-hidden bg-gray-100"
       style={{ width }}
     >
       <div
         className="h-full rounded-full animate-shimmer"
         style={{
-          background: 'linear-gradient(90deg, #E9D5FF 0%, #F5D0FE 30%, #FBCFE8 50%, #F5D0FE 70%, #E9D5FF 100%)',
+          background: 'linear-gradient(90deg, #f3f0ff 0%, #ede9fe 40%, #f3f0ff 100%)',
           backgroundSize: '200% 100%',
         }}
       />
@@ -485,7 +511,7 @@ export const StepCard = ({
   onSkip?: () => void;
   onClickPast?: () => void;
 }) => {
-  const { currentStep, totalSteps } = useWizardStore();
+  const { currentStep } = useWizardStore();
   const isCurrent: boolean = stepNumber === currentStep;
   const isPast: boolean = stepNumber < currentStep;
   
@@ -498,41 +524,93 @@ export const StepCard = ({
   };
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 20 }}
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.22 }}
       className="w-full"
     >
       <div className={cn(
-        "bg-white rounded-2xl p-6 shadow-sm border border-gray-100",
-        isPast && onClickPast && "transition-colors"
+        'bg-white rounded-2xl border shadow-sm transition-all',
+        isCurrent ? 'border-violet-200 p-6' : 'border-gray-100 p-5',
       )}>
         <div
           className={cn(
-            "flex items-center justify-between mb-4",
-            isPast && onClickPast && "cursor-pointer hover:opacity-70 transition-opacity"
+            'flex items-center justify-between mb-4',
+            isPast && onClickPast && 'cursor-pointer hover:opacity-70 transition-opacity',
           )}
           onClick={handleHeaderClick}
         >
-          <div className="flex items-center gap-2">
-            <span className="text-gray-500 font-medium">{stepNumber}/{totalSteps}</span>
-            <h2 className="text-gray-800 font-bold text-lg">{title}</h2>
+          <div className="flex items-center gap-3">
+            <div className={cn(
+              'w-6 h-6 rounded-full flex items-center justify-center shrink-0',
+              isPast
+                ? 'bg-violet-600'
+                : 'bg-violet-100 ring-2 ring-violet-300',
+            )}>
+              {isPast
+                ? <Check className="w-3.5 h-3.5 text-white" />
+                : <span className="text-[10px] font-bold text-violet-700">{stepNumber}</span>
+              }
+            </div>
+            <h2 className={cn(
+              'font-bold',
+              isCurrent ? 'text-gray-900 text-base' : 'text-gray-500 text-sm',
+            )}>{title}</h2>
           </div>
-          {onSkip && isCurrent && (
-            <button 
-              onClick={onSkip}
-              className="text-gray-400 hover:text-gray-600 text-sm font-medium"
-            >
-              跳过
-            </button>
-          )}
+          <div className="flex items-center gap-3">
+            {isPast && onClickPast && (
+              <span className="flex items-center gap-1 text-xs text-violet-400 hover:text-violet-600 transition-colors">
+                <Pencil className="w-3 h-3" />
+                修改
+              </span>
+            )}
+            {onSkip && isCurrent && (
+              <button
+                onClick={onSkip}
+                className="text-xs text-gray-400 hover:text-gray-600 font-medium transition-colors"
+              >
+                跳过
+              </button>
+            )}
+          </div>
         </div>
-        
-        {children}
+
+        {isCurrent && children}
       </div>
     </motion.div>
   );
 };
+
+// ---------------------------------------------------------------------------
+// Quota hint — handles VIP unlimited, limit reached, and normal states
+// ---------------------------------------------------------------------------
+
+interface QuotaHintProps {
+  readonly remaining: number | 'unlimited';
+  readonly limit: number | null;
+  readonly isLimitReached: boolean;
+  readonly onUpgrade: () => void;
+}
+
+function QuotaHint({ remaining, limit, isLimitReached, onUpgrade }: QuotaHintProps): React.ReactElement {
+  if (isLimitReached) {
+    return (
+      <p className="text-center text-xs text-gray-400">
+        今日次数已用完 ·{' '}
+        <button type="button" onClick={onUpgrade} className="text-violet-600 font-medium hover:underline">
+          升级会员无限使用
+        </button>
+      </p>
+    );
+  }
+  if (remaining === 'unlimited') {
+    return <p className="text-center text-xs text-gray-300">会员无限次使用</p>;
+  }
+  return (
+    <p className="text-center text-xs text-gray-300">今日剩余 {remaining}/{limit ?? '∞'} 次</p>
+  );
+}
 
 export const ChatBubble = ({ 
   content, 

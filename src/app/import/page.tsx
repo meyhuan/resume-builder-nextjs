@@ -202,7 +202,7 @@ export default function ImportResumePage(): React.ReactElement {
     <div className="min-h-screen bg-[#F8F9FC] flex flex-col">
       {/* Header */}
       <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-xl border-b border-gray-100/80">
-        <div className="max-w-2xl mx-auto px-5 h-13 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-6 h-13 flex items-center justify-between">
           <button
             type="button"
             onClick={() => router.push(isLoggedIn() ? '/dashboard' : '/')}
@@ -211,6 +211,7 @@ export default function ImportResumePage(): React.ReactElement {
             <ChevronLeft className="w-4 h-4" />
             返回
           </button>
+          <span className="text-sm font-semibold text-gray-800">AI 导入简历</span>
           <Link
             href="/editor/new"
             className="text-xs text-gray-400 hover:text-gray-600 transition-colors flex items-center gap-1"
@@ -223,241 +224,250 @@ export default function ImportResumePage(): React.ReactElement {
 
       <WxLoginDialog isOpen={isLoginOpen} onClose={handleLoginClose} onSuccess={handleLoginSuccess} />
 
-      <div className="flex-1 flex flex-col max-w-2xl mx-auto w-full px-5 py-8 gap-6">
+      {/* Two-column layout on desktop, single column on mobile */}
+      <div className="flex-1 max-w-6xl mx-auto w-full px-6 py-10 lg:py-16">
+        <div className="flex flex-col lg:flex-row lg:gap-12 gap-8">
 
-        {/* Hero */}
-        <div>
-          <div className="flex items-center gap-2 mb-2">
-            <div className="w-6 h-6 rounded-md bg-violet-600 flex items-center justify-center">
-              <Zap className="w-3.5 h-3.5 text-white" />
-            </div>
-            <span className="text-xs font-semibold text-violet-600 tracking-wide uppercase">AI 导入</span>
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900 leading-tight">
-            把简历内容<br />变成专业排版
-          </h1>
-          <p className="text-sm text-gray-400 mt-2 leading-relaxed">
-            粘贴文本或上传文件，AI 自动识别结构，生成可编辑的排版简历
-          </p>
-        </div>
-
-        {/* Mode switcher — minimal, left-aligned */}
-        <div className="flex gap-1 border-b border-gray-100">
-          {(['text', 'file'] as const).map((m) => (
-            <button
-              key={m}
-              type="button"
-              onClick={() => { setMode(m); setFileError(null); }}
-              className={cn(
-                'pb-2.5 px-1 mr-4 text-sm font-medium border-b-2 -mb-px transition-colors',
-                mode === m
-                  ? 'border-violet-600 text-violet-600'
-                  : 'border-transparent text-gray-400 hover:text-gray-600',
-              )}
-            >
-              {m === 'text' ? '文本粘贴' : '文件上传'}
-            </button>
-          ))}
-        </div>
-
-        {/* ── TEXT MODE ── */}
-        <AnimatePresence mode="wait">
-          {mode === 'text' && (
-            <motion.div
-              key="text"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.18 }}
-              className="flex flex-col gap-5"
-            >
-              {/* Source badges */}
-              <div className="flex flex-wrap gap-2 items-center">
-                <span className="text-xs text-gray-300">来源：</span>
-                {PLATFORM_BADGES.map((label) => (
-                  <span key={label} className="text-xs text-gray-500 bg-white border border-gray-200 px-2.5 py-1 rounded-full">
-                    {label}
-                  </span>
-                ))}
-              </div>
-
-              {/* Textarea */}
-              <div className="relative">
-                <textarea
-                  ref={textareaRef}
-                  value={rawText}
-                  onChange={(e) => setRawText(e.target.value)}
-                  placeholder="在此粘贴来自豆包、ChatGPT 等 AI 生成的简历文本..."
-                  className="w-full h-64 resize-none rounded-2xl border border-gray-200 bg-white px-4 py-4 text-sm text-gray-700 placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-400 transition-all leading-relaxed"
-                />
-                {isTextValid && (
-                  <div className="absolute bottom-3 right-3 flex items-center gap-1 text-xs text-emerald-500">
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    就绪
-                  </div>
-                )}
-              </div>
-
-              {!isTextValid && rawText.length > 0 && (
-                <p className="text-xs text-amber-500 -mt-3">至少需要 {MIN_TEXT_LENGTH} 个字符</p>
-              )}
-
-              {/* Value props — compact horizontal */}
-              <div className="grid grid-cols-3 gap-2">
-                {[
-                  { label: '专业排版', sub: '多套模板可选' },
-                  { label: '支持头像', sub: '裁剪上传' },
-                  { label: 'PDF 导出', sub: '免费使用' },
-                ].map((item) => (
-                  <div key={item.label} className="bg-white rounded-xl border border-gray-100 px-3 py-2.5">
-                    <p className="text-xs font-semibold text-gray-700">{item.label}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">{item.sub}</p>
-                  </div>
-                ))}
-              </div>
-
-              {/* CTA */}
-              <div className="flex flex-col items-stretch gap-3">
+          {/* ── LEFT: Action panel (主操作区) ── */}
+          <div className="flex-1 min-w-0 bg-white rounded-3xl p-6 lg:p-8 shadow-sm border border-violet-100/60">
+            {/* Mode switcher */}
+            <div className="flex gap-1 border-b border-gray-200 mb-6">
+              {(['text', 'file'] as const).map((m) => (
                 <button
+                  key={m}
                   type="button"
-                  onClick={handleImport}
-                  disabled={!isTextValid || isLimitReached}
+                  onClick={() => { setMode(m); setFileError(null); }}
                   className={cn(
-                    'w-full py-3.5 rounded-2xl text-sm font-semibold flex items-center justify-center gap-2 transition-all',
-                    isTextValid && !isLimitReached
-                      ? 'bg-violet-600 hover:bg-violet-700 text-white shadow-md shadow-violet-200 hover:shadow-lg hover:shadow-violet-200 active:scale-[0.99]'
-                      : 'bg-gray-100 text-gray-300 cursor-not-allowed',
+                    'pb-3 px-1 mr-5 text-sm font-medium border-b-2 -mb-px transition-colors',
+                    mode === m
+                      ? 'border-violet-600 text-violet-700'
+                      : 'border-transparent text-gray-400 hover:text-gray-600',
                   )}
                 >
-                  <Sparkles className="w-4 h-4" />
-                  AI 解析并生成简历
+                  {m === 'text' ? '文本粘贴' : '文件上传'}
                 </button>
-                <QuotaNote remaining={importQuota.remaining} limit={importQuota.limit} isLimitReached={isLimitReached} onUpgrade={() => setShowUpgrade(true)} />
-              </div>
-            </motion.div>
-          )}
+              ))}
+            </div>
 
-          {/* ── FILE MODE ── */}
-          {mode === 'file' && (
-            <motion.div
-              key="file"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.18 }}
-              className="flex flex-col gap-5"
-            >
-              {/* Drop zone */}
-              <div
-                onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-                onDragLeave={() => setIsDragging(false)}
-                onDrop={handleDrop}
-                onClick={() => !selectedFile && fileInputRef.current?.click()}
-                className={cn(
-                  'relative rounded-2xl border-2 border-dashed transition-all overflow-hidden',
-                  selectedFile
-                    ? 'border-violet-200 bg-violet-50/50 cursor-default p-5'
-                    : isDragging
-                      ? 'border-violet-400 bg-violet-50 cursor-copy p-10'
-                      : 'border-gray-200 bg-white hover:border-violet-300 hover:bg-gray-50/80 cursor-pointer p-10',
-                )}
-              >
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept={ALLOWED_FILE_TYPES}
-                  className="hidden"
-                  onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFileSelect(f); }}
-                />
+            <AnimatePresence mode="wait">
+              {/* ── TEXT MODE ── */}
+              {mode === 'text' && (
+                <motion.div
+                  key="text"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.18 }}
+                  className="flex flex-col gap-5"
+                >
+                  <div className="relative">
+                    <textarea
+                      ref={textareaRef}
+                      value={rawText}
+                      onChange={(e) => setRawText(e.target.value)}
+                      placeholder="在此粘贴来自豆包、ChatGPT 等 AI 生成的简历文本..."
+                      className="w-full h-72 lg:h-80 resize-none rounded-2xl border border-violet-100 bg-violet-50/30 px-5 py-4 text-sm text-gray-700 placeholder:text-violet-300/60 focus:outline-none focus:ring-2 focus:ring-violet-500/25 focus:border-violet-400 focus:bg-white transition-all leading-relaxed"
+                    />
+                    {isTextValid && (
+                      <div className="absolute bottom-3 right-4 flex items-center gap-1 text-xs text-emerald-500">
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        就绪
+                      </div>
+                    )}
+                  </div>
 
-                {selectedFile ? (
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-violet-100 flex items-center justify-center shrink-0">
-                      <FileText className="w-5 h-5 text-violet-600" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-gray-800 truncate">{selectedFile.name}</p>
-                      <p className="text-xs text-gray-400 mt-0.5">{(selectedFile.size / 1024).toFixed(0)} KB</p>
-                    </div>
+                  {!isTextValid && rawText.length > 0 && (
+                    <p className="text-xs text-amber-500 -mt-3">至少需要 {MIN_TEXT_LENGTH} 个字符</p>
+                  )}
+
+                  <div className="flex flex-col gap-3">
                     <button
                       type="button"
-                      onClick={(e) => { e.stopPropagation(); setSelectedFile(null); setFileError(null); }}
-                      className="w-7 h-7 rounded-lg hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors shrink-0"
+                      onClick={handleImport}
+                      disabled={!isTextValid || isLimitReached}
+                      className={cn(
+                        'w-full py-3.5 rounded-2xl text-sm font-semibold flex items-center justify-center gap-2 transition-all',
+                        isTextValid && !isLimitReached
+                          ? 'bg-violet-600 hover:bg-violet-700 text-white shadow-md shadow-violet-200 hover:shadow-lg hover:shadow-violet-200 active:scale-[0.99]'
+                          : 'bg-gray-100 text-gray-300 cursor-not-allowed',
+                      )}
                     >
-                      <X className="w-4 h-4" />
+                      <Sparkles className="w-4 h-4" />
+                      AI 解析并生成简历
                     </button>
+                    <QuotaNote remaining={importQuota.remaining} limit={importQuota.limit} isLimitReached={isLimitReached} onUpgrade={() => setShowUpgrade(true)} />
                   </div>
-                ) : (
-                  <div className="flex flex-col items-center gap-3 text-center">
-                    <div className={cn(
-                      'w-12 h-12 rounded-2xl flex items-center justify-center transition-colors',
-                      isDragging ? 'bg-violet-100' : 'bg-gray-100',
-                    )}>
-                      <Upload className={cn('w-6 h-6 transition-colors', isDragging ? 'text-violet-600' : 'text-gray-400')} />
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-gray-700">
-                        {isDragging ? '松开以上传' : '拖拽文件或点击选择'}
-                      </p>
-                      <p className="text-xs text-gray-400 mt-1">Word / PDF / 图片 · 最大 {MAX_FILE_SIZE_MB}MB</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* File parsing steps */}
-              {!selectedFile && (
-                <div className="flex items-center justify-center gap-3 text-xs text-gray-400">
-                  {['上传文件', 'AI 提取文本', '生成简历'].map((step, i) => (
-                    <React.Fragment key={step}>
-                      <span className="bg-white border border-gray-200 rounded-full px-2.5 py-1">{step}</span>
-                      {i < 2 && <ArrowRight className="w-3 h-3 text-gray-300 shrink-0" />}
-                    </React.Fragment>
-                  ))}
-                </div>
-              )}
-
-              {fileError && (
-                <motion.div
-                  initial={{ opacity: 0, y: -4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="flex items-center gap-2 text-red-600 text-xs bg-red-50 border border-red-100 rounded-xl px-4 py-3"
-                >
-                  <AlertCircle className="w-4 h-4 shrink-0" />
-                  {fileError}
                 </motion.div>
               )}
 
-              {/* CTA */}
-              <div className="flex flex-col items-stretch gap-3">
-                <button
-                  type="button"
-                  onClick={handleFileImport}
-                  disabled={!canSubmitFile}
-                  className={cn(
-                    'w-full py-3.5 rounded-2xl text-sm font-semibold flex items-center justify-center gap-2 transition-all',
-                    canSubmitFile
-                      ? 'bg-violet-600 hover:bg-violet-700 text-white shadow-md shadow-violet-200 hover:shadow-lg hover:shadow-violet-200 active:scale-[0.99]'
-                      : 'bg-gray-100 text-gray-300 cursor-not-allowed',
-                  )}
+              {/* ── FILE MODE ── */}
+              {mode === 'file' && (
+                <motion.div
+                  key="file"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.18 }}
+                  className="flex flex-col gap-5"
                 >
-                  {isFileImporting ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      正在解析文件…
-                    </>
-                  ) : (
-                    <>
-                      <FileUp className="w-4 h-4" />
-                      {selectedFile ? 'AI 解析并生成简历' : '选择文件后开始解析'}
-                    </>
+                  <div
+                    onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                    onDragLeave={() => setIsDragging(false)}
+                    onDrop={handleDrop}
+                    onClick={() => !selectedFile && fileInputRef.current?.click()}
+                    className={cn(
+                      'relative rounded-2xl border-2 border-dashed transition-all overflow-hidden',
+                      selectedFile
+                        ? 'border-violet-200 bg-violet-50/50 cursor-default p-5'
+                        : isDragging
+                          ? 'border-violet-400 bg-violet-50 cursor-copy p-14'
+                          : 'border-gray-200 bg-white hover:border-violet-300 hover:bg-gray-50/50 cursor-pointer p-14',
+                    )}
+                  >
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept={ALLOWED_FILE_TYPES}
+                      className="hidden"
+                      onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFileSelect(f); }}
+                    />
+                    {selectedFile ? (
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-violet-100 flex items-center justify-center shrink-0">
+                          <FileText className="w-5 h-5 text-violet-600" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-gray-800 truncate">{selectedFile.name}</p>
+                          <p className="text-xs text-gray-400 mt-0.5">{(selectedFile.size / 1024).toFixed(0)} KB</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); setSelectedFile(null); setFileError(null); }}
+                          className="w-7 h-7 rounded-lg hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors shrink-0"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center gap-3 text-center">
+                        <div className={cn(
+                          'w-12 h-12 rounded-2xl flex items-center justify-center transition-colors',
+                          isDragging ? 'bg-violet-100' : 'bg-gray-100',
+                        )}>
+                          <Upload className={cn('w-6 h-6 transition-colors', isDragging ? 'text-violet-600' : 'text-gray-400')} />
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-gray-700">
+                            {isDragging ? '松开以上传' : '拖拽文件或点击选择'}
+                          </p>
+                          <p className="text-xs text-gray-400 mt-1">Word / PDF / 图片 · 最大 {MAX_FILE_SIZE_MB}MB</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {!selectedFile && (
+                    <div className="flex items-center justify-center gap-3 text-xs text-gray-400">
+                      {['上传文件', 'AI 提取文本', '生成简历'].map((step, i) => (
+                        <React.Fragment key={step}>
+                          <span className="bg-white border border-gray-200 rounded-full px-2.5 py-1">{step}</span>
+                          {i < 2 && <ArrowRight className="w-3 h-3 text-gray-300 shrink-0" />}
+                        </React.Fragment>
+                      ))}
+                    </div>
                   )}
-                </button>
-                <QuotaNote remaining={importQuota.remaining} limit={importQuota.limit} isLimitReached={isLimitReached} onUpgrade={() => setShowUpgrade(true)} />
+
+                  {fileError && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="flex items-center gap-2 text-red-600 text-xs bg-red-50 border border-red-100 rounded-xl px-4 py-3"
+                    >
+                      <AlertCircle className="w-4 h-4 shrink-0" />
+                      {fileError}
+                    </motion.div>
+                  )}
+
+                  <div className="flex flex-col gap-3">
+                    <button
+                      type="button"
+                      onClick={handleFileImport}
+                      disabled={!canSubmitFile}
+                      className={cn(
+                        'w-full py-3.5 rounded-2xl text-sm font-semibold flex items-center justify-center gap-2 transition-all',
+                        canSubmitFile
+                          ? 'bg-violet-600 hover:bg-violet-700 text-white shadow-md shadow-violet-200 hover:shadow-lg hover:shadow-violet-200 active:scale-[0.99]'
+                          : 'bg-gray-100 text-gray-300 cursor-not-allowed',
+                      )}
+                    >
+                      {isFileImporting ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          正在解析文件…
+                        </>
+                      ) : (
+                        <>
+                          <FileUp className="w-4 h-4" />
+                          {selectedFile ? 'AI 解析并生成简历' : '选择文件后开始解析'}
+                        </>
+                      )}
+                    </button>
+                    <QuotaNote remaining={importQuota.remaining} limit={importQuota.limit} isLimitReached={isLimitReached} onUpgrade={() => setShowUpgrade(true)} />
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* ── RIGHT: Sticky info / explanation panel ── */}
+          <div className="lg:w-[280px] lg:shrink-0 hidden lg:block">
+            <div className="sticky top-20 flex flex-col gap-6 bg-gradient-to-b from-violet-50/80 to-transparent rounded-3xl px-6 py-8">
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-6 h-6 rounded-lg bg-violet-600 flex items-center justify-center">
+                    <Zap className="w-3.5 h-3.5 text-white" />
+                  </div>
+                  <span className="text-xs font-semibold text-violet-700 bg-violet-100 px-2 py-0.5 rounded-full">AI 导入</span>
+                </div>
+                <h2 className="text-lg font-bold text-gray-900 leading-snug">
+                  把简历内容<br />变成专业排版
+                </h2>
+                <p className="text-xs text-violet-900/40 mt-2 leading-relaxed">
+                  粘贴文本或上传文件，AI 自动识别结构，生成可拖拽编辑的专业简历。
+                </p>
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+
+              <div className="flex flex-col gap-3">
+                {[
+                  { label: '专业排版模板', sub: '多套风格，一键切换', color: 'bg-violet-500' },
+                  { label: 'AI 智能解析', sub: '自动识别姓名、经历、技能', color: 'bg-fuchsia-500' },
+                  { label: 'PDF 免费导出', sub: '高清打印，即拿即用', color: 'bg-violet-400' },
+                  { label: '支持头像上传', sub: '裁剪调整，形象专业', color: 'bg-fuchsia-400' },
+                ].map((f) => (
+                  <div key={f.label} className="flex items-start gap-2.5">
+                    <span className={`w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 ${f.color}`} />
+                    <div>
+                      <p className="text-xs font-semibold text-gray-800">{f.label}</p>
+                      <p className="text-[11px] text-violet-900/40 mt-0.5">{f.sub}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div>
+                <p className="text-[11px] text-violet-400 mb-2 font-medium">支持来源</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {PLATFORM_BADGES.map((label) => (
+                    <span key={label} className="text-[11px] text-violet-700 bg-violet-50 border border-violet-100 px-2 py-0.5 rounded-full">
+                      {label}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
       </div>
 
       <VipUpgradeDialog open={showUpgrade} onOpenChange={setShowUpgrade} />
@@ -542,9 +552,9 @@ function ImportGenerationPage({
   }, [isGenerating, onStop]);
 
   return (
-    <div className="min-h-screen bg-[#F8F9FC] flex flex-col">
+    <div className="min-h-screen bg-[#F7F6FB] flex flex-col">
       <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-xl border-b border-gray-100/80">
-        <div className="max-w-2xl mx-auto px-5 h-13 flex items-center gap-3">
+        <div className="max-w-6xl mx-auto px-6 h-13 flex items-center gap-3">
           <button type="button" onClick={onBack} className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-violet-600 transition-colors">
             <ChevronLeft className="w-4 h-4" />
             返回
@@ -571,7 +581,7 @@ function ImportGenerationPage({
         onScroll={handleScroll}
         className="flex-1 overflow-y-auto pb-28"
       >
-        <div className="max-w-2xl mx-auto px-5 py-8">
+        <div className="max-w-3xl mx-auto px-6 py-8">
           <AnimatePresence mode="wait">
             {hasSections ? (
               <motion.div key="content" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-5">
