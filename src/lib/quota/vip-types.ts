@@ -12,6 +12,7 @@ export interface VipQuotaStatus {
   readonly aiImportSection: VipFeatureQuota;
   readonly aiGenerateSection: VipFeatureQuota;
   readonly aiPolishSection: VipFeatureQuota;
+  readonly aiOptimizeResume: VipFeatureQuota;
   readonly pdfExport: VipFeatureQuota;
 }
 

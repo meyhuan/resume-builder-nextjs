@@ -11,13 +11,15 @@
 /** Default quota limits for non-VIP users (number per day) */
 export const DEFAULT_QUOTA_LIMITS = {
   /** AI: Generate complete resume from scratch */
-  aiGenerateResume: 1,
+  aiGenerateResume: 3,
   /** AI: Import and optimize resume sections */
-  aiImportSection: 1,
+  aiImportSection: 3,
   /** AI: Generate additional content for existing sections */
-  aiGenerateSection: 1,
+  aiGenerateSection: 5,
   /** AI: Polish and refine text content */
-  aiPolishSection: 1,
+  aiPolishSection: 5,
+  /** AI: One-click optimize entire resume */
+  aiOptimizeResume: 2,
   /** PDF export limit */
   pdfExport: 1,
 } as const;

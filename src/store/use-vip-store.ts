@@ -23,6 +23,7 @@ const EMPTY_QUOTA: VipQuotaStatus = {
   aiImportSection: { allowed: false, remaining: 0, isVip: false, limit: DEFAULT_QUOTA_LIMITS.aiImportSection },
   aiGenerateSection: { allowed: false, remaining: 0, isVip: false, limit: DEFAULT_QUOTA_LIMITS.aiGenerateSection },
   aiPolishSection: { allowed: false, remaining: 0, isVip: false, limit: DEFAULT_QUOTA_LIMITS.aiPolishSection },
+  aiOptimizeResume: { allowed: false, remaining: 0, isVip: false, limit: DEFAULT_QUOTA_LIMITS.aiOptimizeResume },
   pdfExport: { allowed: false, remaining: 0, isVip: false, limit: DEFAULT_QUOTA_LIMITS.pdfExport },
 };
 
@@ -58,6 +59,7 @@ export const useVipStore = create<VipStoreState>()((set, get) => ({
           aiImportSection: data.aiImportSection || EMPTY_QUOTA.aiImportSection,
           aiGenerateSection: data.aiGenerateSection || EMPTY_QUOTA.aiGenerateSection,
           aiPolishSection: data.aiPolishSection || EMPTY_QUOTA.aiPolishSection,
+          aiOptimizeResume: data.aiOptimizeResume || EMPTY_QUOTA.aiOptimizeResume,
           pdfExport: data.pdfExport || EMPTY_QUOTA.pdfExport,
         };
       })();

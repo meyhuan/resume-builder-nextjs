@@ -44,6 +44,11 @@ export const AI_FEATURE_QUOTAS: Record<string, FeatureQuota> = {
     displayName: 'AI 润色文本',
     description: '优化语言表达，提升专业性',
   },
+  'ai:optimize-resume': {
+    nonVipLimit: DEFAULT_QUOTA_LIMITS.aiOptimizeResume,
+    displayName: 'AI 一键优化简历',
+    description: '结合岗位JD一键优化全部简历内容',
+  },
 } as const;
 
 /** Export-related quotas */

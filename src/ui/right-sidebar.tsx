@@ -15,6 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import { Layout, Upload, Database, X } from 'lucide-react'
 import SectionManager from '@/ui/section-manager'
+import AiOptimizePanel from '@/ui/ai-optimize-panel'
 import Image from 'next/image'
 
 export interface RightSidebarProps {
@@ -35,10 +36,10 @@ export interface RightSidebarProps {
 const PANEL_TITLES: Record<PanelId, string> = {
   sections: '模块管理',
   layout: '排版美化',
-  examples: '参考案例',
-  photo: '证件照',
-  analysis: '智能分析',
   ai: 'AI一键优化',
+  // examples: '参考案例',
+  // photo: '证件照',
+  // analysis: '智能分析',
 }
 
 export default function RightSidebar(props: RightSidebarProps): ReactElement {
@@ -78,22 +79,14 @@ export default function RightSidebar(props: RightSidebarProps): ReactElement {
           onImportJson={props.onImportJson}
         />
       )}
-      {activePanel === 'examples' && <PlaceholderPanel text="参考案例功能即将上线" />}
-      {activePanel === 'photo' && <PlaceholderPanel text="证件照功能即将上线" />}
-      {activePanel === 'analysis' && <PlaceholderPanel text="智能分析功能即将上线" />}
-      {activePanel === 'ai' && <PlaceholderPanel text="AI一键优化功能即将上线" />}
+      {activePanel === 'ai' && <AiOptimizePanel />}
+      {/* {activePanel === 'examples' && <PlaceholderPanel text="参考案例功能即将上线" />} */}
+      {/* {activePanel === 'photo' && <PlaceholderPanel text="证件照功能即将上线" />} */}
+      {/* {activePanel === 'analysis' && <PlaceholderPanel text="智能分析功能即将上线" />} */}
     </div>
   )
 }
 
-/** Placeholder for panels not yet implemented. */
-function PlaceholderPanel(props: { readonly text: string }): ReactElement {
-  return (
-    <div className="flex-1 flex items-center justify-center p-8">
-      <p className="text-sm text-slate-400">{props.text}</p>
-    </div>
-  )
-}
 
 /** 排版美化 panel — contains template grid + theme settings as sub-tabs. */
 interface LayoutPanelProps {
