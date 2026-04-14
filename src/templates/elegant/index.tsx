@@ -183,13 +183,6 @@ function ElegantHeader(props: {
               <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center gap-1.5 print:hidden">
                 <button
                   type="button"
-                  className="px-3 py-1 text-xs font-bold text-white bg-blue-500 rounded hover:bg-blue-600 transition-colors"
-                  onClick={(e) => { e.stopPropagation(); setShowModal(true) }}
-                >
-                  在线制作
-                </button>
-                <button
-                  type="button"
                   className="px-3 py-1 text-xs font-bold text-white border border-white/80 rounded hover:bg-white/20 transition-colors"
                   onClick={(e) => { e.stopPropagation(); handleLocalUpload() }}
                 >
