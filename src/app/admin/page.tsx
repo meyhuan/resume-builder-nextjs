@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Crown, Search, RotateCcw, User, CheckCircle, AlertCircle, LogIn, Shield } from 'lucide-react';
+import { Crown, Search, RotateCcw, User, CheckCircle, AlertCircle, LogIn, Shield, Copy, FileText, ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const JAVA_API = process.env.NEXT_PUBLIC_JAVA_API_BASE_URL || 'https://aijianli.cn/api';
@@ -14,6 +14,13 @@ interface UserInfo {
   vipType: number;
   vipExpireTime: string | null;
   freeExportCount?: number;
+}
+
+interface ResumeItem {
+  id: string;
+  title: string;
+  template: string;
+  updatedAt: string;
 }
 
 interface VipFormData {
@@ -42,6 +49,12 @@ export default function AdminPage(): React.ReactElement {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [showVipForm, setShowVipForm] = useState(false);
+  const [showCopySection, setShowCopySection] = useState(false);
+  const [myResumes, setMyResumes] = useState<ResumeItem[]>([]);
+  const [selectedResumeId, setSelectedResumeId] = useState('');
+  const [targetUserId, setTargetUserId] = useState('');
+  const [copyLoading, setCopyLoading] = useState(false);
+  const [copyMessage, setCopyMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [vipForm, setVipForm] = useState<VipFormData>({
     vipType: 1,
     expiryDate: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 16),
@@ -128,6 +141,53 @@ export default function AdminPage(): React.ReactElement {
     }
   }
 
+  async function loadMyResumes(): Promise<void> {
+    setShowCopySection((v) => {
+      if (!v) fetchMyResumes();
+      return !v;
+    });
+  }
+
+  async function fetchMyResumes(): Promise<void> {
+    try {
+      const res = await fetch('/next-api/resumes');
+      const json = await res.json();
+      if (Array.isArray(json)) {
+        setMyResumes(json);
+        if (json.length > 0) setSelectedResumeId(json[0].id);
+      }
+    } catch {
+      setCopyMessage({ type: 'error', text: '加载简历列表失败' });
+    }
+  }
+
+  async function copyResume(): Promise<void> {
+    if (!selectedResumeId || !targetUserId.trim()) {
+      setCopyMessage({ type: 'error', text: '请选择简历并填写目标用户 ID' });
+      return;
+    }
+    setCopyLoading(true);
+    setCopyMessage(null);
+    try {
+      const res = await fetch('/next-api/admin/copy-resume', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adminPassword: password, resumeId: selectedResumeId, targetUserId: targetUserId.trim() }),
+      });
+      const json = await res.json();
+      if (!res.ok || json.error) {
+        setCopyMessage({ type: 'error', text: json.error || '复制失败' });
+        return;
+      }
+      setCopyMessage({ type: 'success', text: `简历已成功复制到用户 ${json.targetUserId}，新简历 ID: ${json.resumeId}` });
+      setTargetUserId('');
+    } catch (err) {
+      setCopyMessage({ type: 'error', text: '复制失败: ' + (err instanceof Error ? err.message : '未知错误') });
+    } finally {
+      setCopyLoading(false);
+    }
+  }
+
   async function resetVip(): Promise<void> {
     if (!user) return;
     setLoading(true);
@@ -200,7 +260,7 @@ export default function AdminPage(): React.ReactElement {
         <div className="mb-8 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Crown className="w-5 h-5 text-amber-500" />
-            <span className="font-bold text-slate-700 text-lg">VIP 管理后台</span>
+            <span className="font-bold text-slate-700 text-lg">管理后台</span>
           </div>
           <button onClick={() => { setAuthed(false); setUser(null); setMessage(null); }} className="text-sm text-slate-400 hover:text-slate-600">
             退出登录
@@ -361,6 +421,88 @@ export default function AdminPage(): React.ReactElement {
             )}
           </div>
         )}
+
+        {/* Resume Copy Section */}
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 mb-6 overflow-hidden">
+          <button
+            onClick={loadMyResumes}
+            className="w-full flex items-center justify-between px-6 py-4 hover:bg-slate-50 transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <Copy className="w-5 h-5 text-violet-500" />
+              <span className="font-semibold text-slate-700">简历同步 · 复制到他人账号</span>
+            </div>
+            {showCopySection ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
+          </button>
+
+          {showCopySection && (
+            <div className="px-6 pb-6 space-y-4 border-t border-slate-100 pt-4">
+              {copyMessage && (
+                <div className={`p-3 rounded-xl flex items-start gap-2 text-sm ${
+                  copyMessage.type === 'success' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'
+                }`}>
+                  {copyMessage.type === 'success' ? <CheckCircle className="w-4 h-4 shrink-0 mt-0.5" /> : <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />}
+                  <span className="break-all">{copyMessage.text}</span>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-xs text-slate-500 mb-1.5">选择要复制的简历（当前账号）</label>
+                {myResumes.length === 0 ? (
+                  <p className="text-sm text-slate-400 py-2">暂无简历</p>
+                ) : (
+                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                    {myResumes.map((r) => (
+                      <label
+                        key={r.id}
+                        className={cn(
+                          'flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all',
+                          selectedResumeId === r.id
+                            ? 'border-violet-400 bg-violet-50'
+                            : 'border-slate-200 hover:border-slate-300',
+                        )}
+                      >
+                        <input
+                          type="radio"
+                          name="resume"
+                          value={r.id}
+                          checked={selectedResumeId === r.id}
+                          onChange={() => setSelectedResumeId(r.id)}
+                          className="accent-violet-600"
+                        />
+                        <FileText className="w-4 h-4 text-slate-400 shrink-0" />
+                        <div className="min-w-0">
+                          <p className="font-medium text-slate-700 text-sm truncate">{r.title}</p>
+                          <p className="text-xs text-slate-400">{r.template} · {new Date(r.updatedAt).toLocaleString('zh-CN')}</p>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-xs text-slate-500 mb-1.5">目标用户 ID（wxId 或数据库 ID）</label>
+                <input
+                  type="text"
+                  value={targetUserId}
+                  onChange={(e) => setTargetUserId(e.target.value)}
+                  placeholder="输入对方的 wxId 或 User ID"
+                  className="w-full px-3 py-2.5 border border-slate-200 rounded-xl bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+                />
+              </div>
+
+              <button
+                onClick={copyResume}
+                disabled={copyLoading || !selectedResumeId || !targetUserId.trim()}
+                className="w-full py-2.5 bg-violet-600 hover:bg-violet-700 text-white font-medium rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                <Copy className="w-4 h-4" />
+                {copyLoading ? '复制中...' : '确认复制到该用户'}
+              </button>
+            </div>
+          )}
+        </div>
 
         {!user && !loading && !message && (
           <div className="text-center py-12 text-slate-400">

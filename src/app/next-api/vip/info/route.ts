@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import { prisma } from '@/lib/prisma';
 
 const JAVA_API_BASE = process.env.JAVA_API_BASE_URL || 'https://aijianli.cn/api';
 
@@ -25,6 +26,15 @@ export async function GET(): Promise<NextResponse> {
       return NextResponse.json({ error: 'Backend error' }, { status: response.status });
     }
     const data = await response.json();
+
+    // Backfill javaUserId into Prisma User (fire-and-forget)
+    const javaUserId: number | undefined = data?.data?.userId;
+    if (javaUserId) {
+      prisma.user.updateMany({
+        where: { wxId: cvUserId },
+        data: { javaUserId: String(javaUserId) },
+      }).catch(() => undefined);
+    }
 
     // Fetch web-specific pricing plans
     try {

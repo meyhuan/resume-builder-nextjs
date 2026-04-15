@@ -10,9 +10,10 @@ export async function syncUserAction(userData: {
   name?: string;
   avatar?: string;
   email?: string;
+  javaUserId?: string;
 }) {
   try {
-    const { wxId, name, avatar, email } = userData;
+    const { wxId, name, avatar, email, javaUserId } = userData;
 
     if (!wxId) {
       return { success: false, error: 'wxId is required' };
@@ -24,12 +25,14 @@ export async function syncUserAction(userData: {
         name: name || undefined,
         avatar: avatar || undefined,
         email: email || undefined,
+        javaUserId: javaUserId || undefined,
       },
       create: {
         wxId,
         name: name || `用户_${wxId}`,
         avatar,
         email,
+        javaUserId,
       },
     });
 

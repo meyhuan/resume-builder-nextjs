@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Crown, ArrowLeft, LogOut, Copy, Check, X, Sparkles, Shield, FileText, Zap } from 'lucide-react';
+import { Crown, ArrowLeft, LogOut, Copy, Check, X, Sparkles, Shield, FileText, Zap, Trash2, AlertTriangle } from 'lucide-react';
 import { useAuthStore } from '@/store/use-auth-store';
 import { useVipCheck } from '@/hooks/use-vip-check';
 import VipUpgradeDialog from '@/components/vip/vip-upgrade-dialog';
@@ -53,6 +53,9 @@ export default function MembershipPage(): React.ReactElement {
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [javaUserId, setJavaUserId] = useState<number | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => { fetchVipInfo(); }, []);
 
@@ -67,6 +70,20 @@ export default function MembershipPage(): React.ReactElement {
   function openUpgrade(): void {
     setHidePlanOptions(false);
     setShowUpgrade(true);
+  }
+
+  async function deleteAccount(): Promise<void> {
+    setDeleteLoading(true);
+    setDeleteError(null);
+    try {
+      const res = await fetch('/next-api/auth/delete-account', { method: 'DELETE' });
+      if (!res.ok) throw new Error('请求失败');
+      logout();
+      router.push('/');
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : '注销失败，请稍后重试');
+      setDeleteLoading(false);
+    }
   }
 
   async function fetchVipInfo(): Promise<void> {
@@ -345,14 +362,59 @@ export default function MembershipPage(): React.ReactElement {
             <div className="flex items-center gap-5 px-1 py-3">
               <Link href="/privacy" className="text-xs text-slate-400 hover:text-slate-600 transition-colors">隐私政策</Link>
               <Link href="/terms" className="text-xs text-slate-400 hover:text-slate-600 transition-colors">服务条款</Link>
-              <button
-                onClick={() => { logout(); router.push('/'); }}
-                className="flex items-center gap-1 text-xs text-rose-400 hover:text-rose-600 transition-colors ml-auto"
-              >
-                <LogOut className="w-3 h-3" />
-                退出登录
-              </button>
+              <div className="ml-auto flex items-center gap-4">
+                <button
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="flex items-center gap-1 text-xs text-slate-400 hover:text-rose-500 transition-colors"
+                >
+                  <Trash2 className="w-3 h-3" />
+                  注销账号
+                </button>
+                <button
+                  onClick={() => { logout(); router.push('/'); }}
+                  className="flex items-center gap-1 text-xs text-rose-400 hover:text-rose-600 transition-colors"
+                >
+                  <LogOut className="w-3 h-3" />
+                  退出登录
+                </button>
+              </div>
             </div>
+
+            {/* ══ DELETE ACCOUNT CONFIRM DIALOG ══ */}
+            {showDeleteConfirm && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+                <div className="bg-white rounded-3xl p-8 shadow-2xl w-full max-w-sm">
+                  <div className="flex flex-col items-center text-center">
+                    <div className="w-14 h-14 rounded-full bg-rose-100 flex items-center justify-center mb-4">
+                      <AlertTriangle className="w-7 h-7 text-rose-500" />
+                    </div>
+                    <h3 className="text-lg font-bold text-slate-800 mb-2">确认注销账号？</h3>
+                    <p className="text-sm text-slate-500 leading-relaxed">
+                      注销后，您的账号及所有简历数据将被<span className="text-rose-500 font-semibold">永久删除</span>，无法恢复。
+                    </p>
+                    {deleteError && (
+                      <p className="mt-3 text-xs text-rose-500 bg-rose-50 px-3 py-2 rounded-xl w-full">{deleteError}</p>
+                    )}
+                  </div>
+                  <div className="mt-6 flex flex-col gap-2">
+                    <button
+                      onClick={deleteAccount}
+                      disabled={deleteLoading}
+                      className="w-full py-3 rounded-2xl bg-rose-500 hover:bg-rose-600 text-white text-sm font-bold transition-all disabled:opacity-50"
+                    >
+                      {deleteLoading ? '注销中...' : '确认注销账号'}
+                    </button>
+                    <button
+                      onClick={() => { setShowDeleteConfirm(false); setDeleteError(null); }}
+                      disabled={deleteLoading}
+                      className="w-full py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium transition-all"
+                    >
+                      取消
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
           </div>
         )}

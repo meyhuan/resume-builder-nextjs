@@ -8,16 +8,17 @@ generator client {
 }
 
 model User {
-  id        String     @id @default(cuid())
-  clerkId   String?    @unique
-  wxId      String?    @unique
-  email     String?    @unique
-  name      String?
-  avatar    String?
-  resumes   Resume[]
-  feedbacks Feedback[]
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  id         String     @id @default(cuid())
+  clerkId    String?    @unique
+  wxId       String?    @unique  // Java tb_cvuser.id (auth_uid cookie value)
+  javaUserId String?    @unique  // Java tb_user.id (VIP / payment system)
+  email      String?    @unique
+  name       String?
+  avatar     String?
+  resumes    Resume[]
+  feedbacks  Feedback[]
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
 }
 
 model Resume {

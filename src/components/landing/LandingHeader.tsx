@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { Menu, X, User, LogOut, ChevronDown, FileText, Wand2, FileUp } from 'lucide-react';
 import { WxLoginDialog } from '../auth/WxLoginDialog';
 import { useAuth } from '@/hooks/use-auth';
+import { useRouter } from 'next/navigation';
 
 interface LandingHeaderProps {
   forceSolid?: boolean;
@@ -19,6 +20,7 @@ export const LandingHeader = ({ forceSolid = false }: LandingHeaderProps = {}) =
   const [isLoginOpen, setIsLoginOpen] = useState(false);
 
   const { isLoggedIn, userInfo, logout } = useAuth();
+  const router = useRouter();
 
   useEffect(() => {
     if (forceSolid) return;
@@ -227,7 +229,7 @@ export const LandingHeader = ({ forceSolid = false }: LandingHeaderProps = {}) =
         isOpen={isLoginOpen} 
         onClose={() => setIsLoginOpen(false)} 
         onSuccess={() => {
-          // Additional logic on success if needed
+          router.push('/dashboard');
         }}
       />
     </>
