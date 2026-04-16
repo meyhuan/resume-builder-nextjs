@@ -295,7 +295,7 @@ export default function FeedbackPage() {
       if (attachmentFile) {
         const formData: FormData = new FormData();
         formData.append('file', attachmentFile);
-        const uploadResponse: Response = await fetch('/api/feedback/upload', {
+        const uploadResponse: Response = await fetch('/next-api/feedback/upload', {
           method: 'POST',
           body: formData,
         });

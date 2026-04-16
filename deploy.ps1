@@ -44,11 +44,14 @@ cd $SERVER_DIR
 unzip -o deploy.zip
 rm deploy.zip
 
-# 只安装生产环境依赖 (使用 pnpm)
-pnpm install --prod
+# 安装全部依赖（包含 devDependencies，prisma generate 需要 prisma CLI）
+pnpm install
 
 # 重新生成 prisma client
 pnpm exec prisma generate
+
+# 生成完毕后裁剪 devDependencies，节省磁盘
+pnpm prune --prod
 
 # 重启 PM2 服务 (如果不存在则启动)
 pm2 restart aijianli-nextjs || pm2 start pnpm --name `"aijianli-nextjs`" -- run start
