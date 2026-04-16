@@ -37,30 +37,11 @@ scp deploy.zip ${SERVER_USER}@${SERVER_IP}:${SERVER_DIR}/deploy.zip
 Write-Host "✅ 上传完成！" -ForegroundColor Green
 
 Write-Host "⚙️  开始在服务器上执行部署..." -ForegroundColor Cyan
-# SSH 登录并执行解压、安装依赖、重启服务的操作
-$REMOTE_COMMANDS = @"
-cd $SERVER_DIR
-# 解压覆盖
-unzip -o deploy.zip
-rm deploy.zip
-
-# 安装全部依赖（包含 devDependencies，prisma generate 需要 prisma CLI）
-pnpm install
-
-# 重新生成 prisma client
-pnpm exec prisma generate
-
-# 生成完毕后裁剪 devDependencies，节省磁盘
-pnpm prune --prod
-
-# 重启 PM2 服务 (如果不存在则启动)
-pm2 restart aijianli-nextjs || pm2 start pnpm --name `"aijianli-nextjs`" -- run start
-
-# 保存 PM2 状态
-pm2 save
-"@
-
-ssh ${SERVER_USER}@${SERVER_IP} $REMOTE_COMMANDS
+ssh ${SERVER_USER}@${SERVER_IP} "cd $SERVER_DIR && unzip -o deploy.zip && rm deploy.zip"
+ssh ${SERVER_USER}@${SERVER_IP} "cd $SERVER_DIR && pnpm install"
+ssh ${SERVER_USER}@${SERVER_IP} "cd $SERVER_DIR && pnpm exec prisma generate"
+ssh ${SERVER_USER}@${SERVER_IP} "cd $SERVER_DIR && pnpm prune --production"
+ssh ${SERVER_USER}@${SERVER_IP} "cd $SERVER_DIR && (pm2 restart aijianli-nextjs || pm2 start pnpm --name 'aijianli-nextjs' -- run start) && pm2 save"
 
 Write-Host "🎉 部署脚本执行完毕！" -ForegroundColor Green
 
