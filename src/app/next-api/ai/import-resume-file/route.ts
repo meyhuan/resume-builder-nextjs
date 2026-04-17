@@ -1,8 +1,9 @@
 import { NextRequest } from 'next/server';
 import { Readable } from 'stream';
 import DocmindApi, {
-  SubmitDocStructureJobAdvanceRequest,
-  GetDocStructureResultRequest,
+  SubmitDocParserJobAdvanceRequest,
+  QueryDocParserStatusRequest,
+  GetDocParserResultRequest,
 } from '@alicloud/docmind-api20220711';
 import OpenAI from 'openai';
 import { checkQuota } from '@/lib/quota/quota-checker';
@@ -13,6 +14,7 @@ import { buildImportSystemPrompt, buildImportUserPrompt } from '@/lib/ai/import-
 const POLL_INTERVAL_MS = 3000;
 const MAX_POLL_COUNT = 20;
 const MAX_FILE_SIZE = 8 * 1024 * 1024;
+const LAYOUT_STEP_SIZE = 500;
 
 const ALLOWED_EXTENSIONS = new Set([
   'doc', 'docx', 'pdf', 'jpg', 'jpeg', 'png', 'bmp', 'tif', 'gif',
@@ -42,17 +44,18 @@ async function submitDocmindJob(
   fileName: string,
 ): Promise<string> {
   console.log('[DocMind] submitDocmindJob start, fileName:', fileName, 'bufferSize:', fileBuffer.byteLength);
-  const request = new SubmitDocStructureJobAdvanceRequest({
+  const request = new SubmitDocParserJobAdvanceRequest({
     fileName,
     fileUrlObject: Readable.from(fileBuffer),
+    outputFormat: ['markdown'],
   });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const runtime: any = { connectTimeout: 60000, readTimeout: 60000 };
-  let response: Awaited<ReturnType<typeof client.submitDocStructureJobAdvance>>;
+  let response: Awaited<ReturnType<typeof client.submitDocParserJobAdvance>>;
   try {
-    response = await client.submitDocStructureJobAdvance(request, runtime);
+    response = await client.submitDocParserJobAdvance(request, runtime);
   } catch (sdkErr) {
-    console.error('[DocMind] submitDocStructureJobAdvance threw:', sdkErr);
+    console.error('[DocMind] submitDocParserJobAdvance threw:', sdkErr);
     throw sdkErr;
   }
   console.log('[DocMind] submit response statusCode:', response.statusCode);
@@ -70,36 +73,62 @@ async function submitDocmindJob(
 
 interface DocmindLayout {
   text?: string;
+  markdownContent?: string;
+  type?: string;
 }
 
 async function pollDocmindResult(client: DocmindApi, jobId: string): Promise<string> {
   for (let attempt = 0; attempt < MAX_POLL_COUNT; attempt++) {
     console.log(`[DocMind] poll attempt ${attempt + 1}/${MAX_POLL_COUNT}, jobId:`, jobId);
-    const request = new GetDocStructureResultRequest({ id: jobId });
-    let response: Awaited<ReturnType<typeof client.getDocStructureResult>>;
+    const request = new QueryDocParserStatusRequest({ id: jobId });
+    let response: Awaited<ReturnType<typeof client.queryDocParserStatus>>;
     try {
-      response = await client.getDocStructureResult(request);
+      response = await client.queryDocParserStatus(request);
     } catch (sdkErr) {
-      console.error('[DocMind] getDocStructureResult threw:', sdkErr);
+      console.error('[DocMind] queryDocParserStatus threw:', sdkErr);
       throw sdkErr;
     }
-    const body = response.body;
-    console.log(`[DocMind] poll response statusCode: ${response.statusCode}, completed: ${body?.completed}, status: ${body?.status}`);
+    const status = (response.body?.data?.status ?? '').toLowerCase();
+    console.log(`[DocMind] poll response statusCode: ${response.statusCode}, status: ${status}`);
 
-    if (body?.completed) {
-      const status = (body.status ?? '').toLowerCase();
-      console.log('[DocMind] job finished, status:', status);
-      if (status !== 'success') {
-        console.error('[DocMind] job failed, body:', JSON.stringify(body));
-        throw new Error(body.message || '文档解析失败，请稍后重试');
-      }
-      console.log('[DocMind] data keys:', Object.keys((body.data as object) ?? {}));
-      return extractTextFromLayouts(body.data);
+    if (status === 'fail') {
+      console.error('[DocMind] job failed, body:', JSON.stringify(response.body));
+      throw new Error(response.body?.message || '文档解析失败，请稍后重试');
+    }
+    if (status === 'success') {
+      console.log('[DocMind] job finished successfully, fetching layouts');
+      return fetchAllLayouts(client, jobId);
     }
 
     await new Promise<void>((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
   }
   throw new Error('文档解析超时，请稍后重试');
+}
+
+async function fetchAllLayouts(client: DocmindApi, jobId: string): Promise<string> {
+  let layoutNum = 0;
+  let result = '';
+  while (true) {
+    const request = new GetDocParserResultRequest({
+      id: jobId,
+      layoutNum,
+      layoutStepSize: LAYOUT_STEP_SIZE,
+    });
+    let response: Awaited<ReturnType<typeof client.getDocParserResult>>;
+    try {
+      response = await client.getDocParserResult(request);
+    } catch (sdkErr) {
+      console.error('[DocMind] getDocParserResult threw:', sdkErr);
+      throw sdkErr;
+    }
+    const pageText = extractTextFromLayouts(response.body?.data);
+    result += pageText;
+    const layouts = (response.body?.data as Record<string, unknown> | null)?.layouts;
+    if (!Array.isArray(layouts) || layouts.length < LAYOUT_STEP_SIZE) break;
+    layoutNum += LAYOUT_STEP_SIZE;
+  }
+  console.log('[DocMind] total extracted text length:', result.length);
+  return result;
 }
 
 function extractTextFromLayouts(data: unknown): string {
@@ -111,8 +140,12 @@ function extractTextFromLayouts(data: unknown): string {
   console.log('[DocMind] layouts type:', typeof layouts, 'isArray:', Array.isArray(layouts), 'length:', Array.isArray(layouts) ? layouts.length : 'N/A');
   if (!Array.isArray(layouts)) return '';
   const text = (layouts as DocmindLayout[])
-    .filter((l) => typeof l.text === 'string' && l.text.trim().length > 0)
-    .map((l) => l.text!.trim())
+    .filter((l) => l.type !== 'figure')
+    .map((l) => {
+      const raw = l.markdownContent?.trim() || l.text?.trim() || '';
+      return raw.replace(/!\[[^\]]*\]\([^)]*\)/g, '').trim();
+    })
+    .filter((s) => s.length > 0)
     .join('\n');
   console.log('[DocMind] extracted text length:', text.length);
   return text;
