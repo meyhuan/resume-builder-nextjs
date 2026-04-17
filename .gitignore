@@ -37,3 +37,7 @@ dist
 
 # clerk configuration (can include secrets)
 /.clerk/
+
+# Deploy archives
+deploy.zip
+*.zip
