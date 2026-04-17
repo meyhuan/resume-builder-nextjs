@@ -4,26 +4,19 @@
  * - VIP users: unlimited access
  * - Non-VIP users: limited by daily/total quotas
  *
- * This works alongside the existing rate limiter but adds VIP awareness.
+ * Single-row design: one UserQuota record per user with JSON quotas field.
  */
 
 import { cookies } from 'next/headers';
+import { Prisma } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 import {
   getQuotaLimit,
   getFeatureDisplayName,
-  QUOTA_CLEANUP_INTERVAL_MS,
   type QuotaFeatureKey,
 } from './membership-benefits';
 
 const JAVA_API_BASE = process.env.JAVA_API_BASE_URL || 'https://aijianli.cn/api';
-
-interface QuotaEntry {
-  dateKey: string;
-  used: number;
-}
-
-/** In-memory quota store keyed by userId_feature. */
-const quotaStore = new Map<string, QuotaEntry>();
 
 function getDateKey(timestamp: number): string {
   const date = new Date(timestamp);
@@ -33,17 +26,16 @@ function getDateKey(timestamp: number): string {
   return `${year}-${month}-${day}`;
 }
 
-/** Clean up expired entries periodically. */
-function cleanupQuotas(): void {
-  const todayKey = getDateKey(Date.now());
-  for (const [key, entry] of quotaStore.entries()) {
-    if (entry.dateKey !== todayKey) {
-      quotaStore.delete(key);
-    }
-  }
+/** JSON structure for per-feature quota tracking */
+interface FeatureQuota {
+  used: number;
+  date: string; // '2025-01-15'
 }
 
-setInterval(cleanupQuotas, QUOTA_CLEANUP_INTERVAL_MS);
+/** Quotas JSON structure: key is feature name */
+interface QuotasData {
+  [feature: string]: FeatureQuota;
+}
 
 export interface QuotaCheckResult {
   /** Whether the action is allowed. */
@@ -122,19 +114,44 @@ export async function checkQuota(
   const limit = getQuotaLimit(feature);
   const featureName = getFeatureDisplayName(feature);
 
-  // Use IP-based fallback if no userId
-  const identifier = userId || 'anonymous';
-  const key = `${identifier}_${feature}`;
-  const now = Date.now();
-  const todayKey = getDateKey(now);
-
-  let entry = quotaStore.get(key);
-  if (!entry || entry.dateKey !== todayKey) {
-    entry = { dateKey: todayKey, used: 0 };
-    quotaStore.set(key, entry);
+  // Use IP-based fallback if no userId - still track via in-memory for anonymous
+  if (!userId) {
+    return handleAnonymousQuota(feature, limit, featureName, skipConsume);
   }
 
-  const used = entry.used;
+  const todayKey = getDateKey(Date.now());
+
+  // Find or create user by wxId (Java user ID)
+  let user = await prisma.user.findUnique({
+    where: { wxId: userId },
+  });
+
+  if (!user) {
+    user = await prisma.user.create({
+      data: { wxId: userId },
+    });
+  }
+
+  // Get or create single quota record for this user
+  let quotaRecord = await prisma.userQuota.findUnique({
+    where: { userId: user.id },
+  });
+
+  if (!quotaRecord) {
+    quotaRecord = await prisma.userQuota.create({
+      data: {
+        userId: user.id,
+        quotas: {},
+      },
+    });
+  }
+
+  // Parse quotas JSON
+  const quotas = (quotaRecord.quotas as unknown as QuotasData) || {};
+  const featureQuota = quotas[feature];
+
+  // Check if quota is for today, reset if needed
+  const used = featureQuota?.date === todayKey ? featureQuota.used : 0;
 
   if (used >= limit) {
     return {
@@ -148,17 +165,23 @@ export async function checkQuota(
     };
   }
 
-  // Consume one quota if not peeking
-  if (!skipConsume) {
-    entry.used += 1;
-  }
+  // Calculate new usage
+  const newUsed = skipConsume ? used : used + 1;
+  const remaining = limit - newUsed;
 
-  const remaining = limit - used - (skipConsume ? 0 : 1);
+  // Update quota in database if consuming
+  if (!skipConsume) {
+    quotas[feature] = { used: newUsed, date: todayKey };
+    await prisma.userQuota.update({
+      where: { userId: user.id },
+      data: { quotas: quotas as unknown as Prisma.InputJsonValue, updatedAt: new Date() },
+    });
+  }
 
   return {
     allowed: true,
     isVip: false,
-    used: used + (skipConsume ? 0 : 1),
+    used: newUsed,
     limit,
     remaining: Math.max(0, remaining),
     message: `今日剩余${remaining}次${featureName}（非VIP用户每日${limit}次）`,
@@ -171,6 +194,57 @@ export async function checkQuota(
  */
 export async function peekQuota(feature: QuotaFeatureKey): Promise<QuotaCheckResult> {
   return checkQuota(feature, true);
+}
+
+/** In-memory store for anonymous users only. */
+const anonymousQuotaStore = new Map<string, { dateKey: string; used: number }>();
+
+async function handleAnonymousQuota(
+  feature: QuotaFeatureKey,
+  limit: number,
+  featureName: string,
+  skipConsume: boolean,
+): Promise<QuotaCheckResult> {
+  const now = Date.now();
+  const todayKey = getDateKey(now);
+  const key = `anonymous_${feature}`;
+
+  let entry = anonymousQuotaStore.get(key);
+  if (!entry || entry.dateKey !== todayKey) {
+    entry = { dateKey: todayKey, used: 0 };
+    anonymousQuotaStore.set(key, entry);
+  }
+
+  const used = entry.used;
+
+  if (used >= limit) {
+    return {
+      allowed: false,
+      isVip: false,
+      used,
+      limit,
+      remaining: 0,
+      message: `今日${featureName}次数已达上限（${limit}次/天），登录后可继续使用`,
+      feature,
+    };
+  }
+
+  if (!skipConsume) {
+    entry.used += 1;
+  }
+
+  const currentUsed = skipConsume ? used : used + 1;
+  const remaining = limit - currentUsed;
+
+  return {
+    allowed: true,
+    isVip: false,
+    used: currentUsed,
+    limit,
+    remaining: Math.max(0, remaining),
+    message: `今日剩余${remaining}次${featureName}（非登录用户每日${limit}次）`,
+    feature,
+  };
 }
 
 /**

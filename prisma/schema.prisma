@@ -17,6 +17,7 @@ model User {
   avatar     String?
   resumes    Resume[]
   feedbacks  Feedback[]
+  quotas     UserQuota[]
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @updatedAt
 }
@@ -45,4 +46,11 @@ model Feedback {
   userId      String?  // Optional relation if user is logged in
   user        User?    @relation(fields: [userId], references: [id])
   createdAt   DateTime @default(now())
+}
+
+model UserQuota {
+  userId    String   @id  // References User.id, one row per user
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quotas    Json     @default("{}") // { "ai:generate-resume": { used: 5, date: "2025-01-15" }, ... }
+  updatedAt DateTime @updatedAt
 }
