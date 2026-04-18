@@ -67,7 +67,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
   const [resumeId, setResumeId] = useState<string | undefined>(initialResumeId)
   const { isLoginOpen, requireAuth, handleLoginSuccess, handleLoginClose } = useRequireAuth()
   const { token } = useAuthStore()
-  const { isVip, quota, refreshQuota, requireVip, requirePdf, requireAi, showUpgrade, setShowUpgrade } = useVipCheck()
+  const { isVip, quota, refreshQuota, requirePdf, requireAi, showUpgrade, setShowUpgrade } = useVipCheck()
   
   // Hydration check to prevent SSR mismatch for auth state
   const [isHydrated, setIsHydrated] = useState(false)
@@ -499,14 +499,13 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
 
   // Template switch guard: disable one-page mode before switching
   const handleTplChange = useCallback((next: string): void => {
-    if (!requireVip()) return
     if (onePageMode) {
       resetOnePage()
       setOnePageMode(false)
       toast.info('已切换模板，一页模式已关闭')
     }
     setTpl(next)
-  }, [onePageMode, resetOnePage, requireVip])
+  }, [onePageMode, resetOnePage])
 
   // 获取当前模板组件
   const templateConfig = getTemplate(tpl)
