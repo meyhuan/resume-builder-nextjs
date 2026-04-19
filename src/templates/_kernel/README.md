@@ -60,7 +60,8 @@ That's it. DnD, avatar upload, AI polish/generate, theme tokens, `jobIntentionVi
 | Theme primary color | `theme.primaryColor`, with fallback via `accents.primary` when user sticks to default dark |
 | Avatar visibility | `baseInfo.showAvatar === false` hides avatar across all variants |
 | Job intention visibility | `resume.jobIntentionVisible` toggles the whole block |
-| Job intention placement | `jobIntention.placement`: `'header-row' \| 'body-top' \| 'sidebar' \| 'hidden'` |
+| Job intention placement | `jobIntention.placement`: `'header-row' \| 'body-top' \| 'sidebar' \| 'hidden'` (推荐 `body-top`，与 `simple`/`timeline`/`elegant` 一致) |
+| Job intention look | `jobIntention.styles` 透传给 v2 `JobIntentionSection`（支持 `layout: 'ribbon'` 旗帜样式、字段网格、图标颜色等） |
 | Section reorder (DnD) | Auto (reuses `DragDropProvider` / `TwoColumnDndProvider`) |
 | Cross-column drag (two-column) | Auto — text-only sections can move between sidebar and main |
 | Block add / delete / up / down / AI polish / AI generate | Auto via existing `BlockWrapper` |

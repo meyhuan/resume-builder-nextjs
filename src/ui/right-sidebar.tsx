@@ -215,6 +215,8 @@ function LayoutPanel(props: LayoutPanelProps): ReactElement {
                 onePage={props.onePage}
                 onePageStatus={props.onePageStatus}
                 onOnePageChange={props.onOnePageChange}
+                locksPrimaryColor={templates.find((t) => t.id === tpl)?.locksPrimaryColor}
+                activeTemplateName={templates.find((t) => t.id === tpl)?.name}
               />
             </div>
           </div>

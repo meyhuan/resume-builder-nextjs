@@ -23,6 +23,12 @@ export interface TemplateConfig {
   readonly author?: string
   readonly tags?: string[]
   readonly component: ComponentType<TemplateProps>
+  /**
+   * Flagship templates own a deliberate brand palette that should not be
+   * overridden by the user's chosen primaryColor. When true, the theme panel
+   * will disable the primary-color section for this template and explain why.
+   */
+  readonly locksPrimaryColor?: boolean
 }
 
 /**
@@ -30,6 +36,7 @@ export interface TemplateConfig {
  * 使用动态import，每个模板会被Vite自动分割成独立chunk
  */
 export const TEMPLATE_REGISTRY: Record<string, TemplateConfig> = {
+  // ——— Legacy templates (pre-kernel, kept as the utility baseline) —————
   simple: {
     id: 'simple',
     name: '简约',
@@ -61,6 +68,16 @@ export const TEMPLATE_REGISTRY: Record<string, TemplateConfig> = {
     preview: '/thumbnails/template_timeline.webp',
     tags: ['通用', '时间轴', '经典', '简洁'],
     component: lazy(() => import('@/templates/timeline')),
+  },
+  // ——— Flagship headless templates (each owns a deliberate brand palette) —
+  qingyun: {
+    id: 'qingyun',
+    name: '青云',
+    description: '天青蓝 + 暖橙 · 应届毕业徽章 · 双语时间轴 · 校招应届生首选（Headless）',
+    preview: '/thumbnails/template_qingyun.webp',
+    tags: ['旗舰', '校招', '应届生', '天青蓝', 'Headless'],
+    component: lazy(() => import('@/templates/qingyun')),
+    locksPrimaryColor: true,
   },
 }
 

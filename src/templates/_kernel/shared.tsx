@@ -10,8 +10,6 @@ import {
   IconWorkYear,
   IconInfo,
 } from '@/components/sections/baseinfo-icons'
-import type { AvatarShape } from './types'
-
 /** Field definition for base-info rendering. */
 export interface BaseInfoFieldDef {
   readonly key: string
@@ -69,14 +67,6 @@ export function buildBaseInfoFields(baseInfo: BaseInfo | null): BaseInfoFieldDef
   return defs
 }
 
-/** Convert AvatarShape to a CSS border-radius rule. */
-export function resolveAvatarRadius(shape: AvatarShape | undefined): string {
-  if (shape === 'circle') return '9999px'
-  if (shape === 'rounded') return '12px'
-  if (shape === 'rounded-bottom') return '0 0 65px 65px'
-  return '4px'
-}
-
 /** Convert hex to rgba with alpha. Accepts #rgb / #rrggbb. */
 export function hexToRgba(hex: string, alpha: number): string {
   let h = hex.replace('#', '')
@@ -85,6 +75,17 @@ export function hexToRgba(hex: string, alpha: number): string {
   const g = parseInt(h.slice(2, 4), 16)
   const b = parseInt(h.slice(4, 6), 16)
   return `rgba(${r}, ${g}, ${b}, ${alpha})`
+}
+
+/** Lighten a hex color by amount in [0, 1] (0 = unchanged, 1 = white). */
+export function lightenHex(hex: string, amount: number): string {
+  let h = hex.replace('#', '')
+  if (h.length === 3) h = h.split('').map((c) => c + c).join('')
+  const mix = (v: number): number => Math.round(v + (255 - v) * amount)
+  const r = mix(parseInt(h.slice(0, 2), 16))
+  const g = mix(parseInt(h.slice(2, 4), 16))
+  const b = mix(parseInt(h.slice(4, 6), 16))
+  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`
 }
 
 /** Darken a hex color by factor (0 = black, 1 = unchanged). */

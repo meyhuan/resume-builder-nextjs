@@ -27,6 +27,10 @@ export default function ThemePanel(props: {
   readonly onePage?: boolean
   readonly onePageStatus?: OnePageStatus
   readonly onOnePageChange?: (isOnePage: boolean) => void
+  /** If true, the active template owns its palette — disable primary-color UI. */
+  readonly locksPrimaryColor?: boolean
+  /** Display name of the active template (used in the lock notice). */
+  readonly activeTemplateName?: string
 }): ReactElement {
   const theme = props.theme
   // const fonts: readonly { label: string; value: string }[] = [
@@ -84,6 +88,7 @@ export default function ThemePanel(props: {
 
   const [primaryPopoverOpen, setPrimaryPopoverOpen] = useState(false)
   const [showPrimaryCustom, setShowPrimaryCustom] = useState(false)
+  const [flagshipOverride, setFlagshipOverride] = useState(false)
 
   const presetColors: readonly string[] = [
     '#000000',
@@ -294,6 +299,28 @@ export default function ThemePanel(props: {
           </div>
           <span className="text-[10px] font-medium text-rose-700/80 bg-rose-50 px-1.5 py-0.5 rounded-md">颜色</span>
         </div>
+        {props.locksPrimaryColor ? (
+          <div className="rounded-xl border border-violet-200 bg-violet-50/60 p-3.5 space-y-2">
+            <div className="flex items-center gap-2">
+              <Palette className="h-3.5 w-3.5 text-violet-700" />
+              <span className="text-xs font-semibold text-violet-900">
+                {props.activeTemplateName || '当前模板'} · 推荐品牌配色
+              </span>
+            </div>
+            <p className="text-[11px] leading-relaxed text-violet-800/80">
+              这是一款旗舰模板，设计师调校了完整的品牌色彩系统，建议保持默认以获得最佳视觉效果。你仍可根据需要自定义主色。
+            </p>
+            <button
+              type="button"
+              onClick={(): void => setFlagshipOverride(!flagshipOverride)}
+              className="w-full flex items-center justify-center gap-2 py-2 rounded-lg border border-violet-300 bg-white text-violet-800 font-medium text-xs transition-colors hover:bg-violet-100"
+            >
+              <Palette className="h-3.5 w-3.5" />
+              <span>{flagshipOverride ? '收起自定义' : '仍要自定义主色'}</span>
+            </button>
+          </div>
+        ) : null}
+        {(!props.locksPrimaryColor || flagshipOverride) && (
         <div className="space-y-3">
           <div className="space-y-2">
             <Label className={labelClass}>主题主色</Label>
@@ -380,6 +407,7 @@ export default function ThemePanel(props: {
             </Popover.Root>
           </div>
         </div>
+        )}
       </section>
     </div>
   )
