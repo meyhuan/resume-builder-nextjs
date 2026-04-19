@@ -35,7 +35,7 @@ export function ResumeFrame(props: ResumeFrameProps): ReactElement {
 
   return (
     <div
-      className={`resume-container bg-white text-black mx-auto rounded shadow-sm overflow-hidden ${className ?? ''}`}
+      className={`resume-container bg-white text-black mx-auto ${className ?? ''}`}
       data-page-padding-vertical={theme.pagePaddingVertical}
       {...(bleed ? { 'data-bleed': 'true' } : {})}
       style={{

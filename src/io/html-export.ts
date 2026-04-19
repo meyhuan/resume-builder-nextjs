@@ -32,7 +32,8 @@ export function buildResumeHtml(element: HTMLElement, options?: ResumeHtmlOption
   const bleedFirstPageCss: string = isBleed
     ? `\n    @page :first {\n      margin-top: 0;\n    }`
     : ''
-  return `${DOCUMENT_DOCTYPE}\n<html lang="en">\n<head>\n  <meta charset="UTF-8">\n  <meta http-equiv="X-UA-Compatible" content="IE=edge">\n  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n  <title>${title}</title>\n  ${fonts}\n  <style>\n  ${styles}\n  @media print {\n    @page {\n      size: A4;\n      ${pageMarginCss}\n    }${bleedFirstPageCss}\n    body {\n      margin: 0;\n      padding: 0;\n    }${onePageCss}${perPageMarginCss}\n  }\n  * {\n    -webkit-print-color-adjust: exact;\n    print-color-adjust: exact;\n  }\n  </style>\n</head>\n<body>\n${markup}\n</body>\n</html>`
+  const squareCornersCss: string = `\n    .page {\n      border-radius: 0 !important;\n      box-shadow: none !important;\n    }`
+  return `${DOCUMENT_DOCTYPE}\n<html lang="en">\n<head>\n  <meta charset="UTF-8">\n  <meta http-equiv="X-UA-Compatible" content="IE=edge">\n  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n  <title>${title}</title>\n  ${fonts}\n  <style>\n  ${styles}${squareCornersCss}\n  @media print {\n    @page {\n      size: A4;\n      ${pageMarginCss}\n    }${bleedFirstPageCss}\n    body {\n      margin: 0;\n      padding: 0;\n    }${onePageCss}${perPageMarginCss}\n  }\n  * {\n    -webkit-print-color-adjust: exact;\n    print-color-adjust: exact;\n  }\n  </style>\n</head>\n<body>\n${markup}\n</body>\n</html>`
 }
 
 /**

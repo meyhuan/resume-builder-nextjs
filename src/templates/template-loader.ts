@@ -79,6 +79,15 @@ export const TEMPLATE_REGISTRY: Record<string, TemplateConfig> = {
     component: lazy(() => import('@/templates/qingyun')),
     locksPrimaryColor: true,
   },
+  mashang: {
+    id: 'mashang',
+    name: '码上',
+    description: '代码绿 + 终端琥珀 · 终端风 Hero · 章节编号 · 开发者 / 算法岗首选（Headless）',
+    preview: '/thumbnails/template_mashang.webp',
+    tags: ['旗舰', '开发', '算法', '技术', '终端', 'Headless'],
+    component: lazy(() => import('@/templates/mashang')),
+    locksPrimaryColor: true,
+  },
 }
 
 /**

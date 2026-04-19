@@ -402,17 +402,33 @@ function ObjectiveSection(props: ObjectiveProps): ReactElement {
               >
                 {f.value}
               </span>
-              {isHover && (
-                <button
-                  type="button"
-                  onClick={(e) => { e.stopPropagation(); deleteField(f.key) }}
-                  className="print:hidden"
-                  style={{ marginLeft: 4, color: '#ef4444', lineHeight: 1 }}
-                  aria-label={`删除${f.label}`}
-                >
-                  ×
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); deleteField(f.key) }}
+                className="print:hidden"
+                style={{
+                  position: 'absolute',
+                  top: -6,
+                  right: -8,
+                  color: '#ef4444',
+                  lineHeight: 1,
+                  fontSize: 14,
+                  background: palette.paper,
+                  borderRadius: 999,
+                  width: 16,
+                  height: 16,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  opacity: isHover ? 1 : 0,
+                  pointerEvents: isHover ? 'auto' : 'none',
+                  transition: 'opacity 120ms ease',
+                  zIndex: 5,
+                }}
+                aria-label={`删除${f.label}`}
+              >
+                ×
+              </button>
             </span>
           )
         })}

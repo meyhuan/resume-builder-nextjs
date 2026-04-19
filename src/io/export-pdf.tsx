@@ -19,11 +19,13 @@ export function useExportPdf<T extends HTMLElement>(contentRef: RefObject<T | nu
   const paddingOverride: string = isBleed
     ? ''
     : ' .resume-container, .resume-body-content { padding-top: 0 !important; padding-bottom: 0 !important; }'
+  const squareCornersOverride: string =
+    ' .page { border-radius: 0 !important; box-shadow: none !important; }'
   const handlePrint = useReactToPrint({
     // react-to-print types expect HTMLElement; cast safely via unknown without using any
     contentRef: (contentRef as unknown) as RefObject<HTMLElement>,
     documentTitle: options?.documentTitle ?? 'resume',
-    pageStyle: `@page { size: A4; margin: ${pageMargin}; }${paddingOverride}`,
+    pageStyle: `@page { size: A4; margin: ${pageMargin}; }${paddingOverride}${squareCornersOverride}`,
   })
   return handlePrint
 }
