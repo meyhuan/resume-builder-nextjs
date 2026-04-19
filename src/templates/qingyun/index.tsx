@@ -380,9 +380,9 @@ function ObjectiveSection(props: ObjectiveProps): ReactElement {
       {/* Field chips (salary highlighted in accent orange) */}
       <div
         className="flex flex-wrap"
-        style={{ paddingLeft: 14, fontSize: '1em', color: palette.ink, gap: '4px 0' }}
+        style={{ paddingLeft: 14, fontSize: '1em', color: palette.ink, gap: '8px 12px' }}
       >
-        {fields.map((f, idx) => {
+        {fields.map((f) => {
           const isSalary: boolean = f.key === 'salary'
           const isHover: boolean = hoveredField === f.key
           return (
@@ -393,7 +393,6 @@ function ObjectiveSection(props: ObjectiveProps): ReactElement {
               onMouseEnter={() => setHoveredField(f.key)}
               onMouseLeave={() => setHoveredField(null)}
             >
-              {idx > 0 && <span style={{ margin: '0 8px 0 0', color: palette.mute }}>·</span>}
               <span style={{ color: palette.mute, marginRight: 6 }}>{f.label}</span>
               <span
                 style={{
