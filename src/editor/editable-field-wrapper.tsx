@@ -6,6 +6,29 @@ import { useState, useRef, useEffect, type ReactElement, type KeyboardEvent } fr
 import { useAppStore } from '@/state/store'
 import type { ResumeBlock } from '@/entities/blocks/resume-block'
 
+/**
+ * Default placeholders derived from the `fieldName` of common resume block fields.
+ * Callers can still pass an explicit `placeholder` to override.
+ */
+const FIELD_PLACEHOLDERS: Readonly<Record<string, string>> = {
+  company: '公司名称',
+  position: '职位名称',
+  industry: '行业',
+  name: '项目名称',
+  role: '角色',
+  school: '学校名称',
+  major: '专业',
+  degree: '学历',
+  organization: '社团 / 活动',
+  startDate: '开始时间',
+  endDate: '结束时间',
+}
+
+function resolveFieldPlaceholder(fieldName: string, explicit?: string): string {
+  if (explicit && explicit.length > 0) return explicit
+  return FIELD_PLACEHOLDERS[fieldName] ?? '点击编辑'
+}
+
 interface EditableFieldWrapperProps {
   readonly blockId: string
   readonly fieldName: string
@@ -93,6 +116,7 @@ export default function EditableFieldWrapper(props: EditableFieldWrapperProps): 
     }
   }
 
+  const placeholder: string = resolveFieldPlaceholder(props.fieldName, props.placeholder)
   if (isEditing) {
     return (
       <input
@@ -102,8 +126,8 @@ export default function EditableFieldWrapper(props: EditableFieldWrapperProps): 
         onChange={(e): void => setTempValue(e.target.value)}
         onBlur={saveEdit}
         onKeyDown={handleKeyDown}
-        className={`${props.className || ''} bg-blue-50 rounded px-1 leading-tight outline-none min-w-[50px] w-full text-right ring-1 ring-blue-500`}
-        placeholder={props.placeholder}
+        className={`${props.className || ''} bg-blue-50 rounded px-1 leading-tight outline-none min-w-[50px] w-full ring-1 ring-blue-500`}
+        placeholder={placeholder}
       />
     )
   }
@@ -112,9 +136,9 @@ export default function EditableFieldWrapper(props: EditableFieldWrapperProps): 
     <span
       onClick={startEditing}
       className={`${props.className || ''} cursor-text hover:bg-gray-100 rounded px-1 leading-tight transition-colors border border-transparent`}
-      title={props.title || '点击编辑'}
+      title={props.title || `点击编辑${placeholder}`}
     >
-      {props.value || props.placeholder || '点击编辑'}
+      {props.value || placeholder}
     </span>
   )
 }

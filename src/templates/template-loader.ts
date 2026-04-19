@@ -96,6 +96,26 @@ export const TEMPLATE_REGISTRY: Record<string, TemplateConfig> = {
     locksPrimaryColor: true,
     recommendedPrimaryColor: '#10b981',
   },
+  zhumo: {
+    id: 'zhumo',
+    name: '朱墨',
+    description: '朱砂红 + 松烟墨 · 衬线字 · 中文数字编号 · 朱红方印 · 编辑 / 文案 / 内容岗首选（Headless）',
+    preview: '/thumbnails/template_zhumo.webp',
+    tags: ['旗舰', '编辑', '文案', '内容', '衬线', 'Headless'],
+    component: lazy(() => import('@/templates/zhumo')),
+    locksPrimaryColor: true,
+    recommendedPrimaryColor: '#b91c1c',
+  },
+  xingtan: {
+    id: 'xingtan',
+    name: '杏坛',
+    description: '杏黄 + 松烟墨 · 古籍卷首双实线 banner · 章节「第壹章」· 书法体姓名 · 教师 / 学术岗首选（Headless）',
+    preview: '/thumbnails/template_xingtan.webp',
+    tags: ['旗舰', '教师', '学术', '教育', '古籍', 'Headless'],
+    component: lazy(() => import('@/templates/xingtan')),
+    locksPrimaryColor: true,
+    recommendedPrimaryColor: '#a16207',
+  },
 }
 
 /**
