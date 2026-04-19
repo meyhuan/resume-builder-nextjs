@@ -30,7 +30,8 @@ import type { TemplateProps } from '@/templates/_core'
 //  - 若用户在主题面板自定义了 primaryColor，将自动衍生 deep / light
 //  - accent（暖橙）固定，它是第二色，与主色构成对比
 // ---------------------------------------------------------------------------
-const QINGYUN_DEFAULT_SKY = '#2563eb'
+// 青 — 传统青色（介于蓝与绿之间），使用 cyan-600 呼应「青云」之名
+const QINGYUN_DEFAULT_SKY = '#0891b2'
 
 const QINGYUN_STATIC = {
   accent: '#f97316',
@@ -229,16 +230,16 @@ function QingyunHero({ header, horizontalPadding, freshGradLabel }: HeroProps): 
       )}
 
       <div className="flex items-center gap-6">
-        {/* 头像 */}
+        {/* 头像 — 标准证件照比例 5:7 */}
         <AvatarSlot
           header={header}
           render={({ image, uploadOverlay }) => (
             <div
               className="relative overflow-hidden shrink-0"
               style={{
-                width: 104,
-                height: 104,
-                borderRadius: 14,
+                width: 100,
+                height: 140,
+                borderRadius: 10,
                 border: '3px solid rgba(255,255,255,0.9)',
                 boxShadow: '0 4px 18px rgba(30,64,175,0.35)',
               }}
@@ -377,13 +378,12 @@ function ObjectiveSection(props: ObjectiveProps): ReactElement {
         编辑
       </button>
 
-      {/* Field chips (salary highlighted in accent orange) */}
+      {/* Field chips */}
       <div
         className="flex flex-wrap"
         style={{ paddingLeft: 14, fontSize: '1em', color: palette.ink, gap: '8px 12px' }}
       >
         {fields.map((f) => {
-          const isSalary: boolean = f.key === 'salary'
           const isHover: boolean = hoveredField === f.key
           return (
             <span
@@ -394,12 +394,7 @@ function ObjectiveSection(props: ObjectiveProps): ReactElement {
               onMouseLeave={() => setHoveredField(null)}
             >
               <span style={{ color: palette.mute, marginRight: 6 }}>{f.label}</span>
-              <span
-                style={{
-                  fontWeight: isSalary ? 700 : 500,
-                  color: isSalary ? palette.accent : palette.ink,
-                }}
-              >
+              <span style={{ fontWeight: 500, color: palette.ink }}>
                 {f.value}
               </span>
               <button

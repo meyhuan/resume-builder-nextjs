@@ -14,6 +14,7 @@ import type { ExternalResume } from '@/io/external-resume-types'
 import { mapExternalResume } from '@/io/external-resume-importer'
 import { BLANK_RESUME_JSON, TEST_RESUME_JSON } from '@/io/default-resume-data'
 import { createDefaultBlock } from '@/entities/blocks/block-factory'
+import { TEMPLATE_REGISTRY } from '@/templates/template-loader'
 
 const DEFAULT_FONT_SIZE: number = 15
 const defaultTheme: ThemeTokens = {
@@ -25,6 +26,19 @@ const defaultTheme: ThemeTokens = {
   spacingScale: 1,
   pagePaddingVertical: 22,
   pagePaddingHorizontal: 15,
+}
+
+/**
+ * Resolve the initial theme for a template.
+ *
+ * Flagship templates may declare a `recommendedPrimaryColor` — when no saved
+ * theme exists yet, that recommendation seeds `primaryColor` so the brand
+ * identity is preserved on first render.
+ */
+function resolveInitialTheme(templateId: string): ThemeTokens {
+  const recommended: string | undefined = TEMPLATE_REGISTRY[templateId]?.recommendedPrimaryColor
+  if (!recommended) return defaultTheme
+  return { ...defaultTheme, primaryColor: recommended }
 }
 
 export const defaultResume: ResumeData = {
@@ -126,11 +140,11 @@ export const useAppStore = create<AppState>()(
     },
     getThemeForTemplate: (templateId) => {
       const state = get()
-      return state.themes[templateId] || defaultTheme
+      return state.themes[templateId] || resolveInitialTheme(templateId)
     },
     setThemeForTemplate: (templateId, updater) =>
       set((state) => {
-        const currentTheme = state.themes[templateId] || defaultTheme
+        const currentTheme = state.themes[templateId] || resolveInitialTheme(templateId)
         return {
           themes: {
             ...state.themes,

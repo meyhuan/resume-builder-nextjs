@@ -29,6 +29,12 @@ export interface TemplateConfig {
    * will disable the primary-color section for this template and explain why.
    */
   readonly locksPrimaryColor?: boolean
+  /**
+   * Flagship templates can declare their signature primary color. When a user
+   * opens this template for the first time (no saved theme yet), the app will
+   * seed `theme.primaryColor` with this value instead of the global default.
+   */
+  readonly recommendedPrimaryColor?: string
 }
 
 /**
@@ -78,6 +84,7 @@ export const TEMPLATE_REGISTRY: Record<string, TemplateConfig> = {
     tags: ['旗舰', '校招', '应届生', '天青蓝', 'Headless'],
     component: lazy(() => import('@/templates/qingyun')),
     locksPrimaryColor: true,
+    recommendedPrimaryColor: '#0891b2',
   },
   mashang: {
     id: 'mashang',
@@ -87,6 +94,7 @@ export const TEMPLATE_REGISTRY: Record<string, TemplateConfig> = {
     tags: ['旗舰', '开发', '算法', '技术', '终端', 'Headless'],
     component: lazy(() => import('@/templates/mashang')),
     locksPrimaryColor: true,
+    recommendedPrimaryColor: '#10b981',
   },
 }
 

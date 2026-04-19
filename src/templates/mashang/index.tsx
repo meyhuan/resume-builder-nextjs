@@ -172,7 +172,6 @@ function MashangHero({ header, horizontalPadding }: HeroProps): ReactElement {
       onClick={openEditModal}
       style={{
         padding: `2.2em ${horizontalPadding}px 1.6em`,
-        borderBottom: `1px solid ${palette.rule}`,
         background: `linear-gradient(180deg, ${palette.codeBg} 0%, ${palette.paper} 100%)`,
       }}
     >
@@ -313,12 +312,22 @@ function ObjectiveSection(props: ObjectiveProps): ReactElement {
       onClick={openEditModal}
       style={{ padding: `${18 * spacingScale}px ${horizontalPadding}px ${8 * spacingScale}px` }}
     >
-      {/* Heading (matches section style) */}
+      {/* Heading (matches section style, uses 00/ prefix) */}
       <div
         className="flex items-baseline gap-3"
         style={{ marginBottom: '0.6em' }}
       >
-        <span style={{ fontSize: '1.05em', fontWeight: 600, color: palette.codeDeep }}>
+        <span
+          style={{
+            fontFamily: MONO,
+            fontSize: '1.15em',
+            fontWeight: 700,
+            color: palette.code,
+          }}
+        >
+          00/
+        </span>
+        <span style={{ fontSize: '1.1em', fontWeight: 600, color: palette.codeDeep }}>
           求职意向
         </span>
         <span
@@ -362,7 +371,6 @@ function ObjectiveSection(props: ObjectiveProps): ReactElement {
         style={{ paddingLeft: 22, gap: '6px 22px', fontSize: '0.95em' }}
       >
         {fields.map((f) => {
-          const isSalary: boolean = f.key === 'salary'
           const isHover: boolean = hoveredField === f.key
           return (
             <span
@@ -381,12 +389,7 @@ function ObjectiveSection(props: ObjectiveProps): ReactElement {
               >
                 {f.label}
               </span>
-              <span
-                style={{
-                  color: isSalary ? palette.amber : palette.ink,
-                  fontWeight: isSalary ? 700 : 500,
-                }}
-              >
+              <span style={{ fontWeight: 500, color: palette.ink }}>
                 {f.value}
               </span>
               <button
