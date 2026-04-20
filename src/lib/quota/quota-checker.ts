@@ -15,6 +15,7 @@ import {
   getFeatureDisplayName,
   type QuotaFeatureKey,
 } from './membership-benefits';
+import { LIFETIME_QUOTA_FEATURES } from './quota-config';
 
 const JAVA_API_BASE = process.env.JAVA_API_BASE_URL || 'https://aijianli.cn/api';
 
@@ -150,17 +151,21 @@ export async function checkQuota(
   const quotas = (quotaRecord.quotas as unknown as QuotasData) || {};
   const featureQuota = quotas[feature];
 
-  // Check if quota is for today, reset if needed
-  const used = featureQuota?.date === todayKey ? featureQuota.used : 0;
+  // Check if quota is for today, reset if needed (skip for lifetime quotas)
+  const isLifetimeQuota = LIFETIME_QUOTA_FEATURES.includes(feature);
+  const used = isLifetimeQuota
+    ? (featureQuota?.used ?? 0)
+    : (featureQuota?.date === todayKey ? featureQuota.used : 0);
 
   if (used >= limit) {
+    const limitText = isLifetimeQuota ? `免费限${limit}次` : `${limit}次/天`;
     return {
       allowed: false,
       isVip: false,
       used,
       limit,
       remaining: 0,
-      message: `今日${featureName}次数已达上限（${limit}次/天），升级VIP可无限使用`,
+      message: `${featureName}次数已达上限（${limitText}），升级VIP可无限使用`,
       feature,
     };
   }
@@ -171,12 +176,16 @@ export async function checkQuota(
 
   // Update quota in database if consuming
   if (!skipConsume) {
-    quotas[feature] = { used: newUsed, date: todayKey };
+    quotas[feature] = { used: newUsed, date: isLifetimeQuota ? 'lifetime' : todayKey };
     await prisma.userQuota.update({
       where: { userId: user.id },
       data: { quotas: quotas as unknown as Prisma.InputJsonValue, updatedAt: new Date() },
     });
   }
+
+  const message = isLifetimeQuota
+    ? `剩余${remaining}次${featureName}（非VIP用户免费限${limit}次）`
+    : `今日剩余${remaining}次${featureName}（非VIP用户每日${limit}次）`;
 
   return {
     allowed: true,
@@ -184,7 +193,7 @@ export async function checkQuota(
     used: newUsed,
     limit,
     remaining: Math.max(0, remaining),
-    message: `今日剩余${remaining}次${featureName}（非VIP用户每日${limit}次）`,
+    message,
     feature,
   };
 }
@@ -208,23 +217,26 @@ async function handleAnonymousQuota(
   const now = Date.now();
   const todayKey = getDateKey(now);
   const key = `anonymous_${feature}`;
+  const isLifetimeQuota = LIFETIME_QUOTA_FEATURES.includes(feature);
 
   let entry = anonymousQuotaStore.get(key);
-  if (!entry || entry.dateKey !== todayKey) {
-    entry = { dateKey: todayKey, used: 0 };
+  if (!entry || (!isLifetimeQuota && entry.dateKey !== todayKey)) {
+    entry = { dateKey: isLifetimeQuota ? 'lifetime' : todayKey, used: 0 };
     anonymousQuotaStore.set(key, entry);
   }
 
-  const used = entry.used;
+  const used = entry?.used ?? 0;
 
   if (used >= limit) {
+    const limitText = isLifetimeQuota ? `免费限${limit}次` : `${limit}次/天`;
+    const suffix = isLifetimeQuota ? '登录后可继续使用' : '登录后可继续使用';
     return {
       allowed: false,
       isVip: false,
       used,
       limit,
       remaining: 0,
-      message: `今日${featureName}次数已达上限（${limit}次/天），登录后可继续使用`,
+      message: `${featureName}次数已达上限（${limitText}），${suffix}`,
       feature,
     };
   }
@@ -236,13 +248,17 @@ async function handleAnonymousQuota(
   const currentUsed = skipConsume ? used : used + 1;
   const remaining = limit - currentUsed;
 
+  const message = isLifetimeQuota
+    ? `剩余${remaining}次${featureName}（非登录用户免费限${limit}次）`
+    : `今日剩余${remaining}次${featureName}（非登录用户每日${limit}次）`;
+
   return {
     allowed: true,
     isVip: false,
     used: currentUsed,
     limit,
     remaining: Math.max(0, remaining),
-    message: `今日剩余${remaining}次${featureName}（非登录用户每日${limit}次）`,
+    message,
     feature,
   };
 }

@@ -70,16 +70,16 @@ export default function ExportPreviewDialog({
               <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] ${showLowQuotaWarning ? 'bg-rose-50 text-rose-600 border border-rose-200' : 'bg-slate-100 text-slate-600'}`}>
                 {showLowQuotaWarning && <AlertCircle className="w-3 h-3" />}
                 <span>
-                  今日剩余导出次数：
+                  剩余导出次数：
                   <span className={showLowQuotaWarning ? 'font-bold' : 'font-medium'}>
                     {remainingQuota === 0 ? '0' : remainingQuota ?? '1'}
                   </span>
-                  次
+                  次（免费限 1 次）
                 </span>
               </div>
             )}
             <p className="text-[11px] text-slate-400">
-              {isVip ? 'VIP 会员无限导出' : '本次导出将消耗 1 次导出次数'}
+              {isVip ? 'VIP 会员无限导出' : '免费用户限 1 次导出'}
             </p>
           </div>
           <Button

@@ -8,21 +8,24 @@
  * Modify values here to change quotas globally.
  */
 
-/** Default quota limits for non-VIP users (number per day) */
+/** Default quota limits for non-VIP users (number per day, or total for lifetime) */
 export const DEFAULT_QUOTA_LIMITS = {
-  /** AI: Generate complete resume from scratch */
+  /** AI: Generate complete resume from scratch (per day) */
   aiGenerateResume: 3,
-  /** AI: Import and optimize resume sections */
+  /** AI: Import and optimize resume sections (per day) */
   aiImportSection: 3,
-  /** AI: Generate additional content for existing sections */
+  /** AI: Generate additional content for existing sections (per day) */
   aiGenerateSection: 5,
-  /** AI: Polish and refine text content */
+  /** AI: Polish and refine text content (per day) */
   aiPolishSection: 5,
-  /** AI: One-click optimize entire resume */
+  /** AI: One-click optimize entire resume (per day) */
   aiOptimizeResume: 2,
-  /** PDF export limit */
+  /** PDF export limit (lifetime total, never resets) */
   pdfExport: 1,
 } as const;
+
+/** Features with lifetime quota (never reset) */
+export const LIFETIME_QUOTA_FEATURES: readonly string[] = ['pdf:export'];
 
 /** Type for quota limit keys */
 export type QuotaLimitKey = keyof typeof DEFAULT_QUOTA_LIMITS;
