@@ -7,6 +7,7 @@ import type { ThemeTokens } from '@/entities/theme/theme-tokens'
 import OverlaySection from '@/dnd/overlay-section'
 import OverlayBlock from '@/dnd/overlay-block'
 import { DndIds } from '@/dnd/ids'
+import { useAppStore } from '@/state/store'
 
 interface DragDropProviderProps {
   readonly resume: ResumeData
@@ -23,12 +24,17 @@ interface DragDropProviderProps {
  * It delegates actual data mutations to callbacks provided by the caller.
  */
 export default function DragDropProvider(props: DragDropProviderProps): ReactElement {
+  const readOnly = useAppStore((s) => s.readOnly)
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 5 } })
   )
 
   const [active, setActive] = useState<{ kind: 'section' | 'block'; id: string } | null>(null)
+
+  if (readOnly) {
+    return <>{props.children}</>
+  }
 
   function findSectionIdByBlockId(blockId: string): string | undefined {
     for (const sec of props.resume.sections) {

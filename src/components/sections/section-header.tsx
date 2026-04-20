@@ -4,6 +4,7 @@ import type { ReactElement, ReactNode } from 'react';
 import type { UUID } from '@/entities/common/uuid';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, Trash2, GripVertical } from 'lucide-react';
+import { useAppStore } from '@/state/store';
 
 import type { SectionHeaderStyles } from '@/templates/components/v2/types';
 
@@ -25,7 +26,23 @@ export interface SectionHeaderProps {
 }
 
 export default function SectionHeader(props: SectionHeaderProps): ReactElement {
-  const { title, icon, themeColor, styles, onTitleChange, onAdd, onDelete, dragHandleAttributes, dragHandleListeners, dragHandleRef, layout = 'default' } = props;
+  const readOnly = useAppStore((s) => s.readOnly);
+  // In read-only mode, strip all mutating handlers so the header is purely presentational.
+  const effectiveOnTitleChange = readOnly ? undefined : props.onTitleChange;
+  const effectiveOnAdd = readOnly ? undefined : props.onAdd;
+  const effectiveOnDelete = readOnly ? undefined : props.onDelete;
+  const effectiveDragHandleAttributes = readOnly ? undefined : props.dragHandleAttributes;
+  const effectiveDragHandleListeners = readOnly ? undefined : props.dragHandleListeners;
+  const effectiveDragHandleRef = readOnly ? undefined : props.dragHandleRef;
+
+  const { title, icon, themeColor, styles, layout = 'default' } = props;
+  const onTitleChange = effectiveOnTitleChange;
+  const onAdd = effectiveOnAdd;
+  const onDelete = effectiveOnDelete;
+  const dragHandleAttributes = effectiveDragHandleAttributes;
+  const dragHandleListeners = effectiveDragHandleListeners;
+  const dragHandleRef = effectiveDragHandleRef;
+
   const [isHovered, setIsHovered] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(title);

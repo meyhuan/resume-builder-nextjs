@@ -62,6 +62,7 @@ export default function EditableFieldWrapper(props: EditableFieldWrapperProps): 
   const [tempValue, setTempValue] = useState(props.value || '')
   const inputRef = useRef<HTMLInputElement>(null)
   const setResume = useAppStore((s) => s.setResume)
+  const readOnly = useAppStore((s) => s.readOnly)
 
   useEffect(() => {
     if (isEditing && inputRef.current) {
@@ -117,6 +118,15 @@ export default function EditableFieldWrapper(props: EditableFieldWrapperProps): 
   }
 
   const placeholder: string = resolveFieldPlaceholder(props.fieldName, props.placeholder)
+
+  if (readOnly) {
+    return (
+      <span className={props.className} style={{ whiteSpace: 'pre-wrap' }}>
+        {props.value || ''}
+      </span>
+    )
+  }
+
   if (isEditing) {
     return (
       <input

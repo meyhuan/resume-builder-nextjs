@@ -94,6 +94,8 @@ export const useAppStore = create<AppState>()(
     themes: {},
     pastStates: [],
     futureStates: [],
+    readOnly: false,
+    setReadOnly: (readOnly) => set(() => ({ readOnly }), false, 'ui/setReadOnly'),
     resetResume: () =>
       set(() => ({
         resume: defaultResume,

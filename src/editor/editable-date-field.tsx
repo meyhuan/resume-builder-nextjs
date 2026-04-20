@@ -50,10 +50,20 @@ function formatDisplay(val: string | undefined, presentLabel: string): string {
 export default function EditableDateField(props: EditableDateFieldProps): ReactElement {
   const { blockId, fieldName, value, className, presentLabel = '至今', showIcon = false, onOpenChange } = props
   const setResume = useAppStore((s) => s.setResume)
+  const readOnly = useAppStore((s) => s.readOnly)
   const [open, setOpen] = useState(false)
 
   const selectedDate: Date | undefined = parseDate(value)
   const displayText: string = formatDisplay(value, presentLabel)
+
+  if (readOnly) {
+    return (
+      <span className={cn('inline-flex items-center gap-1 px-1', className)}>
+        {showIcon ? <CalendarIcon className="h-3 w-3" /> : null}
+        <span>{displayText === '选择' ? '' : displayText}</span>
+      </span>
+    )
+  }
 
   function setPopoverOpen(next: boolean): void {
     setOpen(next)

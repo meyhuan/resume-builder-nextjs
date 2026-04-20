@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import type { ReactElement, ReactNode } from 'react';
 import { GripHorizontal } from 'lucide-react';
 import BlockActions from './block-actions';
+import { useAppStore } from '@/state/store';
 
 /**
  * Wrapper for blocks with hover actions (floating buttons, no layout shift).
@@ -26,6 +27,14 @@ const HOVER_DELAY_MS = 200;
 const HOVER_POLL_MS = 500;
 
 export default function BlockWrapper(props: BlockWrapperProps): ReactElement {
+  const readOnly = useAppStore((s) => s.readOnly);
+  if (readOnly) {
+    return <div className="relative rounded mb-4 last:mb-0 pb-1">{props.children}</div>;
+  }
+  return <EditableBlockHoverWrapper {...props} />;
+}
+
+function EditableBlockHoverWrapper(props: BlockWrapperProps): ReactElement {
   const { children, blockType, onAdd, onPolish, onGenerate, onDelete, onMoveUp, onMoveDown, dragHandleProps, dragHandleRef, showDragHandle = true, disableHover = false } = props;
   const [isHovered, setIsHovered] = useState(false);
   const hideTimerRef = useRef<NodeJS.Timeout | number | null>(null);

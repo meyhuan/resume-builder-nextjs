@@ -43,7 +43,10 @@ export interface BaseInfoSectionProps {
  */
 export default function BaseInfoSection(props: BaseInfoSectionProps): ReactElement {
   const { name, baseInfo, themeColor, styles = {}, renderCustom, slots } = props
-  const [showModal, setShowModal] = useState(false)
+  const readOnly = useAppStore((s) => s.readOnly)
+  const [showModalRaw, setShowModalRaw] = useState(false)
+  const showModal = !readOnly && showModalRaw
+  const setShowModal = readOnly ? ((_: boolean): void => { void _ }) : setShowModalRaw
   const [hoveredField, setHoveredField] = useState<string | null>(null)
   const [avatarHovered, setAvatarHovered] = useState(false)
   const [cropImageSrc, setCropImageSrc] = useState<string | null>(null)
@@ -96,9 +99,9 @@ export default function BaseInfoSection(props: BaseInfoSectionProps): ReactEleme
 
   return (
     <>
-      <header className={styles.container || "mb-5 flex items-start gap-5 relative group cursor-pointer print:cursor-default"}>
+      <header className={`${styles.container || "mb-5 flex items-start gap-5 relative group print:cursor-default"} ${readOnly ? '' : 'cursor-pointer'}`}>
         {/* Edit pencil - top right on hover */}
-        {slots?.editButton ? (
+        {!readOnly && (slots?.editButton ? (
           slots.editButton(() => setShowModal(true))
         ) : (
           <button
@@ -108,13 +111,13 @@ export default function BaseInfoSection(props: BaseInfoSectionProps): ReactEleme
           >
             <Pencil size={18} />
           </button>
-        )}
+        ))}
 
         {/* Avatar with hover overlay */}
         {baseInfo?.showAvatar !== false && (
         <div
           className={`relative ${styles.avatar?.containerClassName || 'w-20 h-24 rounded-lg bg-gray-100'} overflow-hidden shrink-0 border border-gray-200`}
-          onMouseEnter={() => setAvatarHovered(true)}
+          onMouseEnter={() => !readOnly && setAvatarHovered(true)}
           onMouseLeave={() => setAvatarHovered(false)}
         >
           {baseInfo?.avatarUrl ? (
@@ -122,7 +125,7 @@ export default function BaseInfoSection(props: BaseInfoSectionProps): ReactEleme
           ) : (
             <AvatarPlaceholder />
           )}
-          {avatarHovered && (
+          {!readOnly && avatarHovered && (
             <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center gap-1.5 print:hidden">
               <button
                 type="button"
@@ -133,18 +136,20 @@ export default function BaseInfoSection(props: BaseInfoSectionProps): ReactEleme
               </button>
             </div>
           )}
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handleFileChange}
-          />
+          {!readOnly && (
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleFileChange}
+            />
+          )}
         </div>
         )}
 
         {/* Right content */}
-        <div className="flex-1 min-w-0" onClick={() => setShowModal(true)}>
+        <div className="flex-1 min-w-0" onClick={() => !readOnly && setShowModal(true)}>
           {/* Name + intention row */}
           <div className={styles.nameRow?.className || "flex items-baseline gap-4 mb-2"}>
             {slots?.name ? (
@@ -173,7 +178,8 @@ export default function BaseInfoSection(props: BaseInfoSectionProps): ReactEleme
                 <InfoField
                   key={f.key}
                   field={f}
-                  isHovered={hoveredField === f.key}
+                  isHovered={!readOnly && hoveredField === f.key}
+                  readOnly={readOnly}
                   styles={styles}
                   onMouseEnter={() => setHoveredField(f.key)}
                   onMouseLeave={() => setHoveredField(null)}
@@ -216,12 +222,13 @@ function AvatarPlaceholder(): ReactElement {
 function InfoField(props: {
   readonly field: FieldDef
   readonly isHovered: boolean
+  readonly readOnly?: boolean
   readonly styles?: BaseInfoSectionStyles
   readonly onMouseEnter: () => void
   readonly onMouseLeave: () => void
   readonly onDelete: () => void
 }): ReactElement {
-  const { field, isHovered, styles, onMouseEnter, onMouseLeave, onDelete } = props
+  const { field, isHovered, readOnly, styles, onMouseEnter, onMouseLeave, onDelete } = props
   return (
     <div
       className={`${styles?.fieldItem || 'flex items-center gap-1.5 text-gray-700 relative rounded px-1.5 py-0.5 transition-all'} ${
@@ -238,7 +245,7 @@ function InfoField(props: {
       </span>
       <span className="text-gray-500">{field.label}：</span>
       <span>{field.value}</span>
-      {isHovered && (
+      {!readOnly && isHovered && (
         <button
           type="button"
           className="absolute -right-1 top-1/2 -translate-y-1/2 print:hidden text-red-400 hover:text-red-600 transition-colors shrink-0"

@@ -3,6 +3,7 @@ import { useRef, useState, useLayoutEffect } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { DndIds } from '@/dnd/ids';
+import { useAppStore } from '@/state/store';
 
 /**
  * Wrapper that provides DnD sortable functionality for sections.
@@ -18,6 +19,14 @@ export interface SortableSectionWrapperProps {
 }
 
 export default function SortableSectionWrapper(props: SortableSectionWrapperProps): ReactElement {
+  const readOnly = useAppStore((s) => s.readOnly);
+  if (readOnly) {
+    return <>{props.children({ attributes: undefined, listeners: undefined, ref: () => {} })}</>;
+  }
+  return <EditableSortableSection {...props} />;
+}
+
+function EditableSortableSection(props: SortableSectionWrapperProps): ReactElement {
   const { sectionId, children } = props;
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({ 
     id: `${DndIds.SECTION_SORT_ID_PREFIX}${sectionId}` 

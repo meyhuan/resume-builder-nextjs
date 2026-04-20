@@ -40,7 +40,10 @@ export interface JobIntentionSectionProps {
  */
 export default function JobIntentionSection(props: JobIntentionSectionProps): ReactElement | null {
   const { jobIntention, themeColor, styles = {}, renderCustom, slots } = props
-  const [showModal, setShowModal] = useState(false)
+  const readOnly = useAppStore((s) => s.readOnly)
+  const [showModalRaw, setShowModalRaw] = useState(false)
+  const showModal = !readOnly && showModalRaw
+  const setShowModal = readOnly ? ((_: boolean): void => { void _ }) : setShowModalRaw
   const [hoveredField, setHoveredField] = useState<string | null>(null)
   const updateJobIntention = useAppStore((s) => s.updateJobIntention)
 
@@ -191,7 +194,7 @@ export default function JobIntentionSection(props: JobIntentionSectionProps): Re
     <>
       <section 
         className={containerClassName}
-        onClick={() => setShowModal(true)}
+        onClick={() => !readOnly && setShowModal(true)}
       >
         {renderHeader()}
 
@@ -204,7 +207,8 @@ export default function JobIntentionSection(props: JobIntentionSectionProps): Re
             hoveredField,
             setHoveredField,
             handleDeleteField,
-            slots
+            slots,
+            readOnly
           )}
         </div>
       </section>
@@ -250,7 +254,8 @@ function renderJobFields(
   hoveredField: string | null,
   setHoveredField: (field: string | null) => void,
   handleDeleteField: (field: string) => void,
-  slots?: JobIntentionSlots
+  slots: JobIntentionSlots | undefined,
+  readOnly: boolean
 ): ReactElement[] {
   const fields: ReactElement[] = []
   const fieldClassName = styles.fieldItem || 'flex items-center gap-1.5 text-gray-700 relative group/field hover:bg-gray-50 rounded px-1 py-0.5 transition-colors'
@@ -285,7 +290,7 @@ function renderJobFields(
       <div
         key={field.key}
         className={`${fieldClassName} relative`}
-        onMouseEnter={() => setHoveredField(field.key)}
+        onMouseEnter={() => !readOnly && setHoveredField(field.key)}
         onMouseLeave={() => setHoveredField(null)}
       >
         {/* 使用插槽或默认渲染 */}
@@ -303,7 +308,7 @@ function renderJobFields(
         )}
         
         {/* 删除按钮 - absolute positioned to prevent layout shift */}
-        {hoveredField === field.key && (
+        {!readOnly && hoveredField === field.key && (
           <button
             type="button"
             className="absolute right-1 top-1/2 -translate-y-1/2 print:hidden text-red-500 hover:text-red-700 opacity-100 transition-opacity"

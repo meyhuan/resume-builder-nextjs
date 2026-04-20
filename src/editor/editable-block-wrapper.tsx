@@ -36,6 +36,7 @@ export default function EditableBlockWrapper(props: EditableBlockWrapperProps): 
   const [isEditing, setIsEditing] = useState(false)
   const setResume = useAppStore((s) => s.setResume)
   const resume = useAppStore((s) => s.resume)
+  const readOnly = useAppStore((s) => s.readOnly)
 
   useEffect(() => {
     onEditingChange?.(isEditing)
@@ -88,6 +89,15 @@ export default function EditableBlockWrapper(props: EditableBlockWrapperProps): 
 
   if (!content && props.children) {
     return <>{props.children({ isEditing: false, onStartEdit: () => {} })}</>
+  }
+
+  if (readOnly) {
+    return (
+      <div
+        className={`${displayStyles} ${className || ''}`.trim()}
+        dangerouslySetInnerHTML={{ __html: content }}
+      />
+    )
   }
 
   if (isEditing) {
