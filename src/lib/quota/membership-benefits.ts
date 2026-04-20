@@ -9,12 +9,12 @@
 
 import { DEFAULT_QUOTA_LIMITS } from './quota-config';
 
-/** Quota limit for non-VIP users (number per day, or boolean for on/off features) */
+/** Quota limit for non-VIP users (number per day, total lifetime, or boolean for on/off features) */
 export type QuotaValue = number | boolean;
 
-/** Daily quota configuration for a specific AI feature */
+/** Quota configuration for a specific feature */
 export interface FeatureQuota {
-  /** Daily usage limit for non-VIP users */
+  /** Usage limit for non-VIP users (daily or lifetime depending on feature) */
   readonly nonVipLimit: number;
   /** Display name for the feature */
   readonly displayName: string;
@@ -53,11 +53,11 @@ export const AI_FEATURE_QUOTAS: Record<string, FeatureQuota> = {
 
 /** Export-related quotas */
 export const EXPORT_QUOTAS = {
-  /** PDF export quota for non-VIP users */
+  /** PDF export quota for non-VIP users (lifetime total, never resets) */
   'pdf:export': {
     nonVipLimit: DEFAULT_QUOTA_LIMITS.pdfExport,
     displayName: 'PDF 导出',
-    description: '导出高清 PDF 简历文件',
+    description: '导出高清 PDF 简历文件（免费限 1 次）',
   },
 } as const;
 
@@ -97,7 +97,7 @@ export type QuotaFeatureKey =
 /** All valid feature keys including boolean features */
 export type FeatureKey = QuotaFeatureKey | keyof typeof BOOLEAN_FEATURES;
 
-/** Get the daily quota limit for a feature */
+/** Get the quota limit for a feature */
 export function getQuotaLimit(feature: QuotaFeatureKey): number {
   if (feature in AI_FEATURE_QUOTAS) {
     return AI_FEATURE_QUOTAS[feature as keyof typeof AI_FEATURE_QUOTAS].nonVipLimit;
@@ -170,10 +170,11 @@ function generateBenefitsSummary(): {
     vip[camelKey] = { limit: 'unlimited', unit: '' };
   }
 
-  // Add export quotas
+  // Add export quotas (pdf:export is lifetime, not daily)
   for (const [key, config] of Object.entries(EXPORT_QUOTAS)) {
     const camelKey = toCamelCase(key);
-    nonVip[camelKey] = { limit: config.nonVipLimit, unit: '次/天' };
+    const isLifetime = key === 'pdf:export';
+    nonVip[camelKey] = { limit: config.nonVipLimit, unit: isLifetime ? '次（免费）' : '次/天' };
     vip[camelKey] = { limit: 'unlimited', unit: '' };
   }
 

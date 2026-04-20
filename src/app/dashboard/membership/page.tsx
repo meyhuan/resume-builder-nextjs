@@ -37,7 +37,7 @@ function getDaysRemaining(expireTime: string | null): number | null {
 const COMPARE_ROWS: Array<{ label: string; free: string | false; vip: string | true }> = [
   { label: 'AI 生成简历', free: '每日 3 次', vip: '无限次' },
   { label: 'AI 续写 & 润色', free: '每日 5 次', vip: '无限次' },
-  { label: 'PDF 导出', free: '有水印', vip: '无水印 · 高清' },
+  { label: 'PDF 导出', free: '免费限 1 次', vip: '无水印 · 高清 · 无限' },
   { label: '精品模板', free: '部分可用', vip: '全部解锁' },
   { label: 'AI 导入解析', free: '每日 3 次', vip: '无限次' },
   { label: '简历私密保存', free: false, vip: true },
@@ -277,7 +277,7 @@ export default function MembershipPage(): React.ReactElement {
                   <X className="w-4 h-4 text-rose-500" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-semibold text-rose-700">今日额度已用尽</p>
+                  <p className="text-sm font-semibold text-rose-700">额度已用尽</p>
                   <p className="text-xs text-rose-400 mt-0.5">开通会员即可无限使用，不受次数限制</p>
                 </div>
                 <button onClick={openUpgrade} className="shrink-0 text-xs font-bold text-rose-600 hover:text-rose-800 transition-colors">
@@ -289,7 +289,7 @@ export default function MembershipPage(): React.ReactElement {
             {/* ══ FREE: QUOTA BARS ══ */}
             {!isVip && (
               <div className="bg-white rounded-3xl px-7 py-6 border border-violet-100/60">
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-4">今日剩余额度</p>
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-4">剩余额度</p>
                 <div className="space-y-3.5">
                   {quotaItems.map((item) => {
                     const remaining = typeof item.remaining === 'number' ? item.remaining : item.limit;
