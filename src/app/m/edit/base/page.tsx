@@ -7,6 +7,9 @@ import {
   useNameField,
 } from '@/features/edit/draft/use-draft-field'
 import { ModuleEditShell } from '../_components/module-edit-shell'
+import { chain, validateEmail, validatePhone, validateRequired } from '../_components/validators'
+import type { ValidationResult } from '../_components/module-edit-shell'
+import { CustomBaseFields } from '../_components/custom-base-fields'
 import { TextField } from '@/features/edit/form-fields/text-field'
 import { NumberField } from '@/features/edit/form-fields/number-field'
 import { TagSelectField } from '@/features/edit/form-fields/tag-select-field'
@@ -37,8 +40,19 @@ export default function BaseInfoEditPage(): ReactElement {
     )
   }
 
+  const validate = (): ValidationResult =>
+    chain(
+      validateRequired([
+        { label: '姓名', value: nameF.value },
+        { label: '手机号', value: phoneF.value as string | undefined },
+        { label: '邮箱', value: emailF.value as string | undefined },
+      ]),
+      validatePhone(phoneF.value as string | undefined),
+      validateEmail(emailF.value as string | undefined),
+    )
+
   return (
-    <ModuleEditShell title="基础信息" subtitle="让招聘者快速认识你">
+    <ModuleEditShell title="基础信息" subtitle="让招聘者快速认识你" validate={validate}>
       <TextField
         label="姓名"
         value={nameF.value}
@@ -98,6 +112,7 @@ export default function BaseInfoEditPage(): ReactElement {
         value={politicalF.value ?? ''}
         onValueChange={politicalF.setValue}
       />
+      <CustomBaseFields />
     </ModuleEditShell>
   )
 }

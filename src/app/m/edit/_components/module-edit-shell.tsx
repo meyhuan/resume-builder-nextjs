@@ -7,12 +7,23 @@ import { toast } from 'sonner'
 import { useDraftStore } from '@/features/edit/draft/draft-store'
 import { cn } from '@/lib/utils'
 
+export interface ValidationResult {
+  readonly ok: boolean
+  /** User-facing message shown in a toast. */
+  readonly message?: string
+}
+
 interface ModuleEditShellProps {
   readonly title: string
   readonly subtitle?: string
   readonly children: ReactNode
   readonly onBack?: () => void
   readonly footer?: ReactNode
+  /**
+   * Optional pre-save validation. Returning `{ ok: false, message }` aborts
+   * the save and shows a toast. Pages declare their required-field rules here.
+   */
+  readonly validate?: () => ValidationResult
 }
 
 /**
@@ -22,7 +33,7 @@ interface ModuleEditShellProps {
  * and haptic feedback on save success.
  */
 export function ModuleEditShell(props: ModuleEditShellProps): ReactElement {
-  const { title, subtitle, children, onBack, footer } = props
+  const { title, subtitle, children, onBack, footer, validate } = props
   const router = useRouter()
   const dirtyCount = useDraftStore((s) => s.dirtyPaths.length)
   const isSaving = useDraftStore((s) => s.isSaving)
@@ -43,7 +54,21 @@ export function ModuleEditShell(props: ModuleEditShellProps): ReactElement {
     doBack()
   }
 
+  const runValidation = (): boolean => {
+    if (!validate) return true
+    const result: ValidationResult = validate()
+    if (!result.ok) {
+      toast.error(result.message || '请先填写必填项')
+      if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+        navigator.vibrate([30, 20, 30])
+      }
+      return false
+    }
+    return true
+  }
+
   const handleSave = async (): Promise<void> => {
+    if (!runValidation()) return
     const res = await saveAll()
     if (res.ok) {
       toast.success('已保存 ✓')
@@ -56,6 +81,7 @@ export function ModuleEditShell(props: ModuleEditShellProps): ReactElement {
   }
 
   const handleSaveAndBack = async (): Promise<void> => {
+    if (!runValidation()) return
     const res = await saveAll()
     if (res.ok) {
       setConfirmBack(false)
@@ -67,7 +93,7 @@ export function ModuleEditShell(props: ModuleEditShellProps): ReactElement {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
-      {/* Top bar */}
+      {/* Minimal top bar: back + title only. Save action lives at the bottom. */}
       <div className="sticky top-0 z-20 flex items-center justify-between px-3 h-12 bg-white/90 backdrop-blur border-b border-slate-200">
         <button
           type="button"
@@ -81,29 +107,55 @@ export function ModuleEditShell(props: ModuleEditShellProps): ReactElement {
           <div className="text-sm font-semibold text-slate-800">{title}</div>
           {subtitle && <div className="text-[10px] text-slate-400">{subtitle}</div>}
         </div>
-        <button
-          type="button"
-          onClick={handleSave}
-          disabled={isSaving || dirtyCount === 0}
-          className={cn(
-            'h-9 px-3 rounded-lg flex items-center gap-1 text-sm font-medium transition-all',
-            dirtyCount > 0
-              ? 'bg-violet-600 text-white active:scale-95'
-              : 'text-slate-400',
-          )}
-          aria-label="保存"
-        >
-          {isSaving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
-          保存
-        </button>
+        <div className="w-9" />
       </div>
 
-      {/* Body */}
-      <div className="flex-1 px-4 py-5 pb-24">
+      {/* Body — extra bottom padding to clear the fixed save bar. */}
+      <div
+        className="flex-1 px-4 py-5"
+        style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 88px)' }}
+      >
         <div className="flex flex-col gap-5">{children}</div>
       </div>
 
       {footer}
+
+      {/* Bottom action bar — thumb-zone friendly primary save action. */}
+      <div
+        className="fixed bottom-0 left-0 right-0 z-30 bg-white/95 backdrop-blur border-t border-slate-200 shadow-[0_-2px_8px_rgba(0,0,0,0.04)]"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+      >
+        <div className="flex items-center gap-3 px-4 py-3">
+          <div className="flex items-center gap-2 text-xs text-slate-500">
+            {dirtyCount > 0 ? (
+              <>
+                <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+                <span><span className="font-semibold text-slate-700">{dirtyCount}</span> 项未保存</span>
+              </>
+            ) : (
+              <>
+                <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                <span>已全部保存</span>
+              </>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={isSaving || dirtyCount === 0}
+            className={cn(
+              'ml-auto h-11 px-6 rounded-xl flex items-center justify-center gap-2 text-sm font-medium transition-all active:scale-[0.98]',
+              dirtyCount > 0
+                ? 'bg-violet-600 hover:bg-violet-700 text-white shadow-md shadow-violet-600/30'
+                : 'bg-slate-100 text-slate-400',
+            )}
+            aria-label="保存"
+          >
+            {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
+            <span>{isSaving ? '保存中…' : '保存'}</span>
+          </button>
+        </div>
+      </div>
 
       {/* Confirm back dialog */}
       {confirmBack && (

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, type ReactElement } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Eye, Loader2, Menu } from 'lucide-react'
+import { Loader2, Menu } from 'lucide-react'
 import { toast } from 'sonner'
 import type { ResumeData } from '@/entities/resume/resume-data'
 import { useDraftStore } from '@/features/edit/draft/draft-store'
@@ -12,7 +12,7 @@ import { GreetingBanner } from './_components/greeting-banner'
 import { ProgressCard } from './_components/progress-card'
 import { QuickActions } from './_components/quick-actions'
 import { MilestoneConfetti } from './_components/milestone-confetti'
-import { SaveBar } from './_components/save-bar'
+import { HomeActionBar } from './_components/home-action-bar'
 import { DeveloperNote } from './_components/developer-note'
 import { BaseInfoPreview } from './_components/base-info-preview'
 import { JobIntentionPreview } from './_components/job-intention-preview'
@@ -102,7 +102,21 @@ export default function MobileEditHomeClient(): ReactElement {
       if (sec.blocks.length === 1 && sec.blocks[0].type === 'text') {
         return !htmlToPlainText(sec.blocks[0].html)
       }
-      return false
+      // Check if all list-based blocks are empty
+      return sec.blocks.every((block) => {
+        switch (block.type) {
+          case 'project':
+            return !block.name && !block.role && !block.contentHtml
+          case 'experience':
+            return !block.company && !block.position && !block.contentHtml
+          case 'education':
+            return !block.school && !block.major && !block.degree
+          case 'campus':
+            return !block.organization && !block.position && !block.contentHtml
+          default:
+            return false
+        }
+      })
     })
   }, [resume])
 
@@ -167,7 +181,10 @@ export default function MobileEditHomeClient(): ReactElement {
   if (!resume) return <div />
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-32">
+    <div
+      className="min-h-screen bg-slate-50"
+      style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 88px)' }}
+    >
       <div className="sticky top-0 z-20 flex items-center justify-between px-3 h-12 bg-white/90 backdrop-blur border-b border-slate-200">
         <button
           type="button"
@@ -177,15 +194,7 @@ export default function MobileEditHomeClient(): ReactElement {
           <Menu size={18} />
         </button>
         <div className="text-sm font-semibold text-slate-800">我的简历</div>
-        <button
-          type="button"
-          onClick={(): void => router.push(`/m/preview?id=${resumeId ?? ''}`)}
-          className="h-9 px-3 rounded-lg flex items-center gap-1 text-violet-600 hover:bg-violet-50 text-sm font-medium"
-          aria-label="预览"
-        >
-          <Eye size={16} />
-          <span>预览</span>
-        </button>
+        <div className="w-9" />
       </div>
 
       <GreetingBanner name={resume.name} />
@@ -205,7 +214,7 @@ export default function MobileEditHomeClient(): ReactElement {
       <AddMoreModules emptyModules={emptyOptionalModules} />
 
       <DeveloperNote />
-      <SaveBar />
+      <HomeActionBar resumeId={resumeId} />
     </div>
   )
 }

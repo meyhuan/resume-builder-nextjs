@@ -3,9 +3,10 @@
 import { use, useMemo, type ReactElement } from 'react'
 import { useRouter } from 'next/navigation'
 import { ModuleEditShell } from '../../_components/module-edit-shell'
+import type { ValidationResult } from '../../_components/module-edit-shell'
+import { validateRequired } from '../../_components/validators'
 import { TextField } from '@/features/edit/form-fields/text-field'
-import { TextareaField } from '@/features/edit/form-fields/textarea-field'
-import { htmlToPlainText, plainTextToHtml } from '@/features/edit/form-fields/html-text'
+import { MobileRichTextarea } from '@/features/edit/form-fields/mobile-rich-textarea'
 import { useCustomSections } from '@/features/edit/draft/use-custom-sections'
 
 interface PageParams {
@@ -32,8 +33,16 @@ export default function CustomDetailPage({ params }: PageParams): ReactElement {
     )
   }
 
+  const validate = (): ValidationResult =>
+    validateRequired([{ label: '模块名称', value: section.title }])
+
   return (
-    <ModuleEditShell title={section.title} subtitle="自定义内容" onBack={(): void => router.replace('/m/edit/custom')}>
+    <ModuleEditShell
+      title={section.title}
+      subtitle="自定义内容"
+      onBack={(): void => router.replace('/m/edit/custom')}
+      validate={validate}
+    >
       <TextField
         label="模块名称"
         value={section.title}
@@ -41,13 +50,13 @@ export default function CustomDetailPage({ params }: PageParams): ReactElement {
         required
         placeholder="例如：语言能力"
       />
-      <TextareaField
+      <MobileRichTextarea
         label="模块内容"
-        value={htmlToPlainText(getTextHtml(section.id))}
-        onValueChange={(v): void => setTextHtml(section.id, plainTextToHtml(v))}
+        html={getTextHtml(section.id)}
+        onHtmlChange={(v): void => setTextHtml(section.id, v)}
         placeholder={'每行一条即可，空行分段\n\n例如：\n• 英语 CET-6（600 分）\n• 日语 N2\n• 粤语日常沟通'}
-        tip="内容越具体，招聘者印象越深"
-        minRows={8}
+        tip="内容越具体，招聘者印象越深；支持粗体/列表格式"
+        minHeight={200}
       />
     </ModuleEditShell>
   )

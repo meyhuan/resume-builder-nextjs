@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, type ReactElement } from 'react'
+import { useState, useCallback, type ReactElement } from 'react'
 import {
   DndContext,
   closestCenter,
@@ -20,8 +20,10 @@ import { CSS } from '@dnd-kit/utilities'
 import { KeyboardSensor } from '@dnd-kit/core'
 import { Shuffle, Check } from 'lucide-react'
 import type { Section } from '@/entities/resume/section'
+import type { ModuleConfig } from '@/entities/module/module-config'
 import { useDraftStore } from '@/features/edit/draft/draft-store'
 import { findModuleBySectionTitle } from '@/entities/module/module-config'
+import { useSectionList } from '@/features/edit/draft/use-section-list'
 import { SectionPreview } from './section-preview'
 import { htmlToPlainText } from '@/features/edit/form-fields/html-text'
 
@@ -87,7 +89,7 @@ export function SectionsList({ sections }: SectionsListProps): ReactElement | nu
       ) : (
         <div className="flex flex-col gap-3">
           {nonEmpty.map((s) => (
-            <SectionPreview
+            <SectionPreviewWithAdd
               key={s.id}
               section={s}
               module={findModuleBySectionTitle(s.title) ?? null}
@@ -104,7 +106,40 @@ function isSectionEmpty(section: Section): boolean {
   if (section.blocks.length === 1 && section.blocks[0].type === 'text') {
     return !htmlToPlainText(section.blocks[0].html)
   }
-  return false
+  // Check if all list-based blocks are empty
+  return section.blocks.every((block) => {
+    switch (block.type) {
+      case 'project':
+        return !block.name && !block.role && !block.contentHtml
+      case 'experience':
+        return !block.company && !block.position && !block.contentHtml
+      case 'education':
+        return !block.school && !block.major && !block.degree
+      case 'campus':
+        return !block.organization && !block.position && !block.contentHtml
+      default:
+        return false
+    }
+  })
+}
+
+/**
+ * Wrapper that provides onAddItem via useSectionList for list-based modules.
+ */
+function SectionPreviewWithAdd({ section, module }: { readonly section: Section; readonly module: ModuleConfig | null }): ReactElement {
+  if (module?.isList && module.sectionTitle) {
+    return <ListSectionPreview section={section} module={module} />
+  }
+  return <SectionPreview section={section} module={module} />
+}
+
+function ListSectionPreview({ section, module }: { readonly section: Section; readonly module: ModuleConfig }): ReactElement {
+  const { addBlock, blocks } = useSectionList(module.sectionTitle!)
+  const onAddItem = useCallback((): number => {
+    addBlock()
+    return blocks.length
+  }, [addBlock, blocks.length])
+  return <SectionPreview section={section} module={module} onAddItem={onAddItem} />
 }
 
 function SortableSectionRow({ section }: { readonly section: Section }): ReactElement {

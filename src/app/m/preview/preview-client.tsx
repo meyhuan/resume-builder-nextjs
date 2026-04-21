@@ -1,14 +1,22 @@
 'use client'
 
-import { useEffect, useRef, useState, Suspense, type ReactElement } from 'react'
+import { useEffect, useRef, useState, useCallback, Suspense, type ReactElement } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { ArrowLeft, Settings2, X, Loader2, FileDown } from 'lucide-react'
+import { toast } from 'sonner'
 import { useAppStore } from '@/state/store'
+import { useDraftStore } from '@/features/edit/draft/draft-store'
+import type { ResumeData } from '@/entities/resume/resume-data'
 import { TEMPLATE_REGISTRY, getTemplate } from '@/templates/template-loader'
 import type { ThemeTokens } from '@/entities/theme/theme-tokens'
 import AiSectionProvider from '@/components/ai-section/ai-section-provider'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Slider } from '@/components/ui/slider'
 import { cn } from '@/lib/utils'
+import { buildResumeHtml } from '@/io/html-export'
+import { exportImage } from '@/io/export-image'
+import { useVipCheck } from '@/hooks/use-vip-check'
+import VipUpgradeDialog from '@/components/vip/vip-upgrade-dialog'
 
 const FONT_FAMILIES: ReadonlyArray<{ id: string; label: string; stack: string }> = [
   { id: 'sans', label: '无衬线', stack: 'Inter, "Noto Sans SC", system-ui, sans-serif' },
@@ -33,28 +41,63 @@ type SettingsTab = 'template' | 'color' | 'font' | 'layout' | 'advanced'
  * and renders the active template alongside a bottom-sheet settings panel.
  */
 export default function MobilePreviewClient(): ReactElement {
+  const searchParams = useSearchParams()
   const resume = useAppStore((s) => s.resume)
   const setReadOnly = useAppStore((s) => s.setReadOnly)
-  const loadTestData = useAppStore((s) => s.loadTestData)
+  const setResume = useAppStore((s) => s.setResume)
   const getThemeForTemplate = useAppStore((s) => s.getThemeForTemplate)
   const setThemeForTemplate = useAppStore((s) => s.setThemeForTemplate)
   // Subscribe to themes map so live updates re-render the preview.
   const themesMap = useAppStore((s) => s.themes)
   void themesMap
 
+  // Draft store holds the user's actual edits
+  const draft = useDraftStore((s) => s.draft)
+  const draftResumeId = useDraftStore((s) => s.resumeId)
+  const setFromServer = useDraftStore((s) => s.setFromServer)
+
   const [templateId, setTemplateId] = useState<string>('simple')
   const [sheetOpen, setSheetOpen] = useState<boolean>(false)
   const [tab, setTab] = useState<SettingsTab>('template')
   const [containerWidth, setContainerWidth] = useState<number>(MOBILE_PAGE_MAX_WIDTH_PX)
+  const [contentHeight, setContentHeight] = useState<number>(0)
+  // User pinch-zoom factor. Independent of theme/layout so typography changes
+  // do not reset the user's chosen zoom level.
+  const [userZoom, setUserZoom] = useState<number>(1)
   const stageRef = useRef<HTMLDivElement>(null)
+  const innerRef = useRef<HTMLDivElement>(null)
+  const pinchStateRef = useRef<{ startDist: number; startZoom: number } | null>(null)
+  const lastTapRef = useRef<number>(0)
 
+  // Sync draft data into the app store so templates can render it.
+  // Falls back to loading from server if draft is empty.
   useEffect(() => {
     setReadOnly(true)
-    loadTestData()
+    if (draft) {
+      setResume((d: ResumeData): void => {
+        Object.assign(d, draft)
+      })
+    } else {
+      const paramId: string | null = searchParams.get('id')
+      const targetId: string | null = paramId || draftResumeId
+      if (targetId) {
+        void (async (): Promise<void> => {
+          try {
+            const res = await fetch(`/next-api/resumes/${targetId}`, { credentials: 'include' })
+            if (!res.ok) return
+            const full: { id: string; content: ResumeData } = await res.json()
+            setFromServer(full.id, full.content)
+            setResume((d: ResumeData): void => {
+              Object.assign(d, full.content)
+            })
+          } catch { /* silent */ }
+        })()
+      }
+    }
     return (): void => {
       setReadOnly(false)
     }
-  }, [setReadOnly, loadTestData])
+  }, [draft, searchParams, draftResumeId, setReadOnly, setResume, setFromServer])
 
   useEffect(() => {
     const update = (): void => {
@@ -67,6 +110,21 @@ export default function MobilePreviewClient(): ReactElement {
     return (): void => window.removeEventListener('resize', update)
   }, [])
 
+  // Observe the unscaled template content height so we can size the outer
+  // container to the visually-scaled height (CSS transform does not shrink
+  // layout dimensions, which otherwise causes an oversized scroll area).
+  useEffect(() => {
+    const node = innerRef.current
+    if (!node) return
+    const observer = new ResizeObserver((entries): void => {
+      for (const entry of entries) {
+        setContentHeight(entry.contentRect.height)
+      }
+    })
+    observer.observe(node)
+    return (): void => observer.disconnect()
+  }, [templateId, resume])
+
   const theme: ThemeTokens = getThemeForTemplate(templateId)
   const templateConfig = getTemplate(templateId)
   const Template = templateConfig?.component
@@ -75,9 +133,13 @@ export default function MobilePreviewClient(): ReactElement {
   const paragraphIndent: number = theme.paragraphIndent ?? 0
   const onePageFit: boolean = theme.onePageFit ?? false
 
-  // A4 at 210mm ≈ 794px @ 96dpi. Scale to fit mobile viewport.
+  // A4 at 210mm ≈ 794px @ 96dpi. Scale to fit mobile viewport, then multiply
+  // by the user-controlled pinch zoom factor.
   const A4_WIDTH_PX = 794
-  const scale: number = containerWidth / A4_WIDTH_PX
+  const MIN_USER_ZOOM = 0.5
+  const MAX_USER_ZOOM = 3
+  const baseScale: number = containerWidth / A4_WIDTH_PX
+  const scale: number = baseScale * userZoom
   const scaledHeight: number = A4_WIDTH_PX * A4_RATIO * scale
 
   const updateTheme = (patch: Partial<ThemeTokens>): void => {
@@ -86,6 +148,100 @@ export default function MobilePreviewClient(): ReactElement {
     })
   }
 
+  const clampZoom = (z: number): number => Math.min(MAX_USER_ZOOM, Math.max(MIN_USER_ZOOM, z))
+
+  const getTouchDistance = (touches: React.TouchList): number => {
+    const dx: number = touches[0].clientX - touches[1].clientX
+    const dy: number = touches[0].clientY - touches[1].clientY
+    return Math.hypot(dx, dy)
+  }
+
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>): void => {
+    if (e.touches.length === 2) {
+      pinchStateRef.current = {
+        startDist: getTouchDistance(e.touches),
+        startZoom: userZoom,
+      }
+    } else if (e.touches.length === 1) {
+      // Double-tap to reset zoom.
+      const now: number = Date.now()
+      if (now - lastTapRef.current < 300) {
+        setUserZoom(1)
+        lastTapRef.current = 0
+      } else {
+        lastTapRef.current = now
+      }
+    }
+  }
+
+  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>): void => {
+    if (e.touches.length !== 2 || !pinchStateRef.current) return
+    e.preventDefault()
+    const dist: number = getTouchDistance(e.touches)
+    const ratio: number = dist / pinchStateRef.current.startDist
+    setUserZoom(clampZoom(pinchStateRef.current.startZoom * ratio))
+  }
+
+  const handleTouchEnd = (e: React.TouchEvent<HTMLDivElement>): void => {
+    if (e.touches.length < 2) pinchStateRef.current = null
+  }
+
+  // --- Export handlers ---
+  const { requirePdf, showUpgrade, setShowUpgrade } = useVipCheck()
+  const [isExporting, setIsExporting] = useState<boolean>(false)
+
+  const handleExportPdf = useCallback(async (): Promise<void> => {
+    if (!requirePdf()) return
+    if (!innerRef.current) return
+    setIsExporting(true)
+    try {
+      const html: string = buildResumeHtml(innerRef.current, { title: resume.name || 'Resume' })
+      const response = await fetch('/next-api/generate-pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ html }),
+      })
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null)
+        throw new Error(errorData?.error ?? `PDF 生成失败 (${response.status})`)
+      }
+      // Consume quota
+      const quotaRes = await fetch('/next-api/consume-pdf-quota', { method: 'POST' })
+      if (!quotaRes.ok) {
+        const errBody = await quotaRes.json().catch(() => null)
+        toast.error(errBody?.error || '导出次数已用完')
+        setShowUpgrade(true)
+        return
+      }
+      const blob: Blob = await response.blob()
+      const url: string = window.URL.createObjectURL(blob)
+      const a: HTMLAnchorElement = document.createElement('a')
+      a.href = url
+      a.download = `${resume.name || 'resume'}.pdf`
+      a.click()
+      window.URL.revokeObjectURL(url)
+      toast.success('PDF 导出成功 ✓')
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'PDF 导出失败')
+    } finally {
+      setIsExporting(false)
+    }
+  }, [resume, requirePdf, setShowUpgrade])
+
+  const handleExportImage = useCallback(async (): Promise<void> => {
+    if (!requirePdf()) return
+    if (!innerRef.current) return
+    setIsExporting(true)
+    try {
+      await exportImage(innerRef, { fileName: resume.name || 'resume', pixelRatio: 2, backgroundColor: '#ffffff' })
+      toast.success('图片导出成功 ✓')
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : '图片导出失败')
+    } finally {
+      setIsExporting(false)
+    }
+  }, [resume, requirePdf])
+
   const scopedStyleId = `m-preview-scope-${templateId}`
 
   return (
@@ -93,13 +249,26 @@ export default function MobilePreviewClient(): ReactElement {
       <div className="min-h-screen bg-slate-100 flex flex-col">
         <TopBar />
 
-        <div ref={stageRef} className="flex-1 flex items-start justify-center px-3 pt-4 pb-32 overflow-y-auto">
+        <div
+          ref={stageRef}
+          className="flex-1 flex items-start justify-center px-3 pt-4 overflow-auto touch-pan-y"
+          style={{
+            touchAction: 'pan-x pan-y',
+            // Bottom padding accounts for the fixed action bar (72px) + safe area.
+            paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 88px)',
+          }}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
           <div
             id={scopedStyleId}
-            className="relative bg-white shadow-xl rounded"
+            className="relative bg-white shadow-xl rounded overflow-hidden"
             style={{
-              width: `${containerWidth}px`,
-              minHeight: `${scaledHeight}px`,
+              width: `${containerWidth * userZoom}px`,
+              // Use the measured unscaled content height × scale for the real
+              // visual height. Fallback to one A4 page height before measurement.
+              height: `${contentHeight > 0 ? contentHeight * scale : scaledHeight}px`,
             }}
           >
             {/* Scoped CSS so titleScale / paragraphIndent can influence existing templates
@@ -115,6 +284,7 @@ export default function MobilePreviewClient(): ReactElement {
             `}</style>
 
             <div
+              ref={innerRef}
               style={{
                 width: `${A4_WIDTH_PX}px`,
                 transform: `scale(${scale})`,
@@ -134,7 +304,26 @@ export default function MobilePreviewClient(): ReactElement {
           </div>
         </div>
 
-        <FloatingSettingsButton onClick={(): void => setSheetOpen(true)} />
+        {/* Zoom indicator — shows when user zoomed in/out, tap to reset.
+            Positioned above the bottom action bar with safe-area awareness. */}
+        {userZoom !== 1 && (
+          <button
+            type="button"
+            onClick={(): void => setUserZoom(1)}
+            className="fixed left-1/2 -translate-x-1/2 z-30 px-3 py-1.5 rounded-full bg-slate-900/80 text-white text-xs font-medium shadow-lg backdrop-blur active:scale-95 transition-transform"
+            style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 72px)' }}
+            aria-label="重置缩放"
+          >
+            {Math.round(userZoom * 100)}% · 点击复位
+          </button>
+        )}
+
+        <BottomActionBar
+          onOpenSettings={(): void => setSheetOpen(true)}
+          onExportPdf={handleExportPdf}
+          onExportImage={handleExportImage}
+          isExporting={isExporting}
+        />
 
         <BottomSheet open={sheetOpen} onClose={(): void => setSheetOpen(false)}>
           <Tabs value={tab} onValueChange={(v): void => setTab(v as SettingsTab)}>
@@ -171,6 +360,8 @@ export default function MobilePreviewClient(): ReactElement {
             </TabsContent>
           </Tabs>
         </BottomSheet>
+
+        <VipUpgradeDialog open={showUpgrade} onOpenChange={setShowUpgrade} />
       </div>
     </AiSectionProvider>
   )
@@ -180,9 +371,8 @@ export default function MobilePreviewClient(): ReactElement {
 // Top bar
 // ---------------------------------------------------------------------------
 
+/** Minimal top bar: back + title. Primary actions live in the bottom bar. */
 function TopBar(): ReactElement {
-  const [showExportMenu, setShowExportMenu] = useState(false)
-
   return (
     <div className="sticky top-0 z-30 flex items-center justify-between px-3 h-12 bg-white/90 backdrop-blur border-b border-slate-200">
       <button
@@ -194,39 +384,98 @@ function TopBar(): ReactElement {
         <ArrowLeft size={18} />
       </button>
       <div className="text-sm font-semibold text-slate-800">简历预览</div>
-      <div className="relative">
+      <div className="w-9" />
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Bottom action bar (primary mobile touchpoint)
+// ---------------------------------------------------------------------------
+
+interface BottomActionBarProps {
+  readonly onOpenSettings: () => void
+  readonly onExportPdf: () => Promise<void>
+  readonly onExportImage: () => Promise<void>
+  readonly isExporting: boolean
+}
+
+/**
+ * Fixed bottom action bar with thumb-zone friendly primary actions.
+ * Follows mobile UX best practice: primary actions in the bottom third of
+ * the screen, with safe-area inset support for iOS home-indicator.
+ */
+function BottomActionBar(props: BottomActionBarProps): ReactElement {
+  const { onOpenSettings, onExportPdf, onExportImage, isExporting } = props
+  const [showExportMenu, setShowExportMenu] = useState<boolean>(false)
+
+  return (
+    <div
+      className="fixed bottom-0 left-0 right-0 z-30 bg-white/95 backdrop-blur border-t border-slate-200 shadow-[0_-2px_8px_rgba(0,0,0,0.04)]"
+      style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+    >
+      <div className="flex items-center gap-3 px-4 py-3">
         <button
           type="button"
-          className="h-9 w-9 rounded-lg flex items-center justify-center text-slate-600 hover:bg-slate-100"
-          onClick={(): void => setShowExportMenu((v) => !v)}
-          aria-label="导出"
+          onClick={onOpenSettings}
+          className="flex-1 h-11 rounded-xl flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-sm active:scale-[0.98] transition-transform"
         >
-          <FileDown size={18} />
+          <Settings2 size={18} />
+          <span>排版设置</span>
         </button>
-        {showExportMenu && (
-          <div className="absolute right-0 top-full mt-1 w-32 bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-50">
-            <button
-              type="button"
-              className="w-full px-3 py-2 text-sm text-left text-slate-700 hover:bg-slate-50"
-              onClick={(): void => {
-                setShowExportMenu(false)
-                alert('导出 PDF 功能开发中')
-              }}
-            >
-              导出 PDF
-            </button>
-            <button
-              type="button"
-              className="w-full px-3 py-2 text-sm text-left text-slate-700 hover:bg-slate-50"
-              onClick={(): void => {
-                setShowExportMenu(false)
-                alert('导出图片功能开发中')
-              }}
-            >
-              导出图片
-            </button>
-          </div>
-        )}
+
+        <div className="relative flex-1">
+          <button
+            type="button"
+            onClick={(): void => setShowExportMenu((v) => !v)}
+            disabled={isExporting}
+            className="w-full h-11 rounded-xl flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-700 text-white font-medium text-sm shadow-md shadow-violet-600/30 active:scale-[0.98] transition-transform disabled:opacity-70"
+          >
+            {isExporting ? (
+              <>
+                <Loader2 size={18} className="animate-spin" />
+                <span>导出中…</span>
+              </>
+            ) : (
+              <>
+                <FileDown size={18} />
+                <span>导出</span>
+              </>
+            )}
+          </button>
+
+          {showExportMenu && !isExporting && (
+            <>
+              {/* Tap-outside dismissal layer */}
+              <div
+                className="fixed inset-0 z-40"
+                onClick={(): void => setShowExportMenu(false)}
+              />
+              <div className="absolute right-0 bottom-full mb-2 w-40 bg-white rounded-xl shadow-xl border border-slate-200 py-1 z-50 overflow-hidden">
+                <button
+                  type="button"
+                  className="w-full px-4 py-3 text-sm text-left text-slate-700 hover:bg-slate-50 active:bg-slate-100"
+                  onClick={(): void => {
+                    setShowExportMenu(false)
+                    void onExportPdf()
+                  }}
+                >
+                  导出 PDF
+                </button>
+                <button
+                  type="button"
+                  className="w-full px-4 py-3 text-sm text-left text-slate-700 hover:bg-slate-50 active:bg-slate-100"
+                  onClick={(): void => {
+                    setShowExportMenu(false)
+                    void onExportImage()
+                  }}
+                >
+                  导出图片
+                </button>
+              </div>
+            </>
+          )}
+        </div>
       </div>
     </div>
   )
@@ -242,21 +491,8 @@ function TemplateFallback(): ReactElement {
 }
 
 // ---------------------------------------------------------------------------
-// Floating button + bottom sheet
+// Bottom sheet
 // ---------------------------------------------------------------------------
-
-function FloatingSettingsButton({ onClick }: { onClick: () => void }): ReactElement {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="fixed bottom-6 right-6 z-30 h-14 w-14 rounded-full bg-violet-600 text-white shadow-xl shadow-violet-600/30 flex items-center justify-center active:scale-95 transition-transform"
-      aria-label="打开排版设置"
-    >
-      <Settings2 size={22} />
-    </button>
-  )
-}
 
 interface BottomSheetProps {
   readonly open: boolean

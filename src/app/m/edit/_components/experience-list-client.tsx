@@ -3,6 +3,7 @@
 import { useState, type ReactElement } from 'react'
 import { useRouter } from 'next/navigation'
 import { Plus, Trash2, ChevronUp, ChevronDown, GripVertical } from 'lucide-react'
+import { htmlToPlainText } from '@/features/edit/form-fields/html-text'
 import { toast } from 'sonner'
 import { ModuleEditShell } from './module-edit-shell'
 import { useSectionList } from '@/features/edit/draft/use-section-list'
@@ -116,18 +117,18 @@ interface ExperienceRowProps {
   readonly onMoveDown: () => void
 }
 
-function summarizeBlock(block: ResumeBlock): { title: string; meta: string } {
+function summarizeBlock(block: ResumeBlock): { title: string; meta: string; content: string } {
   switch (block.type) {
     case 'experience':
-      return { title: block.company || '未填写', meta: `${block.position || ''} · ${block.startDate || ''}${block.endDate ? ` - ${block.endDate}` : ''}`.trim() }
+      return { title: block.company || '未填写', meta: `${block.position || ''} · ${block.startDate || ''}${block.endDate ? ` - ${block.endDate}` : ''}`.trim(), content: htmlToPlainText(block.contentHtml) }
     case 'education':
-      return { title: block.school || '未填写', meta: `${block.major || ''} · ${block.degree || ''}`.trim() }
+      return { title: block.school || '未填写', meta: `${block.major || ''} · ${block.degree || ''}`.trim(), content: '' }
     case 'project':
-      return { title: block.name || '未填写', meta: `${block.role || ''} · ${block.startDate || ''}${block.endDate ? ` - ${block.endDate}` : ''}`.trim() }
+      return { title: block.name || '未填写', meta: `${block.role || ''} · ${block.startDate || ''}${block.endDate ? ` - ${block.endDate}` : ''}`.trim(), content: htmlToPlainText(block.contentHtml) }
     case 'campus':
-      return { title: block.organization || '未填写', meta: `${block.position || ''}`.trim() }
+      return { title: block.organization || '未填写', meta: `${block.position || ''}`.trim(), content: htmlToPlainText(block.contentHtml) }
     default:
-      return { title: '内容', meta: '' }
+      return { title: '内容', meta: '', content: '' }
   }
 }
 
@@ -145,6 +146,7 @@ function ExperienceRow(props: ExperienceRowProps): ReactElement {
         <div className="flex-1 min-w-0">
           <div className="text-sm font-semibold text-slate-900 truncate">{summary.title}</div>
           {summary.meta && <div className="mt-0.5 text-xs text-slate-500 truncate">{summary.meta}</div>}
+          {summary.content && <div className="mt-1 text-xs text-slate-400 line-clamp-2">{summary.content}</div>}
         </div>
       </button>
       <div className="flex items-center border-t border-slate-100">

@@ -130,13 +130,14 @@ export function MobileRichTextarea(props: MobileRichTextareaProps): ReactElement
           <HistoryPlugin />
           <ListPlugin />
           <OnChangePlugin onChange={handleChange} ignoreSelectionChange />
-          <div className="border-t border-slate-100 px-1.5 py-1 flex items-center gap-1 overflow-x-auto">
-            <FormatToolbar />
+          <div className="border-t border-slate-100 px-1.5 py-1 flex flex-col gap-1">
+            <div className="flex items-center gap-1 overflow-x-auto">
+              <FormatToolbar />
+            </div>
             {extraToolbar && (
-              <>
-                <div className="w-px h-4 bg-slate-200 mx-1 shrink-0" />
-                <div className="flex items-center gap-1 overflow-x-auto">{extraToolbar}</div>
-              </>
+              <div className="flex items-center gap-1 overflow-x-auto border-t border-slate-100 pt-1">
+                {extraToolbar}
+              </div>
             )}
           </div>
         </div>

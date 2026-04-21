@@ -2,7 +2,7 @@
 
 import { type ReactElement } from 'react'
 import { useRouter } from 'next/navigation'
-import { ChevronRight, Plus, GripVertical } from 'lucide-react'
+import { ChevronRight, Plus, GripVertical, MoreHorizontal } from 'lucide-react'
 import type { Section } from '@/entities/resume/section'
 import type { ResumeBlock } from '@/entities/blocks/resume-block'
 import type { ModuleConfig } from '@/entities/module/module-config'
@@ -15,6 +15,8 @@ export interface SectionPreviewProps {
   /** Whether drag reorder handle is visible (manage mode). */
   readonly dragging?: boolean
   readonly dragHandleProps?: React.HTMLAttributes<HTMLDivElement>
+  /** Callback to add a new block and return its index. If omitted, falls back to list page. */
+  readonly onAddItem?: () => number
 }
 
 /**
@@ -22,7 +24,7 @@ export interface SectionPreviewProps {
  * expands to show each item as a clickable row; for text-based modules it
  * shows a truncated preview.
  */
-export function SectionPreview({ section, module, dragging, dragHandleProps }: SectionPreviewProps): ReactElement {
+export function SectionPreview({ section, module, dragging, dragHandleProps, onAddItem }: SectionPreviewProps): ReactElement {
   const router = useRouter()
   const label: string = module?.label ?? section.title
   const emoji: string = module?.emoji ?? '✨'
@@ -56,9 +58,13 @@ export function SectionPreview({ section, module, dragging, dragHandleProps }: S
       const plain: string = htmlToPlainText(textBlock.html)
       if (!plain) return null
       return (
-        <div className="px-4 pb-3 pt-1 text-[13px] text-slate-600 leading-relaxed line-clamp-3 whitespace-pre-wrap">
+        <button
+          type="button"
+          onClick={(): void => router.push(baseRoute)}
+          className="w-full text-left px-4 pb-4 pt-1 text-[13px] text-slate-600 leading-relaxed whitespace-pre-wrap line-clamp-4 active:bg-slate-50 transition-colors"
+        >
           {plain}
-        </div>
+        </button>
       )
     }
     return null
@@ -88,9 +94,10 @@ export function SectionPreview({ section, module, dragging, dragHandleProps }: S
         <button
           type="button"
           onClick={(): void => router.push(baseRoute)}
-          className="text-[11px] text-violet-600 px-2 py-1 rounded hover:bg-violet-50"
+          className="text-violet-600 p-1 rounded hover:bg-violet-50"
+          title="管理模块"
         >
-          管理
+          <MoreHorizontal size={16} />
         </button>
       </div>
 
@@ -109,7 +116,14 @@ export function SectionPreview({ section, module, dragging, dragHandleProps }: S
           {module?.isList && (
             <button
               type="button"
-              onClick={(): void => router.push(baseRoute)}
+              onClick={(): void => {
+                if (onAddItem) {
+                  const newIdx: number = onAddItem()
+                  router.push(`${baseRoute}/${newIdx}`)
+                } else {
+                  router.push(baseRoute)
+                }
+              }}
               className="w-full py-2 text-xs text-violet-600 border-t border-slate-100 flex items-center justify-center gap-1 hover:bg-violet-50/50"
             >
               <Plus size={12} />
@@ -134,6 +148,7 @@ function BlockSummary({ block }: { readonly block: ResumeBlock }): ReactElement 
           <div className="mt-0.5 text-xs text-slate-400 truncate">
             {formatDateRange(block.startDate, block.endDate)}
           </div>
+          {block.contentHtml && <div className="mt-1 text-xs text-slate-400 line-clamp-2">{htmlToPlainText(block.contentHtml)}</div>}
         </>
       )
     case 'education':
@@ -158,6 +173,7 @@ function BlockSummary({ block }: { readonly block: ResumeBlock }): ReactElement 
           <div className="mt-0.5 text-xs text-slate-400 truncate">
             {formatDateRange(block.startDate, block.endDate)}
           </div>
+          {block.contentHtml && <div className="mt-1 text-xs text-slate-400 line-clamp-2">{htmlToPlainText(block.contentHtml)}</div>}
         </>
       )
     case 'campus':
@@ -170,6 +186,7 @@ function BlockSummary({ block }: { readonly block: ResumeBlock }): ReactElement 
           <div className="mt-0.5 text-xs text-slate-400 truncate">
             {formatDateRange(block.startDate, block.endDate)}
           </div>
+          {block.contentHtml && <div className="mt-1 text-xs text-slate-400 line-clamp-2">{htmlToPlainText(block.contentHtml)}</div>}
         </>
       )
     default:

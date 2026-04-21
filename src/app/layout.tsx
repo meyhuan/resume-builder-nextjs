@@ -107,7 +107,9 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
         {children}
-        <Toaster position="top-center" richColors />
+        {/* Toast position: bottom-center on mobile (avoid covering top-bar back button),
+            top-center on desktop (traditional). */}
+        <Toaster position="bottom-center" richColors mobileOffset={{ bottom: '96px' }} />
         <BaiduAnalytics />
       </body>
     </html>

@@ -9,6 +9,8 @@ import type { EducationBlock } from '@/entities/blocks/education-block'
 import type { ProjectBlock } from '@/entities/blocks/project-block'
 import type { CampusBlock } from '@/entities/blocks/campus-block'
 import { ModuleEditShell } from './module-edit-shell'
+import type { ValidationResult } from './module-edit-shell'
+import { validateRequired } from './validators'
 import { TextField } from '@/features/edit/form-fields/text-field'
 import { MonthPickerField } from '@/features/edit/form-fields/month-picker-field'
 import { TagSelectField } from '@/features/edit/form-fields/tag-select-field'
@@ -57,8 +59,46 @@ export function ExperienceDetailClient(props: ExperienceDetailClientProps): Reac
     )
   }
 
+  const validate = (): ValidationResult => {
+    switch (kind) {
+      case 'work':
+      case 'intern': {
+        const b = block as ExperienceBlock
+        return validateRequired([
+          { label: '公司名称', value: b.company },
+          { label: kind === 'intern' ? '实习岗位' : '职位名称', value: b.position },
+          { label: '开始时间', value: b.startDate },
+        ])
+      }
+      case 'education': {
+        const b = block as EducationBlock
+        return validateRequired([
+          { label: '学校名称', value: b.school },
+          { label: '开始时间', value: b.startDate },
+        ])
+      }
+      case 'project': {
+        const b = block as ProjectBlock
+        return validateRequired([
+          { label: '项目名称', value: b.name },
+          { label: '开始时间', value: b.startDate },
+        ])
+      }
+      case 'campus': {
+        const b = block as CampusBlock
+        return validateRequired([
+          { label: '组织名称', value: b.organization },
+          { label: '担任职务', value: b.position },
+          { label: '开始时间', value: b.startDate },
+        ])
+      }
+      default:
+        return { ok: true }
+    }
+  }
+
   return (
-    <ModuleEditShell title={title} onBack={(): void => router.replace(backRoute)}>
+    <ModuleEditShell title={title} onBack={(): void => router.replace(backRoute)} validate={validate}>
       {kind === 'work' && <WorkFields block={block as ExperienceBlock} onChange={handleFieldChange} moduleType="experience" />}
       {kind === 'intern' && <WorkFields block={block as ExperienceBlock} onChange={handleFieldChange} moduleType="experience" internship />}
       {kind === 'education' && <EducationFields block={block as EducationBlock} onChange={handleFieldChange} />}

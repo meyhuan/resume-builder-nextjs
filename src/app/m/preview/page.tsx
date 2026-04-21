@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import type { ReactElement } from 'react'
+import { Suspense, type ReactElement } from 'react'
 import MobilePreviewClient from './preview-client'
 
 export const metadata: Metadata = {
@@ -11,9 +11,13 @@ export const metadata: Metadata = {
 /**
  * Mobile-first read-only resume preview with template switching and typography/layout settings.
  *
- * The page is intentionally self-contained and backend-agnostic: it loads the built-in test
- * resume so the user can visit a URL and evaluate the settings surface end-to-end.
+ * Loads the user's draft data from the draft store (or from server if no draft),
+ * syncing it into the app store so templates can render it.
  */
 export default function MobilePreviewPage(): ReactElement {
-  return <MobilePreviewClient />
+  return (
+    <Suspense>
+      <MobilePreviewClient />
+    </Suspense>
+  )
 }

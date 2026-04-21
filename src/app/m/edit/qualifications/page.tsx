@@ -2,8 +2,7 @@
 
 import { type ReactElement } from 'react'
 import { ModuleEditShell } from '../_components/module-edit-shell'
-import { TextareaField } from '@/features/edit/form-fields/textarea-field'
-import { htmlToPlainText, plainTextToHtml } from '@/features/edit/form-fields/html-text'
+import { MobileRichTextarea } from '@/features/edit/form-fields/mobile-rich-textarea'
 import { useSingleTextBlock } from '@/features/edit/draft/use-single-text-block'
 
 const PLACEHOLDER: string = `• 2023 年「XX 全国创业大赛」一等奖\n• 大学英语六级（560 分）\n• 计算机软件设计师（中级）\n• 校级一等奖学金（2022-2023 学年）`
@@ -18,13 +17,13 @@ export default function QualificationsEditPage(): ReactElement {
       {!ready ? (
         <div className="text-center py-12 text-sm text-slate-500">加载中…</div>
       ) : (
-        <TextareaField
+        <MobileRichTextarea
           label="奖项证书"
-          value={htmlToPlainText(html)}
-          onValueChange={(v): void => setHtml(plainTextToHtml(v))}
+          html={html}
+          onHtmlChange={setHtml}
           placeholder={PLACEHOLDER}
-          tip="含金量越高越靠前"
-          minRows={7}
+          tip="含金量越高越靠前，支持粗体/列表格式"
+          minHeight={180}
         />
       )}
     </ModuleEditShell>

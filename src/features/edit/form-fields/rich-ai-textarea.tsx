@@ -60,11 +60,16 @@ export function RichAiTextarea(props: RichAiTextareaProps): ReactElement {
     }
   }
 
+  // Manual remount counter — bumped only when AI polish applies a new HTML.
+  // Previously we used `html` content as the key, which caused the Lexical
+  // editor to unmount on every keystroke and lose focus (#2 bug fix).
+  const [editorEpoch, setEditorEpoch] = useState<number>(0)
+
   const applyPolish = (): void => {
     if (streamedHtml) {
       onHtmlChange(streamedHtml)
+      setEditorEpoch((n) => n + 1)
       toast.success('已应用润色结果 ✨')
-      // Force remount by bumping key via a key prop from parent is handled upstream.
     }
     setPreviewing(false)
     reset()
@@ -76,36 +81,16 @@ export function RichAiTextarea(props: RichAiTextareaProps): ReactElement {
     reset()
   }
 
-  const extraToolbar: ReactElement = (
-    <div className="flex items-center gap-1 shrink-0">
-      <span className="text-[11px] text-violet-500 shrink-0 px-0.5 flex items-center gap-0.5">
-        <Sparkles size={11} />
-        AI
-      </span>
-      {POLISH_LEVELS.map((lv) => (
-        <button
-          key={lv.id}
-          type="button"
-          onClick={(): void => void handlePolish(lv.id)}
-          disabled={isPolishing}
-          className={cn(
-            'shrink-0 px-2 py-1 text-[11px] rounded-md border transition-all active:scale-95',
-            'text-violet-700 border-violet-200 hover:bg-violet-50',
-            'disabled:opacity-50 disabled:cursor-not-allowed',
-          )}
-        >
-          {lv.label}
-        </button>
-      ))}
-    </div>
-  )
+  // Re-mount only when AI polish applies a new HTML, so Lexical re-picks up
+  // the initial state. Using `html` as part of the key would remount on every
+  // keystroke and steal focus.
+  const editorKey: string = `epoch-${editorEpoch}`
 
-  // Keying the editor by html length + first 20 chars forces a re-mount when
-  // polish is applied so the Lexical initial state picks up the new HTML.
-  const editorKey: string = `${html.length}-${html.slice(0, 20)}`
+  const plainLength: number = htmlToPlainText(html).length
+  const hasEnoughContent: boolean = plainLength >= MIN_POLISH_CONTENT_LENGTH
 
   return (
-    <div>
+    <div className="flex flex-col gap-2">
       <MobileRichTextarea
         key={editorKey}
         label={label}
@@ -114,8 +99,72 @@ export function RichAiTextarea(props: RichAiTextareaProps): ReactElement {
         placeholder={placeholder}
         tip={tip}
         minHeight={minHeight}
-        extraToolbar={extraToolbar}
       />
+
+      {/* Prominent AI polish bar — sits below the editor for natural flow
+          after the user finishes typing. Disabled state nudges them to write. */}
+      <div
+        className={cn(
+          'relative overflow-hidden rounded-2xl p-3',
+          'bg-gradient-to-br from-violet-50 via-fuchsia-50 to-indigo-50',
+          'border border-violet-200/70',
+          'transition-all',
+          hasEnoughContent && 'shadow-md shadow-violet-200/50',
+        )}
+      >
+        {/* Decorative glow */}
+        <div className="pointer-events-none absolute -top-6 -right-6 h-20 w-20 rounded-full bg-violet-300/20 blur-2xl" />
+
+        <div className="relative flex items-center justify-between gap-2 mb-2">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span
+              className={cn(
+                'relative h-7 w-7 rounded-lg flex items-center justify-center shrink-0',
+                'bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white shadow-sm',
+                hasEnoughContent,
+              )}
+            >
+              <Sparkles size={14} />
+            </span>
+            <div className="min-w-0">
+              <div className="text-[13px] font-bold text-slate-900 flex items-center gap-1">
+                AI 智能润色
+                <span className="text-[10px] font-semibold bg-gradient-to-r from-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
+                  NEW
+                </span>
+              </div>
+              <div className="text-[11px] text-slate-500 leading-tight">
+                {hasEnoughContent
+                  ? '选择一个模式，AI 一键优化表达'
+                  : `再写 ${MIN_POLISH_CONTENT_LENGTH - plainLength} 字即可启用 AI 润色`}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="relative grid grid-cols-3 gap-1.5">
+          {POLISH_LEVELS.map((lv) => (
+            <button
+              key={lv.id}
+              type="button"
+              onClick={(): void => void handlePolish(lv.id)}
+              disabled={isPolishing || !hasEnoughContent}
+              className={cn(
+                'h-9 rounded-xl text-[12px] font-semibold transition-all active:scale-95',
+                'flex items-center justify-center gap-1',
+                hasEnoughContent
+                  ? 'bg-white text-violet-700 border border-violet-300 hover:bg-violet-600 hover:text-white hover:border-violet-600 shadow-sm'
+                  : 'bg-white/50 text-slate-400 border border-slate-200 cursor-not-allowed',
+                'disabled:active:scale-100',
+              )}
+              aria-label={`AI 润色：${lv.label}`}
+            >
+              <Sparkles size={11} className={hasEnoughContent ? 'text-violet-500' : 'text-slate-300'} />
+              {lv.label}
+            </button>
+          ))}
+        </div>
+      </div>
 
       {previewing && (
         <>
