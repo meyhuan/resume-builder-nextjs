@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, type ReactElement } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Loader2, Menu } from 'lucide-react'
+import { Loader2, ArrowLeft } from 'lucide-react'
 import { toast } from 'sonner'
 import type { ResumeData } from '@/entities/resume/resume-data'
 import { useDraftStore } from '@/features/edit/draft/draft-store'
@@ -10,7 +10,6 @@ import { computeProgress } from '@/features/edit/progress/module-completeness'
 import { MODULES, findModuleBySectionTitle } from '@/entities/module/module-config'
 import { GreetingBanner } from './_components/greeting-banner'
 import { ProgressCard } from './_components/progress-card'
-import { QuickActions } from './_components/quick-actions'
 import { MilestoneConfetti } from './_components/milestone-confetti'
 import { HomeActionBar } from './_components/home-action-bar'
 import { DeveloperNote } from './_components/developer-note'
@@ -30,6 +29,7 @@ interface ResumeFull {
   readonly id: string
   readonly title: string
   readonly content: ResumeData & { [k: string]: unknown }
+  readonly template?: string
 }
 
 type LoadState = 'loading' | 'ready' | 'empty' | 'error'
@@ -69,7 +69,7 @@ export default function MobileEditHomeClient(): ReactElement {
         if (!res.ok) throw new Error(`简历加载失败 (${res.status})`)
         const full: ResumeFull = await res.json()
         if (cancelled) return
-        setFromServer(full.id, full.content as ResumeData)
+        setFromServer(full.id, full.content as ResumeData, full.template ?? 'simple')
         setLoadState('ready')
       } catch (err: unknown) {
         if (cancelled) return
@@ -188,10 +188,11 @@ export default function MobileEditHomeClient(): ReactElement {
       <div className="sticky top-0 z-20 flex items-center justify-between px-3 h-12 bg-white/90 backdrop-blur border-b border-slate-200">
         <button
           type="button"
-          className="h-9 w-9 rounded-lg flex items-center justify-center text-slate-600 hover:bg-slate-100"
-          aria-label="菜单"
+          onClick={(): void => router.push('/m')}
+          className="h-9 w-9 rounded-lg flex items-center justify-center text-slate-600 hover:bg-slate-100 active:scale-95 transition-transform"
+          aria-label="返回首页"
         >
-          <Menu size={18} />
+          <ArrowLeft size={18} />
         </button>
         <div className="text-sm font-semibold text-slate-800">我的简历</div>
         <div className="w-9" />
@@ -201,10 +202,7 @@ export default function MobileEditHomeClient(): ReactElement {
       <ProgressCard progress={progress} />
       <MilestoneConfetti progress={progress} />
 
-      <div className="mt-5" />
-      <QuickActions />
-
-      <div className="mt-6 px-5 flex flex-col gap-3">
+      <div className="mt-5 px-5 flex flex-col gap-3">
         <BaseInfoPreview resume={resume} />
         <JobIntentionPreview resume={resume} />
       </div>

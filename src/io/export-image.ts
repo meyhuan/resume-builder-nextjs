@@ -11,6 +11,12 @@ interface ExportImageOptions {
   readonly returnBase64?: boolean
   /** When true, clip the capture to the first A4 page (297 mm). */
   readonly clipFirstPage?: boolean
+  /**
+   * When true, neutralize any CSS `transform` on the captured node
+   * (e.g. `scale()` used for viewport-fit previews on mobile) so the
+   * produced image is not shrunk with empty padding.
+   */
+  readonly resetTransform?: boolean
 }
 
 /** Convert mm to px using a temporary DOM element. */
@@ -38,13 +44,22 @@ export async function exportImage<T extends HTMLElement>(contentRef: RefObject<T
     cacheBust: true,
     backgroundColor: options?.backgroundColor,
   }
+  const cloneStyle: Record<string, string> = {}
+  if (options?.resetTransform) {
+    cloneStyle.transform = 'none'
+    cloneStyle.transformOrigin = 'top left'
+  }
   if (options?.clipFirstPage) {
     const a4HeightPx: number = mmToPx(297)
     const nodeHeight: number = node.scrollHeight
     if (nodeHeight > a4HeightPx) {
       toPngOptions.height = a4HeightPx
-      toPngOptions.style = { overflow: 'hidden', maxHeight: `${a4HeightPx}px` }
+      cloneStyle.overflow = 'hidden'
+      cloneStyle.maxHeight = `${a4HeightPx}px`
     }
+  }
+  if (Object.keys(cloneStyle).length > 0) {
+    toPngOptions.style = cloneStyle
   }
   const dataUrl: string = await toPng((node as unknown) as HTMLElement, toPngOptions)
 

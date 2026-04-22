@@ -82,7 +82,7 @@ export default function MobileAiGeneratePage(): ReactElement {
       })
       if (!res.ok) throw new Error('保存失败')
       const saved: { id: string } = await res.json()
-      setFromServer(saved.id, resumeData)
+      setFromServer(saved.id, resumeData, 'simple')
       router.replace(`/m/edit?id=${saved.id}`)
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : '保存失败')

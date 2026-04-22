@@ -28,13 +28,39 @@ export interface DraftState {
   readonly lastSavedAt: number | null
   readonly isSaving: boolean
   readonly celebratedMilestones: readonly number[]
-  setFromServer: (id: string, resume: ResumeData) => void
+  readonly templateId: string
+  setFromServer: (id: string, resume: ResumeData, templateId?: string) => void
   updateDraft: (path: string, updater: (draft: ResumeData) => void) => void
   replaceDraft: (next: ResumeData) => void
   reorderSections: (fromIdx: number, toIdx: number) => void
   discardAll: () => void
   saveAll: () => Promise<SaveResult>
+  /**
+   * Persist a freshly-captured resume thumbnail (data URL) alongside the
+   * current draft content. Called from the preview page after the template
+   * renders, so the saved cover reflects the real layout.
+   */
+  saveThumbnail: (dataUrl: string) => Promise<SaveResult>
   markMilestoneCelebrated: (milestone: number) => void
+}
+
+/**
+ * Ensure required collection fields exist even when a resume was persisted
+ * with an empty content object (e.g. a freshly-created blank resume saved as
+ * `{}`). Without this normalization, downstream consumers iterating
+ * `sections` would crash with "Cannot read properties of undefined".
+ */
+function normalizeResume(resume: ResumeData | null | undefined, fallbackId: string): ResumeData {
+  const base = (resume ?? {}) as Partial<ResumeData>
+  return {
+    id: base.id ?? fallbackId,
+    name: base.name ?? '',
+    contactHtml: base.contactHtml,
+    baseInfo: base.baseInfo,
+    jobIntention: base.jobIntention,
+    jobIntentionVisible: base.jobIntentionVisible,
+    sections: Array.isArray(base.sections) ? base.sections : [],
+  }
 }
 
 /**
@@ -63,14 +89,22 @@ export const useDraftStore = create<DraftState>()(
       lastSavedAt: null,
       isSaving: false,
       celebratedMilestones: [],
-      setFromServer: (id, resume): void => {
+      templateId: 'simple',
+      setFromServer: (id, resume, templateId): void => {
+        const normalized: ResumeData = normalizeResume(resume, id)
         const current = get()
         // If user has unsaved local draft for the same resume, keep it.
         if (current.resumeId === id && current.draft && current.dirtyPaths.length > 0) {
-          set({ server: resume })
+          set({ server: normalized, templateId: templateId ?? current.templateId })
           return
         }
-        set({ resumeId: id, draft: resume, server: resume, dirtyPaths: [] })
+        set({
+          resumeId: id,
+          draft: normalized,
+          server: normalized,
+          dirtyPaths: [],
+          templateId: templateId ?? 'simple',
+        })
       },
       updateDraft: (path, updater): void => {
         const current = get().draft
@@ -130,6 +164,27 @@ export const useDraftStore = create<DraftState>()(
           return { ok: false, error: msg }
         }
       },
+      saveThumbnail: async (dataUrl): Promise<SaveResult> => {
+        const { resumeId, draft } = get()
+        if (!resumeId || !draft) {
+          return { ok: false, error: '无可保存的简历' }
+        }
+        try {
+          const res = await fetch(`/next-api/resumes/${resumeId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content: draft, thumbnail: dataUrl }),
+          })
+          if (!res.ok) {
+            const text = await res.text().catch(() => '')
+            throw new Error(text || `封面保存失败 (${res.status})`)
+          }
+          return { ok: true }
+        } catch (err: unknown) {
+          const msg: string = err instanceof Error ? err.message : '网络错误'
+          return { ok: false, error: msg }
+        }
+      },
       markMilestoneCelebrated: (milestone): void => {
         const list = new Set(get().celebratedMilestones)
         list.add(milestone)
@@ -145,6 +200,20 @@ export const useDraftStore = create<DraftState>()(
         dirtyPaths: state.dirtyPaths,
         celebratedMilestones: state.celebratedMilestones,
       }),
+      onRehydrateStorage: () => (state): void => {
+        // Older persisted drafts may lack a `sections` array; normalize on
+        // rehydrate so components that iterate sections never see undefined.
+        if (!state) return
+        const mutable = state as {
+          -readonly [K in keyof DraftState]: DraftState[K]
+        }
+        if (mutable.draft && mutable.resumeId) {
+          mutable.draft = normalizeResume(mutable.draft, mutable.resumeId)
+        }
+        if (mutable.server && mutable.resumeId) {
+          mutable.server = normalizeResume(mutable.server, mutable.resumeId)
+        }
+      },
     },
   ),
 )

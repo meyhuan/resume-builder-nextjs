@@ -57,8 +57,13 @@ export default function MobilePreviewClient(): ReactElement {
   const draft = useDraftStore((s) => s.draft)
   const draftResumeId = useDraftStore((s) => s.resumeId)
   const setFromServer = useDraftStore((s) => s.setFromServer)
+  const saveThumbnail = useDraftStore((s) => s.saveThumbnail)
 
-  const [templateId, setTemplateId] = useState<string>('simple')
+  const initialTemplateId: string = (() => {
+    const fromUrl: string | null = searchParams.get('tpl')
+    return fromUrl && TEMPLATE_REGISTRY[fromUrl] ? fromUrl : 'simple'
+  })()
+  const [templateId, setTemplateId] = useState<string>(initialTemplateId)
   const [sheetOpen, setSheetOpen] = useState<boolean>(false)
   const [tab, setTab] = useState<SettingsTab>('template')
   const [containerWidth, setContainerWidth] = useState<number>(MOBILE_PAGE_MAX_WIDTH_PX)
@@ -87,8 +92,8 @@ export default function MobilePreviewClient(): ReactElement {
           try {
             const res = await fetch(`/next-api/resumes/${targetId}`, { credentials: 'include' })
             if (!res.ok) return
-            const full: { id: string; content: ResumeData } = await res.json()
-            setFromServer(full.id, full.content)
+            const full: { id: string; content: ResumeData; template?: string } = await res.json()
+            setFromServer(full.id, full.content, full.template ?? 'simple')
             setResume((d: ResumeData): void => {
               Object.assign(d, full.content)
             })
@@ -126,6 +131,44 @@ export default function MobilePreviewClient(): ReactElement {
     observer.observe(node)
     return (): void => observer.disconnect()
   }, [templateId, resume])
+
+  // Debounced cover-thumbnail capture. Runs whenever the resume, template or
+  // any live theme token changes — the timer is reset on each change, so
+  // rapid template swipes or slider tweaks only persist the *final* cover.
+  // An AbortController drops any in-flight upload if a newer capture starts.
+  useEffect(() => {
+    if (!draftResumeId) return
+    if (!resume || !resume.sections || resume.sections.length === 0) return
+
+    const controller: AbortController = new AbortController()
+    const timer: ReturnType<typeof setTimeout> = setTimeout((): void => {
+      if (!innerRef.current) return
+      void (async (): Promise<void> => {
+        try {
+          const dataUrl: string | void = await exportImage(innerRef, {
+            pixelRatio: 1,
+            backgroundColor: '#ffffff',
+            returnBase64: true,
+            clipFirstPage: true,
+            // innerRef is scaled via CSS transform for viewport-fit; neutralize
+            // it so the captured cover is full-bleed like PC's thumbnail.
+            resetTransform: true,
+          })
+          if (controller.signal.aborted) return
+          if (typeof dataUrl === 'string') {
+            await saveThumbnail(dataUrl)
+          }
+        } catch {
+          // silent — cover is best-effort
+        }
+      })()
+    }, 1500)
+
+    return (): void => {
+      clearTimeout(timer)
+      controller.abort()
+    }
+  }, [draftResumeId, resume, templateId, themesMap, saveThumbnail])
 
   const theme: ThemeTokens = getThemeForTemplate(templateId)
   const templateConfig = getTemplate(templateId)

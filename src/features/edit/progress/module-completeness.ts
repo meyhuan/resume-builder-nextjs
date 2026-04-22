@@ -18,7 +18,8 @@ export interface ModuleInfo {
  */
 function findSection(resume: ResumeData, title: string): Section | undefined {
   const normalized: string = title.replace(/\s/g, '')
-  return resume.sections.find((s) => s.title.replace(/\s/g, '') === normalized)
+  const sections: readonly Section[] = Array.isArray(resume.sections) ? resume.sections : []
+  return sections.find((s) => s.title.replace(/\s/g, '') === normalized)
 }
 
 /**

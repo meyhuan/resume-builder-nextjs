@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback, useRef, type ReactElement } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { ArrowLeft, FileText, Loader2, Upload, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { useImportGeneration } from '@/lib/ai/use-import-generation'
@@ -23,8 +23,10 @@ const ALLOWED_EXT = ['doc', 'docx', 'pdf', 'jpg', 'jpeg', 'png', 'bmp', 'gif']
  */
 export default function MobileImportPage(): ReactElement {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const setFromServer = useDraftStore((s) => s.setFromServer)
-  const [mode, setMode] = useState<ImportMode>('text')
+  const initialMode: ImportMode = searchParams.get('mode') === 'file' ? 'file' : 'text'
+  const [mode, setMode] = useState<ImportMode>(initialMode)
   const [step, setStep] = useState<ImportStep>('input')
   const [rawText, setRawText] = useState<string>('')
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
@@ -49,7 +51,7 @@ export default function MobileImportPage(): ReactElement {
       })
       if (!res.ok) throw new Error('保存失败')
       const saved: { id: string } = await res.json()
-      setFromServer(saved.id, resumeData)
+      setFromServer(saved.id, resumeData, 'simple')
       router.replace(`/m/edit?id=${saved.id}`)
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : '保存失败，请重试')
@@ -177,7 +179,9 @@ export default function MobileImportPage(): ReactElement {
         >
           <ArrowLeft size={18} />
         </button>
-        <div className="text-sm font-semibold text-slate-800">导入简历</div>
+        <div className="text-sm font-semibold text-slate-800">
+          {mode === 'file' ? '导入简历' : '文本转简历'}
+        </div>
         <div className="w-9" />
       </div>
 
