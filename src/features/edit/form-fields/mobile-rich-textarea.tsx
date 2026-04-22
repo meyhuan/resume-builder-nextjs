@@ -86,10 +86,13 @@ export function MobileRichTextarea(props: MobileRichTextareaProps): ReactElement
     },
   }
 
+  const lastEmittedHtmlRef = useRef<string>(html)
+
   const handleChange = useCallback(
     (editorState: EditorState, editor: LexicalEditor): void => {
       editorState.read(() => {
         const nextHtml: string = $generateHtmlFromNodes(editor)
+        lastEmittedHtmlRef.current = nextHtml
         if (nextHtml !== html) onHtmlChange(nextHtml)
       })
     },
@@ -97,12 +100,13 @@ export function MobileRichTextarea(props: MobileRichTextareaProps): ReactElement
   )
 
   return (
-    <label className="block">
+    <div className="block">
       <div className="flex items-center gap-1 mb-1.5 px-1">
         <span className="text-sm font-medium text-slate-700">{label}</span>
         {required && <span className="text-rose-500 text-xs">*</span>}
       </div>
       <LexicalComposer initialConfig={initialConfig}>
+        <ExternalHtmlSync html={html} lastEmittedHtmlRef={lastEmittedHtmlRef} />
         <div
           className={cn(
             'rounded-xl border bg-white transition-all',
@@ -144,8 +148,45 @@ export function MobileRichTextarea(props: MobileRichTextareaProps): ReactElement
       </LexicalComposer>
       {error && <div className="mt-1 px-1 text-xs text-rose-500">{error}</div>}
       {!error && tip && <div className="mt-1 px-1 text-xs text-slate-400">💡 {tip}</div>}
-    </label>
+    </div>
   )
+}
+
+/**
+ * Keeps the Lexical editor in sync when the `html` prop changes from outside
+ * the component (e.g. quick-add buttons that append content programmatically).
+ *
+ * Uses `lastEmittedHtmlRef` (written by the editor's own onChange) to know
+ * whether the change originated inside the editor. If so, skip to avoid loops.
+ */
+function ExternalHtmlSync({
+  html,
+  lastEmittedHtmlRef,
+}: {
+  readonly html: string
+  readonly lastEmittedHtmlRef: React.MutableRefObject<string>
+}): null {
+  const [editor] = useLexicalComposerContext()
+
+  useEffect(() => {
+    if (html === lastEmittedHtmlRef.current) return
+
+    editor.update(() => {
+      const root = $getRoot()
+      root.clear()
+      if (!html) {
+        lastEmittedHtmlRef.current = html
+        return
+      }
+      const dom: Document = new DOMParser().parseFromString(html, 'text/html')
+      const nodes = $generateNodesFromDOM(editor, dom)
+      const elementNodes = nodes.filter((n) => $isElementNode(n))
+      if (elementNodes.length > 0) root.append(...elementNodes)
+      lastEmittedHtmlRef.current = html
+    })
+  }, [html, editor, lastEmittedHtmlRef])
+
+  return null
 }
 
 interface ToolbarState {

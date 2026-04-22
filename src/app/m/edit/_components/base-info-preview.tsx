@@ -24,6 +24,7 @@ export function BaseInfoPreview({ resume }: BaseInfoPreviewProps): ReactElement 
   const location: string = (base.location ?? '').trim()
   const gender: string = (base.gender ?? '').trim()
   const age: number | undefined = typeof base.age === 'number' ? base.age : undefined
+  const avatarUrl: string = (base.avatarUrl ?? '').trim()
   const empty: boolean = !name && !phone && !email && !title
 
   return (
@@ -37,9 +38,18 @@ export function BaseInfoPreview({ resume }: BaseInfoPreviewProps): ReactElement 
       )}
     >
       <div className="flex items-start gap-3">
-        <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white flex items-center justify-center text-lg font-semibold shrink-0">
-          {name ? name.slice(0, 1) : <User2 size={20} />}
-        </div>
+        {avatarUrl ? (
+          <div
+            className="overflow-hidden rounded-xl shrink-0 bg-slate-100 border border-slate-200"
+            style={{ width: 44, height: 58 }}
+          >
+            <img src={avatarUrl} alt={name || '证件照'} className="h-full w-full object-cover" />
+          </div>
+        ) : (
+          <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white flex items-center justify-center text-lg font-semibold shrink-0">
+            {name ? name.slice(0, 1) : <User2 size={20} />}
+          </div>
+        )}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
             <span className="text-base font-semibold text-slate-900 truncate">

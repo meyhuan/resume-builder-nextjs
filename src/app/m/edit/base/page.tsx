@@ -10,6 +10,7 @@ import { ModuleEditShell } from '../_components/module-edit-shell'
 import { chain, validateEmail, validatePhone, validateRequired } from '../_components/validators'
 import type { ValidationResult } from '../_components/module-edit-shell'
 import { CustomBaseFields } from '../_components/custom-base-fields'
+import { MobileAvatarField } from '../_components/mobile-avatar-field'
 import { TextField } from '@/features/edit/form-fields/text-field'
 import { NumberField } from '@/features/edit/form-fields/number-field'
 import { TagSelectField } from '@/features/edit/form-fields/tag-select-field'
@@ -31,6 +32,7 @@ export default function BaseInfoEditPage(): ReactElement {
   const ageF = useBaseInfoField('age')
   const locationF = useBaseInfoField('location')
   const politicalF = useBaseInfoField('politicalStatus')
+  const avatarF = useBaseInfoField('avatarUrl')
 
   if (!draft) {
     return (
@@ -53,6 +55,10 @@ export default function BaseInfoEditPage(): ReactElement {
 
   return (
     <ModuleEditShell title="基础信息" subtitle="让招聘者快速认识你" validate={validate}>
+      <MobileAvatarField
+        value={avatarF.value as string | undefined}
+        onChange={(next): void => avatarF.setValue(next)}
+      />
       <TextField
         label="姓名"
         value={nameF.value}

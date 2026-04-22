@@ -17,6 +17,8 @@ import { buildResumeHtml } from '@/io/html-export'
 import { exportImage } from '@/io/export-image'
 import { useVipCheck } from '@/hooks/use-vip-check'
 import VipUpgradeDialog from '@/components/vip/vip-upgrade-dialog'
+import { useOnePageMode, type OnePageStatus } from '@/hooks/use-one-page-mode'
+import type { AdjustableTokens } from '@/entities/editor/editor-meta'
 
 const FONT_FAMILIES: ReadonlyArray<{ id: string; label: string; stack: string }> = [
   { id: 'sans', label: '无衬线', stack: 'Inter, "Noto Sans SC", system-ui, sans-serif' },
@@ -133,6 +135,10 @@ export default function MobilePreviewClient(): ReactElement {
   const paragraphIndent: number = theme.paragraphIndent ?? 0
   const onePageFit: boolean = theme.onePageFit ?? false
 
+  // Snapshot of user's original spacing/line-height/font-size before auto-fit.
+  // Kept in component state; could later be persisted to editor meta if needed.
+  const [onePageSnapshot, setOnePageSnapshot] = useState<AdjustableTokens | null>(null)
+
   // A4 at 210mm ≈ 794px @ 96dpi. Scale to fit mobile viewport, then multiply
   // by the user-controlled pinch zoom factor.
   const A4_WIDTH_PX = 794
@@ -142,11 +148,35 @@ export default function MobilePreviewClient(): ReactElement {
   const scale: number = baseScale * userZoom
   const scaledHeight: number = A4_WIDTH_PX * A4_RATIO * scale
 
-  const updateTheme = (patch: Partial<ThemeTokens>): void => {
-    setThemeForTemplate(templateId, (draft) => {
-      Object.assign(draft, patch)
-    })
-  }
+  const updateTheme = useCallback(
+    (patch: Partial<ThemeTokens>): void => {
+      setThemeForTemplate(templateId, (draft) => {
+        Object.assign(draft, patch)
+      })
+    },
+    [templateId, setThemeForTemplate],
+  )
+
+  // Drive the auto-fit algorithm against the unscaled template content (innerRef).
+  const { status: onePageStatus } = useOnePageMode({
+    contentRef: innerRef,
+    theme,
+    patchTheme: updateTheme,
+    enabled: onePageFit,
+    snapshot: onePageSnapshot,
+    setSnapshot: setOnePageSnapshot,
+  })
+
+  // When switching templates, clear the snapshot to avoid restoring one
+  // template's tokens onto another. The next template starts fresh.
+  const handleSelectTemplate = useCallback(
+    (nextId: string): void => {
+      if (nextId === templateId) return
+      setOnePageSnapshot(null)
+      setTemplateId(nextId)
+    },
+    [templateId],
+  )
 
   const clampZoom = (z: number): number => Math.min(MAX_USER_ZOOM, Math.max(MIN_USER_ZOOM, z))
 
@@ -296,11 +326,7 @@ export default function MobilePreviewClient(): ReactElement {
               </Suspense>
             </div>
 
-            {onePageFit ? (
-              <div className="absolute top-2 right-2 text-[10px] px-1.5 py-0.5 rounded bg-violet-600/90 text-white">
-                单页模式（UI 占位）
-              </div>
-            ) : null}
+            {onePageFit ? <OnePageBadge status={onePageStatus} /> : null}
           </div>
         </div>
 
@@ -336,7 +362,7 @@ export default function MobilePreviewClient(): ReactElement {
             </TabsList>
 
             <TabsContent value="template">
-              <TemplatePanel activeId={templateId} onSelect={setTemplateId} />
+              <TemplatePanel activeId={templateId} onSelect={handleSelectTemplate} />
             </TabsContent>
 
             <TabsContent value="color">
@@ -769,7 +795,7 @@ function AdvancedPanel({ theme, onUpdate }: { readonly theme: ThemeTokens; reado
               )}
             />
           </button>
-          <span className="text-xs text-slate-500">开启后系统将尝试自动缩放以单页呈现（占位，后续接入自动缩放算法）</span>
+          <span className="text-xs text-slate-500">开启后自动压缩间距/行高/字号以适配单页 A4，关闭时恢复原设置</span>
         </div>
       </Row>
     </div>
@@ -785,6 +811,26 @@ function Row({ label, children }: { readonly label: string; readonly children: R
     <div>
       <div className="text-xs font-medium text-slate-700 mb-2">{label}</div>
       {children}
+    </div>
+  )
+}
+
+/**
+ * Status badge overlaid on the preview when one-page mode is enabled.
+ * Colours/messages mirror the four states from `useOnePageMode`.
+ */
+const ONE_PAGE_BADGE_STYLES: Record<OnePageStatus, { bg: string; label: string }> = {
+  idle: { bg: 'bg-violet-600/90', label: '单页模式' },
+  fitting: { bg: 'bg-amber-500/90', label: '正在适配单页…' },
+  fit: { bg: 'bg-emerald-600/90', label: '单页适配完成' },
+  overflow: { bg: 'bg-rose-600/90', label: '内容过多，建议精简' },
+}
+
+function OnePageBadge({ status }: { readonly status: OnePageStatus }): ReactElement {
+  const { bg, label } = ONE_PAGE_BADGE_STYLES[status]
+  return (
+    <div className={cn('absolute top-2 right-2 text-[10px] px-1.5 py-0.5 rounded text-white', bg)}>
+      {label}
     </div>
   )
 }

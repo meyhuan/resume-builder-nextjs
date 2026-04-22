@@ -71,10 +71,11 @@ export function ModuleEditShell(props: ModuleEditShellProps): ReactElement {
     if (!runValidation()) return
     const res = await saveAll()
     if (res.ok) {
-      toast.success('已保存 ✓')
+      toast.success('已保存')
       if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
         navigator.vibrate(12)
       }
+      doBack()
     } else {
       toast.error(res.error || '保存失败')
     }
