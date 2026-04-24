@@ -1,5 +1,6 @@
 import { type ReactElement } from 'react'
 import type { Metadata } from 'next'
+import { cookies } from 'next/headers'
 import MobileHomeClient from './home-client'
 
 export const metadata: Metadata = {
@@ -8,10 +9,13 @@ export const metadata: Metadata = {
 }
 
 /**
- * Mobile H5 home entry (/m). Mirrors the miniprogram home page layout
- * with a gradient hero, primary actions, user's resume list and a
- * template gallery.
+ * Mobile H5 home entry (/m). Reads the auth cookie server-side so the SSR
+ * HTML already reflects the user's login state — this lets the client skip
+ * the "logged-out → logged-in" re-render that caused the "My Resumes"
+ * section to pop in and shift layout on first paint.
  */
-export default function MobileHomePage(): ReactElement {
-  return <MobileHomeClient />
+export default async function MobileHomePage(): Promise<ReactElement> {
+  const store = await cookies()
+  const initialIsLoggedIn: boolean = Boolean(store.get('auth_uid')?.value)
+  return <MobileHomeClient initialIsLoggedIn={initialIsLoggedIn} />
 }

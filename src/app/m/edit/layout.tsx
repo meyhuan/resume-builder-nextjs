@@ -11,17 +11,20 @@ import { Loader2 } from 'lucide-react'
  */
 export default function MobileEditLayout({ children }: { readonly children: ReactNode }): ReactElement {
   const router = useRouter()
-  const [authState] = useState<'checking' | 'authed' | 'guest'>(() => {
-    if (typeof document === 'undefined') return 'checking'
-    const uid: string | undefined = getCookie('auth_uid') as string | undefined
-    return uid ? 'authed' : 'guest'
-  })
+  // Always start in `checking` so SSR and the first client render match.
+  // Cookie resolution happens after mount inside `useEffect`.
+  const [authState, setAuthState] = useState<'checking' | 'authed' | 'guest'>('checking')
 
   useEffect((): void => {
-    if (authState === 'guest') {
-      router.replace('/login?redirect=/m/edit')
+    const uid: string | undefined = getCookie('auth_uid') as string | undefined
+    if (uid) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setAuthState('authed')
+      return
     }
-  }, [authState, router])
+    setAuthState('guest')
+    router.replace('/login?redirect=/m/edit')
+  }, [router])
 
   if (authState !== 'authed') {
     return (

@@ -182,16 +182,16 @@ export const StepTargetRole = ({ stepNumber, onClickPast }: { stepNumber: number
                 全部岗位分类
               </button>
             </div>
-            <div className="flex gap-4 min-h-[280px]">
+            <div className="flex gap-2 sm:gap-4 min-h-[280px]">
               {/* Left sidebar */}
-              <div className="w-32 shrink-0 space-y-1 overflow-y-auto max-h-[320px] pr-1">
+              <div className="w-20 sm:w-32 shrink-0 space-y-1 overflow-y-auto max-h-[320px] pr-1">
                 {jobTree.map((cat) => (
                   <button
                     key={cat.name}
                     type="button"
                     onClick={() => setActiveCategory(cat.name)}
                     className={cn(
-                      'w-full text-left px-3 py-2 rounded-md text-sm transition-colors',
+                      'w-full text-left px-2 py-2 sm:px-3 rounded-md text-xs sm:text-sm transition-colors',
                       activeCategory === cat.name
                         ? 'bg-[#F5F3FF] text-[#7C3AED] font-medium'
                         : 'text-gray-600 hover:bg-gray-50',
@@ -203,8 +203,8 @@ export const StepTargetRole = ({ stepNumber, onClickPast }: { stepNumber: number
               </div>
 
               {/* Right content */}
-              <div className="flex-1 border-l border-gray-100 pl-4">
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 overflow-y-auto max-h-[320px] pr-2">
+              <div className="flex-1 min-w-0 border-l border-gray-100 pl-2 sm:pl-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3 overflow-y-auto max-h-[320px] pr-1 sm:pr-2">
                   {activeCategoryJobs.map((job) => (
                     <button
                       key={job}

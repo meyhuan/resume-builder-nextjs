@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
+import { useDraftStore } from '@/features/edit/draft/draft-store';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useWizardStore, getWizardInput } from '@/state/wizard-store';
@@ -24,6 +25,11 @@ const WIZARD_CACHE_KEY = 'wizard_pending_resume';
 
 export const WizardLayout = ({ children }: { children: React.ReactNode }) => {
   const router = useRouter();
+  const pathname: string | null = usePathname();
+  // When the wizard is mounted under the mobile route prefix, save/nav paths
+  // must point at the mobile editor instead of the PC editor.
+  const isMobile: boolean = typeof pathname === 'string' && pathname.startsWith('/m');
+  const setDraftFromServer = useDraftStore((s) => s.setFromServer);
   const wizardState = useWizardStore();
   const { isGenerating, streamedText, error, generate, abort, reset } = useAiGeneration();
   const selectedModel: string = AI_MODELS[0].name;
@@ -47,11 +53,17 @@ export const WizardLayout = ({ children }: { children: React.ReactNode }) => {
       if (!res.ok) throw new Error('保存简历失败');
       const saved: { id: string } = await res.json();
       localStorage.removeItem(WIZARD_CACHE_KEY);
-      router.push(`/editor/${saved.id}`);
+      if (isMobile) {
+        // Prime the mobile draft store so /m/edit does not re-fetch.
+        setDraftFromServer(saved.id, resumeData, 'simple');
+        router.push(`/m/edit?id=${saved.id}`);
+      } else {
+        router.push(`/editor/${saved.id}`);
+      }
     } catch (err) {
       console.error('[AI] Failed to save resume:', err);
     }
-  }, [router]);
+  }, [router, isMobile, setDraftFromServer]);
 
   // Auto-save cached result when user returns logged in
   useEffect(() => {
@@ -71,9 +83,9 @@ export const WizardLayout = ({ children }: { children: React.ReactNode }) => {
     if (isLoggedIn()) {
       saveResume(resumeData);
     } else {
-      router.push('/editor/new?source=ai');
+      router.push(isMobile ? '/m' : '/editor/new?source=ai');
     }
-  }, [isLoggedIn, saveResume, router]);
+  }, [isLoggedIn, saveResume, router, isMobile]);
 
   const handleGenerate = async (): Promise<void> => {
     if (isLimitReached) {
@@ -120,21 +132,22 @@ export const WizardLayout = ({ children }: { children: React.ReactNode }) => {
   return (
     <div className="min-h-screen bg-[#F7F6FB] flex flex-col">
       <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-xl border-b border-gray-100/80">
-        <div className="max-w-6xl mx-auto px-6 h-13 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-13 flex items-center justify-between">
           <button
             type="button"
-            onClick={() => router.push(isLoggedIn() ? '/dashboard' : '/')}
+            onClick={() => router.push(isMobile ? '/m' : (isLoggedIn() ? '/dashboard' : '/'))}
             className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-violet-600 transition-colors"
           >
             <ChevronLeft className="w-4 h-4" />
-            返回
+            <span className="hidden sm:inline">返回</span>
           </button>
           <span className="text-sm font-semibold text-gray-800">AI 生成简历</span>
           <Link
-            href="/editor/new"
+            href={isMobile ? '/m' : '/editor/new'}
             className="text-xs text-gray-400 hover:text-gray-600 transition-colors flex items-center gap-1"
           >
-            跳过，直接创建
+            <span className="hidden sm:inline">跳过，直接创建</span>
+            <span className="sm:hidden">跳过</span>
             <FileText className="w-3 h-3" />
           </Link>
         </div>
@@ -143,8 +156,8 @@ export const WizardLayout = ({ children }: { children: React.ReactNode }) => {
       <WxLoginDialog isOpen={isLoginOpen} onClose={handleLoginClose} onSuccess={handleLoginSuccess} />
       <VipUpgradeDialog open={showUpgrade} onOpenChange={setShowUpgrade} />
 
-      <div className="flex-1 max-w-6xl mx-auto w-full px-6 py-10 lg:py-12">
-        <div className="flex flex-col lg:flex-row lg:gap-12 gap-8">
+      <div className="flex-1 max-w-6xl mx-auto w-full px-4 py-5 sm:px-6 sm:py-10 lg:py-12">
+        <div className="flex flex-col lg:flex-row lg:gap-12 gap-6 sm:gap-8">
 
           {/* LEFT: step cards (main action area) */}
           <div className="flex-1 min-w-0 flex flex-col gap-5">
@@ -532,7 +545,7 @@ export const StepCard = ({
     >
       <div className={cn(
         'bg-white rounded-2xl border shadow-sm transition-all',
-        isCurrent ? 'border-violet-200 p-6' : 'border-gray-100 p-5',
+        isCurrent ? 'border-violet-200 p-4 sm:p-6' : 'border-gray-100 p-4 sm:p-5',
       )}>
         <div
           className={cn(
@@ -631,7 +644,7 @@ export const ChatBubble = ({
       )}
     >
       <div className={cn(
-        "px-5 py-3 rounded-2xl max-w-[80%] text-sm font-medium",
+        "px-4 py-2.5 sm:px-5 sm:py-3 rounded-2xl max-w-[85%] sm:max-w-[80%] text-sm font-medium",
         isUser 
           ? "bg-[#D8B4FE] text-[#4C1D95] rounded-tr-none" 
           : "bg-white border border-gray-100 shadow-sm text-gray-700 rounded-tl-none"
