@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { getCookie } from 'cookies-next'
 import { toast } from 'sonner'
+import { createLogger } from '@/lib/logger'
 import {
   Sparkles,
   FilePlus2,
@@ -61,6 +62,8 @@ interface MobileHomeClientProps {
   readonly initialIsLoggedIn?: boolean
 }
 
+const log = createLogger('m/home')
+
 export default function MobileHomeClient(props: MobileHomeClientProps = {}): ReactElement {
   const { initialIsLoggedIn = false } = props
   const router = useRouter()
@@ -102,15 +105,19 @@ export default function MobileHomeClient(props: MobileHomeClientProps = {}): Rea
     }
     let cancelled = false
     void (async (): Promise<void> => {
+      log.info('fetch resumes start')
       try {
         const res: Response = await fetch('/next-api/resumes', { credentials: 'include' })
+        log.info('fetch resumes HTTP', { status: res.status })
         if (!res.ok) throw new Error(`${res.status}`)
         const list: ResumeListItem[] = await res.json()
+        log.info('fetch resumes parsed', { count: list.length })
         if (cancelled) return
         setResumes(list)
         setListState('ready')
         writeResumeListCache(list)
-      } catch {
+      } catch (e: unknown) {
+        log.error('fetch resumes failed', { error: e instanceof Error ? e.message : String(e) })
         if (cancelled) return
         // Only surface error state when there was nothing to show.
         if (!cached) setListState('error')
@@ -138,16 +145,20 @@ export default function MobileHomeClient(props: MobileHomeClientProps = {}): Rea
     if (creating) return
     setCreating(true)
     try {
+      log.info('create resume start')
       const res: Response = await fetch('/next-api/resumes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({ title: '我的简历', content: {}, template: 'simple' }),
       })
+      log.info('create resume HTTP', { status: res.status })
       if (!res.ok) throw new Error(`${res.status}`)
       const created: { id: string } = await res.json()
+      log.info('create resume done', { id: created.id })
       router.push(`/m/edit?id=${created.id}`)
-    } catch {
+    } catch (e: unknown) {
+      log.error('create resume failed', { error: e instanceof Error ? e.message : String(e) })
       toast.error('创建简历失败，请稍后再试')
     } finally {
       setCreating(false)

@@ -3,6 +3,26 @@ import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { cookies } from 'next/headers'
 import { persistResumeAssets } from '@/lib/persist-resume-assets'
+import { toExternalResume } from '@/features/migration/java-resume-converter'
+import { mapExternalResume } from '@/io/external-resume-importer'
+import type { ResumeData } from '@/entities/resume/resume-data'
+
+/**
+ * Detect and convert Java/ExternalResume format to ResumeData if needed.
+ * Java format has snake_case keys like base_info, job_intention, etc.
+ */
+function normalizeContent(raw: unknown): ResumeData {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+    return raw as ResumeData
+  }
+  const obj = raw as Record<string, unknown>
+  const isJavaFormat: boolean =
+    obj.base_info !== undefined || !Array.isArray(obj.sections)
+  if (isJavaFormat) {
+    return mapExternalResume(toExternalResume(obj))
+  }
+  return raw as ResumeData
+}
 
 // GET /next-api/resumes - List all resumes for current user
 export async function GET() {
@@ -36,8 +56,9 @@ export async function POST(req: Request) {
   try {
     const body = await req.json()
     const { title, content, template } = body
+    const normalizedContent: ResumeData = normalizeContent(content)
     const persistedAssets = await persistResumeAssets({
-      content,
+      content: normalizedContent as unknown as Record<string, unknown>,
       thumbnail: null,
     })
     

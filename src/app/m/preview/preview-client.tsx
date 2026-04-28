@@ -19,6 +19,7 @@ import { useVipCheck } from '@/hooks/use-vip-check'
 import VipUpgradeDialog from '@/components/vip/vip-upgrade-dialog'
 import { useOnePageMode, type OnePageStatus } from '@/hooks/use-one-page-mode'
 import type { AdjustableTokens } from '@/entities/editor/editor-meta'
+import { createLogger } from '@/lib/logger'
 
 const FONT_FAMILIES: ReadonlyArray<{ id: string; label: string; stack: string }> = [
   { id: 'sans', label: '无衬线', stack: 'Inter, "Noto Sans SC", system-ui, sans-serif' },
@@ -38,11 +39,14 @@ const A4_RATIO = 297 / 210
 
 type SettingsTab = 'template' | 'color' | 'font' | 'layout' | 'advanced'
 
+const log = createLogger('m/preview')
+
 /**
  * Main client for /m/preview. Owns the current template id, mounts read-only mode,
  * and renders the active template alongside a bottom-sheet settings panel.
  */
 export default function MobilePreviewClient(): ReactElement {
+  log.info('mount')
   const searchParams = useSearchParams()
   const resume = useAppStore((s) => s.resume)
   const setReadOnly = useAppStore((s) => s.setReadOnly)
@@ -88,16 +92,21 @@ export default function MobilePreviewClient(): ReactElement {
       const paramId: string | null = searchParams.get('id')
       const targetId: string | null = paramId || draftResumeId
       if (targetId) {
+        log.info('fetch resume for preview', { id: targetId })
         void (async (): Promise<void> => {
           try {
             const res = await fetch(`/next-api/resumes/${targetId}`, { credentials: 'include' })
+            log.info('fetch resume HTTP', { status: res.status })
             if (!res.ok) return
             const full: { id: string; content: ResumeData; template?: string } = await res.json()
+            log.info('fetch resume parsed', { id: full.id })
             setFromServer(full.id, full.content, full.template ?? 'simple')
             setResume((d: ResumeData): void => {
               Object.assign(d, full.content)
             })
-          } catch { /* silent */ }
+          } catch (e: unknown) {
+            log.error('fetch resume failed', { error: e instanceof Error ? e.message : String(e) })
+          }
         })()
       }
     }

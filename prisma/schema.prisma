@@ -18,6 +18,7 @@ model User {
   resumes    Resume[]
   feedbacks  Feedback[]
   quotas     UserQuota[]
+  migration  ResumeMigration?
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @updatedAt
 }
@@ -28,10 +29,28 @@ model Resume {
   content   Json
   template  String   @default("simple")
   thumbnail String?
+  meta      Json?    // { javaId?: string, migratedAt?: ISO string, ... }
   userId    String
   user      User     @relation(fields: [userId], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+/// One row per user tracking the mini-program -> Next.js resume migration.
+/// status: 'pending' | 'running' | 'done' | 'failed' | 'no_source'
+model ResumeMigration {
+  userId        String    @id
+  sourceCount   Int       @default(0)
+  migratedCount Int       @default(0)
+  status        String
+  failedItems   Json?
+  startedAt     DateTime?
+  finishedAt    DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Feedback {

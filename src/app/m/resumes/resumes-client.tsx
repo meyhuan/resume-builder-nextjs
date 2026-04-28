@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { getCookie } from 'cookies-next'
 import { toast } from 'sonner'
+import { createLogger } from '@/lib/logger'
 import { ArrowLeft, MoreHorizontal, Plus, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
@@ -26,12 +27,15 @@ import {
 
 type ListState = 'checking-auth' | 'loading' | 'ready' | 'error'
 
+const log = createLogger('m/resumes')
+
 /**
  * Full mobile list of the user's resumes. Uses the same session cache as
  * `/m` so repeat visits show the list instantly (stale-while-revalidate).
  */
 export default function MobileResumesClient(): ReactElement {
   const router = useRouter()
+  log.info('mount')
   const [resumes, setResumes] = useState<readonly ResumeListItem[]>([])
   const [state, setState] = useState<ListState>('checking-auth')
   const [creating, setCreating] = useState<boolean>(false)
@@ -42,6 +46,7 @@ export default function MobileResumesClient(): ReactElement {
   useEffect((): void | (() => void) => {
     const uid: string | undefined = getCookie('auth_uid') as string | undefined
     if (!uid) {
+      log.warn('no auth cookie, redirect to login')
       router.replace('/login?redirect=/m/resumes')
       return
     }
@@ -54,15 +59,19 @@ export default function MobileResumesClient(): ReactElement {
     }
     let cancelled = false
     void (async (): Promise<void> => {
+      log.info('fetch resumes start')
       try {
         const res: Response = await fetch('/next-api/resumes', { credentials: 'include' })
+        log.info('fetch resumes HTTP', { status: res.status })
         if (!res.ok) throw new Error(`${res.status}`)
         const list: ResumeListItem[] = await res.json()
+        log.info('fetch resumes parsed', { count: list.length })
         if (cancelled) return
         setResumes(list)
         setState('ready')
         writeResumeListCache(list)
-      } catch {
+      } catch (e: unknown) {
+        log.error('fetch resumes failed', { error: e instanceof Error ? e.message : String(e) })
         if (cancelled) return
         if (!cached) setState('error')
       }
@@ -73,14 +82,17 @@ export default function MobileResumesClient(): ReactElement {
   }, [router])
 
   const refresh = useCallback(async (): Promise<void> => {
+    log.info('refresh resumes start')
     try {
       const res: Response = await fetch('/next-api/resumes', { credentials: 'include' })
+      log.info('refresh resumes HTTP', { status: res.status })
       if (!res.ok) return
       const list: ResumeListItem[] = await res.json()
+      log.info('refresh resumes parsed', { count: list.length })
       setResumes(list)
       writeResumeListCache(list)
-    } catch {
-      /* ignore */
+    } catch (e: unknown) {
+      log.error('refresh resumes failed', { error: e instanceof Error ? e.message : String(e) })
     }
   }, [])
 
@@ -88,16 +100,20 @@ export default function MobileResumesClient(): ReactElement {
     if (creating) return
     setCreating(true)
     try {
+      log.info('create resume start')
       const res: Response = await fetch('/next-api/resumes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({ title: '我的简历', content: {}, template: 'simple' }),
       })
+      log.info('create resume HTTP', { status: res.status })
       if (!res.ok) throw new Error(`${res.status}`)
       const created: { id: string } = await res.json()
+      log.info('create resume done', { id: created.id })
       router.push(`/m/edit?id=${created.id}`)
-    } catch {
+    } catch (e: unknown) {
+      log.error('create resume failed', { error: e instanceof Error ? e.message : String(e) })
       toast.error('创建简历失败，请稍后再试')
     } finally {
       setCreating(false)

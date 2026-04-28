@@ -97,7 +97,8 @@ export function getModuleInfo(resume: ResumeData, key: ModuleKey): ModuleInfo {
         '工作经历', '教育经历', '项目经验', '实习经历', '在校经历',
         '自我评价', '相关技能', '奖项证书',
       ]
-      const custom = resume.sections.filter((s) => !canonical.includes(s.title.replace(/\s/g, '')))
+      const sections: readonly Section[] = Array.isArray(resume.sections) ? resume.sections : []
+      const custom = sections.filter((s) => !canonical.includes(s.title.replace(/\s/g, '')))
       const count: number = custom.length
       const status: ModuleStatus = count === 0 ? 'empty' : 'complete'
       const summary: string = count === 0 ? '自定义更多内容' : `${count} 个模块`
