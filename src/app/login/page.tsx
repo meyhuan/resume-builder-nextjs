@@ -97,13 +97,20 @@ function LoginForm(): React.ReactElement {
         if (payload === 'pending' || payload.status === 'pending') return;
         const uid: string | undefined = payload.uid || (payload.data && payload.data.uid);
         if (uid) {
-          logger.success('WxLogin', `Login successful, UID: ${uid}`);
+          const identity: string = payload.unionid || payload.openid || String(uid);
+          const uidStr = String(uid);
+          logger.success('WxLogin', `Login successful, identity: ${identity}`);
           try {
-            await syncUserAction({ wxId: uid, name: `用户_${uid}` });
+            await syncUserAction({
+              wxId: identity,
+              name: `用户_${identity}`,
+              legacyCvUserId: uidStr,
+              javaUserId: uidStr, // enable fallback lookup by javaUserId
+            });
           } catch (syncError) {
             logger.error('WxLogin', 'Failed to sync user', syncError);
           }
-          handleLoginSuccess(uid);
+          handleLoginSuccess(identity);
         }
       } catch {
         // Continue polling

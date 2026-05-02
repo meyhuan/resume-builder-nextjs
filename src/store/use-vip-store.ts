@@ -84,7 +84,16 @@ export const useVipStore = create<VipStoreState>()((set, get) => ({
     if (!requestPromise) {
       requestPromise = (async (): Promise<VipPollData | null> => {
         const response: Response = await fetch('/next-api/vip/poll');
-        if (!response.ok) return null;
+        if (!response.ok) {
+          if (response.status === 401) {
+            const body: { error?: string; message?: string } = await response.json().catch(() => ({}));
+            if (body.error === 'RE_LOGIN') {
+              useAuthStore.getState().logout();
+              window.dispatchEvent(new CustomEvent('re-login-required', { detail: { message: body.message } }));
+            }
+          }
+          return null;
+        }
         const json: { data?: VipPollData } = await response.json();
         return json.data ?? null;
       })();

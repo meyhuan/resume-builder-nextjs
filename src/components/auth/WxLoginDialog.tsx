@@ -148,25 +148,28 @@ export const WxLoginDialog: React.FC<WxLoginDialogProps> = ({ isOpen, onClose, o
         const uid = payload.uid || (payload.data && payload.data.uid);
         
         if (uid) {
-          logger.success('WxLogin', `Login successful, UID: ${uid}`);
+          // Prefer unionid (cross-app unique) > openid > numeric uid
+          const identity: string = payload.unionid || payload.openid || String(uid);
+          const uidStr = String(uid);
+          logger.success('WxLogin', `Login successful, identity: ${identity}`);
           // Sync with local database using Server Action
           try {
             await syncUserAction({
-              wxId: uid,
-              name: `用户_${uid}`,
+              wxId: identity,
+              name: `用户_${identity}`,
+              legacyCvUserId: uidStr,
+              javaUserId: uidStr, // enable fallback lookup by javaUserId
             });
             logger.success('WxLogin', 'User synced to local database via Server Action');
           } catch (syncError) {
             logger.error('WxLogin', 'Failed to sync user to local database', syncError);
           }
 
-          // Since this direct Java API returns a UID instead of a full JWT,
-          // we treat the UID as our session token/identifier for now.
-          setToken(uid);
-          setCookie('auth_uid', uid, { maxAge: 60 * 60 * 24 * 30 }); // Save UID in cookie for server-side access
+          setToken(identity);
+          setCookie('auth_uid', identity, { maxAge: 60 * 60 * 24 * 30 });
           setUserInfo({
-            id: uid,
-            name: `用户_${uid}`,
+            id: identity,
+            name: `用户_${identity}`,
           });
 
           stopPolling();

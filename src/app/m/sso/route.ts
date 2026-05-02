@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { cookies } from 'next/headers'
 import { prisma } from '@/lib/prisma'
+import { fetchJavaWithLog, parseJsonWithLog } from '@/lib/api/fetch-with-log'
 
 const JAVA_API_BASE: string = process.env.JAVA_API_BASE_URL || 'https://aijianli.cn/api'
 const AUTH_COOKIE_NAME = 'auth_uid'
@@ -8,7 +9,7 @@ const AUTH_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 30
 
 interface SsoVerifyResult {
   readonly status: number
-  readonly data?: { readonly uid: number | string; readonly openid?: string }
+  readonly data?: { readonly uid: number | string; readonly openid?: string; readonly unionid?: string }
 }
 
 /**
@@ -79,7 +80,8 @@ function sanitizeRedirect(target: string): string {
 }
 
 async function verifyTokenWithJava(token: string): Promise<string> {
-  const response: Response = await fetch(`${JAVA_API_BASE}/sso/verify`, {
+  const response: Response = await fetchJavaWithLog('/sso/verify', {
+    logPrefix: '[m/sso]',
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ token }),
@@ -88,13 +90,12 @@ async function verifyTokenWithJava(token: string): Promise<string> {
   if (!response.ok) {
     throw new Error(`SSO verify HTTP ${response.status}`)
   }
-  const payload: SsoVerifyResult = await response.json()
+  const payload = await parseJsonWithLog<SsoVerifyResult>(response, '[m/sso]')
   if (payload.status !== 100 || !payload.data?.uid) {
     throw new Error('登录令牌无效或已过期')
   }
-  // Prefer openid (wx identity) over Java numeric uid so it matches the sid
-  // used by the mini-program when calling /next-api/resumes/mini.
-  return payload.data.openid || String(payload.data.uid)
+  // Prefer unionid (cross-app unique) > openid > numeric uid
+  return payload.data.unionid || payload.data.openid || String(payload.data.uid)
 }
 
 async function ensureUserExists(wxId: string): Promise<void> {

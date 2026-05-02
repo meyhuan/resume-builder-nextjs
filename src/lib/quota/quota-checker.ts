@@ -10,14 +10,13 @@
 import { cookies } from 'next/headers';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
+import { fetchJavaWithLog, parseJsonWithLog } from '@/lib/api/fetch-with-log';
 import {
   getQuotaLimit,
   getFeatureDisplayName,
   type QuotaFeatureKey,
 } from './membership-benefits';
 import { LIFETIME_QUOTA_FEATURES } from './quota-config';
-
-const JAVA_API_BASE = process.env.JAVA_API_BASE_URL || 'https://aijianli.cn/api';
 
 function getDateKey(timestamp: number): string {
   const date = new Date(timestamp);
@@ -61,26 +60,29 @@ export interface QuotaCheckResult {
 async function checkVipStatus(): Promise<{ isVip: boolean; userId?: string }> {
   try {
     const cookieStore = await cookies();
-    const cvUserId = cookieStore.get('auth_uid')?.value;
-    if (!cvUserId) {
+    const unionid = cookieStore.get('auth_uid')?.value;
+    if (!unionid) {
       return { isVip: false };
     }
 
-    const response = await fetch(`${JAVA_API_BASE}/cvstore/user/${cvUserId}/vip-info`, {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
-      cache: 'no-store',
-    });
-
+    const response = await fetchJavaWithLog(
+      `/user/vip-info?unionid=${encodeURIComponent(unionid)}`,
+      {
+        logPrefix: '[quota]',
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        cache: 'no-store',
+      }
+    );
     if (!response.ok) {
+      console.error('[quota] VIP check failed:', response.status);
       return { isVip: false };
     }
-
-    const data = await response.json();
-    return {
-      isVip: data.data?.isVip ?? false,
-      userId: String(data.data?.userId),
-    };
+    const data = await parseJsonWithLog<{
+      status?: number;
+      data?: { isVip?: boolean; userId?: number };
+    }>(response, '[quota]');
+    return { isVip: !!data?.data?.isVip, userId: String(data?.data?.userId ?? '') };
   } catch {
     return { isVip: false };
   }
@@ -122,30 +124,22 @@ export async function checkQuota(
 
   const todayKey = getDateKey(Date.now());
 
-  // Find or create user by wxId (Java user ID)
-  let user = await prisma.user.findUnique({
+  // Find or create user by wxId (using upsert to avoid race conditions)
+  const user = await prisma.user.upsert({
     where: { wxId: userId },
+    update: {},
+    create: { wxId: userId },
   });
 
-  if (!user) {
-    user = await prisma.user.create({
-      data: { wxId: userId },
-    });
-  }
-
-  // Get or create single quota record for this user
-  let quotaRecord = await prisma.userQuota.findUnique({
+  // Get or create single quota record for this user (using upsert to avoid race conditions)
+  const quotaRecord = await prisma.userQuota.upsert({
     where: { userId: user.id },
+    update: {},
+    create: {
+      userId: user.id,
+      quotas: {},
+    },
   });
-
-  if (!quotaRecord) {
-    quotaRecord = await prisma.userQuota.create({
-      data: {
-        userId: user.id,
-        quotas: {},
-      },
-    });
-  }
 
   // Parse quotas JSON
   const quotas = (quotaRecord.quotas as unknown as QuotasData) || {};
