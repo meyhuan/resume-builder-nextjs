@@ -1,3 +1,4 @@
+"use client"
 import { useState } from 'react'
 import type { ReactElement, ReactNode } from 'react'
 import { useDroppable } from '@dnd-kit/core'

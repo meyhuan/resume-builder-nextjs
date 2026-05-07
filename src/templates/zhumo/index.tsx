@@ -1,3 +1,5 @@
+"use client"
+
 /**
  * 朱墨 — Zhumo (flagship for editorial / content / copy roles)
  *

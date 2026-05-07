@@ -1,3 +1,4 @@
+"use client"
 import { useState, useRef, useCallback, cloneElement } from 'react'
 import type { ReactElement, ReactNode, ChangeEvent } from 'react'
 import { useDroppable } from '@dnd-kit/core'

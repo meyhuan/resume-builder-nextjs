@@ -1,3 +1,5 @@
+"use client"
+
 /**
  * 杏坛 — Xingtan (flagship for teachers / academic / education roles)
  *

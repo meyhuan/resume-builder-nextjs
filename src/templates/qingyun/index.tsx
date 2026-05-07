@@ -1,3 +1,5 @@
+"use client"
+
 /**
  * 青云 — Qingyun (flagship for fresh graduates)
  *

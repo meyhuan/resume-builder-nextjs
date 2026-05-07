@@ -1,3 +1,5 @@
+"use client"
+
 /**
  * 码上 — Mashang (flagship for software engineers)
  *

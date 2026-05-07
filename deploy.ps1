@@ -11,6 +11,7 @@ param(
 $SERVER_IP = "47.120.35.34"
 $SERVER_USER = "root"
 $SERVER_DIR = "/home/webapp/aijianli-nextjs/resume-builder-nextjs"
+$SSH_KEY = "C:\Users\62765\Marker\Aliyun\key-8G-20260504.pem"
 
 if ($RemoteOnly) {
     Write-Host "⏭️ 跳过本地构建和 deploy.zip 上传，仅上传 deploy.sh 并执行远端部署..." -ForegroundColor Yellow
@@ -65,7 +66,7 @@ if (-not $RemoteOnly) {
     # }
 
     # 上传 zip 文件
-    scp deploy.zip ${SERVER_USER}@${SERVER_IP}:${SERVER_DIR}/deploy.zip
+    scp -i $SSH_KEY deploy.zip ${SERVER_USER}@${SERVER_IP}:${SERVER_DIR}/deploy.zip
     if ($LASTEXITCODE -ne 0) {
         Write-Host "❌ 上传 deploy.zip 失败。" -ForegroundColor Red
         exit 1
@@ -82,7 +83,7 @@ if (-not $RemoteOnly) {
 
 if ($RemoteOnly) {
     Write-Host "🚀 开始上传最新部署脚本到服务器: $SERVER_IP ..." -ForegroundColor Cyan
-    scp deploy.sh ${SERVER_USER}@${SERVER_IP}:${SERVER_DIR}/deploy.sh
+    scp -i $SSH_KEY deploy.sh ${SERVER_USER}@${SERVER_IP}:${SERVER_DIR}/deploy.sh
     if ($LASTEXITCODE -ne 0) {
         Write-Host "❌ 上传 deploy.sh 失败。" -ForegroundColor Red
         exit 1
@@ -92,7 +93,7 @@ if ($RemoteOnly) {
 
 Write-Host "⚙️  开始在服务器上执行部署..." -ForegroundColor Cyan
 # 转换 deploy.sh 为 LF 并执行，避免 Windows CRLF 在 Linux 上报错
-ssh ${SERVER_USER}@${SERVER_IP} "sed -i 's/\r$//' $SERVER_DIR/deploy.sh && chmod +x $SERVER_DIR/deploy.sh && bash -x $SERVER_DIR/deploy.sh"
+ssh -i $SSH_KEY ${SERVER_USER}@${SERVER_IP} "sed -i 's/\r$//' $SERVER_DIR/deploy.sh && chmod +x $SERVER_DIR/deploy.sh && bash -x $SERVER_DIR/deploy.sh"
 if ($LASTEXITCODE -ne 0) {
     Write-Host "❌ 远端部署失败，请检查上方日志。" -ForegroundColor Red
     exit 1

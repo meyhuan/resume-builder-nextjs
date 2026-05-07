@@ -3,7 +3,6 @@ import { cookies } from 'next/headers'
 import { prisma } from '@/lib/prisma'
 import { fetchJavaWithLog, parseJsonWithLog } from '@/lib/api/fetch-with-log'
 
-const JAVA_API_BASE: string = process.env.JAVA_API_BASE_URL || 'https://aijianli.cn/api'
 const AUTH_COOKIE_NAME = 'auth_uid'
 const AUTH_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 30
 

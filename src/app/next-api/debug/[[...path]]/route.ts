@@ -10,10 +10,10 @@ const JAVA_API_BASE = process.env.JAVA_API_BASE_URL || 'https://aijianli.cn/api'
  */
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ path: string[] }> }
-): Promise<NextResponse> {
+  { params }: { params: Promise<{ path?: string[] }> }
+) {
   const { path } = await params;
-  const pathStr = path.join('/');
+  const pathStr = (path ?? []).join('/');
 
   try {
     const response = await fetch(`${JAVA_API_BASE}/debug/${pathStr}`, {
@@ -35,10 +35,10 @@ export async function GET(
  */
 export async function POST(
   request: Request,
-  { params }: { params: Promise<{ path: string[] }> }
-): Promise<NextResponse> {
+  { params }: { params: Promise<{ path?: string[] }> }
+) {
   const { path } = await params;
-  const pathStr = path.join('/');
+  const pathStr = (path ?? []).join('/');
 
   try {
     const response = await fetch(`${JAVA_API_BASE}/debug/${pathStr}`, {
