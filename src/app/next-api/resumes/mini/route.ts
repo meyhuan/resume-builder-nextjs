@@ -24,7 +24,7 @@ type Action = 'list' | 'create' | 'copy' | 'rename' | 'delete'
 
 interface RequestBody {
   action: Action
-  sid: unknown
+  wxId: unknown
   timestamp: unknown
   sign: unknown
   resumeId?: string
@@ -40,19 +40,19 @@ export async function POST(req: Request): Promise<NextResponse> {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
   }
 
-  const sid: string = String(body.sid ?? '')
+  const wxId: string = String(body.wxId ?? '')
   const timestamp: number = Number(body.timestamp)
   const sign: string = String(body.sign ?? '')
 
-  const signError = verifyMiniSign({ sid, timestamp, sign })
+  const signError = verifyMiniSign({ wxId, timestamp, sign })
   if (signError) {
     return NextResponse.json({ error: signError }, { status: 403 })
   }
 
   const user = await prisma.user.upsert({
-    where: { wxId: sid },
+    where: { wxId },
     update: {},
-    create: { wxId: sid, name: `用户_${sid}` },
+    create: { wxId, name: `用户_${wxId}` },
     select: { id: true },
   })
 

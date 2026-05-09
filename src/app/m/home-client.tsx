@@ -18,6 +18,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { getAllTemplates, type TemplateConfig } from '@/templates/template-loader'
+import { defaultResume } from '@/state/store'
 import {
   renameResume as renameResumeAction,
   duplicateResume as duplicateResumeAction,
@@ -150,7 +151,7 @@ export default function MobileHomeClient(props: MobileHomeClientProps = {}): Rea
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ title: '我的简历', content: {}, template: 'simple' }),
+        body: JSON.stringify({ title: '我的简历', content: defaultResume, template: 'simple' }),
       })
       log.info('create resume HTTP', { status: res.status })
       if (!res.ok) throw new Error(`${res.status}`)

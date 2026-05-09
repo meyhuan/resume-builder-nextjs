@@ -6,6 +6,7 @@ import { Eye } from 'lucide-react'
 
 interface HomeActionBarProps {
   readonly resumeId: string | null
+  readonly template?: string | null
 }
 
 /**
@@ -15,11 +16,12 @@ interface HomeActionBarProps {
  * in secondary pages that handle save on exit.
  */
 export function HomeActionBar(props: HomeActionBarProps): ReactElement {
-  const { resumeId } = props
+  const { resumeId, template } = props
   const router = useRouter()
 
   const handlePreview = (): void => {
-    router.push(`/m/preview?id=${resumeId ?? ''}`)
+    const tpl = template ? `&tpl=${encodeURIComponent(template)}` : ''
+    router.push(`/m/preview?id=${resumeId ?? ''}${tpl}`)
   }
 
   return (

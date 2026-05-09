@@ -3,10 +3,11 @@ import puppeteerCore from 'puppeteer-core';
 import chromium from '@sparticuz/chromium';
 import { paginateHtml, getClientPaginationScript } from '@/utils/paginate-html';
 import { checkQuota } from '@/lib/quota/quota-checker';
+import { savePdfTemp } from '@/lib/pdf-temp-store';
 
 export async function POST(req: Request) {
   try {
-    const { html, preview = false } = await req.json();
+    const { html, preview = false, returnUrl = false, fileName = 'resume' } = await req.json();
 
     // Check PDF quota (preview = unlimited, export = limited)
     if (!preview) {
@@ -70,14 +71,18 @@ export async function POST(req: Request) {
         preferCSSPageSize: true,
       });
 
-      const response = new NextResponse(pdf as unknown as BodyInit, {
+      if (returnUrl) {
+        const token = savePdfTemp(Buffer.from(pdf), fileName)
+        const url = `/next-api/pdf-file/${token}`
+        return NextResponse.json({ url })
+      }
+
+      return new NextResponse(pdf as unknown as BodyInit, {
         headers: {
           'Content-Type': 'application/pdf',
-          'Content-Disposition': 'attachment; filename="resume.pdf"',
+          'Content-Disposition': `attachment; filename="${encodeURIComponent(fileName)}.pdf"`,
         },
       });
-
-      return response;
     } finally {
       if (browser) {
         await browser.close();

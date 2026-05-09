@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Slider } from '@/components/ui/slider'
 import { cn } from '@/lib/utils'
 import { buildResumeHtml } from '@/io/html-export'
+import { ResumeSvgPlaceholder } from '@/features/m/resume-list/shared'
 import { exportImage } from '@/io/export-image'
 import { useVipCheck } from '@/hooks/use-vip-check'
 import VipUpgradeDialog from '@/components/vip/vip-upgrade-dialog'
@@ -276,12 +277,14 @@ export default function MobilePreviewClient(): ReactElement {
     if (!requirePdf()) return
     if (!innerRef.current) return
     setIsExporting(true)
+    const isWeChat: boolean = typeof window !== 'undefined' && /MicroMessenger/i.test(navigator.userAgent)
+    const fileName: string = resume.name || 'resume'
     try {
-      const html: string = buildResumeHtml(innerRef.current, { title: resume.name || 'Resume' })
+      const html: string = buildResumeHtml(innerRef.current, { title: fileName })
       const response = await fetch('/next-api/generate-pdf', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ html }),
+        body: JSON.stringify({ html, returnUrl: isWeChat, fileName }),
       })
       if (!response.ok) {
         const errorData = await response.json().catch(() => null)
@@ -295,14 +298,23 @@ export default function MobilePreviewClient(): ReactElement {
         setShowUpgrade(true)
         return
       }
-      const blob: Blob = await response.blob()
-      const url: string = window.URL.createObjectURL(blob)
-      const a: HTMLAnchorElement = document.createElement('a')
-      a.href = url
-      a.download = `${resume.name || 'resume'}.pdf`
-      a.click()
-      window.URL.revokeObjectURL(url)
-      toast.success('PDF 导出成功 ✓')
+      if (isWeChat) {
+        const { url }: { url: string } = await response.json()
+        const absoluteUrl: string = `${window.location.origin}${url}`
+        // Post message then navigate back so mini-program receives it and downloads
+        window.wx?.miniProgram?.postMessage({ data: { action: 'downloadPdf', url: absoluteUrl, fileName } })
+        toast.success('准备下载...')
+        setTimeout(() => window.wx?.miniProgram?.navigateBack(), 800)
+      } else {
+        const blob: Blob = await response.blob()
+        const url: string = window.URL.createObjectURL(blob)
+        const a: HTMLAnchorElement = document.createElement('a')
+        a.href = url
+        a.download = `${fileName}.pdf`
+        a.click()
+        window.URL.revokeObjectURL(url)
+        toast.success('PDF 导出成功 ✓')
+      }
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'PDF 导出失败')
     } finally {
@@ -561,9 +573,8 @@ function BottomActionBar(props: BottomActionBarProps): ReactElement {
 
 function TemplateFallback(): ReactElement {
   return (
-    <div className="flex items-center justify-center py-20 text-slate-500">
-      <Loader2 className="animate-spin" size={18} />
-      <span className="ml-2 text-sm">加载模板…</span>
+    <div className="w-full shadow-sm overflow-hidden">
+      <ResumeSvgPlaceholder pulse />
     </div>
   )
 }

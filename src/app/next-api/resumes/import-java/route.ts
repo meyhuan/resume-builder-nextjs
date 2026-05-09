@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { verifyMiniSign } from '@/lib/verify-mini-sign'
 
 interface ImportJavaBody {
-  readonly sid: unknown
+  readonly wxId: unknown
   readonly timestamp: unknown
   readonly sign: unknown
   readonly javaId: string
@@ -34,23 +34,23 @@ export async function POST(req: Request): Promise<NextResponse> {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
   }
 
-  const sid: string = String(body.sid ?? '')
+  const wxId: string = String(body.wxId ?? '')
   const timestamp: number = Number(body.timestamp)
   const sign: string = String(body.sign ?? '')
   const { javaId, title, template, content } = body
 
-  const signError = verifyMiniSign({ sid, timestamp, sign })
+  const signError = verifyMiniSign({ wxId, timestamp, sign })
   if (signError) {
     return NextResponse.json({ error: signError }, { status: 403 })
   }
-  if (!sid || !javaId || !content) {
+  if (!wxId || !javaId || !content) {
     return NextResponse.json({ error: 'Missing required fields: sid, javaId, content' }, { status: 400 })
   }
 
   const user = await prisma.user.upsert({
-    where: { wxId: sid },
+    where: { wxId },
     update: {},
-    create: { wxId: sid, name: `用户_${sid}` },
+    create: { wxId, name: `用户_${wxId}` },
     select: { id: true },
   })
 

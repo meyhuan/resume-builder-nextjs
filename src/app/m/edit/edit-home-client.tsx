@@ -229,7 +229,7 @@ export default function MobileEditHomeClient(
       <AddMoreModules emptyModules={emptyOptionalModules} />
 
       <DeveloperNote />
-      <HomeActionBar resumeId={resumeId ?? initial?.id ?? null} />
+      <HomeActionBar resumeId={resumeId ?? initial?.id ?? null} template={initial?.template ?? null} />
     </div>
   )
 }

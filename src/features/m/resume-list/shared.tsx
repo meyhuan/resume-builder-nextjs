@@ -90,9 +90,9 @@ export function formatUpdateTime(iso: string): string {
 // Resume SVG placeholder (used when a resume has no thumbnail)
 // ---------------------------------------------------------------------------
 
-export function ResumeSvgPlaceholder(): ReactElement {
+export function ResumeSvgPlaceholder({ pulse = false }: { readonly pulse?: boolean } = {}): ReactElement {
   return (
-    <svg viewBox="0 0 200 280" className="w-full h-full">
+    <svg viewBox="0 0 200 280" className={`w-full h-full${pulse ? ' animate-pulse' : ''}`}>
       <rect x="0" y="0" width="200" height="280" fill="#ffffff" />
       <rect x="20" y="20" width="160" height="24" rx="2" fill="#f1f5f9" />
       <rect x="20" y="56" width="100" height="12" rx="2" fill="#e2e8f0" />

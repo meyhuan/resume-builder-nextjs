@@ -63,9 +63,9 @@ export async function POST(req: Request) {
     })
     
     const cookieStore = await cookies();
-    const userId = cookieStore.get("auth_uid")?.value;
+    const wxId = cookieStore.get("auth_uid")?.value;
 
-    if (!userId) {
+    if (!wxId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -77,8 +77,8 @@ export async function POST(req: Request) {
         template: template || 'simple',
         user: {
           connectOrCreate: {
-            where: { wxId: userId },
-            create: { wxId: userId }
+            where: { wxId: wxId },
+            create: { wxId: wxId }
           }
         }
       }
