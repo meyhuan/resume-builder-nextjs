@@ -3,7 +3,7 @@
  * Logs are only shown in development mode (NODE_ENV !== 'production').
  */
 
-const JAVA_API_BASE = process.env.JAVA_API_BASE_URL || 'https://aijianli.cn/api';
+const JAVA_API_BASE = process.env.NEXT_PUBLIC_JAVA_API_BASE_URL || 'https://aijianli.cn/api';
 const isDev = process.env.NODE_ENV !== 'production';
 
 interface FetchWithLogOptions extends RequestInit {

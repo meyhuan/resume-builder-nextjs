@@ -131,15 +131,31 @@ export async function checkQuota(
     create: { wxId: userId },
   });
 
-  // Get or create single quota record for this user (using upsert to avoid race conditions)
-  const quotaRecord = await prisma.userQuota.upsert({
-    where: { userId: user.id },
-    update: {},
-    create: {
-      userId: user.id,
-      quotas: {},
-    },
-  });
+  // Find or create single quota record for this user
+  // Use try-catch to handle race conditions when multiple requests run concurrently
+  let quotaRecord;
+  try {
+    quotaRecord = await prisma.userQuota.upsert({
+      where: { userId: user.id },
+      update: {},
+      create: {
+        userId: user.id,
+        quotas: {},
+      },
+    });
+  } catch (error) {
+    // If another request created the record first (P2002), fetch the existing record
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      quotaRecord = await prisma.userQuota.findUnique({
+        where: { userId: user.id },
+      });
+      if (!quotaRecord) {
+        throw new Error(`[quota] Failed to fetch UserQuota after P2002 for user ${user.id}`);
+      }
+    } else {
+      throw error;
+    }
+  }
 
   // Parse quotas JSON
   const quotas = (quotaRecord.quotas as unknown as QuotasData) || {};

@@ -17,7 +17,7 @@
 import { PrismaClient } from '@prisma/client'
 
 const DRY_RUN = process.argv.includes('--dry-run')
-const JAVA_API_BASE = process.env.JAVA_API_BASE_URL || 'https://aijianli.cn/api'
+const JAVA_API_BASE = process.env.NEXT_PUBLIC_JAVA_API_BASE_URL || 'https://aijianli.cn/api'
 
 const prisma = new PrismaClient()
 

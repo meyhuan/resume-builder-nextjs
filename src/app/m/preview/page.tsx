@@ -3,7 +3,7 @@ import { Suspense, type ReactElement } from 'react'
 import MobilePreviewClient from './preview-client'
 
 export const metadata: Metadata = {
-  title: '移动端简历预览 · 排版设置',
+  title: '简历预览',
   description: '只读预览 + 模板切换 + 排版设置（字体、字号、行距、间距、颜色等）。',
   robots: { index: false, follow: false },
 }

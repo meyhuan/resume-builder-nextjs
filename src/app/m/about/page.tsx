@@ -4,28 +4,31 @@ import { type ReactElement } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Heart, MessageCircle, Mail, Code2 } from 'lucide-react'
 import Image from 'next/image'
+import { useInMiniProgram } from '../_components/use-mini-program'
 
 /**
  * Mobile about page: developer story, contact, and changelog.
  */
 export default function MobileAboutPage(): ReactElement {
   const router = useRouter()
+  const inMiniProgram = useInMiniProgram()
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
-      {/* Top bar */}
-      <div className="sticky top-0 z-20 flex items-center justify-between px-3 h-12 bg-white/90 backdrop-blur border-b border-slate-200">
-        <button
-          type="button"
-          className="h-9 w-9 rounded-lg flex items-center justify-center text-slate-600 hover:bg-slate-100"
-          onClick={(): void => router.back()}
-          aria-label="返回"
-        >
-          <ArrowLeft size={18} />
-        </button>
-        <div className="text-sm font-semibold text-slate-800">关于开发者</div>
-        <div className="w-9" />
-      </div>
+      {!inMiniProgram && (
+        <div className="sticky top-0 z-20 flex items-center justify-between px-3 h-12 bg-white/90 backdrop-blur border-b border-slate-200">
+          <button
+            type="button"
+            className="h-9 w-9 rounded-lg flex items-center justify-center text-slate-600 hover:bg-slate-100"
+            onClick={(): void => router.back()}
+            aria-label="返回"
+          >
+            <ArrowLeft size={18} />
+          </button>
+          <div className="text-sm font-semibold text-slate-800">关于开发者</div>
+          <div className="w-9" />
+        </div>
+      )}
 
       <div className="flex-1 px-5 py-6 pb-12">
         <div className="flex flex-col gap-5">

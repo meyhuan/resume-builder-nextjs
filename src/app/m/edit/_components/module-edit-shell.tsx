@@ -6,6 +6,7 @@ import { ArrowLeft, Loader2, Check } from 'lucide-react'
 import { toast } from 'sonner'
 import { useDraftStore } from '@/features/edit/draft/draft-store'
 import { cn } from '@/lib/utils'
+import { useInMiniProgram } from '../../_components/use-mini-program'
 
 export interface ValidationResult {
   readonly ok: boolean
@@ -40,6 +41,7 @@ export function ModuleEditShell(props: ModuleEditShellProps): ReactElement {
   const saveAll = useDraftStore((s) => s.saveAll)
   const discardAll = useDraftStore((s) => s.discardAll)
   const [confirmBack, setConfirmBack] = useState<boolean>(false)
+  const inMiniProgram = useInMiniProgram()
 
   const doBack = (): void => {
     if (onBack) onBack()
@@ -94,22 +96,23 @@ export function ModuleEditShell(props: ModuleEditShellProps): ReactElement {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
-      {/* Minimal top bar: back + title only. Save action lives at the bottom. */}
-      <div className="sticky top-0 z-20 flex items-center justify-between px-3 h-12 bg-white/90 backdrop-blur border-b border-slate-200">
-        <button
-          type="button"
-          className="h-9 w-9 rounded-lg flex items-center justify-center text-slate-600 hover:bg-slate-100"
-          onClick={handleBack}
-          aria-label="返回"
-        >
-          <ArrowLeft size={18} />
-        </button>
-        <div className="flex flex-col items-center">
-          <div className="text-sm font-semibold text-slate-800">{title}</div>
-          {subtitle && <div className="text-[10px] text-slate-400">{subtitle}</div>}
+      {!inMiniProgram && (
+        <div className="sticky top-0 z-20 flex items-center justify-between px-3 h-12 bg-white/90 backdrop-blur border-b border-slate-200">
+          <button
+            type="button"
+            className="h-9 w-9 rounded-lg flex items-center justify-center text-slate-600 hover:bg-slate-100"
+            onClick={handleBack}
+            aria-label="返回"
+          >
+            <ArrowLeft size={18} />
+          </button>
+          <div className="flex flex-col items-center">
+            <div className="text-sm font-semibold text-slate-800">{title}</div>
+            {subtitle && <div className="text-[10px] text-slate-400">{subtitle}</div>}
+          </div>
+          <div className="w-9" />
         </div>
-        <div className="w-9" />
-      </div>
+      )}
 
       {/* Body — extra bottom padding to clear the fixed save bar. */}
       <div

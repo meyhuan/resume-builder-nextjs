@@ -20,7 +20,7 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@fontsource/inter": "^5.2.8",
-    "@fontsource/noto-sans-sc": "^5.2.8",
+    "@fontsource/noto-sans-sc": "^5.2.9",
     "@lexical/html": "^0.36.1",
     "@lexical/list": "^0.36.1",
     "@lexical/react": "^0.36.1",

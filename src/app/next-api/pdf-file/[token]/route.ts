@@ -12,10 +12,13 @@ export async function GET(
   { params }: { params: Promise<{ token: string }> },
 ): Promise<NextResponse> {
   const { token } = await params
-  const entry = consumePdfTemp(token)
+  console.log('[pdf-file] request', { token })
+  const entry = await consumePdfTemp(token)
   if (!entry) {
+    console.warn('[pdf-file] not found or expired', { token })
     return NextResponse.json({ error: 'File not found or expired' }, { status: 404 })
   }
+  console.log('[pdf-file] serving PDF', { token, fileName: entry.fileName, bytes: entry.buffer.length })
   return new NextResponse(entry.buffer as unknown as BodyInit, {
     headers: {
       'Content-Type': 'application/pdf',

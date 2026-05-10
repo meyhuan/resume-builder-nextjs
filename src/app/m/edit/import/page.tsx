@@ -9,6 +9,7 @@ import { mapExternalResume } from '@/io/external-resume-importer'
 import type { ResumeData } from '@/entities/resume/resume-data'
 import { useDraftStore } from '@/features/edit/draft/draft-store'
 import { cn } from '@/lib/utils'
+import { useInMiniProgram } from '../../_components/use-mini-program'
 
 type ImportMode = 'text' | 'file'
 type ImportStep = 'input' | 'processing' | 'done'
@@ -24,6 +25,7 @@ const ALLOWED_EXT = ['doc', 'docx', 'pdf', 'jpg', 'jpeg', 'png', 'bmp', 'gif']
 export default function MobileImportPage(): ReactElement {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const inMiniProgram = useInMiniProgram()
   const setFromServer = useDraftStore((s) => s.setFromServer)
   const initialMode: ImportMode = searchParams.get('mode') === 'file' ? 'file' : 'text'
   const [mode, setMode] = useState<ImportMode>(initialMode)
@@ -169,21 +171,22 @@ export default function MobileImportPage(): ReactElement {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
-      {/* Top bar */}
-      <div className="sticky top-0 z-20 flex items-center justify-between px-3 h-12 bg-white/90 backdrop-blur border-b border-slate-200">
-        <button
-          type="button"
-          className="h-9 w-9 rounded-lg flex items-center justify-center text-slate-600 hover:bg-slate-100"
-          onClick={handleBack}
-          aria-label="返回"
-        >
-          <ArrowLeft size={18} />
-        </button>
-        <div className="text-sm font-semibold text-slate-800">
-          {mode === 'file' ? '导入简历' : '文本转简历'}
+      {!inMiniProgram && (
+        <div className="sticky top-0 z-20 flex items-center justify-between px-3 h-12 bg-white/90 backdrop-blur border-b border-slate-200">
+          <button
+            type="button"
+            className="h-9 w-9 rounded-lg flex items-center justify-center text-slate-600 hover:bg-slate-100"
+            onClick={handleBack}
+            aria-label="返回"
+          >
+            <ArrowLeft size={18} />
+          </button>
+          <div className="text-sm font-semibold text-slate-800">
+            {mode === 'file' ? '导入简历' : '文本转简历'}
+          </div>
+          <div className="w-9" />
         </div>
-        <div className="w-9" />
-      </div>
+      )}
 
       {/* Body */}
       <div className="flex-1 px-5 py-6">

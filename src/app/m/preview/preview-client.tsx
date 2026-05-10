@@ -21,6 +21,7 @@ import VipUpgradeDialog from '@/components/vip/vip-upgrade-dialog'
 import { useOnePageMode, type OnePageStatus } from '@/hooks/use-one-page-mode'
 import type { AdjustableTokens } from '@/entities/editor/editor-meta'
 import { createLogger } from '@/lib/logger'
+import { useInMiniProgram } from '../_components/use-mini-program'
 
 const FONT_FAMILIES: ReadonlyArray<{ id: string; label: string; stack: string }> = [
   { id: 'sans', label: '无衬线', stack: 'Inter, "Noto Sans SC", system-ui, sans-serif' },
@@ -39,6 +40,13 @@ const MOBILE_PAGE_MAX_WIDTH_PX = 390
 const A4_RATIO = 297 / 210
 
 type SettingsTab = 'template' | 'color' | 'font' | 'layout' | 'advanced'
+
+interface PdfQuotaCheck {
+  readonly allowed?: boolean
+  readonly isVip?: boolean
+  readonly remaining?: number | 'unlimited'
+  readonly message?: string
+}
 
 const log = createLogger('m/preview')
 
@@ -273,13 +281,31 @@ export default function MobilePreviewClient(): ReactElement {
   const { requirePdf, showUpgrade, setShowUpgrade } = useVipCheck()
   const [isExporting, setIsExporting] = useState<boolean>(false)
 
+  const requireExportQuota = useCallback(async (): Promise<boolean> => {
+    const quotaCheckRes = await fetch('/next-api/quota', { credentials: 'include', cache: 'no-store' })
+    log.info('export quota precheck HTTP', { status: quotaCheckRes.status })
+    if (!quotaCheckRes.ok) {
+      log.warn('export quota precheck failed, fallback to local requirePdf', { status: quotaCheckRes.status })
+      return requirePdf()
+    }
+    const quotaJson: { pdfExport?: PdfQuotaCheck } = await quotaCheckRes.json()
+    const pdfQuota: PdfQuotaCheck | undefined = quotaJson.pdfExport
+    log.info('export quota precheck parsed', { pdfQuota })
+    if (pdfQuota?.allowed || pdfQuota?.isVip) return true
+    log.warn('export quota precheck blocked export', { pdfQuota })
+    toast.error(pdfQuota?.message || '导出次数已用完')
+    setShowUpgrade(true)
+    return false
+  }, [requirePdf, setShowUpgrade])
+
   const handleExportPdf = useCallback(async (): Promise<void> => {
-    if (!requirePdf()) return
     if (!innerRef.current) return
     setIsExporting(true)
     const isWeChat: boolean = typeof window !== 'undefined' && /MicroMessenger/i.test(navigator.userAgent)
     const fileName: string = resume.name || 'resume'
     try {
+      if (!(await requireExportQuota())) return
+
       const html: string = buildResumeHtml(innerRef.current, { title: fileName })
       const response = await fetch('/next-api/generate-pdf', {
         method: 'POST',
@@ -301,10 +327,36 @@ export default function MobilePreviewClient(): ReactElement {
       if (isWeChat) {
         const { url }: { url: string } = await response.json()
         const absoluteUrl: string = `${window.location.origin}${url}`
-        // Post message then navigate back so mini-program receives it and downloads
+        const environment: string | undefined = (window as unknown as { __wxjs_environment?: string }).__wxjs_environment
+        const hasWx: boolean = !!window.wx
+        const hasMiniProgram: boolean = !!window.wx?.miniProgram
+        const canPostMessage: boolean = typeof window.wx?.miniProgram?.postMessage === 'function'
+        const canNavigateBack: boolean = typeof window.wx?.miniProgram?.navigateBack === 'function'
+        log.info('mini program PDF handoff ready check', {
+          environment,
+          hasWx,
+          hasMiniProgram,
+          canPostMessage,
+          canNavigateBack,
+          fileName,
+          url: absoluteUrl,
+        })
+        if (!canPostMessage) {
+          log.error('mini program postMessage unavailable', { environment, hasWx, hasMiniProgram })
+          throw new Error('小程序通信未就绪，请稍后重试')
+        }
+        log.info('mini program postMessage send', { action: 'downloadPdf', fileName, url: absoluteUrl })
         window.wx?.miniProgram?.postMessage({ data: { action: 'downloadPdf', url: absoluteUrl, fileName } })
+        log.info('mini program postMessage sent')
         toast.success('准备下载...')
-        setTimeout(() => window.wx?.miniProgram?.navigateBack(), 800)
+        setTimeout((): void => {
+          if (!canNavigateBack) {
+            log.warn('mini program navigateBack unavailable after postMessage')
+            return
+          }
+          log.info('mini program navigateBack start')
+          window.wx?.miniProgram?.navigateBack()
+        }, 800)
       } else {
         const blob: Blob = await response.blob()
         const url: string = window.URL.createObjectURL(blob)
@@ -320,13 +372,13 @@ export default function MobilePreviewClient(): ReactElement {
     } finally {
       setIsExporting(false)
     }
-  }, [resume, requirePdf, setShowUpgrade])
+  }, [resume, requireExportQuota])
 
   const handleExportImage = useCallback(async (): Promise<void> => {
-    if (!requirePdf()) return
     if (!innerRef.current) return
     setIsExporting(true)
     try {
+      if (!(await requireExportQuota())) return
       await exportImage(innerRef, { fileName: resume.name || 'resume', pixelRatio: 2, backgroundColor: '#ffffff' })
       toast.success('图片导出成功 ✓')
     } catch (err: unknown) {
@@ -334,7 +386,7 @@ export default function MobilePreviewClient(): ReactElement {
     } finally {
       setIsExporting(false)
     }
-  }, [resume, requirePdf])
+  }, [resume, requireExportQuota])
 
   const scopedStyleId = `m-preview-scope-${templateId}`
 
@@ -463,6 +515,10 @@ export default function MobilePreviewClient(): ReactElement {
 
 /** Minimal top bar: back + title. Primary actions live in the bottom bar. */
 function TopBar(): ReactElement {
+  const inMiniProgram = useInMiniProgram()
+
+  if (inMiniProgram) return <></>
+
   return (
     <div className="sticky top-0 z-30 flex items-center justify-between px-3 h-12 bg-white/90 backdrop-blur border-b border-slate-200">
       <button

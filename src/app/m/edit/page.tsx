@@ -10,7 +10,7 @@ import MobileEditHomeClient, { type InitialResume } from './edit-home-client'
 const log = createLogger('m/edit/page')
 
 export const metadata: Metadata = {
-  title: '编辑简历 · AI 简历',
+  title: '我的简历',
   description: '移动端简历编辑首页',
 }
 

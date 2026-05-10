@@ -65,18 +65,28 @@ function normalizeResume(resume: ResumeData | null | undefined, fallbackId: stri
 
 /**
  * IndexedDB-backed storage adapter for zustand persist.
+ * Returns a noop adapter during SSR to avoid "indexedDB is not defined".
  */
-const idbStorage = {
-  getItem: async (name: string): Promise<string | null> => {
-    const value: unknown = await idbGet(name)
-    return typeof value === 'string' ? value : null
-  },
-  setItem: async (name: string, value: string): Promise<void> => {
-    await idbSet(name, value)
-  },
-  removeItem: async (name: string): Promise<void> => {
-    await idbDel(name)
-  },
+function makeIdbStorage() {
+  if (typeof window === 'undefined') {
+    return {
+      getItem: async (_name: string): Promise<string | null> => null,
+      setItem: async (_name: string, _value: string): Promise<void> => {},
+      removeItem: async (_name: string): Promise<void> => {},
+    }
+  }
+  return {
+    getItem: async (name: string): Promise<string | null> => {
+      const value: unknown = await idbGet(name)
+      return typeof value === 'string' ? value : null
+    },
+    setItem: async (name: string, value: string): Promise<void> => {
+      await idbSet(name, value)
+    },
+    removeItem: async (name: string): Promise<void> => {
+      await idbDel(name)
+    },
+  }
 }
 
 export const useDraftStore = create<DraftState>()(
@@ -193,7 +203,7 @@ export const useDraftStore = create<DraftState>()(
     }),
     {
       name: 'resume-draft-v1',
-      storage: createJSONStorage(() => idbStorage),
+      storage: createJSONStorage(() => makeIdbStorage()),
       partialize: (state) => ({
         resumeId: state.resumeId,
         draft: state.draft,

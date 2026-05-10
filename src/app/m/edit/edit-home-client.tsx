@@ -19,6 +19,7 @@ import { JobIntentionPreview } from './_components/job-intention-preview'
 import { SectionsList } from './_components/sections-list'
 import { AddMoreModules } from './_components/add-more-modules'
 import { htmlToPlainText } from '@/features/edit/form-fields/html-text'
+import { useInMiniProgram } from '../_components/use-mini-program'
 
 /**
  * Resume data already loaded on the server and passed as a prop.
@@ -48,6 +49,7 @@ export default function MobileEditHomeClient(
 ): ReactElement {
   log.info('mount', { hasInitial: !!initial, initialId: initial?.id })
   const router = useRouter()
+  const inMiniProgram = useInMiniProgram()
   const setFromServer = useDraftStore((s): typeof s.setFromServer => s.setFromServer)
   const draft = useDraftStore((s): ResumeData | null => s.draft)
   const resumeId = useDraftStore((s): string | null => s.resumeId)
@@ -202,18 +204,20 @@ export default function MobileEditHomeClient(
       className="min-h-screen bg-slate-50"
       style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 88px)' }}
     >
-      <div className="sticky top-0 z-20 flex items-center justify-between px-3 h-12 bg-white/90 backdrop-blur border-b border-slate-200">
-        <button
-          type="button"
-          onClick={(): void => router.push('/m')}
-          className="h-9 w-9 rounded-lg flex items-center justify-center text-slate-600 hover:bg-slate-100 active:scale-95 transition-transform"
-          aria-label="返回首页"
-        >
-          <ArrowLeft size={18} />
-        </button>
-        <div className="text-sm font-semibold text-slate-800">我的简历</div>
-        <div className="w-9" />
-      </div>
+      {!inMiniProgram && (
+        <div className="sticky top-0 z-20 flex items-center justify-between px-3 h-12 bg-white/90 backdrop-blur border-b border-slate-200">
+          <button
+            type="button"
+            onClick={(): void => router.push('/m')}
+            className="h-9 w-9 rounded-lg flex items-center justify-center text-slate-600 hover:bg-slate-100 active:scale-95 transition-transform"
+            aria-label="返回首页"
+          >
+            <ArrowLeft size={18} />
+          </button>
+          <div className="text-sm font-semibold text-slate-800">我的简历</div>
+          <div className="w-9" />
+        </div>
+      )}
 
       <GreetingBanner name={resume.name} />
       <ProgressCard progress={progress} />

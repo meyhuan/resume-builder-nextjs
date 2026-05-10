@@ -72,8 +72,9 @@ export async function POST(req: Request) {
       });
 
       if (returnUrl) {
-        const token = savePdfTemp(Buffer.from(pdf), fileName)
+        const token = await savePdfTemp(Buffer.from(pdf), fileName)
         const url = `/next-api/pdf-file/${token}`
+        console.log('[generate-pdf] return PDF temp URL', { token, url, fileName })
         return NextResponse.json({ url })
       }
 
