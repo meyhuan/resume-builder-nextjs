@@ -288,6 +288,10 @@ export default function FeedbackPage() {
       toast.error('反馈内容不能为空');
       return;
     }
+    if (!contact.trim()) {
+      toast.error('请留下联系方式，方便我回复和定位问题');
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -493,13 +497,13 @@ export default function FeedbackPage() {
         <div className="flex flex-col gap-3 sm:gap-4 mt-6">
           <div className="flex items-center gap-2">
             <span className="text-sm font-semibold text-slate-700">联系方式</span>
-            <span className="text-xs text-slate-400">选填</span>
+            <span className="text-rose-500">*</span>
           </div>
           <div>
             <input
               type="text"
               className="w-full px-4 py-3 border border-slate-200 rounded-lg outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 transition-all text-slate-700 placeholder:text-slate-400 bg-white"
-              placeholder="可留下您的邮箱、手机号或微信号"
+              placeholder="请留下您的邮箱、手机号或微信号"
               value={contact}
               onChange={(e) => setContact(e.target.value)}
             />
@@ -512,7 +516,7 @@ export default function FeedbackPage() {
           <div className="text-center sm:text-left">
             <Button
               onClick={handleSubmit}
-              disabled={isSubmitting || !content.trim()}
+              disabled={isSubmitting || !content.trim() || !contact.trim()}
               className="w-full sm:w-40 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl h-11 shadow-sm"
             >
               {isSubmitting ? '提交中...' : '提交反馈'}

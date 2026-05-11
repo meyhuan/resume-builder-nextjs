@@ -3,6 +3,10 @@ import "@/styles/tailwind.css";
 import "@/styles/print.css";
 import "@/styles/base.css";
 import "@/styles/theme-override.css";
+import { Toaster } from 'sonner';
+import { BaiduAnalytics } from '@/components/analytics/BaiduAnalytics';
+import { FeedbackWidget } from '@/features/feedback/feedback-widget';
+import { InstallRequestLogger } from '@/features/feedback/install-request-logger';
 
 const SITE_URL = 'https://aijianli.cn';
 const SITE_NAME = '智简简历';
@@ -75,9 +79,6 @@ export const metadata: Metadata = {
   },
 };
 
-import { Toaster } from 'sonner';
-import { BaiduAnalytics } from '@/components/analytics/BaiduAnalytics';
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -107,6 +108,8 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
         {children}
+        <InstallRequestLogger />
+        <FeedbackWidget />
         {/* Toast position: bottom-center on mobile (avoid covering top-bar back button),
             top-center on desktop (traditional). */}
         <Toaster position="bottom-center" richColors mobileOffset={{ bottom: '96px' }} />

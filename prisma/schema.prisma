@@ -58,6 +58,8 @@ model Feedback {
   content     String   // The feedback text content
   contact     String?  // Optional contact info (email/phone/wechat)
   attachment  String?  // Optional base64 or URL for uploaded image/screenshot
+  diagnostics Json?
+  requestLogs Json?
   status      String   @default("RECEIVED")
   adminReply  String?
   adminReplyAt DateTime?
