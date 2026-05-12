@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState, useCallback, Suspense, type ReactElement } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { ArrowLeft, Settings2, X, Loader2, FileDown } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAppStore } from '@/state/store'
@@ -48,6 +48,17 @@ interface PdfQuotaCheck {
   readonly message?: string
 }
 
+type ExportType = 'pdf' | 'image'
+
+interface ExportJobResponse {
+  readonly id: string
+  readonly type: ExportType
+  readonly fileName: string
+  readonly downloadUrl: string
+  readonly previewUrl: string
+  readonly expiresAt: string
+}
+
 const log = createLogger('m/preview')
 
 /**
@@ -56,6 +67,7 @@ const log = createLogger('m/preview')
  */
 export default function MobilePreviewClient(): ReactElement {
   log.info('mount')
+  const router = useRouter()
   const searchParams = useSearchParams()
   const resume = useAppStore((s) => s.resume)
   const setReadOnly = useAppStore((s) => s.setReadOnly)
@@ -298,95 +310,142 @@ export default function MobilePreviewClient(): ReactElement {
     return false
   }, [requirePdf, setShowUpgrade])
 
+  const inMiniProgram = useInMiniProgram()
+
+  /**
+   * Hand off to the native mini-program exportResult page using the resume id.
+   * The native page calls /next-api/exports/mini directly (preview→confirm→
+   * destinations) so this route does not need to render the file. Returns true
+   * if the handoff was attempted, false if the caller should fall back to the
+   * normal H5 export pipeline.
+   */
+  const openMiniProgramExportResult = useCallback((opts: {
+    readonly type: ExportType
+    readonly resumeId: string
+    readonly templateId: string
+    readonly fileName: string
+  }): boolean => {
+    const canNavigateTo = typeof window.wx?.miniProgram?.navigateTo === 'function'
+    if (!canNavigateTo) {
+      log.warn('mini program navigateTo unavailable, fallback to H5 export')
+      return false
+    }
+    const params = new URLSearchParams({
+      type: opts.type,
+      resumeId: opts.resumeId,
+      templateId: opts.templateId,
+      fileName: opts.fileName,
+    })
+    const page = `/pages/exportResult/exportResult?${params.toString()}`
+    log.info('mini program navigateTo (native flow)', { page, type: opts.type, resumeId: opts.resumeId })
+    window.wx?.miniProgram?.navigateTo({ url: page })
+    return true
+  }, [])
+
+  const openExportResult = useCallback((job: ExportJobResponse): void => {
+    log.info('open export result (H5)', { id: job.id, type: job.type, fileName: job.fileName, inMiniProgram })
+    const params = new URLSearchParams({
+      id: job.id,
+      type: job.type,
+      fileName: job.fileName,
+      url: job.downloadUrl,
+      expiresAt: job.expiresAt,
+    })
+    router.push(`/m/export-result?${params.toString()}`)
+  }, [router, inMiniProgram])
+
+  const createExportJob = useCallback(async (
+    payload: { readonly type: 'pdf'; readonly html: string; readonly fileName: string } | { readonly type: 'image'; readonly dataUrl: string; readonly fileName: string },
+  ): Promise<ExportJobResponse> => {
+    const response = await fetch('/next-api/exports', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+    log.info('create export job HTTP', { type: payload.type, status: response.status })
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null)
+      throw new Error(errorData?.error ?? `导出失败 (${response.status})`)
+    }
+    const job = await response.json() as ExportJobResponse
+    log.info('create export job parsed', { id: job.id, type: job.type, fileName: job.fileName, expiresAt: job.expiresAt })
+    return job
+  }, [])
+
   const handleExportPdf = useCallback(async (): Promise<void> => {
     if (!innerRef.current) return
     setIsExporting(true)
-    const isWeChat: boolean = typeof window !== 'undefined' && /MicroMessenger/i.test(navigator.userAgent)
     const fileName: string = resume.name || 'resume'
     try {
+      // Mini-program flow: skip H5 file generation entirely, hand the raw
+      // resumeId+templateId off to the native page so the user sees the
+      // server-rendered preview before consuming any quota.
+      if (inMiniProgram) {
+        const targetResumeId: string | null = draftResumeId || searchParams.get('id')
+        if (targetResumeId) {
+          const handed = openMiniProgramExportResult({
+            type: 'pdf',
+            resumeId: targetResumeId,
+            templateId,
+            fileName,
+          })
+          if (handed) return
+        } else {
+          log.warn('miniprogram pdf export missing resumeId, falling back to H5')
+        }
+      }
+
       if (!(await requireExportQuota())) return
 
       const html: string = buildResumeHtml(innerRef.current, { title: fileName })
-      const response = await fetch('/next-api/generate-pdf', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ html, returnUrl: isWeChat, fileName }),
-      })
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null)
-        throw new Error(errorData?.error ?? `PDF 生成失败 (${response.status})`)
-      }
-      // Consume quota
-      const quotaRes = await fetch('/next-api/consume-pdf-quota', { method: 'POST' })
-      if (!quotaRes.ok) {
-        const errBody = await quotaRes.json().catch(() => null)
-        toast.error(errBody?.error || '导出次数已用完')
-        setShowUpgrade(true)
-        return
-      }
-      if (isWeChat) {
-        const { url }: { url: string } = await response.json()
-        const absoluteUrl: string = `${window.location.origin}${url}`
-        const environment: string | undefined = (window as unknown as { __wxjs_environment?: string }).__wxjs_environment
-        const hasWx: boolean = !!window.wx
-        const hasMiniProgram: boolean = !!window.wx?.miniProgram
-        const canPostMessage: boolean = typeof window.wx?.miniProgram?.postMessage === 'function'
-        const canNavigateBack: boolean = typeof window.wx?.miniProgram?.navigateBack === 'function'
-        log.info('mini program PDF handoff ready check', {
-          environment,
-          hasWx,
-          hasMiniProgram,
-          canPostMessage,
-          canNavigateBack,
-          fileName,
-          url: absoluteUrl,
-        })
-        if (!canPostMessage) {
-          log.error('mini program postMessage unavailable', { environment, hasWx, hasMiniProgram })
-          throw new Error('小程序通信未就绪，请稍后重试')
-        }
-        log.info('mini program postMessage send', { action: 'downloadPdf', fileName, url: absoluteUrl })
-        window.wx?.miniProgram?.postMessage({ data: { action: 'downloadPdf', url: absoluteUrl, fileName } })
-        log.info('mini program postMessage sent')
-        toast.success('准备下载...')
-        setTimeout((): void => {
-          if (!canNavigateBack) {
-            log.warn('mini program navigateBack unavailable after postMessage')
-            return
-          }
-          log.info('mini program navigateBack start')
-          window.wx?.miniProgram?.navigateBack()
-        }, 800)
-      } else {
-        const blob: Blob = await response.blob()
-        const url: string = window.URL.createObjectURL(blob)
-        const a: HTMLAnchorElement = document.createElement('a')
-        a.href = url
-        a.download = `${fileName}.pdf`
-        a.click()
-        window.URL.revokeObjectURL(url)
-        toast.success('PDF 导出成功 ✓')
-      }
+      const job = await createExportJob({ type: 'pdf', html, fileName })
+      openExportResult(job)
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'PDF 导出失败')
     } finally {
       setIsExporting(false)
     }
-  }, [resume, requireExportQuota])
+  }, [resume, requireExportQuota, createExportJob, openExportResult, inMiniProgram, draftResumeId, searchParams, templateId, openMiniProgramExportResult])
 
   const handleExportImage = useCallback(async (): Promise<void> => {
     if (!innerRef.current) return
     setIsExporting(true)
     try {
+      const fileName: string = resume.name || 'resume'
+      // Mini-program flow: hand off to native page with resumeId for server-side
+      // rendering. The native page will consume quota only after preview confirm.
+      if (inMiniProgram) {
+        const targetResumeId: string | null = draftResumeId || searchParams.get('id')
+        if (targetResumeId) {
+          const handed = openMiniProgramExportResult({
+            type: 'image',
+            resumeId: targetResumeId,
+            templateId,
+            fileName,
+          })
+          if (handed) return
+        } else {
+          log.warn('miniprogram image export missing resumeId, falling back to H5')
+        }
+      }
+
       if (!(await requireExportQuota())) return
-      await exportImage(innerRef, { fileName: resume.name || 'resume', pixelRatio: 2, backgroundColor: '#ffffff' })
-      toast.success('图片导出成功 ✓')
+      const dataUrl = await exportImage(innerRef, {
+        fileName,
+        pixelRatio: 2,
+        backgroundColor: '#ffffff',
+        returnBase64: true,
+        resetTransform: true,
+      })
+      if (typeof dataUrl !== 'string') throw new Error('图片生成失败')
+      const job = await createExportJob({ type: 'image', dataUrl, fileName })
+      openExportResult(job)
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : '图片导出失败')
     } finally {
       setIsExporting(false)
     }
-  }, [resume, requireExportQuota])
+  }, [resume, requireExportQuota, createExportJob, openExportResult, inMiniProgram, draftResumeId, searchParams, templateId, openMiniProgramExportResult])
 
   const scopedStyleId = `m-preview-scope-${templateId}`
 

@@ -23,12 +23,16 @@ const AiSectionContext = createContext<AiSectionContextValue | null>(null);
 /**
  * Hook to access AI section polish/generate actions from any block.
  */
+const NOOP_CONTEXT: AiSectionContextValue = {
+  openPolish: () => {},
+  openGenerate: () => {},
+}
+
 export function useAiSection(): AiSectionContextValue {
   const ctx = useContext(AiSectionContext);
-  if (!ctx) {
-    throw new Error('useAiSection must be used within AiSectionProvider');
-  }
-  return ctx;
+  // Outside the editor (e.g. print/puppeteer page) there is no Provider.
+  // Return a no-op context so templates render without throwing.
+  return ctx ?? NOOP_CONTEXT;
 }
 
 // ---------------------------------------------------------------------------

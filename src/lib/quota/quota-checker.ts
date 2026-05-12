@@ -215,6 +215,158 @@ export async function peekQuota(feature: QuotaFeatureKey): Promise<QuotaCheckRes
   return checkQuota(feature, true);
 }
 
+/**
+ * Check VIP status for an explicit unionid (wxId), used by API routes that
+ * authenticate via signed body instead of the auth_uid cookie (e.g. mini-program).
+ */
+async function checkVipStatusForWxId(wxId: string): Promise<{ isVip: boolean; userId?: string }> {
+  try {
+    const response = await fetchJavaWithLog(
+      `/user/vip-info?unionid=${encodeURIComponent(wxId)}`,
+      {
+        logPrefix: '[quota:wxid]',
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        cache: 'no-store',
+      }
+    );
+    if (!response.ok) {
+      console.error('[quota:wxid] VIP check failed:', response.status);
+      return { isVip: false, userId: wxId };
+    }
+    const data = await parseJsonWithLog<{
+      status?: number;
+      data?: { isVip?: boolean; userId?: number };
+    }>(response, '[quota:wxid]');
+    return {
+      isVip: !!data?.data?.isVip,
+      userId: String(data?.data?.userId ?? wxId),
+    };
+  } catch {
+    return { isVip: false, userId: wxId };
+  }
+}
+
+/**
+ * Check and consume quota for a specific user (by wxId / unionid).
+ * Mirrors `checkQuota` but does not depend on the auth_uid cookie. Designed
+ * for API routes that authenticate via signed body (mini-program).
+ */
+export async function checkQuotaForUser(
+  wxId: string,
+  feature: QuotaFeatureKey,
+  skipConsume = false,
+): Promise<QuotaCheckResult> {
+  if (!wxId) {
+    return {
+      allowed: false,
+      isVip: false,
+      used: 0,
+      limit: 0,
+      remaining: 0,
+      message: '未登录',
+      feature,
+    };
+  }
+
+  const { isVip } = await checkVipStatusForWxId(wxId);
+  if (isVip) {
+    return {
+      allowed: true,
+      isVip: true,
+      used: 0,
+      limit: Infinity,
+      remaining: 'unlimited',
+      message: 'VIP用户 unlimited',
+      feature,
+    };
+  }
+
+  const limit = getQuotaLimit(feature);
+  const featureName = getFeatureDisplayName(feature);
+  const todayKey = getDateKey(Date.now());
+
+  const user = await prisma.user.upsert({
+    where: { wxId },
+    update: {},
+    create: { wxId, name: `用户_${wxId}` },
+  });
+
+  let quotaRecord;
+  try {
+    quotaRecord = await prisma.userQuota.upsert({
+      where: { userId: user.id },
+      update: {},
+      create: {
+        userId: user.id,
+        quotas: {},
+      },
+    });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      quotaRecord = await prisma.userQuota.findUnique({ where: { userId: user.id } });
+      if (!quotaRecord) {
+        throw new Error(`[quota:wxid] Failed to fetch UserQuota after P2002 for user ${user.id}`);
+      }
+    } else {
+      throw error;
+    }
+  }
+
+  const quotas = (quotaRecord.quotas as unknown as QuotasData) || {};
+  const featureQuota = quotas[feature];
+
+  const isLifetimeQuota = LIFETIME_QUOTA_FEATURES.includes(feature);
+  const used = isLifetimeQuota
+    ? (featureQuota?.used ?? 0)
+    : (featureQuota?.date === todayKey ? featureQuota.used : 0);
+
+  if (used >= limit) {
+    const limitText = isLifetimeQuota ? `免费限${limit}次` : `${limit}次/天`;
+    return {
+      allowed: false,
+      isVip: false,
+      used,
+      limit,
+      remaining: 0,
+      message: `${featureName}次数已达上限（${limitText}），升级VIP可无限使用`,
+      feature,
+    };
+  }
+
+  const newUsed = skipConsume ? used : used + 1;
+  const remaining = limit - newUsed;
+
+  if (!skipConsume) {
+    quotas[feature] = { used: newUsed, date: isLifetimeQuota ? 'lifetime' : todayKey };
+    await prisma.userQuota.update({
+      where: { userId: user.id },
+      data: { quotas: quotas as unknown as Prisma.InputJsonValue, updatedAt: new Date() },
+    });
+  }
+
+  const message = isLifetimeQuota
+    ? `剩余${remaining}次${featureName}（非VIP用户免费限${limit}次）`
+    : `今日剩余${remaining}次${featureName}（非VIP用户每日${limit}次）`;
+
+  console.log('[quota:wxid] decision', { wxId, feature, used: newUsed, remaining, skipConsume });
+
+  return {
+    allowed: true,
+    isVip: false,
+    used: newUsed,
+    limit,
+    remaining: Math.max(0, remaining),
+    message,
+    feature,
+  };
+}
+
+/** Peek a user's quota without consuming. */
+export async function peekQuotaForUser(wxId: string, feature: QuotaFeatureKey): Promise<QuotaCheckResult> {
+  return checkQuotaForUser(wxId, feature, true);
+}
+
 /** In-memory store for anonymous users only. */
 const anonymousQuotaStore = new Map<string, { dateKey: string; used: number }>();
 

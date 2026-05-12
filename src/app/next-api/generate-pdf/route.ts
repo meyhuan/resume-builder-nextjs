@@ -1,3 +1,20 @@
+/**
+ * PDF 导出路由 — PC 编辑器「预览 PDF」专用
+ *
+ * 调用方：src/components/ResumeEditor.tsx → handlePreviewPdf()
+ * 认证：cookie（auth_uid）
+ * 配额：preview=true 时不消耗，preview=false 时消耗
+ * 特点：把序列化后的 HTML 字符串用 puppeteer setContent() 渲染，
+ *       默认直接把 PDF 流返回给浏览器（不存文件）；
+ *       returnUrl=true 时存入 pdf-temp-store 并返回临时 URL。
+ *
+ * 与其他导出路由的区别：
+ *   - /next-api/exports          H5 移动端，结果存 export-temp-store，返回 token
+ *   - /next-api/exports/mini     小程序，puppeteer page.goto(SSR页) 渲染，HMAC 认证
+ *
+ * TODO: 若后续 H5 移动端也改为直接下载（不需要 token），
+ *       可将本路由与 /next-api/exports 合并，减少重复。
+ */
 import { NextResponse } from 'next/server';
 import puppeteerCore from 'puppeteer-core';
 import chromium from '@sparticuz/chromium';
