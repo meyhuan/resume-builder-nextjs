@@ -154,6 +154,10 @@ export const useAppStore = create<AppState>()(
           },
         }
       }, false, `theme/set/${templateId}`),
+    loadThemes: (themes) =>
+      set((state) => ({
+        themes: { ...state.themes, ...themes },
+      }), false, 'theme/load'),
     moveBlockInSection: (sectionId, activeId, overId) => {
       const state = get()
       set(() => ({

@@ -13,13 +13,12 @@ import AiSectionProvider from '@/components/ai-section/ai-section-provider'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Slider } from '@/components/ui/slider'
 import { cn } from '@/lib/utils'
-import { buildResumeHtml } from '@/io/html-export'
 import { ResumeSvgPlaceholder } from '@/features/m/resume-list/shared'
 import { exportImage } from '@/io/export-image'
 import { useVipCheck } from '@/hooks/use-vip-check'
 import VipUpgradeDialog from '@/components/vip/vip-upgrade-dialog'
 import { useOnePageMode, type OnePageStatus } from '@/hooks/use-one-page-mode'
-import type { AdjustableTokens } from '@/entities/editor/editor-meta'
+import { embedEditorMeta, extractEditorMeta, type AdjustableTokens } from '@/entities/editor/editor-meta'
 import { createLogger } from '@/lib/logger'
 import { useInMiniProgram } from '../_components/use-mini-program'
 
@@ -41,13 +40,6 @@ const A4_RATIO = 297 / 210
 
 type SettingsTab = 'template' | 'color' | 'font' | 'layout' | 'advanced'
 
-interface PdfQuotaCheck {
-  readonly allowed?: boolean
-  readonly isVip?: boolean
-  readonly remaining?: number | 'unlimited'
-  readonly message?: string
-}
-
 type ExportType = 'pdf' | 'image'
 
 interface ExportJobResponse {
@@ -55,8 +47,9 @@ interface ExportJobResponse {
   readonly type: ExportType
   readonly fileName: string
   readonly downloadUrl: string
-  readonly previewUrl: string
   readonly expiresAt: string
+  readonly confirmed?: boolean
+  readonly previewImages?: readonly string[]
 }
 
 const log = createLogger('m/preview')
@@ -74,9 +67,10 @@ export default function MobilePreviewClient(): ReactElement {
   const setResume = useAppStore((s) => s.setResume)
   const getThemeForTemplate = useAppStore((s) => s.getThemeForTemplate)
   const setThemeForTemplate = useAppStore((s) => s.setThemeForTemplate)
-  // Subscribe to themes map so live updates re-render the preview.
+  const loadThemes = useAppStore((s) => s.loadThemes)
+  // Subscribe to themes map so live updates re-render the preview and are
+  // available for syncPreviewState to persist all templates' themes to the DB.
   const themesMap = useAppStore((s) => s.themes)
-  void themesMap
 
   // Draft store holds the user's actual edits
   const draft = useDraftStore((s) => s.draft)
@@ -121,9 +115,19 @@ export default function MobilePreviewClient(): ReactElement {
             if (!res.ok) return
             const full: { id: string; content: ResumeData; template?: string } = await res.json()
             log.info('fetch resume parsed', { id: full.id })
-            setFromServer(full.id, full.content, full.template ?? 'simple')
+            // Extract __editorMeta from the raw content and load saved themes
+            // into the app store so the preview reflects the user's last saved
+            // color/font settings without requiring them to re-apply changes.
+            const { content: cleanContent, meta } = extractEditorMeta(
+              full.content as unknown as Record<string, unknown>
+            )
+            if (Object.keys(meta.themes).length > 0) {
+              log.info('loading saved themes from DB', { templates: Object.keys(meta.themes) })
+              loadThemes(meta.themes)
+            }
+            setFromServer(full.id, cleanContent as unknown as ResumeData, full.template ?? 'simple')
             setResume((d: ResumeData): void => {
-              Object.assign(d, full.content)
+              Object.assign(d, cleanContent)
             })
           } catch (e: unknown) {
             log.error('fetch resume failed', { error: e instanceof Error ? e.message : String(e) })
@@ -134,12 +138,15 @@ export default function MobilePreviewClient(): ReactElement {
     return (): void => {
       setReadOnly(false)
     }
-  }, [draft, searchParams, draftResumeId, setReadOnly, setResume, setFromServer])
+  }, [draft, searchParams, draftResumeId, setReadOnly, setResume, setFromServer, loadThemes])
 
   useEffect(() => {
     const update = (): void => {
       if (!stageRef.current) return
-      const w = Math.min(stageRef.current.clientWidth, MOBILE_PAGE_MAX_WIDTH_PX)
+      // stageRef has px-3 (12px * 2 = 24px padding). clientWidth includes padding,
+      // so we must subtract it to get the actual available width for the content.
+      const availableWidth = stageRef.current.clientWidth - 24
+      const w = Math.min(availableWidth, MOBILE_PAGE_MAX_WIDTH_PX)
       setContainerWidth(w)
     }
     update()
@@ -290,60 +297,68 @@ export default function MobilePreviewClient(): ReactElement {
   }
 
   // --- Export handlers ---
-  const { requirePdf, showUpgrade, setShowUpgrade } = useVipCheck()
+  const { showUpgrade, setShowUpgrade } = useVipCheck()
   const [isExporting, setIsExporting] = useState<boolean>(false)
-
-  const requireExportQuota = useCallback(async (): Promise<boolean> => {
-    const quotaCheckRes = await fetch('/next-api/quota', { credentials: 'include', cache: 'no-store' })
-    log.info('export quota precheck HTTP', { status: quotaCheckRes.status })
-    if (!quotaCheckRes.ok) {
-      log.warn('export quota precheck failed, fallback to local requirePdf', { status: quotaCheckRes.status })
-      return requirePdf()
-    }
-    const quotaJson: { pdfExport?: PdfQuotaCheck } = await quotaCheckRes.json()
-    const pdfQuota: PdfQuotaCheck | undefined = quotaJson.pdfExport
-    log.info('export quota precheck parsed', { pdfQuota })
-    if (pdfQuota?.allowed || pdfQuota?.isVip) return true
-    log.warn('export quota precheck blocked export', { pdfQuota })
-    toast.error(pdfQuota?.message || '导出次数已用完')
-    setShowUpgrade(true)
-    return false
-  }, [requirePdf, setShowUpgrade])
 
   const inMiniProgram = useInMiniProgram()
 
   /**
-   * Hand off to the native mini-program exportResult page using the resume id.
-   * The native page calls /next-api/exports/mini directly (preview→confirm→
-   * destinations) so this route does not need to render the file. Returns true
-   * if the handoff was attempted, false if the caller should fall back to the
-   * normal H5 export pipeline.
+   * Call /next-api/exports/mini to render and save the export asset.
+   * Both mini-program and H5 use this same endpoint (dual-auth on server).
    */
-  const openMiniProgramExportResult = useCallback((opts: {
-    readonly type: ExportType
-    readonly resumeId: string
-    readonly templateId: string
-    readonly fileName: string
-  }): boolean => {
-    const canNavigateTo = typeof window.wx?.miniProgram?.navigateTo === 'function'
-    if (!canNavigateTo) {
-      log.warn('mini program navigateTo unavailable, fallback to H5 export')
-      return false
-    }
-    const params = new URLSearchParams({
-      type: opts.type,
-      resumeId: opts.resumeId,
-      templateId: opts.templateId,
-      fileName: opts.fileName,
+  const createExportJob = useCallback(async (
+    payload: { readonly resumeId: string; readonly templateId: string; readonly type: 'pdf' | 'image'; readonly fileName: string },
+  ): Promise<ExportJobResponse> => {
+    const response = await fetch('/next-api/exports/mini', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ ...payload, mode: 'final' }),
     })
-    const page = `/pages/exportResult/exportResult?${params.toString()}`
-    log.info('mini program navigateTo (native flow)', { page, type: opts.type, resumeId: opts.resumeId })
-    window.wx?.miniProgram?.navigateTo({ url: page })
-    return true
-  }, [])
+    log.info('create export job HTTP', { type: payload.type, resumeId: payload.resumeId, status: response.status })
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null)
+      if (response.status === 402) {
+        setShowUpgrade(true)
+        throw new Error(errorData?.error ?? '导出次数已用完')
+      }
+      throw new Error(errorData?.error ?? `导出失败 (${response.status})`)
+    }
+    const job = await response.json() as ExportJobResponse
+    log.info('create export job parsed', { id: job.id, type: job.type, fileName: job.fileName, previewImages: job.previewImages?.length, expiresAt: job.expiresAt })
+    return job
+  }, [setShowUpgrade])
 
+  /**
+   * Navigate to the export result page after a successful export.
+   * Mini-program: native exportResult page (with share/download capabilities).
+   * H5: /m/export-result page.
+   */
   const openExportResult = useCallback((job: ExportJobResponse): void => {
-    log.info('open export result (H5)', { id: job.id, type: job.type, fileName: job.fileName, inMiniProgram })
+    if (inMiniProgram) {
+      // Try navigating to mini-program native page for better share/download UX
+      const canNavigateTo = typeof window.wx?.miniProgram?.navigateTo === 'function'
+      if (canNavigateTo) {
+        const params = new URLSearchParams({
+          id: job.id,
+          type: job.type,
+          fileName: job.fileName,
+          url: job.downloadUrl,
+          expiresAt: job.expiresAt,
+        })
+        if (job.previewImages && job.previewImages.length > 0) {
+          params.set('previewImages', JSON.stringify(job.previewImages))
+        }
+        const page = `/pages/exportResult/exportResult?${params.toString()}`
+        log.info('navigateTo mini-program exportResult', { page })
+        window.wx?.miniProgram?.navigateTo({ url: page })
+        return
+      }
+      log.warn('mini program navigateTo unavailable, falling back to H5 result page')
+    }
+
+    // H5 export result page
+    log.info('open export result (H5)', { id: job.id, type: job.type })
     const params = new URLSearchParams({
       id: job.id,
       type: job.type,
@@ -351,101 +366,89 @@ export default function MobilePreviewClient(): ReactElement {
       url: job.downloadUrl,
       expiresAt: job.expiresAt,
     })
+    if (job.previewImages && job.previewImages.length > 0) {
+      params.set('previewImages', JSON.stringify(job.previewImages))
+    }
     router.push(`/m/export-result?${params.toString()}`)
   }, [router, inMiniProgram])
 
-  const createExportJob = useCallback(async (
-    payload: { readonly type: 'pdf'; readonly html: string; readonly fileName: string } | { readonly type: 'image'; readonly dataUrl: string; readonly fileName: string },
-  ): Promise<ExportJobResponse> => {
-    const response = await fetch('/next-api/exports', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    })
-    log.info('create export job HTTP', { type: payload.type, status: response.status })
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => null)
-      throw new Error(errorData?.error ?? `导出失败 (${response.status})`)
-    }
-    const job = await response.json() as ExportJobResponse
-    log.info('create export job parsed', { id: job.id, type: job.type, fileName: job.fileName, expiresAt: job.expiresAt })
-    return job
-  }, [])
+  /**
+   * Sync the local theme overrides and template choice back to the DB before
+   * server-side rendering. This ensures the SSR print page will render the
+   * correct visual layout (including one-page mode and font settings).
+   * Used by both the mini-program and H5 export flows.
+   */
+  const syncPreviewState = useCallback(async (targetId: string): Promise<void> => {
+    try {
+      // Merge the current theme into the full themes map so other templates'
+      // saved themes are preserved in the DB (not overwritten with an empty map).
+      const mergedThemes = { ...themesMap, [templateId]: theme }
+      log.info('syncPreviewState', { templateId, primaryColor: theme.primaryColor, themesMapKeys: Object.keys(themesMap) })
 
-  const handleExportPdf = useCallback(async (): Promise<void> => {
+      const editorMeta = {
+        themes: mergedThemes,
+        onePageMode: onePageFit,
+        onePageSnapshot,
+      }
+
+      // Strip any stale __editorMeta that may be embedded in the resume object
+      // (e.g. when resume was loaded from the server GET response which includes
+      // the raw content blob). embedEditorMeta will write the fresh meta.
+      const { content: cleanContent } = extractEditorMeta(
+        resume as unknown as Record<string, unknown>
+      )
+      const contentWithMeta = embedEditorMeta(cleanContent, editorMeta)
+
+      await fetch(`/next-api/resumes/${targetId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: resume.name || 'Untitled Resume',
+          content: contentWithMeta,
+          template: templateId,
+        }),
+      })
+    } catch (err) {
+      log.warn('failed to sync preview state before export', { error: err })
+    }
+  }, [resume, templateId, theme, themesMap, onePageFit, onePageSnapshot])
+
+  /**
+   * Unified export handler for both PDF and image.
+   * Both mini-program and H5 use the same flow:
+   *   1. syncPreviewState (save theme/one-page to DB)
+   *   2. call /next-api/exports/mini with mode='final'
+   *   3. navigate to result page (native or H5)
+   */
+  const handleExport = useCallback(async (type: ExportType): Promise<void> => {
     if (!innerRef.current) return
     setIsExporting(true)
     const fileName: string = resume.name || 'resume'
     try {
-      // Mini-program flow: skip H5 file generation entirely, hand the raw
-      // resumeId+templateId off to the native page so the user sees the
-      // server-rendered preview before consuming any quota.
-      if (inMiniProgram) {
-        const targetResumeId: string | null = draftResumeId || searchParams.get('id')
-        if (targetResumeId) {
-          const handed = openMiniProgramExportResult({
-            type: 'pdf',
-            resumeId: targetResumeId,
-            templateId,
-            fileName,
-          })
-          if (handed) return
-        } else {
-          log.warn('miniprogram pdf export missing resumeId, falling back to H5')
-        }
+      const targetResumeId: string | null = draftResumeId || searchParams.get('id')
+      if (!targetResumeId) {
+        toast.error('无法获取简历 ID，请返回重试')
+        return
       }
 
-      if (!(await requireExportQuota())) return
-
-      const html: string = buildResumeHtml(innerRef.current, { title: fileName })
-      const job = await createExportJob({ type: 'pdf', html, fileName })
+      await syncPreviewState(targetResumeId)
+      const job = await createExportJob({ resumeId: targetResumeId, templateId, type, fileName })
       openExportResult(job)
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'PDF 导出失败')
+      const msg = err instanceof Error ? err.message : (type === 'pdf' ? 'PDF 导出失败' : '图片导出失败')
+      toast.error(msg)
     } finally {
       setIsExporting(false)
     }
-  }, [resume, requireExportQuota, createExportJob, openExportResult, inMiniProgram, draftResumeId, searchParams, templateId, openMiniProgramExportResult])
+  }, [resume, createExportJob, openExportResult, draftResumeId, searchParams, templateId, syncPreviewState])
+
+  const handleExportPdf = useCallback(async (): Promise<void> => {
+    await handleExport('pdf')
+  }, [handleExport])
 
   const handleExportImage = useCallback(async (): Promise<void> => {
-    if (!innerRef.current) return
-    setIsExporting(true)
-    try {
-      const fileName: string = resume.name || 'resume'
-      // Mini-program flow: hand off to native page with resumeId for server-side
-      // rendering. The native page will consume quota only after preview confirm.
-      if (inMiniProgram) {
-        const targetResumeId: string | null = draftResumeId || searchParams.get('id')
-        if (targetResumeId) {
-          const handed = openMiniProgramExportResult({
-            type: 'image',
-            resumeId: targetResumeId,
-            templateId,
-            fileName,
-          })
-          if (handed) return
-        } else {
-          log.warn('miniprogram image export missing resumeId, falling back to H5')
-        }
-      }
-
-      if (!(await requireExportQuota())) return
-      const dataUrl = await exportImage(innerRef, {
-        fileName,
-        pixelRatio: 2,
-        backgroundColor: '#ffffff',
-        returnBase64: true,
-        resetTransform: true,
-      })
-      if (typeof dataUrl !== 'string') throw new Error('图片生成失败')
-      const job = await createExportJob({ type: 'image', dataUrl, fileName })
-      openExportResult(job)
-    } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : '图片导出失败')
-    } finally {
-      setIsExporting(false)
-    }
-  }, [resume, requireExportQuota, createExportJob, openExportResult, inMiniProgram, draftResumeId, searchParams, templateId, openMiniProgramExportResult])
+    await handleExport('image')
+  }, [handleExport])
 
   const scopedStyleId = `m-preview-scope-${templateId}`
 

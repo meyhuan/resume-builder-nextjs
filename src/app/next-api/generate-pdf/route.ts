@@ -9,11 +9,7 @@
  *       returnUrl=true 时存入 pdf-temp-store 并返回临时 URL。
  *
  * 与其他导出路由的区别：
- *   - /next-api/exports          H5 移动端，结果存 export-temp-store，返回 token
- *   - /next-api/exports/mini     小程序，puppeteer page.goto(SSR页) 渲染，HMAC 认证
- *
- * TODO: 若后续 H5 移动端也改为直接下载（不需要 token），
- *       可将本路由与 /next-api/exports 合并，减少重复。
+ *   - /next-api/exports/mini     H5 移动端 + 小程序统一导出，page.goto(SSR页)，双重认证
  */
 import { NextResponse } from 'next/server';
 import puppeteerCore from 'puppeteer-core';

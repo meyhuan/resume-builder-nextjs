@@ -1,0 +1,95 @@
+/**
+ * Shared Puppeteer renderer that navigates to the SSR `/print/[id]` page
+ * to produce PDF or image exports.
+ *
+ * Used by `/next-api/exports/mini` which serves both the H5 mobile
+ * and mini-program export flows (dual-auth: cookie or HMAC sign).
+ */
+import puppeteerCore from 'puppeteer-core'
+import chromium from '@sparticuz/chromium'
+import { mintPrintToken } from '@/lib/print-token'
+import { rasterizePdfToPngs } from '@/lib/pdf-to-png'
+import type { ExportAssetType } from '@/lib/export-temp-store'
+
+export interface RenderResult {
+  readonly buffer: Buffer
+  /** Per-page PNG screenshots (PDF only, empty for image exports). */
+  readonly pageScreenshots: readonly Buffer[]
+}
+
+export interface RenderViaPrintPageOpts {
+  readonly baseUrl: string
+  readonly resumeId: string
+  readonly templateId?: string
+  readonly type: ExportAssetType
+  /** Print token TTL in ms. Defaults to 5 minutes. */
+  readonly tokenTtlMs?: number
+}
+
+/**
+ * Derive the internal base URL from either env vars or the incoming request.
+ */
+export function getInternalBaseUrl(req: Request): string {
+  const override = process.env.INTERNAL_BASE_URL || process.env.NEXT_PUBLIC_SITE_URL
+  if (override) return override.replace(/\/$/, '')
+  const url = new URL(req.url)
+  return `${url.protocol}//${url.host}`
+}
+
+export async function renderViaPrintPage(opts: RenderViaPrintPageOpts): Promise<RenderResult> {
+  const isLocal: boolean = process.env.NODE_ENV === 'development'
+  const executablePath: string = isLocal
+    ? 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
+    : await chromium.executablePath()
+
+  const printToken: string = mintPrintToken(opts.resumeId, opts.tokenTtlMs ?? 5 * 60 * 1000)
+  const params = new URLSearchParams({ token: printToken })
+  if (opts.templateId) params.set('tpl', opts.templateId)
+  const printUrl: string = `${opts.baseUrl}/print/${encodeURIComponent(opts.resumeId)}?${params.toString()}`
+
+  console.log('[render-via-print-page] puppeteer goto', { printUrl, type: opts.type })
+
+  let browser
+  try {
+    browser = await puppeteerCore.launch({
+      args: isLocal ? [] : chromium.args,
+      executablePath,
+      headless: true,
+    })
+    const page = await browser.newPage()
+    await page.setViewport({ width: 794, height: 1123, deviceScaleFactor: 2 })
+    await page.goto(printUrl, { waitUntil: ['networkidle0', 'domcontentloaded', 'load'], timeout: 60_000 })
+    await page.evaluateHandle('document.fonts.ready')
+
+    // Wait for the client renderer to flag readiness, but tolerate timeouts.
+    await page.waitForSelector('[data-print-ready="1"]', { timeout: 15_000 }).catch(() => {
+      console.warn('[render-via-print-page] print-ready timed out, continuing')
+    })
+
+    if (opts.type !== 'pdf') {
+      const target = await page.$('#print-root')
+      if (!target) throw new Error('print-root selector missing')
+      const png = await target.screenshot({ type: 'png', omitBackground: false })
+      console.log('[render-via-print-page] image bytes', { size: png.length })
+      return { buffer: Buffer.from(png), pageScreenshots: [] }
+    }
+
+    // Generate the PDF
+    const pdfBuffer = Buffer.from(
+      await page.pdf({ printBackground: true, displayHeaderFooter: false, preferCSSPageSize: true })
+    )
+    console.log('[render-via-print-page] pdf bytes', { size: pdfBuffer.length })
+
+    // Rasterize PDF pages into PNG previews using the browser's Canvas API
+    let pageScreenshots: Buffer[] = []
+    try {
+      pageScreenshots = await rasterizePdfToPngs(page, pdfBuffer)
+    } catch (err) {
+      console.error('[render-via-print-page] pdf rasterization failed:', err)
+    }
+
+    return { buffer: pdfBuffer, pageScreenshots }
+  } finally {
+    if (browser) await browser.close()
+  }
+}

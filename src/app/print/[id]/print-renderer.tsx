@@ -8,6 +8,7 @@ import { TEMPLATE_REGISTRY } from '@/templates/template-loader'
 interface PrintRendererProps {
   readonly resume: ResumeData
   readonly templateId: string
+  readonly savedTheme?: ThemeTokens
 }
 
 const DEFAULT_THEME: ThemeTokens = {
@@ -28,30 +29,34 @@ function resolveTheme(templateId: string): ThemeTokens {
 }
 
 /**
- * Client-side renderer for the print page. Mounts the lazy template component
- * with resume data and a recommended theme. Sets `data-print-ready="1"` on the
- * outer container after fonts + first paint, so puppeteer can wait for it.
+ * Client-side renderer for the print page.
+ * Sets data-print-ready="1" after fonts load so puppeteer can capture.
  */
-export default function PrintRenderer({ resume, templateId }: PrintRendererProps): ReactElement {
+export default function PrintRenderer({ resume, templateId, savedTheme }: PrintRendererProps): ReactElement {
   const config = TEMPLATE_REGISTRY[templateId] || TEMPLATE_REGISTRY['simple']
-  const theme: ThemeTokens = useMemo(() => resolveTheme(config?.id ?? 'simple'), [config])
+  const defaultTheme: ThemeTokens = useMemo(() => resolveTheme(config?.id ?? 'simple'), [config])
+  
+  // Use the saved theme from the database if available, otherwise fallback to the default theme
+  const theme: ThemeTokens = savedTheme ?? defaultTheme
+
   const [ready, setReady] = useState<boolean>(false)
 
   useEffect(() => {
     let cancelled = false
     const markReady = (): void => {
       if (cancelled) return
-      console.log('[print-renderer] ready signal')
+      console.log('[print-renderer] ready')
       setReady(true)
     }
-    const fontsPromise: Promise<unknown> = (document as unknown as { fonts?: { ready?: Promise<unknown> } }).fonts?.ready ?? Promise.resolve()
+    const fontsPromise: Promise<unknown> =
+      (document as unknown as { fonts?: { ready?: Promise<unknown> } }).fonts?.ready ?? Promise.resolve()
     void fontsPromise.finally((): void => {
       requestAnimationFrame((): void => {
         requestAnimationFrame(markReady)
       })
     })
     return () => { cancelled = true }
-  }, [templateId])
+  }, [])
 
   if (!config) {
     console.error('[print-renderer] no template config', { templateId })
@@ -59,9 +64,20 @@ export default function PrintRenderer({ resume, templateId }: PrintRendererProps
   }
 
   const TemplateComponent = config.component
+  const titleScale: number = theme.titleScale ?? 1
+  const paragraphIndent: number = theme.paragraphIndent ?? 0
+  const scopedStyleId = `print-scope-${templateId}`
 
   return (
-    <div data-print-template={config.id} data-print-ready={ready ? '1' : '0'}>
+    <div id={scopedStyleId} data-print-template={config.id} data-print-ready={ready ? '1' : '0'}>
+      <style>{`
+        #${scopedStyleId} .resume-container h2 {
+          font-size: calc(1.285em * ${titleScale}) !important;
+        }
+        #${scopedStyleId} .resume-container p {
+          text-indent: ${paragraphIndent}em;
+        }
+      `}</style>
       <Suspense fallback={<div data-print-loading="1" />}>
         <TemplateComponent resume={resume} theme={theme} />
       </Suspense>

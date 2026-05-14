@@ -23,6 +23,8 @@ export interface AppState {
   redo: () => void
   getThemeForTemplate: (templateId: string) => ThemeTokens
   setThemeForTemplate: (templateId: string, updater: (draft: Draft<ThemeTokens>) => void) => void
+  /** Bulk-load a themes map (e.g. from DB __editorMeta) into the store, merging with existing entries. */
+  loadThemes: (themes: Record<string, ThemeTokens>) => void
   /** Move a block inside a section by swapping positions based on ids. */
   moveBlockInSection: (sectionId: UUID, activeId: UUID, overId: UUID) => void
   /** Move a block from one section to another at a specific index. */
