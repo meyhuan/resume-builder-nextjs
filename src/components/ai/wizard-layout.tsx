@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useDraftStore } from '@/features/edit/draft/draft-store';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -19,6 +19,29 @@ import { useVipCheck } from '@/hooks/use-vip-check';
 import { WxLoginDialog } from '@/components/auth/WxLoginDialog';
 import VipUpgradeDialog from '@/components/vip/vip-upgrade-dialog';
 import { toast } from 'sonner';
+
+// Mini-program detection helpers
+interface WxMiniProgram {
+  postMessage?: (p: { data: unknown }) => void
+  navigateTo?: (o: { url: string }) => void
+  navigateBack?: (o?: { delta?: number }) => void
+}
+
+function getMiniProgram(): WxMiniProgram | null {
+  if (typeof window === 'undefined') return null
+  const wx = (window as unknown as { wx?: { miniProgram?: WxMiniProgram } }).wx
+  return wx?.miniProgram ?? null
+}
+
+function useInMiniProgram(): boolean {
+  const [inMini, setInMini] = useState<boolean>(false)
+  useEffect((): void => {
+    const isEnv = (window as unknown as { __wxjs_environment?: string }).__wxjs_environment === 'miniprogram'
+    console.log('[useInMiniProgram] environment check:', isEnv, 'wx.miniProgram:', !!getMiniProgram())
+    setInMini(isEnv)
+  }, [])
+  return inMini
+}
 
 const AI_MODELS = getAvailableModels();
 const WIZARD_CACHE_KEY = 'wizard_pending_resume';
@@ -38,6 +61,7 @@ export const WizardLayout = ({ children }: { children: React.ReactNode }) => {
   const { showUpgrade, setShowUpgrade, quota, refreshQuota } = useVipCheck();
   const resumeQuota = quota.aiGenerateResume;
   const isLimitReached = resumeQuota.remaining === 0;
+  const inMiniProgram = useInMiniProgram();
 
   const saveResume = useCallback(async (resumeData: ResumeData): Promise<void> => {
     try {
@@ -53,6 +77,17 @@ export const WizardLayout = ({ children }: { children: React.ReactNode }) => {
       if (!res.ok) throw new Error('保存简历失败');
       const saved: { id: string } = await res.json();
       localStorage.removeItem(WIZARD_CACHE_KEY);
+
+      // If running in mini-program webview, post message back instead of navigating
+      if (inMiniProgram) {
+        const mini = getMiniProgram();
+        if (mini?.postMessage) {
+          console.log('[WizardLayout] posting resumeGenerated to mini-program:', saved.id);
+          mini.postMessage({ data: { action: 'resumeGenerated', resumeId: saved.id } });
+        }
+        return;
+      }
+
       if (isMobile) {
         // Prime the mobile draft store so /m/edit does not re-fetch.
         setDraftFromServer(saved.id, resumeData, 'simple');
@@ -63,7 +98,7 @@ export const WizardLayout = ({ children }: { children: React.ReactNode }) => {
     } catch (err) {
       console.error('[AI] Failed to save resume:', err);
     }
-  }, [router, isMobile, setDraftFromServer]);
+  }, [router, isMobile, setDraftFromServer, inMiniProgram]);
 
   // Auto-save cached result when user returns logged in
   useEffect(() => {
@@ -135,21 +170,35 @@ export const WizardLayout = ({ children }: { children: React.ReactNode }) => {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-13 flex items-center justify-between">
           <button
             type="button"
-            onClick={() => router.push(isMobile ? '/m' : (isLoggedIn() ? '/dashboard' : '/'))}
+            onClick={() => {
+              if (inMiniProgram) {
+                // In mini-program webview, navigate back to mini-program
+                const mini = getMiniProgram();
+                if (mini?.navigateBack) {
+                  mini.navigateBack();
+                }
+                return;
+              }
+              router.push(isMobile ? '/m' : (isLoggedIn() ? '/dashboard' : '/'));
+            }}
             className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-violet-600 transition-colors"
           >
             <ChevronLeft className="w-4 h-4" />
             <span className="hidden sm:inline">返回</span>
           </button>
           <span className="text-sm font-semibold text-gray-800">AI 生成简历</span>
-          <Link
-            href={isMobile ? '/m' : '/editor/new'}
-            className="text-xs text-gray-400 hover:text-gray-600 transition-colors flex items-center gap-1"
-          >
-            <span className="hidden sm:inline">跳过，直接创建</span>
-            <span className="sm:hidden">跳过</span>
-            <FileText className="w-3 h-3" />
-          </Link>
+          {/* Hide skip link in mini-program */}
+          {!inMiniProgram && (
+            <Link
+              href={isMobile ? '/m' : '/editor/new'}
+              className="text-xs text-gray-400 hover:text-gray-600 transition-colors flex items-center gap-1"
+            >
+              <span className="hidden sm:inline">跳过，直接创建</span>
+              <span className="sm:hidden">跳过</span>
+              <FileText className="w-3 h-3" />
+            </Link>
+          )}
+          {inMiniProgram && <span />} {/* Spacer to maintain layout */}
         </div>
       </header>
 

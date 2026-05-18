@@ -319,7 +319,16 @@ export default function MobilePreviewClient(): ReactElement {
     if (!response.ok) {
       const errorData = await response.json().catch(() => null)
       if (response.status === 402) {
-        setShowUpgrade(true)
+        // In mini-program: navigate to native payment page for better UX
+        // In H5/PC: show the upgrade dialog
+        if (inMiniProgram && typeof window.wx?.miniProgram?.navigateTo === 'function') {
+          log.info('quota exceeded in mini-program, navigating to native payment page')
+          window.wx.miniProgram.navigateTo({
+            url: '/pages/payment/payment?from=export'
+          })
+        } else {
+          setShowUpgrade(true)
+        }
         throw new Error(errorData?.error ?? '导出次数已用完')
       }
       throw new Error(errorData?.error ?? `导出失败 (${response.status})`)
@@ -327,7 +336,7 @@ export default function MobilePreviewClient(): ReactElement {
     const job = await response.json() as ExportJobResponse
     log.info('create export job parsed', { id: job.id, type: job.type, fileName: job.fileName, previewImages: job.previewImages?.length, expiresAt: job.expiresAt })
     return job
-  }, [setShowUpgrade])
+  }, [setShowUpgrade, inMiniProgram])
 
   /**
    * Navigate to the export result page after a successful export.

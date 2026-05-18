@@ -1,6 +1,8 @@
 import type { ResumeData } from '@/entities/resume/resume-data'
 import type { Section } from '@/entities/resume/section'
+import type { ResumeBlock } from '@/entities/blocks/resume-block'
 import type { ModuleKey } from '@/entities/module/module-config'
+import { htmlToPlainText } from '@/features/edit/form-fields/html-text'
 
 /**
  * Status of a module on the edit home.
@@ -13,9 +15,10 @@ export interface ModuleInfo {
   readonly count: number
 }
 
-/**
- * Find a section whose title matches the given title (case-insensitive, fuzzy).
- */
+// ---------------------------------------------------------------------------
+// Internal helpers
+// ---------------------------------------------------------------------------
+
 function findSection(resume: ResumeData, title: string): Section | undefined {
   const normalized: string = title.replace(/\s/g, '')
   const sections: readonly Section[] = Array.isArray(resume.sections) ? resume.sections : []
@@ -23,15 +26,40 @@ function findSection(resume: ResumeData, title: string): Section | undefined {
 }
 
 /**
- * Count blocks inside a section.
+ * A block is considered "filled" when at least one meaningful field has content.
+ * This prevents empty placeholder blocks from counting as real content.
  */
-function countBlocks(section: Section | undefined): number {
-  return section?.blocks.length ?? 0
+function isBlockFilled(block: ResumeBlock): boolean {
+  switch (block.type) {
+    case 'experience':
+      return Boolean(block.company?.trim() || block.position?.trim() || htmlToPlainText(block.contentHtml))
+    case 'education':
+      return Boolean(block.school?.trim() || block.major?.trim())
+    case 'project':
+      return Boolean(block.name?.trim() || htmlToPlainText(block.contentHtml))
+    case 'campus':
+      return Boolean(block.organization?.trim() || block.position?.trim() || htmlToPlainText(block.contentHtml))
+    case 'text':
+      return Boolean(htmlToPlainText(block.html))
+    case 'list':
+      return true // list blocks are always considered filled if present
+    default:
+      return false
+  }
 }
 
 /**
- * Compute status and one-line summary for a given module key.
+ * Count blocks in a section that have real content.
  */
+function countFilledBlocks(section: Section | undefined): number {
+  if (!section) return 0
+  return section.blocks.filter(isBlockFilled).length
+}
+
+// ---------------------------------------------------------------------------
+// Per-module status
+// ---------------------------------------------------------------------------
+
 export function getModuleInfo(resume: ResumeData, key: ModuleKey): ModuleInfo {
   switch (key) {
     case 'base': {
@@ -51,6 +79,7 @@ export function getModuleInfo(resume: ResumeData, key: ModuleKey): ModuleInfo {
         count: filled,
       }
     }
+
     case 'intention': {
       const ji = resume.jobIntention
       const hasPosition: boolean = Boolean(ji?.position?.trim())
@@ -67,32 +96,88 @@ export function getModuleInfo(resume: ResumeData, key: ModuleKey): ModuleInfo {
         count: filled,
       }
     }
-    case 'workExp':
-    case 'eduExp':
-    case 'programExp':
-    case 'internExp':
-    case 'schoolExp':
-    case 'summary':
-    case 'skill':
-    case 'qualifications': {
-      const titleMap: Record<string, string> = {
-        workExp: '工作经历',
-        eduExp: '教育经历',
-        programExp: '项目经验',
-        internExp: '实习经历',
-        schoolExp: '在校经历',
-        summary: '自我评价',
-        skill: '相关技能',
-        qualifications: '奖项证书',
+
+    case 'eduExp': {
+      const section = findSection(resume, '教育经历')
+      const count = countFilledBlocks(section)
+      return {
+        status: count > 0 ? 'complete' : 'empty',
+        summary: count > 0 ? `${count} 段教育经历` : '点击添加教育经历',
+        count,
       }
-      const section = findSection(resume, titleMap[key])
-      const count: number = countBlocks(section)
-      const status: ModuleStatus = count === 0 ? 'empty' : 'complete'
-      const summary: string = count === 0 ? '点击添加' : `${count} 项内容`
-      return { status, summary, count }
     }
+
+    case 'workExp': {
+      const section = findSection(resume, '工作经历')
+      const count = countFilledBlocks(section)
+      return {
+        status: count > 0 ? 'complete' : 'empty',
+        summary: count > 0 ? `${count} 段工作经历` : '点击添加工作经历',
+        count,
+      }
+    }
+
+    case 'programExp': {
+      const section = findSection(resume, '项目经验')
+      const count = countFilledBlocks(section)
+      return {
+        status: count > 0 ? 'complete' : 'empty',
+        summary: count > 0 ? `${count} 个项目` : '点击添加项目经验',
+        count,
+      }
+    }
+
+    case 'internExp': {
+      const section = findSection(resume, '实习经历')
+      const count = countFilledBlocks(section)
+      return {
+        status: count > 0 ? 'complete' : 'empty',
+        summary: count > 0 ? `${count} 段实习经历` : '点击添加实习经历',
+        count,
+      }
+    }
+
+    case 'schoolExp': {
+      const section = findSection(resume, '在校经历')
+      const count = countFilledBlocks(section)
+      return {
+        status: count > 0 ? 'complete' : 'empty',
+        summary: count > 0 ? `${count} 项在校经历` : '点击添加在校经历',
+        count,
+      }
+    }
+
+    case 'summary': {
+      const section = findSection(resume, '自我评价')
+      const count = countFilledBlocks(section)
+      return {
+        status: count > 0 ? 'complete' : 'empty',
+        summary: count > 0 ? '已填写' : '点击添加自我评价',
+        count,
+      }
+    }
+
+    case 'skill': {
+      const section = findSection(resume, '相关技能')
+      const count = countFilledBlocks(section)
+      return {
+        status: count > 0 ? 'complete' : 'empty',
+        summary: count > 0 ? '已填写' : '点击添加技能',
+        count,
+      }
+    }
+
+    case 'qualifications': {
+      const section = findSection(resume, '奖项证书')
+      const count = countFilledBlocks(section)
+      return {
+        status: count > 0 ? 'complete' : 'empty',
+        summary: count > 0 ? `${count} 项证书/奖项` : '点击添加奖项证书',
+        count,
+      }
+    }
+
     case 'custom': {
-      // Any section not in the canonical set is "custom"
       const canonical: readonly string[] = [
         '工作经历', '教育经历', '项目经验', '实习经历', '在校经历',
         '自我评价', '相关技能', '奖项证书',
@@ -100,38 +185,76 @@ export function getModuleInfo(resume: ResumeData, key: ModuleKey): ModuleInfo {
       const sections: readonly Section[] = Array.isArray(resume.sections) ? resume.sections : []
       const custom = sections.filter((s) => !canonical.includes(s.title.replace(/\s/g, '')))
       const count: number = custom.length
-      const status: ModuleStatus = count === 0 ? 'empty' : 'complete'
-      const summary: string = count === 0 ? '自定义更多内容' : `${count} 个模块`
-      return { status, summary, count }
+      return {
+        status: count === 0 ? 'empty' : 'complete',
+        summary: count === 0 ? '自定义更多内容' : `${count} 个模块`,
+        count,
+      }
     }
   }
 }
 
+// ---------------------------------------------------------------------------
+// Progress computation
+// ---------------------------------------------------------------------------
+
 /**
- * Weighted progress percentage (0-100) across all modules.
+ * Compute a realistic progress percentage (0–100) from the user's perspective.
+ *
+ * Design principles:
+ * 1. Only mandatory and universally-expected modules determine the score.
+ *    Optional modules (qualifications, schoolExp, custom) are excluded so
+ *    they cannot inflate the number.
+ * 2. Experience modules (work / project / intern) are treated as a single
+ *    "core experience" slot — having ANY one of them earns full credit.
+ *    This avoids penalising fresh graduates who have no work history.
+ * 3. Blocks are checked for real content, not just existence, so an empty
+ *    placeholder block does not count.
+ * 4. partial status earns half weight so users feel incremental progress.
+ *
+ * Score breakdown (total = 100):
+ *   base info        25 pts  (name + phone + email; partial = 12)
+ *   job intention    15 pts  (position + city; partial = 7)
+ *   education        20 pts  (at least 1 filled block)
+ *   core experience  25 pts  (work OR project OR intern, whichever is best)
+ *   self summary     10 pts
+ *   skill             5 pts
  */
 export function computeProgress(resume: ResumeData): number {
-  const weights: Record<ModuleKey, number> = {
-    base: 20,
-    intention: 15,
-    workExp: 12,
-    eduExp: 12,
-    programExp: 8,
-    internExp: 5,
-    schoolExp: 3,
-    summary: 8,
-    skill: 8,
-    qualifications: 5,
-    custom: 4,
-  }
-  let total: number = 0
-  let earned: number = 0
-  for (const k of Object.keys(weights) as ModuleKey[]) {
-    const w: number = weights[k]
-    total += w
-    const info = getModuleInfo(resume, k)
-    if (info.status === 'complete') earned += w
-    else if (info.status === 'partial') earned += w * 0.5
-  }
-  return Math.round((earned / total) * 100)
+  let earned = 0
+
+  // --- base info (25 pts) ---
+  const base = getModuleInfo(resume, 'base')
+  if (base.status === 'complete') earned += 25
+  else if (base.status === 'partial') earned += 12
+
+  // --- job intention (15 pts) ---
+  const intention = getModuleInfo(resume, 'intention')
+  if (intention.status === 'complete') earned += 15
+  else if (intention.status === 'partial') earned += 7
+
+  // --- education (20 pts) ---
+  const edu = getModuleInfo(resume, 'eduExp')
+  if (edu.status === 'complete') earned += 20
+
+  // --- core experience: best of work / project / intern (25 pts) ---
+  // Give full credit as long as the user has filled at least one experience type.
+  const work = getModuleInfo(resume, 'workExp')
+  const project = getModuleInfo(resume, 'programExp')
+  const intern = getModuleInfo(resume, 'internExp')
+  const hasAnyExp =
+    work.status === 'complete' ||
+    project.status === 'complete' ||
+    intern.status === 'complete'
+  if (hasAnyExp) earned += 25
+
+  // --- self summary (10 pts) ---
+  const summary = getModuleInfo(resume, 'summary')
+  if (summary.status === 'complete') earned += 10
+
+  // --- skill (5 pts) ---
+  const skill = getModuleInfo(resume, 'skill')
+  if (skill.status === 'complete') earned += 5
+
+  return Math.min(100, Math.round(earned))
 }
