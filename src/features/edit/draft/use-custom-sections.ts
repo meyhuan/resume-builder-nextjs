@@ -5,11 +5,9 @@ import type { Section } from '@/entities/resume/section'
 import type { TextBlock } from '@/entities/blocks/text-block'
 import type { ResumeBlock } from '@/entities/blocks/resume-block'
 import { useDraftStore } from './draft-store'
+import { MODULE_SECTION_TITLES } from '@/entities/module/module-config'
 
-const CANONICAL_TITLES: readonly string[] = [
-  '工作经历', '教育经历', '项目经验', '实习经历', '在校经历',
-  '自我评价', '相关技能', '奖项证书',
-]
+const CANONICAL_TITLES: readonly string[] = Object.values(MODULE_SECTION_TITLES)
 
 function normalize(title: string): string {
   return title.replace(/\s/g, '')

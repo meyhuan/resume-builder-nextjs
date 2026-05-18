@@ -15,25 +15,24 @@ type Props = Omit<TextFieldProps, 'value' | 'onValueChange' | 'type'> & {
  */
 export function NumberField(props: Props): ReactElement {
   const { value, onValueChange, min, max, ...rest } = props
-  const str: string = value === undefined || Number.isNaN(value) ? '' : String(value)
+  const str: string = value == null || Number.isNaN(value) ? '' : String(value)
   return (
     <TextField
       {...rest}
-      type="number"
+      type="text"
       inputMode="numeric"
       value={str}
       onValueChange={(next: string): void => {
-        if (!next.trim()) {
+        const cleaned = next.replace(/\D/g, '')
+        if (!cleaned) {
           onValueChange(undefined)
           return
         }
-        let parsed: number = parseInt(next, 10)
+        const parsed: number = parseInt(cleaned, 10)
         if (Number.isNaN(parsed)) {
           onValueChange(undefined)
           return
         }
-        if (min !== undefined) parsed = Math.max(min, parsed)
-        if (max !== undefined) parsed = Math.min(max, parsed)
         onValueChange(parsed)
       }}
     />

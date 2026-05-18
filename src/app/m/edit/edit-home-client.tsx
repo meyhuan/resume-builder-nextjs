@@ -6,20 +6,18 @@ import { toast } from 'sonner'
 import { ArrowLeft } from 'lucide-react'
 import { createLogger } from '@/lib/logger'
 import type { ResumeData } from '@/entities/resume/resume-data'
-import { useDraftStore } from '@/features/edit/draft/draft-store'
-import { computeProgress } from '@/features/edit/progress/module-completeness'
 import { MODULES, findModuleBySectionTitle } from '@/entities/module/module-config'
-import { GreetingBanner } from './_components/greeting-banner'
-import { ProgressCard } from './_components/progress-card'
-import { MilestoneConfetti } from './_components/milestone-confetti'
-import { HomeActionBar } from './_components/home-action-bar'
-import { DeveloperNote } from './_components/developer-note'
-import { BaseInfoPreview } from './_components/base-info-preview'
-import { JobIntentionPreview } from './_components/job-intention-preview'
-import { SectionsList } from './_components/sections-list'
-import { AddMoreModules } from './_components/add-more-modules'
+import { useDraftStore } from '@/features/edit/draft/draft-store'
 import { htmlToPlainText } from '@/features/edit/form-fields/html-text'
+import { computeProgress } from '@/features/edit/progress/module-completeness'
+import { isMeaningfulText } from '@/features/edit/progress/meaningful-field'
 import { useInMiniProgram } from '../_components/use-mini-program'
+import { AddMoreModules } from './_components/add-more-modules'
+import { DeveloperNote } from './_components/developer-note'
+import { HomeActionBar } from './_components/home-action-bar'
+import { JobIntentionPreview } from './_components/job-intention-preview'
+import { ResumeProfileCard } from './_components/resume-profile-card'
+import { SectionsList } from './_components/sections-list'
 
 /**
  * Resume data already loaded on the server and passed as a prop.
@@ -84,7 +82,7 @@ export default function MobileEditHomeClient(
 
   // Hydrate the store whenever the server resume id differs from what's
   // currently in the persisted draft. This guarantees a stale persisted
-  // draft (from a previous resume) cannot leak into a new edit session.
+  // draft from a previous resume cannot leak into a new edit session.
   if (initial && initial.id !== resumeId) {
     log.info('hydrate store: id mismatch', { from: resumeId, to: initial.id })
     setFromServer(initial.id, initial.content, initial.template)
@@ -99,10 +97,8 @@ export default function MobileEditHomeClient(
     }
   }, [initial, setFromServer, resumeId])
 
-  // Resolve the resume to render.
-  // Trust the draft only when its id matches AND it has actual content
-  // (sections.length > 0 or a non-empty name). An empty draft means the
-  // user never edited yet — fall through to the freshly-loaded server data.
+  // Resolve the resume to render. Trust the draft only when its id matches
+  // and it has real content. Otherwise fall through to freshly loaded data.
   const draftHasContent: boolean = !!(
     draft &&
     resumeId === initial?.id &&
@@ -126,6 +122,35 @@ export default function MobileEditHomeClient(
     [resume],
   )
 
+  const missingItems: readonly string[] = useMemo(() => {
+    if (!resume) return []
+    const items: string[] = []
+    const base = resume.baseInfo ?? {}
+    const intention = resume.jobIntention ?? {}
+    if (!isMeaningfulText(resume.name)) items.push('姓名')
+    if (!isMeaningfulText(base.phone)) items.push('手机号')
+    if (!isMeaningfulText(base.email)) items.push('邮箱')
+    if (!isMeaningfulText(intention.position)) items.push('求职岗位')
+    if (!isMeaningfulText(intention.city)) items.push('意向城市')
+    const hasCoreExperience = resume.sections.some((section) =>
+      section.blocks.some((block) => {
+        if (block.type === 'project') {
+          return Boolean(isMeaningfulText(block.name) || htmlToPlainText(block.contentHtml))
+        }
+        if (block.type === 'experience') {
+          return Boolean(
+            isMeaningfulText(block.company) ||
+            isMeaningfulText(block.position) ||
+            htmlToPlainText(block.contentHtml),
+          )
+        }
+        return false
+      }),
+    )
+    if (!hasCoreExperience) items.push('项目或经历')
+    return items.slice(0, 4)
+  }, [resume])
+
   const emptyOptionalModules = useMemo(() => {
     if (!resume) return []
     return MODULES.filter((m) => {
@@ -134,9 +159,7 @@ export default function MobileEditHomeClient(
         return !resume.sections.some((s) => !findModuleBySectionTitle(s.title))
       }
       if (!m.sectionTitle) return true
-      const sec = resume.sections.find(
-        (s) => s.title.replace(/\s/g, '') === m.sectionTitle!.replace(/\s/g, ''),
-      )
+      const sec = resume.sections.find((s) => findModuleBySectionTitle(s.title)?.key === m.key)
       if (!sec) return true
       if (sec.blocks.length === 0) return true
       if (sec.blocks.length === 1 && sec.blocks[0].type === 'text') {
@@ -201,30 +224,35 @@ export default function MobileEditHomeClient(
 
   return (
     <div
-      className="min-h-screen bg-slate-50"
-      style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 88px)' }}
+      className="min-h-screen bg-white"
+      style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 112px)' }}
     >
       {!inMiniProgram && (
-        <div className="sticky top-0 z-20 flex items-center justify-between px-3 h-12 bg-white/90 backdrop-blur border-b border-slate-200">
+        <div className="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-slate-200 bg-white/95 px-4 backdrop-blur">
           <button
             type="button"
             onClick={(): void => router.push('/m')}
-            className="h-9 w-9 rounded-lg flex items-center justify-center text-slate-600 hover:bg-slate-100 active:scale-95 transition-transform"
+            className="flex h-10 w-10 items-center justify-center rounded-xl text-slate-600 transition-transform hover:bg-slate-100 active:scale-95"
             aria-label="返回首页"
           >
-            <ArrowLeft size={18} />
+            <ArrowLeft size={21} />
           </button>
-          <div className="text-sm font-semibold text-slate-800">我的简历</div>
-          <div className="w-9" />
+          <div className="absolute left-1/2 -translate-x-1/2 text-[17px] font-semibold text-slate-950">
+            编辑简历
+          </div>
+          <button
+            type="button"
+            onClick={(): void => router.push('/m/edit/import')}
+            className="rounded-xl px-2 py-1.5 text-[14px] font-medium text-violet-700 hover:bg-violet-50"
+          >
+            导入
+          </button>
         </div>
       )}
 
-      <GreetingBanner name={resume.name} />
-      <ProgressCard progress={progress} />
-      <MilestoneConfetti progress={progress} />
+      <ResumeProfileCard resume={resume} progress={progress} missingItems={missingItems} />
 
-      <div className="mt-5 px-5 flex flex-col gap-3">
-        <BaseInfoPreview resume={resume} />
+      <div className="mt-2 px-[18px]">
         <JobIntentionPreview resume={resume} />
       </div>
 
@@ -233,7 +261,10 @@ export default function MobileEditHomeClient(
       <AddMoreModules emptyModules={emptyOptionalModules} />
 
       <DeveloperNote />
-      <HomeActionBar resumeId={resumeId ?? initial?.id ?? null} template={initial?.template ?? null} />
+      <HomeActionBar
+        resumeId={resumeId ?? initial?.id ?? null}
+        template={initial?.template ?? null}
+      />
     </div>
   )
 }

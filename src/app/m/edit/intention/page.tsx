@@ -53,11 +53,12 @@ export default function JobIntentionEditPage(): ReactElement {
         required
         placeholder="输入或选择城市"
       />
-      <TagSelectField
+      <AutocompleteField
         label="期望薪资"
         options={SALARY_OPTIONS}
         value={salaryF.value ?? ''}
         onValueChange={salaryF.setValue}
+        placeholder="输入或选择薪资范围"
       />
       <TagSelectField
         label="求职类型"

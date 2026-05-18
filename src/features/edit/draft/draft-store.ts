@@ -29,10 +29,13 @@ export interface DraftState {
   readonly isSaving: boolean
   readonly celebratedMilestones: readonly number[]
   readonly templateId: string
+  readonly hiddenSectionIds: readonly string[]
   setFromServer: (id: string, resume: ResumeData, templateId?: string) => void
   updateDraft: (path: string, updater: (draft: ResumeData) => void) => void
   replaceDraft: (next: ResumeData) => void
   reorderSections: (fromIdx: number, toIdx: number) => void
+  toggleSectionHidden: (sectionId: string) => void
+  removeSection: (sectionId: string) => void
   discardAll: () => void
   saveAll: () => Promise<SaveResult>
   /**
@@ -100,6 +103,7 @@ export const useDraftStore = create<DraftState>()(
       isSaving: false,
       celebratedMilestones: [],
       templateId: 'simple',
+      hiddenSectionIds: [],
       setFromServer: (id, resume, templateId): void => {
         const normalized: ResumeData = normalizeResume(resume, id)
         const current = get()
@@ -140,6 +144,25 @@ export const useDraftStore = create<DraftState>()(
         const dirty = new Set(get().dirtyPaths)
         dirty.add(`sections.reorder.${fromIdx}.${toIdx}`)
         set({ draft: next, dirtyPaths: Array.from(dirty) })
+      },
+      toggleSectionHidden: (sectionId): void => {
+        const hidden = new Set(get().hiddenSectionIds)
+        if (hidden.has(sectionId)) hidden.delete(sectionId)
+        else hidden.add(sectionId)
+        set({ hiddenSectionIds: Array.from(hidden) })
+      },
+      removeSection: (sectionId): void => {
+        const current = get().draft
+        if (!current) return
+        const next = structuredClone(current)
+        const idx = next.sections.findIndex((s) => s.id === sectionId)
+        if (idx < 0) return
+        next.sections.splice(idx, 1)
+        const dirty = new Set(get().dirtyPaths)
+        dirty.add(`sections.${sectionId}.remove`)
+        const hidden = new Set(get().hiddenSectionIds)
+        hidden.delete(sectionId)
+        set({ draft: next, dirtyPaths: Array.from(dirty), hiddenSectionIds: Array.from(hidden) })
       },
       discardAll: (): void => {
         const server = get().server
@@ -209,6 +232,7 @@ export const useDraftStore = create<DraftState>()(
         draft: state.draft,
         dirtyPaths: state.dirtyPaths,
         celebratedMilestones: state.celebratedMilestones,
+        hiddenSectionIds: state.hiddenSectionIds,
       }),
       onRehydrateStorage: () => (state): void => {
         // Older persisted drafts may lack a `sections` array; normalize on

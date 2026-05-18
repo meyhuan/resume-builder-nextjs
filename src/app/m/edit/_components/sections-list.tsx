@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useCallback, type ReactElement } from 'react'
+import { useCallback, useState, type ReactElement } from 'react'
 import {
-  DndContext,
   closestCenter,
+  DndContext,
+  KeyboardSensor,
   PointerSensor,
   TouchSensor,
   useSensor,
@@ -17,23 +18,21 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { KeyboardSensor } from '@dnd-kit/core'
-import { Shuffle, Check } from 'lucide-react'
+import { Check } from 'lucide-react'
 import type { Section } from '@/entities/resume/section'
 import type { ModuleConfig } from '@/entities/module/module-config'
-import { useDraftStore } from '@/features/edit/draft/draft-store'
 import { findModuleBySectionTitle } from '@/entities/module/module-config'
+import { useDraftStore } from '@/features/edit/draft/draft-store'
 import { useSectionList } from '@/features/edit/draft/use-section-list'
-import { SectionPreview } from './section-preview'
 import { htmlToPlainText } from '@/features/edit/form-fields/html-text'
+import { SectionPreview } from './section-preview'
 
 interface SectionsListProps {
   readonly sections: readonly Section[]
 }
 
 /**
- * Renders the resume's sections as previews. Supports a "reorder mode"
- * toggled by the user where each card gets a drag handle.
+ * Renders resume sections as a compact, task-oriented module list.
  */
 export function SectionsList({ sections }: SectionsListProps): ReactElement | null {
   const reorder = useDraftStore((s) => s.reorderSections)
@@ -59,27 +58,23 @@ export function SectionsList({ sections }: SectionsListProps): ReactElement | nu
   const items: string[] = nonEmpty.map((s) => s.id)
 
   return (
-    <div className="mt-5 px-5">
-      <div className="flex items-center gap-2 mb-3 px-1">
-        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-          你的简历内容
-        </span>
-        <div className="flex-1 h-px bg-slate-100" />
-        {nonEmpty.length >= 2 && (
+    <div className="mt-2 px-[18px]">
+      {nonEmpty.length >= 2 && manageMode && (
+        <div className="mb-2 flex justify-end px-1">
           <button
             type="button"
-            onClick={(): void => setManageMode((v) => !v)}
-            className="text-[11px] text-violet-600 px-2 py-1 rounded hover:bg-violet-50 flex items-center gap-1"
+            onClick={(): void => setManageMode(false)}
+            className="flex items-center gap-1 rounded-lg px-2 py-1 text-[12px] text-slate-600 hover:bg-slate-100"
           >
-            {manageMode ? <><Check size={11} /> 完成</> : <><Shuffle size={11} /> 排序</>}
+            <Check size={12} /> 完成
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
       {manageMode ? (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={items} strategy={verticalListSortingStrategy}>
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-2">
               {nonEmpty.map((s) => (
                 <SortableSectionRow key={s.id} section={s} />
               ))}
@@ -87,7 +82,7 @@ export function SectionsList({ sections }: SectionsListProps): ReactElement | nu
           </SortableContext>
         </DndContext>
       ) : (
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-2">
           {nonEmpty.map((s) => (
             <SectionPreviewWithAdd
               key={s.id}
@@ -106,7 +101,6 @@ function isSectionEmpty(section: Section): boolean {
   if (section.blocks.length === 1 && section.blocks[0].type === 'text') {
     return !htmlToPlainText(section.blocks[0].html)
   }
-  // Check if all list-based blocks are empty
   return section.blocks.every((block) => {
     switch (block.type) {
       case 'project':
@@ -123,17 +117,18 @@ function isSectionEmpty(section: Section): boolean {
   })
 }
 
-/**
- * Wrapper that provides onAddItem via useSectionList for list-based modules.
- */
-function SectionPreviewWithAdd({ section, module }: { readonly section: Section; readonly module: ModuleConfig | null }): ReactElement {
+function SectionPreviewWithAdd(
+  { section, module }: { readonly section: Section; readonly module: ModuleConfig | null },
+): ReactElement {
   if (module?.isList && module.sectionTitle) {
     return <ListSectionPreview section={section} module={module} />
   }
   return <SectionPreview section={section} module={module} />
 }
 
-function ListSectionPreview({ section, module }: { readonly section: Section; readonly module: ModuleConfig }): ReactElement {
+function ListSectionPreview(
+  { section, module }: { readonly section: Section; readonly module: ModuleConfig },
+): ReactElement {
   const { addBlock, blocks } = useSectionList(module.sectionTitle!)
   const onAddItem = useCallback((): number => {
     addBlock()
@@ -163,5 +158,4 @@ function SortableSectionRow({ section }: { readonly section: Section }): ReactEl
   )
 }
 
-/* Re-export default noop to keep module shape */
 export default SectionsList

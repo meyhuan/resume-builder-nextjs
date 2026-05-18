@@ -1,0 +1,1204 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>简历编辑首页 UI</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #f5f7fb;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+        "Microsoft YaHei", sans-serif;
+      color: #18181b;
+      padding: 32px;
+    }
+
+    .gallery {
+      display: grid;
+      grid-template-columns: repeat(4, 390px);
+      gap: 56px 28px;
+      align-items: start;
+    }
+
+    .phone-wrap {
+      position: relative;
+    }
+
+    .screen-title {
+      position: absolute;
+      top: -30px;
+      left: 0;
+      font-size: 14px;
+      font-weight: 700;
+      color: #334155;
+    }
+
+    .phone {
+      width: 390px;
+      height: 844px;
+      background: #fff;
+      border-radius: 30px;
+      overflow: hidden;
+      border: 1px solid #e5e7eb;
+      box-shadow: 0 24px 60px rgba(15, 23, 42, 0.14);
+      position: relative;
+    }
+
+    .status-bar {
+      height: 48px;
+      padding: 12px 22px 0;
+      display: flex;
+      justify-content: space-between;
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .topbar {
+      height: 62px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      font-size: 18px;
+      font-weight: 800;
+      background: #fff;
+    }
+
+    .back {
+      position: absolute;
+      left: 22px;
+      font-size: 34px;
+      font-weight: 300;
+    }
+
+    .right-action {
+      position: absolute;
+      right: 22px;
+      font-size: 16px;
+      font-weight: 700;
+      color: #18181b;
+    }
+
+    .content {
+      height: calc(100% - 110px);
+      overflow-y: auto;
+      padding: 0 18px 112px;
+      background: #fff;
+    }
+
+    .content::-webkit-scrollbar {
+      display: none;
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid #edf0f5;
+      border-radius: 18px;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.045);
+    }
+
+    .resume-card {
+      margin-top: 8px;
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .avatar {
+      width: 56px;
+      height: 56px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #dbeafe, #eef2ff);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex: none;
+    }
+
+    .avatar svg {
+      width: 30px;
+      height: 30px;
+      color: #165dff;
+    }
+
+    .resume-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .name-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      font-size: 18px;
+      font-weight: 900;
+    }
+
+    .role-tag {
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: #eff6ff;
+      color: #165dff;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .meta {
+      margin-top: 6px;
+      font-size: 12px;
+      line-height: 1.65;
+      color: #64748b;
+    }
+
+    .progress-ring {
+      width: 66px;
+      height: 66px;
+      border-radius: 50%;
+      background: conic-gradient(#5b35f5 0 76%, #eef1ff 76% 100%);
+      padding: 6px;
+      flex: none;
+    }
+
+    .progress-inner {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      color: #64748b;
+    }
+
+    .progress-inner strong {
+      color: #5b35f5;
+      font-size: 18px;
+      line-height: 18px;
+    }
+
+    .module {
+      margin-top: 10px;
+      padding: 14px;
+    }
+
+    .module-head {
+      display: grid;
+      grid-template-columns: 36px 1fr auto 16px;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      background: #f1efff;
+      color: #6c47ff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex: none;
+    }
+
+    .icon svg {
+      width: 20px;
+      height: 20px;
+      stroke-width: 2.1;
+    }
+
+    .module-title {
+      font-size: 15px;
+      font-weight: 900;
+    }
+
+    .module-subtitle {
+      margin-top: 3px;
+      font-size: 12px;
+      color: #64748b;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .status {
+      height: 22px;
+      padding: 0 8px;
+      border-radius: 999px;
+      display: flex;
+      align-items: center;
+      font-size: 11px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .status.done {
+      background: #eafbf4;
+      color: #16a06a;
+    }
+
+    .status.warning {
+      background: #fff4e5;
+      color: #e57a00;
+    }
+
+    .status.empty {
+      background: #f1f5f9;
+      color: #64748b;
+    }
+
+    .arrow {
+      color: #94a3b8;
+      font-size: 18px;
+    }
+
+    /* 关键修改：内容区域不再缩进到 icon 右侧，直接与卡片内容左侧对齐 */
+    .module-body {
+      margin-top: 12px;
+      padding: 0;
+      font-size: 12px;
+      color: #475569;
+      line-height: 1.7;
+    }
+
+    .body-title {
+      font-weight: 800;
+      color: #334155;
+      margin-bottom: 4px;
+    }
+
+    .placeholder {
+      color: #9aa3b2;
+    }
+
+    .list-item {
+      margin-top: 8px;
+      padding: 9px 10px;
+      border-radius: 12px;
+      background: #fafbff;
+      border: 1px solid #f0f2f7;
+    }
+
+    .list-item:first-child {
+      margin-top: 0;
+    }
+
+    .list-main {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      font-weight: 800;
+      color: #334155;
+    }
+
+    .list-date {
+      color: #94a3b8;
+      font-size: 11px;
+      font-weight: 500;
+      flex: none;
+    }
+
+    .list-desc {
+      margin-top: 4px;
+      color: #64748b;
+      line-height: 1.6;
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .chip {
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: #f3f0ff;
+      color: #6c47ff;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .add-section {
+      margin-top: 24px;
+      padding-bottom: 10px;
+    }
+
+    .add-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 12px;
+    }
+
+    .add-title {
+      font-size: 22px;
+      font-weight: 900;
+    }
+
+    .add-desc {
+      color: #a1a1aa;
+      font-size: 13px;
+    }
+
+    .add-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    .add-card {
+      min-height: 74px;
+      padding: 14px;
+    }
+
+    .add-card strong {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      font-size: 16px;
+      margin-bottom: 8px;
+    }
+
+    .add-card svg {
+      width: 19px;
+      height: 19px;
+      color: #27272a;
+      stroke-width: 2;
+      flex: none;
+    }
+
+    .add-card p {
+      margin: 0;
+      color: #71717a;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .bottom-bar {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 88px;
+      background: rgba(255, 255, 255, 0.96);
+      border-top: 1px solid #eef2f7;
+      backdrop-filter: blur(16px);
+      display: grid;
+      grid-template-columns: 86px 1fr;
+      gap: 10px;
+      align-items: center;
+      padding: 10px 18px 20px;
+    }
+
+    .module-manage {
+      text-align: center;
+      font-size: 12px;
+      color: #27272a;
+    }
+
+    .module-manage svg {
+      width: 28px;
+      height: 28px;
+      margin-bottom: 3px;
+      stroke-width: 2.3;
+    }
+
+    .primary-btn {
+      height: 50px;
+      border: none;
+      border-radius: 12px;
+      background: #165dff;
+      color: #fff;
+      font-size: 17px;
+      font-weight: 900;
+      box-shadow: 0 8px 18px rgba(22, 93, 255, 0.24);
+    }
+
+    .manage-tip {
+      margin: 10px 4px 14px;
+      color: #94a3b8;
+      font-size: 13px;
+    }
+
+    .manage-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .manage-item {
+      padding: 12px 14px;
+      display: grid;
+      grid-template-columns: 24px 1fr auto 24px;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .manage-item svg {
+      width: 20px;
+      height: 20px;
+      stroke-width: 2;
+    }
+
+    .drag {
+      color: #94a3b8;
+    }
+
+    .hide-btn {
+      color: #94a3b8;
+    }
+
+    .remove {
+      color: #ef4444;
+    }
+
+    .bottom-sheet-mask {
+      position: absolute;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.42);
+      z-index: 3;
+    }
+
+    .sheet {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 4;
+      background: #fff;
+      border-radius: 28px 28px 0 0;
+      padding: 24px 20px 34px;
+    }
+
+    .sheet-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .sheet-title {
+      font-size: 20px;
+      font-weight: 900;
+    }
+
+    .sheet-close {
+      font-size: 22px;
+      color: #64748b;
+    }
+
+    .sheet-desc {
+      color: #94a3b8;
+      font-size: 13px;
+      margin-bottom: 18px;
+    }
+
+    .sheet-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px 12px;
+    }
+
+    .sheet-module {
+      text-align: center;
+      font-size: 12px;
+      color: #334155;
+    }
+
+    .sheet-icon {
+      width: 44px;
+      height: 44px;
+      margin: 0 auto 8px;
+      border-radius: 50%;
+      border: 1px solid #e7e5ff;
+      color: #6c47ff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #fbfaff;
+    }
+
+    .sheet-icon svg {
+      width: 21px;
+      height: 21px;
+      stroke-width: 2.1;
+    }
+
+    @media (max-width: 1720px) {
+      .gallery {
+        grid-template-columns: repeat(2, 390px);
+      }
+    }
+
+    @media (max-width: 860px) {
+      body {
+        padding: 12px;
+      }
+
+      .gallery {
+        grid-template-columns: 1fr;
+        gap: 52px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- SVG 图标库 -->
+  <svg width="0" height="0" style="position:absolute; visibility:hidden;">
+    <symbol id="i-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M20 21a8 8 0 0 0-16 0"/>
+      <circle cx="12" cy="7" r="4"/>
+    </symbol>
+
+    <symbol id="i-target" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="9"/>
+      <circle cx="12" cy="12" r="5"/>
+      <circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/>
+    </symbol>
+
+    <symbol id="i-briefcase" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="7" width="18" height="13" rx="2"/>
+      <path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/>
+      <path d="M3 12h18"/>
+      <path d="M12 12v2"/>
+    </symbol>
+
+    <symbol id="i-project" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="4" y="4" width="6" height="6" rx="1.5"/>
+      <rect x="14" y="4" width="6" height="6" rx="1.5"/>
+      <rect x="4" y="14" width="6" height="6" rx="1.5"/>
+      <path d="M10 7h4"/>
+      <path d="M7 10v4"/>
+      <path d="M10 17h4.5a2.5 2.5 0 0 0 2.5-2.5V10"/>
+    </symbol>
+
+    <symbol id="i-education" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 8l9-4 9 4-9 4-9-4Z"/>
+      <path d="M7 10v5c0 1.8 2.2 3 5 3s5-1.2 5-3v-5"/>
+      <path d="M21 8v6"/>
+    </symbol>
+
+    <symbol id="i-skill" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M14.7 6.3a3 3 0 1 0-4.2 4.2L3.8 17.2a2 2 0 0 0 0 2.8l.2.2a2 2 0 0 0 2.8 0l6.7-6.7a3 3 0 1 0 4.2-4.2"/>
+      <path d="M15 5l4 4"/>
+      <path d="M17 3l4 4"/>
+    </symbol>
+
+    <symbol id="i-self" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M6 3h8l4 4v14H6V3Z"/>
+      <path d="M14 3v5h5"/>
+      <path d="M9 13h6"/>
+      <path d="M9 17h4"/>
+    </symbol>
+
+    <symbol id="i-award" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="8" r="5"/>
+      <path d="M8.5 12.5 7 21l5-3 5 3-1.5-8.5"/>
+      <path d="M10 8l1.4 1.4L14.5 6"/>
+    </symbol>
+
+    <symbol id="i-heart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M20.8 5.6a5 5 0 0 0-7.1 0L12 7.3l-1.7-1.7a5 5 0 1 0-7.1 7.1L12 21l8.8-8.3a5 5 0 0 0 0-7.1Z"/>
+    </symbol>
+
+    <symbol id="i-language" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 5h9"/>
+      <path d="M9 3v2"/>
+      <path d="M6 9c1.4 2.6 4.2 4.4 7 5"/>
+      <path d="M12 5c-.8 4-3.4 7.2-8 9"/>
+      <path d="M15 21l4-9 4 9"/>
+      <path d="M16.5 18h5"/>
+    </symbol>
+
+    <symbol id="i-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M10 13a5 5 0 0 0 7.1 0l2.1-2.1a5 5 0 0 0-7.1-7.1L11 4.9"/>
+      <path d="M14 11a5 5 0 0 0-7.1 0l-2.1 2.1a5 5 0 0 0 7.1 7.1L13 19.1"/>
+    </symbol>
+
+    <symbol id="i-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 7h16"/>
+      <path d="M4 12h16"/>
+      <path d="M4 17h16"/>
+    </symbol>
+
+    <symbol id="i-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/>
+      <circle cx="12" cy="12" r="3"/>
+    </symbol>
+
+    <symbol id="i-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 3l18 18"/>
+      <path d="M10.6 10.6a2 2 0 0 0 2.8 2.8"/>
+      <path d="M9.8 5.2A10.7 10.7 0 0 1 12 5c6.5 0 10 7 10 7a17.3 17.3 0 0 1-3 4.1"/>
+      <path d="M6.6 6.6C3.6 8.5 2 12 2 12s3.5 7 10 7a10 10 0 0 0 4.2-.9"/>
+    </symbol>
+
+    <symbol id="i-minus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round">
+      <path d="M5 12h14"/>
+    </symbol>
+
+    <symbol id="i-layout" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="4" y="4" width="16" height="16" rx="2"/>
+      <path d="M4 10h16"/>
+      <path d="M10 20V10"/>
+    </symbol>
+  </svg>
+
+  <div class="gallery">
+    <!-- 1. 完整填写 -->
+    <div class="phone-wrap">
+      <div class="screen-title">1. 已填写：所有模块展示摘要内容</div>
+      <main class="phone">
+        <div class="status-bar">
+          <span>9:41</span>
+          <span>◐ ▮▮ ▮▮ WiFi 65</span>
+        </div>
+
+        <div class="topbar">
+          <span class="back">‹</span>
+          编辑简历
+          <span class="right-action">导入</span>
+        </div>
+
+        <section class="content">
+          <div class="resume-card card">
+            <div class="avatar">
+              <svg><use href="#i-user"></use></svg>
+            </div>
+            <div class="resume-info">
+              <div class="name-row">张小明 <span class="role-tag">3年经验</span></div>
+              <div class="meta">
+                产品经理｜上海｜176cm｜1995年<br />
+                138-1234-5678<br />
+                zhangxiaoming@email.com
+              </div>
+            </div>
+            <div class="progress-ring">
+              <div class="progress-inner">
+                <strong>92%</strong>
+                <span>完整度</span>
+              </div>
+            </div>
+          </div>
+
+          <article class="module card">
+            <div class="module-head">
+              <div class="icon"><svg><use href="#i-target"></use></svg></div>
+              <div>
+                <div class="module-title">求职意向</div>
+                <div class="module-subtitle">产品经理 / 上海 / 20-30K</div>
+              </div>
+              <span class="status done">已完善</span>
+              <span class="arrow">›</span>
+            </div>
+            <div class="module-body">
+              目标岗位：产品经理；期望城市：上海；期望薪资：20-30K；到岗时间：随时到岗。
+            </div>
+          </article>
+
+          <article class="module card">
+            <div class="module-head">
+              <div class="icon"><svg><use href="#i-briefcase"></use></svg></div>
+              <div>
+                <div class="module-title">工作经历</div>
+                <div class="module-subtitle">3段经历</div>
+              </div>
+              <span class="status done">已完善</span>
+              <span class="arrow">›</span>
+            </div>
+            <div class="module-body">
+              <div class="list-item">
+                <div class="list-main">
+                  <span>产品经理 · 某某科技有限公司</span>
+                  <span class="list-date">2022.06 - 至今</span>
+                </div>
+                <div class="list-desc">
+                  负责产品规划、需求分析和核心流程设计，提升用户活跃度 30%。
+                </div>
+              </div>
+
+              <div class="list-item">
+                <div class="list-main">
+                  <span>产品助理 · 某某互联网公司</span>
+                  <span class="list-date">2020.09 - 2022.05</span>
+                </div>
+                <div class="list-desc">
+                  协助完成竞品分析、需求文档和项目跟进。
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article class="module card">
+            <div class="module-head">
+              <div class="icon"><svg><use href="#i-project"></use></svg></div>
+              <div>
+                <div class="module-title">项目经历</div>
+                <div class="module-subtitle">2个项目</div>
+              </div>
+              <span class="status done">已完善</span>
+              <span class="arrow">›</span>
+            </div>
+            <div class="module-body">
+              智能数据分析系统：负责需求调研、原型设计和数据看板规划，上线后数据查询效率提升 40%。
+            </div>
+          </article>
+
+          <article class="module card">
+            <div class="module-head">
+              <div class="icon"><svg><use href="#i-education"></use></svg></div>
+              <div>
+                <div class="module-title">教育经历</div>
+                <div class="module-subtitle">本科 / 上海大学 / 会计学</div>
+              </div>
+              <span class="status done">已完善</span>
+              <span class="arrow">›</span>
+            </div>
+            <div class="module-body">
+              上海大学｜会计学｜2014.09 - 2018.06；主修课程：财务管理、审计学、税务筹划、数据分析。
+            </div>
+          </article>
+
+          <article class="module card">
+            <div class="module-head">
+              <div class="icon"><svg><use href="#i-skill"></use></svg></div>
+              <div>
+                <div class="module-title">技能特长</div>
+                <div class="module-subtitle">12项技能</div>
+              </div>
+              <span class="status done">已完善</span>
+              <span class="arrow">›</span>
+            </div>
+            <div class="module-body">
+              <div class="chips">
+                <span class="chip">Excel</span>
+                <span class="chip">VLOOKUP</span>
+                <span class="chip">PIVOT</span>
+                <span class="chip">SQL</span>
+                <span class="chip">数据分析</span>
+              </div>
+            </div>
+          </article>
+
+          <div class="add-section">
+            <div class="add-title-row">
+              <div class="add-title">添加模块</div>
+              <div class="add-desc">点击添加需要的模块</div>
+            </div>
+            <div class="add-grid">
+              <div class="add-card card">
+                <strong><svg><use href="#i-award"></use></svg>荣誉证书</strong>
+                <p>突出特长助你脱颖而出</p>
+              </div>
+              <div class="add-card card">
+                <strong><svg><use href="#i-heart"></use></svg>兴趣爱好</strong>
+                <p>突出兴趣丰富你的形象</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <footer class="bottom-bar">
+          <div class="module-manage">
+            <svg><use href="#i-layout"></use></svg>
+            <div>模块管理</div>
+          </div>
+          <button class="primary-btn">预览简历</button>
+        </footer>
+      </main>
+    </div>
+
+    <!-- 2. 混合状态：未填写也展开 -->
+    <div class="phone-wrap">
+      <div class="screen-title">2. 混合状态：未填写模块也展示占位</div>
+      <main class="phone">
+        <div class="status-bar">
+          <span>9:41</span>
+          <span>◐ ▮▮ ▮▮ WiFi 65</span>
+        </div>
+
+        <div class="topbar">
+          <span class="back">‹</span>
+          编辑简历
+          <span class="right-action">导入</span>
+        </div>
+
+        <section class="content">
+          <div class="resume-card card">
+            <div class="avatar"><svg><use href="#i-user"></use></svg></div>
+            <div class="resume-info">
+              <div class="name-row">张小明 <span class="role-tag">1年经验</span></div>
+              <div class="meta">
+                财务助理｜上海<br />
+                138-1234-5678<br />
+                zhangxiaoming@email.com
+              </div>
+            </div>
+            <div
+              class="progress-ring"
+              style="background: conic-gradient(#5b35f5 0 68%, #eef1ff 68% 100%)"
+            >
+              <div class="progress-inner">
+                <strong>68%</strong>
+                <span>完整度</span>
+              </div>
+            </div>
+          </div>
+
+          <article class="module card">
+            <div class="module-head">
+              <div class="icon"><svg><use href="#i-target"></use></svg></div>
+              <div>
+                <div class="module-title">求职意向</div>
+                <div class="module-subtitle">财务助理 / 上海 / 8-12K</div>
+              </div>
+              <span class="status done">已完善</span>
+              <span class="arrow">›</span>
+            </div>
+            <div class="module-body">
+              目标岗位：财务助理；期望城市：上海；期望薪资：8-12K；到岗时间：一周内。
+            </div>
+          </article>
+
+          <article class="module card">
+            <div class="module-head">
+              <div class="icon"><svg><use href="#i-briefcase"></use></svg></div>
+              <div>
+                <div class="module-title">工作经历</div>
+                <div class="module-subtitle">2段经历</div>
+              </div>
+              <span class="status done">已完善</span>
+              <span class="arrow">›</span>
+            </div>
+            <div class="module-body">
+              <div class="list-item">
+                <div class="list-main">
+                  <span>财务实习生 · 某某贸易公司</span>
+                  <span class="list-date">2021.07 - 2022.05</span>
+                </div>
+                <div class="list-desc">
+                  协助整理月度财务报表、凭证归档和费用核对。
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article class="module card">
+            <div class="module-head">
+              <div class="icon"><svg><use href="#i-project"></use></svg></div>
+              <div>
+                <div class="module-title">项目经历</div>
+                <div class="module-subtitle">1个项目</div>
+              </div>
+              <span class="status warning">待完善</span>
+              <span class="arrow">›</span>
+            </div>
+            <div class="module-body">
+              模拟财务报告项目：参与数据收集、报表制作和差异分析。
+              <br />
+              <span class="placeholder">建议补充：你的具体职责、使用工具、结果数据。</span>
+            </div>
+          </article>
+
+          <article class="module card">
+            <div class="module-head">
+              <div class="icon"><svg><use href="#i-skill"></use></svg></div>
+              <div>
+                <div class="module-title">职业技能</div>
+                <div class="module-subtitle">8项技能</div>
+              </div>
+              <span class="status warning">待优化</span>
+              <span class="arrow">›</span>
+            </div>
+            <div class="module-body">
+              <div class="body-title">已填写</div>
+              <div class="chips">
+                <span class="chip">Excel</span>
+                <span class="chip">VLOOKUP</span>
+                <span class="chip">PIVOT</span>
+                <span class="chip">金蝶</span>
+              </div>
+              <div class="placeholder" style="margin-top: 6px">
+                建议补充：税务筹划、审计、财务报表、数据分析等岗位关键词。
+              </div>
+            </div>
+          </article>
+
+          <article class="module card">
+            <div class="module-head">
+              <div class="icon"><svg><use href="#i-self"></use></svg></div>
+              <div>
+                <div class="module-title">自我评价</div>
+                <div class="module-subtitle">120字</div>
+              </div>
+              <span class="status warning">待优化</span>
+              <span class="arrow">›</span>
+            </div>
+            <div class="module-body">
+              熟悉财务分析流程，具备良好的沟通能力和学习能力。
+              <br />
+              <span class="placeholder">建议补充：具体成果、实习经验、岗位关键词。</span>
+            </div>
+          </article>
+
+          <article class="module card">
+            <div class="module-head">
+              <div class="icon"><svg><use href="#i-award"></use></svg></div>
+              <div>
+                <div class="module-title">荣誉证书</div>
+                <div class="module-subtitle">已添加但未填写</div>
+              </div>
+              <span class="status empty">未填写</span>
+              <span class="arrow">›</span>
+            </div>
+            <div class="module-body placeholder">
+              可填写奖学金、竞赛获奖、职业证书、英语等级等。
+              <br />
+              例如：初级会计证书、英语四级、校级奖学金。
+            </div>
+          </article>
+
+          <article class="module card">
+            <div class="module-head">
+              <div class="icon"><svg><use href="#i-heart"></use></svg></div>
+              <div>
+                <div class="module-title">兴趣爱好</div>
+                <div class="module-subtitle">已添加但未填写</div>
+              </div>
+              <span class="status empty">未填写</span>
+              <span class="arrow">›</span>
+            </div>
+            <div class="module-body placeholder">
+              可填写阅读、运动、写作、志愿服务等与个人特质相关的内容。
+            </div>
+          </article>
+        </section>
+
+        <footer class="bottom-bar">
+          <div class="module-manage">
+            <svg><use href="#i-layout"></use></svg>
+            <div>模块管理</div>
+          </div>
+          <button class="primary-btn">预览简历</button>
+        </footer>
+      </main>
+    </div>
+
+    <!-- 3. 模块管理 -->
+    <div class="phone-wrap">
+      <div class="screen-title">3. 模块管理：排序 / 隐藏 / 移除</div>
+      <main class="phone">
+        <div class="status-bar">
+          <span>9:41</span>
+          <span>◐ ▮▮ ▮▮ WiFi 65</span>
+        </div>
+
+        <div class="topbar">
+          <span class="back">‹</span>
+          模块管理
+          <span class="right-action" style="color:#165dff">完成</span>
+        </div>
+
+        <section class="content">
+          <div class="manage-tip">长按拖动调整展示顺序；隐藏后不会出现在简历预览中。</div>
+
+          <div class="manage-list">
+            <div class="manage-item card">
+              <span class="drag"><svg><use href="#i-menu"></use></svg></span>
+              <div>
+                <div class="module-title">基本信息</div>
+                <div class="module-subtitle">姓名、电话、邮箱、城市</div>
+              </div>
+              <span class="status done">显示</span>
+              <span class="hide-btn"><svg><use href="#i-eye"></use></svg></span>
+            </div>
+
+            <div class="manage-item card">
+              <span class="drag"><svg><use href="#i-menu"></use></svg></span>
+              <div>
+                <div class="module-title">求职意向</div>
+                <div class="module-subtitle">岗位、城市、薪资</div>
+              </div>
+              <span class="status done">显示</span>
+              <span class="hide-btn"><svg><use href="#i-eye"></use></svg></span>
+            </div>
+
+            <div class="manage-item card">
+              <span class="drag"><svg><use href="#i-menu"></use></svg></span>
+              <div>
+                <div class="module-title">工作经历</div>
+                <div class="module-subtitle">2段经历</div>
+              </div>
+              <span class="status done">显示</span>
+              <span class="hide-btn"><svg><use href="#i-eye"></use></svg></span>
+            </div>
+
+            <div class="manage-item card">
+              <span class="drag"><svg><use href="#i-menu"></use></svg></span>
+              <div>
+                <div class="module-title">荣誉证书</div>
+                <div class="module-subtitle">已添加但未填写</div>
+              </div>
+              <span class="status empty">隐藏</span>
+              <span class="remove"><svg><use href="#i-minus"></use></svg></span>
+            </div>
+          </div>
+
+          <div class="add-section">
+            <div class="add-title-row">
+              <div class="add-title">未添加模块</div>
+              <div class="add-desc">可继续补充</div>
+            </div>
+            <div class="add-grid">
+              <div class="add-card card">
+                <strong><svg><use href="#i-language"></use></svg>语言能力</strong>
+                <p>英语、普通话、证书等级</p>
+              </div>
+              <div class="add-card card">
+                <strong><svg><use href="#i-link"></use></svg>作品集/链接</strong>
+                <p>GitHub、作品集、博客</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <footer class="bottom-bar">
+          <div class="module-manage">
+            <svg><use href="#i-layout"></use></svg>
+            <div>返回编辑</div>
+          </div>
+          <button class="primary-btn">保存排序</button>
+        </footer>
+      </main>
+    </div>
+
+    <!-- 4. 添加模块弹层 -->
+    <div class="phone-wrap">
+      <div class="screen-title">4. 添加模块 Bottom Sheet</div>
+      <main class="phone">
+        <div class="status-bar">
+          <span>9:41</span>
+          <span>◐ ▮▮ ▮▮ WiFi 65</span>
+        </div>
+
+        <div class="topbar">
+          <span class="back">‹</span>
+          编辑简历
+          <span class="right-action">导入</span>
+        </div>
+
+        <section class="content">
+          <div class="resume-card card">
+            <div class="avatar"><svg><use href="#i-user"></use></svg></div>
+            <div class="resume-info">
+              <div class="name-row">张小明 <span class="role-tag">1年经验</span></div>
+              <div class="meta">财务助理｜上海<br />138-1234-5678</div>
+            </div>
+            <div
+              class="progress-ring"
+              style="background: conic-gradient(#5b35f5 0 68%, #eef1ff 68% 100%)"
+            >
+              <div class="progress-inner">
+                <strong>68%</strong>
+                <span>完整度</span>
+              </div>
+            </div>
+          </div>
+
+          <article class="module card">
+            <div class="module-head">
+              <div class="icon"><svg><use href="#i-target"></use></svg></div>
+              <div>
+                <div class="module-title">求职意向</div>
+                <div class="module-subtitle">财务助理 / 上海 / 8-12K</div>
+              </div>
+              <span class="status done">已完善</span>
+              <span class="arrow">›</span>
+            </div>
+            <div class="module-body">目标岗位：财务助理；到岗时间：一周内。</div>
+          </article>
+
+          <article class="module card">
+            <div class="module-head">
+              <div class="icon"><svg><use href="#i-skill"></use></svg></div>
+              <div>
+                <div class="module-title">职业技能</div>
+                <div class="module-subtitle">Excel、VLOOKUP、财务软件</div>
+              </div>
+              <span class="status done">已填写</span>
+              <span class="arrow">›</span>
+            </div>
+            <div class="module-body">熟悉财务分析、报表制作、费用核对和财务软件操作。</div>
+          </article>
+        </section>
+
+        <footer class="bottom-bar">
+          <div class="module-manage">
+            <svg><use href="#i-layout"></use></svg>
+            <div>模块管理</div>
+          </div>
+          <button class="primary-btn">预览简历</button>
+        </footer>
+
+        <div class="bottom-sheet-mask"></div>
+        <section class="sheet">
+          <div class="sheet-title-row">
+            <div class="sheet-title">添加模块</div>
+            <div class="sheet-close">×</div>
+          </div>
+          <div class="sheet-desc">选择需要补充的内容，添加后会在首页展示对应占位内容。</div>
+
+          <div class="sheet-grid">
+            <div class="sheet-module">
+              <div class="sheet-icon"><svg><use href="#i-education"></use></svg></div>
+              校园经历
+            </div>
+            <div class="sheet-module">
+              <div class="sheet-icon"><svg><use href="#i-award"></use></svg></div>
+              荣誉证书
+            </div>
+            <div class="sheet-module">
+              <div class="sheet-icon"><svg><use href="#i-heart"></use></svg></div>
+              兴趣爱好
+            </div>
+            <div class="sheet-module">
+              <div class="sheet-icon"><svg><use href="#i-language"></use></svg></div>
+              语言能力
+            </div>
+            <div class="sheet-module">
+              <div class="sheet-icon"><svg><use href="#i-award"></use></svg></div>
+              资格证书
+            </div>
+            <div class="sheet-module">
+              <div class="sheet-icon"><svg><use href="#i-link"></use></svg></div>
+              作品链接
+            </div>
+            <div class="sheet-module">
+              <div class="sheet-icon"><svg><use href="#i-briefcase"></use></svg></div>
+              实习经历
+            </div>
+            <div class="sheet-module">
+              <div class="sheet-icon"><svg><use href="#i-project"></use></svg></div>
+              培训经历
+            </div>
+            <div class="sheet-module">
+              <div class="sheet-icon"><svg><use href="#i-self"></use></svg></div>
+              自定义模块
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+</body>
+</html>

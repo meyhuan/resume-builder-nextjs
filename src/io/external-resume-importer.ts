@@ -8,6 +8,7 @@ import type { ProjectBlock } from '@/entities/blocks/project-block';
 import type { CampusBlock } from '@/entities/blocks/campus-block';
 import type { TextBlock } from '@/entities/blocks/text-block';
 import type { ExternalResume } from './external-resume-types';
+import { MODULE_SECTION_TITLES } from '@/entities/module/module-config';
 
 /**
  * Maps external JSON resume to internal ResumeData model.
@@ -20,9 +21,9 @@ export function mapExternalResume(ext: ExternalResume): ResumeData {
 
   // Job intention is now handled separately via jobIntention field, not as a section
 
-  if (ext.self_evaluation && !ext.self_evaluation.is_hide) {
-    const selfSection = mapSelfEvaluation(ext);
-    if (selfSection) sections.push(selfSection);
+  if (ext.education && ext.education.length > 0) {
+    const eduSection = mapEducation(ext);
+    if (eduSection) sections.push(eduSection);
   }
 
   if (ext.experience && ext.experience.length > 0) {
@@ -35,14 +36,19 @@ export function mapExternalResume(ext: ExternalResume): ResumeData {
     if (projSection) sections.push(projSection);
   }
 
-  if (ext.education && ext.education.length > 0) {
-    const eduSection = mapEducation(ext);
-    if (eduSection) sections.push(eduSection);
-  }
-
   if (ext.intern && ext.intern.length > 0) {
     const internSection = mapInternship(ext);
     if (internSection) sections.push(internSection);
+  }
+
+  if (ext.school_exps && ext.school_exps.length > 0) {
+    const schoolSection = mapSchoolExps(ext);
+    if (schoolSection) sections.push(schoolSection);
+  }
+
+  if (ext.self_evaluation && !ext.self_evaluation.is_hide) {
+    const selfSection = mapSelfEvaluation(ext);
+    if (selfSection) sections.push(selfSection);
   }
 
   if (ext.skills && !ext.skills.is_hide) {
@@ -53,11 +59,6 @@ export function mapExternalResume(ext: ExternalResume): ResumeData {
   if (ext.qualifications && !ext.qualifications.is_hide) {
     const qualSection = mapQualifications(ext);
     if (qualSection) sections.push(qualSection);
-  }
-
-  if (ext.school_exps && ext.school_exps.length > 0) {
-    const schoolSection = mapSchoolExps(ext);
-    if (schoolSection) sections.push(schoolSection);
   }
 
   if (ext.custom_module_info && ext.custom_module_info.length > 0) {
@@ -105,7 +106,7 @@ function mapSelfEvaluation(ext: ExternalResume): Section | undefined {
   const blocks: TextBlock[] = [{ id: 'block-self-evaluation', type: 'text', html: se.content }];
   return {
     id: 'section-self-evaluation',
-    title: '自我评价',
+    title: MODULE_SECTION_TITLES.summary,
     columns: 1,
     blocks,
   };
@@ -126,7 +127,7 @@ function mapExperience(ext: ExternalResume): Section | undefined {
   }));
   return {
     id: 'section-experience',
-    title: '工作经历',
+    title: MODULE_SECTION_TITLES.workExp,
     columns: 1,
     blocks,
   };
@@ -146,7 +147,7 @@ function mapProjects(ext: ExternalResume): Section | undefined {
   }));
   return {
     id: 'section-projects',
-    title: '项目经历',
+    title: MODULE_SECTION_TITLES.programExp,
     columns: 1,
     blocks,
   };
@@ -167,7 +168,7 @@ function mapEducation(ext: ExternalResume): Section | undefined {
   }));
   return {
     id: 'section-education',
-    title: '教育经历',
+    title: MODULE_SECTION_TITLES.eduExp,
     columns: 1,
     blocks,
   };
@@ -188,7 +189,7 @@ function mapInternship(ext: ExternalResume): Section | undefined {
   }));
   return {
     id: 'section-internship',
-    title: '实习经历',
+    title: MODULE_SECTION_TITLES.internExp,
     columns: 1,
     blocks,
   };
@@ -200,7 +201,7 @@ function mapSkills(ext: ExternalResume): Section | undefined {
   const blocks: TextBlock[] = [{ id: 'block-skills', type: 'text', html: sc.content }];
   return {
     id: 'section-skills',
-    title: '专业技能',
+    title: MODULE_SECTION_TITLES.skill,
     columns: 1,
     blocks,
   };
@@ -212,7 +213,7 @@ function mapQualifications(ext: ExternalResume): Section | undefined {
   const blocks: TextBlock[] = [{ id: 'block-qualifications', type: 'text', html: q.content }];
   return {
     id: 'section-qualifications',
-    title: '资质证书',
+    title: MODULE_SECTION_TITLES.qualifications,
     columns: 1,
     blocks,
   };
@@ -232,7 +233,7 @@ function mapSchoolExps(ext: ExternalResume): Section | undefined {
   }));
   return {
     id: 'section-school-exps',
-    title: '校园经历',
+    title: MODULE_SECTION_TITLES.schoolExp,
     columns: 1,
     blocks,
   };

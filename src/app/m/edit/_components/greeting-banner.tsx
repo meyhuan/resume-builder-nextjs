@@ -1,23 +1,25 @@
 'use client'
 
 import { type ReactElement } from 'react'
-import { useTimeGreeting } from '@/features/edit/greeting/use-time-greeting'
 
 interface GreetingBannerProps {
   readonly name?: string
 }
 
 /**
- * Time-based greeting shown at the top of the edit home.
+ * Professional page intro for the mobile edit workspace.
  */
 export function GreetingBanner({ name }: GreetingBannerProps): ReactElement {
-  const { text, emoji } = useTimeGreeting()
-  const displayName: string = name?.trim() || '同学'
+  const displayName: string = name?.trim() || '未命名简历'
   return (
-    <div className="px-5 pt-5 pb-2">
-      <h1 className="text-xl font-semibold text-slate-900 leading-snug">
-        {text}，{displayName} <span className="inline-block animate-wiggle">{emoji}</span>
+    <div className="px-4 pt-4 pb-2">
+      <div className="text-[11px] font-medium text-slate-500">编辑工作台</div>
+      <h1 className="mt-1 text-[22px] font-semibold text-slate-950 leading-snug tracking-normal">
+        {displayName}
       </h1>
+      <p className="mt-1 text-[13px] leading-5 text-slate-500">
+        按模块完善内容，保持简历清晰、专业、可投递。
+      </p>
     </div>
   )
 }

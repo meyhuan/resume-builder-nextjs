@@ -64,12 +64,14 @@ export function MonthPickerField(props: MonthPickerFieldProps): ReactElement {
         <span className="text-sm font-medium text-slate-700">{label}</span>
         {required && <span className="text-rose-500 text-xs">*</span>}
       </div>
-      <button
-        type="button"
+      <div
+        role="button"
+        tabIndex={0}
         onClick={openSheet}
+        onKeyDown={(e): void => { if (e.key === 'Enter' || e.key === ' ') openSheet() }}
         className={cn(
           'w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3',
-          'flex items-center justify-between text-left active:bg-slate-50 transition-colors',
+          'flex items-center justify-between text-left active:bg-slate-50 transition-colors cursor-pointer',
         )}
       >
         <span className="flex items-center gap-2">
@@ -89,7 +91,7 @@ export function MonthPickerField(props: MonthPickerFieldProps): ReactElement {
             <X size={14} />
           </button>
         )}
-      </button>
+      </div>
 
       <BottomSheet open={open} onClose={(): void => setOpen(false)} title={label} height="420px">
         <div className="flex gap-3 h-56 relative">

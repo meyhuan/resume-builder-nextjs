@@ -14,9 +14,7 @@ const VCONSOLE_SRC: string =
 /**
  * Decides whether the debug panel should be active.
  *
- *   - Always on unless NEXT_PUBLIC_DISABLE_VCONSOLE=true is set.
- *   - In production the panel can be hidden by setting that env var,
- *     or dismissed by running `localStorage.setItem('mobile_debug','0')`.
+ *   - Off by default so it never covers production-like mobile previews.
  *   - Query param `?debug=0` forces it off; `?debug=1` forces it on.
  */
 function shouldActivate(): boolean {
@@ -33,7 +31,7 @@ function shouldActivate(): boolean {
   }
   const stored: string | null = window.localStorage.getItem('mobile_debug')
   if (stored === '0') return false
-  return true
+  return stored === '1'
 }
 
 /**

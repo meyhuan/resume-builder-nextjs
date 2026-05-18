@@ -25,7 +25,7 @@ export function IconGraduationCap({ size = ICON_SIZE, className }: { readonly si
   );
 }
 
-/** 项目经验 / Project */
+/** 项目经历 / Project */
 export function IconCode({ size = ICON_SIZE, className }: { readonly size?: string | number; readonly className?: string }): ReactElement {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" width={size} height={size} className={className}>

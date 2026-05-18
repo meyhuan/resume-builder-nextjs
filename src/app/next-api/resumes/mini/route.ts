@@ -2,6 +2,18 @@ import { NextResponse } from 'next/server'
 import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { verifyMiniSign } from '@/lib/verify-mini-sign'
+import { computeProgress } from '@/features/edit/progress/module-completeness'
+import type { ResumeData } from '@/entities/resume/resume-data'
+import { mapExternalResume } from '@/io/external-resume-importer'
+import DocmindApi, {
+  SubmitDocParserJobAdvanceRequest,
+  QueryDocParserStatusRequest,
+  GetDocParserResultRequest,
+} from '@alicloud/docmind-api20220711'
+import { Readable } from 'stream'
+import OpenAI from 'openai'
+import { getDefaultModel, resolveApiKey } from '@/lib/ai/ai-config'
+import { buildImportSystemPrompt, buildImportUserPrompt } from '@/lib/ai/import-prompt-builder'
 
 /**
  * POST /next-api/resumes/mini
@@ -13,14 +25,15 @@ import { verifyMiniSign } from '@/lib/verify-mini-sign'
  *   { action, sid, timestamp, sign, ...actionFields }
  *
  * Actions:
- *   list                          → returns resume list
- *   create   { title, template }  → creates empty resume
- *   copy     { resumeId }         → copies a resume
- *   rename   { resumeId, title }  → renames a resume
- *   delete   { resumeId }         → deletes a resume
+ *   list                               → returns resume list with progress
+ *   create   { title, template }       → creates empty resume
+ *   copy     { resumeId }              → copies a resume
+ *   rename   { resumeId, title }       → renames a resume
+ *   delete   { resumeId }              → deletes a resume
+ *   import   { fileName, fileBase64 }  → AI parses file/text, saves, returns { id }
  */
 
-type Action = 'list' | 'create' | 'copy' | 'rename' | 'delete'
+type Action = 'list' | 'create' | 'copy' | 'rename' | 'delete' | 'import'
 
 interface RequestBody {
   action: Action
@@ -30,6 +43,8 @@ interface RequestBody {
   resumeId?: string
   title?: string
   template?: string
+  fileName?: string
+  fileBase64?: string
 }
 
 export async function POST(req: Request): Promise<NextResponse> {
@@ -62,9 +77,13 @@ export async function POST(req: Request): Promise<NextResponse> {
     const resumes = await prisma.resume.findMany({
       where: { userId: user.id },
       orderBy: { updatedAt: 'desc' },
-      select: { id: true, title: true, thumbnail: true, updatedAt: true, template: true },
+      select: { id: true, title: true, thumbnail: true, updatedAt: true, template: true, content: true },
     })
-    return NextResponse.json(resumes)
+    const result = resumes.map(({ content, ...r }) => ({
+      ...r,
+      progress: computeProgress(content as unknown as ResumeData),
+    }))
+    return NextResponse.json(result)
   }
 
   if (action === 'create') {
@@ -123,5 +142,131 @@ export async function POST(req: Request): Promise<NextResponse> {
     return NextResponse.json({ success: true })
   }
 
+  if (action === 'import') {
+    const { fileName, fileBase64 } = body
+    if (!fileName || !fileBase64) {
+      return NextResponse.json({ error: 'Missing fileName or fileBase64' }, { status: 400 })
+    }
+    const ext = fileName.split('.').pop()?.toLowerCase() ?? ''
+    const ALLOWED = new Set(['doc', 'docx', 'pdf', 'jpg', 'jpeg', 'png', 'bmp', 'gif', 'txt'])
+    if (!ALLOWED.has(ext)) {
+      return NextResponse.json({ error: '不支持的文件格式' }, { status: 400 })
+    }
+
+    let extractedText: string
+    if (ext === 'txt') {
+      extractedText = Buffer.from(fileBase64, 'base64').toString('utf8')
+    } else {
+      const accessKeyId = process.env.ALIYUN_DOCMIND_ACCESS_KEY_ID ?? ''
+      const accessKeySecret = process.env.ALIYUN_DOCMIND_ACCESS_KEY_SECRET ?? ''
+      if (!accessKeyId || !accessKeySecret) {
+        return NextResponse.json({ error: '文档解析服务未配置' }, { status: 500 })
+      }
+      const fileBuffer = Buffer.from(fileBase64, 'base64')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const docmindConfig: any = {
+        accessKeyId,
+        accessKeySecret,
+        endpoint: 'docmind-api.cn-hangzhou.aliyuncs.com',
+      }
+      const docmindClient = new DocmindApi(docmindConfig)
+      const submitReq = new SubmitDocParserJobAdvanceRequest({
+        fileName,
+        fileUrlObject: Readable.from(fileBuffer),
+        outputFormat: ['markdown'],
+      })
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const runtime: any = { connectTimeout: 60000, readTimeout: 60000 }
+      const submitRes = await docmindClient.submitDocParserJobAdvance(submitReq, runtime)
+      const jobId = submitRes.body?.data?.id
+      if (!jobId) {
+        return NextResponse.json({ error: '文档解析任务提交失败' }, { status: 500 })
+      }
+      extractedText = await pollMiniDocmind(docmindClient, jobId)
+    }
+
+    if (!extractedText.trim()) {
+      return NextResponse.json({ error: '文件内容为空，请检查文件是否正确' }, { status: 400 })
+    }
+
+    const model = getDefaultModel()
+    const apiKey = resolveApiKey(model)
+    const openai = new OpenAI({ apiKey, baseURL: model.baseUrl })
+    const llmRes = await openai.chat.completions.create({
+      model: model.name,
+      messages: [
+        { role: 'system', content: buildImportSystemPrompt() },
+        { role: 'user', content: buildImportUserPrompt(extractedText) },
+      ],
+      temperature: 0.2,
+      max_tokens: 4096,
+      response_format: { type: 'json_object' },
+      stream: false,
+    })
+    const raw = (llmRes.choices[0]?.message?.content ?? '').trim()
+      .replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const externalResume = JSON.parse(raw) as any
+    if (externalResume?.error === 'NOT_RESUME') {
+      return NextResponse.json({ error: externalResume.message || '内容不像简历，请重试' }, { status: 422 })
+    }
+    const resumeData: ResumeData = mapExternalResume(externalResume)
+    if (externalResume?.base_info?.name) resumeData.name = externalResume.base_info.name
+
+    const saved = await prisma.resume.create({
+      data: {
+        userId: user.id,
+        title: resumeData.name || '导入的简历',
+        template: 'simple',
+        content: resumeData as unknown as Prisma.InputJsonValue,
+      },
+      select: { id: true },
+    })
+    return NextResponse.json({ id: saved.id })
+  }
+
   return NextResponse.json({ error: 'Unknown action' }, { status: 400 })
+}
+
+// ---------------------------------------------------------------------------
+// DocMind polling helper (shared with import action)
+// ---------------------------------------------------------------------------
+
+const MINI_POLL_INTERVAL_MS = 3000
+const MINI_MAX_POLL_COUNT = 20
+const MINI_LAYOUT_STEP_SIZE = 500
+
+async function pollMiniDocmind(client: DocmindApi, jobId: string): Promise<string> {
+  for (let attempt = 0; attempt < MINI_MAX_POLL_COUNT; attempt++) {
+    const req = new QueryDocParserStatusRequest({ id: jobId })
+    const res = await client.queryDocParserStatus(req)
+    const status = (res.body?.data?.status ?? '').toLowerCase()
+    if (status === 'fail') throw new Error(res.body?.message || '文档解析失败')
+    if (status === 'success') return fetchMiniLayouts(client, jobId)
+    await new Promise<void>((r) => setTimeout(r, MINI_POLL_INTERVAL_MS))
+  }
+  throw new Error('文档解析超时，请稍后重试')
+}
+
+async function fetchMiniLayouts(client: DocmindApi, jobId: string): Promise<string> {
+  let layoutNum = 0
+  let result = ''
+  while (true) {
+    const req = new GetDocParserResultRequest({ id: jobId, layoutNum, layoutStepSize: MINI_LAYOUT_STEP_SIZE })
+    const res = await client.getDocParserResult(req)
+    const data = res.body?.data as Record<string, unknown> | null
+    const layouts = data?.layouts
+    if (Array.isArray(layouts)) {
+      result += (layouts as Array<{ type?: string; markdownContent?: string; text?: string }>)
+        .filter((l) => l.type !== 'figure')
+        .map((l) => (l.markdownContent?.trim() || l.text?.trim() || '').replace(/!\[[^\]]*\]\([^)]*\)/g, '').trim())
+        .filter((s) => s.length > 0)
+        .join('\n')
+      if (layouts.length < MINI_LAYOUT_STEP_SIZE) break
+      layoutNum += MINI_LAYOUT_STEP_SIZE
+    } else {
+      break
+    }
+  }
+  return result
 }

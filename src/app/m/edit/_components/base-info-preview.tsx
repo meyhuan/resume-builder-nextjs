@@ -2,9 +2,10 @@
 
 import { type ReactElement } from 'react'
 import { useRouter } from 'next/navigation'
-import { Phone, Mail, MapPin, ChevronRight, User2 } from 'lucide-react'
+import { ChevronRight, Mail, MapPin, Phone, User2 } from 'lucide-react'
 import type { ResumeData } from '@/entities/resume/resume-data'
 import { cn } from '@/lib/utils'
+import { isMeaningfulText } from '@/features/edit/progress/meaningful-field'
 
 interface BaseInfoPreviewProps {
   readonly resume: ResumeData
@@ -16,16 +17,26 @@ interface BaseInfoPreviewProps {
  */
 export function BaseInfoPreview({ resume }: BaseInfoPreviewProps): ReactElement {
   const router = useRouter()
-  const name: string = resume.name?.trim() || ''
+  const rawName: string = resume.name?.trim() || ''
+  const name: string = isMeaningfulText(rawName) ? rawName : ''
   const base = resume.baseInfo ?? {}
-  const title: string = (base.title ?? '').trim()
-  const phone: string = (base.phone ?? '').trim()
-  const email: string = (base.email ?? '').trim()
-  const location: string = (base.location ?? '').trim()
-  const gender: string = (base.gender ?? '').trim()
+  const rawTitle: string = (base.title ?? '').trim()
+  const rawPhone: string = (base.phone ?? '').trim()
+  const rawEmail: string = (base.email ?? '').trim()
+  const rawLocation: string = (base.location ?? '').trim()
+  const rawGender: string = (base.gender ?? '').trim()
+  const title: string = isMeaningfulText(rawTitle) ? rawTitle : ''
+  const phone: string = isMeaningfulText(rawPhone) ? rawPhone : ''
+  const email: string = isMeaningfulText(rawEmail) ? rawEmail : ''
+  const location: string = isMeaningfulText(rawLocation) ? rawLocation : ''
+  const gender: string = isMeaningfulText(rawGender) ? rawGender : ''
   const age: number | undefined = typeof base.age === 'number' ? base.age : undefined
   const avatarUrl: string = (base.avatarUrl ?? '').trim()
-  const empty: boolean = !name && !phone && !email && !title
+  const missing: string[] = []
+  if (!name) missing.push('姓名')
+  if (!phone) missing.push('手机号')
+  if (!email) missing.push('邮箱')
+  const empty: boolean = missing.length === 3 && !title
 
   return (
     <button
@@ -33,8 +44,8 @@ export function BaseInfoPreview({ resume }: BaseInfoPreviewProps): ReactElement 
       onClick={(): void => router.push('/m/edit/base')}
       className={cn(
         'group w-full text-left rounded-2xl bg-white border border-slate-200',
-        'px-4 py-4 active:scale-[0.99] active:bg-slate-50 transition-all',
-        empty && 'border-dashed border-rose-200 bg-rose-50/30',
+        'px-4 py-4 shadow-sm active:scale-[0.99] active:bg-slate-50 transition-all',
+        empty && 'border-violet-200 bg-violet-50/30',
       )}
     >
       <div className="flex items-start gap-3">
@@ -46,36 +57,28 @@ export function BaseInfoPreview({ resume }: BaseInfoPreviewProps): ReactElement 
             <img src={avatarUrl} alt={name || '证件照'} className="h-full w-full object-cover" />
           </div>
         ) : (
-          <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white flex items-center justify-center text-lg font-semibold shrink-0">
-            {name ? name.slice(0, 1) : <User2 size={20} />}
+          <div className="h-11 w-11 rounded-xl bg-slate-100 text-slate-500 border border-slate-200 flex items-center justify-center shrink-0">
+            {name ? <span className="text-base font-semibold text-slate-700">{name.slice(0, 1)}</span> : <User2 size={19} />}
           </div>
         )}
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5">
-            <span className="text-base font-semibold text-slate-900 truncate">
-              {name || '点我填写姓名'}
+          <div className="flex items-center gap-2">
+            <span className={cn('text-base font-semibold truncate', name ? 'text-slate-950' : 'text-slate-400')}>
+              {name || '填写姓名'}
             </span>
-            {empty && (
-              <span className="text-[10px] text-rose-500 bg-rose-100 px-1.5 py-0.5 rounded">必填</span>
+            {missing.length > 0 && (
+              <span className="shrink-0 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-700">
+                待完善
+              </span>
             )}
           </div>
-          {title && <div className="mt-0.5 text-sm text-slate-600 truncate">{title}</div>}
+          <div className={cn('mt-0.5 text-sm truncate', title ? 'text-slate-600' : 'text-slate-400')}>
+            {title || '填写求职岗位'}
+          </div>
           <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-500">
-            {phone && (
-              <span className="inline-flex items-center gap-1">
-                <Phone size={11} /> {phone}
-              </span>
-            )}
-            {email && (
-              <span className="inline-flex items-center gap-1 truncate max-w-[180px]">
-                <Mail size={11} /> {email}
-              </span>
-            )}
-            {location && (
-              <span className="inline-flex items-center gap-1">
-                <MapPin size={11} /> {location}
-              </span>
-            )}
+            <InfoItem icon={<Phone size={11} />} text={phone || '手机号'} muted={!phone} />
+            <InfoItem icon={<Mail size={11} />} text={email || '邮箱'} muted={!email} className="max-w-[180px]" />
+            {location && <InfoItem icon={<MapPin size={11} />} text={location} />}
             {(gender || age !== undefined) && (
               <span>{[gender, age !== undefined ? `${age}岁` : ''].filter(Boolean).join(' · ')}</span>
             )}
@@ -84,5 +87,21 @@ export function BaseInfoPreview({ resume }: BaseInfoPreviewProps): ReactElement 
         <ChevronRight size={16} className="text-slate-300 mt-2 shrink-0 group-hover:text-violet-500" />
       </div>
     </button>
+  )
+}
+
+function InfoItem(
+  { icon, text, muted = false, className }: {
+    readonly icon: ReactElement
+    readonly text: string
+    readonly muted?: boolean
+    readonly className?: string
+  },
+): ReactElement {
+  return (
+    <span className={cn('inline-flex items-center gap-1 truncate', muted && 'text-slate-400', className)}>
+      {icon}
+      {text}
+    </span>
   )
 }

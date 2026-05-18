@@ -1,36 +1,62 @@
 'use client'
 
 import { type ReactElement } from 'react'
-import { Sparkles } from 'lucide-react'
-import { getEncouragement } from '@/features/edit/greeting/use-time-greeting'
+import { CheckCircle2, CircleAlert } from 'lucide-react'
 
 interface ProgressCardProps {
   readonly progress: number
+  readonly missingItems?: readonly string[]
 }
 
 /**
- * Gradient progress card with percentage bar and encouragement text.
+ * Compact resume readiness card. It favors task clarity over decorative AI
+ * styling so users know exactly what to fix next.
  */
-export function ProgressCard({ progress }: ProgressCardProps): ReactElement {
-  const encouragement: string = getEncouragement(progress)
+export function ProgressCard({ progress, missingItems = [] }: ProgressCardProps): ReactElement {
   const safeProgress: number = Math.max(0, Math.min(100, progress))
+  const ready: boolean = safeProgress >= 80 && missingItems.length === 0
+
   return (
-    <div className="mx-5 rounded-2xl bg-gradient-to-br from-violet-500 via-fuchsia-500 to-pink-500 px-4 py-3 text-white shadow-lg shadow-violet-500/20 relative overflow-hidden">
-      <div className="absolute -top-6 -right-6 h-20 w-20 rounded-full bg-white/10 blur-2xl" aria-hidden="true" />
-      <div className="relative flex items-center gap-3">
-        <Sparkles size={16} className="text-white shrink-0" />
-        <div className="flex items-baseline gap-1.5 min-w-0 flex-1">
-          <span className="text-[12px] opacity-90 shrink-0">完成度</span>
-          <span className="text-xl font-bold tracking-tight">{safeProgress}%</span>
-          <span className="text-[11px] opacity-90 truncate">· {encouragement}</span>
+    <section className="mx-4 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <div className="flex items-center gap-1.5 text-[13px] font-medium text-slate-700">
+            {ready ? (
+              <CheckCircle2 size={15} className="text-emerald-600" />
+            ) : (
+              <CircleAlert size={15} className="text-violet-600" />
+            )}
+            <span>{ready ? '简历已基本完善' : '继续完善简历'}</span>
+          </div>
+          <p className="mt-1 text-[12px] leading-5 text-slate-500">
+            {ready ? '可以预览排版并导出投递。' : '优先补齐关键信息，提升简历完整度。'}
+          </p>
+        </div>
+        <div className="shrink-0 text-right">
+          <div className="text-2xl font-semibold leading-none text-slate-950">{safeProgress}%</div>
+          <div className="mt-1 text-[11px] text-slate-400">完成度</div>
         </div>
       </div>
-      <div className="relative mt-2 h-1.5 rounded-full bg-white/25 overflow-hidden">
+
+      <div className="mt-3 h-1.5 rounded-full bg-slate-100 overflow-hidden">
         <div
-          className="h-full bg-white rounded-full transition-all duration-700 ease-out"
+          className="h-full rounded-full bg-violet-600 transition-all duration-700 ease-out"
           style={{ width: `${safeProgress}%` }}
         />
       </div>
-    </div>
+
+      {missingItems.length > 0 && (
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          {missingItems.map((item) => (
+            <span
+              key={item}
+              className="rounded-full border border-violet-100 bg-violet-50 px-2 py-1 text-[11px] font-medium text-violet-700"
+            >
+              待完善：{item}
+            </span>
+          ))}
+        </div>
+      )}
+    </section>
   )
 }

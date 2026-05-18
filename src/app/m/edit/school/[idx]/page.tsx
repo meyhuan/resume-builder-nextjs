@@ -2,6 +2,7 @@
 
 import { use, type ReactElement } from 'react'
 import { ExperienceDetailClient } from '../../_components/experience-detail-client'
+import { MODULE_SECTION_TITLES } from '@/entities/module/module-config'
 
 interface PageParams {
   readonly params: Promise<{ idx: string }>
@@ -14,7 +15,7 @@ export default function SchoolDetailPage({ params }: PageParams): ReactElement {
     <ExperienceDetailClient
       kind="campus"
       title="在校经历"
-      sectionTitle="在校经历"
+      sectionTitle={MODULE_SECTION_TITLES.schoolExp}
       idx={Number.isNaN(parsed) ? -1 : parsed}
       backRoute="/m/edit/school"
     />

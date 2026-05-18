@@ -1,6 +1,6 @@
 'use client'
 
-import { type ReactElement, type ReactNode } from 'react'
+import { useEffect, type ReactElement, type ReactNode } from 'react'
 import { X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -33,6 +33,15 @@ export function BottomSheet(props: BottomSheetProps): ReactElement {
     showCloseButton = true,
     contentClassName,
   } = props
+
+  // Lock body scroll while sheet is open to prevent scroll bleed-through.
+  useEffect((): (() => void) => {
+    if (!open) return (): void => {}
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return (): void => { document.body.style.overflow = prev }
+  }, [open])
+
   return (
     <>
       <div
@@ -41,12 +50,13 @@ export function BottomSheet(props: BottomSheetProps): ReactElement {
           open ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none',
         )}
         onClick={onClose}
+        onTouchMove={(e): void => { e.preventDefault() }}
         aria-hidden="true"
       />
       <div
         className={cn(
           'fixed inset-x-0 bottom-0 z-50 bg-white rounded-t-2xl shadow-2xl transition-transform duration-300 flex flex-col',
-          open ? 'translate-y-0' : 'translate-y-full',
+          open ? 'translate-y-0 pointer-events-auto' : 'translate-y-full pointer-events-none',
         )}
         style={{ height }}
         role="dialog"

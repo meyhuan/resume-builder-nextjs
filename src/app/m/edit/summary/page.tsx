@@ -4,6 +4,7 @@ import { type ReactElement } from 'react'
 import { ModuleEditShell } from '../_components/module-edit-shell'
 import { RichAiTextarea } from '@/features/edit/form-fields/rich-ai-textarea'
 import { useSingleTextBlock } from '@/features/edit/draft/use-single-text-block'
+import { MODULE_SECTION_TITLES } from '@/entities/module/module-config'
 
 const PLACEHOLDER: string = `本人性格开朗，积极向上，对工作有极大的兴趣。\n\n从以下几个方面入手：\n• 你的核心优势\n• 你擅长的工作领域\n• 你想给招聘者传达的态度`
 
@@ -11,7 +12,7 @@ const PLACEHOLDER: string = `本人性格开朗，积极向上，对工作有极
  * Self-evaluation / summary edit page.
  */
 export default function SummaryEditPage(): ReactElement {
-  const { html, setHtml, ready } = useSingleTextBlock('自我评价')
+  const { html, setHtml, ready } = useSingleTextBlock(MODULE_SECTION_TITLES.summary)
   return (
     <ModuleEditShell title="自我评价" subtitle="向招聘者做一次 30 秒自我介绍">
       {!ready ? (

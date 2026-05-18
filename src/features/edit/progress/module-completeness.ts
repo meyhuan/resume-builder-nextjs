@@ -1,6 +1,9 @@
+import type { ResumeBlock } from '@/entities/blocks/resume-block'
+import { getModule, getSectionTitleCandidates, type ModuleKey } from '@/entities/module/module-config'
 import type { ResumeData } from '@/entities/resume/resume-data'
 import type { Section } from '@/entities/resume/section'
-import type { ModuleKey } from '@/entities/module/module-config'
+import { htmlToPlainText } from '@/features/edit/form-fields/html-text'
+import { isMeaningfulText } from './meaningful-field'
 
 /**
  * Status of a module on the edit home.
@@ -13,125 +16,174 @@ export interface ModuleInfo {
   readonly count: number
 }
 
-/**
- * Find a section whose title matches the given title (case-insensitive, fuzzy).
- */
-function findSection(resume: ResumeData, title: string): Section | undefined {
-  const normalized: string = title.replace(/\s/g, '')
+function normalizeTitle(title: string): string {
+  return title.replace(/\s/g, '')
+}
+
+function findSectionByModule(resume: ResumeData, key: ModuleKey): Section | undefined {
+  const module = getModule(key)
+  if (!module) return undefined
+  const titles = getSectionTitleCandidates(module).map(normalizeTitle)
   const sections: readonly Section[] = Array.isArray(resume.sections) ? resume.sections : []
-  return sections.find((s) => s.title.replace(/\s/g, '') === normalized)
+  return sections.find((section) => titles.includes(normalizeTitle(section.title)))
 }
 
 /**
- * Count blocks inside a section.
+ * A block is considered "filled" when at least one meaningful field has content.
+ * This prevents empty placeholder blocks from counting as real content.
  */
-function countBlocks(section: Section | undefined): number {
-  return section?.blocks.length ?? 0
+function isBlockFilled(block: ResumeBlock): boolean {
+  switch (block.type) {
+    case 'experience':
+      return Boolean(isMeaningfulText(block.company) || isMeaningfulText(block.position) || htmlToPlainText(block.contentHtml))
+    case 'education':
+      return Boolean(isMeaningfulText(block.school) || isMeaningfulText(block.major))
+    case 'project':
+      return Boolean(isMeaningfulText(block.name) || htmlToPlainText(block.contentHtml))
+    case 'campus':
+      return Boolean(isMeaningfulText(block.organization) || isMeaningfulText(block.position) || htmlToPlainText(block.contentHtml))
+    case 'text':
+      return Boolean(htmlToPlainText(block.html))
+    case 'list':
+      return true
+    default:
+      return false
+  }
 }
 
-/**
- * Compute status and one-line summary for a given module key.
- */
+function countFilledBlocks(section: Section | undefined): number {
+  if (!section) return 0
+  return section.blocks.filter(isBlockFilled).length
+}
+
 export function getModuleInfo(resume: ResumeData, key: ModuleKey): ModuleInfo {
   switch (key) {
     case 'base': {
       const b = resume.baseInfo
-      const hasName: boolean = Boolean(resume.name?.trim())
-      const hasPhone: boolean = Boolean(b?.phone?.trim())
-      const hasEmail: boolean = Boolean(b?.email?.trim())
+      const hasName: boolean = isMeaningfulText(resume.name)
+      const hasPhone: boolean = isMeaningfulText(b?.phone)
+      const hasEmail: boolean = isMeaningfulText(b?.email)
       const filled: number = [hasName, hasPhone, hasEmail].filter(Boolean).length
       const status: ModuleStatus = filled === 3 ? 'complete' : filled === 0 ? 'empty' : 'partial'
       const summaryParts: string[] = []
-      if (resume.name) summaryParts.push(resume.name)
+      if (isMeaningfulText(resume.name)) summaryParts.push(resume.name)
       if (b?.age) summaryParts.push(`${b.age}岁`)
-      if (b?.title) summaryParts.push(b.title)
+      if (isMeaningfulText(b?.title)) summaryParts.push(b.title)
       return {
         status,
-        summary: summaryParts.length > 0 ? summaryParts.join(' · ') : '点击填写基础信息',
+        summary: summaryParts.length > 0 ? summaryParts.join(' · ') : '点击填写基本信息',
         count: filled,
       }
     }
+
     case 'intention': {
       const ji = resume.jobIntention
-      const hasPosition: boolean = Boolean(ji?.position?.trim())
-      const hasCity: boolean = Boolean(ji?.city?.trim())
+      const hasPosition: boolean = isMeaningfulText(ji?.position)
+      const hasCity: boolean = isMeaningfulText(ji?.city)
       const filled: number = [hasPosition, hasCity].filter(Boolean).length
       const status: ModuleStatus = filled === 2 ? 'complete' : filled === 0 ? 'empty' : 'partial'
       const parts: string[] = []
-      if (ji?.position) parts.push(ji.position)
-      if (ji?.city) parts.push(ji.city)
-      if (ji?.salary) parts.push(ji.salary)
+      if (isMeaningfulText(ji?.position)) parts.push(ji.position)
+      if (isMeaningfulText(ji?.city)) parts.push(ji.city)
+      if (isMeaningfulText(ji?.salary)) parts.push(ji.salary)
       return {
         status,
         summary: parts.length > 0 ? parts.join(' · ') : '点击添加期望岗位',
         count: filled,
       }
     }
-    case 'workExp':
+
     case 'eduExp':
+      return countModule(resume, key, '段教育经历', '点击添加教育经历')
+    case 'workExp':
+      return countModule(resume, key, '段工作经历', '点击添加工作经历')
     case 'programExp':
+      return countModule(resume, key, '个项目', '点击添加项目经历')
     case 'internExp':
+      return countModule(resume, key, '段实习经历', '点击添加实习经历')
     case 'schoolExp':
+      return countModule(resume, key, '项校园经历', '点击添加校园经历')
     case 'summary':
+      return filledTextModule(resume, key, '已填写', '点击添加自我评价')
     case 'skill':
-    case 'qualifications': {
-      const titleMap: Record<string, string> = {
-        workExp: '工作经历',
-        eduExp: '教育经历',
-        programExp: '项目经验',
-        internExp: '实习经历',
-        schoolExp: '在校经历',
-        summary: '自我评价',
-        skill: '相关技能',
-        qualifications: '奖项证书',
-      }
-      const section = findSection(resume, titleMap[key])
-      const count: number = countBlocks(section)
-      const status: ModuleStatus = count === 0 ? 'empty' : 'complete'
-      const summary: string = count === 0 ? '点击添加' : `${count} 项内容`
-      return { status, summary, count }
-    }
+      return filledTextModule(resume, key, '已填写', '点击添加技能')
+    case 'qualifications':
+      return countModule(resume, key, '项证书/奖项', '点击添加奖项证书')
     case 'custom': {
-      // Any section not in the canonical set is "custom"
-      const canonical: readonly string[] = [
-        '工作经历', '教育经历', '项目经验', '实习经历', '在校经历',
-        '自我评价', '相关技能', '奖项证书',
-      ]
+      const canonicalTitles = new Set(
+        ['workExp', 'eduExp', 'programExp', 'internExp', 'schoolExp', 'summary', 'skill', 'qualifications']
+          .flatMap((moduleKey) => {
+            const module = getModule(moduleKey as ModuleKey)
+            return module ? getSectionTitleCandidates(module).map(normalizeTitle) : []
+          }),
+      )
       const sections: readonly Section[] = Array.isArray(resume.sections) ? resume.sections : []
-      const custom = sections.filter((s) => !canonical.includes(s.title.replace(/\s/g, '')))
+      const custom = sections.filter((section) => !canonicalTitles.has(normalizeTitle(section.title)))
       const count: number = custom.length
-      const status: ModuleStatus = count === 0 ? 'empty' : 'complete'
-      const summary: string = count === 0 ? '自定义更多内容' : `${count} 个模块`
-      return { status, summary, count }
+      return {
+        status: count === 0 ? 'empty' : 'complete',
+        summary: count === 0 ? '自定义更多内容' : `${count} 个模块`,
+        count,
+      }
     }
   }
 }
 
+function countModule(resume: ResumeData, key: ModuleKey, unit: string, emptySummary: string): ModuleInfo {
+  const count = countFilledBlocks(findSectionByModule(resume, key))
+  return {
+    status: count > 0 ? 'complete' : 'empty',
+    summary: count > 0 ? `${count} ${unit}` : emptySummary,
+    count,
+  }
+}
+
+function filledTextModule(resume: ResumeData, key: ModuleKey, filledSummary: string, emptySummary: string): ModuleInfo {
+  const count = countFilledBlocks(findSectionByModule(resume, key))
+  return {
+    status: count > 0 ? 'complete' : 'empty',
+    summary: count > 0 ? filledSummary : emptySummary,
+    count,
+  }
+}
+
 /**
- * Weighted progress percentage (0-100) across all modules.
+ * Compute a realistic progress percentage (0-100) from the user's perspective.
+ *
+ * Score breakdown:
+ *   base info        25 pts
+ *   job intention    15 pts
+ *   education        20 pts
+ *   core experience  25 pts
+ *   self summary     10 pts
+ *   skill             5 pts
  */
 export function computeProgress(resume: ResumeData): number {
-  const weights: Record<ModuleKey, number> = {
-    base: 20,
-    intention: 15,
-    workExp: 12,
-    eduExp: 12,
-    programExp: 8,
-    internExp: 5,
-    schoolExp: 3,
-    summary: 8,
-    skill: 8,
-    qualifications: 5,
-    custom: 4,
+  let earned = 0
+
+  const base = getModuleInfo(resume, 'base')
+  if (base.status === 'complete') earned += 25
+  else if (base.status === 'partial') earned += 12
+
+  const intention = getModuleInfo(resume, 'intention')
+  if (intention.status === 'complete') earned += 15
+  else if (intention.status === 'partial') earned += 7
+
+  const edu = getModuleInfo(resume, 'eduExp')
+  if (edu.status === 'complete') earned += 20
+
+  const work = getModuleInfo(resume, 'workExp')
+  const project = getModuleInfo(resume, 'programExp')
+  const intern = getModuleInfo(resume, 'internExp')
+  if (work.status === 'complete' || project.status === 'complete' || intern.status === 'complete') {
+    earned += 25
   }
-  let total: number = 0
-  let earned: number = 0
-  for (const k of Object.keys(weights) as ModuleKey[]) {
-    const w: number = weights[k]
-    total += w
-    const info = getModuleInfo(resume, k)
-    if (info.status === 'complete') earned += w
-    else if (info.status === 'partial') earned += w * 0.5
-  }
-  return Math.round((earned / total) * 100)
+
+  const summary = getModuleInfo(resume, 'summary')
+  if (summary.status === 'complete') earned += 10
+
+  const skill = getModuleInfo(resume, 'skill')
+  if (skill.status === 'complete') earned += 5
+
+  return Math.min(100, Math.round(earned))
 }

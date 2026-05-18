@@ -25,7 +25,6 @@ import { POPULAR_CITIES } from '@/data/dictionaries/cities'
 export default function BaseInfoEditPage(): ReactElement {
   const draft = useDraftStore((s) => s.draft)
   const nameF = useNameField()
-  const titleF = useBaseInfoField('title')
   const phoneF = useBaseInfoField('phone')
   const emailF = useBaseInfoField('email')
   const genderF = useBaseInfoField('gender')
@@ -68,12 +67,6 @@ export default function BaseInfoEditPage(): ReactElement {
         tip="真实姓名，招聘者会查证"
       />
       <TextField
-        label="职位名称"
-        value={titleF.value ?? ''}
-        onValueChange={titleF.setValue}
-        placeholder="例如：高级前端工程师"
-      />
-      <TextField
         label="手机号"
         value={phoneF.value ?? ''}
         onValueChange={phoneF.setValue}
@@ -103,7 +96,7 @@ export default function BaseInfoEditPage(): ReactElement {
         onValueChange={ageF.setValue}
         min={14}
         max={80}
-        placeholder="岁"
+        placeholder="如：25"
       />
       <AutocompleteField
         label="所在城市"
