@@ -80,8 +80,12 @@ export async function checkQuota(
   feature: QuotaFeatureKey,
   skipConsume = false,
 ): Promise<QuotaCheckResult> {
+  const logPrefix = '[quota:check]';
+  console.log(`${logPrefix} start`, { feature, skipConsume });
   const { isVip, userId, freeExportCount = 0 } = await checkVipStatus();
+  console.log(`${logPrefix} vipStatus`, { isVip, userId, freeExportCount });
   if (isVip) {
+    console.log(`${logPrefix} vipGranted`, { feature, userId });
     return createResult({
       allowed: true,
       isVip: true,
@@ -95,6 +99,7 @@ export async function checkQuota(
   const limit = getEffectiveLimit(feature, freeExportCount);
   const featureName = getFeatureDisplayName(feature);
   if (!userId) {
+    console.log(`${logPrefix} noUserId`, { feature });
     return createResult({
       allowed: false,
       isVip: false,
@@ -105,6 +110,7 @@ export async function checkQuota(
       feature,
     });
   }
+  console.log(`${logPrefix} proceedToCore`, { userId, feature });
   return checkQuotaCore(userId, freeExportCount, feature, skipConsume, limit, featureName);
 }
 
@@ -112,6 +118,7 @@ export async function checkQuota(
  * Peek at current quota without consuming.
  */
 export async function peekQuota(feature: QuotaFeatureKey): Promise<QuotaCheckResult> {
+  console.log('[quota:peek] start', { feature });
   return checkQuota(feature, true);
 }
 
@@ -125,7 +132,10 @@ export async function checkQuotaForUser(
   feature: QuotaFeatureKey,
   skipConsume = false,
 ): Promise<QuotaCheckResult> {
+  const logPrefix = '[quota:checkForUser]';
+  console.log(`${logPrefix} start`, { wxId, feature, skipConsume });
   if (!wxId) {
+    console.log(`${logPrefix} emptyWxId`, { feature });
     return createResult({
       allowed: false,
       isVip: false,
@@ -137,7 +147,9 @@ export async function checkQuotaForUser(
     });
   }
   const { isVip, freeExportCount = 0 } = await checkVipStatusForWxId(wxId);
+  console.log(`${logPrefix} vipStatus`, { wxId, isVip, freeExportCount });
   if (isVip) {
+    console.log(`${logPrefix} vipGranted`, { wxId, feature });
     return createResult({
       allowed: true,
       isVip: true,
@@ -150,6 +162,7 @@ export async function checkQuotaForUser(
   }
   const limit = getEffectiveLimit(feature, freeExportCount);
   const featureName = getFeatureDisplayName(feature);
+  console.log(`${logPrefix} proceedToCore`, { wxId, limit, featureName });
   return checkQuotaCore(wxId, freeExportCount, feature, skipConsume, limit, featureName, {
     userName: `用户_${wxId}`,
     logPrefix: '[quota:wxid]',
@@ -158,6 +171,7 @@ export async function checkQuotaForUser(
 
 /** Peek a user's quota without consuming. */
 export async function peekQuotaForUser(wxId: string, feature: QuotaFeatureKey): Promise<QuotaCheckResult> {
+  console.log('[quota:peekForUser] start', { wxId, feature });
   return checkQuotaForUser(wxId, feature, true);
 }
 
@@ -166,6 +180,7 @@ export async function peekQuotaForUser(wxId: string, feature: QuotaFeatureKey): 
  * Useful for displaying usage dashboard.
  */
 export async function getAllQuotas(): Promise<QuotaCheckResult[]> {
+  console.log('[quota:getAll] start');
   const features: QuotaFeatureKey[] = [
     'ai:generate-resume',
     'ai:import-section',
@@ -174,8 +189,9 @@ export async function getAllQuotas(): Promise<QuotaCheckResult[]> {
     'ai:optimize-resume',
     'pdf:export',
   ];
-
-  return Promise.all(features.map((f) => peekQuota(f)));
+  const results = await Promise.all(features.map((f) => peekQuota(f)));
+  console.log('[quota:getAll] done', { count: results.length });
+  return results;
 }
 
 /**
@@ -191,14 +207,19 @@ async function checkQuotaCore(
   featureName: string,
   opts?: { userName?: string; logPrefix?: string },
 ): Promise<QuotaCheckResult> {
+  const logPrefix = opts?.logPrefix ?? '[quota:core]';
+  console.log(`${logPrefix} start`, { wxId, feature, limit, skipConsume });
   const todayKey = getDateKey(Date.now());
+  console.log(`${logPrefix} upsertUser`, { wxId });
   const user = await prisma.user.upsert({
     where: { wxId },
     update: {},
     create: { wxId, ...(opts?.userName ? { name: opts.userName } : {}) },
   });
+  console.log(`${logPrefix} userReady`, { userId: user.id });
   let quotaRecord;
   try {
+    console.log(`${logPrefix} upsertQuota`, { userId: user.id });
     quotaRecord = await prisma.userQuota.upsert({
       where: { userId: user.id },
       update: {},
@@ -206,11 +227,14 @@ async function checkQuotaCore(
     });
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      console.log(`${logPrefix} raceConditionP2002`, { userId: user.id });
       quotaRecord = await prisma.userQuota.findUnique({ where: { userId: user.id } });
       if (!quotaRecord) {
-        throw new Error(`${opts?.logPrefix ?? '[quota]'} Failed to fetch UserQuota after P2002 for user ${user.id}`);
+        throw new Error(`${logPrefix} Failed to fetch UserQuota after P2002 for user ${user.id}`);
       }
+      console.log(`${logPrefix} recoveredFromRace`, { userId: user.id });
     } else {
+      console.error(`${logPrefix} dbError`, { userId: user.id, error });
       throw error;
     }
   }
@@ -220,7 +244,9 @@ async function checkQuotaCore(
   const used = isLifetimeQuota
     ? (featureQuota?.used ?? 0)
     : (featureQuota?.date === todayKey ? featureQuota.used : 0);
+  console.log(`${logPrefix} quotaState`, { userId: user.id, feature, used, isLifetimeQuota, featureDate: featureQuota?.date, todayKey });
   if (used >= limit) {
+    console.log(`${logPrefix} limitExceeded`, { userId: user.id, feature, used, limit });
     const limitText = isLifetimeQuota ? `免费限${limit}次` : `${limit}次/天`;
     return createResult({
       allowed: false,
@@ -236,6 +262,7 @@ async function checkQuotaCore(
   const newUsed = skipConsume ? used : used + 1;
   const remaining = limit - newUsed;
   if (!skipConsume) {
+    console.log(`${logPrefix} consuming`, { userId: user.id, feature, newUsed });
     quotas[feature] = { used: newUsed, date: isLifetimeQuota ? 'lifetime' : todayKey };
     await prisma.userQuota.update({
       where: { userId: user.id },
@@ -248,6 +275,7 @@ async function checkQuotaCore(
   if (opts?.logPrefix) {
     console.log(`${opts.logPrefix} decision`, { wxId, feature, used: newUsed, remaining, skipConsume, freeExportCount });
   }
+  console.log(`${logPrefix} result`, { userId: user.id, feature, allowed: true, used: newUsed, remaining });
   return createResult({
     allowed: true,
     isVip: false,

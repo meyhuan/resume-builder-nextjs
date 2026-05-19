@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import { useDraftStore } from '@/features/edit/draft/draft-store';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -34,13 +34,12 @@ function getMiniProgram(): WxMiniProgram | null {
 }
 
 function useInMiniProgram(): boolean {
-  const [inMini, setInMini] = useState<boolean>(false)
-  useEffect((): void => {
+  return useMemo((): boolean => {
+    if (typeof window === 'undefined') return false
     const isEnv = (window as unknown as { __wxjs_environment?: string }).__wxjs_environment === 'miniprogram'
     console.log('[useInMiniProgram] environment check:', isEnv, 'wx.miniProgram:', !!getMiniProgram())
-    setInMini(isEnv)
+    return isEnv
   }, [])
-  return inMini
 }
 
 const AI_MODELS = getAvailableModels();
