@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { checkQuota } from '@/lib/quota/quota-checker';
+import { withQuotaCheck } from '@/lib/quota/quota-guard';
 
 /**
  * POST /next-api/consume-pdf-quota
@@ -7,25 +7,14 @@ import { checkQuota } from '@/lib/quota/quota-checker';
  * Consumes one PDF export quota.
  * Called when user confirms export after preview.
  */
-export async function POST(): Promise<NextResponse> {
+export async function POST(): Promise<Response> {
   try {
-    const quota = await checkQuota('pdf:export');
-    
-    if (!quota.allowed) {
-      return NextResponse.json(
-        {
-          error: quota.message,
-          quotaExceeded: true,
-          remaining: quota.remaining,
-        },
-        { status: 429 },
-      );
-    }
-
-    return NextResponse.json({
-      success: true,
-      remaining: quota.remaining,
-    });
+    return withQuotaCheck('pdf:export', async (quota) =>
+      NextResponse.json({
+        success: true,
+        remaining: quota.remaining,
+      }),
+    );
   } catch (error) {
     console.error('Consume PDF quota error:', error);
     return NextResponse.json(

@@ -51,6 +51,23 @@ export interface QuotaCheckResult {
   readonly message: string;
   /** Feature key that was checked. */
   readonly feature: QuotaFeatureKey;
+  /** Additional free export count from Java backend (for pdf:export). */
+  readonly freeExportCount?: number;
+}
+
+/** Helper to build QuotaCheckResult with automatic freeExportCount for pdf:export */
+function createResult(
+  params: Omit<QuotaCheckResult, 'freeExportCount'> & { freeExportCount?: number },
+): QuotaCheckResult {
+  return {
+    ...params,
+    freeExportCount: params.feature === 'pdf:export' ? params.freeExportCount ?? 0 : undefined,
+  };
+}
+
+function getEffectiveLimit(feature: QuotaFeatureKey, freeExportCount: number): number {
+  const baseLimit = getQuotaLimit(feature);
+  return feature === 'pdf:export' ? baseLimit + freeExportCount : baseLimit;
 }
 
 /**
@@ -63,11 +80,9 @@ export async function checkQuota(
   feature: QuotaFeatureKey,
   skipConsume = false,
 ): Promise<QuotaCheckResult> {
-  const { isVip, userId } = await checkVipStatus();
-
-  // VIP users have unlimited access
+  const { isVip, userId, freeExportCount = 0 } = await checkVipStatus();
   if (isVip) {
-    return {
+    return createResult({
       allowed: true,
       isVip: true,
       used: 0,
@@ -75,102 +90,22 @@ export async function checkQuota(
       remaining: 'unlimited',
       message: 'VIP用户 unlimited',
       feature,
-    };
-  }
-
-  // Non-VIP users check quota
-  const limit = getQuotaLimit(feature);
-  const featureName = getFeatureDisplayName(feature);
-
-  // Use IP-based fallback if no userId - still track via in-memory for anonymous
-  if (!userId) {
-    return handleAnonymousQuota(feature, limit, featureName, skipConsume);
-  }
-
-  const todayKey = getDateKey(Date.now());
-
-  // Find or create user by wxId (using upsert to avoid race conditions)
-  const user = await prisma.user.upsert({
-    where: { wxId: userId },
-    update: {},
-    create: { wxId: userId },
-  });
-
-  // Find or create single quota record for this user
-  // Use try-catch to handle race conditions when multiple requests run concurrently
-  let quotaRecord;
-  try {
-    quotaRecord = await prisma.userQuota.upsert({
-      where: { userId: user.id },
-      update: {},
-      create: {
-        userId: user.id,
-        quotas: {},
-      },
     });
-  } catch (error) {
-    // If another request created the record first (P2002), fetch the existing record
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-      quotaRecord = await prisma.userQuota.findUnique({
-        where: { userId: user.id },
-      });
-      if (!quotaRecord) {
-        throw new Error(`[quota] Failed to fetch UserQuota after P2002 for user ${user.id}`);
-      }
-    } else {
-      throw error;
-    }
   }
-
-  // Parse quotas JSON
-  const quotas = (quotaRecord.quotas as unknown as QuotasData) || {};
-  const featureQuota = quotas[feature];
-
-  // Check if quota is for today, reset if needed (skip for lifetime quotas)
-  const isLifetimeQuota = LIFETIME_QUOTA_FEATURES.includes(feature);
-  const used = isLifetimeQuota
-    ? (featureQuota?.used ?? 0)
-    : (featureQuota?.date === todayKey ? featureQuota.used : 0);
-
-  if (used >= limit) {
-    const limitText = isLifetimeQuota ? `免费限${limit}次` : `${limit}次/天`;
-    return {
+  const limit = getEffectiveLimit(feature, freeExportCount);
+  const featureName = getFeatureDisplayName(feature);
+  if (!userId) {
+    return createResult({
       allowed: false,
       isVip: false,
-      used,
-      limit,
+      used: 0,
+      limit: 0,
       remaining: 0,
-      message: `${featureName}次数已达上限（${limitText}），升级VIP可无限使用`,
+      message: '请先登录',
       feature,
-    };
-  }
-
-  // Calculate new usage
-  const newUsed = skipConsume ? used : used + 1;
-  const remaining = limit - newUsed;
-
-  // Update quota in database if consuming
-  if (!skipConsume) {
-    quotas[feature] = { used: newUsed, date: isLifetimeQuota ? 'lifetime' : todayKey };
-    await prisma.userQuota.update({
-      where: { userId: user.id },
-      data: { quotas: quotas as unknown as Prisma.InputJsonValue, updatedAt: new Date() },
     });
   }
-
-  const message = isLifetimeQuota
-    ? `剩余${remaining}次${featureName}（非VIP用户免费限${limit}次）`
-    : `今日剩余${remaining}次${featureName}（非VIP用户每日${limit}次）`;
-
-  return {
-    allowed: true,
-    isVip: false,
-    used: newUsed,
-    limit,
-    remaining: Math.max(0, remaining),
-    message,
-    feature,
-  };
+  return checkQuotaCore(userId, freeExportCount, feature, skipConsume, limit, featureName);
 }
 
 /**
@@ -191,7 +126,7 @@ export async function checkQuotaForUser(
   skipConsume = false,
 ): Promise<QuotaCheckResult> {
   if (!wxId) {
-    return {
+    return createResult({
       allowed: false,
       isVip: false,
       used: 0,
@@ -199,12 +134,11 @@ export async function checkQuotaForUser(
       remaining: 0,
       message: '未登录',
       feature,
-    };
+    });
   }
-
-  const { isVip } = await checkVipStatusForWxId(wxId);
+  const { isVip, freeExportCount = 0 } = await checkVipStatusForWxId(wxId);
   if (isVip) {
-    return {
+    return createResult({
       allowed: true,
       isVip: true,
       used: 0,
@@ -212,150 +146,19 @@ export async function checkQuotaForUser(
       remaining: 'unlimited',
       message: 'VIP用户 unlimited',
       feature,
-    };
+    });
   }
-
-  const limit = getQuotaLimit(feature);
+  const limit = getEffectiveLimit(feature, freeExportCount);
   const featureName = getFeatureDisplayName(feature);
-  const todayKey = getDateKey(Date.now());
-
-  const user = await prisma.user.upsert({
-    where: { wxId },
-    update: {},
-    create: { wxId, name: `用户_${wxId}` },
+  return checkQuotaCore(wxId, freeExportCount, feature, skipConsume, limit, featureName, {
+    userName: `用户_${wxId}`,
+    logPrefix: '[quota:wxid]',
   });
-
-  let quotaRecord;
-  try {
-    quotaRecord = await prisma.userQuota.upsert({
-      where: { userId: user.id },
-      update: {},
-      create: {
-        userId: user.id,
-        quotas: {},
-      },
-    });
-  } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-      quotaRecord = await prisma.userQuota.findUnique({ where: { userId: user.id } });
-      if (!quotaRecord) {
-        throw new Error(`[quota:wxid] Failed to fetch UserQuota after P2002 for user ${user.id}`);
-      }
-    } else {
-      throw error;
-    }
-  }
-
-  const quotas = (quotaRecord.quotas as unknown as QuotasData) || {};
-  const featureQuota = quotas[feature];
-
-  const isLifetimeQuota = LIFETIME_QUOTA_FEATURES.includes(feature);
-  const used = isLifetimeQuota
-    ? (featureQuota?.used ?? 0)
-    : (featureQuota?.date === todayKey ? featureQuota.used : 0);
-
-  if (used >= limit) {
-    const limitText = isLifetimeQuota ? `免费限${limit}次` : `${limit}次/天`;
-    return {
-      allowed: false,
-      isVip: false,
-      used,
-      limit,
-      remaining: 0,
-      message: `${featureName}次数已达上限（${limitText}），升级VIP可无限使用`,
-      feature,
-    };
-  }
-
-  const newUsed = skipConsume ? used : used + 1;
-  const remaining = limit - newUsed;
-
-  if (!skipConsume) {
-    quotas[feature] = { used: newUsed, date: isLifetimeQuota ? 'lifetime' : todayKey };
-    await prisma.userQuota.update({
-      where: { userId: user.id },
-      data: { quotas: quotas as unknown as Prisma.InputJsonValue, updatedAt: new Date() },
-    });
-  }
-
-  const message = isLifetimeQuota
-    ? `剩余${remaining}次${featureName}（非VIP用户免费限${limit}次）`
-    : `今日剩余${remaining}次${featureName}（非VIP用户每日${limit}次）`;
-
-  console.log('[quota:wxid] decision', { wxId, feature, used: newUsed, remaining, skipConsume });
-
-  return {
-    allowed: true,
-    isVip: false,
-    used: newUsed,
-    limit,
-    remaining: Math.max(0, remaining),
-    message,
-    feature,
-  };
 }
 
 /** Peek a user's quota without consuming. */
 export async function peekQuotaForUser(wxId: string, feature: QuotaFeatureKey): Promise<QuotaCheckResult> {
   return checkQuotaForUser(wxId, feature, true);
-}
-
-/** In-memory store for anonymous users only. */
-const anonymousQuotaStore = new Map<string, { dateKey: string; used: number }>();
-
-async function handleAnonymousQuota(
-  feature: QuotaFeatureKey,
-  limit: number,
-  featureName: string,
-  skipConsume: boolean,
-): Promise<QuotaCheckResult> {
-  const now = Date.now();
-  const todayKey = getDateKey(now);
-  const key = `anonymous_${feature}`;
-  const isLifetimeQuota = LIFETIME_QUOTA_FEATURES.includes(feature);
-
-  let entry = anonymousQuotaStore.get(key);
-  if (!entry || (!isLifetimeQuota && entry.dateKey !== todayKey)) {
-    entry = { dateKey: isLifetimeQuota ? 'lifetime' : todayKey, used: 0 };
-    anonymousQuotaStore.set(key, entry);
-  }
-
-  const used = entry?.used ?? 0;
-
-  if (used >= limit) {
-    const limitText = isLifetimeQuota ? `免费限${limit}次` : `${limit}次/天`;
-    const suffix = isLifetimeQuota ? '登录后可继续使用' : '登录后可继续使用';
-    return {
-      allowed: false,
-      isVip: false,
-      used,
-      limit,
-      remaining: 0,
-      message: `${featureName}次数已达上限（${limitText}），${suffix}`,
-      feature,
-    };
-  }
-
-  if (!skipConsume) {
-    entry.used += 1;
-  }
-
-  const currentUsed = skipConsume ? used : used + 1;
-  const remaining = limit - currentUsed;
-
-  const message = isLifetimeQuota
-    ? `剩余${remaining}次${featureName}（非登录用户免费限${limit}次）`
-    : `今日剩余${remaining}次${featureName}（非登录用户每日${limit}次）`;
-
-  return {
-    allowed: true,
-    isVip: false,
-    used: currentUsed,
-    limit,
-    remaining: Math.max(0, remaining),
-    message,
-    feature,
-  };
 }
 
 /**
@@ -373,4 +176,86 @@ export async function getAllQuotas(): Promise<QuotaCheckResult[]> {
   ];
 
   return Promise.all(features.map((f) => peekQuota(f)));
+}
+
+/**
+ * Core quota check logic shared by checkQuota and checkQuotaForUser.
+ * Handles user upsert, quota record fetch, limit check, and consumption.
+ */
+async function checkQuotaCore(
+  wxId: string,
+  freeExportCount: number,
+  feature: QuotaFeatureKey,
+  skipConsume: boolean,
+  limit: number,
+  featureName: string,
+  opts?: { userName?: string; logPrefix?: string },
+): Promise<QuotaCheckResult> {
+  const todayKey = getDateKey(Date.now());
+  const user = await prisma.user.upsert({
+    where: { wxId },
+    update: {},
+    create: { wxId, ...(opts?.userName ? { name: opts.userName } : {}) },
+  });
+  let quotaRecord;
+  try {
+    quotaRecord = await prisma.userQuota.upsert({
+      where: { userId: user.id },
+      update: {},
+      create: { userId: user.id, quotas: {} },
+    });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      quotaRecord = await prisma.userQuota.findUnique({ where: { userId: user.id } });
+      if (!quotaRecord) {
+        throw new Error(`${opts?.logPrefix ?? '[quota]'} Failed to fetch UserQuota after P2002 for user ${user.id}`);
+      }
+    } else {
+      throw error;
+    }
+  }
+  const quotas = (quotaRecord.quotas as unknown as QuotasData) || {};
+  const featureQuota = quotas[feature];
+  const isLifetimeQuota = LIFETIME_QUOTA_FEATURES.includes(feature);
+  const used = isLifetimeQuota
+    ? (featureQuota?.used ?? 0)
+    : (featureQuota?.date === todayKey ? featureQuota.used : 0);
+  if (used >= limit) {
+    const limitText = isLifetimeQuota ? `免费限${limit}次` : `${limit}次/天`;
+    return createResult({
+      allowed: false,
+      isVip: false,
+      used,
+      limit,
+      remaining: 0,
+      message: `${featureName}次数已达上限（${limitText}），升级VIP可无限使用`,
+      feature,
+      freeExportCount,
+    });
+  }
+  const newUsed = skipConsume ? used : used + 1;
+  const remaining = limit - newUsed;
+  if (!skipConsume) {
+    quotas[feature] = { used: newUsed, date: isLifetimeQuota ? 'lifetime' : todayKey };
+    await prisma.userQuota.update({
+      where: { userId: user.id },
+      data: { quotas: quotas as unknown as Prisma.InputJsonValue, updatedAt: new Date() },
+    });
+  }
+  const message = isLifetimeQuota
+    ? `剩余${remaining}次${featureName}（非VIP用户免费限${limit}次）`
+    : `今日剩余${remaining}次${featureName}（非VIP用户每日${limit}次）`;
+  if (opts?.logPrefix) {
+    console.log(`${opts.logPrefix} decision`, { wxId, feature, used: newUsed, remaining, skipConsume, freeExportCount });
+  }
+  return createResult({
+    allowed: true,
+    isVip: false,
+    used: newUsed,
+    limit,
+    remaining: Math.max(0, remaining),
+    message,
+    feature,
+    freeExportCount,
+  });
 }

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { getModelByName, resolveApiKey } from '@/lib/ai/ai-config';
-import { checkQuota } from '@/lib/quota/quota-checker';
+import { withQuotaCheck } from '@/lib/quota/quota-guard';
 import { applyRateLimit } from '@/lib/ai/with-rate-limit';
 import {
   buildImportSystemPrompt,
@@ -24,22 +24,10 @@ interface ImportResumeBody {
  */
 export async function POST(request: NextRequest): Promise<Response> {
   try {
-    // Check AI quota for import-section (VIP users bypass)
-    const quota = await checkQuota('ai:import-section');
-    if (!quota.allowed) {
-      return NextResponse.json(
-        {
-          error: quota.message,
-          quotaExceeded: true,
-          remaining: quota.remaining,
-        },
-        { status: 429 },
-      );
-    }
-
     const rateLimitResponse = await applyRateLimit(request);
     if (rateLimitResponse) return rateLimitResponse;
 
+    return withQuotaCheck('ai:import-section', async () => {
     const body: ImportResumeBody = await request.json();
     const { rawText, model: modelName } = body;
 
@@ -108,6 +96,7 @@ export async function POST(request: NextRequest): Promise<Response> {
         'Cache-Control': 'no-cache',
         Connection: 'keep-alive',
       },
+    });
     });
   } catch (error) {
     const message: string =

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { getModelByName, resolveApiKey } from '@/lib/ai/ai-config';
-import { checkQuota } from '@/lib/quota/quota-checker';
+import { withQuotaCheck } from '@/lib/quota/quota-guard';
 import {
   buildPolishSystemPrompt,
   buildPolishUserPrompt,
@@ -17,19 +17,7 @@ import { MIN_POLISH_CONTENT_LENGTH } from '@/lib/ai/section-types';
  */
 export async function POST(request: NextRequest): Promise<Response> {
   try {
-    // Check AI quota for polish-section (VIP users bypass)
-    const quota = await checkQuota('ai:polish-section');
-    if (!quota.allowed) {
-      return NextResponse.json(
-        {
-          error: quota.message,
-          quotaExceeded: true,
-          remaining: quota.remaining,
-        },
-        { status: 429 },
-      );
-    }
-
+    return withQuotaCheck('ai:polish-section', async () => {
     const body: PolishSectionRequest = await request.json();
     const {
       content,
@@ -118,6 +106,7 @@ export async function POST(request: NextRequest): Promise<Response> {
         'Cache-Control': 'no-cache',
         Connection: 'keep-alive',
       },
+    });
     });
   } catch (error) {
     const message: string =

@@ -25,6 +25,8 @@ export type FetchVipResult =
 export interface VipStatusResult {
   isVip: boolean;
   userId?: string;
+  /** Additional free export count from Java backend (for non-VIP users). */
+  freeExportCount?: number;
 }
 
 /**
@@ -97,6 +99,7 @@ export async function checkVipStatus(): Promise<VipStatusResult> {
     return {
       isVip: !!result.data?.data?.isVip,
       userId: String(result.data?.data?.userId ?? ''),
+      freeExportCount: result.data?.data?.freeExportCount ?? 0,
     };
   } catch {
     return { isVip: false };
@@ -114,6 +117,7 @@ export async function checkVipStatusForWxId(wxId: string): Promise<VipStatusResu
     return {
       isVip: !!result.data?.data?.isVip,
       userId: String(result.data?.data?.userId ?? wxId),
+      freeExportCount: result.data?.data?.freeExportCount ?? 0,
     };
   } catch {
     return { isVip: false, userId: wxId };
