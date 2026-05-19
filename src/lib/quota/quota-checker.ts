@@ -7,10 +7,9 @@
  * Single-row design: one UserQuota record per user with JSON quotas field.
  */
 
-import { cookies } from 'next/headers';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
-import { fetchJavaWithLog, parseJsonWithLog } from '@/lib/api/fetch-with-log';
+import { checkVipStatus, checkVipStatusForWxId } from '@/lib/api/vip-api';
 import {
   getQuotaLimit,
   getFeatureDisplayName,
@@ -52,40 +51,6 @@ export interface QuotaCheckResult {
   readonly message: string;
   /** Feature key that was checked. */
   readonly feature: QuotaFeatureKey;
-}
-
-/**
- * Check user's VIP status by calling the Java backend.
- */
-async function checkVipStatus(): Promise<{ isVip: boolean; userId?: string }> {
-  try {
-    const cookieStore = await cookies();
-    const unionid = cookieStore.get('auth_uid')?.value;
-    if (!unionid) {
-      return { isVip: false };
-    }
-
-    const response = await fetchJavaWithLog(
-      `/user/vip-info?unionid=${encodeURIComponent(unionid)}`,
-      {
-        logPrefix: '[quota]',
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-        cache: 'no-store',
-      }
-    );
-    if (!response.ok) {
-      console.error('[quota] VIP check failed:', response.status);
-      return { isVip: false };
-    }
-    const data = await parseJsonWithLog<{
-      status?: number;
-      data?: { isVip?: boolean; userId?: number };
-    }>(response, '[quota]');
-    return { isVip: !!data?.data?.isVip, userId: String(data?.data?.userId ?? '') };
-  } catch {
-    return { isVip: false };
-  }
 }
 
 /**
@@ -213,38 +178,6 @@ export async function checkQuota(
  */
 export async function peekQuota(feature: QuotaFeatureKey): Promise<QuotaCheckResult> {
   return checkQuota(feature, true);
-}
-
-/**
- * Check VIP status for an explicit unionid (wxId), used by API routes that
- * authenticate via signed body instead of the auth_uid cookie (e.g. mini-program).
- */
-async function checkVipStatusForWxId(wxId: string): Promise<{ isVip: boolean; userId?: string }> {
-  try {
-    const response = await fetchJavaWithLog(
-      `/user/vip-info?unionid=${encodeURIComponent(wxId)}`,
-      {
-        logPrefix: '[quota:wxid]',
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-        cache: 'no-store',
-      }
-    );
-    if (!response.ok) {
-      console.error('[quota:wxid] VIP check failed:', response.status);
-      return { isVip: false, userId: wxId };
-    }
-    const data = await parseJsonWithLog<{
-      status?: number;
-      data?: { isVip?: boolean; userId?: number };
-    }>(response, '[quota:wxid]');
-    return {
-      isVip: !!data?.data?.isVip,
-      userId: String(data?.data?.userId ?? wxId),
-    };
-  } catch {
-    return { isVip: false, userId: wxId };
-  }
 }
 
 /**
