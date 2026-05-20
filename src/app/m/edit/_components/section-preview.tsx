@@ -2,21 +2,7 @@
 
 import { type ComponentType, type ReactElement } from 'react'
 import { useRouter } from 'next/navigation'
-import {
-  Award,
-  BriefcaseBusiness,
-  ChevronRight,
-  FileText,
-  FolderKanban,
-  GraduationCap,
-  GripVertical,
-  Pencil,
-  Plus,
-  School,
-  Sparkles,
-  Wrench,
-  type LucideProps,
-} from 'lucide-react'
+import { Award, BriefcaseBusiness, ChevronRight, FileText, FolderKanban, GraduationCap, GripVertical, Plus, School, Sparkles, Wrench, type LucideProps, } from 'lucide-react'
 import type { ResumeBlock } from '@/entities/blocks/resume-block'
 import type { ModuleConfig, ModuleKey } from '@/entities/module/module-config'
 import type { Section } from '@/entities/resume/section'
@@ -165,16 +151,6 @@ export function SectionPreview(
         </button>
       )}
 
-      {!module?.isList && !isEmpty && (
-        <button
-          type="button"
-          onClick={(): void => router.push(baseRoute)}
-          className="mt-2 inline-flex items-center gap-1 text-[12px] font-medium text-slate-500"
-        >
-          <Pencil size={12} />
-          编辑
-        </button>
-      )}
     </article>
   )
 }

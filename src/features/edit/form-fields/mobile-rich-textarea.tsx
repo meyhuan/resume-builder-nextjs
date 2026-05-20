@@ -26,7 +26,7 @@ import {
 } from 'lexical'
 import type { InitialConfigType } from '@lexical/react/LexicalComposer'
 import type { EditorState, LexicalEditor } from 'lexical'
-import { Bold, Italic, List, ListOrdered, Redo2, Undo2 } from 'lucide-react'
+import { Bold, Italic, List, ListOrdered, Redo2, Trash2, Undo2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export interface MobileRichTextareaProps {
@@ -63,7 +63,25 @@ const theme = {
  */
 export function MobileRichTextarea(props: MobileRichTextareaProps): ReactElement {
   const { label, html, onHtmlChange, placeholder, tip, required, error, minHeight = 120, extraToolbar } = props
+  const hasContent: boolean = html.trim().length > 0
   const initialHtmlRef = useRef<string>(html)
+  const [focused, setFocused] = useState<boolean>(false)
+  const [keyboardOffset, setKeyboardOffset] = useState<number>(0)
+
+  useEffect(() => {
+    const vv = window.visualViewport
+    if (!vv) return
+    const update = (): void => {
+      const offset = window.innerHeight - vv.height - vv.offsetTop
+      setKeyboardOffset(Math.max(0, offset))
+    }
+    vv.addEventListener('resize', update)
+    vv.addEventListener('scroll', update)
+    return (): void => {
+      vv.removeEventListener('resize', update)
+      vv.removeEventListener('scroll', update)
+    }
+  }, [])
 
   const initialConfig: InitialConfigType = {
     namespace: 'mobile-rich-textarea',
@@ -104,6 +122,16 @@ export function MobileRichTextarea(props: MobileRichTextareaProps): ReactElement
       <div className="flex items-center gap-1 mb-1.5 px-1">
         <span className="text-sm font-medium text-slate-700">{label}</span>
         {required && <span className="text-rose-500 text-xs">*</span>}
+        <button
+          type="button"
+          onClick={(): void => onHtmlChange('')}
+          disabled={!hasContent}
+          className="ml-auto flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-medium border transition-colors disabled:opacity-40 disabled:cursor-not-allowed bg-rose-50 text-rose-500 border-rose-200 active:bg-rose-100"
+          aria-label="清除内容"
+        >
+          <Trash2 size={11} />
+          一键清空
+        </button>
       </div>
       <LexicalComposer initialConfig={initialConfig}>
         <ExternalHtmlSync html={html} lastEmittedHtmlRef={lastEmittedHtmlRef} />
@@ -134,7 +162,16 @@ export function MobileRichTextarea(props: MobileRichTextareaProps): ReactElement
           <HistoryPlugin />
           <ListPlugin />
           <OnChangePlugin onChange={handleChange} ignoreSelectionChange />
-          <div className="border-t border-slate-100 px-1.5 py-1 flex flex-col gap-1">
+          {/* Spacer keeps layout space when toolbar is fixed */}
+          {focused && <div className="h-10" />}
+          <FocusPlugin onFocus={(): void => setFocused(true)} onBlur={(): void => setFocused(false)} />
+          <div
+            className={cn(
+              'border-t border-slate-100 px-1.5 py-1 flex flex-col gap-1 bg-white',
+              focused && 'fixed left-0 right-0 z-50 shadow-[0_-2px_8px_rgba(0,0,0,0.08)]',
+            )}
+            style={focused ? { bottom: keyboardOffset } : undefined}
+          >
             <div className="flex items-center gap-1 overflow-x-auto">
               <FormatToolbar />
             </div>
@@ -159,6 +196,21 @@ export function MobileRichTextarea(props: MobileRichTextareaProps): ReactElement
  * Uses `lastEmittedHtmlRef` (written by the editor's own onChange) to know
  * whether the change originated inside the editor. If so, skip to avoid loops.
  */
+function FocusPlugin({ onFocus, onBlur }: { readonly onFocus: () => void; readonly onBlur: () => void }): null {
+  const [editor] = useLexicalComposerContext()
+  useEffect(() => {
+    return mergeRegister(
+      editor.registerRootListener((rootElement, prevRootElement) => {
+        prevRootElement?.removeEventListener('focus', onFocus)
+        prevRootElement?.removeEventListener('blur', onBlur)
+        rootElement?.addEventListener('focus', onFocus)
+        rootElement?.addEventListener('blur', onBlur)
+      }),
+    )
+  }, [editor, onFocus, onBlur])
+  return null
+}
+
 function ExternalHtmlSync({
   html,
   lastEmittedHtmlRef,

@@ -42,7 +42,7 @@ export function HomeActionBar(props: HomeActionBarProps): ReactElement {
           <button
             type="button"
             onClick={handlePreview}
-            className="flex h-[52px] flex-1 items-center justify-center gap-2 rounded-[14px] bg-[#165dff] text-[15px] font-semibold text-white shadow-sm shadow-blue-600/20 transition-transform hover:bg-blue-700 active:scale-[0.98]"
+            className="flex h-[52px] flex-1 items-center justify-center gap-2 rounded-[14px] bg-violet-600 text-[15px] font-semibold text-white shadow-sm shadow-violet-600/20 transition-transform hover:bg-violet-700 active:scale-[0.98]"
           >
             <Eye size={18} />
             <span>预览简历</span>

@@ -9,6 +9,7 @@ import { usePolishSection } from '@/lib/ai/use-polish-section'
 import { useGenerateSection } from '@/lib/ai/use-generate-section'
 import { useJobIntentionField } from '@/features/edit/draft/use-draft-field'
 import { htmlToPlainText } from './html-text'
+import { isMeaningfulText } from '@/features/edit/progress/meaningful-field'
 import type { SectionIdentity, SectionModuleType, PolishLevel } from '@/lib/ai/section-types'
 import { MIN_POLISH_CONTENT_LENGTH } from '@/lib/ai/section-types'
 import { cn } from '@/lib/utils'
@@ -32,7 +33,7 @@ export interface RichAiTextareaProps {
 const POLISH_LEVELS: readonly { id: PolishLevel; label: string }[] = [
   { id: 'basic', label: '基础纠错' },
   { id: 'professional', label: '专业表达' },
-  { id: 'jd-match', label: 'JD 匹配' },
+  // { id: 'jd-match', label: 'JD 匹配' },
 ]
 
 /**
@@ -113,8 +114,7 @@ export function RichAiTextarea(props: RichAiTextareaProps): ReactElement {
     if (jobIndustry) answers['目标行业'] = jobIndustry
     if (generatePrefill) {
       for (const [k, v] of Object.entries(generatePrefill)) {
-        const trimmed: string = (v ?? '').trim()
-        if (trimmed) answers[k] = trimmed
+        if (isMeaningfulText(v)) answers[k] = v.trim()
       }
     }
     setPreviewMode('generate')
@@ -218,7 +218,7 @@ export function RichAiTextarea(props: RichAiTextareaProps): ReactElement {
         </div>
 
         {hasEnoughContent ? (
-          <div className="relative grid grid-cols-3 gap-1.5">
+          <div className="relative grid grid-cols-2 gap-1.5">
             {POLISH_LEVELS.map((lv) => (
               <button
                 key={lv.id}
