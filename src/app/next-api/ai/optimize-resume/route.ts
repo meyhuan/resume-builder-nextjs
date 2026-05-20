@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { getModelByName, resolveApiKey } from '@/lib/ai/ai-config';
-import { checkQuota } from '@/lib/quota/quota-checker';
+import { withQuotaCheck } from '@/lib/quota/quota-guard';
 import {
   buildOptimizeSystemPrompt,
   buildOptimizeUserPrompt,
@@ -19,18 +19,7 @@ import type { OptimizeResumeRequest } from '@/lib/ai/optimize-resume-prompt-buil
  */
 export async function POST(request: NextRequest): Promise<Response> {
   try {
-    const quota = await checkQuota('ai:optimize-resume');
-    if (!quota.allowed) {
-      return NextResponse.json(
-        {
-          error: quota.message,
-          quotaExceeded: true,
-          remaining: quota.remaining,
-        },
-        { status: 429 },
-      );
-    }
-
+    return withQuotaCheck('ai:optimize-resume', async () => {
     const body: OptimizeResumeRequest = await request.json();
     const {
       blocks,
@@ -110,6 +99,7 @@ export async function POST(request: NextRequest): Promise<Response> {
         'Cache-Control': 'no-cache',
         Connection: 'keep-alive',
       },
+    });
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : '服务器内部错误';

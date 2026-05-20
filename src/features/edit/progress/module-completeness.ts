@@ -56,6 +56,7 @@ function countFilledBlocks(section: Section | undefined): number {
   return section.blocks.filter(isBlockFilled).length
 }
 
+
 export function getModuleInfo(resume: ResumeData, key: ModuleKey): ModuleInfo {
   switch (key) {
     case 'base': {
@@ -148,30 +149,34 @@ function filledTextModule(resume: ResumeData, key: ModuleKey, filledSummary: str
 }
 
 /**
- * Compute a realistic progress percentage (0-100) from the user's perspective.
+ * Compute a realistic progress percentage (0–100) from the user's perspective.
  *
- * Score breakdown:
- *   base info        25 pts
- *   job intention    15 pts
- *   education        20 pts
- *   core experience  25 pts
+ * Score breakdown (total = 100):
+ *   base info        25 pts  (name + phone + email; partial = 12)
+ *   job intention    15 pts  (position + city; partial = 7)
+ *   education        20 pts  (at least 1 filled block)
+ *   core experience  25 pts  (work OR project OR intern)
  *   self summary     10 pts
  *   skill             5 pts
  */
 export function computeProgress(resume: ResumeData): number {
   let earned = 0
 
+  // --- base info (25 pts) ---
   const base = getModuleInfo(resume, 'base')
   if (base.status === 'complete') earned += 25
   else if (base.status === 'partial') earned += 12
 
+  // --- job intention (15 pts) ---
   const intention = getModuleInfo(resume, 'intention')
   if (intention.status === 'complete') earned += 15
   else if (intention.status === 'partial') earned += 7
 
+  // --- education (20 pts) ---
   const edu = getModuleInfo(resume, 'eduExp')
   if (edu.status === 'complete') earned += 20
 
+  // --- core experience: best of work / project / intern (25 pts) ---
   const work = getModuleInfo(resume, 'workExp')
   const project = getModuleInfo(resume, 'programExp')
   const intern = getModuleInfo(resume, 'internExp')
@@ -179,9 +184,11 @@ export function computeProgress(resume: ResumeData): number {
     earned += 25
   }
 
+  // --- self summary (10 pts) ---
   const summary = getModuleInfo(resume, 'summary')
   if (summary.status === 'complete') earned += 10
 
+  // --- skill (5 pts) ---
   const skill = getModuleInfo(resume, 'skill')
   if (skill.status === 'complete') earned += 5
 
