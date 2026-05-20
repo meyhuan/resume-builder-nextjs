@@ -1,5 +1,5 @@
 import type { ResumeBlock } from '@/entities/blocks/resume-block'
-import { getModule, getSectionTitleCandidates, type ModuleKey } from '@/entities/module/module-config'
+import { getModule, getSectionTitleCandidates, MODULES, type ModuleKey } from '@/entities/module/module-config'
 import type { ResumeData } from '@/entities/resume/resume-data'
 import type { Section } from '@/entities/resume/section'
 import { htmlToPlainText } from '@/features/edit/form-fields/html-text'
@@ -112,11 +112,9 @@ export function getModuleInfo(resume: ResumeData, key: ModuleKey): ModuleInfo {
       return countModule(resume, key, '项证书/奖项', '点击添加奖项证书')
     case 'custom': {
       const canonicalTitles = new Set(
-        ['workExp', 'eduExp', 'programExp', 'internExp', 'schoolExp', 'summary', 'skill', 'qualifications']
-          .flatMap((moduleKey) => {
-            const module = getModule(moduleKey as ModuleKey)
-            return module ? getSectionTitleCandidates(module).map(normalizeTitle) : []
-          }),
+        MODULES
+          .filter((m) => m.key !== 'custom')
+          .flatMap((m) => getSectionTitleCandidates(m).map(normalizeTitle)),
       )
       const sections: readonly Section[] = Array.isArray(resume.sections) ? resume.sections : []
       const custom = sections.filter((section) => !canonicalTitles.has(normalizeTitle(section.title)))
