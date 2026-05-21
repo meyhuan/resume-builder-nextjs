@@ -77,7 +77,7 @@ function BlockRendererWrapper(props: {
   if (block.type === 'campus') blockTypeLabel = '校园经历'
   
   return (
-    <div style={{ marginBottom: blockIndex < totalBlocks - 1 ? `${16 * spacingScale}px` : '0' }}>
+    <div style={{ marginBottom: blockIndex < totalBlocks - 1 ? `${13 * spacingScale}px` : '0' }}>
       <BlockWrapper
         blockType={blockTypeLabel}
         onAdd={block.type !== 'text' ? (): void => addBlock(sectionId) : undefined}
@@ -107,7 +107,7 @@ export default function SimpleTemplate(props: SimpleTemplateProps): ReactElement
 
   return (
     <div
-      className="resume-container bg-white text-black mx-auto rounded shadow-sm"
+      className="resume-container bg-white text-black mx-auto rounded"
       data-page-padding-vertical={theme.pagePaddingVertical}
       style={{
         color: theme.textColor,
@@ -117,7 +117,7 @@ export default function SimpleTemplate(props: SimpleTemplateProps): ReactElement
         padding: pagePadding,
       }}
     >
-      <div style={{ marginBottom: `${24 * theme.spacingScale}px` }}>
+      <div style={{ marginBottom: `${18 * theme.spacingScale}px` }}>
         <BaseInfoSection
           name={resume.name}
           baseInfo={resume.baseInfo ?? null}
@@ -127,7 +127,7 @@ export default function SimpleTemplate(props: SimpleTemplateProps): ReactElement
       </div>
 
       {isJobIntentionVisible ? (
-        <div style={{ marginBottom: `${24 * theme.spacingScale}px` }}>
+        <div style={{ marginBottom: `${18 * theme.spacingScale}px` }}>
           <JobIntentionSection
             jobIntention={resume.jobIntention ?? null}
             themeColor={theme.primaryColor}
@@ -168,7 +168,7 @@ export default function SimpleTemplate(props: SimpleTemplateProps): ReactElement
           )
         }}
       >
-        <main className="flex flex-col relative" style={{ gap: `${24 * theme.spacingScale}px` }}>
+        <main className="flex flex-col relative" style={{ gap: `${18 * theme.spacingScale}px` }}>
           {resume.sections.map((section) => (
             <SortableSectionWrapper key={section.id} sectionId={section.id}>
               {(sectionDragProps) => (

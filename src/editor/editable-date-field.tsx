@@ -1,12 +1,16 @@
-import { useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import type { ReactElement } from 'react'
 import * as Popover from '@radix-ui/react-popover'
 import { CalendarIcon } from 'lucide-react'
 import { useAppStore } from '@/state/store'
 import type { ResumeBlock } from '@/entities/blocks/resume-block'
-import { MonthPicker } from '@/components/ui/monthpicker'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+
+const MonthPicker = lazy(async () => {
+  const module = await import('@/components/ui/monthpicker')
+  return { default: module.MonthPicker }
+})
 
 /**
  * EditableDateField - Year/Month selector for resume date fields.
@@ -126,12 +130,14 @@ export default function EditableDateField(props: EditableDateFieldProps): ReactE
           sideOffset={6}
           align="start"
         >
-          <MonthPicker
-            selectedMonth={selectedDate}
-            onMonthSelect={handleMonthSelect}
-            minDate={new Date(1980, 0, 1)}
-            maxDate={new Date(2050, 11, 31)}
-          />
+          <Suspense fallback={<div className="h-[220px] w-[220px]" />}>
+            <MonthPicker
+              selectedMonth={selectedDate}
+              onMonthSelect={handleMonthSelect}
+              minDate={new Date(1980, 0, 1)}
+              maxDate={new Date(2050, 11, 31)}
+            />
+          </Suspense>
           
           {fieldName === 'endDate' ? (
             <div className="px-3 pb-3">

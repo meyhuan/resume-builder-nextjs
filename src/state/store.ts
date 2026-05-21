@@ -24,7 +24,7 @@ const defaultTheme: ThemeTokens = {
   fontSize: DEFAULT_FONT_SIZE,
   lineHeight: 1.5,
   spacingScale: 1,
-  pagePaddingVertical: 22,
+  pagePaddingVertical: 19,
   pagePaddingHorizontal: 15,
 }
 

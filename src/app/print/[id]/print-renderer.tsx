@@ -16,10 +16,10 @@ const DEFAULT_THEME: ThemeTokens = {
   textColor: '#111827',
   fontFamily: 'Inter, "Noto Sans SC", system-ui, sans-serif',
   fontSize: 15,
-  lineHeight: 1.55,
+  lineHeight: 1.5,
   spacingScale: 1,
-  pagePaddingVertical: 22,
-  pagePaddingHorizontal: 18,
+  pagePaddingVertical: 19,
+  pagePaddingHorizontal: 15,
 }
 
 function resolveTheme(templateId: string): ThemeTokens {
