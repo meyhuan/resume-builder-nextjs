@@ -17,6 +17,7 @@ model User {
   name       String?
   avatar     String?
   resumes    Resume[]
+  exports    ExportRecord[]
   feedbacks  Feedback[]
   quotas     UserQuota[]
   migration  ResumeMigration?
@@ -37,6 +38,29 @@ model Resume {
   updatedAt DateTime @updatedAt
 
   @@index([userId])
+}
+
+model ExportRecord {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  wxId        String
+  resumeId    String
+  resumeTitle String
+  templateId  String?
+  type        String
+  fileName    String
+  token       String   @unique
+  ossKey      String?
+  ossUrl      String?
+  expiresAt   DateTime
+  status      String   @default("available")
+  confirmedAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([wxId, createdAt])
+  @@index([userId, createdAt])
 }
 
 /// One row per user tracking the mini-program -> Next.js resume migration.

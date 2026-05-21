@@ -3,7 +3,7 @@ import { mkdir, readFile, readdir, stat, unlink, writeFile } from 'fs/promises'
 import { tmpdir } from 'os'
 import { join } from 'path'
 
-const TTL_MS = 10 * 60 * 1000
+export const EXPORT_TEMP_TTL_MS = 30 * 24 * 60 * 60 * 1000
 const STORE_DIR = join(tmpdir(), 'aijianli-export-temp')
 
 export type ExportAssetType = 'pdf' | 'image'
@@ -17,6 +17,11 @@ export interface ExportTempEntry {
   readonly type: ExportAssetType
   readonly confirmed: boolean
   readonly previewTokens?: readonly string[]
+  readonly wxId?: string
+  readonly userId?: string
+  readonly resumeId?: string
+  readonly resumeTitle?: string
+  readonly templateId?: string
 }
 
 interface ExportTempMeta {
@@ -27,6 +32,11 @@ interface ExportTempMeta {
   readonly type: ExportAssetType
   readonly confirmed: boolean
   readonly previewTokens?: readonly string[]
+  readonly wxId?: string
+  readonly userId?: string
+  readonly resumeId?: string
+  readonly resumeTitle?: string
+  readonly templateId?: string
 }
 
 export interface SaveExportTempInput {
@@ -37,6 +47,11 @@ export interface SaveExportTempInput {
   readonly type: ExportAssetType
   readonly confirmed?: boolean
   readonly previewTokens?: readonly string[]
+  readonly wxId?: string
+  readonly userId?: string
+  readonly resumeId?: string
+  readonly resumeTitle?: string
+  readonly templateId?: string
 }
 
 async function ensureStoreDir(): Promise<void> {
@@ -96,7 +111,7 @@ if (typeof setInterval !== 'undefined') {
 export async function saveExportTemp(input: SaveExportTempInput): Promise<{ token: string; expiresAt: number }> {
   await purgeExpired()
   const token = randomBytes(16).toString('hex')
-  const expiresAt = Date.now() + TTL_MS
+  const expiresAt = Date.now() + EXPORT_TEMP_TTL_MS
   const meta: ExportTempMeta = {
     expiresAt,
     fileName: input.fileName,
@@ -105,6 +120,11 @@ export async function saveExportTemp(input: SaveExportTempInput): Promise<{ toke
     type: input.type,
     confirmed: input.confirmed === true,
     ...(input.previewTokens && input.previewTokens.length > 0 ? { previewTokens: input.previewTokens } : {}),
+    ...(input.wxId ? { wxId: input.wxId } : {}),
+    ...(input.userId ? { userId: input.userId } : {}),
+    ...(input.resumeId ? { resumeId: input.resumeId } : {}),
+    ...(input.resumeTitle ? { resumeTitle: input.resumeTitle } : {}),
+    ...(input.templateId ? { templateId: input.templateId } : {}),
   }
   await writeFile(getFilePath(token, input.extension), input.buffer)
   await writeFile(getMetaPath(token), JSON.stringify(meta), 'utf8')

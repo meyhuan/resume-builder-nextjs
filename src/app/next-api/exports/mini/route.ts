@@ -24,7 +24,8 @@ import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { prisma } from '@/lib/prisma'
 import { verifyMiniSign } from '@/lib/verify-mini-sign'
-import { saveExportTemp } from '@/lib/export-temp-store'
+import { EXPORT_TEMP_TTL_MS, saveExportTemp } from '@/lib/export-temp-store'
+import { uploadExportAsset } from '@/lib/upload-export-asset'
 import { peekQuotaForUser, checkQuotaForUser } from '@/lib/quota/quota-checker'
 import { renderViaPrintPage, getInternalBaseUrl, type RenderResult } from '@/lib/render-via-print-page'
 
@@ -117,7 +118,7 @@ export async function POST(req: Request): Promise<NextResponse> {
   // Verify resume ownership
   const resume = await prisma.resume.findFirst({
     where: { id: resumeId, user: { wxId } },
-    select: { id: true, title: true, template: true },
+    select: { id: true, title: true, template: true, userId: true },
   })
   if (!resume) {
     console.warn('[exports/mini] resume not found or not owned', { wxId, resumeId })
@@ -158,18 +159,20 @@ export async function POST(req: Request): Promise<NextResponse> {
   const { buffer, pageScreenshots } = renderResult
   const fileName: string = (requestedFileName || resume.title || 'resume').replace(/[\/:*?"<>|]/g, '_')
   const isPdf: boolean = type === 'pdf'
+  const contentType: string = isPdf ? 'application/pdf' : 'image/png'
+  const extension: string = isPdf ? 'pdf' : 'png'
 
   // Save per-page PNG previews (PDF only) so the mini-program can display them
   // as an inline scrollable preview without needing a web-view.
   const previewTokens: string[] = []
   if (isPdf && pageScreenshots.length > 0) {
-    const expiresAt = Date.now() + 10 * 60 * 1000
+    const expiresAt = Date.now() + EXPORT_TEMP_TTL_MS
     for (const png of pageScreenshots) {
       const pg = await saveExportTemp({
         buffer: png,
-        fileName: `${fileName}-preview`,
-        contentType: 'image/jpeg',
-        extension: 'jpg',
+      fileName: `${fileName}-preview`,
+      contentType: 'image/jpeg',
+      extension: 'jpg',
         type: 'image',
         confirmed: true,
       })
@@ -181,15 +184,27 @@ export async function POST(req: Request): Promise<NextResponse> {
   const saved = await saveExportTemp({
     buffer,
     fileName,
-    contentType: isPdf ? 'application/pdf' : 'image/png',
-    extension: isPdf ? 'pdf' : 'png',
+    contentType,
+    extension,
     type,
     confirmed: mode === 'final',
     previewTokens,
+    wxId,
+    userId: resume.userId,
+    resumeId: resume.id,
+    resumeTitle: resume.title,
+    templateId: explicitTemplateId || resume.template || undefined,
   })
 
-  // Consume quota AFTER successful render+save when mode=final
+  // Upload and consume quota AFTER successful render+save when mode=final.
+  // Upload happens first so an OSS failure does not burn the user's quota.
   if (mode === 'final') {
+    const ossAsset = await uploadExportAsset({
+      token: saved.token,
+      buffer,
+      contentType,
+      extension,
+    })
     const consumed = await checkQuotaForUser(wxId, 'pdf:export')
     console.log('[exports/mini] quota consumed', { wxId, ...consumed })
     if (!consumed.allowed) {
@@ -201,6 +216,37 @@ export async function POST(req: Request): Promise<NextResponse> {
         isVip: consumed.isVip,
       }, { status: 402 })
     }
+    await prisma.exportRecord.upsert({
+      where: { token: saved.token },
+      update: {
+        userId: resume.userId,
+        wxId,
+        resumeId: resume.id,
+        resumeTitle: resume.title || fileName,
+        templateId: explicitTemplateId || resume.template || null,
+        type,
+        fileName,
+        ossKey: ossAsset.key,
+        ossUrl: ossAsset.url,
+        expiresAt: new Date(saved.expiresAt),
+        status: 'available',
+        confirmedAt: new Date(),
+      },
+      create: {
+        userId: resume.userId,
+        wxId,
+        resumeId: resume.id,
+        resumeTitle: resume.title || fileName,
+        templateId: explicitTemplateId || resume.template || null,
+        type,
+        fileName,
+        token: saved.token,
+        ossKey: ossAsset.key,
+        ossUrl: ossAsset.url,
+        expiresAt: new Date(saved.expiresAt),
+        status: 'available',
+      },
+    })
   }
 
   const downloadUrl: string = `/next-api/export-file/${saved.token}`

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { prisma } from '@/lib/prisma'
 import { readExportTemp } from '@/lib/export-temp-store'
 
 export async function GET(
@@ -11,6 +12,29 @@ export async function GET(
   console.log('[export-file] request', { token, inline })
   const entry = await readExportTemp(token)
   if (!entry) {
+    const record = await prisma.exportRecord.findUnique({
+      where: { token },
+      select: { ossUrl: true, expiresAt: true, status: true, fileName: true, type: true },
+    })
+    const available = record?.ossUrl
+      && record.status === 'available'
+      && record.expiresAt.getTime() > Date.now()
+    if (available) {
+      console.log('[export-file] proxying OSS asset', { token })
+      const ossResponse = await fetch(record.ossUrl as string, { cache: 'no-store' })
+      if (!ossResponse.ok) {
+        console.warn('[export-file] OSS asset unavailable', { token, status: ossResponse.status })
+        return NextResponse.json({ error: 'File not found or expired' }, { status: 404 })
+      }
+      const body = Buffer.from(await ossResponse.arrayBuffer())
+      return new NextResponse(body as unknown as BodyInit, {
+        headers: {
+          'Content-Type': ossResponse.headers.get('Content-Type') || 'application/octet-stream',
+          'Content-Disposition': `attachment; filename="${encodeURIComponent(record.fileName)}.${record.type === 'image' ? 'png' : 'pdf'}"`,
+          'Cache-Control': 'no-store',
+        },
+      })
+    }
     console.warn('[export-file] not found or expired', { token })
     return NextResponse.json({ error: 'File not found or expired' }, { status: 404 })
   }
