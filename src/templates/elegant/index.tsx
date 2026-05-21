@@ -169,6 +169,7 @@ function ElegantHeader(props: {
             style={{ border: `3px solid ${accentColor}` }}
             onMouseEnter={() => setAvatarHovered(true)}
             onMouseLeave={() => setAvatarHovered(false)}
+            onClick={(e) => e.stopPropagation()}
           >
             {baseInfo?.avatarUrl ? (
               <img src={baseInfo.avatarUrl} alt="avatar" className="w-full h-full object-cover" />
