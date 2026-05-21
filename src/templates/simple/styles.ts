@@ -28,10 +28,10 @@ export const SIMPLE_TEMPLATE_STYLES: TemplateStylesConfig = {
       className: 'font-bold',
       fontSize: '1.86em',
       fontWeight: 'bold',
-      color: '#333',
+      color: '#333333',
     },
     title: {
-      className: 'text-gray-500',
+      className: 'text-neutral-500',
       fontSize: '0.96em',
     },
     infoLayout: {
@@ -40,10 +40,10 @@ export const SIMPLE_TEMPLATE_STYLES: TemplateStylesConfig = {
       gap: '4',
       className: 'flex flex-wrap gap-y-2 gap-x-8',
     },
-    fieldItem: 'flex items-center gap-1.5 text-gray-600 relative group/field hover:bg-gray-50 rounded pl-1 pr-5 py-0.5 transition-colors whitespace-nowrap text-[0.96em]',
+    fieldItem: 'flex items-center gap-1.5 text-neutral-600 relative group/field hover:bg-gray-50 rounded pl-1 pr-5 py-0.5 transition-colors whitespace-nowrap text-[0.96em]',
     fieldIcon: {
       size: '1em',
-      className: 'text-gray-500',
+      className: 'text-neutral-600',
     },
     editButton: 'absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity print:hidden text-gray-400 hover:text-gray-600',
   },
@@ -55,6 +55,7 @@ export const SIMPLE_TEMPLATE_STYLES: TemplateStylesConfig = {
       className: 'font-bold',
       fontSize: '1.18em',
       fontWeight: 'bold',
+      color: '#2f2f2f',
     },
     fieldsLayout: {
       type: 'grid',
@@ -63,10 +64,11 @@ export const SIMPLE_TEMPLATE_STYLES: TemplateStylesConfig = {
       className: 'grid grid-cols-2 gap-y-2.5 gap-x-8 text-[0.98em]',
     },
     fieldItem: 'hover:bg-gray-50 rounded px-1.5 py-0.5 pr-5 transition-colors relative',
-    fieldLabel: 'text-gray-600',
-    fieldValue: 'text-gray-900',
+    fieldLabel: 'text-neutral-600',
+    fieldValue: 'text-neutral-800',
     icon: {
       size: '1.25em',
+      color: '#2f2f2f',
     },
     editButton: 'ml-auto opacity-0 group-hover:opacity-100 transition-opacity print:hidden text-gray-400 hover:text-gray-600',
   },
@@ -75,9 +77,11 @@ export const SIMPLE_TEMPLATE_STYLES: TemplateStylesConfig = {
     fontSize: '1.18em',
     fontWeight: 'bold',
     lineHeight: '1.2',
+    color: '#2f2f2f',
     containerClassName: 'pb-0.5',
     icon: {
       size: '1.18em',
+      color: '#2f2f2f',
     },
   },
   
@@ -93,18 +97,19 @@ export const SIMPLE_TEMPLATE_STYLES: TemplateStylesConfig = {
       className: 'font-bold',
       fontSize: '1.03em',
       fontWeight: '700',
-      color: '#333',
+      color: '#333333',
     },
     subtitle: {
       className: 'font-bold',
       fontSize: '0.97em',
-      color: '#333',
+      color: '#333333',
     },
     dateRange: {
       fontSize: '0.97em',
       fontWeight: 'bold',
-      className: 'text-gray-700 ml-3 shrink-0',
+      className: 'text-neutral-800 ml-3 shrink-0',
     },
-    content: 'text-[0.98em] text-gray-600 text-justify mt-1',
+    content: 'text-[0.98em] text-justify mt-1',
+    contentColor: '#555555',
   },
 }

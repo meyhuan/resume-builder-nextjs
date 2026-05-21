@@ -479,7 +479,7 @@ function renderBlockContent(
 
   if (block.type === 'text') {
     return (
-      <div style={{ fontSize: contentFontSize }}>
+      <div style={{ fontSize: contentFontSize, color: styles.contentColor }}>
         <EditableBlockWrapper
           blockId={block.id}
           contentField="html"
@@ -493,7 +493,7 @@ function renderBlockContent(
 
   if (block.type === 'experience' || block.type === 'project' || block.type === 'campus') {
     return (
-      <div style={{ fontSize: contentFontSize }}>
+      <div style={{ fontSize: contentFontSize, color: styles.contentColor }}>
         <EditableBlockWrapper
           blockId={block.id}
           contentField="contentHtml"
@@ -507,7 +507,7 @@ function renderBlockContent(
 
   if (block.type === 'education') {
     return block.courseHtml ? (
-      <div style={{ fontSize: contentFontSize }}>
+      <div style={{ fontSize: contentFontSize, color: styles.contentColor }}>
         <EditableBlockWrapper
           blockId={block.id}
           contentField="courseHtml"

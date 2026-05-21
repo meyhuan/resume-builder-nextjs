@@ -7,7 +7,7 @@
  * Includes text styling, list styling, and interaction states.
  * Note: line-height is inherited from parent theme settings.
  */
-export const CONTENT_BASE_STYLES = 'text-gray-800'
+export const CONTENT_BASE_STYLES = 'text-inherit'
 
 /**
  * List styles for ul/ol elements.

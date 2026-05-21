@@ -106,6 +106,7 @@ export interface BlockRendererStyles {
   readonly subtitle?: TextFieldStyles
   readonly dateRange?: TextFieldStyles
   readonly content?: string
+  readonly contentColor?: string
   readonly layout?: 'default' | 'card' | 'timeline' | 'minimal' | string
   readonly spacing?: string
   readonly border?: string
