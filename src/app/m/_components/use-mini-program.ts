@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useMemo } from 'react'
 
 interface WxMiniProgram {
   postMessage?: (p: { data: unknown }) => void
@@ -19,12 +19,11 @@ function getMiniProgram(): WxMiniProgram | null {
  * Always returns false during SSR to avoid hydration mismatch.
  */
 export function useInMiniProgram(): boolean {
-  const [inMini, setInMini] = useState<boolean>(false)
-  useEffect((): void => {
+  return useMemo((): boolean => {
+    if (typeof window === 'undefined') return false
     const isEnv = (window as unknown as { __wxjs_environment?: string }).__wxjs_environment === 'miniprogram'
     console.log('[useInMiniProgram] environment check:', isEnv, 'wx.miniProgram:', !!getMiniProgram())
-    setInMini(isEnv)
+    return isEnv
   }, [])
-  return inMini
 }
 

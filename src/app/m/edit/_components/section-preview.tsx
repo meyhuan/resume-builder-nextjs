@@ -1,8 +1,8 @@
 'use client'
 
-import { type ComponentType, type ReactElement } from 'react'
+import { createElement, type ReactElement } from 'react'
 import { useRouter } from 'next/navigation'
-import { Award, BriefcaseBusiness, ChevronRight, FileText, FolderKanban, GraduationCap, GripVertical, Plus, School, Sparkles, Wrench, type LucideProps, } from 'lucide-react'
+import { Award, BriefcaseBusiness, ChevronRight, FileText, FolderKanban, GraduationCap, GripVertical, Plus, School, Sparkles, Wrench, type LucideIcon } from 'lucide-react'
 import type { ResumeBlock } from '@/entities/blocks/resume-block'
 import type { ModuleConfig, ModuleKey } from '@/entities/module/module-config'
 import type { Section } from '@/entities/resume/section'
@@ -30,7 +30,7 @@ export function SectionPreview(
     !htmlToPlainText(section.blocks[0].html)
   )
   const isDefault: boolean = !isEmpty && section.blocks.every(isDefaultBlock)
-  const Icon = getModuleIcon(module?.key)
+  const moduleIcon: LucideIcon = getModuleIcon(module?.key)
 
   const renderItems = (): ReactElement | null => {
     if (section.blocks.length === 0) return null
@@ -91,7 +91,7 @@ export function SectionPreview(
           </div>
         ) : (
           <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#f1efff] text-[#6c47ff]">
-            <Icon size={18} strokeWidth={2.1} />
+            {createElement(moduleIcon, { size: 18, strokeWidth: 2.1 })}
           </div>
         )}
         <button
@@ -155,7 +155,7 @@ export function SectionPreview(
   )
 }
 
-function getModuleIcon(key?: ModuleKey): ComponentType<LucideProps> {
+function getModuleIcon(key?: ModuleKey): LucideIcon {
   switch (key) {
     case 'workExp':
     case 'internExp':

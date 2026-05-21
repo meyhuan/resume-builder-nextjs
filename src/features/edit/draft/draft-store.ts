@@ -73,9 +73,9 @@ function normalizeResume(resume: ResumeData | null | undefined, fallbackId: stri
 function makeIdbStorage() {
   if (typeof window === 'undefined') {
     return {
-      getItem: async (_name: string): Promise<string | null> => null,
-      setItem: async (_name: string, _value: string): Promise<void> => {},
-      removeItem: async (_name: string): Promise<void> => {},
+      getItem: async (): Promise<string | null> => null,
+      setItem: async (): Promise<void> => {},
+      removeItem: async (): Promise<void> => {},
     }
   }
   return {

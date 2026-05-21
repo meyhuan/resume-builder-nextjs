@@ -14,6 +14,7 @@ type Props = Omit<TextFieldProps, 'value' | 'onValueChange' | 'type'> & {
  * Number text field that emits parsed integers (or undefined when empty).
  */
 export function NumberField(props: Props): ReactElement {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { value, onValueChange, min, max, ...rest } = props
   const str: string = value == null || Number.isNaN(value) ? '' : String(value)
   return (

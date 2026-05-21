@@ -55,7 +55,7 @@ export async function rasterizePdfToPngs(page: Page, pdfBuffer: Buffer, scale: n
   const workerContent = getPdfjsWorkerContent()
   
   const dataUrls = await page.evaluate(async (base64Data, renderScale, pdfjsWorkerJs) => {
-    // @ts-ignore - injected globally by script tag
+    // @ts-expect-error - injected globally by script tag
     const pdfjsLib = window['pdfjs-dist/build/pdf']
     // Create a blob URL from the worker source so PDF.js can spawn the worker
     // without making any outbound HTTP requests.

@@ -157,7 +157,7 @@ export async function POST(req: Request): Promise<NextResponse> {
   }
 
   const { buffer, pageScreenshots } = renderResult
-  const fileName: string = (requestedFileName || resume.title || 'resume').replace(/[\/:*?"<>|]/g, '_')
+  const fileName: string = (requestedFileName || resume.title || 'resume').replace(/[/:*?"<>|]/g, '_')
   const isPdf: boolean = type === 'pdf'
   const contentType: string = isPdf ? 'application/pdf' : 'image/png'
   const extension: string = isPdf ? 'pdf' : 'png'

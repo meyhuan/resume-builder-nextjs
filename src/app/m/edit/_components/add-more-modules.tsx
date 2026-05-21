@@ -1,8 +1,8 @@
 'use client'
 
-import { type ReactElement } from 'react'
+import { createElement, type ReactElement } from 'react'
 import { useRouter } from 'next/navigation'
-import { Award, BriefcaseBusiness, FilePlus2, FolderKanban, GraduationCap, Plus, School, Sparkles, Wrench } from 'lucide-react'
+import { Award, BriefcaseBusiness, FilePlus2, FolderKanban, GraduationCap, Plus, School, Sparkles, Wrench, type LucideIcon } from 'lucide-react'
 import type { ModuleConfig, ModuleKey } from '@/entities/module/module-config'
 import { useSectionList } from '@/features/edit/draft/use-section-list'
 
@@ -65,12 +65,12 @@ function ListModuleChip({ module }: { readonly module: ModuleConfig }): ReactEle
 }
 
 function ChipContent({ module }: { readonly module: ModuleConfig }): ReactElement {
-  const Icon = getChipIcon(module.key)
+  const chipIcon: LucideIcon = getChipIcon(module.key)
   return (
     <div>
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-1.5">
-          <Icon size={13} strokeWidth={2.2} className="shrink-0 text-slate-600" />
+          {createElement(chipIcon, { size: 13, strokeWidth: 2.2, className: 'shrink-0 text-slate-600' })}
           <span className="text-[13px] font-semibold text-slate-800">{module.label}</span>
         </div>
         <Plus size={12} className="shrink-0 text-slate-400" />
@@ -80,7 +80,7 @@ function ChipContent({ module }: { readonly module: ModuleConfig }): ReactElemen
   )
 }
 
-function getChipIcon(key: ModuleKey) {
+function getChipIcon(key: ModuleKey): LucideIcon {
   switch (key) {
     case 'workExp':
     case 'internExp':

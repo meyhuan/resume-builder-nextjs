@@ -24,15 +24,8 @@ export function ResumeProfileCard(
   const intention = resume.jobIntention ?? {}
   const name: string = isMeaningfulText(resume.name) ? resume.name.trim() : ''
   const jobPosition: string = isMeaningfulText(intention.position) ? intention.position!.trim() : ''
-  const city: string = isMeaningfulText(base.location)
-    ? base.location!.trim()
-    : isMeaningfulText(intention.city)
-      ? intention.city!.trim()
-      : ''
   const phone: string = isMeaningfulText(base.phone) ? base.phone!.trim() : ''
   const email: string = isMeaningfulText(base.email) ? base.email!.trim() : ''
-  const gender: string = isMeaningfulText(base.gender) ? base.gender!.trim() : ''
-  const age: string = typeof base.age === 'number' ? `${base.age}岁` : ''
   const avatarUrl: string = (base.avatarUrl ?? '').trim()
   const safeProgress: number = Math.max(0, Math.min(100, progress))
   const router = useRouter()
