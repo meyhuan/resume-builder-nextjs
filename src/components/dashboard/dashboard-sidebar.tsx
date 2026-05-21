@@ -4,7 +4,7 @@ import type { ReactElement } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { FileText, MessageSquareHeart, Crown, Sparkles } from 'lucide-react';
+import { FileText, MessageSquareHeart, Crown, Sparkles, Download } from 'lucide-react';
 import { useAuthStore } from '@/store/use-auth-store';
 import { useState, useEffect } from 'react';
 import { VipExpirationReminder } from '@/components/vip/vip-expiration-reminder';
@@ -19,6 +19,7 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { key: 'resume', label: '我的简历', href: '/dashboard', icon: <FileText className="w-[18px] h-[18px]" /> },
+  { key: 'exports', label: '导出记录', href: '/dashboard/exports', icon: <Download className="w-[18px] h-[18px]" /> },
   { key: 'membership', label: '会员中心', href: '/dashboard/membership', icon: <Sparkles className="w-[18px] h-[18px]" /> },
   { key: 'feedback', label: '用户反馈', href: '/dashboard/feedback', icon: <MessageSquareHeart className="w-[18px] h-[18px]" /> },
 ];

@@ -452,37 +452,53 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
   /** Confirm export: consume quota and download PDF. */
   async function handleConfirmExport(): Promise<void> {
     if (!pdfBlob) return
-    
-    // Consume quota on actual export
-    try {
-      const quotaRes = await fetch('/next-api/consume-pdf-quota', { method: 'POST' })
-      if (!quotaRes.ok) {
-        const errorData = await quotaRes.json()
-        toast.error(errorData.error || '导出次数已用完，升级VIP可无限导出')
-        setShowUpgrade(true)
-        return
-      }
-    } catch {
-      toast.error('配额检查失败，请重试')
-      return
-    }
-    
-    const url: string = window.URL.createObjectURL(pdfBlob)
-    const a: HTMLAnchorElement = document.createElement('a')
-    a.href = url
-    
+
     // Auto-generate professional filename: Name-Position-Phone
     const baseInfo = resume.baseInfo as Record<string, string> | undefined
     const name = baseInfo?.fullName?.trim() || baseInfo?.name?.trim() || '简历'
     const position = baseInfo?.title?.trim() || baseInfo?.position?.trim() || ''
     const phone = baseInfo?.phone?.trim() || ''
-    
     const nameParts = [name, position, phone].filter(Boolean)
     const fileName = nameParts.length > 0 ? nameParts.join('-') : (resume.name || 'export')
-    
+
+    if (!resumeId) {
+      toast.error('请先保存简历，再导出 PDF')
+      return
+    }
+
+    let downloadUrl = ''
+    try {
+      const form = new FormData()
+      form.append('file', pdfBlob, `${fileName}.pdf`)
+      form.append('resumeId', resumeId)
+      form.append('templateId', tpl)
+      form.append('fileName', fileName)
+      const exportRes = await fetch('/next-api/exports/pc', {
+        method: 'POST',
+        body: form,
+      })
+      if (!exportRes.ok) {
+        const errorData = await exportRes.json()
+        toast.error(errorData.error || '导出次数已用完，升级VIP可无限导出')
+        if (errorData.quotaExceeded) setShowUpgrade(true)
+        return
+      }
+      const exported = await exportRes.json() as { downloadUrl?: string }
+      downloadUrl = exported.downloadUrl || ''
+    } catch {
+      toast.error('导出保存失败，请重试')
+      return
+    }
+
+    if (!downloadUrl) {
+      toast.error('导出链接生成失败，请重试')
+      return
+    }
+
+    const a: HTMLAnchorElement = document.createElement('a')
+    a.href = downloadUrl
     a.download = `${fileName}.pdf`
     a.click()
-    window.URL.revokeObjectURL(url)
     handleClosePreview()
     toast.success('PDF 导出成功')
     // 刷新额度显示
