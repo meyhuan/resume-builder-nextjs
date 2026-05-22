@@ -57,17 +57,39 @@ export function JobIntentionPreview({ resume }: JobIntentionPreviewProps): React
         <ChevronRight size={16} className="text-slate-300" />
       </div>
 
-      <div className="mt-3 text-[13px] leading-6 text-slate-600">
+      <div className="mt-3">
         {empty ? (
-          <p className="text-slate-500">
+          <p className="text-[12px] leading-5 text-slate-400">
             请填写目标岗位、期望城市和期望薪资。求职意向会影响 AI 优化建议和简历关键词。
           </p>
         ) : (
-          <p>
-            目标岗位：{position || '未填写'}；期望城市：{city || '未填写'}；期望薪资：{salary || '未填写'}
-            {type ? `；求职类型：${type}` : ''}
-            {status ? `；当前状态：${status}` : ''}。
-          </p>
+          <div className="flex flex-wrap gap-2">
+            {position && (
+              <span className="inline-flex items-center rounded-lg bg-violet-50/50 border border-violet-100/50 px-2.5 py-1 text-[12px] font-medium text-slate-700">
+                <span className="text-slate-400 mr-1 font-normal">意向：</span>{position}
+              </span>
+            )}
+            {city && (
+              <span className="inline-flex items-center rounded-lg bg-violet-50/50 border border-violet-100/50 px-2.5 py-1 text-[12px] font-medium text-slate-700">
+                <span className="text-slate-400 mr-1 font-normal">城市：</span>{city}
+              </span>
+            )}
+            {salary && (
+              <span className="inline-flex items-center rounded-lg bg-violet-50/50 border border-violet-100/50 px-2.5 py-1 text-[12px] font-medium text-slate-700">
+                <span className="text-slate-400 mr-1 font-normal">薪资：</span>{salary}
+              </span>
+            )}
+            {type && (
+              <span className="inline-flex items-center rounded-lg bg-violet-50/50 border border-violet-100/50 px-2.5 py-1 text-[12px] font-medium text-slate-700">
+                <span className="text-slate-400 mr-1 font-normal">性质：</span>{type}
+              </span>
+            )}
+            {status && (
+              <span className="inline-flex items-center rounded-lg bg-violet-50/50 border border-violet-100/50 px-2.5 py-1 text-[12px] font-medium text-slate-700">
+                <span className="text-slate-400 mr-1 font-normal">状态：</span>{status}
+              </span>
+            )}
+          </div>
         )}
       </div>
     </button>

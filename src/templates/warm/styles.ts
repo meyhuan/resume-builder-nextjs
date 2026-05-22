@@ -26,6 +26,16 @@ export function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`
 }
 
+/** Blend a hex color onto white and return an opaque hex value. */
+export function tintHex(hex: string, alpha: number): string {
+  const normalized = normalizeHex(hex)
+  const clampedAlpha = Math.min(1, Math.max(0, alpha))
+  const r = Math.round(parseInt(normalized.slice(1, 3), 16) * clampedAlpha + 255 * (1 - clampedAlpha))
+  const g = Math.round(parseInt(normalized.slice(3, 5), 16) * clampedAlpha + 255 * (1 - clampedAlpha))
+  const b = Math.round(parseInt(normalized.slice(5, 7), 16) * clampedAlpha + 255 * (1 - clampedAlpha))
+  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`
+}
+
 /** Darken a hex color by a factor (0-1, where 0 = black, 1 = original). */
 export function darkenHex(hex: string, factor: number): string {
   const normalized = normalizeHex(hex)

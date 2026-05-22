@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useRef, type ReactElement } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, type ReactElement } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { ArrowLeft } from 'lucide-react'
@@ -35,6 +35,18 @@ interface MobileEditHomeClientProps {
 }
 
 const log = createLogger('m/edit')
+const SCROLL_STORAGE_PREFIX = 'm-edit-home-scroll'
+
+function findScrollContainer(node: HTMLElement | null): HTMLElement | null {
+  let current = node?.parentElement ?? null
+  while (current) {
+    const style = window.getComputedStyle(current)
+    const canScroll = /(auto|scroll)/.test(style.overflowY) && current.scrollHeight > current.clientHeight
+    if (canScroll) return current
+    current = current.parentElement
+  }
+  return document.scrollingElement instanceof HTMLElement ? document.scrollingElement : null
+}
 
 /**
  * Mobile edit home page. Data is loaded server-side in page.tsx and injected
@@ -52,6 +64,9 @@ export default function MobileEditHomeClient(
   const draft = useDraftStore((s): ResumeData | null => s.draft)
   const resumeId = useDraftStore((s): string | null => s.resumeId)
   const hydratedRef = useRef<boolean>(false)
+  const restoredScrollRef = useRef<boolean>(false)
+  const rootRef = useRef<HTMLDivElement>(null)
+  const scrollStorageKey = `${SCROLL_STORAGE_PREFIX}:${initial?.id ?? resumeId ?? 'default'}`
 
   log.info('store snapshot', {
     storeResumeId: resumeId,
@@ -96,6 +111,75 @@ export default function MobileEditHomeClient(
       hydratedRef.current = true
     }
   }, [initial, setFromServer, resumeId])
+
+  useLayoutEffect((): (() => void) | void => {
+    if (restoredScrollRef.current) return
+    const scroller = findScrollContainer(rootRef.current)
+    if (!scroller) return
+
+    const saved = sessionStorage.getItem(scrollStorageKey)
+    if (!saved) return
+
+    const y = Number(saved)
+    if (!Number.isFinite(y) || y <= 0) return
+    restoredScrollRef.current = true
+
+    const restore = (): void => {
+      scroller.scrollTo({ top: y, left: 0, behavior: 'instant' })
+    }
+
+    let timeoutId: ReturnType<typeof setTimeout> | null = null
+    const frameId = requestAnimationFrame((): void => {
+      restore()
+      timeoutId = setTimeout(restore, 80)
+    })
+
+    return (): void => {
+      cancelAnimationFrame(frameId)
+      if (timeoutId) clearTimeout(timeoutId)
+    }
+  }, [scrollStorageKey])
+
+  useEffect((): (() => void) => {
+    const scroller = findScrollContainer(rootRef.current)
+    if (!scroller) return (): void => {}
+
+    let frameId: number | null = null
+
+    const saveScroll = (): void => {
+      sessionStorage.setItem(scrollStorageKey, String(Math.max(0, Math.round(scroller.scrollTop))))
+    }
+
+    const handleScroll = (): void => {
+      if (frameId !== null) return
+      frameId = requestAnimationFrame((): void => {
+        frameId = null
+        saveScroll()
+      })
+    }
+
+    const handleVisibilityChange = (): void => {
+      if (document.visibilityState === 'hidden') saveScroll()
+    }
+
+    scroller.addEventListener('scroll', handleScroll, { passive: true })
+    window.addEventListener('pagehide', saveScroll)
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return (): void => {
+      if (frameId !== null) cancelAnimationFrame(frameId)
+      saveScroll()
+      scroller.removeEventListener('scroll', handleScroll)
+      window.removeEventListener('pagehide', saveScroll)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
+  }, [scrollStorageKey])
+
+  const saveCurrentScroll = (): void => {
+    const scroller = findScrollContainer(rootRef.current)
+    if (!scroller) return
+    sessionStorage.setItem(scrollStorageKey, String(Math.max(0, Math.round(scroller.scrollTop))))
+  }
 
   // Resolve the resume to render. Trust the draft only when its id matches
   // and it has real content. Otherwise fall through to freshly loaded data.
@@ -224,8 +308,13 @@ export default function MobileEditHomeClient(
 
   return (
     <div
-      className="min-h-screen bg-white"
-      style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 112px)' }}
+      ref={rootRef}
+      className="min-h-screen pt-2"
+      style={{
+        paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 112px)',
+        background: 'radial-gradient(circle at 12% 8%, rgba(124, 58, 237, 0.09) 0, rgba(124, 58, 237, 0) 320px), linear-gradient(180deg, #fbfaff 0%, #f5f3ff 45%, #ffffff 100%)',
+      }}
+      onClickCapture={saveCurrentScroll}
     >
       {!inMiniProgram && (
         <div className="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-slate-200 bg-white/95 px-4 backdrop-blur">

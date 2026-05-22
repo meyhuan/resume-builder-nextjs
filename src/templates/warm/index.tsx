@@ -30,7 +30,7 @@ import TwoColumnDndProvider, {
   COLUMN_RIGHT_ID,
   isTextOnlySection,
 } from './two-column-dnd-provider'
-import { WARM_TEMPLATE_STYLES, resolveAccent, hexToRgba, darkenHex } from './styles'
+import { WARM_TEMPLATE_STYLES, resolveAccent, tintHex, darkenHex } from './styles'
 
 interface WarmTemplateProps {
   readonly resume: ResumeData
@@ -43,7 +43,7 @@ interface WarmTemplateProps {
 const LEFT_TITLE_KEYWORDS = ['自我', '评价', 'self']
 
 function sectionTitleBackground(themeColor: string): string {
-  return `linear-gradient(90deg, ${hexToRgba(themeColor, 0.28)} 0%, ${hexToRgba(themeColor, 0.16)} 62%, ${hexToRgba(themeColor, 0.08)} 100%)`
+  return `linear-gradient(90deg, ${tintHex(themeColor, 0.28)} 0%, ${tintHex(themeColor, 0.16)} 62%, ${tintHex(themeColor, 0.08)} 100%)`
 }
 
 function shouldDefaultToLeft(section: Section): boolean {

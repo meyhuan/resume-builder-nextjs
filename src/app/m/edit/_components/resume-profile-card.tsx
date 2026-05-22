@@ -32,7 +32,7 @@ export function ResumeProfileCard(
 
   return (
     <section className={cn(
-      'mx-[18px] mt-2 rounded-[18px] border bg-white px-3 py-3 shadow-[0_8px_24px_rgba(15,23,42,0.045)]',
+      'mx-[18px] mt-2 rounded-[18px] border bg-white p-3.5 shadow-[0_8px_24px_rgba(15,23,42,0.045)]',
       !name ? 'border-violet-200 bg-violet-50/20' : 'border-[#edf0f5]',
     )}>
       <div className="flex items-center gap-3">
@@ -44,14 +44,14 @@ export function ResumeProfileCard(
           aria-label="编辑基础信息"
         >
           {avatarUrl ? (
-            <div className="overflow-hidden rounded-lg border border-slate-200 bg-slate-100" style={{ width: 56, height: 74 }}>
+            <div className="overflow-hidden rounded-lg border border-slate-200 bg-slate-100" style={{ width: 64, height: 84 }}>
               <img src={avatarUrl} alt={name || '头像'} className="h-full w-full object-cover object-top" />
             </div>
           ) : (
-            <div className="rounded-lg border border-blue-100 bg-gradient-to-br from-blue-100 to-indigo-50 text-blue-600 flex items-center justify-center" style={{ width: 56, height: 74 }}>
+            <div className="rounded-lg border border-blue-100 bg-gradient-to-br from-blue-100 to-indigo-50 text-blue-600 flex items-center justify-center" style={{ width: 64, height: 84 }}>
               {name
-                ? <span className="text-[22px] font-semibold text-blue-600">{name.slice(0, 1)}</span>
-                : <UserRound size={28} strokeWidth={1.8} />}
+                ? <span className="text-[24px] font-semibold text-blue-600">{name.slice(0, 1)}</span>
+                : <UserRound size={32} strokeWidth={1.8} />}
             </div>
           )}
         </button>

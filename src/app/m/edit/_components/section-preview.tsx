@@ -23,7 +23,7 @@ export function SectionPreview(
 ): ReactElement {
   const router = useRouter()
   const label: string = module?.label ?? section.title
-  const baseRoute: string = module?.route ?? `/m/edit/custom/${section.id}`
+  const baseRoute: string = module?.route ?? '/m/edit/custom'
   const isEmpty: boolean = section.blocks.length === 0 || (
     section.blocks.length === 1 &&
     section.blocks[0].type === 'text' &&
@@ -80,7 +80,7 @@ export function SectionPreview(
   return (
     <article
       className={cn(
-        'rounded-[18px] border border-[#edf0f5] bg-white p-3 shadow-[0_8px_24px_rgba(15,23,42,0.045)] transition-shadow',
+        'rounded-[18px] border border-[#edf0f5] bg-white p-3.5 shadow-[0_8px_24px_rgba(15,23,42,0.045)] transition-shadow',
         dragging && 'ring-2 ring-violet-300 shadow-lg',
       )}
     >
