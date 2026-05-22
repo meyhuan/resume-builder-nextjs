@@ -11,6 +11,15 @@ interface PrintPageProps {
   searchParams: Promise<{ token?: string; tpl?: string }>
 }
 
+const BLEED_TEMPLATE_IDS: ReadonlySet<string> = new Set([
+  'elegant',
+  'warm',
+  'qingyun',
+  'mashang',
+  'xingtan',
+  'zhumo',
+])
+
 export const dynamic = 'force-dynamic'
 
 /**
@@ -53,8 +62,15 @@ export default async function PrintPage(props: PrintPageProps): Promise<ReactEle
   // In one-page mode, we remove the native CSS @page margins completely to give the container maximum space.
   // We also conditionally build the per-page margin overrides.
   const isOnePage = meta.onePageMode
+  const isBleedTemplate: boolean = BLEED_TEMPLATE_IDS.has(templateId)
   const pagePaddingV = savedTheme?.pagePaddingVertical ?? 22
   const pageMarginCss = isOnePage ? 'margin: 0;' : `margin: ${pagePaddingV}mm 0;`
+  const bleedFirstPageCss = (!isOnePage && isBleedTemplate)
+    ? `
+        @page :first {
+          margin-top: 0;
+        }`
+    : ''
   const onePageCss = isOnePage
     ? `
         .page[data-one-page="true"] {
@@ -65,7 +81,7 @@ export default async function PrintPage(props: PrintPageProps): Promise<ReactEle
           break-after: avoid !important;
         }`
     : ''
-  const perPageMarginCss = isOnePage
+  const perPageMarginCss = isOnePage || isBleedTemplate
     ? ''
     : `
         .resume-container,
@@ -74,7 +90,7 @@ export default async function PrintPage(props: PrintPageProps): Promise<ReactEle
           padding-bottom: 0 !important;
         }`
 
-  console.log('[print/page] rendering', { id, templateId, title: record.title, hasSavedTheme: !!savedTheme, primaryColor: savedTheme?.primaryColor, isOnePage })
+  console.log('[print/page] rendering', { id, templateId, title: record.title, hasSavedTheme: !!savedTheme, primaryColor: savedTheme?.primaryColor, isOnePage, isBleedTemplate })
 
   return (
     <div className="print-stage">
@@ -89,6 +105,7 @@ export default async function PrintPage(props: PrintPageProps): Promise<ReactEle
         /* @page margin provides top/bottom whitespace on every page (including page 2+).
            Remove the template container's own vertical padding so it doesn't double up on page 1. */
         @page { size: A4; ${pageMarginCss} }
+        ${bleedFirstPageCss}
         ${onePageCss}
         ${perPageMarginCss}
       `}</style>

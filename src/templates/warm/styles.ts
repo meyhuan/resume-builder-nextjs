@@ -19,18 +19,30 @@ export function resolveAccent(primaryColor: string): string {
 
 /** Convert hex color to rgba string with given alpha. */
 export function hexToRgba(hex: string, alpha: number): string {
-  const r = parseInt(hex.slice(1, 3), 16)
-  const g = parseInt(hex.slice(3, 5), 16)
-  const b = parseInt(hex.slice(5, 7), 16)
+  const normalized = normalizeHex(hex)
+  const r = parseInt(normalized.slice(1, 3), 16)
+  const g = parseInt(normalized.slice(3, 5), 16)
+  const b = parseInt(normalized.slice(5, 7), 16)
   return `rgba(${r}, ${g}, ${b}, ${alpha})`
 }
 
 /** Darken a hex color by a factor (0-1, where 0 = black, 1 = original). */
 export function darkenHex(hex: string, factor: number): string {
-  const r = Math.round(parseInt(hex.slice(1, 3), 16) * factor)
-  const g = Math.round(parseInt(hex.slice(3, 5), 16) * factor)
-  const b = Math.round(parseInt(hex.slice(5, 7), 16) * factor)
+  const normalized = normalizeHex(hex)
+  const r = Math.round(parseInt(normalized.slice(1, 3), 16) * factor)
+  const g = Math.round(parseInt(normalized.slice(3, 5), 16) * factor)
+  const b = Math.round(parseInt(normalized.slice(5, 7), 16) * factor)
   return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`
+}
+
+function normalizeHex(color: string): string {
+  const trimmed = color.trim()
+  if (/^#[0-9a-fA-F]{6}$/.test(trimmed)) return trimmed
+  if (/^#[0-9a-fA-F]{3}$/.test(trimmed)) {
+    const [, r, g, b] = trimmed
+    return `#${r}${r}${g}${g}${b}${b}`
+  }
+  return ACCENT_YELLOW
 }
 
 export const WARM_TEMPLATE_STYLES: TemplateStylesConfig = {
@@ -96,7 +108,7 @@ export const WARM_TEMPLATE_STYLES: TemplateStylesConfig = {
   sectionHeader: {
     fontSize: '1.125em',
     fontWeight: 'bold',
-    containerClassName: 'mb-6 w-full',
+    containerClassName: 'w-full',
     icon: {
       size: '0',
       className: 'hidden',

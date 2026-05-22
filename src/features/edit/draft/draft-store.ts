@@ -31,6 +31,7 @@ export interface DraftState {
   readonly templateId: string
   readonly hiddenSectionIds: readonly string[]
   setFromServer: (id: string, resume: ResumeData, templateId?: string) => void
+  setTemplateId: (templateId: string) => void
   updateDraft: (path: string, updater: (draft: ResumeData) => void) => void
   replaceDraft: (next: ResumeData) => void
   reorderSections: (fromIdx: number, toIdx: number) => void
@@ -119,6 +120,9 @@ export const useDraftStore = create<DraftState>()(
           dirtyPaths: [],
           templateId: templateId ?? 'simple',
         })
+      },
+      setTemplateId: (templateId): void => {
+        set({ templateId })
       },
       updateDraft: (path, updater): void => {
         const current = get().draft
@@ -230,6 +234,7 @@ export const useDraftStore = create<DraftState>()(
       partialize: (state) => ({
         resumeId: state.resumeId,
         draft: state.draft,
+        templateId: state.templateId,
         dirtyPaths: state.dirtyPaths,
         celebratedMilestones: state.celebratedMilestones,
         hiddenSectionIds: state.hiddenSectionIds,

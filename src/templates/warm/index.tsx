@@ -42,6 +42,10 @@ interface WarmTemplateProps {
 /** Default sidebar sections by title keywords. */
 const LEFT_TITLE_KEYWORDS = ['自我', '评价', 'self']
 
+function sectionTitleBackground(themeColor: string): string {
+  return `linear-gradient(90deg, ${hexToRgba(themeColor, 0.28)} 0%, ${hexToRgba(themeColor, 0.16)} 62%, ${hexToRgba(themeColor, 0.08)} 100%)`
+}
+
 function shouldDefaultToLeft(section: Section): boolean {
   const t = section.title.toLowerCase()
   return isTextOnlySection(section) && LEFT_TITLE_KEYWORDS.some((kw) => t.includes(kw))
@@ -327,9 +331,10 @@ function WarmSectionView(props: {
       <div
         className="mb-6 w-full"
         style={{
-          borderLeft: `2px solid ${themeColor}`,
-          paddingLeft: '15px',
-          background: `linear-gradient(90deg, ${hexToRgba(themeColor, 0.08)} 0%, #ffffff 100%)`,
+          borderLeft: `4px solid ${themeColor}`,
+          borderRadius: '0 4px 4px 0',
+          padding: '5px 10px 5px 15px',
+          background: sectionTitleBackground(themeColor),
         }}
       >
         <SectionHeader
@@ -341,7 +346,7 @@ function WarmSectionView(props: {
             ...WARM_TEMPLATE_STYLES.sectionHeader,
             fontSize: '1.125em',
             lineHeight: '1.5',
-            containerClassName: 'w-full',
+            containerClassName: 'w-full !mb-0',
           }}
           onTitleChange={isCustomSection(title) ? (newTitle: string) => updateSectionTitle(sectionId, newTitle) : undefined}
           onAdd={isTextOnly ? undefined : (): void => addBlock(sectionId)}
@@ -473,9 +478,10 @@ export default function WarmTemplate(props: WarmTemplateProps): ReactElement {
                   <div
                     className="mb-6 w-full"
                     style={{
-                      borderLeft: `2px solid ${accentColor}`,
-                      paddingLeft: '15px',
-                      background: `linear-gradient(90deg, ${hexToRgba(accentColor, 0.08)} 0%, #ffffff 100%)`,
+                      borderLeft: `4px solid ${accentColor}`,
+                      borderRadius: '0 4px 4px 0',
+                      padding: '5px 10px 5px 15px',
+                      background: sectionTitleBackground(accentColor),
                     }}
                   >
                     <SectionHeader
@@ -486,7 +492,7 @@ export default function WarmTemplate(props: WarmTemplateProps): ReactElement {
                         ...WARM_TEMPLATE_STYLES.sectionHeader,
                         fontSize: '1.125em',
                         lineHeight: '1.5',
-                        containerClassName: 'w-full',
+                        containerClassName: 'w-full !mb-0',
                       }}
                     />
                   </div>

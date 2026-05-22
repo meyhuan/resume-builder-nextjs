@@ -1,9 +1,10 @@
 'use client'
 
-import { Suspense, useEffect, useMemo, useState, type ReactElement } from 'react'
+import { Suspense, useEffect, useLayoutEffect, useMemo, useState, type ReactElement } from 'react'
 import type { ResumeData } from '@/entities/resume/resume-data'
 import type { ThemeTokens } from '@/entities/theme/theme-tokens'
 import { TEMPLATE_REGISTRY } from '@/templates/template-loader'
+import { useAppStore } from '@/state/store'
 
 interface PrintRendererProps {
   readonly resume: ResumeData
@@ -35,11 +36,23 @@ function resolveTheme(templateId: string): ThemeTokens {
 export default function PrintRenderer({ resume, templateId, savedTheme }: PrintRendererProps): ReactElement {
   const config = TEMPLATE_REGISTRY[templateId] || TEMPLATE_REGISTRY['simple']
   const defaultTheme: ThemeTokens = useMemo(() => resolveTheme(config?.id ?? 'simple'), [config])
+  const setReadOnly = useAppStore((s) => s.setReadOnly)
+  const setResume = useAppStore((s) => s.setResume)
   
   // Use the saved theme from the database if available, otherwise fallback to the default theme
   const theme: ThemeTokens = savedTheme ?? defaultTheme
 
   const [ready, setReady] = useState<boolean>(false)
+
+  useLayoutEffect((): (() => void) => {
+    setReadOnly(true)
+    setResume((draft: ResumeData): void => {
+      Object.assign(draft, resume)
+    })
+    return (): void => {
+      setReadOnly(false)
+    }
+  }, [resume, setReadOnly, setResume])
 
   useEffect(() => {
     let cancelled = false

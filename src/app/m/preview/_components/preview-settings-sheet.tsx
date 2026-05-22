@@ -57,6 +57,8 @@ interface PreviewSettingsSheetProps {
   readonly locksPrimaryColor: boolean
   readonly onePageStatus: OnePageStatus
   readonly onClose: () => void
+  readonly onConfirm: () => void | Promise<void>
+  readonly confirming: boolean
   readonly onReset: () => void
   readonly onTabChange: (tab: SettingsTab) => void
   readonly onSelectTemplate: (id: string) => void
@@ -72,6 +74,8 @@ export function PreviewSettingsSheet(props: PreviewSettingsSheetProps): ReactEle
     locksPrimaryColor,
     onePageStatus,
     onClose,
+    onConfirm,
+    confirming,
     onReset,
     onTabChange,
     onSelectTemplate,
@@ -79,7 +83,7 @@ export function PreviewSettingsSheet(props: PreviewSettingsSheetProps): ReactEle
   } = props
 
   return (
-    <BottomSheet open={open} onClose={onClose} onReset={onReset}>
+    <BottomSheet open={open} confirming={confirming} onClose={onClose} onConfirm={onConfirm} onReset={onReset}>
       <Tabs value={tab} onValueChange={(v): void => onTabChange(v as SettingsTab)}>
         <TabsList className="grid grid-cols-4 w-full h-11 bg-slate-100 mb-4 rounded-xl p-1">
           <TabsTrigger value="template">模板</TabsTrigger>
@@ -111,11 +115,13 @@ export function PreviewSettingsSheet(props: PreviewSettingsSheetProps): ReactEle
 interface BottomSheetProps {
   readonly open: boolean
   readonly onClose: () => void
+  readonly onConfirm: () => void | Promise<void>
+  readonly confirming: boolean
   readonly onReset: () => void
   readonly children: ReactNode
 }
 
-function BottomSheet({ open, onClose, onReset, children }: BottomSheetProps): ReactElement {
+function BottomSheet({ open, onClose, onConfirm, confirming, onReset, children }: BottomSheetProps): ReactElement {
   return (
     <>
       <div
@@ -167,11 +173,12 @@ function BottomSheet({ open, onClose, onReset, children }: BottomSheetProps): Re
             </button>
             <button
               type="button"
-              onClick={onClose}
-              className="h-11 rounded-xl bg-violet-600 text-sm font-medium text-white shadow-md shadow-violet-600/25 active:scale-[0.98] transition-transform flex items-center justify-center gap-1.5"
+              onClick={(): void => { void onConfirm() }}
+              disabled={confirming}
+              className="h-11 rounded-xl bg-violet-600 text-sm font-medium text-white shadow-md shadow-violet-600/25 active:scale-[0.98] transition-transform flex items-center justify-center gap-1.5 disabled:opacity-70"
             >
               <Check size={17} />
-              完成
+              {confirming ? '保存中...' : '完成'}
             </button>
           </div>
         </div>
@@ -298,21 +305,6 @@ function AppearancePanel({
               </button>
             )
           })}
-        </div>
-      </Row>
-
-      <Row label="文字颜色">
-        <div className="flex items-center justify-between rounded-xl border border-slate-200 px-3 py-2">
-          <div>
-            <div className="text-sm font-medium text-slate-800">正文颜色</div>
-            <div className="text-xs font-mono text-slate-400">{theme.textColor}</div>
-          </div>
-          <input
-            type="color"
-            value={theme.textColor}
-            onChange={(e): void => onUpdate({ textColor: e.target.value })}
-            className="h-9 w-12 rounded border border-slate-200 bg-transparent p-0"
-          />
         </div>
       </Row>
     </div>

@@ -78,15 +78,19 @@ export default function MobilePreviewClient(): ReactElement {
   // Draft store holds the user's actual edits
   const draft = useDraftStore((s) => s.draft)
   const draftResumeId = useDraftStore((s) => s.resumeId)
+  const draftTemplateId = useDraftStore((s) => s.templateId)
   const setFromServer = useDraftStore((s) => s.setFromServer)
+  const setDraftTemplateId = useDraftStore((s) => s.setTemplateId)
   const saveThumbnail = useDraftStore((s) => s.saveThumbnail)
 
   const initialTemplateId: string = (() => {
     const fromUrl: string | null = searchParams.get('tpl')
-    return fromUrl && TEMPLATE_REGISTRY[fromUrl] ? fromUrl : 'simple'
+    if (fromUrl && TEMPLATE_REGISTRY[fromUrl]) return fromUrl
+    return draftTemplateId && TEMPLATE_REGISTRY[draftTemplateId] ? draftTemplateId : 'simple'
   })()
   const [templateId, setTemplateId] = useState<string>(initialTemplateId)
   const [sheetOpen, setSheetOpen] = useState<boolean>(false)
+  const [settingsSaving, setSettingsSaving] = useState<boolean>(false)
   const [tab, setTab] = useState<SettingsTab>('template')
   const [containerWidth, setContainerWidth] = useState<number>(MOBILE_PAGE_MAX_WIDTH_PX)
   const [contentHeight, setContentHeight] = useState<number>(0)
@@ -127,6 +131,9 @@ export default function MobilePreviewClient(): ReactElement {
             if (Object.keys(meta.themes).length > 0) {
               log.info('loading saved themes from DB', { templates: Object.keys(meta.themes) })
               loadThemes(meta.themes)
+            }
+            if (!searchParams.get('tpl') && full.template && TEMPLATE_REGISTRY[full.template]) {
+              setTemplateId(full.template)
             }
             setFromServer(full.id, cleanContent as unknown as ResumeData, full.template ?? 'simple')
             setResume((d: ResumeData): void => {
@@ -404,39 +411,73 @@ export default function MobilePreviewClient(): ReactElement {
    * Used by both the mini-program and H5 export flows.
    */
   const syncPreviewState = useCallback(async (targetId: string): Promise<void> => {
-    try {
-      // Merge the current theme into the full themes map so other templates'
-      // saved themes are preserved in the DB (not overwritten with an empty map).
-      const mergedThemes = { ...themesMap, [templateId]: theme }
-      log.info('syncPreviewState', { templateId, primaryColor: theme.primaryColor, themesMapKeys: Object.keys(themesMap) })
+    const sourceResume: ResumeData = draft ?? resume
+    const latestStore = useAppStore.getState()
+    const latestTheme: ThemeTokens = latestStore.getThemeForTemplate(templateId)
+    const latestThemesMap: Record<string, ThemeTokens> = latestStore.themes
+    // Merge the current theme into the full themes map so other templates'
+    // saved themes are preserved in the DB (not overwritten with an empty map).
+    const mergedThemes = { ...latestThemesMap, [templateId]: latestTheme }
+    log.info('syncPreviewState', {
+      templateId,
+      primaryColor: latestTheme.primaryColor,
+      themesMapKeys: Object.keys(latestThemesMap),
+    })
 
-      const editorMeta = {
-        themes: mergedThemes,
-        onePageMode: onePageFit,
-        onePageSnapshot,
-      }
-
-      // Strip any stale __editorMeta that may be embedded in the resume object
-      // (e.g. when resume was loaded from the server GET response which includes
-      // the raw content blob). embedEditorMeta will write the fresh meta.
-      const { content: cleanContent } = extractEditorMeta(
-        resume as unknown as Record<string, unknown>
-      )
-      const contentWithMeta = embedEditorMeta(cleanContent, editorMeta)
-
-      await fetch(`/next-api/resumes/${targetId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: resume.name || 'Untitled Resume',
-          content: contentWithMeta,
-          template: templateId,
-        }),
-      })
-    } catch (err) {
-      log.warn('failed to sync preview state before export', { error: err })
+    const editorMeta = {
+      themes: mergedThemes,
+      onePageMode: onePageFit,
+      onePageSnapshot,
     }
-  }, [resume, templateId, theme, themesMap, onePageFit, onePageSnapshot])
+
+    // Strip any stale __editorMeta that may be embedded in the resume object
+    // (e.g. when resume was loaded from the server GET response which includes
+    // the raw content blob). embedEditorMeta will write the fresh meta.
+    const { content: cleanContent } = extractEditorMeta(
+      sourceResume as unknown as Record<string, unknown>
+    )
+    const contentWithMeta = embedEditorMeta(cleanContent, editorMeta)
+
+    const response = await fetch(`/next-api/resumes/${targetId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title: sourceResume.name || resume.name || 'Untitled Resume',
+        content: contentWithMeta,
+        template: templateId,
+      }),
+    })
+
+    if (!response.ok) {
+      const text = await response.text().catch(() => '')
+      const message = text || `HTTP ${response.status}`
+      log.warn('failed to sync preview state before export', { status: response.status, message })
+      throw new Error('保存最新简历内容失败，请重试后再导出')
+    }
+  }, [draft, resume, templateId, onePageFit, onePageSnapshot])
+
+  const handleConfirmSettings = useCallback(async (): Promise<void> => {
+    const targetId: string | null = draftResumeId || searchParams.get('id')
+    if (!targetId) {
+      toast.error('无法获取简历 ID，请返回重试')
+      return
+    }
+    setSettingsSaving(true)
+    try {
+      await syncPreviewState(targetId)
+      setDraftTemplateId(templateId)
+      setSheetOpen(false)
+      toast.success('样式已保存')
+    } catch (err: unknown) {
+      log.warn('failed to save preview settings', {
+        templateId,
+        error: err instanceof Error ? err.message : String(err),
+      })
+      toast.error(err instanceof Error ? err.message : '样式保存失败，请稍后重试')
+    } finally {
+      setSettingsSaving(false)
+    }
+  }, [draftResumeId, searchParams, syncPreviewState, setDraftTemplateId, templateId])
 
   /**
    * Unified export handler for both PDF and image.
@@ -491,12 +532,12 @@ export default function MobilePreviewClient(): ReactElement {
 
   return (
     <AiSectionProvider>
-      <div className="min-h-screen bg-slate-100 flex flex-col">
+      <div className="h-[100dvh] overflow-hidden bg-slate-100 flex flex-col">
         <TopBar />
 
         <div
           ref={stageRef}
-          className="flex-1 overflow-auto overscroll-contain px-3 pt-4"
+          className="min-h-0 flex-1 overflow-auto overscroll-contain px-3 pt-4"
           style={{
             touchAction: 'pan-x pan-y',
             // Bottom padding accounts for the fixed action bar (72px) + safe area.
@@ -580,6 +621,8 @@ export default function MobilePreviewClient(): ReactElement {
           locksPrimaryColor={Boolean(templateConfig?.locksPrimaryColor)}
           onePageStatus={onePageStatus}
           onClose={(): void => setSheetOpen(false)}
+          onConfirm={handleConfirmSettings}
+          confirming={settingsSaving}
           onReset={handleResetStyle}
           onTabChange={setTab}
           onSelectTemplate={handleSelectTemplate}

@@ -19,6 +19,7 @@ import { blockTypeToModuleType, extractBlockContentHtml } from '@/components/ai-
 import DragDropProvider from '@/dnd/drag-drop-provider'
 import { DndIds } from '@/dnd/ids'
 import { BaseInfoSection, JobIntentionSection, BlockRenderer, SectionContainer } from '@/templates/components/v2'
+import type { SectionHeaderStyles } from '@/templates/components/v2/types'
 import { SIMPLE_TEMPLATE_STYLES } from './styles'
 
 /** Check if every block in a section is a TextBlock. */
@@ -104,6 +105,38 @@ export default function SimpleTemplate(props: SimpleTemplateProps): ReactElement
   const { resume, theme } = props
   const isJobIntentionVisible: boolean = resume.jobIntentionVisible ?? Boolean(resume.jobIntention)
   const pagePadding: string = `${theme.pagePaddingVertical}mm ${theme.pagePaddingHorizontal}mm`
+  const baseInfoStyles = SIMPLE_TEMPLATE_STYLES.baseInfo ?? {}
+  const jobIntentionStyles = SIMPLE_TEMPLATE_STYLES.jobIntention ?? {}
+  const sectionHeaderStyles = SIMPLE_TEMPLATE_STYLES.sectionHeader ?? {}
+  const styles = {
+    ...SIMPLE_TEMPLATE_STYLES,
+    baseInfo: {
+      ...baseInfoStyles,
+      name: {
+        ...baseInfoStyles.name,
+        color: theme.primaryColor,
+      },
+    },
+    jobIntention: {
+      ...jobIntentionStyles,
+      title: {
+        ...jobIntentionStyles.title,
+        color: theme.primaryColor,
+      },
+      icon: {
+        ...jobIntentionStyles.icon,
+        color: theme.primaryColor,
+      },
+    },
+    sectionHeader: {
+      ...sectionHeaderStyles,
+      color: theme.primaryColor,
+      icon: {
+        ...sectionHeaderStyles.icon,
+        color: theme.primaryColor,
+      },
+    },
+  }
 
   return (
     <div
@@ -122,7 +155,7 @@ export default function SimpleTemplate(props: SimpleTemplateProps): ReactElement
           name={resume.name}
           baseInfo={resume.baseInfo ?? null}
           themeColor={theme.primaryColor}
-          styles={SIMPLE_TEMPLATE_STYLES.baseInfo}
+          styles={styles.baseInfo}
         />
       </div>
 
@@ -131,7 +164,7 @@ export default function SimpleTemplate(props: SimpleTemplateProps): ReactElement
           <JobIntentionSection
             jobIntention={resume.jobIntention ?? null}
             themeColor={theme.primaryColor}
-            styles={SIMPLE_TEMPLATE_STYLES.jobIntention}
+            styles={styles.jobIntention}
           />
         </div>
       ) : null}
@@ -152,7 +185,7 @@ export default function SimpleTemplate(props: SimpleTemplateProps): ReactElement
                 title={section.title}
                 icon={getSectionIcon(section.title) || undefined}
                 themeColor={theme.primaryColor}
-                styles={SIMPLE_TEMPLATE_STYLES.sectionHeader}
+                styles={styles.sectionHeader}
               />
               <div className="space-y-3">
                 {section.blocks.map((block) => (
@@ -160,7 +193,7 @@ export default function SimpleTemplate(props: SimpleTemplateProps): ReactElement
                     key={block.id}
                     block={block}
                     themeColor={theme.primaryColor}
-                    styles={SIMPLE_TEMPLATE_STYLES.blockRenderer}
+                    styles={styles.blockRenderer}
                   />
                 ))}
               </div>
@@ -178,6 +211,7 @@ export default function SimpleTemplate(props: SimpleTemplateProps): ReactElement
                   dragHandleAttributes={sectionDragProps.attributes}
                   dragHandleListeners={sectionDragProps.listeners}
                   dragHandleRef={sectionDragProps.ref}
+                  sectionHeaderStyles={styles.sectionHeader}
                 >
                   {section.blocks.map((block, index) => (
                     <BlockRendererWrapper 
@@ -207,10 +241,11 @@ interface SectionViewProps {
   readonly dragHandleAttributes?: unknown
   readonly dragHandleListeners?: unknown
   readonly dragHandleRef?: (element: HTMLElement | null) => void
+  readonly sectionHeaderStyles: SectionHeaderStyles
 }
 
 function SectionView(props: SectionViewProps): ReactElement {
-  const { section, themeColor, children, dragHandleAttributes, dragHandleListeners, dragHandleRef } = props
+  const { section, themeColor, children, dragHandleAttributes, dragHandleListeners, dragHandleRef, sectionHeaderStyles } = props
   const { id: sectionId, title, columns, blocks } = section
   const blockIds = blocks.map((b) => b.id)
   const isTextOnly = isTextOnlySection(section)
@@ -237,7 +272,7 @@ function SectionView(props: SectionViewProps): ReactElement {
         title={title}
         icon={icon || undefined}
         themeColor={themeColor}
-        styles={SIMPLE_TEMPLATE_STYLES.sectionHeader}
+        styles={sectionHeaderStyles}
         onTitleChange={isCustomSection(title) ? (newTitle: string) => updateSectionTitle(sectionId, newTitle) : undefined}
         onAdd={isTextOnly ? undefined : (): void => addBlock(sectionId)}
         onDelete={handleDeleteSection}

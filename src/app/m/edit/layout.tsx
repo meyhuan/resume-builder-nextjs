@@ -1,7 +1,6 @@
 import { type ReactElement, type ReactNode } from 'react'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
-import { MobileRouteTransition } from './_components/mobile-route-transition'
 
 /**
  * Mobile edit layout (server component): guards all /m/edit/* routes.
@@ -15,5 +14,5 @@ export default async function MobileEditLayout(
   if (!uid) {
     redirect('/login?redirect=/m/edit')
   }
-  return <MobileRouteTransition>{children}</MobileRouteTransition>
+  return <>{children}</>
 }

@@ -2,8 +2,10 @@ import { type ReactElement } from 'react'
 import type { Metadata } from 'next'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
+import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { createLogger } from '@/lib/logger'
+import { createDefaultResume } from '@/lib/default-resume'
 import type { ResumeData } from '@/entities/resume/resume-data'
 import MobileEditHomeClient, { type InitialResume } from './edit-home-client'
 
@@ -16,6 +18,13 @@ export const metadata: Metadata = {
 
 interface EditHomePageProps {
   readonly searchParams: Promise<{ id?: string; javaId?: string }>
+}
+
+function hasEditableContent(content: unknown): boolean {
+  if (!content || typeof content !== 'object' || Array.isArray(content)) return false
+  const resume = content as Partial<ResumeData>
+  if (resume.name || resume.baseInfo || resume.jobIntention) return true
+  return Array.isArray(resume.sections) && resume.sections.length > 0
 }
 
 /**
@@ -71,11 +80,23 @@ export default async function MobileEditHomePage(
         select: { id: true, title: true, content: true, template: true },
       })
 
-  const initial: InitialResume | null = resume
+  let initialContent: ResumeData | null = resume
+    ? resume.content as unknown as ResumeData
+    : null
+  if (resume && !hasEditableContent(resume.content)) {
+    log.warn('resume content is empty, backfilling default content', { id: resume.id })
+    initialContent = createDefaultResume()
+    await prisma.resume.update({
+      where: { id: resume.id },
+      data: { content: initialContent as unknown as Prisma.InputJsonValue },
+    })
+  }
+
+  const initial: InitialResume | null = resume && initialContent
     ? {
         id: resume.id,
         title: resume.title,
-        content: resume.content as unknown as ResumeData,
+        content: initialContent,
         template: resume.template ?? 'simple',
       }
     : null

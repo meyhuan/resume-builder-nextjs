@@ -2,6 +2,7 @@ import { type ReactElement, type ReactNode } from 'react'
 import type { Metadata } from 'next'
 import MobileDebugTools from './_components/mobile-debug-tools'
 import WechatJssdkLoader from './_components/wechat-jssdk-loader'
+import MobilePageTransition from './_components/mobile-page-transition'
 
 export const metadata: Metadata = {
   title: {
@@ -22,7 +23,7 @@ export default function MobileRootLayout(
     <>
       <WechatJssdkLoader />
       <MobileDebugTools />
-      {children}
+      <MobilePageTransition>{children}</MobilePageTransition>
     </>
   )
 }

@@ -3,6 +3,7 @@
 import { useState, type ReactElement } from 'react'
 import { useRouter } from 'next/navigation'
 import { Eye, LayoutGrid } from 'lucide-react'
+import { useDraftStore } from '@/features/edit/draft/draft-store'
 import { ModuleManageSheet } from './module-manage-sheet'
 
 interface HomeActionBarProps {
@@ -17,10 +18,12 @@ interface HomeActionBarProps {
 export function HomeActionBar(props: HomeActionBarProps): ReactElement {
   const { resumeId, template } = props
   const router = useRouter()
+  const draftTemplateId = useDraftStore((s): string => s.templateId)
   const [sheetOpen, setSheetOpen] = useState<boolean>(false)
 
   const handlePreview = (): void => {
-    const tpl = template ? `&tpl=${encodeURIComponent(template)}` : ''
+    const currentTemplate = draftTemplateId || template
+    const tpl = currentTemplate ? `&tpl=${encodeURIComponent(currentTemplate)}` : ''
     router.push(`/m/preview?id=${resumeId ?? ''}${tpl}`)
   }
 

@@ -12,7 +12,8 @@ import type { UUID } from '@/entities/common/uuid'
 import type { ResumeData } from '@/entities/resume/resume-data'
 import type { ExternalResume } from '@/io/external-resume-types'
 import { mapExternalResume } from '@/io/external-resume-importer'
-import { BLANK_RESUME_JSON, TEST_RESUME_JSON } from '@/io/default-resume-data'
+import { TEST_RESUME_JSON } from '@/io/default-resume-data'
+import { createDefaultResume } from '@/lib/default-resume'
 import { createDefaultBlock } from '@/entities/blocks/block-factory'
 import { TEMPLATE_REGISTRY } from '@/templates/template-loader'
 
@@ -41,10 +42,7 @@ function resolveInitialTheme(templateId: string): ThemeTokens {
   return { ...defaultTheme, primaryColor: recommended }
 }
 
-export const defaultResume: ResumeData = {
-  ...mapExternalResume(BLANK_RESUME_JSON),
-  jobIntentionVisible: true,
-}
+export const defaultResume: ResumeData = createDefaultResume()
 const testResume = mapExternalResume(TEST_RESUME_JSON)
 
 function createId(prefix: string): UUID {

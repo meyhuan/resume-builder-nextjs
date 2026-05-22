@@ -67,7 +67,7 @@ export const SIMPLE_TEMPLATE_STYLES: TemplateStylesConfig = {
     fieldLabel: 'text-neutral-600',
     fieldValue: 'text-neutral-800',
     icon: {
-      size: '1.25em',
+      size: '1.52em',
       color: '#2f2f2f',
     },
     editButton: 'ml-auto opacity-0 group-hover:opacity-100 transition-opacity print:hidden text-gray-400 hover:text-gray-600',
@@ -80,7 +80,7 @@ export const SIMPLE_TEMPLATE_STYLES: TemplateStylesConfig = {
     color: '#2f2f2f',
     containerClassName: 'pb-0.5',
     icon: {
-      size: '1.18em',
+      size: '1.42em',
       color: '#2f2f2f',
     },
   },

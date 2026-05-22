@@ -14,6 +14,7 @@ import { Readable } from 'stream'
 import OpenAI from 'openai'
 import { getDefaultModel, resolveApiKey } from '@/lib/ai/ai-config'
 import { buildImportSystemPrompt, buildImportUserPrompt } from '@/lib/ai/import-prompt-builder'
+import { createDefaultResume } from '@/lib/default-resume'
 
 /**
  * POST /next-api/resumes/mini
@@ -94,7 +95,7 @@ export async function POST(req: Request): Promise<NextResponse> {
         userId: user.id,
         title,
         template,
-        content: { sections: [] } as unknown as Prisma.InputJsonValue,
+        content: createDefaultResume() as unknown as Prisma.InputJsonValue,
       },
       select: { id: true, title: true, template: true, updatedAt: true },
     })
