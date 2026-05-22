@@ -54,6 +54,19 @@ interface ExportJobResponse {
 
 const log = createLogger('m/preview')
 
+function normalizeExportFileName(value: string | undefined): string {
+  return (value || '').trim().replace(/[\\/:*?"<>|]/g, '_')
+}
+
+function buildDefaultExportFileName(resume: ResumeData): string {
+  const baseInfo = resume.baseInfo as (ResumeData['baseInfo'] & { readonly name?: string; readonly fullName?: string; readonly position?: string }) | undefined
+  const name = normalizeExportFileName(baseInfo?.fullName || baseInfo?.name || resume.name)
+  const position = normalizeExportFileName(resume.jobIntention?.position || baseInfo?.position || baseInfo?.title || '')
+  const phone = normalizeExportFileName(baseInfo?.phone || '')
+  const parts = [name, position, phone].filter(Boolean)
+  return parts.length > 0 ? parts.join('_') : 'resume'
+}
+
 /**
  * Main client for /m/preview. Owns the current template id, mounts read-only mode,
  * and renders the active template alongside a bottom-sheet settings panel.
@@ -227,6 +240,9 @@ export default function MobilePreviewClient(): ReactElement {
   const baseScale: number = containerWidth / A4_WIDTH_PX
   const scale: number = baseScale * userZoom
   const scaledHeight: number = A4_WIDTH_PX * A4_RATIO * scale
+  const scaledWidth: number = A4_WIDTH_PX * scale
+  const previewHeight: number = contentHeight > 0 ? contentHeight * scale : scaledHeight
+  const previewViewportWidth: number = Math.max(containerWidth * userZoom, scaledWidth)
 
   const updateTheme = useCallback(
     (patch: Partial<ThemeTokens>): void => {
@@ -432,7 +448,7 @@ export default function MobilePreviewClient(): ReactElement {
   const handleExport = useCallback(async (type: ExportType): Promise<void> => {
     if (!innerRef.current) return
     setIsExporting(true)
-    const fileName: string = resume.name || 'resume'
+    const fileName: string = buildDefaultExportFileName(resume)
     try {
       const targetResumeId: string | null = draftResumeId || searchParams.get('id')
       if (!targetResumeId) {
@@ -441,6 +457,18 @@ export default function MobilePreviewClient(): ReactElement {
       }
 
       await syncPreviewState(targetResumeId)
+      if (inMiniProgram && typeof window.wx?.miniProgram?.navigateTo === 'function') {
+        const params = new URLSearchParams({
+          resumeId: targetResumeId,
+          templateId,
+          type,
+          fileName,
+        })
+        const page = `/pages/exportResult/exportResult?${params.toString()}`
+        log.info('navigateTo native mini-program exportResult before confirm', { page })
+        window.wx.miniProgram.navigateTo({ url: page })
+        return
+      }
       const job = await createExportJob({ resumeId: targetResumeId, templateId, type, fileName })
       openExportResult(job)
     } catch (err: unknown) {
@@ -449,7 +477,7 @@ export default function MobilePreviewClient(): ReactElement {
     } finally {
       setIsExporting(false)
     }
-  }, [resume, createExportJob, openExportResult, draftResumeId, searchParams, templateId, syncPreviewState])
+  }, [resume, createExportJob, openExportResult, draftResumeId, searchParams, templateId, syncPreviewState, inMiniProgram])
 
   const handleExportPdf = useCallback(async (): Promise<void> => {
     await handleExport('pdf')
@@ -468,7 +496,7 @@ export default function MobilePreviewClient(): ReactElement {
 
         <div
           ref={stageRef}
-          className="flex-1 flex items-start justify-center px-3 pt-4 overflow-auto touch-pan-y"
+          className="flex-1 overflow-auto overscroll-contain px-3 pt-4"
           style={{
             touchAction: 'pan-x pan-y',
             // Bottom padding accounts for the fixed action bar (72px) + safe area.
@@ -479,41 +507,47 @@ export default function MobilePreviewClient(): ReactElement {
           onTouchEnd={handleTouchEnd}
         >
           <div
-            id={scopedStyleId}
-            className="relative bg-white shadow-xl rounded overflow-hidden"
+            className="mx-auto"
             style={{
-              width: `${containerWidth * userZoom}px`,
-              // Use the measured unscaled content height × scale for the real
-              // visual height. Fallback to one A4 page height before measurement.
-              height: `${contentHeight > 0 ? contentHeight * scale : scaledHeight}px`,
+              width: `${previewViewportWidth}px`,
+              height: `${previewHeight}px`,
             }}
           >
-            {/* Scoped CSS so titleScale / paragraphIndent can influence existing templates
-                without modifying every template's internals. Uses !important to win over
-                the templates' inline font-size on section headings. */}
-            <style>{`
-              #${scopedStyleId} .resume-container h2 {
-                font-size: calc(1.285em * ${titleScale}) !important;
-              }
-              #${scopedStyleId} .resume-container p {
-                text-indent: ${paragraphIndent}em;
-              }
-            `}</style>
-
             <div
-              ref={innerRef}
+              id={scopedStyleId}
+              className="relative bg-white shadow-xl rounded overflow-hidden"
               style={{
-                width: `${A4_WIDTH_PX}px`,
-                transform: `scale(${scale})`,
-                transformOrigin: 'top left',
+                width: `${scaledWidth}px`,
+                height: `${previewHeight}px`,
               }}
             >
-              <Suspense fallback={<TemplateFallback />}>
-                {Template ? <Template resume={resume} theme={theme} /> : null}
-              </Suspense>
-            </div>
+              {/* Scoped CSS so titleScale / paragraphIndent can influence existing templates
+                  without modifying every template's internals. Uses !important to win over
+                  the templates' inline font-size on section headings. */}
+              <style>{`
+                #${scopedStyleId} .resume-container h2 {
+                  font-size: calc(1.285em * ${titleScale}) !important;
+                }
+                #${scopedStyleId} .resume-container p {
+                  text-indent: ${paragraphIndent}em;
+                }
+              `}</style>
 
-            {onePageFit ? <OnePageBadge status={onePageStatus} /> : null}
+              <div
+                ref={innerRef}
+                style={{
+                  width: `${A4_WIDTH_PX}px`,
+                  transform: `scale(${scale})`,
+                  transformOrigin: 'top left',
+                }}
+              >
+                <Suspense fallback={<TemplateFallback />}>
+                  {Template ? <Template resume={resume} theme={theme} /> : null}
+                </Suspense>
+              </div>
+
+              {onePageFit ? <OnePageBadge status={onePageStatus} /> : null}
+            </div>
           </div>
         </div>
 

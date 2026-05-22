@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, type ReactElement } from 'react'
+import { useEffect, useState, type ReactElement } from 'react'
 
 interface VConsoleWindow extends Window {
   readonly vConsole?: unknown
@@ -40,6 +40,8 @@ function shouldActivate(): boolean {
  * inside the WeChat mini-program web-view where no native devtools exist).
  */
 export default function MobileDebugTools(): ReactElement | null {
+  const [loadFailed, setLoadFailed] = useState<boolean>(false)
+
   useEffect((): (() => void) | void => {
     if (!shouldActivate()) return
     const w: VConsoleWindow = window as VConsoleWindow
@@ -56,8 +58,33 @@ export default function MobileDebugTools(): ReactElement | null {
         Object.assign(updated, { vConsole: new updated.VConsole() })
       }
     }
+    script.onerror = (): void => {
+      setLoadFailed(true)
+      console.error('[mobile-debug] failed to load vConsole script:', VCONSOLE_SRC)
+    }
     document.head.appendChild(script)
   }, [])
 
-  return null
+  if (!loadFailed) return null
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        right: 12,
+        bottom: 12,
+        zIndex: 2147483647,
+        maxWidth: 260,
+        borderRadius: 8,
+        background: '#fee2e2',
+        color: '#991b1b',
+        fontSize: 12,
+        lineHeight: 1.5,
+        padding: '8px 10px',
+        boxShadow: '0 10px 24px rgba(15,23,42,0.18)',
+      }}
+    >
+      H5 调试面板加载失败，请检查 webview 是否能访问 jsdelivr。
+    </div>
+  )
 }

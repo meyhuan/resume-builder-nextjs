@@ -33,7 +33,9 @@ export function getInternalBaseUrl(req: Request): string {
   const override = process.env.INTERNAL_BASE_URL || process.env.NEXT_PUBLIC_SITE_URL
   if (override) return override.replace(/\/$/, '')
   const url = new URL(req.url)
-  return `${url.protocol}//${url.host}`
+  const isLocalHost = url.hostname === 'localhost' || url.hostname === '127.0.0.1' || url.hostname === '::1'
+  const protocol = isLocalHost ? 'http:' : url.protocol
+  return `${protocol}//${url.host}`
 }
 
 export async function renderViaPrintPage(opts: RenderViaPrintPageOpts): Promise<RenderResult> {

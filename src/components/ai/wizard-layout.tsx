@@ -34,12 +34,34 @@ function getMiniProgram(): WxMiniProgram | null {
 }
 
 function useInMiniProgram(): boolean {
-  return useMemo((): boolean => {
+  const [inMiniProgram, setInMiniProgram] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false
-    const isEnv = (window as unknown as { __wxjs_environment?: string }).__wxjs_environment === 'miniprogram'
-    console.log('[useInMiniProgram] environment check:', isEnv, 'wx.miniProgram:', !!getMiniProgram())
-    return isEnv
+    const params = new URLSearchParams(window.location.search)
+    return params.get('source') === 'mini' || params.get('mini') === '1'
+  })
+
+  useEffect((): (() => void) | void => {
+    if (typeof window === 'undefined') return
+
+    const check = (): void => {
+      const isEnv = (window as unknown as { __wxjs_environment?: string }).__wxjs_environment === 'miniprogram'
+      const hasMiniProgram = Boolean(getMiniProgram())
+      const next = isEnv || hasMiniProgram
+      console.log('[useInMiniProgram] environment check:', next, 'wx.miniProgram:', hasMiniProgram)
+      setInMiniProgram(next)
+    }
+
+    check()
+    window.addEventListener('WeixinJSBridgeReady', check)
+    const timer = window.setTimeout(check, 300)
+
+    return (): void => {
+      window.removeEventListener('WeixinJSBridgeReady', check)
+      window.clearTimeout(timer)
+    }
   }, [])
+
+  return inMiniProgram
 }
 
 const AI_MODELS = getAvailableModels();
@@ -61,6 +83,14 @@ export const WizardLayout = ({ children }: { children: React.ReactNode }) => {
   const resumeQuota = quota.aiGenerateResume;
   const isLimitReached = resumeQuota.remaining === 0;
   const inMiniProgram = useInMiniProgram();
+
+  useEffect((): void => {
+    document.title = 'AI 生成简历';
+    const mini = getMiniProgram();
+    if (inMiniProgram && mini?.postMessage) {
+      mini.postMessage({ data: { action: 'setTitle', title: 'AI 生成简历' } });
+    }
+  }, [inMiniProgram]);
 
   const saveResume = useCallback(async (resumeData: ResumeData): Promise<void> => {
     try {
@@ -157,6 +187,7 @@ export const WizardLayout = ({ children }: { children: React.ReactNode }) => {
         onBack={handleBack}
         onRetry={handleGenerate}
         setShowUpgrade={setShowUpgrade}
+        inMiniProgram={inMiniProgram}
       />
     );
   }
@@ -165,7 +196,7 @@ export const WizardLayout = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <div className="min-h-screen bg-[#F7F6FB] flex flex-col">
-      <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-xl border-b border-gray-100/80">
+      {!inMiniProgram && <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-xl border-b border-gray-100/80">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-13 flex items-center justify-between">
           <button
             type="button"
@@ -199,7 +230,7 @@ export const WizardLayout = ({ children }: { children: React.ReactNode }) => {
           )}
           {inMiniProgram && <span />} {/* Spacer to maintain layout */}
         </div>
-      </header>
+      </header>}
 
       <WxLoginDialog isOpen={isLoginOpen} onClose={handleLoginClose} onSuccess={handleLoginSuccess} />
       <VipUpgradeDialog open={showUpgrade} onOpenChange={setShowUpgrade} />
@@ -302,6 +333,7 @@ interface GenerationPageProps {
   readonly onBack: () => void;
   readonly onRetry: () => void;
   readonly setShowUpgrade: (show: boolean) => void;
+  readonly inMiniProgram: boolean;
 }
 
 function GenerationPage({
@@ -312,6 +344,7 @@ function GenerationPage({
   onBack,
   onRetry,
   setShowUpgrade,
+  inMiniProgram,
 }: GenerationPageProps): React.ReactElement {
   const scrollRef = useRef<HTMLDivElement>(null);
   const isUserScrolled = useRef<boolean>(false);
@@ -344,7 +377,7 @@ function GenerationPage({
 
   return (
     <div className="min-h-screen bg-[#F7F6FB] flex flex-col">
-      <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-xl border-b border-gray-100/80">
+      {!inMiniProgram && <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-xl border-b border-gray-100/80">
         <div className="max-w-6xl mx-auto px-6 h-13 flex items-center gap-3">
           <button
             type="button"
@@ -371,7 +404,7 @@ function GenerationPage({
             </div>
           )}
         </div>
-      </header>
+      </header>}
 
       <div
         ref={scrollRef}

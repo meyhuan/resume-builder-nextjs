@@ -21,6 +21,7 @@ interface ConfirmRequestBody {
   readonly wxId?: unknown
   readonly timestamp?: unknown
   readonly sign?: unknown
+  readonly fileName?: unknown
 }
 
 export async function POST(
@@ -38,6 +39,9 @@ export async function POST(
   const wxId: string = String(body.wxId ?? '')
   const timestamp: number = Number(body.timestamp)
   const sign: string = String(body.sign ?? '')
+  const requestedFileName: string | undefined = typeof body.fileName === 'string'
+    ? sanitizeFileName(body.fileName)
+    : undefined
   const signError = verifyMiniSign({ wxId, timestamp, sign })
   if (signError) {
     console.warn('[exports/mini/confirm] sign error', { id, wxId, signError })
@@ -54,11 +58,14 @@ export async function POST(
 
   if (entry.confirmed) {
     console.log('[exports/mini/confirm] already confirmed (idempotent)', { id })
-    await persistExportRecord(id, wxId, entry)
+    const next = requestedFileName ? await markConfirmed(id, requestedFileName) : null
+    const confirmedEntry: ExportTempEntry = next ? { ...entry, ...next, confirmed: true } : entry
+    await persistExportRecord(id, wxId, confirmedEntry)
     return NextResponse.json({
       id,
       downloadUrl: `/next-api/export-file/${id}`,
-      expiresAt: new Date(entry.expiresAt).toISOString(),
+      fileName: confirmedEntry.fileName,
+      expiresAt: new Date(confirmedEntry.expiresAt).toISOString(),
       confirmed: true,
     })
   }
@@ -92,7 +99,7 @@ export async function POST(
     }, { status: 402 })
   }
 
-  const next = await markConfirmed(id)
+  const next = await markConfirmed(id, requestedFileName)
   if (!next) {
     console.error('[exports/mini/confirm] markConfirmed failed', { id })
     return NextResponse.json({ error: '确认失败，请重试' }, { status: 500 })
@@ -104,11 +111,17 @@ export async function POST(
   return NextResponse.json({
     id,
     downloadUrl: `/next-api/export-file/${id}`,
+    fileName: confirmedEntry.fileName,
     expiresAt: new Date(next.expiresAt).toISOString(),
     confirmed: true,
     remaining: consumed.remaining,
     isVip: consumed.isVip,
   })
+}
+
+function sanitizeFileName(value: string): string | undefined {
+  const sanitized = value.trim().replace(/[\\/:*?"<>|]/g, '_').replace(/\.(pdf|png)$/i, '').slice(0, 60)
+  return sanitized || undefined
 }
 
 async function persistExportRecord(

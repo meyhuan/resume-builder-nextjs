@@ -1,6 +1,6 @@
 'use client'
 
-import { type ReactElement, type ReactNode, useState } from 'react'
+import { type ReactElement, type ReactNode, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Loader2, Check } from 'lucide-react'
 import { toast } from 'sonner'
@@ -42,6 +42,13 @@ export function ModuleEditShell(props: ModuleEditShellProps): ReactElement {
   const discardAll = useDraftStore((s) => s.discardAll)
   const [confirmBack, setConfirmBack] = useState<boolean>(false)
   const inMiniProgram = useInMiniProgram()
+
+  useEffect((): void => {
+    document.title = title
+    if (inMiniProgram && typeof window.wx?.miniProgram?.postMessage === 'function') {
+      window.wx.miniProgram.postMessage({ data: { action: 'setTitle', title } })
+    }
+  }, [inMiniProgram, title])
 
   const doBack = (): void => {
     if (onBack) onBack()

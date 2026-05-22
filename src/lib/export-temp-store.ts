@@ -137,7 +137,7 @@ export async function saveExportTemp(input: SaveExportTempInput): Promise<{ toke
  * Returns the updated entry (without the buffer) or null if the asset does not
  * exist or has expired.
  */
-export async function markConfirmed(token: string): Promise<ExportTempMeta | null> {
+export async function markConfirmed(token: string, fileName?: string): Promise<ExportTempMeta | null> {
   if (!isValidToken(token)) {
     console.warn('[export-temp-store] markConfirmed invalid token', { token })
     return null
@@ -150,11 +150,16 @@ export async function markConfirmed(token: string): Promise<ExportTempMeta | nul
       console.warn('[export-temp-store] markConfirmed expired', { token })
       return null
     }
-    if (meta.confirmed) {
+    const sanitizedFileName = sanitizeStoredFileName(fileName)
+    if (meta.confirmed && !sanitizedFileName) {
       console.log('[export-temp-store] markConfirmed already confirmed', { token })
       return meta
     }
-    const next: ExportTempMeta = { ...meta, confirmed: true }
+    const next: ExportTempMeta = {
+      ...meta,
+      confirmed: true,
+      ...(sanitizedFileName ? { fileName: sanitizedFileName } : {}),
+    }
     await writeFile(getMetaPath(token), JSON.stringify(next), 'utf8')
     console.log('[export-temp-store] markConfirmed flipped', { token })
     return next
@@ -162,6 +167,11 @@ export async function markConfirmed(token: string): Promise<ExportTempMeta | nul
     console.error('[export-temp-store] markConfirmed failed', { token, error: error instanceof Error ? error.message : String(error) })
     return null
   }
+}
+
+function sanitizeStoredFileName(value?: string): string | undefined {
+  const text = value?.trim().replace(/[\\/:*?"<>|]/g, '_').replace(/\.(pdf|png)$/i, '').slice(0, 60)
+  return text || undefined
 }
 
 export async function readExportTemp(token: string): Promise<ExportTempEntry | null> {
