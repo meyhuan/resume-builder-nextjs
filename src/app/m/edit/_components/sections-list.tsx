@@ -58,7 +58,7 @@ export function SectionsList({ sections }: SectionsListProps): ReactElement | nu
   const items: string[] = nonEmpty.map((s) => s.id)
 
   return (
-    <div className="mt-2 px-[18px]">
+    <div className="mt-2 px-3">
       {nonEmpty.length >= 2 && manageMode && (
         <div className="mb-2 flex justify-end px-1">
           <button

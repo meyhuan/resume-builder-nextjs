@@ -16,7 +16,7 @@ interface AddMoreModulesProps {
 export function AddMoreModules({ emptyModules }: AddMoreModulesProps): ReactElement | null {
   if (emptyModules.length === 0) return null
   return (
-    <section className="mt-6 px-[18px]">
+    <section className="mt-6 px-3">
       <div className="mb-3 px-1">
         <div className="text-[15px] font-semibold text-slate-900">添加模块</div>
         <div className="mt-0.5 text-[12px] text-slate-500">点击添加需要的模块</div>

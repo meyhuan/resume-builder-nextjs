@@ -309,13 +309,19 @@ export default function MobileEditHomeClient(
   return (
     <div
       ref={rootRef}
-      className="min-h-screen pt-2"
+      className="min-h-screen pt-2 relative"
       style={{
         paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 112px)',
-        background: 'radial-gradient(circle at 12% 8%, rgba(124, 58, 237, 0.09) 0, rgba(124, 58, 237, 0) 320px), linear-gradient(180deg, #fbfaff 0%, #f5f3ff 45%, #ffffff 100%)',
       }}
       onClickCapture={saveCurrentScroll}
     >
+      {/* Viewport-fixed background layer to bypass iOS Safari / WeChat WebView background-attachment limitation */}
+      <div
+        className="fixed inset-0 -z-10 pointer-events-none"
+        style={{
+          background: 'radial-gradient(circle at 12% 8%, rgba(124, 58, 237, 0.09) 0, rgba(124, 58, 237, 0) 320px), linear-gradient(180deg, #fbfaff 0%, #faf9ff 30%, #ffffff 100%)',
+        }}
+      />
       {!inMiniProgram && (
         <div className="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-slate-200 bg-white/95 px-4 backdrop-blur">
           <button
@@ -341,7 +347,7 @@ export default function MobileEditHomeClient(
 
       <ResumeProfileCard resume={resume} progress={progress} missingItems={missingItems} />
 
-      <div className="mt-2 px-[18px]">
+      <div className="mt-2 px-3">
         <JobIntentionPreview resume={resume} />
       </div>
 

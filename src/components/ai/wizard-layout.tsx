@@ -24,6 +24,7 @@ import { toast } from 'sonner';
 interface WxMiniProgram {
   postMessage?: (p: { data: unknown }) => void
   navigateTo?: (o: { url: string }) => void
+  redirectTo?: (o: { url: string }) => void
   navigateBack?: (o?: { delta?: number }) => void
 }
 
@@ -62,6 +63,24 @@ function useInMiniProgram(): boolean {
   }, [])
 
   return inMiniProgram
+}
+
+function openMiniProgramEditor(resumeId: string): boolean {
+  const mini = getMiniProgram()
+  const page = `/pages/editShell/editShell?path=${encodeURIComponent(`/m/edit?id=${resumeId}`)}`
+  if (mini?.redirectTo) {
+    mini.redirectTo({ url: page })
+    return true
+  }
+  if (mini?.navigateTo) {
+    mini.navigateTo({ url: page })
+    return true
+  }
+  if (mini?.postMessage) {
+    mini.postMessage({ data: { action: 'resumeGenerated', resumeId } })
+    return true
+  }
+  return false
 }
 
 const AI_MODELS = getAvailableModels();
@@ -107,14 +126,15 @@ export const WizardLayout = ({ children }: { children: React.ReactNode }) => {
       const saved: { id: string } = await res.json();
       localStorage.removeItem(WIZARD_CACHE_KEY);
 
-      // If running in mini-program webview, post message back instead of navigating
+      // In mini-program web-view, bindmessage is not reliable as an immediate
+      // navigation trigger, so jump to the native edit shell directly.
       if (inMiniProgram) {
-        const mini = getMiniProgram();
-        if (mini?.postMessage) {
-          console.log('[WizardLayout] posting resumeGenerated to mini-program:', saved.id);
-          mini.postMessage({ data: { action: 'resumeGenerated', resumeId: saved.id } });
+        console.log('[WizardLayout] opening mini-program editor:', saved.id);
+        const opened = openMiniProgramEditor(saved.id);
+        if (opened) {
+          return;
         }
-        return;
+        console.warn('[WizardLayout] mini-program bridge unavailable, falling back to H5 mobile editor');
       }
 
       if (isMobile) {
