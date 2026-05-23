@@ -211,11 +211,30 @@ async function checkQuotaCore(
   console.log(`${logPrefix} start`, { wxId, feature, limit, skipConsume });
   const todayKey = getDateKey(Date.now());
   console.log(`${logPrefix} upsertUser`, { wxId });
-  const user = await prisma.user.upsert({
-    where: { wxId },
-    update: {},
-    create: { wxId, ...(opts?.userName ? { name: opts.userName } : {}) },
-  });
+  let user;
+  try {
+    user = await prisma.user.upsert({
+      where: { wxId },
+      update: {},
+      create: { wxId, ...(opts?.userName ? { name: opts.userName } : {}) },
+      select: { id: true },
+    });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      console.log(`${logPrefix} userRaceConditionP2002`, { wxId });
+      user = await prisma.user.findUnique({
+        where: { wxId },
+        select: { id: true },
+      });
+      if (!user) {
+        throw new Error(`${logPrefix} Failed to fetch User after P2002 for wxId ${wxId}`);
+      }
+      console.log(`${logPrefix} userRecoveredFromRace`, { wxId, userId: user.id });
+    } else {
+      console.error(`${logPrefix} userDbError`, { wxId, error });
+      throw error;
+    }
+  }
   console.log(`${logPrefix} userReady`, { userId: user.id });
   let quotaRecord;
   try {

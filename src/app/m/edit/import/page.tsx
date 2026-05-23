@@ -51,11 +51,16 @@ export default function MobileImportPage(): ReactElement {
         credentials: 'include',
         body: JSON.stringify({ title: resumeData.name || '导入的简历', content: resumeData, template: 'simple' }),
       })
-      if (!res.ok) throw new Error('保存失败')
+      if (!res.ok) {
+        const text = await res.text().catch(() => '')
+        console.error('[MobileImport] saveAndNavigate failed response', { status: res.status, text })
+        throw new Error('保存失败')
+      }
       const saved: { id: string } = await res.json()
       setFromServer(saved.id, resumeData, 'simple')
       router.replace(`/m/edit?id=${saved.id}`)
     } catch (err: unknown) {
+      console.error('[MobileImport] saveAndNavigate error', err)
       toast.error(err instanceof Error ? err.message : '保存失败，请重试')
     }
   }, [router, setFromServer])
@@ -133,6 +138,11 @@ export default function MobileImportPage(): ReactElement {
               setFileProgress(100)
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               const externalResume = event.resumeData as any
+              if (externalResume && typeof externalResume.error === 'string') {
+                setFileError((externalResume.message as string) || '内容不像简历，请检查文件后重试')
+                setStep('input')
+                return
+              }
               const resumeData = mapExternalResume(externalResume)
               const parsedName: string = externalResume?.base_info?.name ?? ''
               if (parsedName) resumeData.name = parsedName

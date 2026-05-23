@@ -77,6 +77,39 @@ interface DocmindLayout {
   type?: string;
 }
 
+interface UploadedFormFile {
+  name: string;
+  size: number;
+  arrayBuffer: () => Promise<ArrayBuffer>;
+}
+
+function getUploadedFormFile(value: FormDataEntryValue | null): UploadedFormFile | null {
+  if (!value || typeof value !== 'object') return null;
+  const candidate = value as Partial<UploadedFormFile>;
+  if (
+    typeof candidate.name === 'string' &&
+    typeof candidate.size === 'number' &&
+    typeof candidate.arrayBuffer === 'function'
+  ) {
+    return {
+      name: candidate.name,
+      size: candidate.size,
+      arrayBuffer: () => candidate.arrayBuffer!.call(value),
+    };
+  }
+  return null;
+}
+
+function getImportErrorPayload(value: unknown): { error: string; message?: string } | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const obj = value as Record<string, unknown>;
+  if (typeof obj.error !== 'string') return null;
+  return {
+    error: obj.error,
+    message: typeof obj.message === 'string' ? obj.message : undefined,
+  };
+}
+
 async function pollDocmindResult(client: DocmindApi, jobId: string): Promise<string> {
   for (let attempt = 0; attempt < MAX_POLL_COUNT; attempt++) {
     console.log(`[DocMind] poll attempt ${attempt + 1}/${MAX_POLL_COUNT}, jobId:`, jobId);
@@ -231,8 +264,8 @@ export async function POST(request: NextRequest): Promise<Response> {
       }
 
       const formData = await request.formData();
-      const file = formData.get('file');
-      if (!file || !(file instanceof File)) {
+      const file = getUploadedFormFile(formData.get('file'));
+      if (!file) {
         await send('error', { error: '请上传简历文件' });
         return;
       }
@@ -269,6 +302,19 @@ export async function POST(request: NextRequest): Promise<Response> {
 
       console.log(`[import-resume-file] Extracted ${extractedText.length} chars, calling LLM`);
       const resumeData = await parseTextWithLLM(extractedText);
+      const importError = getImportErrorPayload(resumeData);
+      if (importError) {
+        console.warn('[import-resume-file] LLM returned import error:', {
+          error: importError.error,
+          message: importError.message,
+          extractedLength: extractedText.length,
+        });
+        await send('error', {
+          error: importError.message || '内容不像简历，请检查文件后重试',
+          code: importError.error,
+        });
+        return;
+      }
 
       await send('stage', { label: '解析完成，正在生成简历…', progress: 95 });
       await send('done', { resumeData });

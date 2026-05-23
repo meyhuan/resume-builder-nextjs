@@ -125,9 +125,11 @@ export async function POST(req: Request): Promise<NextResponse> {
     return NextResponse.json({ error: 'Resume not found' }, { status: 404 })
   }
 
-  // Pre-render quota check for `final` mode (preview is free)
+  const quotaPeek = await peekQuotaForUser(wxId, 'pdf:export')
+
+  // Pre-render quota check for `final` mode (preview is free, but still
+  // returns quota info so the mini-program can label/disable confirmation).
   if (mode === 'final') {
-    const quotaPeek = await peekQuotaForUser(wxId, 'pdf:export')
     console.log('[exports/mini] quota peek', { wxId, ...quotaPeek })
     if (!quotaPeek.allowed) {
       return NextResponse.json({
@@ -268,6 +270,8 @@ export async function POST(req: Request): Promise<NextResponse> {
     downloadUrl,
     expiresAt: new Date(saved.expiresAt).toISOString(),
     confirmed: mode === 'final',
+    remaining: quotaPeek.remaining,
+    isVip: quotaPeek.isVip,
     previewImages,
   })
 }

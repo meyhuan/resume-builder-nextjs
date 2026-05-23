@@ -40,6 +40,41 @@ type ImportMode = 'text' | 'file';
 
 const PLATFORM_BADGES: readonly string[] = ['豆包', '通义千问', 'ChatGPT', 'DeepSeek', 'Kimi', '其他 AI'];
 
+function looksLikeResumeData(value: unknown): value is ResumeData {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const obj = value as Partial<ResumeData> & Record<string, unknown>;
+  return (
+    Array.isArray(obj.sections) ||
+    obj.baseInfo !== undefined ||
+    obj.jobIntention !== undefined ||
+    obj.name !== undefined
+  );
+}
+
+function unwrapImportedResume(value: unknown): unknown {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return value;
+  const obj = value as Record<string, unknown>;
+  const wrapped = obj.resumeData ?? obj.resume ?? obj.data;
+  return wrapped && typeof wrapped === 'object' ? wrapped : value;
+}
+
+function resolveImportedResumeData(value: unknown): ResumeData {
+  const unwrapped = unwrapImportedResume(value);
+  if (looksLikeResumeData(unwrapped)) {
+    const resume = unwrapped as Partial<ResumeData>;
+    return {
+      id: resume.id ?? 'resume-imported',
+      name: resume.name ?? '',
+      contactHtml: resume.contactHtml,
+      baseInfo: resume.baseInfo,
+      jobIntention: resume.jobIntention,
+      jobIntentionVisible: resume.jobIntentionVisible ?? Boolean(resume.jobIntention),
+      sections: Array.isArray(resume.sections) ? resume.sections : [],
+    };
+  }
+  return mapExternalResume(unwrapped as Parameters<typeof mapExternalResume>[0]);
+}
+
 export default function ImportResumePage(): React.ReactElement {
   const router = useRouter();
   const [mode, setMode] = useState<ImportMode>('text');
@@ -179,7 +214,11 @@ export default function ImportResumePage(): React.ReactElement {
               await refreshQuota();
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               const externalResume = event.resumeData as any;
-              const resumeData = mapExternalResume(externalResume);
+              if (externalResume && typeof externalResume.error === 'string') {
+                setFileError((externalResume.message as string) || '内容不像简历，请检查文件后重试');
+                return;
+              }
+              const resumeData = resolveImportedResumeData(externalResume);
               const parsedName: string = externalResume?.base_info?.name ?? '';
               if (parsedName) resumeData.name = parsedName;
               openEditorWithData(resumeData);
