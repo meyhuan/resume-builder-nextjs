@@ -7,6 +7,7 @@ import { toast } from 'sonner'
 import { useImportGeneration } from '@/lib/ai/use-import-generation'
 import { mapExternalResume } from '@/io/external-resume-importer'
 import type { ResumeData } from '@/entities/resume/resume-data'
+import { buildImportResumeTitle } from '@/lib/import-resume-title'
 import { useDraftStore } from '@/features/edit/draft/draft-store'
 import { cn } from '@/lib/utils'
 import { useInMiniProgram } from '../../_components/use-mini-program'
@@ -43,13 +44,13 @@ export default function MobileImportPage(): ReactElement {
     generate, abort, reset,
   } = useImportGeneration()
 
-  const saveAndNavigate = useCallback(async (resumeData: ResumeData): Promise<void> => {
+  const saveAndNavigate = useCallback(async (resumeData: ResumeData, sourceFileName?: string | null): Promise<void> => {
     try {
       const res = await fetch('/next-api/resumes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ title: resumeData.name || '导入的简历', content: resumeData, template: 'simple' }),
+        body: JSON.stringify({ title: buildImportResumeTitle(resumeData, sourceFileName), content: resumeData, template: 'simple' }),
       })
       if (!res.ok) {
         const text = await res.text().catch(() => '')
@@ -147,7 +148,7 @@ export default function MobileImportPage(): ReactElement {
               const parsedName: string = externalResume?.base_info?.name ?? ''
               if (parsedName) resumeData.name = parsedName
               setStep('done')
-              await saveAndNavigate(resumeData)
+              await saveAndNavigate(resumeData, selectedFile.name)
               return
             } else if (event.type === 'error') {
               setFileError(event.error as string)

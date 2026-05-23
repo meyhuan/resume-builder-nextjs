@@ -15,6 +15,7 @@ import OpenAI from 'openai'
 import { getDefaultModel, resolveApiKey } from '@/lib/ai/ai-config'
 import { buildImportSystemPrompt, buildImportUserPrompt } from '@/lib/ai/import-prompt-builder'
 import { createDefaultResume } from '@/lib/default-resume'
+import { buildImportResumeTitle } from '@/lib/import-resume-title'
 
 /**
  * POST /next-api/resumes/mini
@@ -217,7 +218,7 @@ export async function POST(req: Request): Promise<NextResponse> {
     const saved = await prisma.resume.create({
       data: {
         userId: user.id,
-        title: resumeData.name || '导入的简历',
+        title: buildImportResumeTitle(resumeData, fileName),
         template: 'simple',
         content: resumeData as unknown as Prisma.InputJsonValue,
       },

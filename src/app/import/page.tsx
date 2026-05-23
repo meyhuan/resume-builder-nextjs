@@ -8,6 +8,7 @@ import { useImportGeneration } from '@/lib/ai/use-import-generation';
 import { getAvailableModels } from '@/lib/ai/ai-config';
 import { mapExternalResume } from '@/io/external-resume-importer';
 import type { ResumeData } from '@/entities/resume/resume-data';
+import { buildImportResumeTitle } from '@/lib/import-resume-title';
 import { parseStreamSections } from '@/lib/ai/json-to-markdown';
 import type { DisplaySection } from '@/lib/ai/json-to-markdown';
 import {
@@ -65,14 +66,14 @@ export default function ImportResumePage(): React.ReactElement {
   const importQuota = quota.aiImportSection;
   const isLimitReached = importQuota.remaining === 0;
 
-  const saveResume = useCallback(async (resumeData: ResumeData): Promise<void> => {
+  const saveResume = useCallback(async (resumeData: ResumeData, sourceFileName?: string | null): Promise<void> => {
     setIsSaving(true);
     try {
       const res: Response = await fetch('/next-api/resumes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          title: resumeData.name || 'AI 排版简历',
+          title: buildImportResumeTitle(resumeData, sourceFileName),
           content: resumeData,
           template: 'simple',
         }),
@@ -100,10 +101,10 @@ export default function ImportResumePage(): React.ReactElement {
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const openEditorWithData = useCallback((resumeData: ResumeData): void => {
+  const openEditorWithData = useCallback((resumeData: ResumeData, sourceFileName?: string | null): void => {
     localStorage.setItem(IMPORT_CACHE_KEY, JSON.stringify(resumeData));
     if (isLoggedIn()) {
-      saveResume(resumeData);
+      saveResume(resumeData, sourceFileName);
     } else {
       router.push('/editor/new?source=import');
     }
@@ -182,7 +183,7 @@ export default function ImportResumePage(): React.ReactElement {
               const resumeData = mapExternalResume(externalResume);
               const parsedName: string = externalResume?.base_info?.name ?? '';
               if (parsedName) resumeData.name = parsedName;
-              openEditorWithData(resumeData);
+              openEditorWithData(resumeData, selectedFile.name);
               return;
             } else if (event.type === 'error') {
               setFileError(event.error as string);
