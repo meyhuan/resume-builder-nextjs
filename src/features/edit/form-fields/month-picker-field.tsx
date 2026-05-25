@@ -1,7 +1,8 @@
 'use client'
 
-import { useEffect, useRef, useState, type ReactElement } from 'react'
-import { Calendar, Check, X } from 'lucide-react'
+import { useState, type ReactElement, type ReactNode } from 'react'
+import { Calendar, X } from 'lucide-react'
+import Picker, { type PickerValue } from 'react-mobile-picker'
 import { BottomSheet } from '@/components/ui/bottom-sheet'
 import { cn } from '@/lib/utils'
 
@@ -26,33 +27,47 @@ const YEARS: readonly number[] = Array.from(
 )
 const MONTHS: readonly number[] = Array.from({ length: 12 }, (_, i) => i + 1)
 
+type MonthPickerValue = PickerValue & {
+  readonly year: string
+  readonly month: string
+}
+
+function parseMonthValue(value: string): { year: number; month: number } | null {
+  if (!value || value === '至今') return null
+  const match: RegExpMatchArray | null = value.match(/^(\d{4})-(\d{2})$/)
+  if (!match) return null
+
+  const year: number = Number(match[1])
+  const month: number = Number(match[2])
+  if (!Number.isInteger(year) || !MONTHS.includes(month)) return null
+
+  return { year, month }
+}
+
 /**
- * Mobile month picker with bottom-sheet scrollable columns.
+ * Mobile month picker with a stable two-column year/month selector.
  */
 export function MonthPickerField(props: MonthPickerFieldProps): ReactElement {
   const { label, value, onValueChange, placeholder = '选择月份', allowPresent = false, required } = props
   const [open, setOpen] = useState<boolean>(false)
-  const isPresent: boolean = value === '至今'
-  const parsed: { year: number; month: number } | null = (() => {
-    if (!value || isPresent) return null
-    const [y, m] = value.split('-').map((s) => parseInt(s, 10))
-    if (!y || !m) return null
-    return { year: y, month: m }
-  })()
-  const [tempYear, setTempYear] = useState<number>(parsed?.year ?? CURRENT_YEAR)
-  const [tempMonth, setTempMonth] = useState<number>(parsed?.month ?? new Date().getMonth() + 1)
+  const parsed: { year: number; month: number } | null = parseMonthValue(value)
+  const [pickerValue, setPickerValue] = useState<MonthPickerValue>({
+    year: String(parsed?.year ?? CURRENT_YEAR),
+    month: String(parsed?.month ?? new Date().getMonth() + 1),
+  })
 
   const openSheet = (): void => {
     if (parsed) {
-      setTempYear(parsed.year)
-      setTempMonth(parsed.month)
+      setPickerValue({ year: String(parsed.year), month: String(parsed.month) })
+    } else {
+      setPickerValue({ year: String(CURRENT_YEAR), month: String(new Date().getMonth() + 1) })
     }
     setOpen(true)
   }
 
   const confirm = (): void => {
-    const mm: string = String(tempMonth).padStart(2, '0')
-    onValueChange(`${tempYear}-${mm}`)
+    const mm: string = String(pickerValue.month).padStart(2, '0')
+    onValueChange(`${pickerValue.year}-${mm}`)
     setOpen(false)
   }
 
@@ -81,6 +96,7 @@ export function MonthPickerField(props: MonthPickerFieldProps): ReactElement {
         {value && (
           <button
             type="button"
+            onKeyDown={(e): void => { e.stopPropagation() }}
             onClick={(e): void => {
               e.stopPropagation()
               onValueChange('')
@@ -94,11 +110,34 @@ export function MonthPickerField(props: MonthPickerFieldProps): ReactElement {
       </div>
 
       <BottomSheet open={open} onClose={(): void => setOpen(false)} title={label} height="420px">
-        <div className="flex gap-3 h-56 relative">
-          {/* Centered selection band — iOS wheel-picker inspiration. */}
-          <div className="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 h-10 rounded-lg bg-violet-500/5 border-y border-violet-200/60" />
-          <ScrollColumn label="年" options={YEARS} value={tempYear} onChange={setTempYear} suffix="年" />
-          <ScrollColumn label="月" options={MONTHS} value={tempMonth} onChange={setTempMonth} suffix="月" />
+        <div className="relative overflow-hidden rounded-xl border border-slate-100 bg-white">
+          <Picker
+            value={pickerValue}
+            onChange={setPickerValue}
+            height={224}
+            itemHeight={40}
+            wheelMode="natural"
+            className="relative z-20"
+          >
+            <Picker.Column name="year">
+              {YEARS.map((year) => (
+                <Picker.Item key={year} value={String(year)}>
+                  {({ selected }): ReactElement => (
+                    <PickerItemContent selected={selected}>{year}年</PickerItemContent>
+                  )}
+                </Picker.Item>
+              ))}
+            </Picker.Column>
+            <Picker.Column name="month">
+              {MONTHS.map((month) => (
+                <Picker.Item key={month} value={String(month)}>
+                  {({ selected }): ReactElement => (
+                    <PickerItemContent selected={selected}>{month}月</PickerItemContent>
+                  )}
+                </Picker.Item>
+              ))}
+            </Picker.Column>
+          </Picker>
         </div>
         <div className="mt-4 flex gap-2">
           {allowPresent && (
@@ -126,55 +165,15 @@ export function MonthPickerField(props: MonthPickerFieldProps): ReactElement {
   )
 }
 
-interface ScrollColumnProps {
-  readonly label: string
-  readonly options: readonly number[]
-  readonly value: number
-  readonly onChange: (next: number) => void
-  readonly suffix?: string
-}
-
-function ScrollColumn({ label, options, value, onChange, suffix }: ScrollColumnProps): ReactElement {
-  const listRef = useRef<HTMLDivElement>(null)
-  const selectedRef = useRef<HTMLButtonElement>(null)
-
-  // Auto-scroll the active option into view when the sheet opens or value changes.
-  useEffect((): void => {
-    const el: HTMLButtonElement | null = selectedRef.current
-    const container: HTMLDivElement | null = listRef.current
-    if (!el || !container) return
-    const offset: number = el.offsetTop - container.clientHeight / 2 + el.clientHeight / 2
-    container.scrollTo({ top: Math.max(0, offset), behavior: 'smooth' })
-  }, [value])
-
+function PickerItemContent({ selected, children }: { readonly selected: boolean; readonly children: ReactNode }): ReactElement {
   return (
-    <div className="flex-1 flex flex-col">
-      <div className="text-xs text-slate-400 text-center mb-1.5">{label}</div>
-      <div
-        ref={listRef}
-        className="flex-1 overflow-y-auto rounded-xl border border-slate-200 bg-white scroll-smooth"
-      >
-        {options.map((opt) => {
-          const active: boolean = opt === value
-          return (
-            <button
-              key={opt}
-              ref={active ? selectedRef : undefined}
-              type="button"
-              onClick={(): void => onChange(opt)}
-              className={cn(
-                'w-full px-3 py-2.5 flex items-center justify-center gap-1.5 text-sm transition-all',
-                active
-                  ? 'bg-violet-50 text-violet-700 font-semibold'
-                  : 'text-slate-600 hover:bg-slate-50',
-              )}
-            >
-              <span>{opt}{suffix}</span>
-              {active && <Check size={14} className="text-violet-600" />}
-            </button>
-          )
-        })}
-      </div>
+    <div
+      className={cn(
+        'flex h-10 items-center justify-center text-[17px] transition-colors',
+        selected ? 'font-semibold text-violet-700' : 'font-normal text-slate-500',
+      )}
+    >
+      {children}
     </div>
   )
 }
