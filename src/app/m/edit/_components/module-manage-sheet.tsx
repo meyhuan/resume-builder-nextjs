@@ -5,7 +5,7 @@ import {
   closestCenter,
   DndContext,
   KeyboardSensor,
-  PointerSensor,
+  MouseSensor,
   TouchSensor,
   useSensor,
   useSensors,
@@ -48,7 +48,7 @@ export function ModuleManageSheet({ open, onClose }: ModuleManageSheetProps): Re
   const [pendingRemove, setPendingRemove] = useState<Section | null>(null)
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 180, tolerance: 6 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   )
@@ -141,6 +141,7 @@ function SortableManageRow({ section, onRequestRemove }: ManageRowProps): ReactE
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
+    zIndex: isDragging ? 20 : undefined,
   }
 
   const moduleConfig = findModuleBySectionTitle(section.title)
@@ -151,16 +152,16 @@ function SortableManageRow({ section, onRequestRemove }: ManageRowProps): ReactE
     <div
       ref={setNodeRef}
       style={style}
+      {...attributes}
+      {...listeners}
       className={cn(
-        'flex items-center gap-3 rounded-[14px] border border-[#edf0f5] bg-white px-3 py-3 shadow-[0_2px_8px_rgba(15,23,42,0.04)] transition-shadow',
-        isDragging && 'ring-2 ring-violet-300 shadow-lg',
+        'relative flex touch-none cursor-grab items-center gap-3 rounded-[14px] border border-[#edf0f5] bg-white px-3 py-3 shadow-[0_2px_8px_rgba(15,23,42,0.04)] transition-shadow active:cursor-grabbing',
+        isDragging && 'border-violet-200 shadow-[0_12px_28px_rgba(124,58,237,0.18)] ring-2 ring-violet-200',
       )}
     >
       {/* Drag handle */}
       <div
-        {...attributes}
-        {...listeners}
-        className="flex h-8 w-6 shrink-0 touch-none cursor-grab items-center justify-center text-slate-300 active:cursor-grabbing"
+        className="flex h-8 w-6 shrink-0 items-center justify-center text-slate-300"
       >
         <GripVertical size={17} />
       </div>
@@ -179,7 +180,13 @@ function SortableManageRow({ section, onRequestRemove }: ManageRowProps): ReactE
       ) : (
         <button
           type="button"
-          onClick={(): void => onRequestRemove(section)}
+          onPointerDown={(e): void => { e.stopPropagation() }}
+          onMouseDown={(e): void => { e.stopPropagation() }}
+          onTouchStart={(e): void => { e.stopPropagation() }}
+          onClick={(e): void => {
+            e.stopPropagation()
+            onRequestRemove(section)
+          }}
           aria-label={`删除${label}`}
           className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-red-400 transition-colors hover:bg-red-50 active:bg-red-100"
         >

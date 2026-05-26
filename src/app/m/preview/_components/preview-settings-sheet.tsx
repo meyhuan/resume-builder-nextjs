@@ -84,29 +84,33 @@ export function PreviewSettingsSheet(props: PreviewSettingsSheetProps): ReactEle
 
   return (
     <BottomSheet open={open} confirming={confirming} onClose={onClose} onConfirm={onConfirm} onReset={onReset}>
-      <Tabs value={tab} onValueChange={(v): void => onTabChange(v as SettingsTab)}>
-        <TabsList className="grid grid-cols-4 w-full h-11 bg-slate-100 mb-4 rounded-xl p-1">
+      <Tabs value={tab} onValueChange={(v): void => onTabChange(v as SettingsTab)} className="flex h-full min-h-0 flex-col">
+        <div className="shrink-0 bg-white px-4 pb-3 pt-3">
+          <TabsList className="grid h-10 w-full grid-cols-4 rounded-xl bg-slate-100 p-1">
           <TabsTrigger value="template">模板</TabsTrigger>
           <TabsTrigger value="appearance">外观</TabsTrigger>
           <TabsTrigger value="layout">版式</TabsTrigger>
           <TabsTrigger value="one-page">单页</TabsTrigger>
-        </TabsList>
+          </TabsList>
+        </div>
 
-        <TabsContent value="template">
-          <TemplatePanel activeId={templateId} onSelect={onSelectTemplate} />
-        </TabsContent>
+        <div className="min-h-0 flex-1 overflow-y-auto bg-white px-4 pb-3">
+          <TabsContent value="template" className="mt-0">
+            <TemplatePanel activeId={templateId} onSelect={onSelectTemplate} />
+          </TabsContent>
 
-        <TabsContent value="appearance">
-          <AppearancePanel theme={theme} locked={locksPrimaryColor} onUpdate={onUpdateTheme} />
-        </TabsContent>
+          <TabsContent value="appearance" className="mt-0">
+            <AppearancePanel theme={theme} locked={locksPrimaryColor} onUpdate={onUpdateTheme} />
+          </TabsContent>
 
-        <TabsContent value="layout">
-          <LayoutPanel theme={theme} onUpdate={onUpdateTheme} />
-        </TabsContent>
+          <TabsContent value="layout" className="mt-0">
+            <LayoutPanel theme={theme} onUpdate={onUpdateTheme} />
+          </TabsContent>
 
-        <TabsContent value="one-page">
-          <OnePagePanel theme={theme} status={onePageStatus} onUpdate={onUpdateTheme} />
-        </TabsContent>
+          <TabsContent value="one-page" className="mt-0">
+            <OnePagePanel theme={theme} status={onePageStatus} onUpdate={onUpdateTheme} />
+          </TabsContent>
+        </div>
       </Tabs>
     </BottomSheet>
   )
@@ -126,7 +130,7 @@ function BottomSheet({ open, onClose, onConfirm, confirming, onReset, children }
     <>
       <div
         className={cn(
-          'fixed inset-0 z-40 bg-black/25 transition-opacity',
+          'fixed inset-0 z-40 bg-black/[0.08] transition-opacity',
           open ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none',
         )}
         onClick={onClose}
@@ -134,20 +138,17 @@ function BottomSheet({ open, onClose, onConfirm, confirming, onReset, children }
       <div
         className={cn(
           'fixed inset-x-0 bottom-0 z-50 bg-white rounded-t-2xl shadow-2xl transition-transform duration-300',
-          'h-[76vh] max-h-[620px] flex flex-col',
+          'h-[62vh] max-h-[540px] flex flex-col',
           open ? 'translate-y-0' : 'translate-y-full',
         )}
         role="dialog"
         aria-modal="true"
       >
-        <div className="flex items-center justify-center px-5 pt-3 pb-2 shrink-0">
+        <div className="flex items-center justify-center px-5 pt-2 pb-1 shrink-0">
           <div className="h-1 w-10 rounded-full bg-slate-300" />
         </div>
-        <div className="flex items-center justify-between px-5 pb-3 shrink-0 border-b border-slate-100">
-          <div>
-            <h3 className="text-lg font-semibold text-slate-900">调整样式</h3>
-            <p className="mt-0.5 text-xs text-slate-500">实时预览，导出前可随时修改</p>
-          </div>
+        <div className="flex items-center justify-between px-5 pb-2 shrink-0 border-b border-slate-100">
+          <h3 className="text-base font-semibold text-slate-900">调整样式</h3>
           <button
             type="button"
             onClick={onClose}
@@ -157,10 +158,10 @@ function BottomSheet({ open, onClose, onConfirm, confirming, onReset, children }
             <X size={18} />
           </button>
         </div>
-        <div className="px-5 py-4 overflow-y-auto flex-1">{children}</div>
+        <div className="min-h-0 flex-1 bg-white">{children}</div>
         <div
-          className="shrink-0 border-t border-slate-100 bg-white px-5 py-3"
-          style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 12px)' }}
+          className="shrink-0 border-t border-slate-100 bg-white px-4 py-2.5"
+          style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 10px)' }}
         >
           <div className="grid grid-cols-[1fr_1.4fr] gap-3">
             <button

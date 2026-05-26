@@ -104,6 +104,9 @@ function BlockRendererWrapper(props: {
 export default function SimpleTemplate(props: SimpleTemplateProps): ReactElement {
   const { resume, theme } = props
   const isJobIntentionVisible: boolean = resume.jobIntentionVisible ?? Boolean(resume.jobIntention)
+  const headerBaseInfo = resume.jobIntention?.position
+    ? { ...(resume.baseInfo ?? {}), title: resume.jobIntention.position }
+    : (resume.baseInfo ?? null)
   const pagePadding: string = `${theme.pagePaddingVertical}mm ${theme.pagePaddingHorizontal}mm`
   const baseInfoStyles = SIMPLE_TEMPLATE_STYLES.baseInfo ?? {}
   const jobIntentionStyles = SIMPLE_TEMPLATE_STYLES.jobIntention ?? {}
@@ -153,7 +156,7 @@ export default function SimpleTemplate(props: SimpleTemplateProps): ReactElement
       <div style={{ marginBottom: `${18 * theme.spacingScale}px` }}>
         <BaseInfoSection
           name={resume.name}
-          baseInfo={resume.baseInfo ?? null}
+          baseInfo={headerBaseInfo}
           themeColor={theme.primaryColor}
           styles={styles.baseInfo}
         />
