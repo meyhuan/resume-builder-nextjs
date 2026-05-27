@@ -3,7 +3,7 @@ import { cookies } from 'next/headers';
 import { prisma } from '@/lib/prisma';
 import { saveExportTemp } from '@/lib/export-temp-store';
 import { uploadExportAsset } from '@/lib/upload-export-asset';
-import { checkQuotaForUser, peekQuotaForUser } from '@/lib/quota/quota-checker';
+import { checkQuota, peekQuota } from '@/lib/quota/quota-checker';
 
 function getStringField(form: FormData, key: string): string {
   const value = form.get(key);
@@ -42,7 +42,7 @@ export async function POST(req: Request): Promise<NextResponse> {
     return NextResponse.json({ error: 'Resume not found' }, { status: 404 });
   }
 
-  const quotaPeek = await peekQuotaForUser(wxId, 'pdf:export');
+  const quotaPeek = await peekQuota('pdf:export');
   if (!quotaPeek.allowed) {
     return NextResponse.json({
       error: quotaPeek.message,
@@ -75,7 +75,7 @@ export async function POST(req: Request): Promise<NextResponse> {
     extension: 'pdf',
   });
 
-  const consumed = await checkQuotaForUser(wxId, 'pdf:export');
+  const consumed = await checkQuota('pdf:export');
   if (!consumed.allowed) {
     return NextResponse.json({
       error: consumed.message,
