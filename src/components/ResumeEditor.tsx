@@ -479,8 +479,11 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
       })
       if (!exportRes.ok) {
         const errorData = await exportRes.json()
-        toast.error(errorData.error || '导出次数已用完，升级VIP可无限导出')
-        if (errorData.quotaExceeded) setShowUpgrade(true)
+        if (errorData.quotaExceeded) {
+          setShowUpgrade(true)
+        } else {
+          toast.error(errorData.error || '导出次数已用完，升级VIP可无限导出')
+        }
         return
       }
       const exported = await exportRes.json() as { downloadUrl?: string }
@@ -761,7 +764,11 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
         subtitle={needsForceLogin ? '登录后即可保存、导出，你的简历不会丢失' : undefined}
       />
       {/* VIP upgrade dialog */}
-      <VipUpgradeDialog open={showUpgrade} onOpenChange={setShowUpgrade} />
+      <VipUpgradeDialog
+        open={showUpgrade}
+        onOpenChange={setShowUpgrade}
+        overlayClassName={showPreview ? 'bg-transparent' : 'bg-black/35'}
+      />
     </div>
   )
 }

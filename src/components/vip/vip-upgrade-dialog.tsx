@@ -72,9 +72,10 @@ interface VipUpgradeDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   hidePlanOptions?: boolean;
+  overlayClassName?: string;
 }
 
-export default function VipUpgradeDialog({ open, onOpenChange, hidePlanOptions = false }: VipUpgradeDialogProps): React.ReactElement {
+export default function VipUpgradeDialog({ open, onOpenChange, hidePlanOptions = false, overlayClassName = 'bg-black/35' }: VipUpgradeDialogProps): React.ReactElement {
   const { updateVipStatus } = useAuthStore();
   const [step, setStep] = useState<DialogStep>('loading');
   const [userId, setUserId] = useState<number | null>(null);
@@ -172,8 +173,8 @@ export default function VipUpgradeDialog({ open, onOpenChange, hidePlanOptions =
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        overlayClassName="bg-slate-950/25 backdrop-blur-[1px]"
-        className="max-w-[880px] w-[90vw] gap-0 overflow-hidden rounded-2xl border border-violet-200 bg-white p-0 shadow-xl shadow-violet-100/50"
+        overlayClassName={overlayClassName}
+        className="max-w-[880px] w-[90vw] gap-0 overflow-hidden rounded-2xl border border-violet-200 bg-white p-0 shadow-lg"
       >
         <div className="px-6 pt-5 pb-4 text-white" style={{ background: 'linear-gradient(135deg, #D946EF 0%, #8B5CF6 100%)' }}>
           <DialogHeader>

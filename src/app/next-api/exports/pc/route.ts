@@ -52,6 +52,16 @@ export async function POST(req: Request): Promise<NextResponse> {
     }, { status: 429 });
   }
 
+  const consumed = await checkQuota('pdf:export');
+  if (!consumed.allowed) {
+    return NextResponse.json({
+      error: consumed.message,
+      quotaExceeded: true,
+      remaining: consumed.remaining,
+      isVip: consumed.isVip,
+    }, { status: 429 });
+  }
+
   const buffer = Buffer.from(await file.arrayBuffer());
   const fileName = requestedFileName || sanitizeFileName(resume.title);
   const saved = await saveExportTemp({
@@ -74,16 +84,6 @@ export async function POST(req: Request): Promise<NextResponse> {
     contentType: 'application/pdf',
     extension: 'pdf',
   });
-
-  const consumed = await checkQuota('pdf:export');
-  if (!consumed.allowed) {
-    return NextResponse.json({
-      error: consumed.message,
-      quotaExceeded: true,
-      remaining: consumed.remaining,
-      isVip: consumed.isVip,
-    }, { status: 429 });
-  }
 
   await prisma.exportRecord.upsert({
     where: { token: saved.token },
