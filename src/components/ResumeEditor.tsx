@@ -105,6 +105,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
   const [pdfBlobUrl, setPdfBlobUrl] = useState<string>('')
   const [pdfBlob, setPdfBlob] = useState<Blob | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
+  const [isConfirmingExport, setIsConfirmingExport] = useState(false)
 
   // Initialize from DB data if provided
   const initApplied = useRef(false)
@@ -451,7 +452,9 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
 
   /** Confirm export: consume quota and download PDF. */
   async function handleConfirmExport(): Promise<void> {
-    if (!pdfBlob) return
+    if (!pdfBlob || isConfirmingExport) return
+    setIsConfirmingExport(true)
+    try {
 
     // Auto-generate professional filename: Name-Position-Phone
     const baseInfo = resume.baseInfo as Record<string, string> | undefined
@@ -506,6 +509,9 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
     toast.success('PDF 导出成功')
     // 刷新额度显示
     await refreshQuota()
+    } finally {
+      setIsConfirmingExport(false)
+    }
   }
 
   /** Clean up blob URL and close preview dialog. */
@@ -749,8 +755,10 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
         onOpenChange={(next: boolean) => { if (!next) handleClosePreview() }}
         pdfUrl={pdfBlobUrl}
         onConfirmExport={handleConfirmExport}
+        onUpgradeClick={() => setShowUpgrade(true)}
         remainingQuota={quota.pdfExport.remaining}
         isVip={isVip}
+        isConfirming={isConfirmingExport}
       />
       {/* Forced login dialog for unauthenticated users */}
       <WxLoginDialog
