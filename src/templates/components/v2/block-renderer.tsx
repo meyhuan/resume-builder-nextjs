@@ -93,7 +93,7 @@ function renderBlockHeader(
         )}
         meta={block.role ? (
           <EditableFieldWrapper blockId={block.id} fieldName="role" value={block.role} onUpdate={() => {}} />
-        ) : null}
+        ) : undefined}
         styles={styles}
       />
     )
@@ -113,17 +113,7 @@ function renderBlockHeader(
             className={styles.title?.className || 'font-semibold'}
           />
         )}
-        meta={(
-          <>
-            {block.major ? (
-              <EditableFieldWrapper blockId={block.id} fieldName="major" value={block.major} onUpdate={() => {}} />
-            ) : null}
-            {block.major && block.degree ? <HeaderSeparator /> : null}
-            {block.degree ? (
-              <EditableFieldWrapper blockId={block.id} fieldName="degree" value={block.degree} onUpdate={() => {}} />
-            ) : null}
-          </>
-        )}
+        meta={buildEducationMeta(block)}
         styles={styles}
       />
     )
@@ -155,12 +145,13 @@ function renderBlockHeader(
 function StructuredBlockHeader(props: {
   readonly block: Extract<ResumeBlock, { startDate: string; endDate: string }>
   readonly title: ReactElement
-  readonly meta: ReactNode
+  readonly meta?: ReactNode
   readonly styles: BlockRendererStyles
 }): ReactElement {
   const { block, title, meta, styles } = props
   const layout = styles.layout || 'default'
   const showDate = layout !== 'timeline'
+  const showMeta = layout !== 'timeline' && hasMeta(meta)
 
   return (
     <div className={styles.header || 'flex justify-between items-start gap-3 mb-2'}>
@@ -176,7 +167,7 @@ function StructuredBlockHeader(props: {
           >
             {title}
           </span>
-          {meta ? (
+          {showMeta ? (
             <>
               <HeaderSeparator />
               <span
@@ -199,7 +190,32 @@ function StructuredBlockHeader(props: {
 }
 
 function HeaderSeparator(): ReactElement {
-  return <span className="mx-1 text-current">|</span>
+  return <span className="mx-1 text-current opacity-80">|</span>
+}
+
+function hasMeta(meta: ReactNode | undefined): boolean {
+  if (meta === undefined || meta === null || meta === false) return false
+  if (typeof meta === 'string') return meta.trim().length > 0
+  if (Array.isArray(meta)) return meta.some(hasMeta)
+  return true
+}
+
+function buildEducationMeta(block: Extract<ResumeBlock, { type: 'education' }>): ReactNode | undefined {
+  const hasMajor = Boolean(block.major)
+  const hasDegree = Boolean(block.degree)
+  if (!hasMajor && !hasDegree) return undefined
+
+  return (
+    <>
+      {hasMajor ? (
+        <EditableFieldWrapper blockId={block.id} fieldName="major" value={block.major} onUpdate={() => {}} />
+      ) : null}
+      {hasMajor && hasDegree ? <HeaderSeparator /> : null}
+      {hasDegree ? (
+        <EditableFieldWrapper blockId={block.id} fieldName="degree" value={block.degree} onUpdate={() => {}} />
+      ) : null}
+    </>
+  )
 }
 
 function DateRange(props: {
