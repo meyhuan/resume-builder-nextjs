@@ -48,7 +48,7 @@ interface DbResumeRecord {
 }
 
 interface ResumeSavePayload {
-  readonly title: string
+  readonly title?: string
   readonly content: Record<string, unknown>
   readonly template: string
   readonly thumbnail?: string
@@ -281,7 +281,6 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
         editorMeta,
       )
       const savePayload: ResumeSavePayload = {
-        title: resume.name || 'Untitled Resume',
         content: contentWithMeta,
         template: tpl,
         thumbnail,

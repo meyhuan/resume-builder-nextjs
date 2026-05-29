@@ -64,17 +64,21 @@ export async function PUT(req: Request, { params }: RouteParams) {
     })
     
     updateStep = 'update-database'
+    const data: Prisma.ResumeUpdateInput = {
+      content: persistedAssets.content as Prisma.InputJsonValue,
+      template,
+      thumbnail: persistedAssets.thumbnail,
+    }
+    if (typeof title === 'string' && title.trim()) {
+      data.title = title.trim()
+    }
+
     const resume = await prisma.resume.update({
       where: { 
         id,
         user: { wxId: userId }
       },
-      data: {
-        title,
-        content: persistedAssets.content as Prisma.InputJsonValue,
-        template,
-        thumbnail: persistedAssets.thumbnail
-      }
+      data,
     })
     
     return NextResponse.json(resume)
