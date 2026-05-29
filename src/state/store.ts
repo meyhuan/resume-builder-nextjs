@@ -16,6 +16,11 @@ import { TEST_RESUME_JSON } from '@/io/default-resume-data'
 import { createDefaultResume } from '@/lib/default-resume'
 import { createDefaultBlock } from '@/entities/blocks/block-factory'
 import { TEMPLATE_REGISTRY } from '@/templates/template-loader'
+import {
+  syncJobPositionFromBaseInfo,
+  syncJobPositionFromJobIntention,
+  withNormalizedJobPosition,
+} from '@/entities/resume/sync-job-position'
 
 const DEFAULT_FONT_SIZE: number = 15
 const defaultTheme: ThemeTokens = {
@@ -88,7 +93,7 @@ function pushHistory(
  */
 export const useAppStore = create<AppState>()(
   devtools((set, get) => ({
-    resume: defaultResume,
+    resume: withNormalizedJobPosition(defaultResume),
     themes: {},
     pastStates: [],
     futureStates: [],
@@ -96,7 +101,7 @@ export const useAppStore = create<AppState>()(
     setReadOnly: (readOnly) => set(() => ({ readOnly }), false, 'ui/setReadOnly'),
     resetResume: () =>
       set(() => ({
-        resume: defaultResume,
+        resume: withNormalizedJobPosition(defaultResume),
         pastStates: [],
         futureStates: [],
       }), false, 'resume/reset'),
@@ -127,7 +132,7 @@ export const useAppStore = create<AppState>()(
       set(() => ({
         pastStates: pushHistory(state.resume, state.pastStates),
         futureStates: [],
-        resume: testResume,
+        resume: withNormalizedJobPosition(testResume),
       }), false, 'resume/loadTest')
     },
     setResume: (updater) => {
@@ -135,7 +140,7 @@ export const useAppStore = create<AppState>()(
       set(() => ({
         pastStates: pushHistory(state.resume, state.pastStates),
         futureStates: [],
-        resume: produce(state.resume, updater),
+        resume: withNormalizedJobPosition(produce(state.resume, updater)),
       }), false, 'resume/set')
     },
     getThemeForTemplate: (templateId) => {
@@ -322,7 +327,7 @@ export const useAppStore = create<AppState>()(
       set(() => ({
         pastStates: pushHistory(state.resume, state.pastStates),
         futureStates: [],
-        resume: mapExternalResume(external),
+        resume: withNormalizedJobPosition(mapExternalResume(external)),
       }), false, 'resume/import')
     },
     updateBaseInfo: (baseInfo, name) => {
@@ -332,7 +337,7 @@ export const useAppStore = create<AppState>()(
         futureStates: [],
         resume: produce(state.resume, (draft) => {
           draft.name = name
-          draft.baseInfo = baseInfo
+          syncJobPositionFromBaseInfo(draft, baseInfo)
         }),
       }), false, 'resume/updateBaseInfo')
     },
@@ -342,7 +347,7 @@ export const useAppStore = create<AppState>()(
         pastStates: pushHistory(state.resume, state.pastStates),
         futureStates: [],
         resume: produce(state.resume, (draft) => {
-          draft.jobIntention = jobIntention
+          syncJobPositionFromJobIntention(draft, jobIntention)
         }),
       }), false, 'resume/updateJobIntention')
     },
