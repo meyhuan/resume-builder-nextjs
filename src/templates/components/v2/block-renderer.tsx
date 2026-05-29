@@ -1,15 +1,4 @@
-/**
- * V2 BlockRenderer - Style-Driven Architecture
- * 
- * 完全解耦的 Block 渲染组件，支持：
- * 1. 样式配置驱动
- * 2. 自定义渲染函数
- * 3. 插槽模式
- * 
- * 新增模板无需修改此文件
- */
-
-import type { ReactElement } from 'react'
+import type { ReactElement, ReactNode } from 'react'
 import type { ResumeBlock } from '@/entities/blocks/resume-block'
 import EditableBlockWrapper from '@/editor/editable-block-wrapper'
 import EditableFieldWrapper from '@/editor/editable-field-wrapper'
@@ -24,24 +13,14 @@ export interface BlockRendererProps {
   readonly block: ResumeBlock
   readonly themeColor: string
   readonly onEditingChange?: (isEditing: boolean) => void
-  
-  // 方案1: 样式配置（推荐用于大多数场景）
   readonly styles?: BlockRendererStyles
-  
-  // 方案2: 完全自定义渲染（用于完全不同的布局）
   readonly renderCustom?: (props: BlockRenderProps) => ReactElement
-  
-  // 方案3: 插槽模式（用于部分自定义）
   readonly slots?: BlockSlots
 }
 
-/**
- * V2 Block 渲染器 - 样式配置驱动
- */
 export default function BlockRenderer(props: BlockRendererProps): ReactElement {
   const { block, themeColor, onEditingChange, styles = {}, renderCustom, slots } = props
 
-  // 方案2: 完全自定义渲染
   if (renderCustom) {
     return renderCustom({
       block,
@@ -51,431 +30,203 @@ export default function BlockRenderer(props: BlockRendererProps): ReactElement {
     })
   }
 
-  // 根据样式配置选择布局
-  // const layout = styles.layout || 'default' // Unused
   const containerClassName = styles.container || ''
   const spacingClassName = styles.spacing || ''
 
-  // 默认渲染：根据 block 类型和布局样式
   return (
     <div className={`${containerClassName} ${spacingClassName}`.trim()}>
-      {slots?.header ? (
-        slots.header(block, themeColor)
-      ) : (
-        renderBlockHeader(block, themeColor, styles, onEditingChange)
-      )}
-      
-      {slots?.content ? (
-        slots.content(block)
-      ) : (
-        renderBlockContent(block, styles, onEditingChange)
-      )}
-      
+      {slots?.header ? slots.header(block, themeColor) : renderBlockHeader(block, styles, onEditingChange)}
+      {slots?.content ? slots.content(block) : renderBlockContent(block, styles, onEditingChange)}
       {slots?.footer && slots.footer(block)}
     </div>
   )
 }
 
-/**
- * 渲染 Block 头部
- */
 function renderBlockHeader(
   block: ResumeBlock,
-  themeColor: string,
   styles: BlockRendererStyles,
-  onEditingChange?: (isEditing: boolean) => void
+  onEditingChange?: (isEditing: boolean) => void,
 ): ReactElement | null {
+  if (block.type === 'experience') {
+    return (
+      <StructuredBlockHeader
+        block={block}
+        title={(
+          <EditableFieldWrapper
+            blockId={block.id}
+            fieldName="company"
+            value={block.company}
+            onUpdate={() => {}}
+            onEditingChange={onEditingChange}
+            className={styles.title?.className || 'font-semibold'}
+          />
+        )}
+        meta={(
+          <>
+            <EditableFieldWrapper blockId={block.id} fieldName="position" value={block.position} onUpdate={() => {}} />
+            {block.industry ? (
+              <>
+                <HeaderSeparator />
+                <EditableFieldWrapper blockId={block.id} fieldName="industry" value={block.industry} onUpdate={() => {}} />
+              </>
+            ) : null}
+          </>
+        )}
+        styles={styles}
+      />
+    )
+  }
+
+  if (block.type === 'project') {
+    return (
+      <StructuredBlockHeader
+        block={block}
+        title={(
+          <EditableFieldWrapper
+            blockId={block.id}
+            fieldName="name"
+            value={block.name}
+            onUpdate={() => {}}
+            onEditingChange={onEditingChange}
+            className={styles.title?.className || 'font-semibold'}
+          />
+        )}
+        meta={block.role ? (
+          <EditableFieldWrapper blockId={block.id} fieldName="role" value={block.role} onUpdate={() => {}} />
+        ) : null}
+        styles={styles}
+      />
+    )
+  }
+
+  if (block.type === 'education') {
+    return (
+      <StructuredBlockHeader
+        block={block}
+        title={(
+          <EditableFieldWrapper
+            blockId={block.id}
+            fieldName="school"
+            value={block.school}
+            onUpdate={() => {}}
+            onEditingChange={onEditingChange}
+            className={styles.title?.className || 'font-semibold'}
+          />
+        )}
+        meta={(
+          <>
+            {block.major ? (
+              <EditableFieldWrapper blockId={block.id} fieldName="major" value={block.major} onUpdate={() => {}} />
+            ) : null}
+            {block.major && block.degree ? <HeaderSeparator /> : null}
+            {block.degree ? (
+              <EditableFieldWrapper blockId={block.id} fieldName="degree" value={block.degree} onUpdate={() => {}} />
+            ) : null}
+          </>
+        )}
+        styles={styles}
+      />
+    )
+  }
+
+  if (block.type === 'campus') {
+    return (
+      <StructuredBlockHeader
+        block={block}
+        title={(
+          <EditableFieldWrapper
+            blockId={block.id}
+            fieldName="organization"
+            value={block.organization}
+            onUpdate={() => {}}
+            onEditingChange={onEditingChange}
+            className={styles.title?.className || 'font-semibold'}
+          />
+        )}
+        meta={<EditableFieldWrapper blockId={block.id} fieldName="position" value={block.position} onUpdate={() => {}} />}
+        styles={styles}
+      />
+    )
+  }
+
+  return null
+}
+
+function StructuredBlockHeader(props: {
+  readonly block: Extract<ResumeBlock, { startDate: string; endDate: string }>
+  readonly title: ReactElement
+  readonly meta: ReactNode
+  readonly styles: BlockRendererStyles
+}): ReactElement {
+  const { block, title, meta, styles } = props
   const layout = styles.layout || 'default'
-  
-  // 根据布局类型渲染不同的头部
-  if (layout === 'card' || layout === 'default') {
-    return renderCardHeader(block, themeColor, styles, onEditingChange)
-  }
-  
-  if (layout === 'timeline') {
-    return renderTimelineHeader(block, themeColor, styles, onEditingChange)
-  }
-  
-  if (layout === 'minimal') {
-    return renderMinimalHeader(block, themeColor, styles, onEditingChange)
-  }
-  
-  // 自定义布局：使用样式配置
-  return renderCardHeader(block, themeColor, styles, onEditingChange)
-}
+  const showDate = layout !== 'timeline'
 
-/**
- * 卡片样式头部
- */
-function renderCardHeader(
-  block: ResumeBlock,
-  themeColor: string,
-  styles: BlockRendererStyles,
-  onEditingChange?: (isEditing: boolean) => void
-): ReactElement | null {
-  if (block.type === 'experience') {
-    return (
-      <div className={styles.header || 'flex justify-between items-start mb-2'}>
-        <div className="flex-1">
-          <h3 
+  return (
+    <div className={styles.header || 'flex justify-between items-start gap-3 mb-2'}>
+      <div className="flex-1 min-w-0">
+        <h3 className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
+          <span
             className={styles.title?.className || 'font-semibold'}
-            style={{ fontSize: styles.title?.fontSize, fontWeight: styles.title?.fontWeight, color: styles.title?.color }}
+            style={{
+              fontSize: styles.title?.fontSize,
+              fontWeight: styles.title?.fontWeight,
+              color: styles.title?.color,
+            }}
           >
-            <EditableFieldWrapper
-              blockId={block.id}
-              fieldName="company"
-              value={block.company}
-              onUpdate={() => {}}
-              onEditingChange={onEditingChange}
-              className={styles.title?.className || 'font-semibold'}
-            />
-          </h3>
-          <p 
-            className={styles.subtitle?.className || 'text-gray-600 mt-0.5'}
-            style={{ fontSize: styles.subtitle?.fontSize, fontWeight: styles.subtitle?.fontWeight, color: styles.subtitle?.color }}
-          >
-            <EditableFieldWrapper
-              blockId={block.id}
-              fieldName="position"
-              value={block.position}
-              onUpdate={() => {}}
-            />
-            {block.industry ? (
-              <>
-                {' | '}
-                <EditableFieldWrapper
-                  blockId={block.id}
-                  fieldName="industry"
-                  value={block.industry}
-                  onUpdate={() => {}}
-                />
-              </>
-            ) : null}
-          </p>
-        </div>
-        <div 
-          className={styles.dateRange?.className || 'text-gray-500 ml-4 shrink-0'}
-          style={{ fontSize: styles.dateRange?.fontSize, fontWeight: styles.dateRange?.fontWeight }}
-        >
-          <EditableDateField blockId={block.id} fieldName="startDate" value={block.startDate} />
-          {' - '}
-          <EditableDateField blockId={block.id} fieldName="endDate" value={block.endDate} />
-        </div>
-      </div>
-    )
-  }
-
-  if (block.type === 'project') {
-    return (
-      <div className={styles.header || 'flex justify-between items-start mb-2'}>
-        <div className="flex-1">
-          <h3 
-            className={styles.title?.className || 'font-semibold'}
-            style={{ fontSize: styles.title?.fontSize, fontWeight: styles.title?.fontWeight, color: styles.title?.color }}
-          >
-            <EditableFieldWrapper
-              blockId={block.id}
-              fieldName="name"
-              value={block.name}
-              onUpdate={() => {}}
-              onEditingChange={onEditingChange}
-              className={styles.title?.className || 'font-semibold'}
-            />
-          </h3>
-          {block.role ? (
-            <p 
-              className={styles.subtitle?.className || 'mt-0.5'}
-              style={{ fontSize: styles.subtitle?.fontSize, fontWeight: styles.subtitle?.fontWeight, color: styles.subtitle?.color }}
-            >
-              <EditableFieldWrapper
-                blockId={block.id}
-                fieldName="role"
-                value={block.role}
-                onUpdate={() => {}}
-              />
-            </p>
+            {title}
+          </span>
+          {meta ? (
+            <>
+              <HeaderSeparator />
+              <span
+                className={styles.subtitle?.className || 'text-gray-600'}
+                style={{
+                  fontSize: styles.subtitle?.fontSize,
+                  fontWeight: styles.subtitle?.fontWeight,
+                  color: styles.subtitle?.color,
+                }}
+              >
+                {meta}
+              </span>
+            </>
           ) : null}
-        </div>
-        <div 
-          className={styles.dateRange?.className || 'text-gray-500 ml-4 shrink-0'}
-          style={{ fontSize: styles.dateRange?.fontSize, fontWeight: styles.dateRange?.fontWeight }}
-        >
-          <EditableDateField blockId={block.id} fieldName="startDate" value={block.startDate} />
-          {' - '}
-          <EditableDateField blockId={block.id} fieldName="endDate" value={block.endDate} />
-        </div>
+        </h3>
       </div>
-    )
-  }
-
-  if (block.type === 'education') {
-    return (
-      <div className={styles.header || 'flex justify-between items-start mb-2'}>
-        <div className="flex-1">
-          <h3 
-            className={styles.title?.className || 'font-semibold'}
-            style={{ fontSize: styles.title?.fontSize, fontWeight: styles.title?.fontWeight, color: styles.title?.color }}
-          >
-            <EditableFieldWrapper
-              blockId={block.id}
-              fieldName="school"
-              value={block.school}
-              onUpdate={() => {}}
-              onEditingChange={onEditingChange}
-              className={styles.title?.className || 'font-semibold'}
-            />
-          </h3>
-          <p 
-            className={styles.subtitle?.className || 'text-gray-600 mt-0.5'}
-            style={{ fontSize: styles.subtitle?.fontSize, fontWeight: styles.subtitle?.fontWeight, color: styles.subtitle?.color }}
-          >
-            <EditableFieldWrapper
-              blockId={block.id}
-              fieldName="major"
-              value={block.major}
-              onUpdate={() => {}}
-            />
-            {' | '}
-            <EditableFieldWrapper
-              blockId={block.id}
-              fieldName="degree"
-              value={block.degree}
-              onUpdate={() => {}}
-            />
-          </p>
-        </div>
-        <div 
-          className={styles.dateRange?.className || 'text-gray-500 ml-4 shrink-0'}
-          style={{ fontSize: styles.dateRange?.fontSize, fontWeight: styles.dateRange?.fontWeight }}
-        >
-          <EditableDateField blockId={block.id} fieldName="startDate" value={block.startDate} />
-          {' - '}
-          <EditableDateField blockId={block.id} fieldName="endDate" value={block.endDate} />
-        </div>
-      </div>
-    )
-  }
-
-  if (block.type === 'campus') {
-    return (
-      <div className={styles.header || 'flex justify-between items-start mb-2'}>
-        <div className="flex-1">
-          <h3 className={styles.title?.className || 'font-semibold'}>
-            <EditableFieldWrapper
-              blockId={block.id}
-              fieldName="organization"
-              value={block.organization}
-              onUpdate={() => {}}
-              onEditingChange={onEditingChange}
-              className={styles.title?.className || 'font-semibold'}
-            />
-          </h3>
-          <p className={styles.subtitle?.className || 'text-gray-600 mt-0.5'}>
-            <EditableFieldWrapper
-              blockId={block.id}
-              fieldName="position"
-              value={block.position}
-              onUpdate={() => {}}
-            />
-          </p>
-        </div>
-        <div 
-          className={styles.dateRange?.className || 'text-gray-500 ml-4 shrink-0'}
-          style={{ fontSize: styles.dateRange?.fontSize, fontWeight: styles.dateRange?.fontWeight }}
-        >
-          <EditableFieldWrapper blockId={block.id} fieldName="startDate" value={block.startDate} onUpdate={() => {}} />
-          {' - '}
-          <EditableFieldWrapper blockId={block.id} fieldName="endDate" value={block.endDate} onUpdate={() => {}} />
-        </div>
-      </div>
-    )
-  }
-
-  return null
+      {showDate ? <DateRange block={block} styles={styles} /> : null}
+    </div>
+  )
 }
 
-/**
- * 时间线样式头部
- */
-function renderTimelineHeader(
-  block: ResumeBlock,
-  themeColor: string,
-  styles: BlockRendererStyles,
-  onEditingChange?: (isEditing: boolean) => void
-): ReactElement | null {
-  // 复制 card header 的逻辑，但不渲染右侧的时间
-  if (block.type === 'experience') {
-    return (
-      <div className={styles.header || 'flex justify-between items-start mb-2'}>
-        <div className="flex-1">
-          <h3 
-            className={styles.title?.className || 'font-semibold'}
-            style={{ fontSize: styles.title?.fontSize, fontWeight: styles.title?.fontWeight, color: styles.title?.color }}
-          >
-            <EditableFieldWrapper
-              blockId={block.id}
-              fieldName="company"
-              value={block.company}
-              onUpdate={() => {}}
-              onEditingChange={onEditingChange}
-              className={styles.title?.className || 'font-semibold'}
-            />
-          </h3>
-          <p 
-            className={styles.subtitle?.className || 'text-gray-600 mt-0.5'}
-            style={{ fontSize: styles.subtitle?.fontSize, fontWeight: styles.subtitle?.fontWeight, color: styles.subtitle?.color }}
-          >
-            <EditableFieldWrapper
-              blockId={block.id}
-              fieldName="position"
-              value={block.position}
-              onUpdate={() => {}}
-            />
-            {block.industry ? (
-              <>
-                {' | '}
-                <EditableFieldWrapper
-                  blockId={block.id}
-                  fieldName="industry"
-                  value={block.industry}
-                  onUpdate={() => {}}
-                />
-              </>
-            ) : null}
-          </p>
-        </div>
-      </div>
-    )
-  }
-
-  if (block.type === 'project') {
-    return (
-      <div className={styles.header || 'flex justify-between items-start mb-2'}>
-        <div className="flex-1">
-          <h3 
-            className={styles.title?.className || 'font-semibold'}
-            style={{ fontSize: styles.title?.fontSize, fontWeight: styles.title?.fontWeight, color: styles.title?.color }}
-          >
-            <EditableFieldWrapper
-              blockId={block.id}
-              fieldName="name"
-              value={block.name}
-              onUpdate={() => {}}
-              onEditingChange={onEditingChange}
-              className={styles.title?.className || 'font-semibold'}
-            />
-          </h3>
-          {block.role ? (
-            <p 
-              className={styles.subtitle?.className || 'mt-0.5'}
-              style={{ fontSize: styles.subtitle?.fontSize, fontWeight: styles.subtitle?.fontWeight, color: styles.subtitle?.color }}
-            >
-              <EditableFieldWrapper
-                blockId={block.id}
-                fieldName="role"
-                value={block.role}
-                onUpdate={() => {}}
-              />
-            </p>
-          ) : null}
-        </div>
-      </div>
-    )
-  }
-
-  if (block.type === 'education') {
-    return (
-      <div className={styles.header || 'flex justify-between items-start mb-2'}>
-        <div className="flex-1">
-          <h3 
-            className={styles.title?.className || 'font-semibold'}
-            style={{ fontSize: styles.title?.fontSize, fontWeight: styles.title?.fontWeight, color: styles.title?.color }}
-          >
-            <EditableFieldWrapper
-              blockId={block.id}
-              fieldName="school"
-              value={block.school}
-              onUpdate={() => {}}
-              onEditingChange={onEditingChange}
-              className={styles.title?.className || 'font-semibold'}
-            />
-          </h3>
-          <p 
-            className={styles.subtitle?.className || 'text-gray-600 mt-0.5'}
-            style={{ fontSize: styles.subtitle?.fontSize, fontWeight: styles.subtitle?.fontWeight, color: styles.subtitle?.color }}
-          >
-            <EditableFieldWrapper
-              blockId={block.id}
-              fieldName="major"
-              value={block.major}
-              onUpdate={() => {}}
-            />
-            {' | '}
-            <EditableFieldWrapper
-              blockId={block.id}
-              fieldName="degree"
-              value={block.degree}
-              onUpdate={() => {}}
-            />
-          </p>
-        </div>
-      </div>
-    )
-  }
-
-  if (block.type === 'campus') {
-    return (
-      <div className={styles.header || 'flex justify-between items-start mb-2'}>
-        <div className="flex-1">
-          <h3 className={styles.title?.className || 'font-semibold'}>
-            <EditableFieldWrapper
-              blockId={block.id}
-              fieldName="organization"
-              value={block.organization}
-              onUpdate={() => {}}
-              onEditingChange={onEditingChange}
-              className={styles.title?.className || 'font-semibold'}
-            />
-          </h3>
-          <p className={styles.subtitle?.className || 'text-gray-600 mt-0.5'}>
-            <EditableFieldWrapper
-              blockId={block.id}
-              fieldName="position"
-              value={block.position}
-              onUpdate={() => {}}
-            />
-          </p>
-        </div>
-      </div>
-    )
-  }
-
-  return null
+function HeaderSeparator(): ReactElement {
+  return <span className="mx-1 text-current">|</span>
 }
 
-/**
- * 极简样式头部
- */
-function renderMinimalHeader(
-  block: ResumeBlock,
-  themeColor: string,
-  styles: BlockRendererStyles,
-  onEditingChange?: (isEditing: boolean) => void
-): ReactElement | null {
-  // 极简布局的头部渲染
-  return renderCardHeader(block, themeColor, styles, onEditingChange)
+function DateRange(props: {
+  readonly block: Extract<ResumeBlock, { startDate: string; endDate: string }>
+  readonly styles: BlockRendererStyles
+}): ReactElement {
+  const { block, styles } = props
+  return (
+    <div
+      className={styles.dateRange?.className || 'text-gray-500 ml-4 shrink-0'}
+      style={{ fontSize: styles.dateRange?.fontSize, fontWeight: styles.dateRange?.fontWeight }}
+    >
+      <EditableDateField blockId={block.id} fieldName="startDate" value={block.startDate} />
+      {' - '}
+      <EditableDateField blockId={block.id} fieldName="endDate" value={block.endDate} />
+    </div>
+  )
 }
 
-/**
- * 渲染 Block 内容
- */
 function renderBlockContent(
   block: ResumeBlock,
   styles: BlockRendererStyles,
-  onEditingChange?: (isEditing: boolean) => void
+  onEditingChange?: (isEditing: boolean) => void,
 ): ReactElement {
   const contentClassName = styles.content || 'mt-2'
-  const contentFontSize = contentClassName.match(/text-\[([^\]]+)\]/)?.[1] || (styles.content?.includes('text-') ? undefined : styles.content)
+  const contentFontSize = contentClassName.match(/text-\[([^\]]+)\]/)?.[1]
+    || (styles.content?.includes('text-') ? undefined : styles.content)
 
   if (block.type === 'text') {
     return (
