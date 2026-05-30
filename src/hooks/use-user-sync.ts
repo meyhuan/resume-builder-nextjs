@@ -1,13 +1,13 @@
 'use client';
 
-import { syncUserAction } from '@/app/actions';
+import { syncNextUserAction } from '@/app/actions';
 import { logger } from '@/utils/logger';
 
 export const useUserSync = () => {
   const syncUser = async (userData: { wxId: string; name?: string; avatar?: string; email?: string }) => {
     try {
       logger.info('Sync', `Syncing user to DB: ${userData.wxId}`);
-      const result = await syncUserAction(userData);
+      const result = await syncNextUserAction(userData);
       
       if (result.success) {
         logger.success('Sync', `User synced successfully: ${result.user?.id}`);

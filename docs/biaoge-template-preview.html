@@ -1,0 +1,465 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>表格简历模板预览</title>
+  <style>
+    :root {
+      --primary: #7c3aed;
+      --primary-soft: #f5f3ff;
+      --primary-line: #ddd6fe;
+      --text: #0f172a;
+      --muted: #475569;
+      --subtle: #64748b;
+      --line: #e5e7eb;
+      --page: #ffffff;
+      --canvas: #f8fafc;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--canvas);
+      color: var(--text);
+      font-family: Inter, "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif;
+      font-size: 14px;
+      line-height: 1.65;
+    }
+
+    .preview-shell {
+      min-height: 100vh;
+      padding: 32px;
+    }
+
+    .page {
+      width: 210mm;
+      min-height: 297mm;
+      margin: 0 auto;
+      background: var(--page);
+      padding: 18mm 15mm;
+      box-shadow: 0 20px 60px rgba(15, 23, 42, 0.12);
+    }
+
+    .resume-header {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 30mm;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .identity-table,
+    .resume-table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      border: 1px solid var(--line);
+    }
+
+    .identity-name {
+      padding: 9px 12px;
+      border: 1px solid var(--line);
+      background: linear-gradient(90deg, var(--primary-soft), #ffffff);
+    }
+
+    .name-row {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .name {
+      font-size: 26px;
+      line-height: 1.2;
+      font-weight: 800;
+      letter-spacing: 0;
+      color: var(--text);
+    }
+
+    .position {
+      color: var(--primary);
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .summary {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
+    .identity-table th,
+    .identity-table td,
+    .resume-table th,
+    .resume-table td {
+      border: 1px solid var(--line);
+      padding: 6px 8px;
+      vertical-align: top;
+      word-break: break-word;
+    }
+
+    .identity-table th,
+    .resume-table th {
+      width: 18mm;
+      background: #fafafa;
+      color: var(--muted);
+      font-weight: 700;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .avatar-box {
+      height: 100%;
+      min-height: 39mm;
+      border: 1px solid var(--line);
+      background: linear-gradient(180deg, #ffffff, #fafafa);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--subtle);
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .section {
+      margin-top: 10px;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 28px;
+      padding: 0 10px;
+      border: 1px solid var(--primary-line);
+      border-bottom: 0;
+      background: var(--primary-soft);
+      color: var(--primary);
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    .section-title span:last-child {
+      color: #a78bfa;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0;
+    }
+
+    .resume-table td {
+      background: #ffffff;
+    }
+
+    .meta-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) 30mm;
+      gap: 8px;
+      align-items: center;
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    .meta-row .time {
+      text-align: right;
+      color: var(--muted);
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .content {
+      margin-top: 5px;
+      color: #1f2937;
+    }
+
+    .content ul {
+      margin: 4px 0 0;
+      padding-left: 17px;
+    }
+
+    .content li {
+      margin: 2px 0;
+    }
+
+    .skill-grid {
+      display: grid;
+      grid-template-columns: 22mm minmax(0, 1fr);
+      border-top: 1px solid var(--line);
+    }
+
+    .skill-grid:first-child {
+      border-top: 0;
+    }
+
+    .skill-label {
+      padding: 6px 8px;
+      border-right: 1px solid var(--line);
+      background: #fafafa;
+      color: var(--muted);
+      font-weight: 700;
+      text-align: center;
+    }
+
+    .skill-text {
+      padding: 6px 8px;
+    }
+
+    .tag-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+
+    .tag {
+      padding: 1px 7px;
+      border: 1px solid var(--primary-line);
+      border-radius: 999px;
+      background: #ffffff;
+      color: #5b21b6;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.7;
+    }
+
+    .muted {
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    @media print {
+      body {
+        background: #ffffff;
+      }
+
+      .preview-shell {
+        padding: 0;
+      }
+
+      .page {
+        width: auto;
+        min-height: auto;
+        box-shadow: none;
+      }
+    }
+
+    @media (max-width: 860px) {
+      .preview-shell {
+        padding: 16px;
+      }
+
+      .page {
+        width: 100%;
+        min-height: auto;
+        padding: 18px;
+      }
+
+      .resume-header {
+        grid-template-columns: 1fr;
+      }
+
+      .avatar-box {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="preview-shell">
+    <article class="page">
+      <header class="resume-header">
+        <div>
+          <div class="identity-name">
+            <div class="name-row">
+              <div class="name">陈思远</div>
+              <div class="position">产品运营 · AI 简历方向</div>
+            </div>
+            <div class="summary">3 年互联网产品运营经验，擅长用户增长、内容策略与数据分析，能独立推进从需求洞察到落地复盘的完整项目。</div>
+          </div>
+          <table class="identity-table" aria-label="基本信息">
+            <tbody>
+              <tr>
+                <th>手机</th>
+                <td>138 0000 0000</td>
+                <th>邮箱</th>
+                <td>siyuan.chen@example.com</td>
+              </tr>
+              <tr>
+                <th>学历</th>
+                <td>本科</td>
+                <th>城市</th>
+                <td>上海</td>
+              </tr>
+              <tr>
+                <th>经验</th>
+                <td>3 年</td>
+                <th>状态</th>
+                <td>一周内到岗</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="avatar-box">证件照</div>
+      </header>
+
+      <section class="section">
+        <div class="section-title">
+          <span>求职意向</span>
+          <span>JOB TARGET</span>
+        </div>
+        <table class="resume-table">
+          <tbody>
+            <tr>
+              <th>岗位</th>
+              <td>产品运营 / 用户运营 / AI 产品运营</td>
+              <th>期望</th>
+              <td>上海 · 20-25K · 全职</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="section">
+        <div class="section-title">
+          <span>教育经历</span>
+          <span>EDUCATION</span>
+        </div>
+        <table class="resume-table">
+          <tbody>
+            <tr>
+              <td>
+                <div class="meta-row">
+                  <div>华东师范大学</div>
+                  <div class="muted">新闻传播学 · 本科</div>
+                  <div class="time">2017.09 - 2021.06</div>
+                </div>
+                <div class="content">主修课程：用户研究、数据新闻、传播心理学、内容产品策划。GPA 3.7/4.0，连续两年获得校级奖学金。</div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="section">
+        <div class="section-title">
+          <span>工作经历</span>
+          <span>EXPERIENCE</span>
+        </div>
+        <table class="resume-table">
+          <tbody>
+            <tr>
+              <td>
+                <div class="meta-row">
+                  <div>某 AI 工具平台</div>
+                  <div class="muted">产品运营</div>
+                  <div class="time">2023.03 - 至今</div>
+                </div>
+                <div class="content">
+                  <ul>
+                    <li>负责 AI 写作工具新用户激活链路，基于注册、首创作、导出三个关键节点搭建分层运营策略。</li>
+                    <li>联合产品与算法团队优化模板推荐逻辑，使新用户首日完成率从 31% 提升至 46%。</li>
+                    <li>建立周度数据看板，沉淀 20+ 个高转化内容模板，推动付费转化率提升 18%。</li>
+                  </ul>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <div class="meta-row">
+                  <div>某在线教育公司</div>
+                  <div class="muted">用户运营</div>
+                  <div class="time">2021.07 - 2023.02</div>
+                </div>
+                <div class="content">
+                  <ul>
+                    <li>负责 10 万级学习社群的生命周期运营，设计入群欢迎、学习提醒、续费召回等自动化触达流程。</li>
+                    <li>通过 A/B 测试优化社群内容节奏，课程完课率提升 22%，老用户复购率提升 13%。</li>
+                  </ul>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="section">
+        <div class="section-title">
+          <span>项目经历</span>
+          <span>PROJECTS</span>
+        </div>
+        <table class="resume-table">
+          <tbody>
+            <tr>
+              <td>
+                <div class="meta-row">
+                  <div>AI 简历诊断增长项目</div>
+                  <div class="muted">项目负责人</div>
+                  <div class="time">2024.05 - 2024.09</div>
+                </div>
+                <div class="content">
+                  <ul>
+                    <li>围绕“上传简历后一键诊断”场景设计增长漏斗，拆解上传、解析、诊断、改写、导出五个关键动作。</li>
+                    <li>上线行业化诊断话术与示例改写模块，首月带来 2.6 万次使用，简历导出率提升 24%。</li>
+                  </ul>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="section">
+        <div class="section-title">
+          <span>专业技能</span>
+          <span>SKILLS</span>
+        </div>
+        <table class="resume-table">
+          <tbody>
+            <tr>
+              <td>
+                <div class="skill-grid">
+                  <div class="skill-label">运营能力</div>
+                  <div class="skill-text">用户分层、生命周期运营、内容策略、活动策划、私域社群运营</div>
+                </div>
+                <div class="skill-grid">
+                  <div class="skill-label">数据工具</div>
+                  <div class="skill-text">熟练使用 SQL、Excel、Looker Studio、GrowingIO，能独立完成数据分析与复盘</div>
+                </div>
+                <div class="skill-grid">
+                  <div class="skill-label">关键词</div>
+                  <div class="skill-text">
+                    <div class="tag-list">
+                      <span class="tag">AI 产品</span>
+                      <span class="tag">用户增长</span>
+                      <span class="tag">数据分析</span>
+                      <span class="tag">内容运营</span>
+                      <span class="tag">转化优化</span>
+                    </div>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="section">
+        <div class="section-title">
+          <span>自我评价</span>
+          <span>PROFILE</span>
+        </div>
+        <table class="resume-table">
+          <tbody>
+            <tr>
+              <td>具备产品视角和运营落地能力，习惯用数据拆解问题，也能把复杂策略转化为清晰可执行的动作。对 AI 工具和求职服务场景有持续关注，能够快速理解用户痛点并推动跨团队协作。</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+    </article>
+  </main>
+</body>
+</html>

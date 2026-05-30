@@ -1,8 +1,9 @@
 import axios, { InternalAxiosRequestConfig, AxiosError } from 'axios';
 import { logger } from '@/utils/logger';
+import { getPublicJavaApiBaseUrl } from '@/lib/java-api-base';
 
 const api = axios.create({
-  baseURL: 'https://aijianli.cn/api',
+  baseURL: getPublicJavaApiBaseUrl(),
   timeout: 10000,
 });
 
@@ -33,19 +34,17 @@ api.interceptors.response.use(
 );
 
 export const authApi = {
-  // WeChat Login: Get QR Code (Direct Java SSO)
+  // WeChat Login: Get QR Code through the Java web login scene flow.
   getWxQrcode: async (sceneStr: string) => {
-    // Prefix sceneStr as expected by Java backend
-    const prefixedSceneStr = sceneStr.startsWith('cvstore_') ? sceneStr : `cvstore_${sceneStr}`;
-    const { data } = await api.post('/cvstore/login/qrcode_url', { scene_str: prefixedSceneStr });
+    const prefixedSceneStr = sceneStr.startsWith('web_login_') ? sceneStr : `web_login_${sceneStr}`;
+    const { data } = await api.post('/web/login/qrcode_url', { scene_str: prefixedSceneStr });
     return data;
   },
 
-  // WeChat Login: Poll for token exchange (Direct Java SSO)
+  // WeChat Login: Poll for scan confirmation.
   exchangeWxToken: async (sceneStr: string) => {
-    // Prefix sceneStr as expected by Java backend
-    const prefixedSceneStr = sceneStr.startsWith('cvstore_') ? sceneStr : `cvstore_${sceneStr}`;
-    const { data } = await api.post('/cvstore/login/state', { scene_str: prefixedSceneStr });
+    const prefixedSceneStr = sceneStr.startsWith('web_login_') ? sceneStr : `web_login_${sceneStr}`;
+    const { data } = await api.post('/web/login/state', { scene_str: prefixedSceneStr });
     return data;
   },
 

@@ -1,26 +1,24 @@
 'use server'
 
-import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
-
 import { revalidatePath } from 'next/cache'
+import { prisma } from '@/lib/prisma'
 
-export async function syncUserAction(userData: {
-  wxId: string;
-  name?: string;
-  avatar?: string;
-  email?: string;
-  javaUserId?: string;
-  legacyCvUserId?: string;
+export async function syncNextUserAction(userData: {
+  wxId: string
+  name?: string
+  avatar?: string
+  email?: string
+  javaUserId?: string
 }) {
   try {
-    const { wxId, name, avatar, email, javaUserId, legacyCvUserId } = userData;
+    const { wxId, name, avatar, email, javaUserId } = userData
 
-    console.log(`[syncUserAction] START: wxId=${wxId}, legacyCvUserId=${legacyCvUserId}, javaUserId=${javaUserId}`);
+    console.log(`[syncNextUserAction] START: wxId=${wxId}, javaUserId=${javaUserId}`)
 
     if (!wxId) {
-      console.log('[syncUserAction] ERROR: wxId is required');
-      return { success: false, error: 'wxId is required' };
+      console.log('[syncNextUserAction] ERROR: wxId is required')
+      return { success: false, error: 'wxId is required' }
     }
 
     const updateData = {
@@ -28,50 +26,33 @@ export async function syncUserAction(userData: {
       avatar: avatar || undefined,
       email: email || undefined,
       javaUserId: javaUserId || undefined,
-    };
-    console.log(`[syncUserAction] updateData:`, JSON.stringify(updateData));
-
-    // Check if a legacy record exists and migrate it on-the-fly
-    // Try 1: exact match by legacyCvUserId (numeric cvUserId stored as wxId)
-    const legacyId = legacyCvUserId ?? (/^\d+$/.test(wxId) ? wxId : null);
-    console.log(`[syncUserAction] Try 1: legacyId=${legacyId}`);
-    if (legacyId) {
-      console.log(`[syncUserAction] Looking up user by wxId=${legacyId}`);
-      const legacyUser = await prisma.user.findUnique({ where: { wxId: legacyId } });
-      console.log(`[syncUserAction] Try 1 result:`, legacyUser ? `found id=${legacyUser.id}` : 'not found');
-      if (legacyUser) {
-        console.log(`[syncUserAction] ✓ Migrating legacy user wxId ${legacyId} → ${wxId}`);
-        const user = await prisma.user.update({
-          where: { id: legacyUser.id },
-          data: { wxId, ...updateData },
-        });
-        console.log(`[syncUserAction] ✓ Migration complete, user.id=${user.id}`);
-        return { success: true, user, migrated: true };
-      }
     }
-    // Try 2: match by javaUserId (legacy record may have wxId=openid but javaUserId=cvUserId)
-    console.log(`[syncUserAction] Try 2: javaUserId=${javaUserId}`);
+    console.log('[syncNextUserAction] updateData:', JSON.stringify(updateData))
+
     if (javaUserId) {
-      console.log(`[syncUserAction] Looking up user by javaUserId=${String(javaUserId)}`);
+      console.log(`[syncNextUserAction] Looking up user by javaUserId=${javaUserId}`)
       const legacyUser = await prisma.user.findFirst({
         where: {
           javaUserId: String(javaUserId),
-          wxId: { not: wxId }, // exclude if already migrated
+          wxId: { not: wxId },
         },
-      });
-      console.log(`[syncUserAction] Try 2 result:`, legacyUser ? `found id=${legacyUser.id}, wxId=${legacyUser.wxId}` : 'not found');
+      })
+      console.log(
+        '[syncNextUserAction] javaUserId lookup result:',
+        legacyUser ? `found id=${legacyUser.id}, wxId=${legacyUser.wxId}` : 'not found',
+      )
       if (legacyUser) {
-        console.log(`[syncUserAction] ✓ Migrating legacy user by javaUserId ${javaUserId} → ${wxId}`);
+        console.log(`[syncNextUserAction] Migrating legacy user by javaUserId ${javaUserId} -> ${wxId}`)
         const user = await prisma.user.update({
           where: { id: legacyUser.id },
           data: { wxId, ...updateData },
-        });
-        console.log(`[syncUserAction] ✓ Migration complete, user.id=${user.id}`);
-        return { success: true, user, migrated: true };
+        })
+        console.log(`[syncNextUserAction] Migration complete, user.id=${user.id}`)
+        return { success: true, user, migrated: true }
       }
     }
-    console.log(`[syncUserAction] No legacy user found, performing upsert for wxId=${wxId}`);
 
+    console.log(`[syncNextUserAction] No existing user found, performing upsert for wxId=${wxId}`)
     const user = await prisma.user.upsert({
       where: { wxId },
       update: updateData,
@@ -82,12 +63,12 @@ export async function syncUserAction(userData: {
         email,
         javaUserId,
       },
-    });
+    })
 
-    return { success: true, user };
+    return { success: true, user }
   } catch (error: unknown) {
-    console.error('Server Action Error (syncUserAction):', error);
-    return { success: false, error: error instanceof Error ? error.message : 'Internal Server Error' };
+    console.error('Server Action Error (syncNextUserAction):', error)
+    return { success: false, error: error instanceof Error ? error.message : 'Internal Server Error' }
   }
 }
 
@@ -99,5 +80,5 @@ export async function revalidateDashboard() {
  * @deprecated Use /editor/new route instead for blank resume creation.
  */
 export async function createResume(): Promise<never> {
-  redirect('/editor/new');
+  redirect('/editor/new')
 }

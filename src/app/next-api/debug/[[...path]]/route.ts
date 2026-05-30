@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
+import { getServerJavaApiBaseUrl } from '@/lib/java-api-base';
 
-const JAVA_API_BASE = process.env.NEXT_PUBLIC_JAVA_API_BASE_URL || 'https://aijianli.cn/api';
+const JAVA_API_BASE = getServerJavaApiBaseUrl();
 
 /**
  * GET /next-api/debug/find-by-openid/{openid}

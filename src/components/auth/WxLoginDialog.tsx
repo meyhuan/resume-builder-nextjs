@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { authApi } from '@/lib/api';
 import { useAuthStore } from '@/store/use-auth-store';
 import { logger } from '@/utils/logger';
-import { syncUserAction } from '@/app/actions';
+import { syncNextUserAction } from '@/app/actions';
 import { X, Loader2, RefreshCw, AlertCircle } from 'lucide-react';
 import Image from 'next/image';
 import { setCookie } from 'cookies-next';
@@ -104,7 +104,7 @@ export const WxLoginDialog: React.FC<WxLoginDialogProps> = ({ isOpen, onClose, o
         return;
       }
 
-      setExpireIn(qrData?.expire_seconds || 120);
+      setExpireIn(qrData?.expire_seconds || 600);
       startExpireCountdown();
       startPolling();
     } catch (error: unknown) {
@@ -145,20 +145,24 @@ export const WxLoginDialog: React.FC<WxLoginDialogProps> = ({ isOpen, onClose, o
         }
 
         // If data contains uid, it means login is successful
-        const uid = payload.uid || (payload.data && payload.data.uid);
+        if (payload.status === 'expired') {
+          stopPolling();
+          setStatus('expired');
+          return;
+        }
+
+        const javaUserId = payload.javaUserId || payload.uid || (payload.data && (payload.data.javaUserId || payload.data.uid));
         
-        if (uid) {
+        if (javaUserId) {
           // Prefer unionid (cross-app unique) > openid > numeric uid
-          const identity: string = payload.unionid || payload.openid || String(uid);
-          const uidStr = String(uid);
+          const identity: string = payload.unionid || payload.openid || String(javaUserId);
           logger.success('WxLogin', `Login successful, identity: ${identity}`);
           // Sync with local database using Server Action
           try {
-            await syncUserAction({
+            await syncNextUserAction({
               wxId: identity,
               name: `用户_${identity}`,
-              legacyCvUserId: uidStr,
-              javaUserId: uidStr, // enable fallback lookup by javaUserId
+              javaUserId: String(javaUserId),
             });
             logger.success('WxLogin', 'User synced to local database via Server Action');
           } catch (syncError) {

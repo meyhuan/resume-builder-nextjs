@@ -3,8 +3,9 @@
 import { useState } from 'react';
 import { Crown, Search, RotateCcw, User, CheckCircle, AlertCircle, LogIn, Shield, Copy, FileText, ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { getPublicJavaApiBaseUrl } from '@/lib/java-api-base';
 
-const JAVA_API = process.env.NEXT_PUBLIC_JAVA_API_BASE_URL || 'https://aijianli.cn/api';
+const JAVA_API = getPublicJavaApiBaseUrl();
 
 interface UserInfo {
   id: number;

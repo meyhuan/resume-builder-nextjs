@@ -8,7 +8,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { authApi } from '@/lib/api';
 import { useAuthStore } from '@/store/use-auth-store';
-import { syncUserAction } from '@/app/actions';
+import { syncNextUserAction } from '@/app/actions';
 import { logger } from '@/utils/logger';
 import { LegalDialog } from '@/components/legal/LegalDialog';
 
@@ -95,17 +95,20 @@ function LoginForm(): React.ReactElement {
         const resp = await authApi.exchangeWxToken(sceneStrRef.current);
         const payload = resp.data || resp;
         if (payload === 'pending' || payload.status === 'pending') return;
-        const uid: string | undefined = payload.uid || (payload.data && payload.data.uid);
-        if (uid) {
-          const identity: string = payload.unionid || payload.openid || String(uid);
-          const uidStr = String(uid);
+        if (payload.status === 'expired') {
+          stopPolling();
+          setStatus('expired');
+          return;
+        }
+        const javaUserId: string | undefined = payload.javaUserId || payload.uid || (payload.data && (payload.data.javaUserId || payload.data.uid));
+        if (javaUserId) {
+          const identity: string = payload.unionid || payload.openid || String(javaUserId);
           logger.success('WxLogin', `Login successful, identity: ${identity}`);
           try {
-            await syncUserAction({
+            await syncNextUserAction({
               wxId: identity,
               name: `用户_${identity}`,
-              legacyCvUserId: uidStr,
-              javaUserId: uidStr, // enable fallback lookup by javaUserId
+              javaUserId: String(javaUserId),
             });
           } catch (syncError) {
             logger.error('WxLogin', 'Failed to sync user', syncError);
@@ -139,7 +142,7 @@ function LoginForm(): React.ReactElement {
       } else {
         throw new Error('No ticket or URL found in response');
       }
-      setExpireIn(qrData?.expire_seconds || 120);
+      setExpireIn(qrData?.expire_seconds || 600);
       startExpireCountdown();
       startPolling();
     } catch (error: unknown) {
