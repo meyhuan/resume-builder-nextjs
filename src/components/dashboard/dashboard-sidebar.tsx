@@ -46,6 +46,22 @@ export default function DashboardSidebar(): ReactElement {
     return pathname.startsWith(href);
   }
 
+  function getDisplayName(): string {
+    if (userInfo?.id && /^\d+$/.test(userInfo.id)) return `用户_${userInfo.id}`;
+    const name = userInfo?.name?.trim();
+    if (name) return name;
+    if (userInfo?.email) return userInfo.email;
+    return '用户';
+  }
+
+  function getAvatarText(): string {
+    if (userInfo?.id && /^\d+$/.test(userInfo.id)) return userInfo.id.slice(-2);
+    return displayName.slice(0, 1);
+  }
+
+  const displayName = getDisplayName();
+  const avatarText = getAvatarText();
+
   return (
     <aside className="fixed left-0 top-0 bottom-0 w-[200px] bg-white border-r border-slate-100 flex flex-col z-40 print:hidden">
       {/* Logo */}
@@ -92,18 +108,26 @@ export default function DashboardSidebar(): ReactElement {
         {mounted && (
           <div className="rounded-xl bg-slate-50 mb-3 overflow-hidden">
             {/* User Info Row */}
-            <div className="flex items-center gap-3 px-3 py-3">
+            <Link
+              href="/dashboard/membership"
+              className="flex items-center gap-3 px-3 py-3 transition-colors hover:bg-slate-100/70"
+              aria-label="查看账户与会员信息"
+            >
               {/* Avatar */}
               <div
-                className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-white text-sm font-bold"
+                className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-white"
                 style={{ background: `linear-gradient(135deg, ${BRAND_COLOR}, #7C3AED)` }}
               >
-                {userInfo?.name?.[0] || userInfo?.email?.[0] || '用'}
+                {userInfo?.avatar ? (
+                  <Image src={userInfo.avatar} alt={displayName} width={36} height={36} className="w-9 h-9 rounded-full object-cover" />
+                ) : (
+                  <span className="text-xs font-bold tabular-nums">{avatarText}</span>
+                )}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5">
                   <p className="text-sm font-medium text-slate-700 truncate">
-                    {userInfo?.name || userInfo?.email || '用户'}
+                    {displayName}
                   </p>
                   {userInfo?.vip?.isVip && (
                     <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-gradient-to-r from-amber-400 to-orange-400 text-white text-[10px] font-bold">
@@ -120,7 +144,7 @@ export default function DashboardSidebar(): ReactElement {
                       : '免费用户'}
                 </p>
               </div>
-            </div>
+            </Link>
             {/* VIP Upgrade Row for non-VIP */}
             {!userInfo?.vip?.isVip && (
               <Link

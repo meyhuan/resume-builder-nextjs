@@ -64,10 +64,10 @@ function LoginForm(): React.ReactElement {
     }
   }, []);
 
-  const handleLoginSuccess = useCallback((uid: string): void => {
+  const handleLoginSuccess = useCallback((uid: string, userId?: string): void => {
     setToken(uid);
     setCookie('auth_uid', uid, { maxAge: 60 * 60 * 24 * 30 });
-    setUserInfo({ id: uid, name: `用户_${uid}` });
+    setUserInfo({ id: userId || uid, name: userId ? `用户_${userId}` : '用户' });
     stopPolling();
     stopExpireCountdown();
     router.push(redirectPath);
@@ -107,13 +107,13 @@ function LoginForm(): React.ReactElement {
           try {
             await syncNextUserAction({
               wxId: identity,
-              name: `用户_${identity}`,
+              name: `用户_${javaUserId}`,
               javaUserId: String(javaUserId),
             });
           } catch (syncError) {
             logger.error('WxLogin', 'Failed to sync user', syncError);
           }
-          handleLoginSuccess(identity);
+          handleLoginSuccess(identity, String(javaUserId));
         }
       } catch {
         // Continue polling

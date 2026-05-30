@@ -161,7 +161,7 @@ export const WxLoginDialog: React.FC<WxLoginDialogProps> = ({ isOpen, onClose, o
           try {
             await syncNextUserAction({
               wxId: identity,
-              name: `用户_${identity}`,
+              name: `用户_${javaUserId}`,
               javaUserId: String(javaUserId),
             });
             logger.success('WxLogin', 'User synced to local database via Server Action');
@@ -172,8 +172,8 @@ export const WxLoginDialog: React.FC<WxLoginDialogProps> = ({ isOpen, onClose, o
           setToken(identity);
           setCookie('auth_uid', identity, { maxAge: 60 * 60 * 24 * 30 });
           setUserInfo({
-            id: identity,
-            name: `用户_${identity}`,
+            id: String(javaUserId),
+            name: `用户_${javaUserId}`,
           });
 
           stopPolling();

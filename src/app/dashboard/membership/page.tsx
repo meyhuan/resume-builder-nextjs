@@ -7,7 +7,6 @@ import { Crown, ArrowLeft, LogOut, Copy, Check, X, Sparkles, Shield, FileText, Z
 import { useAuthStore } from '@/store/use-auth-store';
 import { useVipCheck } from '@/hooks/use-vip-check';
 import VipUpgradeDialog from '@/components/vip/vip-upgrade-dialog';
-import DashboardSidebar from '@/components/dashboard/dashboard-sidebar';
 
 interface VipInfo {
   isVip: boolean;
@@ -119,9 +118,8 @@ export default function MembershipPage(): React.ReactElement {
 
   return (
     <div className="min-h-screen bg-[#F7F6FB]">
-      <DashboardSidebar />
-
-      <main className="ml-[200px] min-h-screen px-12 py-8 max-w-[860px]">
+      <main className="min-h-screen px-6 py-8">
+        <div className="w-full max-w-[860px] mx-auto">
         <button
           onClick={() => router.push('/dashboard')}
           className="flex items-center gap-1.5 text-sm text-violet-400 hover:text-violet-600 transition-colors mb-6"
@@ -418,6 +416,7 @@ export default function MembershipPage(): React.ReactElement {
 
           </div>
         )}
+        </div>
       </main>
 
       <VipUpgradeDialog
