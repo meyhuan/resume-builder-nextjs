@@ -63,3 +63,11 @@ Job to be done: go from raw experience → impressive resume in under 10 minutes
 4. **Efficiency is respect** — Minimize clicks to core tasks (create, import, edit, export). Defaults should be sensible. Forms should auto-focus. Errors should be inline, not modal-blocking.
 
 5. **Premium without being cold** — Use violet/fuchsia accents sparingly as signals of AI-powered features. Backgrounds stay white/light-gray. Cards have subtle shadows. Interactions have gentle feedback (hover states, micro-animations).
+
+---
+
+## Resume Template Creation Workflow
+
+When asked to create a resume template from a reference image and/or HTML, follow the project workflow in `docs/template-creation-workflow.md`.
+
+Key rule: never implement a resume template as static HTML only. New templates must preserve the editor's existing behaviors: editable base info, avatar upload, editable job intention, editable sections, drag-and-drop, block add/delete/reorder, AI polish/generate actions, mobile preview, print/export rendering, theme controls, and one-page/layout controls where applicable.

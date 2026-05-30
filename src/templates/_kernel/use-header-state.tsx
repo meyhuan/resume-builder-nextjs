@@ -39,7 +39,15 @@ export function useHeaderState(baseInfo: BaseInfo | null, name: string): HeaderS
   const deleteField = useCallback((field: string): void => {
     if (!baseInfo) return
     const updated: Record<string, unknown> = { ...baseInfo }
-    delete updated[field]
+    if (field.startsWith('custom_')) {
+      const label = field.slice('custom_'.length)
+      updated.customFields = baseInfo.customFields?.filter((customField) => customField.label !== label)
+      if (Array.isArray(updated.customFields) && updated.customFields.length === 0) {
+        delete updated.customFields
+      }
+    } else {
+      delete updated[field]
+    }
     updateBaseInfo(updated as BaseInfo, name)
   }, [baseInfo, name, updateBaseInfo])
 

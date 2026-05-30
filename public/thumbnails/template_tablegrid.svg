@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="420" height="594" viewBox="0 0 420 594">
+  <rect width="420" height="594" fill="#fff"/>
+  <rect x="28" y="28" width="364" height="538" rx="4" fill="#fff" stroke="#d7dee2"/>
+  <g stroke="#d7dee2" stroke-width="1">
+    <line x1="73" y1="28" x2="73" y2="566"/>
+    <line x1="179" y1="28" x2="179" y2="101"/>
+    <line x1="224" y1="28" x2="224" y2="101"/>
+    <line x1="330" y1="28" x2="330" y2="101"/>
+    <line x1="28" y1="64" x2="392" y2="64"/>
+    <line x1="28" y1="101" x2="392" y2="101"/>
+    <line x1="28" y1="137" x2="392" y2="137"/>
+    <line x1="28" y1="205" x2="392" y2="205"/>
+    <line x1="28" y1="392" x2="392" y2="392"/>
+    <line x1="28" y1="462" x2="392" y2="462"/>
+    <line x1="28" y1="514" x2="392" y2="514"/>
+  </g>
+  <g fill="#eef8fc">
+    <rect x="29" y="29" width="44" height="35"/>
+    <rect x="180" y="29" width="44" height="35"/>
+    <rect x="29" y="65" width="44" height="36"/>
+    <rect x="180" y="65" width="44" height="36"/>
+    <rect x="29" y="102" width="44" height="35"/>
+    <rect x="29" y="138" width="44" height="67"/>
+    <rect x="29" y="206" width="44" height="186"/>
+    <rect x="29" y="393" width="44" height="69"/>
+    <rect x="29" y="463" width="44" height="51"/>
+    <rect x="29" y="515" width="44" height="50"/>
+  </g>
+  <rect x="331" y="29" width="60" height="72" fill="#dce8ef"/>
+  <g font-family="Arial, sans-serif" fill="#20242c">
+    <text x="87" y="52" font-size="12" font-weight="700">姓名</text>
+    <text x="237" y="52" font-size="12">出生年月</text>
+    <text x="87" y="88" font-size="12">邮箱</text>
+    <text x="237" y="88" font-size="12">联系电话</text>
+    <text x="87" y="124" font-size="12">产品助理 | 5k-10k</text>
+    <text x="87" y="164" font-size="13" font-weight="700">教育经历</text>
+    <rect x="87" y="180" width="220" height="4" rx="2" fill="#6b7280"/>
+    <text x="87" y="232" font-size="13" font-weight="700">项目经历</text>
+    <rect x="87" y="250" width="250" height="4" rx="2" fill="#6b7280"/>
+    <rect x="87" y="266" width="235" height="4" rx="2" fill="#6b7280"/>
+    <rect x="87" y="282" width="215" height="4" rx="2" fill="#6b7280"/>
+    <text x="87" y="420" font-size="13" font-weight="700">校园经历</text>
+    <rect x="87" y="438" width="235" height="4" rx="2" fill="#6b7280"/>
+    <text x="87" y="492" font-size="13" fill="#59636e">职业技能</text>
+    <rect x="87" y="532" width="250" height="4" rx="2" fill="#6b7280"/>
+    <rect x="87" y="548" width="220" height="4" rx="2" fill="#6b7280"/>
+  </g>
+</svg>

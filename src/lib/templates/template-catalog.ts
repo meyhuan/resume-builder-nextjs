@@ -35,4 +35,18 @@ export const templateCatalog: readonly TemplateCatalogItem[] = [
     preview: '/thumbnails/template_timeline.webp',
     tags: ['通用', '时间轴', '经典', '简洁'],
   },
+  {
+    id: 'lanxin',
+    name: '蓝芯',
+    description: '浅蓝页眉 + 左侧竖线节点，清爽专业，适合产品、运营与校招场景',
+    preview: '/thumbnails/template_lanxin.svg',
+    tags: ['通用', '时间轴', '浅蓝', '专业'],
+  },
+  {
+    id: 'tablegrid',
+    name: '表格',
+    description: '传统表格结构，信息分区清晰，适合正式投递与标准化简历',
+    preview: '/thumbnails/template_tablegrid.svg',
+    tags: ['通用', '表格', '正式', '标准'],
+  },
 ];

@@ -14,6 +14,7 @@ interface PrintPageProps {
 const BLEED_TEMPLATE_IDS: ReadonlySet<string> = new Set([
   'elegant',
   'warm',
+  'lanxin',
   'qingyun',
   'mashang',
   'xingtan',

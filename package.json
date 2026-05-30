@@ -8,6 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "template:convert": "node scripts/convert-html-template.mjs",
     "import:supabase": "node scripts/import-supabase-csv.mjs",
     "migrate:oss-assets": "node scripts/migrate-oss-assets.mjs",
     "postinstall": "prisma generate"

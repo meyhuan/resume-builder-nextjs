@@ -75,6 +75,24 @@ export const TEMPLATE_REGISTRY: Record<string, TemplateConfig> = {
     tags: ['通用', '时间轴', '经典', '简洁'],
     component: lazy(() => import('@/templates/timeline')),
   },
+  lanxin: {
+    id: 'lanxin',
+    name: '蓝芯',
+    description: '浅蓝页眉 + 左侧竖线节点，清爽专业，适合产品、运营与校招场景',
+    preview: '/thumbnails/template_lanxin.svg',
+    tags: ['通用', '时间轴', '浅蓝', '专业'],
+    component: lazy(() => import('@/templates/lanxin')),
+    recommendedPrimaryColor: '#3a8ec7',
+  },
+  tablegrid: {
+    id: 'tablegrid',
+    name: '表格',
+    description: '传统表格结构，信息分区清晰，适合正式投递与标准化简历',
+    preview: '/thumbnails/template_tablegrid.svg',
+    tags: ['通用', '表格', '正式', '标准'],
+    component: lazy(() => import('@/templates/tablegrid')),
+    recommendedPrimaryColor: '#3d4b58',
+  },
   // ——— Flagship headless templates (each owns a deliberate brand palette) —
   qingyun: {
     id: 'qingyun',
