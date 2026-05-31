@@ -1,6 +1,7 @@
 import axios, { InternalAxiosRequestConfig, AxiosError } from 'axios';
 import { logger } from '@/utils/logger';
 import { getPublicJavaApiBaseUrl } from '@/lib/java-api-base';
+import { trackError } from '@/lib/analytics';
 
 const api = axios.create({
   baseURL: getPublicJavaApiBaseUrl(),
@@ -24,6 +25,12 @@ api.interceptors.response.use(
     return response;
   },
   (error: AxiosError) => {
+    trackError(error, {
+      source: 'axios_error',
+      statusCode: error.response?.status,
+      requestPath: error.config?.url,
+      method: error.config?.method?.toUpperCase(),
+    });
     logger.error('API', `Error: ${error.config?.method?.toUpperCase()} ${error.config?.url}`, {
       status: error.response?.status,
       data: error.response?.data,

@@ -19,6 +19,7 @@ import { useVipCheck } from '@/hooks/use-vip-check';
 import { WxLoginDialog } from '@/components/auth/WxLoginDialog';
 import VipUpgradeDialog from '@/components/vip/vip-upgrade-dialog';
 import { toast } from 'sonner';
+import { track } from '@/lib/analytics';
 
 // Mini-program detection helpers
 interface WxMiniProgram {
@@ -125,6 +126,11 @@ export const WizardLayout = ({ children }: { children: React.ReactNode }) => {
       if (!res.ok) throw new Error('保存简历失败');
       const saved: { id: string } = await res.json();
       localStorage.removeItem(WIZARD_CACHE_KEY);
+      track('resume_create_success', {
+        resumeId: saved.id,
+        createMethod: 'ai',
+        templateId: 'simple',
+      });
 
       // In mini-program web-view, bindmessage is not reliable as an immediate
       // navigation trigger, so jump to the native edit shell directly.
@@ -179,12 +185,30 @@ export const WizardLayout = ({ children }: { children: React.ReactNode }) => {
     }
     const input = getWizardInput(wizardState);
     if (!input) return;
+    track('ai_generate_start', {
+      aiFeature: 'generate_resume',
+      model: selectedModel,
+      identity: wizardState.identity,
+      targetRole: wizardState.targetRole,
+    });
     setShowGenPage(true);
     const result = await generate(input, selectedModel);
     await refreshQuota();
     if (result) {
+      track('ai_generate_success', {
+        aiFeature: 'generate_resume',
+        model: selectedModel,
+        identity: wizardState.identity,
+        targetRole: wizardState.targetRole,
+      });
       const resumeData = mapExternalResume(result);
       openEditorWithData(resumeData);
+    } else {
+      track('ai_generate_failed', {
+        aiFeature: 'generate_resume',
+        model: selectedModel,
+        failureReason: error || 'generation_empty',
+      });
     }
   };
 

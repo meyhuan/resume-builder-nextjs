@@ -18,12 +18,16 @@ const PUBLIC_ROUTES = [
   '/',
   '/login',
   '/api',
+  '/admin',
 ];
 
 /**
  * Check if a path matches any of the protected routes
  */
 function isProtectedRoute(pathname: string): boolean {
+  if (isPublicRoute(pathname)) {
+    return false;
+  }
   return PROTECTED_ROUTES.some(route => pathname.startsWith(route));
 }
 
@@ -31,7 +35,7 @@ function isProtectedRoute(pathname: string): boolean {
  * Check if a path matches any of the public routes
  */
 function isPublicRoute(pathname: string): boolean {
-  return PUBLIC_ROUTES.some(route => pathname.startsWith(route));
+  return PUBLIC_ROUTES.some(route => pathname === route || (route !== '/' && pathname.startsWith(`${route}/`)));
 }
 
 export function middleware(request: NextRequest) {

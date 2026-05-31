@@ -10,6 +10,7 @@ import type { ResumeData } from '@/entities/resume/resume-data'
 import { buildImportResumeTitle } from '@/lib/import-resume-title'
 import { useDraftStore } from '@/features/edit/draft/draft-store'
 import { cn } from '@/lib/utils'
+import { track } from '@/lib/analytics'
 import { useInMiniProgram } from '../../_components/use-mini-program'
 
 type ImportMode = 'text' | 'file'
@@ -59,12 +60,18 @@ export default function MobileImportPage(): ReactElement {
       }
       const saved: { id: string } = await res.json()
       setFromServer(saved.id, resumeData, 'simple')
+      track('resume_import_success', {
+        resumeId: saved.id,
+        createMethod: 'import',
+        fileName: sourceFileName || undefined,
+        importMode: mode,
+      })
       router.replace(`/m/edit?id=${saved.id}`)
     } catch (err: unknown) {
       console.error('[MobileImport] saveAndNavigate error', err)
       toast.error(err instanceof Error ? err.message : '保存失败，请重试')
     }
-  }, [router, setFromServer])
+  }, [mode, router, setFromServer])
 
   // --- Text import ---
   const handleTextImport = useCallback(async (): Promise<void> => {
@@ -72,6 +79,11 @@ export default function MobileImportPage(): ReactElement {
       toast.error(`请至少输入 ${MIN_TEXT_LENGTH} 个字`)
       return
     }
+    track('resume_import_start', {
+      createMethod: 'import',
+      importMode: 'text',
+      textLength: rawText.trim().length,
+    })
     setStep('processing')
     const result = await generate(rawText)
     if (result) {
@@ -79,9 +91,14 @@ export default function MobileImportPage(): ReactElement {
       setStep('done')
       await saveAndNavigate(resumeData)
     } else {
+      track('resume_import_failed', {
+        createMethod: 'import',
+        importMode: 'text',
+        failureReason: error || 'generation_empty',
+      })
       setStep('input')
     }
-  }, [rawText, generate, saveAndNavigate])
+  }, [rawText, generate, saveAndNavigate, error])
 
   // --- File import ---
   const handleFileSelect = useCallback((file: File): void => {
@@ -100,6 +117,12 @@ export default function MobileImportPage(): ReactElement {
 
   const handleFileImport = useCallback(async (): Promise<void> => {
     if (!selectedFile) return
+    track('resume_import_start', {
+      createMethod: 'import',
+      importMode: 'file',
+      fileName: selectedFile.name,
+      fileSize: selectedFile.size,
+    })
     setIsFileImporting(true)
     setFileError(null)
     setFileProgress(0)
@@ -113,6 +136,12 @@ export default function MobileImportPage(): ReactElement {
         body: formData,
       })
       if (!res.ok || !res.body) {
+        track('resume_import_failed', {
+          createMethod: 'import',
+          importMode: 'file',
+          fileName: selectedFile.name,
+          failureReason: `http_${res.status}`,
+        })
         setFileError('解析失败，请稍后重试')
         setStep('input')
         return
@@ -140,6 +169,12 @@ export default function MobileImportPage(): ReactElement {
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               const externalResume = event.resumeData as any
               if (externalResume && typeof externalResume.error === 'string') {
+                track('resume_import_failed', {
+                  createMethod: 'import',
+                  importMode: 'file',
+                  fileName: selectedFile.name,
+                  failureReason: externalResume.message || externalResume.error,
+                })
                 setFileError((externalResume.message as string) || '内容不像简历，请检查文件后重试')
                 setStep('input')
                 return
@@ -151,6 +186,12 @@ export default function MobileImportPage(): ReactElement {
               await saveAndNavigate(resumeData, selectedFile.name)
               return
             } else if (event.type === 'error') {
+              track('resume_import_failed', {
+                createMethod: 'import',
+                importMode: 'file',
+                fileName: selectedFile.name,
+                failureReason: event.error as string,
+              })
               setFileError(event.error as string)
               setStep('input')
               return
@@ -161,6 +202,12 @@ export default function MobileImportPage(): ReactElement {
         }
       }
     } catch (err: unknown) {
+      track('resume_import_failed', {
+        createMethod: 'import',
+        importMode: 'file',
+        fileName: selectedFile.name,
+        failureReason: err instanceof Error ? err.message : 'parse_failed',
+      })
       setFileError(err instanceof Error ? err.message : '解析失败')
       setStep('input')
     } finally {

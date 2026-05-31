@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Crown, Search, RotateCcw, User, CheckCircle, AlertCircle, LogIn, Shield, Copy, FileText, ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getPublicJavaApiBaseUrl } from '@/lib/java-api-base';
+import { clearStoredAdminPassword, getStoredAdminPassword, setStoredAdminPassword } from '@/lib/admin-auth';
 
 const JAVA_API = getPublicJavaApiBaseUrl();
 
@@ -62,6 +63,14 @@ export default function AdminPage(): React.ReactElement {
     freeExportCount: 0,
   });
 
+  useEffect(() => {
+    const storedPassword = getStoredAdminPassword();
+    if (storedPassword) {
+      setPassword(storedPassword);
+      setAuthed(true);
+    }
+  }, []);
+
   function adminHeaders(): HeadersInit {
     return { 'Content-Type': 'application/json', 'X-Admin-Password': password };
   }
@@ -76,6 +85,7 @@ export default function AdminPage(): React.ReactElement {
       });
       const json = await res.json();
       if (json.status === 100) {
+        setStoredAdminPassword(password);
         setAuthed(true);
         setMessage(null);
       } else {
@@ -263,7 +273,7 @@ export default function AdminPage(): React.ReactElement {
             <Crown className="w-5 h-5 text-amber-500" />
             <span className="font-bold text-slate-700 text-lg">管理后台</span>
           </div>
-          <button onClick={() => { setAuthed(false); setUser(null); setMessage(null); }} className="text-sm text-slate-400 hover:text-slate-600">
+          <button onClick={() => { clearStoredAdminPassword(); setPassword(''); setAuthed(false); setUser(null); setMessage(null); }} className="text-sm text-slate-400 hover:text-slate-600">
             退出登录
           </button>
         </div>

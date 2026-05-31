@@ -18,6 +18,7 @@ import VipUpgradeDialog from '@/components/vip/vip-upgrade-dialog'
 import { useOnePageMode, type OnePageStatus } from '@/hooks/use-one-page-mode'
 import { embedEditorMeta, extractEditorMeta, type AdjustableTokens } from '@/entities/editor/editor-meta'
 import { createLogger } from '@/lib/logger'
+import { track } from '@/lib/analytics'
 import { useInMiniProgram } from '../_components/use-mini-program'
 import { BottomActionBar } from './_components/bottom-action-bar'
 import {
@@ -101,6 +102,13 @@ export default function MobilePreviewClient(): ReactElement {
   const innerRef = useRef<HTMLDivElement>(null)
   const pinchStateRef = useRef<{ startDist: number; startZoom: number } | null>(null)
   const lastTapRef = useRef<number>(0)
+
+  useEffect(() => {
+    track('resume_preview', {
+      resumeId: draftResumeId || searchParams.get('id'),
+      templateId,
+    })
+  }, [draftResumeId, searchParams, templateId])
 
   // Sync draft data into the app store so templates can render it.
   // Falls back to loading from server if draft is empty.
@@ -267,8 +275,13 @@ export default function MobilePreviewClient(): ReactElement {
       if (nextId === templateId) return
       setOnePageSnapshot(null)
       setTemplateId(nextId)
+      track('template_select', {
+        resumeId: draftResumeId || searchParams.get('id'),
+        templateId: nextId,
+        previousTemplateId: templateId,
+      })
     },
-    [templateId],
+    [draftResumeId, searchParams, templateId],
   )
 
   const handleResetStyle = useCallback((): void => {
@@ -342,6 +355,12 @@ export default function MobilePreviewClient(): ReactElement {
     if (!response.ok) {
       const errorData = await response.json().catch(() => null)
       if (response.status === 402) {
+        track('export_failed', {
+          resumeId: payload.resumeId,
+          templateId: payload.templateId,
+          exportType: payload.type,
+          failureReason: 'quota_exceeded',
+        })
         // In mini-program: navigate to native payment page for better UX
         // In H5/PC: show the upgrade dialog
         if (inMiniProgram && typeof window.wx?.miniProgram?.navigateTo === 'function') {
@@ -354,10 +373,22 @@ export default function MobilePreviewClient(): ReactElement {
         }
         throw new Error(errorData?.error ?? '导出次数已用完')
       }
+      track('export_failed', {
+        resumeId: payload.resumeId,
+        templateId: payload.templateId,
+        exportType: payload.type,
+        failureReason: errorData?.error ?? `http_${response.status}`,
+      })
       throw new Error(errorData?.error ?? `导出失败 (${response.status})`)
     }
     const job = await response.json() as ExportJobResponse
     log.info('create export job parsed', { id: job.id, type: job.type, fileName: job.fileName, previewImages: job.previewImages?.length, expiresAt: job.expiresAt })
+    track('export_success', {
+      resumeId: payload.resumeId,
+      templateId: payload.templateId,
+      exportType: payload.type,
+      exportId: job.id,
+    })
     return job
   }, [setShowUpgrade, inMiniProgram])
 
@@ -490,6 +521,13 @@ export default function MobilePreviewClient(): ReactElement {
     if (!innerRef.current) return
     setIsExporting(true)
     const fileName: string = buildDefaultExportFileName(resume)
+    const targetResumeIdForTrack: string | null = draftResumeId || searchParams.get('id')
+    track('export_click', {
+      resumeId: targetResumeIdForTrack,
+      templateId,
+      exportType: type,
+      entry: 'mobile_preview_bottom_bar',
+    })
     try {
       const targetResumeId: string | null = draftResumeId || searchParams.get('id')
       if (!targetResumeId) {
@@ -514,6 +552,12 @@ export default function MobilePreviewClient(): ReactElement {
       openExportResult(job)
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : (type === 'pdf' ? 'PDF 导出失败' : '图片导出失败')
+      track('export_failed', {
+        resumeId: targetResumeIdForTrack,
+        templateId,
+        exportType: type,
+        failureReason: msg,
+      })
       toast.error(msg)
     } finally {
       setIsExporting(false)

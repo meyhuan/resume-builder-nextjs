@@ -5,6 +5,7 @@ import "@/styles/base.css";
 import "@/styles/theme-override.css";
 import { Toaster } from 'sonner';
 import { BaiduAnalytics } from '@/components/analytics/BaiduAnalytics';
+import { AnalyticsErrorTracking } from '@/components/analytics/AnalyticsErrorTracking';
 import { FeedbackWidget } from '@/features/feedback/feedback-widget';
 import { InstallRequestLogger } from '@/features/feedback/install-request-logger';
 
@@ -109,6 +110,7 @@ export default function RootLayout({
         />
         {children}
         <InstallRequestLogger />
+        <AnalyticsErrorTracking />
         <FeedbackWidget />
         {/* Toast position: bottom-center on mobile (avoid covering top-bar back button),
             top-center on desktop (traditional). */}
