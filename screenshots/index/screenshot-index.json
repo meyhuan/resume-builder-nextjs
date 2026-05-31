@@ -1,0 +1,370 @@
+{
+  "generated_at": "2026-05-31T01:39:34.180Z",
+  "base_url": "http://127.0.0.1:3002",
+  "project": "resume-builder-nextjs",
+  "screenshots": [
+    {
+      "id": "landing-home-hero-desktop",
+      "file": "screenshots/raw/desktop/landing-home-hero-desktop.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "page": "首页首屏",
+      "summary": "展示智简简历首页首屏，突出免费 AI 简历制作、在线生成与导出 PDF 的核心定位。",
+      "visible_elements": [
+        "品牌导航",
+        "主标题",
+        "AI 简历制作卖点",
+        "开始使用按钮",
+        "产品首屏视觉"
+      ],
+      "features": [
+        "AI 简历生成",
+        "免费在线简历制作",
+        "PDF 导出",
+        "产品入口"
+      ],
+      "scenarios": [
+        "不知道怎么快速做简历",
+        "想找免费简历制作工具",
+        "需要展示产品总体价值"
+      ],
+      "best_for": [
+        "封面图",
+        "产品介绍",
+        "痛点解决方案型笔记"
+      ],
+      "not_for": [
+        "具体编辑操作",
+        "模板细节",
+        "导出流程"
+      ],
+      "visual_notes": "首屏信息完整，适合作为推广笔记封面或第一张产品价值图。",
+      "annotation_suggestions": [
+        "突出免费 AI 简历制作",
+        "指向开始使用按钮",
+        "弱化长说明文字"
+      ]
+    },
+    {
+      "id": "landing-editor-demo-desktop",
+      "file": "screenshots/raw/desktop/landing-editor-demo-desktop.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "page": "首页编辑器演示区",
+      "summary": "展示在线简历编辑器演示区域，用于说明产品支持边写边预览、简历内容编辑和成品预览。",
+      "visible_elements": [
+        "编辑器演示",
+        "简历预览",
+        "产品界面区域"
+      ],
+      "features": [
+        "实时编辑",
+        "所见即所得预览",
+        "在线简历制作"
+      ],
+      "scenarios": [
+        "担心简历排版麻烦",
+        "想边编辑边看效果",
+        "需要展示产品真实操作界面"
+      ],
+      "best_for": [
+        "核心功能图",
+        "流程展示",
+        "效率提升笔记"
+      ],
+      "not_for": [
+        "模板中心展示",
+        "登录注册",
+        "移动端编辑"
+      ],
+      "visual_notes": "界面感强，适合做第二或第三张图展示产品实际使用体验。",
+      "annotation_suggestions": [
+        "高亮编辑区和预览区",
+        "添加标题：边写边看到成品效果"
+      ]
+    },
+    {
+      "id": "landing-features-desktop",
+      "file": "screenshots/raw/desktop/landing-features-desktop.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "page": "首页功能卖点区",
+      "summary": "展示产品功能卖点模块，集中表达 AI 生成、模板、导出、编辑等核心能力。",
+      "visible_elements": [
+        "功能卡片",
+        "卖点说明",
+        "首页导航"
+      ],
+      "features": [
+        "AI 生成",
+        "模板选择",
+        "导出 PDF",
+        "编辑优化"
+      ],
+      "scenarios": [
+        "想快速了解产品能做什么",
+        "需要总结多个卖点",
+        "推广笔记中承接产品优势"
+      ],
+      "best_for": [
+        "卖点汇总",
+        "总结图",
+        "产品介绍"
+      ],
+      "not_for": [
+        "单一功能深度演示",
+        "登录流程"
+      ],
+      "visual_notes": "适合作为中后段总结图，帮助用户快速扫到多个功能点。",
+      "annotation_suggestions": [
+        "圈出 3-4 个关键功能卡片",
+        "标题强调：写简历常见需求一次覆盖"
+      ]
+    },
+    {
+      "id": "templates-center-desktop",
+      "file": "screenshots/raw/desktop/templates-center-desktop.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "page": "简历模板中心",
+      "summary": "展示按岗位选择简历模板的模板中心页面，适合说明产品覆盖多岗位模板和写作建议。",
+      "visible_elements": [
+        "岗位简历模板中心",
+        "岗位模板入口",
+        "模板预览",
+        "AI 生成入口"
+      ],
+      "features": [
+        "岗位模板",
+        "模板预览",
+        "按岗位选择",
+        "AI 生成简历入口"
+      ],
+      "scenarios": [
+        "不知道选什么简历模板",
+        "不同岗位需要不同简历结构",
+        "想找产品经理/前端/运营模板"
+      ],
+      "best_for": [
+        "模板卖点",
+        "场景解决方案",
+        "岗位人群推广"
+      ],
+      "not_for": [
+        "AI 生成过程",
+        "导出结果"
+      ],
+      "visual_notes": "模板卡片视觉清楚，适合做“按岗位选模板”的功能图。",
+      "annotation_suggestions": [
+        "高亮岗位模板入口",
+        "标题：按岗位直接选合适模板"
+      ]
+    },
+    {
+      "id": "ai-resume-wizard-desktop",
+      "file": "screenshots/raw/desktop/ai-resume-wizard-desktop.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "page": "AI 简历生成页",
+      "summary": "展示 AI 简历生成向导页面，适合表达通过问答或表单快速生成简历内容。",
+      "visible_elements": [
+        "AI 生成向导",
+        "表单/步骤区域",
+        "简历生成入口"
+      ],
+      "features": [
+        "AI 生成简历",
+        "分步引导",
+        "智能写作"
+      ],
+      "scenarios": [
+        "不知道简历怎么写",
+        "想让 AI 帮忙生成初稿",
+        "应届生缺少简历表达"
+      ],
+      "best_for": [
+        "AI 功能展示",
+        "痛点解决方案",
+        "效率提升"
+      ],
+      "not_for": [
+        "模板中心",
+        "导出流程"
+      ],
+      "visual_notes": "页面简洁，适合后续 AI 重设计时加标题和高亮，突出从零生成简历。",
+      "annotation_suggestions": [
+        "高亮输入/步骤区域",
+        "标题：不会写简历就让 AI 先生成初稿"
+      ]
+    },
+    {
+      "id": "import-resume-desktop",
+      "file": "screenshots/raw/desktop/import-resume-desktop.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "page": "导入已有简历页",
+      "summary": "展示从已有简历文本或文件导入并转换为结构化简历的页面。",
+      "visible_elements": [
+        "文本导入",
+        "文件上传",
+        "AI 解析",
+        "生成简历按钮"
+      ],
+      "features": [
+        "导入已有简历",
+        "文件上传",
+        "AI 解析简历",
+        "结构化转换"
+      ],
+      "scenarios": [
+        "已有旧简历想优化",
+        "想把文档简历变成在线简历",
+        "需要快速迁移简历内容"
+      ],
+      "best_for": [
+        "导入流程",
+        "旧简历优化",
+        "效率提升笔记"
+      ],
+      "not_for": [
+        "从零生成简历",
+        "模板中心"
+      ],
+      "visual_notes": "适合表达“已有简历也能快速升级”的使用场景。",
+      "annotation_suggestions": [
+        "高亮上传区域或粘贴区域",
+        "标题：旧简历一键导入再优化"
+      ]
+    },
+    {
+      "id": "mobile-home-hero",
+      "file": "screenshots/raw/mobile/mobile-home-hero.png",
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "isMobile": true
+      },
+      "page": "移动端首页首屏",
+      "summary": "展示移动端首页首屏效果，适合小红书竖版笔记中强调手机也能查看产品价值。",
+      "visible_elements": [
+        "移动端首屏",
+        "产品主标题",
+        "行动按钮"
+      ],
+      "features": [
+        "移动端适配",
+        "AI 简历生成",
+        "在线简历工具"
+      ],
+      "scenarios": [
+        "手机端浏览产品",
+        "小红书竖图封面",
+        "移动用户转化"
+      ],
+      "best_for": [
+        "竖版封面",
+        "移动端展示",
+        "小红书配图"
+      ],
+      "not_for": [
+        "桌面编辑器细节",
+        "复杂功能展示"
+      ],
+      "visual_notes": "天然竖版，适合直接作为小红书配图母版。",
+      "annotation_suggestions": [
+        "添加短标题：手机上也能快速做简历",
+        "保留首屏 CTA"
+      ]
+    },
+    {
+      "id": "landing-home-hero-vertical",
+      "file": "screenshots/raw/vertical/landing-home-hero-vertical.png",
+      "viewport": {
+        "width": 1080,
+        "height": 1440
+      },
+      "page": "首页首屏竖版",
+      "summary": "展示首页首屏的 1080x1440 竖版构图，适合小红书封面二次设计。",
+      "visible_elements": [
+        "品牌导航",
+        "主标题",
+        "免费 AI 简历制作",
+        "开始使用按钮",
+        "产品界面预览"
+      ],
+      "features": [
+        "AI 简历生成",
+        "免费在线简历制作",
+        "PDF 导出"
+      ],
+      "scenarios": [
+        "小红书竖版封面",
+        "产品总价值介绍",
+        "吸引点击"
+      ],
+      "best_for": [
+        "封面图",
+        "竖版推广图"
+      ],
+      "not_for": [
+        "具体流程说明"
+      ],
+      "visual_notes": "竖版留白和主标题明显，适合直接加营销标题或局部高亮。",
+      "annotation_suggestions": [
+        "添加大标题：不会写简历？AI 帮你先写好",
+        "保留 CTA 和产品预览"
+      ]
+    },
+    {
+      "id": "templates-center-vertical",
+      "file": "screenshots/raw/vertical/templates-center-vertical.png",
+      "viewport": {
+        "width": 1080,
+        "height": 1440
+      },
+      "page": "模板中心竖版",
+      "summary": "展示模板中心的 1080x1440 竖版构图，突出按岗位选择简历模板。",
+      "visible_elements": [
+        "岗位简历模板中心",
+        "模板卡片",
+        "AI 生成简历按钮"
+      ],
+      "features": [
+        "岗位模板",
+        "模板预览",
+        "按岗位选择"
+      ],
+      "scenarios": [
+        "不知道选什么模板",
+        "小红书功能展示图",
+        "岗位人群推广"
+      ],
+      "best_for": [
+        "模板卖点",
+        "竖版功能图"
+      ],
+      "not_for": [
+        "AI 生成过程",
+        "导出结果"
+      ],
+      "visual_notes": "竖版中模板卡片较醒目，适合做按岗位选模板的功能卖点图。",
+      "annotation_suggestions": [
+        "标题：按岗位选模板，不再套错简历",
+        "高亮模板卡片区域"
+      ]
+    }
+  ],
+  "capture_notes": "Captured from local Next dev server with product feedback widget and Next dev overlay hidden."
+}
