@@ -18,6 +18,7 @@ import {
   DeleteSectionDialog,
   EditableText,
   FieldChip,
+  mmToPx,
   ResumeFrame,
   SortableSection,
   useEditableHeader,
@@ -103,11 +104,14 @@ export default function TableGridTemplate(props: TemplateProps): ReactElement {
   const header = useEditableHeader(resume.name, resume.baseInfo ?? null)
   const jobIntention = useEditableJobIntention(resume.jobIntention ?? null)
   const isJobIntentionVisible = resume.jobIntentionVisible ?? jobIntention.fields.length > 0
+  const extraBaseInfoFields = header.fields.filter((field) => !['phone', 'email'].includes(field.key))
   const bodyLineHeight = Math.max(1.25, theme.lineHeight * 1.18)
   const palette = buildPalette(theme.primaryColor)
   const titleScale = Math.min(1.25, Math.max(0.85, theme.titleScale ?? 1))
   const spacingScale = Math.min(1.45, Math.max(0.72, theme.spacingScale))
   const paragraphIndent = Math.max(0, theme.paragraphIndent ?? 0)
+  const pagePaddingVertical = Math.max(24, mmToPx(theme.pagePaddingVertical))
+  const pagePaddingHorizontal = Math.max(32, mmToPx(theme.pagePaddingHorizontal))
 
   return (
     <ResumeFrame
@@ -118,13 +122,14 @@ export default function TableGridTemplate(props: TemplateProps): ReactElement {
         backgroundColor: '#ffffff',
         color: palette.ink,
         fontFamily: theme.fontFamily || SANS,
-        padding: 36,
+        padding: `${pagePaddingVertical}px ${pagePaddingHorizontal}px`,
       }}
     >
       <style>{`
         .tablegrid-rich-text p { margin: 0; text-indent: ${paragraphIndent}em; }
         .tablegrid-rich-text ul, .tablegrid-rich-text ol { margin: 0; padding-left: 1.2em; }
         .tablegrid-rich-text li { margin: 0; }
+        .tablegrid-avatar-cell > .relative { height: 100%; }
       `}</style>
 
       <div
@@ -137,6 +142,10 @@ export default function TableGridTemplate(props: TemplateProps): ReactElement {
         }}
       >
         <TableHeader header={header} palette={palette} titleScale={titleScale} />
+
+        {extraBaseInfoFields.length > 0 ? (
+          <BaseInfoRow header={header} fields={extraBaseInfoFields} palette={palette} spacingScale={spacingScale} titleScale={titleScale} />
+        ) : null}
 
         {isJobIntentionVisible && jobIntention.fields.length > 0 ? (
           <JobIntentionRow jobIntention={jobIntention} palette={palette} spacingScale={spacingScale} titleScale={titleScale} />
@@ -167,6 +176,51 @@ export default function TableGridTemplate(props: TemplateProps): ReactElement {
   )
 }
 
+function BaseInfoRow({
+  header,
+  fields,
+  palette,
+  spacingScale,
+  titleScale,
+}: {
+  readonly header: ReturnType<typeof useEditableHeader>
+  readonly fields: readonly Parameters<typeof FieldChip>[0]['field'][]
+  readonly palette: TablePalette
+  readonly spacingScale: number
+  readonly titleScale: number
+}): ReactElement {
+  return (
+    <div
+      className="grid cursor-pointer"
+      style={{
+        gridTemplateColumns: '90px 1fr',
+        minHeight: Math.round(62 * spacingScale),
+        borderBottom: `1px solid ${palette.border}`,
+      }}
+      onClick={header.openEditModal}
+    >
+      <RowLabel palette={palette} titleScale={titleScale}>基本信息</RowLabel>
+      <div
+        className="flex min-w-0 flex-wrap content-center"
+        style={{
+          gap: `${6 * spacingScale}px ${16 * spacingScale}px`,
+          padding: `${11 * spacingScale}px ${16 * spacingScale}px`,
+          fontSize: '0.82em',
+          lineHeight: 1.45,
+          color: palette.ink,
+        }}
+      >
+        {fields.map((field) => (
+          <span key={field.key} className="inline-flex max-w-full min-w-0 items-baseline">
+            <span style={{ flex: '0 0 auto', color: palette.muted }}>{field.label}：</span>
+            <HeaderFieldChip field={field} header={header} />
+          </span>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function findHeaderField(header: ReturnType<typeof useEditableHeader>, keyOrLabel: string) {
   return header.fields.find((field) => field.key === keyOrLabel || field.label.includes(keyOrLabel))
 }
@@ -188,7 +242,7 @@ function TableHeader({
     <div
       style={{
         display: 'grid',
-        gridTemplateColumns: '90px 217px 90px 217px 109px',
+        gridTemplateColumns: '90px minmax(0, 1fr) 90px minmax(0, 1fr) 109px',
         gridTemplateRows: '72px 72px',
         borderBottom: `1px solid ${palette.border}`,
         cursor: 'pointer',
@@ -200,9 +254,14 @@ function TableHeader({
         <EditableText value={header.name} onCommit={header.onCommitName} />
       </HeaderValue>
       <HeaderLabel palette={palette} titleScale={titleScale}>出生年月</HeaderLabel>
-      <HeaderValue palette={palette}>{birth ? <FieldChip field={birth} header={header}>{birth.value}</FieldChip> : null}</HeaderValue>
+      <HeaderValue palette={palette}>{birth ? <HeaderFieldChip field={birth} header={header} /> : null}</HeaderValue>
 
-      <div style={{ gridColumn: 5, gridRow: '1 / span 2', borderLeft: `1px solid ${palette.border}` }} onClick={(event) => event.stopPropagation()}>
+      <div
+        className="tablegrid-avatar-cell"
+        data-tablegrid-avatar-cell="true"
+        style={{ gridColumn: 5, gridRow: '1 / span 2', borderLeft: `1px solid ${palette.border}` }}
+        onClick={(event) => event.stopPropagation()}
+      >
         <AvatarSlot
           header={header}
           render={({ image, uploadOverlay }) => (
@@ -215,10 +274,33 @@ function TableHeader({
       </div>
 
       <HeaderLabel compact palette={palette} titleScale={titleScale}>邮箱</HeaderLabel>
-      <HeaderValue palette={palette}>{email ? <FieldChip field={email} header={header}>{email.value}</FieldChip> : null}</HeaderValue>
+      <HeaderValue palette={palette} dataField="email">{email ? <HeaderFieldChip field={email} header={header} /> : null}</HeaderValue>
       <HeaderLabel palette={palette} titleScale={titleScale}>联系电话</HeaderLabel>
-      <HeaderValue palette={palette}>{phone ? <FieldChip field={phone} header={header}>{phone.value}</FieldChip> : null}</HeaderValue>
+      <HeaderValue palette={palette}>{phone ? <HeaderFieldChip field={phone} header={header} /> : null}</HeaderValue>
     </div>
+  )
+}
+
+function HeaderFieldChip({
+  field,
+  header,
+}: {
+  readonly field: Parameters<typeof FieldChip>[0]['field']
+  readonly header: ReturnType<typeof useEditableHeader>
+}): ReactElement {
+  return (
+    <FieldChip
+      field={field}
+      header={header}
+      style={{
+        display: 'inline',
+        maxWidth: '100%',
+        overflowWrap: 'anywhere',
+        wordBreak: 'break-word',
+      }}
+    >
+      {field.value}
+    </FieldChip>
   )
 }
 
@@ -257,14 +339,17 @@ function HeaderValue({
   children,
   palette,
   strong = false,
+  dataField,
 }: {
   readonly children: ReactNode
   readonly palette: TablePalette
   readonly strong?: boolean
+  readonly dataField?: string
 }): ReactElement {
   return (
     <div
-      className="flex items-center"
+      className="flex min-w-0 items-center overflow-hidden"
+      data-tablegrid-header-value={dataField ?? undefined}
       style={{
         borderRight: `1px solid ${palette.border}`,
         borderBottom: `1px solid ${palette.border}`,
@@ -275,7 +360,9 @@ function HeaderValue({
         color: palette.ink,
       }}
     >
-      {children}
+      <span style={{ minWidth: 0, maxWidth: '100%', overflowWrap: 'anywhere', wordBreak: 'break-word' }}>
+        {children}
+      </span>
     </div>
   )
 }
@@ -291,15 +378,9 @@ function JobIntentionRow({
   readonly spacingScale: number
   readonly titleScale: number
 }): ReactElement {
-  const main = jobIntention.fields
-    .filter((field) => ['position', 'salary', 'city', 'type'].includes(field.key))
-    .map((field) => field.value)
-    .join(' | ')
-  const fallback = jobIntention.fields.map((field) => field.value).join(' | ')
-
   return (
     <div
-        className="grid cursor-pointer"
+      className="grid cursor-pointer"
       style={{
         gridTemplateColumns: '90px 1fr',
         minHeight: Math.round(71 * spacingScale),
@@ -308,8 +389,43 @@ function JobIntentionRow({
       onClick={jobIntention.openEditModal}
     >
       <RowLabel palette={palette} titleScale={titleScale}>求职意向</RowLabel>
-      <div className="flex items-center" style={{ padding: `0 ${16 * spacingScale}px`, fontSize: '0.98em', fontWeight: 500, color: palette.ink }}>
-        {main || fallback}
+      <div
+        className="flex min-w-0 flex-wrap content-center"
+        style={{
+          gap: `${6 * spacingScale}px ${18 * spacingScale}px`,
+          padding: `${12 * spacingScale}px ${16 * spacingScale}px`,
+          fontSize: '0.88em',
+          lineHeight: 1.45,
+          fontWeight: 500,
+          color: palette.ink,
+        }}
+      >
+        {jobIntention.fields.map((field) => {
+          const isHovered = jobIntention.hoveredField === field.key
+          return (
+            <span
+              key={field.key}
+              className="relative inline-flex max-w-full min-w-0 items-baseline"
+              style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}
+              onMouseEnter={() => jobIntention.setHoveredField(field.key)}
+              onMouseLeave={() => jobIntention.setHoveredField(null)}
+            >
+              <span style={{ flex: '0 0 auto', color: palette.muted }}>{field.label}：</span>
+              <span style={{ minWidth: 0, color: palette.ink, fontWeight: 600 }}>{field.value}</span>
+              <button
+                type="button"
+                className="absolute -right-3 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-white text-[12px] leading-none text-red-500 shadow-sm print:hidden"
+                style={{ opacity: isHovered ? 1 : 0 }}
+                onClick={(event) => {
+                  event.stopPropagation()
+                  jobIntention.deleteField(field.key)
+                }}
+              >
+                ×
+              </button>
+            </span>
+          )
+        })}
       </div>
     </div>
   )

@@ -68,12 +68,36 @@ For a new template `<id>`:
 
 ## Verification Checklist
 
-Always run:
+Always run the fixed automated checks before reporting a template as done.
+
+If the dev server is not running, start it first:
 
 ```bash
+corepack pnpm dev
+```
+
+For every changed template `<id>`, run:
+
+```bash
+corepack pnpm template:qa <id> --local --base-url http://localhost:3000
+corepack pnpm template:qa <id> --scenario-loader-url "http://localhost:3000/dev/scenario-loader?tpl=<id>"
 corepack pnpm exec tsc --noEmit
 corepack pnpm exec eslint <changed files>
 ```
+
+If `localhost` returns a connection error or an empty 503 while the dev server is running, retry with `127.0.0.1` and the active port, for example `http://127.0.0.1:3001/dev/scenario-loader?tpl=<id>`.
+
+What these checks must cover:
+
+- Template registration, lazy import, thumbnail asset, and theme contract.
+- Local PC rendering, mobile rendering, sparse data, long content, and rich text.
+- Theme controls: font size, line height, spacing, title scale, page padding, and primary color when not intentionally locked.
+- One-click realistic resume data fill through the scenario loader.
+- Rendered output after one-click fill, including base info, job intention, long company/project text, salary, and custom fields.
+
+When multiple templates changed, run the local check for each template. The scenario loader check can run once for the primary template being verified unless the one-click fill behavior is template-specific.
+
+The scenario loader exists because authenticated editor routes can redirect to login in headless browser tests. It must reuse the same right-sidebar scenario loading action and the same app store path as the real editor, so it verifies the core flow: user action -> store update -> template preview render.
 
 Then verify in a browser using a real editor route when available:
 
@@ -100,6 +124,41 @@ Then verify in a browser using a real editor route when available:
    - title scale
    - primary color unless intentionally locked
 7. Check print/export behavior if the template uses bleed/full-width header styling.
+
+## Test Report Requirement
+
+After automated testing, always include a concise report in the assistant response. Do not just say "tested".
+
+Also write a Markdown report file under `test-artifacts/reports/`, for example:
+
+```text
+test-artifacts/reports/template-qa-<id>-YYYY-MM-DD.md
+```
+
+`test-artifacts/` is intentionally git-ignored, so this report is a local QA artifact for the user to inspect after the run.
+
+Use this format:
+
+```text
+测试对象：
+执行命令：
+覆盖范围：
+通过项：
+失败项：
+截图/产物：
+仍需人工确认：
+结论：
+```
+
+Report rules:
+
+- List the exact commands that were run.
+- State whether each command passed or failed.
+- Mention generated screenshots or artifacts, for example `test-artifacts/templates/<id>/`.
+- Embed the most important screenshots directly in the Markdown report with relative image links, usually the long-content screenshot and the scenario-loader screenshot.
+- If a real editor URL could not be tested because of authentication, say so and explain that `/dev/scenario-loader` covered the same scenario-loading store/render path.
+- If anything failed or was skipped, state the impact and the next step.
+- Keep the report short enough for quick review, but specific enough that the user can trust what was actually checked.
 
 ## Common Pitfalls
 

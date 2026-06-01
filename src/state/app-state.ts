@@ -61,6 +61,8 @@ export interface AppState {
   resetResume: () => void
   /** Load test data into the editor. */
   loadTestData: () => void
+  /** Load a specific template QA scenario into the editor. */
+  loadScenarioData: (resume: ResumeData) => void
   /** When true, the resume is rendered read-only (no inline editing, no drag). */
   readonly readOnly: boolean
   /** Toggle read-only mode. Typically set once when a non-editing preview mounts. */

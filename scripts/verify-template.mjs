@@ -62,6 +62,12 @@ async function main() {
     warn('Runtime scenarios', 'Skipped. Pass --local for fixture-based local checks, or --base-url and --resume-id for DB/export checks.')
   }
 
+  if (args['scenario-loader-url']) {
+    await checkEditorScenarioLoader(args['scenario-loader-url'])
+  } else if (args['editor-url']) {
+    await checkEditorScenarioLoader(args['editor-url'])
+  }
+
   printSummary()
   const failed = results.some((r) => r.status === 'FAIL')
   process.exit(failed ? 1 : 0)
@@ -191,10 +197,7 @@ async function runRuntimeChecks(id, registry) {
     await checkTemplateApi(baseUrl, id)
   }
 
-  const browser = await puppeteer.default.launch({
-    headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox'],
-  })
+  const browser = await launchBrowser(puppeteer)
 
   try {
     if (pcUrl) {
@@ -254,10 +257,7 @@ async function runLocalChecks(templateIds, registries) {
   }
 
   const baseUrl = stripTrailingSlash(args['base-url'] || 'http://localhost:3000')
-  const browser = await puppeteer.default.launch({
-    headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox'],
-  })
+  const browser = await launchBrowser(puppeteer)
 
   try {
     for (const id of templateIds) {
@@ -313,6 +313,52 @@ async function runLocalChecks(templateIds, registries) {
   } finally {
     await browser.close()
   }
+}
+
+async function launchBrowser(puppeteer) {
+  const executablePath = findBrowserExecutable()
+  return puppeteer.default.launch({
+    headless: true,
+    ...(executablePath ? { executablePath } : {}),
+    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+  })
+}
+
+function findBrowserExecutable() {
+  const candidates = [
+    process.env.PUPPETEER_EXECUTABLE_PATH,
+    process.env.CHROME_PATH,
+  ].filter(Boolean)
+
+  if (process.platform === 'win32') {
+    const roots = [
+      process.env.PROGRAMFILES,
+      process.env['PROGRAMFILES(X86)'],
+      process.env.LOCALAPPDATA,
+    ].filter(Boolean)
+    for (const base of roots) {
+      candidates.push(
+        path.join(base, 'Google', 'Chrome', 'Application', 'chrome.exe'),
+        path.join(base, 'Microsoft', 'Edge', 'Application', 'msedge.exe'),
+      )
+    }
+  } else if (process.platform === 'darwin') {
+    candidates.push(
+      '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+      '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge',
+      '/Applications/Chromium.app/Contents/MacOS/Chromium',
+    )
+  } else {
+    candidates.push(
+      '/usr/bin/google-chrome',
+      '/usr/bin/google-chrome-stable',
+      '/usr/bin/chromium',
+      '/usr/bin/chromium-browser',
+      '/usr/bin/microsoft-edge',
+    )
+  }
+
+  return candidates.find((candidate) => candidate && fs.existsSync(candidate))
 }
 
 function labUrl(baseUrl, templateId, fixture, theme, viewport) {
@@ -429,6 +475,113 @@ async function checkThemeControls(browser, baseUrl, id, registry, artifactDir) {
   }
 }
 
+async function checkEditorScenarioLoader(editorUrl) {
+  let puppeteer
+  try {
+    puppeteer = await import('puppeteer')
+  } catch (error) {
+    fail('Editor scenario loader', `Cannot import puppeteer: ${error.message}`)
+    return
+  }
+
+  const browser = await launchBrowser(puppeteer)
+  const page = await browser.newPage()
+  const artifactDir = path.join(artifactRoot, 'editor-scenarios')
+  fs.mkdirSync(artifactDir, { recursive: true })
+
+  page.on('dialog', async (dialog) => {
+    await dialog.accept()
+  })
+
+  try {
+    await page.setViewport({ width: 1440, height: 1000, deviceScaleFactor: 1 })
+    const response = await page.goto(editorUrl, { waitUntil: 'networkidle2', timeout: 60_000 })
+    if (!response || !response.ok()) {
+      fail('Editor scenario loader', `${editorUrl} returned HTTP ${response ? response.status() : 'no response'}.`)
+      return
+    }
+
+    await page.waitForFunction(() => document.body.innerText.includes('排版美化'), { timeout: 20_000 })
+    await clickByTextIfPresent(page, '排版美化', ['button', '[role="tab"]'])
+    await sleep(300)
+    await clickByText(page, '排版设置', ['button', '[role="tab"]'])
+
+    await page.waitForFunction(() => document.body.innerText.includes('模板测试数据'), { timeout: 10_000 })
+
+    const selectChanged = await page.evaluate(() => {
+      const select = Array.from(document.querySelectorAll('select')).find((node) =>
+        Array.from(node.options).some((option) => option.value === 'long-content')
+      )
+      if (!select) return false
+      select.value = 'long-content'
+      select.dispatchEvent(new Event('change', { bubbles: true }))
+      return true
+    })
+    if (!selectChanged) {
+      fail('Editor scenario loader', 'Cannot find template test data scenario select.')
+      return
+    }
+
+    await clickByText(page, '加载场景数据', ['button'])
+    await page.waitForFunction(() => document.body.innerText.includes('欧阳晨曦'), { timeout: 10_000 })
+
+    const verification = await page.evaluate(() => {
+      const text = document.body.innerText
+      return {
+        hasName: text.includes('欧阳晨曦'),
+        hasPosition: text.includes('高级增长产品经理'),
+        hasSalary: text.includes('35k-50k'),
+        hasLongCompany: text.includes('北京云启未来智能科技股份有限公司商业化增长产品中心'),
+        hasProject: text.includes('企业版商业化线索评分与试用转化系统'),
+        hasCustomField: text.includes('期望工作模式'),
+      }
+    })
+
+    const missing = Object.entries(verification)
+      .filter(([, value]) => !value)
+      .map(([key]) => key)
+    if (missing.length > 0) {
+      fail('Editor scenario loader', `Scenario loaded but expected fields are missing: ${missing.join(', ')}.`)
+      return
+    }
+
+    const screenshotPath = path.join(artifactDir, 'long-content-loaded.png')
+    await page.screenshot({ path: screenshotPath, fullPage: true })
+    pass('Editor scenario loader', `Loaded long-content scenario and verified rendered fields. Screenshot saved to ${relative(screenshotPath)}.`)
+  } catch (error) {
+    fail('Editor scenario loader', error.message)
+  } finally {
+    await page.close()
+    await browser.close()
+  }
+}
+
+async function clickByText(page, text, selectors) {
+  const handle = await findElementByText(page, text, selectors)
+  if (!handle) throw new Error(`Cannot find clickable text: ${text}`)
+  await handle.click()
+  await handle.dispose()
+}
+
+async function clickByTextIfPresent(page, text, selectors) {
+  const handle = await findElementByText(page, text, selectors)
+  if (!handle) return
+  await handle.click()
+  await handle.dispose()
+}
+
+async function findElementByText(page, text, selectors) {
+  for (const selector of selectors) {
+    const handles = await page.$$(selector)
+    for (const handle of handles) {
+      const matches = await handle.evaluate((node, targetText) => node.textContent?.includes(targetText) ?? false, text)
+      if (matches) return handle
+      await handle.dispose()
+    }
+  }
+  return null
+}
+
 async function readThemeMetrics(browser, url, screenshot) {
   const page = await browser.newPage()
   try {
@@ -444,6 +597,9 @@ async function readThemeMetrics(browser, url, screenshot) {
       const containerStyle = getComputedStyle(container)
       const headingStyle = heading ? getComputedStyle(heading) : null
       const paragraphStyle = paragraph ? getComputedStyle(paragraph) : null
+      const paddingTargets = [container, ...Array.from(container.children)]
+      const paddingTop = Math.max(...paddingTargets.map((node) => parseFloat(getComputedStyle(node).paddingTop) || 0))
+      const paddingLeft = Math.max(...paddingTargets.map((node) => parseFloat(getComputedStyle(node).paddingLeft) || 0))
       const labPrimary = 'rgb(219, 39, 119)'
       const hasLabPrimaryColor = Array.from(root.querySelectorAll('*')).some((node) => {
         const style = getComputedStyle(node)
@@ -452,8 +608,8 @@ async function readThemeMetrics(browser, url, screenshot) {
       return {
         fontSize: parseFloat(containerStyle.fontSize),
         lineHeight: parseFloat(containerStyle.lineHeight),
-        paddingTop: parseFloat(containerStyle.paddingTop),
-        paddingLeft: parseFloat(containerStyle.paddingLeft),
+        paddingTop,
+        paddingLeft,
         headingFontSize: headingStyle ? parseFloat(headingStyle.fontSize) : 0,
         paragraphIndent: paragraphStyle ? parseFloat(paragraphStyle.textIndent) : 0,
         hasLabPrimaryColor,
@@ -531,6 +687,14 @@ async function checkPage(browser, options) {
       }
     }
 
+    if (options.templateId === 'tablegrid') {
+      const tableGridIssue = await checkTableGridLayout(page)
+      if (tableGridIssue) {
+        fail(options.name, tableGridIssue)
+        return
+      }
+    }
+
     await page.screenshot({ path: options.screenshot, fullPage: true })
 
     if (pageErrors.length > 0) {
@@ -545,6 +709,32 @@ async function checkPage(browser, options) {
   } finally {
     await page.close()
   }
+}
+
+async function checkTableGridLayout(page) {
+  return page.evaluate(() => {
+    const emailCell = document.querySelector('[data-tablegrid-header-value="email"]')
+    const emailContent = emailCell?.firstElementChild
+    if (emailCell && emailContent) {
+      const cellRect = emailCell.getBoundingClientRect()
+      const contentRect = emailContent.getBoundingClientRect()
+      if (contentRect.right - cellRect.right > 1 || contentRect.bottom - cellRect.bottom > 1) {
+        return `TableGrid email content overflows its cell by ${Math.ceil(Math.max(contentRect.right - cellRect.right, contentRect.bottom - cellRect.bottom))}px.`
+      }
+    }
+
+    const avatarCell = document.querySelector('[data-tablegrid-avatar-cell="true"]')
+    const avatarSlot = avatarCell?.firstElementChild
+    if (avatarCell && avatarSlot) {
+      const cellRect = avatarCell.getBoundingClientRect()
+      const slotRect = avatarSlot.getBoundingClientRect()
+      if (Math.abs(slotRect.height - cellRect.height) > 1 || Math.abs(slotRect.width - cellRect.width) > 1) {
+        return `TableGrid avatar slot does not fill its cell: slot ${Math.round(slotRect.width)}x${Math.round(slotRect.height)}, cell ${Math.round(cellRect.width)}x${Math.round(cellRect.height)}.`
+      }
+    }
+
+    return ''
+  })
 }
 
 function buildPrintUrl(baseUrl, resumeId, id) {
@@ -670,11 +860,15 @@ Options:
   --mobile-url <url>          Explicit mobile preview URL.
   --print-url <url>           Explicit print URL. Overrides generated print URL.
   --pc-url <url>              Explicit authenticated PC editor/template URL.
+  --scenario-loader-url <url> Dev scenario-loader URL for testing the one-click data fill UI.
+  --editor-url <url>          Explicit authenticated editor URL for testing the same loader in the real editor.
   --print-token-secret <str>  Secret for generated /print token.
 
 Examples:
   pnpm verify:template qingyun --typecheck
   pnpm verify:template qingyun --base-url http://localhost:3000 --resume-id abc --print-token-secret dev-secret
+  pnpm verify:template lanxin --scenario-loader-url "http://localhost:3000/dev/scenario-loader?tpl=lanxin"
+  pnpm verify:template lanxin --editor-url http://localhost:3000/editor/abc
 `)
 }
 
@@ -701,6 +895,10 @@ function firstLines(value, count) {
 
 function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
 main().catch((error) => {

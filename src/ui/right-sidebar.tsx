@@ -4,6 +4,7 @@
  * Each panel has a title bar with a close (×) button.
  * The 排版美化 panel contains sub-tabs for template switching and theme settings.
  */
+import { useState } from 'react'
 import type { ReactElement } from 'react'
 import type { ThemeTokens } from '@/entities/theme/theme-tokens'
 import type { OnePageStatus } from '@/hooks/use-one-page-mode'
@@ -11,6 +12,7 @@ import type { TemplateConfig } from '@/templates/template-loader'
 import type { PanelId } from '@/ui/editor-toolbar'
 import ThemePanel from '@/ui/theme-panel'
 import { useAppStore } from '@/state/store'
+import { RESUME_SCENARIOS } from '@/dev/resume-scenarios'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import { Layout, Upload, Database, X } from 'lucide-react'
@@ -103,6 +105,8 @@ interface LayoutPanelProps {
 
 function LayoutPanel(props: LayoutPanelProps): ReactElement {
   const { theme, tpl, templates } = props
+  const [scenarioId, setScenarioId] = useState(RESUME_SCENARIOS[0]?.id ?? '')
+  const selectedScenario = RESUME_SCENARIOS.find((scenario) => scenario.id === scenarioId) ?? RESUME_SCENARIOS[0]
 
   function handleImportClick(): void {
     const json = prompt('粘贴 JSON 简历数据：')
@@ -112,6 +116,13 @@ function LayoutPanel(props: LayoutPanelProps): ReactElement {
       } catch (e) {
         alert(`导入失败: ${e}`)
       }
+    }
+  }
+
+  function handleLoadScenario(): void {
+    if (!selectedScenario) return
+    if (window.confirm(`加载「${selectedScenario.name}」将覆盖当前所有内容，确定吗？`)) {
+      useAppStore.getState().loadScenarioData(selectedScenario.resume)
     }
   }
 
@@ -221,19 +232,32 @@ function LayoutPanel(props: LayoutPanelProps): ReactElement {
             </div>
           </div>
           {process.env.NODE_ENV === 'development' && (
-            <div className="p-4 border-t border-slate-200 bg-white shrink-0">
+            <div className="space-y-3 p-4 border-t border-slate-200 bg-white shrink-0">
+              <div className="space-y-1.5">
+                <div className="text-xs font-semibold text-slate-700">模板测试数据</div>
+                <select
+                  value={scenarioId}
+                  onChange={(event) => setScenarioId(event.target.value)}
+                  className="h-9 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-xs font-medium text-slate-700 outline-none transition-colors hover:bg-white focus:border-violet-300 focus:ring-2 focus:ring-violet-100"
+                >
+                  {RESUME_SCENARIOS.map((scenario) => (
+                    <option key={scenario.id} value={scenario.id}>
+                      {scenario.name}
+                    </option>
+                  ))}
+                </select>
+                {selectedScenario ? (
+                  <p className="text-[11px] leading-4 text-slate-500">{selectedScenario.description}</p>
+                ) : null}
+              </div>
               <Button
                 variant="outline"
                 size="sm"
                 className="w-full gap-2 text-sm font-semibold h-11 bg-slate-50 rounded-xl border-slate-200 shadow-none text-slate-700 hover:border-slate-300 hover:text-slate-900 hover:bg-white transition-all"
-                onClick={() => {
-                  if (window.confirm('加载测试数据将覆盖当前所有内容，确定吗？')) {
-                    useAppStore.getState().loadTestData()
-                  }
-                }}
+                onClick={handleLoadScenario}
               >
                 <Database className="h-3.5 w-3.5" />
-                加载测试数据
+                加载场景数据
               </Button>
             </div>
           )}

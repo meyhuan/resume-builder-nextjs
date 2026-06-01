@@ -71,3 +71,5 @@ Job to be done: go from raw experience → impressive resume in under 10 minutes
 When asked to create a resume template from a reference image and/or HTML, follow the project workflow in `docs/template-creation-workflow.md`.
 
 Key rule: never implement a resume template as static HTML only. New templates must preserve the editor's existing behaviors: editable base info, avatar upload, editable job intention, editable sections, drag-and-drop, block add/delete/reorder, AI polish/generate actions, mobile preview, print/export rendering, theme controls, and one-page/layout controls where applicable.
+
+After creating or changing a resume template, run the fixed template QA commands from `docs/template-creation-workflow.md` and include the required test report in the final response. The report must list commands, coverage, pass/fail results, artifacts, skipped items, and the final conclusion.
