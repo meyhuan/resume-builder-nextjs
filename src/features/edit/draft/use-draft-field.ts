@@ -52,8 +52,16 @@ export function useJobIntentionField<K extends keyof NonNullable<ResumeData['job
       updateDraft(`jobIntention.${String(key)}`, (d) => {
         const ji = (d.jobIntention ?? {}) as NonNullable<ResumeData['jobIntention']>
         const mutable = { ...ji } as Record<string, unknown>
-        mutable[String(key)] = next
+        const fieldKey = String(key)
+        mutable[fieldKey] = next
         ;(d as { jobIntention?: unknown }).jobIntention = mutable as NonNullable<ResumeData['jobIntention']>
+        if (fieldKey === 'position') {
+          const position = typeof next === 'string' ? next.trim() || undefined : undefined
+          const bi = (d.baseInfo ?? {}) as NonNullable<ResumeData['baseInfo']>
+          ;(d as { baseInfo?: unknown }).baseInfo = { ...bi, title: position } as NonNullable<
+            ResumeData['baseInfo']
+          >
+        }
       })
     },
     [key, updateDraft],

@@ -4,6 +4,7 @@ import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import { get as idbGet, set as idbSet, del as idbDel } from 'idb-keyval'
 import type { ResumeData } from '@/entities/resume/resume-data'
+import { withNormalizedJobPosition } from '@/entities/resume/sync-job-position'
 
 /**
  * Result returned by saveAll().
@@ -56,7 +57,7 @@ export interface DraftState {
  */
 function normalizeResume(resume: ResumeData | null | undefined, fallbackId: string): ResumeData {
   const base = (resume ?? {}) as Partial<ResumeData>
-  return {
+  const normalized: ResumeData = {
     id: base.id ?? fallbackId,
     name: base.name ?? '',
     contactHtml: base.contactHtml,
@@ -65,6 +66,7 @@ function normalizeResume(resume: ResumeData | null | undefined, fallbackId: stri
     jobIntentionVisible: base.jobIntentionVisible,
     sections: Array.isArray(base.sections) ? base.sections : [],
   }
+  return withNormalizedJobPosition(normalized)
 }
 
 /**
