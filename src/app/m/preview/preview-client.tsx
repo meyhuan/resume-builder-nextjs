@@ -19,6 +19,7 @@ import { useOnePageMode, type OnePageStatus } from '@/hooks/use-one-page-mode'
 import { embedEditorMeta, extractEditorMeta, type AdjustableTokens } from '@/entities/editor/editor-meta'
 import { createLogger } from '@/lib/logger'
 import { track } from '@/lib/analytics'
+import { joinExportFileNameParts } from '@/lib/export-file-name'
 import { useInMiniProgram } from '../_components/use-mini-program'
 import { BottomActionBar } from './_components/bottom-action-bar'
 import {
@@ -45,17 +46,16 @@ interface ExportJobResponse {
 
 const log = createLogger('m/preview')
 
-function normalizeExportFileName(value: string | undefined): string {
-  return (value || '').trim().replace(/[\\/:*?"<>|]/g, '_')
-}
-
 function buildDefaultExportFileName(resume: ResumeData): string {
   const baseInfo = resume.baseInfo as (ResumeData['baseInfo'] & { readonly name?: string; readonly fullName?: string; readonly position?: string }) | undefined
-  const name = normalizeExportFileName(baseInfo?.fullName || baseInfo?.name || resume.name)
-  const position = normalizeExportFileName(resume.jobIntention?.position || baseInfo?.position || baseInfo?.title || '')
-  const phone = normalizeExportFileName(baseInfo?.phone || '')
-  const parts = [name, position, phone].filter(Boolean)
-  return parts.length > 0 ? parts.join('_') : 'resume'
+  return joinExportFileNameParts(
+    [
+      baseInfo?.fullName || baseInfo?.name || resume.name,
+      resume.jobIntention?.position || baseInfo?.position || baseInfo?.title || '',
+      baseInfo?.phone || '',
+    ],
+    { fallback: 'resume' },
+  )
 }
 
 /**

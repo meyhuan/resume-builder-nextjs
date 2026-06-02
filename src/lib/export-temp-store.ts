@@ -2,6 +2,7 @@ import { randomBytes } from 'crypto'
 import { mkdir, readFile, readdir, stat, unlink, writeFile } from 'fs/promises'
 import { tmpdir } from 'os'
 import { join } from 'path'
+import { sanitizeExportFileName } from '@/lib/export-file-name'
 
 export const EXPORT_TEMP_TTL_MS = 30 * 24 * 60 * 60 * 1000
 const STORE_DIR = join(tmpdir(), 'aijianli-export-temp')
@@ -114,7 +115,7 @@ export async function saveExportTemp(input: SaveExportTempInput): Promise<{ toke
   const expiresAt = Date.now() + EXPORT_TEMP_TTL_MS
   const meta: ExportTempMeta = {
     expiresAt,
-    fileName: input.fileName,
+    fileName: sanitizeExportFileName(input.fileName),
     contentType: input.contentType,
     extension: input.extension,
     type: input.type,
@@ -170,7 +171,7 @@ export async function markConfirmed(token: string, fileName?: string): Promise<E
 }
 
 function sanitizeStoredFileName(value?: string): string | undefined {
-  const text = value?.trim().replace(/[\\/:*?"<>|]/g, '_').replace(/\.(pdf|png)$/i, '').slice(0, 60)
+  const text = value ? sanitizeExportFileName(value) : ''
   return text || undefined
 }
 

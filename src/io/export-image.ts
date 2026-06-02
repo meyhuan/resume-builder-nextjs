@@ -3,6 +3,7 @@
  */
 import { toPng } from 'html-to-image'
 import type { RefObject } from 'react'
+import { sanitizeExportFileName } from '@/lib/export-file-name'
 
 interface ExportImageOptions {
   readonly fileName?: string
@@ -68,7 +69,7 @@ export async function exportImage<T extends HTMLElement>(contentRef: RefObject<T
   }
 
   const link: HTMLAnchorElement = document.createElement('a')
-  link.download = `${options?.fileName ?? 'resume'}.png`
+  link.download = `${sanitizeExportFileName(options?.fileName)}.png`
   link.href = dataUrl
   link.click()
 }

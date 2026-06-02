@@ -6,6 +6,7 @@ import { ArrowLeft, Copy, ExternalLink, Download } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { createLogger } from '@/lib/logger'
+import { sanitizeExportFileName } from '@/lib/export-file-name'
 
 const log = createLogger('m/export-result')
 
@@ -57,7 +58,7 @@ export default function ExportResultClient(): ReactElement {
     log.info('browser download clicked', { type: state.type, id: state.id, url: absoluteUrl })
     const a = document.createElement('a')
     a.href = absoluteUrl
-    a.download = `${state.fileName}.${state.type === 'pdf' ? 'pdf' : 'png'}`
+    a.download = `${sanitizeExportFileName(state.fileName)}.${state.type === 'pdf' ? 'pdf' : 'png'}`
     a.click()
   }
 

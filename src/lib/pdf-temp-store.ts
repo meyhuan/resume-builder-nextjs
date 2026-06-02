@@ -2,6 +2,7 @@ import { randomBytes } from 'crypto'
 import { mkdir, readFile, readdir, stat, unlink, writeFile } from 'fs/promises'
 import { tmpdir } from 'os'
 import { join } from 'path'
+import { sanitizeExportFileName } from '@/lib/export-file-name'
 
 /**
  * In-process temporary store for generated PDF buffers.
@@ -92,7 +93,7 @@ if (typeof setInterval !== 'undefined') {
 export async function savePdfTemp(buffer: Buffer, fileName: string): Promise<string> {
   await purgeExpired()
   const token = randomBytes(16).toString('hex')
-  const meta: PdfMeta = { expiresAt: Date.now() + TTL_MS, fileName }
+  const meta: PdfMeta = { expiresAt: Date.now() + TTL_MS, fileName: sanitizeExportFileName(fileName) }
   await writeFile(getPdfPath(token), buffer)
   await writeFile(getMetaPath(token), JSON.stringify(meta), 'utf8')
   console.log('[pdf-temp-store] saved PDF temp file', { token, bytes: buffer.length, fileName })

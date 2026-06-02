@@ -28,6 +28,7 @@ import { EXPORT_TEMP_TTL_MS, saveExportTemp } from '@/lib/export-temp-store'
 import { uploadExportAsset } from '@/lib/upload-export-asset'
 import { peekQuotaForUser, checkQuotaForUser } from '@/lib/quota/quota-checker'
 import { renderViaPrintPage, getInternalBaseUrl, type RenderResult } from '@/lib/render-via-print-page'
+import { sanitizeExportFileName } from '@/lib/export-file-name'
 
 /**
  * POST /next-api/exports/mini
@@ -107,8 +108,8 @@ export async function POST(req: Request): Promise<NextResponse> {
     ? body.templateId
     : undefined
   const requestedFileName: string = typeof body.fileName === 'string' && body.fileName
-    ? body.fileName
-    : 'resume'
+    ? sanitizeExportFileName(body.fileName)
+    : ''
 
   if (!resumeId) return NextResponse.json({ error: 'Missing resumeId' }, { status: 400 })
   if (!type) return NextResponse.json({ error: 'Invalid export type' }, { status: 400 })
@@ -159,7 +160,7 @@ export async function POST(req: Request): Promise<NextResponse> {
   }
 
   const { buffer, pageScreenshots } = renderResult
-  const fileName: string = (requestedFileName || resume.title || 'resume').replace(/[/:*?"<>|]/g, '_')
+  const fileName: string = requestedFileName || sanitizeExportFileName(resume.title)
   const isPdf: boolean = type === 'pdf'
   const contentType: string = isPdf ? 'application/pdf' : 'image/png'
   const extension: string = isPdf ? 'pdf' : 'png'

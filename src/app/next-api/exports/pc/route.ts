@@ -4,14 +4,11 @@ import { prisma } from '@/lib/prisma';
 import { saveExportTemp } from '@/lib/export-temp-store';
 import { uploadExportAsset } from '@/lib/upload-export-asset';
 import { checkQuota, peekQuota } from '@/lib/quota/quota-checker';
+import { sanitizeExportFileName } from '@/lib/export-file-name';
 
 function getStringField(form: FormData, key: string): string {
   const value = form.get(key);
   return typeof value === 'string' ? value.trim() : '';
-}
-
-function sanitizeFileName(value: string): string {
-  return (value || 'resume').replace(/[/:*?"<>|]/g, '_');
 }
 
 export async function POST(req: Request): Promise<NextResponse> {
@@ -25,7 +22,8 @@ export async function POST(req: Request): Promise<NextResponse> {
   const file = form.get('file');
   const resumeId = getStringField(form, 'resumeId');
   const templateId = getStringField(form, 'templateId') || null;
-  const requestedFileName = sanitizeFileName(getStringField(form, 'fileName'));
+  const requestedFileNameField = getStringField(form, 'fileName');
+  const requestedFileName = requestedFileNameField ? sanitizeExportFileName(requestedFileNameField) : '';
 
   if (!(file instanceof Blob)) {
     return NextResponse.json({ error: 'Missing PDF file' }, { status: 400 });
@@ -63,7 +61,7 @@ export async function POST(req: Request): Promise<NextResponse> {
   }
 
   const buffer = Buffer.from(await file.arrayBuffer());
-  const fileName = requestedFileName || sanitizeFileName(resume.title);
+  const fileName = requestedFileName || sanitizeExportFileName(resume.title);
   const saved = await saveExportTemp({
     buffer,
     fileName,

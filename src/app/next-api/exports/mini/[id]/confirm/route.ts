@@ -4,6 +4,7 @@ import { verifyMiniSign } from '@/lib/verify-mini-sign'
 import { markConfirmed, readExportTemp, type ExportTempEntry } from '@/lib/export-temp-store'
 import { uploadExportAsset } from '@/lib/upload-export-asset'
 import { peekQuotaForUser, checkQuotaForUser } from '@/lib/quota/quota-checker'
+import { sanitizeExportFileName } from '@/lib/export-file-name'
 
 /**
  * POST /next-api/exports/mini/[id]/confirm
@@ -39,8 +40,8 @@ export async function POST(
   const wxId: string = String(body.wxId ?? '')
   const timestamp: number = Number(body.timestamp)
   const sign: string = String(body.sign ?? '')
-  const requestedFileName: string | undefined = typeof body.fileName === 'string'
-    ? sanitizeFileName(body.fileName)
+  const requestedFileName: string | undefined = typeof body.fileName === 'string' && body.fileName.trim()
+    ? sanitizeExportFileName(body.fileName)
     : undefined
   const signError = verifyMiniSign({ wxId, timestamp, sign })
   if (signError) {
@@ -117,11 +118,6 @@ export async function POST(
     remaining: consumed.remaining,
     isVip: consumed.isVip,
   })
-}
-
-function sanitizeFileName(value: string): string | undefined {
-  const sanitized = value.trim().replace(/[\\/:*?"<>|]/g, '_').replace(/\.(pdf|png)$/i, '').slice(0, 60)
-  return sanitized || undefined
 }
 
 async function persistExportRecord(

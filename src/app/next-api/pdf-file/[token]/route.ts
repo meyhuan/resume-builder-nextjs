@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { consumePdfTemp } from '@/lib/pdf-temp-store'
+import { buildExportContentDisposition } from '@/lib/export-file-name'
 
 /**
  * GET /next-api/pdf-file/[token]
@@ -22,7 +23,7 @@ export async function GET(
   return new NextResponse(entry.buffer as unknown as BodyInit, {
     headers: {
       'Content-Type': 'application/pdf',
-      'Content-Disposition': `attachment; filename="${encodeURIComponent(entry.fileName)}.pdf"`,
+      'Content-Disposition': buildExportContentDisposition('attachment', entry.fileName, 'pdf'),
       'Cache-Control': 'no-store',
     },
   })

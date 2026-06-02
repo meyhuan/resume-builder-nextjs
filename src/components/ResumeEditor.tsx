@@ -33,6 +33,7 @@ import { useAuthStore } from '@/store/use-auth-store'
 import { useVipCheck } from '@/hooks/use-vip-check'
 import VipUpgradeDialog from '@/components/vip/vip-upgrade-dialog'
 import type { ResumeData } from '@/entities/resume/resume-data'
+import { joinExportFileNameParts, sanitizeExportFileName } from '@/lib/export-file-name'
 
 const AI_CACHE_KEYS: Record<string, string> = {
   ai: 'wizard_pending_resume',
@@ -404,7 +405,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
         const url = URL.createObjectURL(blob)
         const a = document.createElement('a')
         a.href = url
-        a.download = `${resume.name || 'resume'}.md`
+        a.download = `${sanitizeExportFileName(resume.name)}.md`
         a.click()
         URL.revokeObjectURL(url)
         toast.success('Markdown导出成功')
@@ -460,8 +461,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
     const name = baseInfo?.fullName?.trim() || baseInfo?.name?.trim() || '简历'
     const position = baseInfo?.title?.trim() || baseInfo?.position?.trim() || ''
     const phone = baseInfo?.phone?.trim() || ''
-    const nameParts = [name, position, phone].filter(Boolean)
-    const fileName = nameParts.length > 0 ? nameParts.join('-') : (resume.name || 'export')
+    const fileName = joinExportFileNameParts([name, position, phone], { separator: '-', fallback: resume.name || 'export' })
 
     if (!resumeId) {
       toast.error('请先保存简历，再导出 PDF')
@@ -502,7 +502,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
 
     const a: HTMLAnchorElement = document.createElement('a')
     a.href = downloadUrl
-    a.download = `${fileName}.pdf`
+    a.download = `${sanitizeExportFileName(fileName)}.pdf`
     a.click()
     handleClosePreview()
     toast.success('PDF 导出成功')

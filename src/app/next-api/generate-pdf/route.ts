@@ -17,10 +17,12 @@ import chromium from '@sparticuz/chromium';
 import { paginateHtml, getClientPaginationScript } from '@/utils/paginate-html';
 import { checkQuota } from '@/lib/quota/quota-checker';
 import { savePdfTemp } from '@/lib/pdf-temp-store';
+import { buildExportContentDisposition, sanitizeExportFileName } from '@/lib/export-file-name';
 
 export async function POST(req: Request) {
   try {
     const { html, preview = false, returnUrl = false, fileName = 'resume' } = await req.json();
+    const safeFileName = sanitizeExportFileName(typeof fileName === 'string' ? fileName : 'resume');
 
     // Check PDF quota (preview = unlimited, export = limited)
     if (!preview) {
@@ -85,16 +87,16 @@ export async function POST(req: Request) {
       });
 
       if (returnUrl) {
-        const token = await savePdfTemp(Buffer.from(pdf), fileName)
+        const token = await savePdfTemp(Buffer.from(pdf), safeFileName)
         const url = `/next-api/pdf-file/${token}`
-        console.log('[generate-pdf] return PDF temp URL', { token, url, fileName })
+        console.log('[generate-pdf] return PDF temp URL', { token, url, fileName: safeFileName })
         return NextResponse.json({ url })
       }
 
       return new NextResponse(pdf as unknown as BodyInit, {
         headers: {
           'Content-Type': 'application/pdf',
-          'Content-Disposition': `attachment; filename="${encodeURIComponent(fileName)}.pdf"`,
+          'Content-Disposition': buildExportContentDisposition('attachment', safeFileName, 'pdf'),
         },
       });
     } finally {

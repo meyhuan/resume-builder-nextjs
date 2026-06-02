@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { readExportTemp } from '@/lib/export-temp-store'
+import { buildExportContentDisposition } from '@/lib/export-file-name'
 
 export async function GET(
   req: Request,
@@ -30,7 +31,11 @@ export async function GET(
       return new NextResponse(body as unknown as BodyInit, {
         headers: {
           'Content-Type': ossResponse.headers.get('Content-Type') || 'application/octet-stream',
-          'Content-Disposition': `attachment; filename="${encodeURIComponent(record.fileName)}.${record.type === 'image' ? 'png' : 'pdf'}"`,
+          'Content-Disposition': buildExportContentDisposition(
+            'attachment',
+            record.fileName,
+            record.type === 'image' ? 'png' : 'pdf',
+          ),
           'Cache-Control': 'no-store',
         },
       })
@@ -46,8 +51,8 @@ export async function GET(
     return NextResponse.json({ error: 'Export not confirmed yet', code: 'NOT_CONFIRMED' }, { status: 409 })
   }
   const disposition: string = inline
-    ? `inline; filename="${encodeURIComponent(entry.fileName)}.${entry.extension}"`
-    : `attachment; filename="${encodeURIComponent(entry.fileName)}.${entry.extension}"`
+    ? buildExportContentDisposition('inline', entry.fileName, entry.extension)
+    : buildExportContentDisposition('attachment', entry.fileName, entry.extension)
   console.log('[export-file] serving asset', { token, type: entry.type, confirmed: entry.confirmed, inline, fileName: entry.fileName, bytes: entry.buffer.length })
   return new NextResponse(entry.buffer as unknown as BodyInit, {
     headers: {
