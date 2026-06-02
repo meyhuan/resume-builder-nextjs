@@ -37,6 +37,8 @@ export interface TemplateConfig {
   readonly recommendedPrimaryColor?: string
 }
 
+const HIDDEN_TEMPLATE_IDS: ReadonlySet<string> = new Set(['lanxin', 'tablegrid'])
+
 /**
  * 模板注册表
  * 使用动态import，每个模板会被Vite自动分割成独立chunk
@@ -140,7 +142,7 @@ export const TEMPLATE_REGISTRY: Record<string, TemplateConfig> = {
  * 获取所有模板列表
  */
 export function getAllTemplates(): TemplateConfig[] {
-  return Object.values(TEMPLATE_REGISTRY)
+  return Object.values(TEMPLATE_REGISTRY).filter((template) => !HIDDEN_TEMPLATE_IDS.has(template.id))
 }
 
 /**

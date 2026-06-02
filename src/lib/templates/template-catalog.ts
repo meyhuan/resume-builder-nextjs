@@ -6,6 +6,8 @@ type TemplateCatalogItem = {
   tags: readonly string[];
 };
 
+const HIDDEN_TEMPLATE_IDS: ReadonlySet<string> = new Set(['lanxin', 'tablegrid']);
+
 export const templateCatalog: readonly TemplateCatalogItem[] = [
   {
     id: 'simple',
@@ -49,4 +51,4 @@ export const templateCatalog: readonly TemplateCatalogItem[] = [
     preview: '/thumbnails/template_tablegrid.svg',
     tags: ['通用', '表格', '正式', '标准'],
   },
-];
+].filter((template: TemplateCatalogItem) => !HIDDEN_TEMPLATE_IDS.has(template.id));

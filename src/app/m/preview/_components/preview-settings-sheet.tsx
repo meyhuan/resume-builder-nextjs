@@ -5,7 +5,7 @@ import { Check, RotateCcw, X } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Slider } from '@/components/ui/slider'
 import type { ThemeTokens } from '@/entities/theme/theme-tokens'
-import { TEMPLATE_REGISTRY } from '@/templates/template-loader'
+import { TEMPLATE_REGISTRY, getAllTemplates } from '@/templates/template-loader'
 import type { OnePageStatus } from '@/hooks/use-one-page-mode'
 import { cn } from '@/lib/utils'
 
@@ -47,7 +47,7 @@ const PRESET_COLORS: ReadonlyArray<string> = [
   '#b91c1c', '#7c3aed', '#db2777', '#475569',
 ]
 
-const TEMPLATE_IDS: ReadonlyArray<string> = Object.keys(TEMPLATE_REGISTRY)
+const TEMPLATE_IDS: ReadonlyArray<string> = getAllTemplates().map((template) => template.id)
 
 interface PreviewSettingsSheetProps {
   readonly open: boolean
