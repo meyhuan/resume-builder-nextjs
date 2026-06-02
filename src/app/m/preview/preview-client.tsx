@@ -1,12 +1,13 @@
 'use client'
 
-import { useEffect, useRef, useState, useCallback, Suspense, type ReactElement } from 'react'
+import { useEffect, useMemo, useRef, useState, useCallback, Suspense, type ReactElement } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAppStore } from '@/state/store'
 import { useDraftStore } from '@/features/edit/draft/draft-store'
 import type { ResumeData } from '@/entities/resume/resume-data'
+import { getRenderableResume } from '@/entities/resume/renderable-resume'
 import { TEMPLATE_REGISTRY, getTemplate } from '@/templates/template-loader'
 import type { ThemeTokens } from '@/entities/theme/theme-tokens'
 import AiSectionProvider from '@/components/ai-section/ai-section-provider'
@@ -228,6 +229,7 @@ export default function MobilePreviewClient(): ReactElement {
   const theme: ThemeTokens = getThemeForTemplate(templateId)
   const templateConfig = getTemplate(templateId)
   const Template = templateConfig?.component
+  const renderableResume = useMemo(() => getRenderableResume(resume), [resume])
 
   const titleScale: number = theme.titleScale ?? 1
   const paragraphIndent: number = theme.paragraphIndent ?? 0
@@ -627,7 +629,7 @@ export default function MobilePreviewClient(): ReactElement {
                 }}
               >
                 <Suspense fallback={<TemplateFallback />}>
-                  {Template ? <Template resume={resume} theme={theme} /> : null}
+                  {Template ? <Template resume={renderableResume} theme={theme} /> : null}
                 </Suspense>
               </div>
 

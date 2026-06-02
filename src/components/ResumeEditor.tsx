@@ -33,6 +33,7 @@ import { useAuthStore } from '@/store/use-auth-store'
 import { useVipCheck } from '@/hooks/use-vip-check'
 import VipUpgradeDialog from '@/components/vip/vip-upgrade-dialog'
 import type { ResumeData } from '@/entities/resume/resume-data'
+import { getRenderableResume } from '@/entities/resume/renderable-resume'
 import { joinExportFileNameParts, sanitizeExportFileName } from '@/lib/export-file-name'
 
 const AI_CACHE_KEYS: Record<string, string> = {
@@ -534,6 +535,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
   // 获取当前模板组件
   const templateConfig = getTemplate(tpl)
   const TemplateComponent = templateConfig?.component
+  const renderableResume = useMemo(() => getRenderableResume(resume), [resume])
 
   return (
     <div className="h-screen bg-slate-50/50 text-slate-900 flex flex-col overflow-hidden relative">
@@ -686,7 +688,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
               >
                 {TemplateComponent ? (
                   <TemplateComponent
-                    resume={resume}
+                    resume={renderableResume}
                     theme={theme}
                     sidebarSectionIds={sidebarSectionIds}
                     onSidebarSectionIdsChange={setSidebarSectionIds}

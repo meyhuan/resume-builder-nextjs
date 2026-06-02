@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useLayoutEffect, useMemo, useState, type ReactElement } from 'react'
 import type { ResumeData } from '@/entities/resume/resume-data'
+import { getRenderableResume } from '@/entities/resume/renderable-resume'
 import type { ThemeTokens } from '@/entities/theme/theme-tokens'
 import { TEMPLATE_REGISTRY } from '@/templates/template-loader'
 import { useAppStore } from '@/state/store'
@@ -36,6 +37,7 @@ function resolveTheme(templateId: string): ThemeTokens {
 export default function PrintRenderer({ resume, templateId, savedTheme }: PrintRendererProps): ReactElement {
   const config = TEMPLATE_REGISTRY[templateId] || TEMPLATE_REGISTRY['simple']
   const defaultTheme: ThemeTokens = useMemo(() => resolveTheme(config?.id ?? 'simple'), [config])
+  const renderableResume = useMemo(() => getRenderableResume(resume), [resume])
   const setReadOnly = useAppStore((s) => s.setReadOnly)
   const setResume = useAppStore((s) => s.setResume)
   
@@ -92,7 +94,7 @@ export default function PrintRenderer({ resume, templateId, savedTheme }: PrintR
         }
       `}</style>
       <Suspense fallback={<div data-print-loading="1" />}>
-        <TemplateComponent resume={resume} theme={theme} />
+        <TemplateComponent resume={renderableResume} theme={theme} />
       </Suspense>
     </div>
   )

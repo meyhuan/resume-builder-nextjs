@@ -48,7 +48,7 @@ export default function SectionManager(props: SectionManagerProps): ReactElement
   const setAvatarVisibility = useAppStore((s) => s.setAvatarVisibility)
   const setJobIntentionVisibility = useAppStore((s) => s.setJobIntentionVisibility)
   const showPhotoAvatar: boolean = resume.baseInfo?.showAvatar !== false
-  const isJobIntentionVisible: boolean = resume.jobIntentionVisible ?? Boolean(resume.jobIntention)
+  const isJobIntentionVisible: boolean = resume.jobIntentionVisible !== false
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 4 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 5 } })
@@ -100,7 +100,7 @@ export default function SectionManager(props: SectionManagerProps): ReactElement
         </SectionRow>
 
         {/* Pinned: 求职意向 */}
-        <SectionRow label="求职意向">
+        <SectionRow label="求职意向 / 岗位">
           <label className="flex items-center gap-1.5 text-xs font-medium text-slate-500 cursor-pointer select-none">
             <input
               type="checkbox"

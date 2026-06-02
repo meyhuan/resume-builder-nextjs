@@ -28,6 +28,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import type { Section } from '@/entities/resume/section'
+import type { ResumeData } from '@/entities/resume/resume-data'
 import { findModuleBySectionTitle } from '@/entities/module/module-config'
 import { useDraftStore } from '@/features/edit/draft/draft-store'
 import { createLogger } from '@/lib/logger'
@@ -46,10 +47,13 @@ export default function ManagePage(): ReactElement {
   const reorder = useDraftStore((s) => s.reorderSections)
   const toggleHidden = useDraftStore((s) => s.toggleSectionHidden)
   const removeSection = useDraftStore((s) => s.removeSection)
+  const updateDraft = useDraftStore((s) => s.updateDraft)
   const saveAll = useDraftStore((s) => s.saveAll)
   const isSaving = useDraftStore((s) => s.isSaving)
 
   const sections = draft?.sections ?? []
+  const showPhotoAvatar: boolean = draft?.baseInfo?.showAvatar !== false
+  const isJobIntentionVisible: boolean = draft?.jobIntentionVisible !== false
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -77,6 +81,25 @@ export default function ManagePage(): ReactElement {
       toast.success(`已移除「${section.title}」`)
     },
     [removeSection],
+  )
+
+  const handleToggleAvatar = useCallback(
+    (visible: boolean): void => {
+      updateDraft('baseInfo.showAvatar', (next) => {
+        const baseInfo = (next.baseInfo ?? {}) as NonNullable<ResumeData['baseInfo']>
+        ;(next as { baseInfo?: unknown }).baseInfo = { ...baseInfo, showAvatar: visible }
+      })
+    },
+    [updateDraft],
+  )
+
+  const handleToggleJobIntention = useCallback(
+    (visible: boolean): void => {
+      updateDraft('jobIntentionVisible', (next) => {
+        ;(next as { jobIntentionVisible?: boolean }).jobIntentionVisible = visible
+      })
+    },
+    [updateDraft],
   )
 
   const handleDone = useCallback(async (): Promise<void> => {
@@ -122,6 +145,21 @@ export default function ManagePage(): ReactElement {
           长按拖动调整展示顺序；隐藏后不会出现在简历预览中。
         </p>
 
+        <div className="mb-4 flex flex-col gap-2">
+          <PinnedVisibilityRow
+            label="个人信息头像"
+            description="隐藏后保留已上传照片"
+            visible={showPhotoAvatar}
+            onToggle={handleToggleAvatar}
+          />
+          <PinnedVisibilityRow
+            label="求职意向"
+            description="同时隐藏求职意向模块和个人信息岗位"
+            visible={isJobIntentionVisible}
+            onToggle={handleToggleJobIntention}
+          />
+        </div>
+
         {sections.length === 0 ? (
           <div className="rounded-2xl border border-[#edf0f5] bg-white px-5 py-10 text-center text-[13px] text-slate-400 shadow-sm">
             暂无模块，请先在编辑页添加内容
@@ -144,6 +182,47 @@ export default function ManagePage(): ReactElement {
           </DndContext>
         )}
       </div>
+    </div>
+  )
+}
+
+interface PinnedVisibilityRowProps {
+  readonly label: string
+  readonly description: string
+  readonly visible: boolean
+  readonly onToggle: (visible: boolean) => void
+}
+
+function PinnedVisibilityRow({ label, description, visible, onToggle }: PinnedVisibilityRowProps): ReactElement {
+  return (
+    <div
+      className={cn(
+        'flex items-center gap-3 rounded-[16px] border border-[#edf0f5] bg-white px-4 py-3 shadow-[0_4px_12px_rgba(15,23,42,0.04)]',
+        !visible && 'opacity-70',
+      )}
+    >
+      <div className="min-w-0 flex-1">
+        <div className={cn('truncate text-[14px] font-semibold', visible ? 'text-slate-900' : 'text-slate-400')}>
+          {label}
+        </div>
+        <div className="mt-0.5 text-[11px] text-slate-400">{description}</div>
+      </div>
+      <span
+        className={cn(
+          'shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold',
+          visible ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-400',
+        )}
+      >
+        {visible ? '显示' : '隐藏'}
+      </span>
+      <button
+        type="button"
+        onClick={(): void => onToggle(!visible)}
+        aria-label={`${visible ? '隐藏' : '显示'}${label}`}
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-slate-400 transition-colors hover:bg-slate-100 active:bg-slate-200"
+      >
+        {visible ? <Eye size={16} /> : <EyeOff size={16} />}
+      </button>
     </div>
   )
 }
