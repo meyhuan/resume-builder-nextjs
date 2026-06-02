@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useEffect, useState, type ReactElement } from 'react'
+import { Suspense, useEffect, useMemo, useState, type ReactElement } from 'react'
 import { useSearchParams } from 'next/navigation'
 import AiSectionProvider from '@/components/ai-section/ai-section-provider'
 import { useAppStore } from '@/state/store'
@@ -23,25 +23,32 @@ export default function TemplateLabClient(): ReactElement {
   const fixtureId = normalizeFixtureId(searchParams.get('fixture'))
   const themeId = normalizeThemeId(searchParams.get('theme'))
   const viewport = searchParams.get('viewport') === 'mobile' ? 'mobile' : 'pc'
-  const resume: ResumeData = getTemplateFixture(fixtureId)
-  const theme: ThemeTokens = getTemplateLabTheme(themeId)
+  const resume: ResumeData = useMemo(() => getTemplateFixture(fixtureId), [fixtureId])
+  const theme: ThemeTokens = useMemo(() => getTemplateLabTheme(themeId), [themeId])
   const Template = TEMPLATE_REGISTRY[templateId]?.component
   const setReadOnly = useAppStore((s) => s.setReadOnly)
   const setResume = useAppStore((s) => s.setResume)
   const titleScale: number = theme.titleScale ?? 1
   const paragraphIndent: number = theme.paragraphIndent ?? 0
-  const [ready, setReady] = useState<boolean>(false)
+  const labKey = `${templateId}:${fixtureId}:${themeId}:${viewport}`
+  const [readyKey, setReadyKey] = useState<string | null>(null)
+  const ready = readyKey === labKey
   const mobileScale = 0.46
 
   useEffect(() => {
-    setReady(false)
+    let cancelled = false
     setReadOnly(true)
     setResume((draft: ResumeData): void => {
       Object.assign(draft, resume)
     })
-    setReady(true)
-    return (): void => setReadOnly(false)
-  }, [resume, setReadOnly, setResume])
+    queueMicrotask(() => {
+      if (!cancelled) setReadyKey(labKey)
+    })
+    return (): void => {
+      cancelled = true
+      setReadOnly(false)
+    }
+  }, [labKey, resume, setReadOnly, setResume])
 
   return (
     <AiSectionProvider>

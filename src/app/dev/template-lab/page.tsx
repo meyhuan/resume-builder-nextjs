@@ -1,6 +1,10 @@
-import type { ReactElement } from 'react'
+import { Suspense, type ReactElement } from 'react'
 import TemplateLabClient from './template-lab-client'
 
 export default function TemplateLabPage(): ReactElement {
-  return <TemplateLabClient />
+  return (
+    <Suspense fallback={<div data-template-lab="loading" />}>
+      <TemplateLabClient />
+    </Suspense>
+  )
 }
