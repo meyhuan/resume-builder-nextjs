@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
+const AUTH_COOKIE_NAME = 'auth_uid';
+
 /**
  * Protected routes that require authentication
  * Add or remove routes as needed
@@ -50,9 +52,19 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  if (pathname.startsWith('/api') || pathname.startsWith('/next-api')) {
+    return NextResponse.next();
+  }
+
   // Get auth token from cookies
-  const authToken = request.cookies.get('auth_uid')?.value;
+  const authToken = request.cookies.get(AUTH_COOKIE_NAME)?.value;
   const isAuthenticated = !!authToken;
+
+  if (!isAuthenticated && isLocalE2eAutoLoginEnabled(request)) {
+    const setupUrl = new URL('/next-api/e2e/login', request.url);
+    setupUrl.searchParams.set('next', pathname + request.nextUrl.search);
+    return NextResponse.redirect(setupUrl, { status: 307 });
+  }
   
   // Debug logging
   console.log('[Middleware]', {
@@ -77,6 +89,21 @@ export function middleware(request: NextRequest) {
   }
 
   return NextResponse.next();
+}
+
+function isLocalE2eAutoLoginEnabled(request: NextRequest): boolean {
+  if (process.env.E2E_AUTH_ENABLED !== 'true') return false;
+  if (process.env.E2E_AUTH_AUTO_LOGIN !== 'true') return false;
+  return isLoopbackHost(request);
+}
+
+function isLoopbackHost(request: NextRequest): boolean {
+  const hostname = request.nextUrl.hostname.toLowerCase();
+  if (hostname === 'localhost') return true;
+  if (hostname === '::1' || hostname === '[::1]') return true;
+  if (hostname === '0:0:0:0:0:0:0:1') return true;
+  if (hostname.startsWith('127.')) return true;
+  return false;
 }
 
 /**

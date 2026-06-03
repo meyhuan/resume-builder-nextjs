@@ -25,6 +25,7 @@ interface DragDropProviderProps {
  */
 export default function DragDropProvider(props: DragDropProviderProps): ReactElement {
   const readOnly = useAppStore((s) => s.readOnly)
+  const dndContextId = `resume-template-dnd-${props.resume.id}`
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 5 } })
@@ -100,7 +101,7 @@ export default function DragDropProvider(props: DragDropProviderProps): ReactEle
   }
 
   return (
-    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart as never} onDragEnd={handleDragEnd as never} onDragCancel={(): void => setActive(null)}>
+    <DndContext id={dndContextId} sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart as never} onDragEnd={handleDragEnd as never} onDragCancel={(): void => setActive(null)}>
       <SortableContext items={props.resume.sections.map((s) => `${DndIds.SECTION_SORT_ID_PREFIX}${s.id}`)} strategy={verticalListSortingStrategy}>
         {props.children}
       </SortableContext>

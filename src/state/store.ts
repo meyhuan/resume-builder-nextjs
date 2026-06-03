@@ -135,6 +135,14 @@ export const useAppStore = create<AppState>()(
         resume: withNormalizedJobPosition(testResume),
       }), false, 'resume/loadTest')
     },
+    loadScenarioData: (resume) => {
+      const state = get()
+      set(() => ({
+        pastStates: pushHistory(state.resume, state.pastStates),
+        futureStates: [],
+        resume: withNormalizedJobPosition(resume),
+      }), false, 'resume/loadScenario')
+    },
     setResume: (updater) => {
       const state = get()
       set(() => ({

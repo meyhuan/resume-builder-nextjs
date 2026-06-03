@@ -1,0 +1,835 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>原创简历模板视觉预览</title>
+  <style>
+    :root {
+      --page-w: 794px;
+      --page-h: 1123px;
+      --ink: #111827;
+      --muted: #64748b;
+      --line: #e5e7eb;
+      --violet: #7c3aed;
+      --fuchsia: #d946ef;
+      --font-cn: "Noto Sans SC", "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
+      --font-ui: Inter, "Noto Sans SC", "Microsoft YaHei", Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: #f3f4f6;
+      color: var(--ink);
+      font-family: var(--font-ui);
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      padding: 18px 28px;
+      border-bottom: 1px solid #e5e7eb;
+      background: rgba(255, 255, 255, 0.94);
+      backdrop-filter: blur(16px);
+    }
+
+    .topbar h1 {
+      margin: 0 0 6px;
+      font-size: 20px;
+      line-height: 1.35;
+    }
+
+    .topbar p {
+      margin: 0;
+      color: #475569;
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    .gallery {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(794px, 1fr));
+      gap: 28px;
+      align-items: start;
+      padding: 28px;
+    }
+
+    .concept {
+      display: grid;
+      gap: 10px;
+      justify-items: center;
+    }
+
+    .caption {
+      width: var(--page-w);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      color: #334155;
+      font-size: 13px;
+    }
+
+    .caption strong {
+      color: #0f172a;
+      font-size: 15px;
+    }
+
+    .sheet {
+      width: var(--page-w);
+      min-height: var(--page-h);
+      overflow: hidden;
+      background: #fff;
+      box-shadow: 0 18px 45px rgba(15, 23, 42, 0.14);
+      font-family: var(--font-cn);
+      font-size: 14px;
+      line-height: 1.68;
+    }
+
+    h2, h3, p { margin: 0; }
+    ul { margin: 0; padding-left: 18px; }
+    li { margin: 2px 0; }
+
+    .name {
+      font-size: 34px;
+      font-weight: 800;
+      line-height: 1.15;
+    }
+
+    .role {
+      margin-top: 8px;
+      font-size: 15px;
+      color: #475569;
+    }
+
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 16px;
+      color: #475569;
+      font-size: 12px;
+    }
+
+    .section {
+      margin-top: 22px;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+      font-size: 17px;
+      font-weight: 800;
+      line-height: 1.35;
+    }
+
+    .item {
+      margin-top: 14px;
+    }
+
+    .item-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      font-weight: 700;
+      line-height: 1.45;
+    }
+
+    .item-sub {
+      margin-top: 2px;
+      color: #64748b;
+      font-size: 12px;
+    }
+
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      margin-top: 8px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 22px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: #f1f5f9;
+      color: #334155;
+      font-size: 11px;
+      line-height: 1.4;
+    }
+
+    .avatar {
+      width: 96px;
+      height: 116px;
+      border-radius: 16px;
+      background:
+        radial-gradient(circle at 50% 31%, #cbd5e1 0 18px, transparent 19px),
+        radial-gradient(circle at 50% 92%, #cbd5e1 0 42px, transparent 43px),
+        #f8fafc;
+    }
+
+    .metric-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .metric {
+      padding: 10px 12px;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .metric b {
+      display: block;
+      font-size: 18px;
+      line-height: 1.25;
+    }
+
+    .metric span {
+      color: #64748b;
+      font-size: 11px;
+    }
+
+    .tpl-aurora {
+      padding: 48px 54px;
+      background:
+        linear-gradient(135deg, rgba(124, 58, 237, 0.11), rgba(217, 70, 239, 0.06) 28%, transparent 46%),
+        #fff;
+    }
+
+    .tpl-aurora .hero {
+      display: grid;
+      grid-template-columns: 1fr 112px;
+      gap: 36px;
+      align-items: start;
+      padding-bottom: 28px;
+      border-bottom: 1px solid #ddd6fe;
+    }
+
+    .tpl-aurora .name {
+      color: #25185c;
+    }
+
+    .tpl-aurora .section-title {
+      color: #5b21b6;
+    }
+
+    .tpl-aurora .section-title::before {
+      content: "";
+      width: 6px;
+      height: 20px;
+      border-radius: 99px;
+      background: linear-gradient(180deg, var(--violet), var(--fuchsia));
+    }
+
+    .tpl-aurora .summary {
+      margin-top: 18px;
+      padding: 14px 16px;
+      border-left: 4px solid #7c3aed;
+      background: #f5f3ff;
+      color: #334155;
+    }
+
+    .tpl-compact {
+      display: grid;
+      grid-template-columns: 238px 1fr;
+      background: #fff;
+    }
+
+    .tpl-compact aside {
+      padding: 40px 26px;
+      background: #111827;
+      color: #f8fafc;
+    }
+
+    .tpl-compact main {
+      padding: 42px 40px;
+    }
+
+    .tpl-compact .name {
+      font-size: 29px;
+      color: #fff;
+    }
+
+    .tpl-compact .role,
+    .tpl-compact .meta {
+      color: #cbd5e1;
+    }
+
+    .tpl-compact .section-title {
+      margin-bottom: 8px;
+      color: #0f172a;
+      font-size: 16px;
+    }
+
+    .tpl-compact .section-title::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: #cbd5e1;
+    }
+
+    .tpl-compact .side-title {
+      margin-top: 26px;
+      margin-bottom: 10px;
+      color: #a78bfa;
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    .tpl-compact .side-list {
+      padding-left: 0;
+      list-style: none;
+      color: #d1d5db;
+      font-size: 12px;
+      line-height: 1.75;
+    }
+
+    .tpl-campus {
+      padding: 0 50px 46px;
+      background: #fff;
+    }
+
+    .tpl-campus .ribbon {
+      margin: 0 -50px 34px;
+      padding: 44px 50px 28px;
+      background: linear-gradient(135deg, #0891b2, #7c3aed);
+      color: #fff;
+    }
+
+    .tpl-campus .name {
+      color: #fff;
+    }
+
+    .tpl-campus .role,
+    .tpl-campus .meta {
+      color: #e0f2fe;
+    }
+
+    .tpl-campus .section-title {
+      color: #0e7490;
+    }
+
+    .tpl-campus .section-title::before {
+      content: "";
+      width: 22px;
+      height: 22px;
+      border: 5px solid #cffafe;
+      border-radius: 999px;
+      background: #0891b2;
+    }
+
+    .tpl-campus .highlight {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .tpl-campus .highlight div {
+      padding: 12px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.12);
+      font-size: 12px;
+    }
+
+    .tpl-executive {
+      padding: 54px 60px;
+      background: #fbfaf8;
+      color: #1f2937;
+    }
+
+    .tpl-executive .hero {
+      padding-bottom: 26px;
+      border-bottom: 3px double #9a6b38;
+    }
+
+    .tpl-executive .name {
+      color: #1f2937;
+      font-family: Georgia, "Noto Serif SC", serif;
+      font-size: 36px;
+    }
+
+    .tpl-executive .role {
+      color: #7c5b35;
+      font-weight: 700;
+    }
+
+    .tpl-executive .section-title {
+      color: #7c5b35;
+      font-family: Georgia, "Noto Serif SC", serif;
+    }
+
+    .tpl-executive .section-title::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: #c4a47c;
+    }
+
+    .tpl-executive .brief {
+      margin-top: 18px;
+      color: #374151;
+      font-size: 15px;
+    }
+
+    .tpl-creative {
+      display: grid;
+      grid-template-columns: 286px 1fr;
+      background: #fff;
+    }
+
+    .tpl-creative aside {
+      padding: 42px 28px;
+      background:
+        linear-gradient(160deg, rgba(217, 70, 239, 0.12), rgba(124, 58, 237, 0.08)),
+        #f8fafc;
+    }
+
+    .tpl-creative main {
+      padding: 42px 40px;
+    }
+
+    .tpl-creative .name {
+      font-size: 32px;
+      color: #312e81;
+    }
+
+    .tpl-creative .portfolio {
+      margin-top: 24px;
+      padding: 16px;
+      border: 1px solid #e9d5ff;
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .tpl-creative .section-title {
+      color: #7c3aed;
+    }
+
+    .tpl-creative .section-title::before {
+      content: "";
+      width: 18px;
+      height: 18px;
+      transform: rotate(45deg);
+      border-radius: 4px;
+      background: linear-gradient(135deg, #7c3aed, #d946ef);
+    }
+
+    .tpl-formal {
+      padding: 48px 54px;
+      background: #fff;
+    }
+
+    .tpl-formal .hero {
+      display: grid;
+      grid-template-columns: 1fr 104px;
+      gap: 28px;
+      align-items: start;
+      padding-bottom: 22px;
+      border-bottom: 2px solid #334155;
+    }
+
+    .tpl-formal .name {
+      color: #0f172a;
+    }
+
+    .tpl-formal .section {
+      margin-top: 18px;
+    }
+
+    .tpl-formal .section-title {
+      padding: 5px 10px;
+      border-left: 5px solid #334155;
+      background: #f1f5f9;
+      color: #0f172a;
+      font-size: 16px;
+    }
+
+    .tpl-formal .table {
+      display: grid;
+      grid-template-columns: 96px 1fr 96px 1fr;
+      border-top: 1px solid #cbd5e1;
+      border-left: 1px solid #cbd5e1;
+      font-size: 12px;
+    }
+
+    .tpl-formal .table div {
+      min-height: 32px;
+      padding: 6px 8px;
+      border-right: 1px solid #cbd5e1;
+      border-bottom: 1px solid #cbd5e1;
+    }
+
+    .tpl-formal .table .label {
+      background: #f8fafc;
+      color: #475569;
+      font-weight: 700;
+    }
+
+    @media (max-width: 860px) {
+      .gallery {
+        grid-template-columns: 1fr;
+        padding: 16px;
+        overflow-x: auto;
+      }
+
+      .topbar {
+        min-width: 826px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <h1>原创简历模板视觉预览</h1>
+    <p>每张白色画布宽度为 794px，按项目 PC 编辑器 A4 页面宽度设计。确认方向后，后续 React 模板会按这里的布局、字号、间距和颜色迁移实现。</p>
+  </header>
+
+  <main class="gallery">
+    <section class="concept">
+      <div class="caption"><strong>01 星河 · 精美大气型</strong><span>互联网 / 产品 / 运营 / 市场</span></div>
+      <article class="sheet tpl-aurora">
+        <div class="hero">
+          <div>
+            <h2 class="name">林知夏</h2>
+            <p class="role">高级产品经理 · AI 简历 / SaaS 增长方向</p>
+            <div class="meta" style="margin-top:14px;">
+              <span>上海</span><span>138 0000 0000</span><span>linzhixia@example.com</span><span>6 年经验</span>
+            </div>
+            <p class="summary">擅长从用户洞察、产品策略到增长实验的完整闭环，主导过多款 AI 效率工具从 0 到 1 上线，关注转化率、留存和商业化质量。</p>
+          </div>
+          <div class="avatar"></div>
+        </div>
+        <section class="section">
+          <h3 class="section-title">核心优势</h3>
+          <div class="metric-row">
+            <div class="metric"><b>32%</b><span>核心漏斗转化提升</span></div>
+            <div class="metric"><b>120万</b><span>累计服务用户</span></div>
+            <div class="metric"><b>18人</b><span>跨职能项目协作</span></div>
+          </div>
+        </section>
+        <section class="section">
+          <h3 class="section-title">工作经历</h3>
+          <div class="item">
+            <div class="item-head"><span>星澜科技 · 高级产品经理</span><span>2022.04 - 至今</span></div>
+            <p class="item-sub">AI 简历生成、内容优化、导出转化链路负责人</p>
+            <ul>
+              <li>重构新用户建简历流程，将平均完成时间从 18 分钟压缩至 7 分钟。</li>
+              <li>设计 AI 解析、智能补全、职位匹配建议，带动付费导出率提升 24%。</li>
+              <li>建立增长实验看板，按人群分层追踪激活、留存、导出和复购指标。</li>
+            </ul>
+          </div>
+          <div class="item">
+            <div class="item-head"><span>云舟互联 · 产品经理</span><span>2019.07 - 2022.03</span></div>
+            <ul>
+              <li>负责 B 端协同工具的需求调研、原型设计和版本迭代，服务 300+ 企业客户。</li>
+              <li>推动客服、运营、研发共建反馈优先级机制，线上问题平均响应时长下降 40%。</li>
+            </ul>
+          </div>
+        </section>
+        <section class="section">
+          <h3 class="section-title">项目经历</h3>
+          <div class="item">
+            <div class="item-head"><span>AI 简历评分与改写系统</span><span>2024.01 - 2024.08</span></div>
+            <ul>
+              <li>抽象岗位匹配、表达质量、经历完整度三类评分维度，生成可执行优化建议。</li>
+              <li>通过 A/B 测试验证提示词策略，AI 改写采纳率由 37% 提升至 61%。</li>
+            </ul>
+          </div>
+        </section>
+        <section class="section">
+          <h3 class="section-title">技能标签</h3>
+          <div class="tags">
+            <span class="tag">用户增长</span><span class="tag">AI 产品</span><span class="tag">数据分析</span><span class="tag">Prompt Design</span><span class="tag">Figma</span>
+          </div>
+        </section>
+      </article>
+    </section>
+
+    <section class="concept">
+      <div class="caption"><strong>02 砺锋 · 紧凑信息型</strong><span>技术 / 工程 / 项目经理 / 咨询</span></div>
+      <article class="sheet tpl-compact">
+        <aside>
+          <h2 class="name">周明远</h2>
+          <p class="role">后端研发工程师</p>
+          <div class="meta" style="display:grid;margin-top:18px;">
+            <span>北京 · 5 年经验</span><span>139 0000 0000</span><span>zhoumy@example.com</span><span>GitHub: zhoumy</span>
+          </div>
+          <h3 class="side-title">技术栈</h3>
+          <ul class="side-list">
+            <li>Java / Kotlin / TypeScript</li>
+            <li>Spring Boot / Next.js</li>
+            <li>PostgreSQL / Redis / MQ</li>
+            <li>Kubernetes / GitHub Actions</li>
+          </ul>
+          <h3 class="side-title">求职意向</h3>
+          <ul class="side-list">
+            <li>后端研发 / 全栈研发</li>
+            <li>北京 / 上海 / 远程</li>
+            <li>期望薪资：面议</li>
+          </ul>
+          <h3 class="side-title">证书</h3>
+          <ul class="side-list">
+            <li>阿里云 ACA</li>
+            <li>CET-6</li>
+          </ul>
+        </aside>
+        <main>
+          <section class="section" style="margin-top:0;">
+            <h3 class="section-title">职业摘要</h3>
+            <p>具备高并发业务、复杂后台系统和工程效率平台经验，关注服务稳定性、可观测性、交付效率和长期可维护性。</p>
+          </section>
+          <section class="section">
+            <h3 class="section-title">工作经历</h3>
+            <div class="item">
+              <div class="item-head"><span>北辰云 · 高级后端研发</span><span>2021.06 - 至今</span></div>
+              <ul>
+                <li>负责订单、支付、会员权益核心服务，日均处理请求 800 万+。</li>
+                <li>拆分单体服务为 7 个领域服务，引入灰度发布和链路追踪，P0 故障下降 65%。</li>
+                <li>设计导出任务异步队列，峰值导出耗时从 46s 降至 9s。</li>
+              </ul>
+            </div>
+            <div class="item">
+              <div class="item-head"><span>数桥信息 · 后端工程师</span><span>2019.07 - 2021.05</span></div>
+              <ul>
+                <li>参与 CRM 权限、审批流、报表模块开发，沉淀可复用权限中间件。</li>
+                <li>编写集成测试与部署脚本，将回归测试时间从半天缩短至 40 分钟。</li>
+              </ul>
+            </div>
+          </section>
+          <section class="section">
+            <h3 class="section-title">项目经历</h3>
+            <div class="item">
+              <div class="item-head"><span>多租户权限中心</span><span>2023.03 - 2023.12</span></div>
+              <ul>
+                <li>抽象 RBAC + 数据范围规则，支持集团、区域、门店多级组织。</li>
+                <li>提供权限缓存与变更广播机制，接口 P95 延迟稳定在 35ms 内。</li>
+              </ul>
+            </div>
+          </section>
+          <section class="section">
+            <h3 class="section-title">教育经历</h3>
+            <div class="item-head"><span>南京理工大学 · 软件工程 · 本科</span><span>2015.09 - 2019.06</span></div>
+          </section>
+        </main>
+      </article>
+    </section>
+
+    <section class="concept">
+      <div class="caption"><strong>03 青穗 · 校招应届型</strong><span>应届生 / 实习 / 转专业</span></div>
+      <article class="sheet tpl-campus">
+        <div class="ribbon">
+          <h2 class="name">陈若晴</h2>
+          <p class="role">求职意向：用户运营实习生 / 新媒体运营</p>
+          <div class="meta" style="margin-top:12px;">
+            <span>杭州</span><span>女</span><span>152 0000 0000</span><span>chenrq@example.com</span><span>2026 届</span>
+          </div>
+          <div class="highlight">
+            <div><b>Top 10%</b><br>专业绩点排名</div>
+            <div><b>3段</b><br>校园与实习经历</div>
+            <div><b>10万+</b><br>内容累计曝光</div>
+          </div>
+        </div>
+        <section class="section" style="margin-top:0;">
+          <h3 class="section-title">教育经历</h3>
+          <div class="item-head"><span>浙江传媒学院 · 网络与新媒体 · 本科</span><span>2022.09 - 2026.06</span></div>
+          <p class="item-sub">主修课程：传播学、用户研究、数据新闻、短视频策划、品牌营销</p>
+        </section>
+        <section class="section">
+          <h3 class="section-title">实习经历</h3>
+          <div class="item">
+            <div class="item-head"><span>微光科技 · 用户运营实习生</span><span>2025.07 - 2025.10</span></div>
+            <ul>
+              <li>参与社群拉新、活动策划和用户访谈，整理 80+ 条需求反馈。</li>
+              <li>独立维护 5 个用户群，活动参与率从 18% 提升至 31%。</li>
+            </ul>
+          </div>
+        </section>
+        <section class="section">
+          <h3 class="section-title">校园经历</h3>
+          <div class="item">
+            <div class="item-head"><span>校融媒体中心 · 内容策划负责人</span><span>2023.09 - 2025.06</span></div>
+            <ul>
+              <li>策划毕业季、迎新季、社团招新专题，单篇最高阅读 2.6 万。</li>
+              <li>搭建选题日历和复盘模板，团队月均内容产出提升 45%。</li>
+            </ul>
+          </div>
+        </section>
+        <section class="section">
+          <h3 class="section-title">项目经历</h3>
+          <div class="item-head"><span>校园二手交易小程序增长方案</span><span>2025.03 - 2025.05</span></div>
+          <ul>
+            <li>完成 120 份问卷和 12 次访谈，定位新生寝室场景的高频交易需求。</li>
+            <li>设计裂变海报、权益任务和社群承接路径，模拟测算 3 周可获客 1800+。</li>
+          </ul>
+        </section>
+      </article>
+    </section>
+
+    <section class="concept">
+      <div class="caption"><strong>04 远山 · 资深管理型</strong><span>高管 / 专家 / 8 年以上经验</span></div>
+      <article class="sheet tpl-executive">
+        <div class="hero">
+          <h2 class="name">顾承安</h2>
+          <p class="role">运营负责人 / 增长负责人 · 12 年互联网与消费行业经验</p>
+          <div class="meta" style="margin-top:12px;">
+            <span>深圳</span><span>186 0000 0000</span><span>guca@example.com</span><span>团队规模 60+</span>
+          </div>
+          <p class="brief">长期负责业务增长、渠道运营、商业化和团队管理，擅长在高速变化环境中建立可复制的目标体系、组织机制和增长模型。</p>
+        </div>
+        <section class="section">
+          <h3 class="section-title">关键业绩</h3>
+          <div class="metric-row">
+            <div class="metric"><b>3.8亿</b><span>年度 GMV 规模</span></div>
+            <div class="metric"><b>46%</b><span>渠道获客成本下降</span></div>
+            <div class="metric"><b>60+</b><span>运营与销售团队</span></div>
+          </div>
+        </section>
+        <section class="section">
+          <h3 class="section-title">职业经历</h3>
+          <div class="item">
+            <div class="item-head"><span>山海生活 · 运营中心负责人</span><span>2020.01 - 至今</span></div>
+            <ul>
+              <li>搭建从品牌投放、内容种草、私域承接到复购增长的完整运营体系。</li>
+              <li>按区域和品类重构经营指标，推动年度 GMV 从 1.4 亿增长至 3.8 亿。</li>
+              <li>建立管理例会、人才梯队和绩效机制，核心管理岗位内部晋升率达到 70%。</li>
+            </ul>
+          </div>
+          <div class="item">
+            <div class="item-head"><span>辰光电商 · 高级运营经理</span><span>2015.05 - 2019.12</span></div>
+            <ul>
+              <li>负责天猫、京东、抖音多平台运营，双 11 大促 GMV 连续三年增长。</li>
+              <li>沉淀爆品孵化方法论，单品从冷启动到月销千万周期缩短至 4 个月。</li>
+            </ul>
+          </div>
+        </section>
+        <section class="section">
+          <h3 class="section-title">管理能力</h3>
+          <div class="tags">
+            <span class="tag">经营分析</span><span class="tag">组织搭建</span><span class="tag">渠道增长</span><span class="tag">商业化</span><span class="tag">预算管理</span>
+          </div>
+        </section>
+      </article>
+    </section>
+
+    <section class="concept">
+      <div class="caption"><strong>05 锐彩 · 创意表达型</strong><span>设计 / 内容 / 品牌 / 新媒体</span></div>
+      <article class="sheet tpl-creative">
+        <aside>
+          <h2 class="name">苏禾</h2>
+          <p class="role">品牌视觉设计师</p>
+          <div class="meta" style="display:grid;margin-top:14px;">
+            <span>广州</span><span>157 0000 0000</span><span>suhe@example.com</span><span>作品集：suhe.design</span>
+          </div>
+          <div class="portfolio">
+            <b>设计关键词</b>
+            <div class="tags">
+              <span class="tag">品牌系统</span><span class="tag">视觉规范</span><span class="tag">活动视觉</span><span class="tag">AIGC</span>
+            </div>
+          </div>
+          <div class="portfolio">
+            <b>软件能力</b>
+            <p style="margin-top:8px;color:#475569;font-size:12px;">Figma / Photoshop / Illustrator / After Effects / Midjourney</p>
+          </div>
+        </aside>
+        <main>
+          <section class="section" style="margin-top:0;">
+            <h3 class="section-title">个人简介</h3>
+            <p>关注品牌识别、商业转化与视觉记忆点，能在高节奏业务中快速输出稳定、统一且有传播力的设计方案。</p>
+          </section>
+          <section class="section">
+            <h3 class="section-title">工作经历</h3>
+            <div class="item">
+              <div class="item-head"><span>鲸跃品牌 · 资深视觉设计师</span><span>2022.03 - 至今</span></div>
+              <ul>
+                <li>负责消费品牌年度视觉系统升级，统一线上线下 40+ 场景规范。</li>
+                <li>主导 618、双 11 大促视觉，核心会场点击率较上一周期提升 28%。</li>
+                <li>引入 AIGC 草图探索流程，将 KV 前期探索效率提升约 50%。</li>
+              </ul>
+            </div>
+          </section>
+          <section class="section">
+            <h3 class="section-title">代表项目</h3>
+            <div class="item">
+              <div class="item-head"><span>「城市轻食节」品牌活动视觉</span><span>2024.04 - 2024.06</span></div>
+              <ul>
+                <li>完成活动主视觉、社媒模板、线下物料和短视频包装，形成完整视觉资产包。</li>
+                <li>活动曝光 320 万+，线下核销人数较预期提升 36%。</li>
+              </ul>
+            </div>
+          </section>
+          <section class="section">
+            <h3 class="section-title">教育经历</h3>
+            <div class="item-head"><span>广州美术学院 · 视觉传达设计</span><span>2017.09 - 2021.06</span></div>
+          </section>
+        </main>
+      </article>
+    </section>
+
+    <section class="concept">
+      <div class="caption"><strong>06 衡简 · 国企正式型</strong><span>国企 / 银行 / 事业单位 / 传统行业</span></div>
+      <article class="sheet tpl-formal">
+        <div class="hero">
+          <div>
+            <h2 class="name">王嘉宁</h2>
+            <p class="role">求职意向：综合管理岗 / 行政人事岗</p>
+            <div class="meta" style="margin-top:12px;">
+              <span>南京</span><span>女</span><span>中共党员</span><span>135 0000 0000</span><span>wangjn@example.com</span>
+            </div>
+          </div>
+          <div class="avatar" style="border-radius:4px;"></div>
+        </div>
+        <section class="section">
+          <h3 class="section-title">基本信息</h3>
+          <div class="table">
+            <div class="label">出生年月</div><div>1998.06</div>
+            <div class="label">政治面貌</div><div>中共党员</div>
+            <div class="label">最高学历</div><div>硕士研究生</div>
+            <div class="label">现居城市</div><div>南京</div>
+          </div>
+        </section>
+        <section class="section">
+          <h3 class="section-title">教育经历</h3>
+          <div class="item-head"><span>南京大学 · 公共管理 · 硕士</span><span>2021.09 - 2024.06</span></div>
+          <p class="item-sub">奖项：研究生一等奖学金、优秀学生干部、优秀毕业生</p>
+        </section>
+        <section class="section">
+          <h3 class="section-title">工作经历</h3>
+          <div class="item">
+            <div class="item-head"><span>江苏省某国企 · 综合管理实习生</span><span>2023.07 - 2023.12</span></div>
+            <ul>
+              <li>协助完成部门会议组织、纪要整理、制度文件归档和跨部门沟通。</li>
+              <li>参与年度培训项目执行，跟进 12 场培训签到、反馈收集和数据统计。</li>
+              <li>梳理行政采购台账，提升报销与资产登记信息完整度。</li>
+            </ul>
+          </div>
+        </section>
+        <section class="section">
+          <h3 class="section-title">校园经历</h3>
+          <div class="item-head"><span>研究生会 · 办公室主任</span><span>2022.09 - 2023.09</span></div>
+          <ul>
+            <li>负责校级活动流程统筹、材料撰写和志愿者协调，累计服务师生 3000+ 人次。</li>
+            <li>完善会议、物资、宣传三类标准化表单，减少重复沟通成本。</li>
+          </ul>
+        </section>
+        <section class="section">
+          <h3 class="section-title">技能证书</h3>
+          <div class="tags">
+            <span class="tag">CET-6</span><span class="tag">普通话二甲</span><span class="tag">Office 高级应用</span><span class="tag">公文写作</span>
+          </div>
+        </section>
+      </article>
+    </section>
+  </main>
+</body>
+</html>

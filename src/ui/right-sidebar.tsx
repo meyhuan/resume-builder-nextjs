@@ -4,6 +4,7 @@
  * Each panel has a title bar with a close (×) button.
  * The 排版美化 panel contains sub-tabs for template switching and theme settings.
  */
+import { useState } from 'react'
 import type { ReactElement } from 'react'
 import type { ThemeTokens } from '@/entities/theme/theme-tokens'
 import type { OnePageStatus } from '@/hooks/use-one-page-mode'
@@ -11,6 +12,7 @@ import type { TemplateConfig } from '@/templates/template-loader'
 import type { PanelId } from '@/ui/editor-toolbar'
 import ThemePanel from '@/ui/theme-panel'
 import { useAppStore } from '@/state/store'
+import { RESUME_SCENARIOS } from '@/dev/resume-scenarios'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import { Layout, Upload, Database, X } from 'lucide-react'
@@ -103,6 +105,8 @@ interface LayoutPanelProps {
 
 function LayoutPanel(props: LayoutPanelProps): ReactElement {
   const { theme, tpl, templates } = props
+  const [scenarioId, setScenarioId] = useState(RESUME_SCENARIOS[0]?.id ?? '')
+  const selectedScenario = RESUME_SCENARIOS.find((scenario) => scenario.id === scenarioId) ?? RESUME_SCENARIOS[0]
 
   function handleImportClick(): void {
     const json = prompt('粘贴 JSON 简历数据：')
@@ -112,6 +116,13 @@ function LayoutPanel(props: LayoutPanelProps): ReactElement {
       } catch (e) {
         alert(`导入失败: ${e}`)
       }
+    }
+  }
+
+  function handleLoadScenario(): void {
+    if (!selectedScenario) return
+    if (window.confirm(`加载「${selectedScenario.name}」将覆盖当前所有内容，确定吗？`)) {
+      useAppStore.getState().loadScenarioData(selectedScenario.resume)
     }
   }
 
@@ -147,7 +158,7 @@ function LayoutPanel(props: LayoutPanelProps): ReactElement {
                 key={template.id}
                 type="button"
                 aria-pressed={tpl === template.id}
-                aria-label={`选择模板 ${template.name}`}
+                aria-label={`选择模板 ${template.name}：${template.description}`}
                 className={`group relative cursor-pointer rounded-xl border transition-all duration-200 overflow-hidden ${
                   tpl === template.id
                     ? 'border-violet-500 ring-2 ring-violet-100 shadow-sm bg-white'
@@ -172,6 +183,9 @@ function LayoutPanel(props: LayoutPanelProps): ReactElement {
                   {tpl === template.id && (
                     <div className="absolute inset-0 bg-violet-500/5 transition-opacity" />
                   )}
+                  <div className="absolute inset-x-2 bottom-2 rounded-lg bg-slate-950/88 px-2.5 py-2 text-left text-[11px] leading-4 text-white opacity-0 shadow-lg backdrop-blur-sm transition-all duration-200 translate-y-1 group-hover:translate-y-0 group-hover:opacity-100 group-focus-visible:translate-y-0 group-focus-visible:opacity-100">
+                    {template.description}
+                  </div>
                   {tpl === template.id && (
                     <div className="absolute top-2 right-2 w-7 h-7 bg-violet-500 text-white rounded-full flex items-center justify-center shadow-sm animate-in zoom-in duration-200">
                       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" className="w-3 h-3">
@@ -221,19 +235,32 @@ function LayoutPanel(props: LayoutPanelProps): ReactElement {
             </div>
           </div>
           {process.env.NODE_ENV === 'development' && (
-            <div className="p-4 border-t border-slate-200 bg-white shrink-0">
+            <div className="space-y-3 p-4 border-t border-slate-200 bg-white shrink-0">
+              <div className="space-y-1.5">
+                <div className="text-xs font-semibold text-slate-700">模板测试数据</div>
+                <select
+                  value={scenarioId}
+                  onChange={(event) => setScenarioId(event.target.value)}
+                  className="h-9 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-xs font-medium text-slate-700 outline-none transition-colors hover:bg-white focus:border-violet-300 focus:ring-2 focus:ring-violet-100"
+                >
+                  {RESUME_SCENARIOS.map((scenario) => (
+                    <option key={scenario.id} value={scenario.id}>
+                      {scenario.name}
+                    </option>
+                  ))}
+                </select>
+                {selectedScenario ? (
+                  <p className="text-[11px] leading-4 text-slate-500">{selectedScenario.description}</p>
+                ) : null}
+              </div>
               <Button
                 variant="outline"
                 size="sm"
                 className="w-full gap-2 text-sm font-semibold h-11 bg-slate-50 rounded-xl border-slate-200 shadow-none text-slate-700 hover:border-slate-300 hover:text-slate-900 hover:bg-white transition-all"
-                onClick={() => {
-                  if (window.confirm('加载测试数据将覆盖当前所有内容，确定吗？')) {
-                    useAppStore.getState().loadTestData()
-                  }
-                }}
+                onClick={handleLoadScenario}
               >
                 <Database className="h-3.5 w-3.5" />
-                加载测试数据
+                加载场景数据
               </Button>
             </div>
           )}

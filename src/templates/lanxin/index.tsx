@@ -155,7 +155,6 @@ function LanxinHero(props: {
       onClick={header.openEditModal}
       style={{
         minHeight: height,
-        height,
         padding: `${paddingTop}px ${paddingHorizontal}px 0`,
         backgroundColor: headerBg,
         cursor: 'pointer',
@@ -205,20 +204,30 @@ function LanxinHero(props: {
 
           <div
             className="grid"
+            data-lanxin-header-fields="true"
             style={{
-              gridTemplateColumns: '122px 185px 1fr',
-              gap: '10px 18px',
+              gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+              gap: '9px 18px',
               marginTop: 28,
               maxWidth: 720,
               fontSize: '0.75em',
-              lineHeight: 1,
+              lineHeight: 1.35,
               color: '#4d545d',
             }}
           >
             {visibleFields.map((field) => (
-              <FieldChip key={field.key} field={field} header={header} deleteColor={primaryColor}>
-                <span>{field.label}： </span>
-                <span>{field.value}</span>
+              <FieldChip
+                key={field.key}
+                field={field}
+                header={header}
+                deleteColor={primaryColor}
+                className="min-w-0 max-w-full items-baseline"
+                style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}
+              >
+                <span style={{ flex: '0 0 auto' }}>{field.label}： </span>
+                <span style={{ minWidth: 0, overflowWrap: 'anywhere', wordBreak: 'break-word' }}>
+                  {field.value}
+                </span>
               </FieldChip>
             ))}
           </div>

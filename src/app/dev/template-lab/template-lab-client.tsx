@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useEffect, useMemo, useState, type ReactElement } from 'react'
+import { Suspense, useEffect, useLayoutEffect, useMemo, useState, type ReactElement } from 'react'
 import { useSearchParams } from 'next/navigation'
 import AiSectionProvider from '@/components/ai-section/ai-section-provider'
 import { useAppStore } from '@/state/store'
@@ -35,20 +35,27 @@ export default function TemplateLabClient(): ReactElement {
   const ready = readyKey === labKey
   const mobileScale = 0.46
 
-  useEffect(() => {
-    let cancelled = false
+  useLayoutEffect(() => {
     setReadOnly(true)
     setResume((draft: ResumeData): void => {
       Object.assign(draft, resume)
     })
-    queueMicrotask(() => {
-      if (!cancelled) setReadyKey(labKey)
+    return (): void => {
+      setReadOnly(false)
+    }
+  }, [resume, setReadOnly, setResume])
+
+  useEffect(() => {
+    let cancelled = false
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (!cancelled) setReadyKey(labKey)
+      })
     })
     return (): void => {
       cancelled = true
-      setReadOnly(false)
     }
-  }, [labKey, resume, setReadOnly, setResume])
+  }, [labKey, resume, theme])
 
   return (
     <AiSectionProvider>

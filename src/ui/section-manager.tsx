@@ -30,6 +30,25 @@ import { getSectionTypeRegistry } from '@/entities/blocks/block-factory'
 
 /** Derive addable section labels from the central registry. */
 const PREDEFINED_LABELS: readonly string[] = getSectionTypeRegistry().map((e) => e.label)
+const CUSTOM_SECTION_LABEL = '自定义模块'
+
+function normalizeSectionTitle(title: string): string {
+  return title.replace(/\s/g, '')
+}
+
+function getUniqueCustomSectionTitle(existingTitles: ReadonlySet<string>): string {
+  const usedTitles: Set<string> = new Set(
+    Array.from(existingTitles, (title) => normalizeSectionTitle(title))
+  )
+  const baseTitle: string = CUSTOM_SECTION_LABEL
+  if (!usedTitles.has(normalizeSectionTitle(baseTitle))) return baseTitle
+
+  let suffix = 2
+  while (usedTitles.has(normalizeSectionTitle(`${baseTitle} ${suffix}`))) {
+    suffix += 1
+  }
+  return `${baseTitle} ${suffix}`
+}
 
 /** Props accepted by the top-level panel. */
 export interface SectionManagerProps {
@@ -66,9 +85,19 @@ export default function SectionManager(props: SectionManagerProps): ReactElement
     [resume.sections]
   )
   const availableLabels: string[] = useMemo(
-    () => PREDEFINED_LABELS.filter((label) => !existingTitles.has(label)),
+    () => PREDEFINED_LABELS.filter((label) => (
+      label === CUSTOM_SECTION_LABEL || !existingTitles.has(label)
+    )),
     [existingTitles]
   )
+
+  function handleAddSection(label: string): void {
+    addSection(
+      label === CUSTOM_SECTION_LABEL
+        ? getUniqueCustomSectionTitle(existingTitles)
+        : label
+    )
+  }
 
   return (
     <div className="flex flex-col h-full bg-transparent">
@@ -139,7 +168,7 @@ export default function SectionManager(props: SectionManagerProps): ReactElement
                   key={label}
                   type="button"
                   className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-white bg-white/60 backdrop-blur-md shadow-sm text-sm font-medium text-slate-600 hover:border-[#8B5CF6]/30 hover:bg-white/90 hover:text-[#8B5CF6] transition-all"
-                  onClick={() => addSection(label)}
+                  onClick={() => handleAddSection(label)}
                 >
                   <PlusSquare size={16} className="text-[#8B5CF6] shrink-0" />
                   {label}

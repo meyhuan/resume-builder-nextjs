@@ -18,6 +18,7 @@ import { HomeActionBar } from './_components/home-action-bar'
 import { JobIntentionPreview } from './_components/job-intention-preview'
 import { ResumeProfileCard } from './_components/resume-profile-card'
 import { SectionsList } from './_components/sections-list'
+import { TemplateSpecificSettings } from './_components/template-metrics-preview'
 
 /**
  * Resume data already loaded on the server and passed as a prop.
@@ -63,6 +64,7 @@ export default function MobileEditHomeClient(
   const setFromServer = useDraftStore((s): typeof s.setFromServer => s.setFromServer)
   const draft = useDraftStore((s): ResumeData | null => s.draft)
   const resumeId = useDraftStore((s): string | null => s.resumeId)
+  const draftTemplateId = useDraftStore((s): string => s.templateId)
   const hydratedRef = useRef<boolean>(false)
   const restoredScrollRef = useRef<boolean>(false)
   const rootRef = useRef<HTMLDivElement>(null)
@@ -240,7 +242,7 @@ export default function MobileEditHomeClient(
     return MODULES.filter((m) => {
       if (m.required) return false
       if (m.key === 'custom') {
-        return !resume.sections.some((s) => !findModuleBySectionTitle(s.title))
+        return true
       }
       if (!m.sectionTitle) return true
       const sec = resume.sections.find((s) => findModuleBySectionTitle(s.title)?.key === m.key)
@@ -305,6 +307,7 @@ export default function MobileEditHomeClient(
   }
 
   log.info('render resume', { id: initial?.id, name: resume.name })
+  const currentTemplateId = draftTemplateId || initial?.template || 'simple'
 
   return (
     <div
@@ -350,6 +353,8 @@ export default function MobileEditHomeClient(
       <div className="mt-2 px-3">
         <JobIntentionPreview resume={resume} />
       </div>
+
+      <TemplateSpecificSettings resume={resume} templateId={currentTemplateId} />
 
       <SectionsList sections={resume.sections} />
 
