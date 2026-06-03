@@ -2,7 +2,7 @@
 
 import { useState, type ReactElement } from 'react'
 import { useRouter } from 'next/navigation'
-import { Eye, LayoutGrid, Loader2, Monitor } from 'lucide-react'
+import { Loader2, Monitor } from 'lucide-react'
 import { toast } from 'sonner'
 import { useDraftStore } from '@/features/edit/draft/draft-store'
 import { createLogger } from '@/lib/logger'
@@ -69,30 +69,28 @@ export function HomeActionBar(props: HomeActionBarProps): ReactElement {
         className="fixed bottom-0 left-0 right-0 z-30 border-t border-slate-200 bg-white/95 shadow-[0_-8px_24px_rgba(15,23,42,0.06)] backdrop-blur"
         style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
       >
-        <div className="flex items-center gap-3 px-[18px] py-3">
+        <div className="grid grid-cols-[64px_96px_minmax(0,1fr)] items-center gap-2.5 px-3.5 py-3">
           <button
             type="button"
             onClick={(): void => { void handleOpenPcGuide() }}
             disabled={openingPcGuide}
-            className="flex h-[52px] w-[76px] shrink-0 flex-col items-center justify-center gap-0.5 rounded-xl bg-white text-[11px] font-medium text-slate-600 transition-transform active:scale-[0.98] disabled:opacity-70"
+            className="flex h-[54px] min-w-0 flex-col items-center justify-center gap-0.5 rounded-xl bg-white text-slate-900 transition-transform active:scale-[0.98] disabled:opacity-70"
           >
-            {openingPcGuide ? <Loader2 size={18} className="animate-spin" /> : <Monitor size={18} />}
-            <span>{openingPcGuide ? '同步中' : '电脑端'}</span>
+            {openingPcGuide ? <Loader2 size={24} className="animate-spin" /> : <Monitor size={28} strokeWidth={2.2} />}
+            <span className="text-[12px] font-medium leading-none">{openingPcGuide ? '同步中' : '电脑编辑'}</span>
           </button>
           <button
             type="button"
             onClick={(): void => setSheetOpen(true)}
-            className="flex h-[52px] w-[86px] shrink-0 flex-col items-center justify-center gap-0.5 rounded-xl bg-white text-[11px] font-medium text-slate-600 active:scale-[0.98]"
+            className="flex h-[54px] min-w-0 items-center justify-center rounded-[24px] bg-slate-100 px-2 text-[15px] font-semibold text-slate-900 transition-transform active:scale-[0.98]"
           >
-            <LayoutGrid size={18} />
             <span>模块管理</span>
           </button>
           <button
             type="button"
             onClick={handlePreview}
-            className="flex h-[52px] flex-1 items-center justify-center gap-2 rounded-[14px] bg-violet-600 text-[15px] font-semibold text-white shadow-sm shadow-violet-600/20 transition-transform hover:bg-violet-700 active:scale-[0.98]"
+            className="flex h-[54px] min-w-0 items-center justify-center rounded-[24px] bg-violet-600 px-3 text-[16px] font-semibold text-white shadow-lg shadow-violet-600/25 transition-transform hover:bg-violet-700 active:scale-[0.98]"
           >
-            <Eye size={18} />
             <span>预览简历</span>
           </button>
         </div>
