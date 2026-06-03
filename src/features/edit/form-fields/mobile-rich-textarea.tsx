@@ -28,6 +28,7 @@ import type { InitialConfigType } from '@lexical/react/LexicalComposer'
 import type { EditorState, LexicalEditor } from 'lexical'
 import { Bold, Italic, List, ListOrdered, Redo2, Trash2, Undo2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useVisualViewportKeyboard } from '@/hooks/use-visual-viewport-keyboard'
 
 export interface MobileRichTextareaProps {
   readonly label: string
@@ -66,22 +67,8 @@ export function MobileRichTextarea(props: MobileRichTextareaProps): ReactElement
   const hasContent: boolean = html.trim().length > 0
   const initialHtmlRef = useRef<string>(html)
   const [focused, setFocused] = useState<boolean>(false)
-  const [keyboardOffset, setKeyboardOffset] = useState<number>(0)
-
-  useEffect(() => {
-    const vv = window.visualViewport
-    if (!vv) return
-    const update = (): void => {
-      const offset = window.innerHeight - vv.height - vv.offsetTop
-      setKeyboardOffset(Math.max(0, offset))
-    }
-    vv.addEventListener('resize', update)
-    vv.addEventListener('scroll', update)
-    return (): void => {
-      vv.removeEventListener('resize', update)
-      vv.removeEventListener('scroll', update)
-    }
-  }, [])
+  const { canMeasure, keyboardHeight, keyboardOpen } = useVisualViewportKeyboard()
+  const showToolbar: boolean = focused && (keyboardOpen || !canMeasure)
 
   const initialConfig: InitialConfigType = {
     namespace: 'mobile-rich-textarea',
@@ -163,24 +150,23 @@ export function MobileRichTextarea(props: MobileRichTextareaProps): ReactElement
           <ListPlugin />
           <OnChangePlugin onChange={handleChange} ignoreSelectionChange />
           {/* Spacer keeps layout space when toolbar is fixed */}
-          {focused && <div className="h-10" />}
+          {showToolbar && <div className={extraToolbar ? 'h-[76px]' : 'h-10'} />}
           <FocusPlugin onFocus={(): void => setFocused(true)} onBlur={(): void => setFocused(false)} />
-          <div
-            className={cn(
-              'border-t border-slate-100 px-1.5 py-1 flex flex-col gap-1 bg-white',
-              focused && 'fixed left-0 right-0 z-50 shadow-[0_-2px_8px_rgba(0,0,0,0.08)]',
-            )}
-            style={focused ? { bottom: keyboardOffset } : undefined}
-          >
-            <div className="flex items-center gap-1 overflow-x-auto">
-              <FormatToolbar />
-            </div>
-            {extraToolbar && (
-              <div className="flex items-center gap-1 overflow-x-auto border-t border-slate-100 pt-1">
-                {extraToolbar}
+          {showToolbar && (
+            <div
+              className="fixed left-0 right-0 z-50 flex flex-col gap-1 border-t border-slate-100 bg-white px-1.5 py-1 shadow-[0_-2px_8px_rgba(0,0,0,0.08)]"
+              style={{ bottom: keyboardOpen ? keyboardHeight : 0 }}
+            >
+              <div className="flex items-center gap-1 overflow-x-auto">
+                <FormatToolbar />
               </div>
-            )}
-          </div>
+              {extraToolbar && (
+                <div className="flex items-center gap-1 overflow-x-auto border-t border-slate-100 pt-1">
+                  {extraToolbar}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </LexicalComposer>
       {error && <div className="mt-1 px-1 text-xs text-rose-500">{error}</div>}
@@ -311,6 +297,7 @@ function FormatToolbar(): ReactElement {
     <div className="flex items-center gap-0.5 shrink-0">
       <button
         type="button"
+        onPointerDown={(e): void => e.preventDefault()}
         onMouseDown={(e): void => e.preventDefault()}
         onClick={(): void => void editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'bold')}
         className={btnCls(state.isBold)}
@@ -320,6 +307,7 @@ function FormatToolbar(): ReactElement {
       </button>
       <button
         type="button"
+        onPointerDown={(e): void => e.preventDefault()}
         onMouseDown={(e): void => e.preventDefault()}
         onClick={(): void => void editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'italic')}
         className={btnCls(state.isItalic)}
@@ -329,6 +317,7 @@ function FormatToolbar(): ReactElement {
       </button>
       <button
         type="button"
+        onPointerDown={(e): void => e.preventDefault()}
         onMouseDown={(e): void => e.preventDefault()}
         onClick={(): void => {
           if (state.blockType === 'bullet') editor.dispatchCommand(REMOVE_LIST_COMMAND, undefined)
@@ -341,6 +330,7 @@ function FormatToolbar(): ReactElement {
       </button>
       <button
         type="button"
+        onPointerDown={(e): void => e.preventDefault()}
         onMouseDown={(e): void => e.preventDefault()}
         onClick={(): void => {
           if (state.blockType === 'number') editor.dispatchCommand(REMOVE_LIST_COMMAND, undefined)
@@ -354,6 +344,7 @@ function FormatToolbar(): ReactElement {
       <div className="w-px h-4 bg-slate-200 mx-0.5 shrink-0" />
       <button
         type="button"
+        onPointerDown={(e): void => e.preventDefault()}
         onMouseDown={(e): void => e.preventDefault()}
         onClick={(): void => void editor.dispatchCommand(UNDO_COMMAND, undefined)}
         disabled={!state.canUndo}
@@ -364,6 +355,7 @@ function FormatToolbar(): ReactElement {
       </button>
       <button
         type="button"
+        onPointerDown={(e): void => e.preventDefault()}
         onMouseDown={(e): void => e.preventDefault()}
         onClick={(): void => void editor.dispatchCommand(REDO_COMMAND, undefined)}
         disabled={!state.canRedo}
