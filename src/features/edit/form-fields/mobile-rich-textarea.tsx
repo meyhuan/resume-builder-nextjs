@@ -67,7 +67,7 @@ export function MobileRichTextarea(props: MobileRichTextareaProps): ReactElement
   const hasContent: boolean = html.trim().length > 0
   const initialHtmlRef = useRef<string>(html)
   const [focused, setFocused] = useState<boolean>(false)
-  const { canMeasure, keyboardHeight, keyboardOpen } = useVisualViewportKeyboard()
+  const { canMeasure, fixedBottomOffset, keyboardOpen } = useVisualViewportKeyboard()
   const showToolbar: boolean = focused && (keyboardOpen || !canMeasure)
 
   const initialConfig: InitialConfigType = {
@@ -155,7 +155,7 @@ export function MobileRichTextarea(props: MobileRichTextareaProps): ReactElement
           {showToolbar && (
             <div
               className="fixed left-0 right-0 z-50 flex flex-col gap-1 border-t border-slate-100 bg-white px-1.5 py-1 shadow-[0_-2px_8px_rgba(0,0,0,0.08)]"
-              style={{ bottom: keyboardOpen ? keyboardHeight : 0 }}
+              style={{ bottom: fixedBottomOffset }}
             >
               <div className="flex items-center gap-1 overflow-x-auto">
                 <FormatToolbar />
