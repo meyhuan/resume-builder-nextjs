@@ -28,7 +28,6 @@ export function useVisualViewportKeyboard(): VisualViewportKeyboardState {
   useEffect(() => {
     const vv = window.visualViewport
     if (!vv) {
-      setState(INITIAL_STATE)
       return
     }
 
