@@ -14,6 +14,7 @@ const DEFAULT_TEMPLATE = 'lanxin'
 export default function ScenarioLoaderClient(): ReactElement {
   const searchParams = useSearchParams()
   const initialTemplate = searchParams.get('tpl') || DEFAULT_TEMPLATE
+  const avatarUrl = searchParams.get('avatar')
   const [tpl, setTpl] = useState(initialTemplate)
   const resume = useAppStore((s) => s.resume)
   const loadScenarioData = useAppStore((s) => s.loadScenarioData)
@@ -26,9 +27,15 @@ export default function ScenarioLoaderClient(): ReactElement {
   useEffect(() => {
     const firstScenario = RESUME_SCENARIOS[0]
     if (firstScenario) {
-      loadScenarioData(firstScenario.resume)
+      loadScenarioData({
+        ...firstScenario.resume,
+        baseInfo: {
+          ...(firstScenario.resume.baseInfo ?? {}),
+          ...(avatarUrl ? { avatarUrl, showAvatar: true } : {}),
+        },
+      })
     }
-  }, [loadScenarioData])
+  }, [avatarUrl, loadScenarioData])
 
   function patchTheme(patch: Partial<ThemeTokens>): void {
     setThemeForTemplate(tpl, (draft) => {

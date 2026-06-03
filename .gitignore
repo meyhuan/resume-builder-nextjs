@@ -13,6 +13,7 @@ out/
 build
 dist
 test-artifacts/
+.codex-remote-attachments/
 
 # env files
 .env

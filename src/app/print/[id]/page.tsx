@@ -19,6 +19,8 @@ const BLEED_TEMPLATE_IDS: ReadonlySet<string> = new Set([
   'mashang',
   'xingtan',
   'zhumo',
+  'lifeng',
+  'qingsui',
 ])
 
 export const dynamic = 'force-dynamic'
@@ -65,13 +67,8 @@ export default async function PrintPage(props: PrintPageProps): Promise<ReactEle
   const isOnePage = meta.onePageMode
   const isBleedTemplate: boolean = BLEED_TEMPLATE_IDS.has(templateId)
   const pagePaddingV = savedTheme?.pagePaddingVertical ?? 22
-  const pageMarginCss = isOnePage ? 'margin: 0;' : `margin: ${pagePaddingV}mm 0;`
-  const bleedFirstPageCss = (!isOnePage && isBleedTemplate)
-    ? `
-        @page :first {
-          margin-top: 0;
-        }`
-    : ''
+  const pageMarginCss = isOnePage || isBleedTemplate ? 'margin: 0;' : `margin: ${pagePaddingV}mm 0;`
+  const bleedFirstPageCss = ''
   const onePageCss = isOnePage
     ? `
         .page[data-one-page="true"] {
@@ -80,6 +77,16 @@ export default async function PrintPage(props: PrintPageProps): Promise<ReactEle
           overflow: hidden !important;
           page-break-after: avoid !important;
           break-after: avoid !important;
+        }`
+    : ''
+  const bleedPageCss = isBleedTemplate && !isOnePage
+    ? `
+        .page {
+          min-height: 0 !important;
+          height: auto !important;
+        }
+        .resume-container[data-bleed="true"] {
+          min-height: calc(297mm - 1px) !important;
         }`
     : ''
   const perPageMarginCss = isOnePage || isBleedTemplate
@@ -108,6 +115,7 @@ export default async function PrintPage(props: PrintPageProps): Promise<ReactEle
         @page { size: A4; ${pageMarginCss} }
         ${bleedFirstPageCss}
         ${onePageCss}
+        ${bleedPageCss}
         ${perPageMarginCss}
       `}</style>
       <div className="page" id="print-root" data-one-page={isOnePage ? 'true' : 'false'}>

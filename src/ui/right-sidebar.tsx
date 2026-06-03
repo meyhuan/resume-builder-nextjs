@@ -158,7 +158,7 @@ function LayoutPanel(props: LayoutPanelProps): ReactElement {
                 key={template.id}
                 type="button"
                 aria-pressed={tpl === template.id}
-                aria-label={`选择模板 ${template.name}`}
+                aria-label={`选择模板 ${template.name}：${template.description}`}
                 className={`group relative cursor-pointer rounded-xl border transition-all duration-200 overflow-hidden ${
                   tpl === template.id
                     ? 'border-violet-500 ring-2 ring-violet-100 shadow-sm bg-white'
@@ -183,6 +183,9 @@ function LayoutPanel(props: LayoutPanelProps): ReactElement {
                   {tpl === template.id && (
                     <div className="absolute inset-0 bg-violet-500/5 transition-opacity" />
                   )}
+                  <div className="absolute inset-x-2 bottom-2 rounded-lg bg-slate-950/88 px-2.5 py-2 text-left text-[11px] leading-4 text-white opacity-0 shadow-lg backdrop-blur-sm transition-all duration-200 translate-y-1 group-hover:translate-y-0 group-hover:opacity-100 group-focus-visible:translate-y-0 group-focus-visible:opacity-100">
+                    {template.description}
+                  </div>
                   {tpl === template.id && (
                     <div className="absolute top-2 right-2 w-7 h-7 bg-violet-500 text-white rounded-full flex items-center justify-center shadow-sm animate-in zoom-in duration-200">
                       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" className="w-3 h-3">

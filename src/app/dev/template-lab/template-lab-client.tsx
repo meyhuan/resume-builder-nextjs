@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useEffect, useState, type ReactElement } from 'react'
+import { Suspense, useEffect, useLayoutEffect, useState, type ReactElement } from 'react'
 import { useSearchParams } from 'next/navigation'
 import AiSectionProvider from '@/components/ai-section/ai-section-provider'
 import { useAppStore } from '@/state/store'
@@ -30,18 +30,30 @@ export default function TemplateLabClient(): ReactElement {
   const setResume = useAppStore((s) => s.setResume)
   const titleScale: number = theme.titleScale ?? 1
   const paragraphIndent: number = theme.paragraphIndent ?? 0
-  const [ready, setReady] = useState<boolean>(false)
   const mobileScale = 0.46
+  const [ready, setReady] = useState<boolean>(false)
 
-  useEffect(() => {
-    setReady(false)
+  useLayoutEffect(() => {
     setReadOnly(true)
     setResume((draft: ResumeData): void => {
       Object.assign(draft, resume)
     })
-    setReady(true)
-    return (): void => setReadOnly(false)
+    return (): void => {
+      setReadOnly(false)
+    }
   }, [resume, setReadOnly, setResume])
+
+  useEffect(() => {
+    let cancelled = false
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (!cancelled) setReady(true)
+      })
+    })
+    return (): void => {
+      cancelled = true
+    }
+  }, [resume, theme])
 
   return (
     <AiSectionProvider>

@@ -43,9 +43,10 @@ export async function POST(req: Request) {
 
     // Detect one-page mode and bleed templates from the HTML content
     const isOnePage = html.includes('data-one-page="true"');
+    const isBleed = html.includes('data-bleed="true"');
 
     // Pre-process HTML with pagination hints (skip for one-page mode)
-    const paginatedHtml = isOnePage ? html : paginateHtml(html);
+    const paginatedHtml = isOnePage || isBleed ? html : paginateHtml(html);
 
     const isLocal = process.env.NODE_ENV === 'development';
     
@@ -73,7 +74,7 @@ export async function POST(req: Request) {
       await page.evaluateHandle('document.fonts.ready');
       
       // Run client-side pagination script to measure and adjust elements (skip for one-page mode)
-      if (!isOnePage) {
+      if (!isOnePage && !isBleed) {
         await page.evaluate(getClientPaginationScript());
       }
       

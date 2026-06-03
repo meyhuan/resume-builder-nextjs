@@ -104,8 +104,12 @@ export default function TableGridTemplate(props: TemplateProps): ReactElement {
   const header = useEditableHeader(resume.name, resume.baseInfo ?? null)
   const jobIntention = useEditableJobIntention(resume.jobIntention ?? null)
   const isJobIntentionVisible = resume.jobIntentionVisible ?? jobIntention.fields.length > 0
-  const extraBaseInfoFields = header.fields.filter((field) => !['phone', 'email'].includes(field.key))
-  const bodyLineHeight = Math.max(1.25, theme.lineHeight * 1.18)
+  const headerInfoField = getTableHeaderInfoField(header)
+  const topHeaderFieldKeys = new Set(
+    ['phone', 'email', headerInfoField?.key].filter((key): key is string => Boolean(key))
+  )
+  const extraBaseInfoFields = header.fields.filter((field) => !topHeaderFieldKeys.has(field.key))
+  const bodyLineHeight = theme.lineHeight
   const palette = buildPalette(theme.primaryColor)
   const titleScale = Math.min(1.25, Math.max(0.85, theme.titleScale ?? 1))
   const spacingScale = Math.min(1.45, Math.max(0.72, theme.spacingScale))
@@ -122,6 +126,8 @@ export default function TableGridTemplate(props: TemplateProps): ReactElement {
         backgroundColor: '#ffffff',
         color: palette.ink,
         fontFamily: theme.fontFamily || SANS,
+        fontSize: `${theme.fontSize}px`,
+        lineHeight: theme.lineHeight,
         padding: `${pagePaddingVertical}px ${pagePaddingHorizontal}px`,
       }}
     >
@@ -225,6 +231,13 @@ function findHeaderField(header: ReturnType<typeof useEditableHeader>, keyOrLabe
   return header.fields.find((field) => field.key === keyOrLabel || field.label.includes(keyOrLabel))
 }
 
+function getTableHeaderInfoField(header: ReturnType<typeof useEditableHeader>) {
+  return findHeaderField(header, '出生')
+    ?? findHeaderField(header, 'age')
+    ?? findHeaderField(header, '年龄')
+    ?? header.fields.find((field) => !['phone', 'email'].includes(field.key))
+}
+
 function TableHeader({
   header,
   palette,
@@ -234,15 +247,20 @@ function TableHeader({
   readonly palette: TablePalette
   readonly titleScale: number
 }): ReactElement {
-  const birth = findHeaderField(header, '出生')
+  const infoField = getTableHeaderInfoField(header)
   const phone = findHeaderField(header, 'phone')
   const email = findHeaderField(header, 'email')
+  const showAvatar = header.baseInfo?.showAvatar !== false
+  const showSecondaryColumn = Boolean(showAvatar || infoField || phone)
+  const gridTemplateColumns = showSecondaryColumn
+    ? `90px minmax(0, 1fr) 90px minmax(0, 1fr)${showAvatar ? ' 109px' : ''}`
+    : '90px minmax(0, 1fr)'
 
   return (
     <div
       style={{
         display: 'grid',
-        gridTemplateColumns: '90px minmax(0, 1fr) 90px minmax(0, 1fr) 109px',
+        gridTemplateColumns,
         gridTemplateRows: '72px 72px',
         borderBottom: `1px solid ${palette.border}`,
         cursor: 'pointer',
@@ -253,30 +271,41 @@ function TableHeader({
       <HeaderValue strong palette={palette}>
         <EditableText value={header.name} onCommit={header.onCommitName} />
       </HeaderValue>
-      <HeaderLabel palette={palette} titleScale={titleScale}>出生年月</HeaderLabel>
-      <HeaderValue palette={palette}>{birth ? <HeaderFieldChip field={birth} header={header} /> : null}</HeaderValue>
+      {showSecondaryColumn ? (
+        <>
+          <HeaderLabel palette={palette} titleScale={titleScale}>{infoField?.label ?? ''}</HeaderLabel>
+          <HeaderValue palette={palette}>{infoField ? <HeaderFieldChip field={infoField} header={header} /> : null}</HeaderValue>
 
-      <div
-        className="tablegrid-avatar-cell"
-        data-tablegrid-avatar-cell="true"
-        style={{ gridColumn: 5, gridRow: '1 / span 2', borderLeft: `1px solid ${palette.border}` }}
-        onClick={(event) => event.stopPropagation()}
-      >
-        <AvatarSlot
-          header={header}
-          render={({ image, uploadOverlay }) => (
-            <div className="relative h-full w-full overflow-hidden" style={{ backgroundColor: palette.photoBg }}>
-              {image}
-              {uploadOverlay}
+          {showAvatar ? (
+            <div
+              className="tablegrid-avatar-cell"
+              data-tablegrid-avatar-cell="true"
+              style={{ gridColumn: 5, gridRow: '1 / span 2', borderLeft: `1px solid ${palette.border}` }}
+              onClick={(event) => event.stopPropagation()}
+            >
+              <AvatarSlot
+                header={header}
+                render={({ image, uploadOverlay }) => (
+                  <div className="relative h-full w-full overflow-hidden" style={{ backgroundColor: palette.photoBg }}>
+                    {image}
+                    {uploadOverlay}
+                  </div>
+                )}
+              />
             </div>
-          )}
-        />
-      </div>
+          ) : null}
 
-      <HeaderLabel compact palette={palette} titleScale={titleScale}>邮箱</HeaderLabel>
-      <HeaderValue palette={palette} dataField="email">{email ? <HeaderFieldChip field={email} header={header} /> : null}</HeaderValue>
-      <HeaderLabel palette={palette} titleScale={titleScale}>联系电话</HeaderLabel>
-      <HeaderValue palette={palette}>{phone ? <HeaderFieldChip field={phone} header={header} /> : null}</HeaderValue>
+          <HeaderLabel compact palette={palette} titleScale={titleScale}>邮箱</HeaderLabel>
+          <HeaderValue palette={palette} dataField="email">{email ? <HeaderFieldChip field={email} header={header} /> : null}</HeaderValue>
+          <HeaderLabel palette={palette} titleScale={titleScale}>{phone?.label ?? ''}</HeaderLabel>
+          <HeaderValue palette={palette}>{phone ? <HeaderFieldChip field={phone} header={header} /> : null}</HeaderValue>
+        </>
+      ) : (
+        <>
+          <HeaderLabel compact palette={palette} titleScale={titleScale}>邮箱</HeaderLabel>
+          <HeaderValue palette={palette} dataField="email">{email ? <HeaderFieldChip field={email} header={header} /> : null}</HeaderValue>
+        </>
+      )}
     </div>
   )
 }
@@ -617,7 +646,7 @@ function BlockBody(props: {
 
   if (block.type === 'text') {
     return (
-      <TextContent lineHeight={bodyLineHeight} palette={palette}>
+      <TextContent lineHeight={bodyLineHeight}>
         <EditableBlockWrapper blockId={block.id} contentField="html" contentSize="sm" className="tablegrid-rich-text" onEditingChange={onEditingChange} />
       </TextContent>
     )
@@ -626,7 +655,7 @@ function BlockBody(props: {
   return (
     <div>
       <BlockHeader block={block} titleScale={titleScale} palette={palette} onEditingChange={onEditingChange} />
-      <BlockContent block={block} lineHeight={bodyLineHeight} palette={palette} onEditingChange={onEditingChange} />
+      <BlockContent block={block} lineHeight={bodyLineHeight} onEditingChange={onEditingChange} />
     </div>
   )
 }
@@ -644,64 +673,86 @@ function BlockHeader({
 }): ReactElement {
   if (block.type === 'education') {
     return (
-      <>
-        <TitleWithDate title={<EditableFieldWrapper blockId={block.id} fieldName="school" value={block.school ?? ''} onUpdate={() => {}} onEditingChange={onEditingChange} />} block={block} titleScale={titleScale} palette={palette} />
-        <div className="flex items-baseline gap-6" style={{ marginBottom: 7, fontSize: `${0.95 * titleScale}em`, lineHeight: 1, color: palette.ink }}>
-          <EditableFieldWrapper blockId={block.id} fieldName="major" value={block.major ?? ''} onUpdate={() => {}} />
-          <EditableFieldWrapper blockId={block.id} fieldName="degree" value={block.degree ?? ''} onUpdate={() => {}} />
-        </div>
-      </>
+      <TitleMetaWithDate
+        title={<EditableFieldWrapper blockId={block.id} fieldName="school" value={block.school ?? ''} onUpdate={() => {}} onEditingChange={onEditingChange} />}
+        meta={[
+          <EditableFieldWrapper key="major" blockId={block.id} fieldName="major" value={block.major ?? ''} onUpdate={() => {}} />,
+          <EditableFieldWrapper key="degree" blockId={block.id} fieldName="degree" value={block.degree ?? ''} onUpdate={() => {}} />,
+        ]}
+        block={block}
+        titleScale={titleScale}
+        palette={palette}
+      />
     )
   }
 
   if (block.type === 'experience') {
     return (
-      <>
-        <TitleWithDate title={<EditableFieldWrapper blockId={block.id} fieldName="company" value={block.company ?? ''} onUpdate={() => {}} onEditingChange={onEditingChange} />} block={block} titleScale={titleScale} palette={palette} />
-        <SubTitle palette={palette} titleScale={titleScale}><EditableFieldWrapper blockId={block.id} fieldName="position" value={block.position ?? ''} onUpdate={() => {}} /></SubTitle>
-      </>
+      <TitleMetaWithDate
+        title={<EditableFieldWrapper blockId={block.id} fieldName="company" value={block.company ?? ''} onUpdate={() => {}} onEditingChange={onEditingChange} />}
+        meta={[<EditableFieldWrapper key="position" blockId={block.id} fieldName="position" value={block.position ?? ''} onUpdate={() => {}} />]}
+        block={block}
+        titleScale={titleScale}
+        palette={palette}
+      />
     )
   }
 
   if (block.type === 'project') {
     return (
-      <>
-        <TitleWithDate title={<EditableFieldWrapper blockId={block.id} fieldName="name" value={block.name ?? ''} onUpdate={() => {}} onEditingChange={onEditingChange} />} block={block} titleScale={titleScale} palette={palette} />
-        <SubTitle palette={palette} titleScale={titleScale}><EditableFieldWrapper blockId={block.id} fieldName="role" value={block.role ?? ''} onUpdate={() => {}} /></SubTitle>
-      </>
+      <TitleMetaWithDate
+        title={<EditableFieldWrapper blockId={block.id} fieldName="name" value={block.name ?? ''} onUpdate={() => {}} onEditingChange={onEditingChange} />}
+        meta={[<EditableFieldWrapper key="role" blockId={block.id} fieldName="role" value={block.role ?? ''} onUpdate={() => {}} />]}
+        block={block}
+        titleScale={titleScale}
+        palette={palette}
+      />
     )
   }
 
   if (block.type === 'campus') {
     return (
-      <>
-        <TitleWithDate title={<EditableFieldWrapper blockId={block.id} fieldName="organization" value={block.organization ?? ''} onUpdate={() => {}} onEditingChange={onEditingChange} />} block={block} titleScale={titleScale} palette={palette} plainDate />
-        <SubTitle palette={palette} titleScale={titleScale}><EditableFieldWrapper blockId={block.id} fieldName="position" value={block.position ?? ''} onUpdate={() => {}} /></SubTitle>
-      </>
+      <TitleMetaWithDate
+        title={<EditableFieldWrapper blockId={block.id} fieldName="organization" value={block.organization ?? ''} onUpdate={() => {}} onEditingChange={onEditingChange} />}
+        meta={[<EditableFieldWrapper key="position" blockId={block.id} fieldName="position" value={block.position ?? ''} onUpdate={() => {}} />]}
+        block={block}
+        titleScale={titleScale}
+        palette={palette}
+        plainDate
+      />
     )
   }
 
   return <></>
 }
 
-function TitleWithDate(props: {
+function TitleMetaWithDate(props: {
   readonly title: ReactNode
+  readonly meta: readonly ReactNode[]
   readonly block: Extract<ResumeBlock, { startDate?: string; endDate?: string }>
   readonly titleScale: number
   readonly palette: TablePalette
   readonly plainDate?: boolean
 }): ReactElement {
-  const { title, block, titleScale, palette, plainDate } = props
+  const { title, meta, block, titleScale, palette, plainDate } = props
+  const visibleMeta = meta.filter(Boolean)
   return (
-    <div className="relative pr-[150px]" style={{ marginBottom: 7 }}>
-      <h2 style={{ margin: 0, fontSize: `${1.16 * titleScale}em`, lineHeight: 1, fontWeight: 800, color: palette.ink }}>
-        {title}
-      </h2>
-      <div className="absolute right-0 top-0 whitespace-nowrap" style={{ fontSize: `${1.16 * titleScale}em`, lineHeight: 1, fontWeight: 400, color: palette.ink }}>
+    <div className="flex min-w-0 items-start justify-between gap-3" style={{ marginBottom: 7 }}>
+      <div className="flex min-w-0 flex-wrap items-baseline" style={{ gap: '0.35em 1.2em' }}>
+        <h2 style={{ margin: 0, fontSize: `${1.03 * titleScale}em`, lineHeight: 1.25, fontWeight: 700, color: palette.ink }}>
+          {title}
+        </h2>
+        {visibleMeta.map((item, index) => (
+          <span key={index} style={{ fontSize: `${0.97 * titleScale}em`, lineHeight: 1.25, fontWeight: 700, color: palette.ink }}>
+            {item}
+          </span>
+        ))}
+      </div>
+      <div className="shrink-0 whitespace-nowrap" style={{ fontSize: `${0.97 * titleScale}em`, lineHeight: 1.25, fontWeight: 700, color: palette.ink }}>
         {plainDate ? (
           <>
             <EditableFieldWrapper blockId={block.id} fieldName="startDate" value={block.startDate ?? ''} onUpdate={() => {}} />
-            <span>-</span>
+            <span> - </span>
             <EditableFieldWrapper blockId={block.id} fieldName="endDate" value={block.endDate ?? ''} onUpdate={() => {}} />
           </>
         ) : (
@@ -716,34 +767,25 @@ function TitleWithDate(props: {
   )
 }
 
-function SubTitle({ children, palette, titleScale }: { readonly children: ReactNode; readonly palette: TablePalette; readonly titleScale: number }): ReactElement {
-  return (
-    <div style={{ marginBottom: 8, fontSize: `${0.95 * titleScale}em`, lineHeight: 1, fontWeight: 500, color: palette.ink }}>
-      {children}
-    </div>
-  )
-}
-
 function BlockContent(props: {
   readonly block: ResumeBlock
   readonly lineHeight: number
-  readonly palette: TablePalette
   readonly onEditingChange: (value: boolean) => void
 }): ReactElement {
-  const { block, lineHeight, palette, onEditingChange } = props
+  const { block, lineHeight, onEditingChange } = props
 
   if (block.type === 'education') {
     return block.courseHtml ? (
-      <TextContent lineHeight={lineHeight} palette={palette}>
-        <EditableBlockWrapper blockId={block.id} contentField="courseHtml" contentSize="xs" className="tablegrid-rich-text" onEditingChange={onEditingChange} />
+      <TextContent lineHeight={lineHeight}>
+        <EditableBlockWrapper blockId={block.id} contentField="courseHtml" contentSize="sm" className="tablegrid-rich-text" onEditingChange={onEditingChange} />
       </TextContent>
     ) : <></>
   }
 
   if (block.type === 'experience' || block.type === 'project' || block.type === 'campus') {
     return (
-      <TextContent lineHeight={lineHeight} palette={palette}>
-        <EditableBlockWrapper blockId={block.id} contentField="contentHtml" contentSize="xs" className="tablegrid-rich-text" onEditingChange={onEditingChange} />
+      <TextContent lineHeight={lineHeight}>
+        <EditableBlockWrapper blockId={block.id} contentField="contentHtml" contentSize="sm" className="tablegrid-rich-text" onEditingChange={onEditingChange} />
       </TextContent>
     )
   }
@@ -751,9 +793,9 @@ function BlockContent(props: {
   return <></>
 }
 
-function TextContent({ children, lineHeight, palette }: { readonly children: ReactNode; readonly lineHeight: number; readonly palette: TablePalette }): ReactElement {
+function TextContent({ children, lineHeight }: { readonly children: ReactNode; readonly lineHeight: number }): ReactElement {
   return (
-    <div style={{ color: palette.muted, fontSize: '0.73em', lineHeight, fontWeight: 400 }}>
+    <div style={{ color: '#555555', fontSize: '0.98em', lineHeight, fontWeight: 400 }}>
       {children}
     </div>
   )

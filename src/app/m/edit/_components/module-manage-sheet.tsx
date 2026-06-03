@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useState, type ReactElement } from 'react'
+import { useCallback, useMemo, useState, type ReactElement, type ReactNode } from 'react'
 import {
   closestCenter,
   DndContext,
@@ -18,7 +18,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { GripVertical, Trash2 } from 'lucide-react'
+import { Eye, EyeOff, GripVertical, Image as ImageIcon, Target, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { BottomSheet } from '@/components/ui/bottom-sheet'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
@@ -40,10 +40,13 @@ interface ModuleManageSheetProps {
  */
 export function ModuleManageSheet({ open, onClose }: ModuleManageSheetProps): ReactElement {
   const draft = useDraftStore((s) => s.draft)
+  const updateDraft = useDraftStore((s) => s.updateDraft)
   const reorder = useDraftStore((s) => s.reorderSections)
   const removeSection = useDraftStore((s) => s.removeSection)
 
-  const sections = draft?.sections ?? []
+  const sections = useMemo(() => draft?.sections ?? [], [draft?.sections])
+  const showAvatar: boolean = draft?.baseInfo?.showAvatar !== false
+  const showJobIntention: boolean = draft?.jobIntentionVisible ?? Boolean(draft?.jobIntention)
 
   const [pendingRemove, setPendingRemove] = useState<Section | null>(null)
 
@@ -74,6 +77,23 @@ export function ModuleManageSheet({ open, onClose }: ModuleManageSheetProps): Re
     setPendingRemove(null)
   }, [pendingRemove, removeSection])
 
+  const handleToggleAvatar = useCallback((): void => {
+    const nextVisible = !showAvatar
+    updateDraft('baseInfo.showAvatar', (resume) => {
+      const baseInfo = resume.baseInfo ?? {}
+      resume.baseInfo = { ...baseInfo, showAvatar: nextVisible }
+    })
+    toast.success(nextVisible ? '已显示证件照' : '已隐藏证件照')
+  }, [showAvatar, updateDraft])
+
+  const handleToggleJobIntention = useCallback((): void => {
+    const nextVisible = !showJobIntention
+    updateDraft('jobIntentionVisible', (resume) => {
+      resume.jobIntentionVisible = nextVisible
+    })
+    toast.success(nextVisible ? '已显示求职意向' : '已隐藏求职意向')
+  }, [showJobIntention, updateDraft])
+
   const items = sections.map((s) => s.id)
 
   const pendingLabel =
@@ -91,8 +111,25 @@ export function ModuleManageSheet({ open, onClose }: ModuleManageSheetProps): Re
         contentClassName="pb-safe"
       >
         <p className="mb-3 text-[12px] text-slate-400">
-          长按拖动调整顺序；点击红色删除按钮移除模块。
+          控制基础展示项；长按拖动调整模块顺序，点击红色按钮移除模块。
         </p>
+
+        <div className="mb-3 flex flex-col gap-2">
+          <VisibilityControlRow
+            icon={<ImageIcon size={17} />}
+            label="证件照"
+            description="控制简历顶部头像是否显示"
+            visible={showAvatar}
+            onToggle={handleToggleAvatar}
+          />
+          <VisibilityControlRow
+            icon={<Target size={17} />}
+            label="求职意向"
+            description="控制求职意向模块是否显示"
+            visible={showJobIntention}
+            onToggle={handleToggleJobIntention}
+          />
+        </div>
 
         {sections.length === 0 ? (
           <div className="py-10 text-center text-[13px] text-slate-400">
@@ -126,6 +163,48 @@ export function ModuleManageSheet({ open, onClose }: ModuleManageSheetProps): Re
         onConfirm={handleConfirmRemove}
       />
     </>
+  )
+}
+
+function VisibilityControlRow(props: {
+  readonly icon: ReactNode
+  readonly label: string
+  readonly description: string
+  readonly visible: boolean
+  readonly onToggle: () => void
+}): ReactElement {
+  const { icon, label, description, visible, onToggle } = props
+  return (
+    <div className="flex items-center gap-3 rounded-[14px] border border-[#edf0f5] bg-white px-3 py-3 shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
+      <div className={cn(
+        'flex h-8 w-8 shrink-0 items-center justify-center rounded-xl',
+        visible ? 'bg-violet-50 text-violet-600' : 'bg-slate-100 text-slate-400',
+      )}>
+        {icon}
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className={cn('truncate text-[14px] font-semibold', visible ? 'text-slate-900' : 'text-slate-400')}>
+          {label}
+        </div>
+        <div className="mt-0.5 truncate text-[11px] text-slate-400">{description}</div>
+      </div>
+      <span
+        className={cn(
+          'shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold',
+          visible ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-400',
+        )}
+      >
+        {visible ? '显示' : '隐藏'}
+      </span>
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-label={`${visible ? '隐藏' : '显示'}${label}`}
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-slate-400 transition-colors hover:bg-slate-100 active:bg-slate-200"
+      >
+        {visible ? <Eye size={16} /> : <EyeOff size={16} />}
+      </button>
+    </div>
   )
 }
 

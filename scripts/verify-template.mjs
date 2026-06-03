@@ -10,6 +10,7 @@ const root = process.cwd()
 const templateLoaderPath = path.join(root, 'src', 'templates', 'template-loader.ts')
 const publicDir = path.join(root, 'public')
 const artifactRoot = path.join(root, 'test-artifacts', 'templates')
+const reportRoot = path.join(root, 'test-artifacts', 'reports')
 const LOCAL_FIXTURES = ['full', 'sparse', 'long', 'rich']
 
 const args = parseArgs(process.argv.slice(2))
@@ -58,6 +59,8 @@ async function main() {
     } else {
       await runRuntimeChecks(templateId, registries.get(templateId))
     }
+  } else if (args['scenario-loader-url'] || args['editor-url']) {
+    // The scenario-loader check below covers the editor-side data loading path.
   } else {
     warn('Runtime scenarios', 'Skipped. Pass --local for fixture-based local checks, or --base-url and --resume-id for DB/export checks.')
   }
@@ -69,6 +72,9 @@ async function main() {
   }
 
   printSummary()
+  if (args.report) {
+    writeReport(templateIds)
+  }
   const failed = results.some((r) => r.status === 'FAIL')
   process.exit(failed ? 1 : 0)
 }
@@ -133,16 +139,32 @@ function runStaticChecks(id) {
   if (fs.existsSync(indexPath)) {
     pass('Template entry file', relative(indexPath))
     const indexSource = fs.readFileSync(indexPath, 'utf8')
+    const implementationSource = getTemplateImplementationSource(indexSource)
     if (/export\s+default\s+/.test(indexSource)) pass('Default export', 'Found default export.')
     else fail('Default export', 'Template index.tsx must default-export the component.')
 
-    if (/\bresume\b/.test(indexSource)) pass('Resume data usage', 'Template references resume data.')
-    else warn('Resume data usage', 'No "resume" reference found in index.tsx.')
+    if (/\bresume\b/.test(implementationSource)) pass('Resume data usage', 'Template implementation references resume data.')
+    else warn('Resume data usage', 'No "resume" reference found in template implementation.')
 
-    if (/\btheme\b/.test(indexSource)) pass('Theme usage', 'Template references theme tokens.')
-    else warn('Theme usage', 'No "theme" reference found in index.tsx.')
+    if (/\btheme\b/.test(implementationSource)) pass('Theme usage', 'Template implementation references theme tokens.')
+    else warn('Theme usage', 'No "theme" reference found in template implementation.')
 
-    if (/window\.|document\./.test(indexSource) && !/useEffect\s*\(/.test(indexSource)) {
+    const editablePrimitives = [
+      'ResumeFrame',
+      'useEditableHeader',
+      'useEditableJobIntention',
+      'SortableSection',
+      'BlockList',
+      'FieldChip',
+      'AvatarSlot',
+    ].filter((name) => new RegExp(`\\b${name}\\b`).test(implementationSource))
+    if (editablePrimitives.length >= 5) {
+      pass('Editable primitives', `Found ${editablePrimitives.join(', ')}.`)
+    } else {
+      warn('Editable primitives', `Only found ${editablePrimitives.join(', ') || 'none'}; verify editor behaviors manually.`)
+    }
+
+    if (/window\.|document\./.test(implementationSource) && !/useEffect\s*\(/.test(implementationSource)) {
       warn('SSR safety', 'Found window/document usage without an obvious useEffect guard.')
     } else {
       pass('SSR safety', 'No obvious unguarded browser global usage.')
@@ -152,6 +174,26 @@ function runStaticChecks(id) {
   }
 
   return { entry, preview, locksPrimaryColor, recommendedPrimaryColor }
+}
+
+function getTemplateImplementationSource(indexSource) {
+  const sources = [indexSource]
+  if (/OriginalTemplate/.test(indexSource)) {
+    const sharedSourcePaths = [
+      path.join(root, 'src', 'templates', '_originals', 'shared.tsx'),
+      path.join(root, 'src', 'templates', '_originals', 'layouts.tsx'),
+      path.join(root, 'src', 'templates', '_originals', 'components.tsx'),
+      path.join(root, 'src', 'templates', 'originals', 'shared.tsx'),
+      path.join(root, 'src', 'templates', 'originals', 'layouts.tsx'),
+      path.join(root, 'src', 'templates', 'originals', 'components.tsx'),
+    ]
+    for (const sharedPath of sharedSourcePaths) {
+      if (fs.existsSync(sharedPath)) {
+        sources.push(fs.readFileSync(sharedPath, 'utf8'))
+      }
+    }
+  }
+  return sources.join('\n')
 }
 
 function getRegisteredTemplateIds() {
@@ -271,6 +313,9 @@ async function runLocalChecks(templateIds, registries) {
         viewport: { width: 1280, height: 1400, deviceScaleFactor: 1 },
         screenshot: path.join(artifactDir, 'local-pc-full.png'),
         expectedText: '林知夏',
+        checkHorizontalOverflow: true,
+        templateId: id,
+        fixture: 'full',
       })
 
       await checkLocalPage(browser, {
@@ -280,6 +325,8 @@ async function runLocalChecks(templateIds, registries) {
         screenshot: path.join(artifactDir, 'local-mobile-full.png'),
         expectedText: '林知夏',
         checkHorizontalOverflow: true,
+        templateId: id,
+        fixture: 'full',
       })
 
       await checkLocalPage(browser, {
@@ -288,6 +335,9 @@ async function runLocalChecks(templateIds, registries) {
         viewport: { width: 1280, height: 1000, deviceScaleFactor: 1 },
         screenshot: path.join(artifactDir, 'local-sparse.png'),
         expectedText: '陈一',
+        checkHorizontalOverflow: true,
+        templateId: id,
+        fixture: 'sparse',
       })
 
       await checkLocalPage(browser, {
@@ -296,6 +346,9 @@ async function runLocalChecks(templateIds, registries) {
         viewport: { width: 1280, height: 1600, deviceScaleFactor: 1 },
         screenshot: path.join(artifactDir, 'local-long.png'),
         expectedText: '欧阳承远',
+        checkHorizontalOverflow: true,
+        templateId: id,
+        fixture: 'long',
       })
 
       await checkLocalPage(browser, {
@@ -304,7 +357,10 @@ async function runLocalChecks(templateIds, registries) {
         viewport: { width: 1280, height: 1200, deviceScaleFactor: 1 },
         screenshot: path.join(artifactDir, 'local-rich.png'),
         expectedText: '加粗重点',
+        checkHorizontalOverflow: true,
         checkRichText: true,
+        templateId: id,
+        fixture: 'rich',
       })
 
       await checkThemeControls(browser, baseUrl, id, registry, artifactDir)
@@ -366,13 +422,18 @@ function labUrl(baseUrl, templateId, fixture, theme, viewport) {
   return `${baseUrl}/dev/template-lab?${params.toString()}`
 }
 
+function isIgnoredConsoleError(text) {
+  return text.includes('Permissions policy violation: unload is not allowed in this document.')
+}
+
 async function checkLocalPage(browser, options) {
   const page = await browser.newPage()
   const pageErrors = []
   const consoleErrors = []
   page.on('pageerror', (error) => pageErrors.push(error.message))
   page.on('console', (message) => {
-    if (message.type() === 'error') consoleErrors.push(message.text())
+    const text = message.text()
+    if (message.type() === 'error' && !isIgnoredConsoleError(text)) consoleErrors.push(text)
   })
 
   try {
@@ -415,6 +476,18 @@ async function checkLocalPage(browser, options) {
       }
     }
 
+    const generalLayoutIssue = await checkGeneralVisualLayout(page, options)
+    if (generalLayoutIssue) {
+      fail(options.name, generalLayoutIssue)
+      return
+    }
+
+    const layoutIssue = await checkTemplateSpecificLayout(page, options)
+    if (layoutIssue) {
+      fail(options.name, layoutIssue)
+      return
+    }
+
     await page.screenshot({ path: options.screenshot, fullPage: true })
 
     if (pageErrors.length > 0) {
@@ -429,6 +502,176 @@ async function checkLocalPage(browser, options) {
   } finally {
     await page.close()
   }
+}
+
+async function checkTemplateSpecificLayout(page, options) {
+  if (options.templateId === 'lanxin') {
+    return page.evaluate(() => {
+      const container = document.querySelector('[data-lanxin-header-fields="true"]')
+      if (!container) return ''
+      const containerRect = container.getBoundingClientRect()
+      const children = Array.from(container.children).map((node) => ({
+        text: node.textContent?.trim() || 'field',
+        rect: node.getBoundingClientRect(),
+      }))
+
+      for (const child of children) {
+        if (child.rect.right - containerRect.right > 1 || containerRect.left - child.rect.left > 1) {
+          return `Lanxin header field overflows its container: ${child.text}.`
+        }
+      }
+
+      for (let i = 0; i < children.length; i++) {
+        for (let j = i + 1; j < children.length; j++) {
+          const a = children[i].rect
+          const b = children[j].rect
+          const overlapX = Math.min(a.right, b.right) - Math.max(a.left, b.left)
+          const overlapY = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top)
+          if (overlapX > 1 && overlapY > 1) {
+            return `Lanxin header fields overlap: ${children[i].text} / ${children[j].text}.`
+          }
+        }
+      }
+
+      return ''
+    })
+  }
+
+  if (options.templateId === 'tablegrid' && ['full', 'sparse', 'long', 'rich'].includes(options.fixture)) {
+    return page.evaluate(() => {
+      if (document.querySelector('[data-tablegrid-avatar-cell="true"]')) {
+        return 'TableGrid rendered an empty avatar column while the local fixture has showAvatar=false.'
+      }
+      return ''
+    })
+  }
+
+  return ''
+}
+
+async function checkGeneralVisualLayout(page, options) {
+  return page.evaluate((checkOptions) => {
+    const root = document.querySelector('[data-template-root="true"]')
+      || document.querySelector('[data-scenario-preview="true"]')
+      || document.querySelector('[data-print-template]')
+      || document.body
+    const container = root.querySelector('.resume-container')
+    if (!container) return 'Missing .resume-container inside the rendered template.'
+
+    const rootRect = root.getBoundingClientRect()
+    const containerRect = container.getBoundingClientRect()
+    if (containerRect.width < 250 || containerRect.height < 300) {
+      return `Resume container has suspicious dimensions: ${Math.round(containerRect.width)}x${Math.round(containerRect.height)}.`
+    }
+
+    const boundary = containerRect
+    const scrollOverflow = container.scrollWidth - container.clientWidth
+    if (scrollOverflow > 6) {
+      return `Resume container horizontal scroll overflow detected: ${Math.ceil(scrollOverflow)}px.`
+    }
+
+    const visibleTextNodes = collectVisibleTextNodes(container)
+    for (const item of visibleTextNodes) {
+      if (item.rect.width > boundary.width + 3) {
+        return `Text element is wider than the resume page: ${item.label}.`
+      }
+      if (item.rect.left < boundary.left - 3 || item.rect.right > boundary.right + 3) {
+        return `Text element escapes the resume page horizontally: ${item.label}.`
+      }
+    }
+
+    const overlapIssue = findTextOverlap(visibleTextNodes)
+    if (overlapIssue) return overlapIssue
+
+    if (checkOptions.fixture === 'long') {
+      const longText = ['ouyangchengyuan.long.email.address@example-company-domain.com', '一家名称非常非常长的科技创新与数字化转型咨询有限公司']
+      const pageText = container.textContent || ''
+      for (const text of longText) {
+        if (!pageText.includes(text)) {
+          return `Long-content fixture text is missing or unexpectedly truncated: ${text}.`
+        }
+      }
+    }
+
+    if (rootRect.width > window.innerWidth + 8 && checkOptions.viewport?.isMobile) {
+      return `Mobile template root exceeds viewport: ${Math.round(rootRect.width)}px > ${window.innerWidth}px.`
+    }
+
+    return ''
+
+    function collectVisibleTextNodes(scope) {
+      const selector = [
+        'h1', 'h2', 'h3', 'h4',
+        'p', 'li', 'span', 'strong', 'em', 'a',
+        '[data-tablegrid-header-value]',
+        '[data-lanxin-header-fields="true"] > *',
+      ].join(',')
+      const nodes = Array.from(scope.querySelectorAll(selector))
+      const visible = []
+      for (const node of nodes) {
+        if (!isVisibleTextNode(node)) continue
+        if (hasVisibleTextAncestor(node, nodes)) continue
+        const rect = node.getBoundingClientRect()
+        const text = (node.textContent || '').replace(/\s+/g, ' ').trim()
+        visible.push({
+          node,
+          rect,
+          label: text.length > 36 ? `${text.slice(0, 36)}...` : text,
+        })
+      }
+      return visible
+    }
+
+    function isVisibleTextNode(node) {
+      if (node.closest('button, [role="button"], svg, [aria-hidden="true"], [data-template-loading="true"]')) return false
+      const text = (node.textContent || '').replace(/\s+/g, ' ').trim()
+      if (!text) return false
+      const style = window.getComputedStyle(node)
+      if (style.display === 'none' || style.visibility === 'hidden') return false
+      if (Number(style.opacity) === 0) return false
+      const rect = node.getBoundingClientRect()
+      if (rect.width <= 1 || rect.height <= 1) return false
+      if (rect.bottom < containerRect.top || rect.top > containerRect.bottom) return false
+      return true
+    }
+
+    function hasVisibleTextAncestor(node, allNodes) {
+      return allNodes.some((candidate) => {
+        if (candidate === node || !candidate.contains(node)) return false
+        return isVisibleTextNode(candidate)
+      })
+    }
+
+    function findTextOverlap(items) {
+      const limit = Math.min(items.length, 260)
+      for (let i = 0; i < limit; i++) {
+        for (let j = i + 1; j < limit; j++) {
+          const a = items[i]
+          const b = items[j]
+          if (a.node.contains(b.node) || b.node.contains(a.node)) continue
+          if (shareInlineTextFlow(a.node, b.node)) continue
+          const overlapX = Math.min(a.rect.right, b.rect.right) - Math.max(a.rect.left, b.rect.left)
+          const overlapY = Math.min(a.rect.bottom, b.rect.bottom) - Math.max(a.rect.top, b.rect.top)
+          const minWidth = Math.min(a.rect.width, b.rect.width)
+          const minHeight = Math.min(a.rect.height, b.rect.height)
+          if (overlapX > Math.min(8, minWidth * 0.35) && overlapY > Math.min(6, minHeight * 0.45)) {
+            return `Visible text overlap detected: ${a.label} / ${b.label}.`
+          }
+        }
+      }
+      return ''
+    }
+
+    function shareInlineTextFlow(a, b) {
+      const parent = a.parentElement
+      if (!parent || parent !== b.parentElement) return false
+      const display = window.getComputedStyle(parent).display
+      return display.includes('flex') || display.includes('inline')
+    }
+  }, {
+    fixture: options.fixture || '',
+    viewport: options.viewport || {},
+  })
 }
 
 async function checkThemeControls(browser, baseUrl, id, registry, artifactDir) {
@@ -486,6 +729,7 @@ async function checkEditorScenarioLoader(editorUrl) {
 
   const browser = await launchBrowser(puppeteer)
   const page = await browser.newPage()
+  const templateId = extractTemplateIdFromUrl(editorUrl)
   const artifactDir = path.join(artifactRoot, 'editor-scenarios')
   fs.mkdirSync(artifactDir, { recursive: true })
 
@@ -545,7 +789,17 @@ async function checkEditorScenarioLoader(editorUrl) {
       return
     }
 
-    const screenshotPath = path.join(artifactDir, 'long-content-loaded.png')
+    const layoutIssue = await checkGeneralVisualLayout(page, {
+      templateId,
+      fixture: 'scenario-long',
+      viewport: { width: 1440, height: 1000 },
+    })
+    if (layoutIssue) {
+      fail('Editor scenario loader', layoutIssue)
+      return
+    }
+
+    const screenshotPath = path.join(artifactDir, `long-content-loaded-${templateId}.png`)
     await page.screenshot({ path: screenshotPath, fullPage: true })
     pass('Editor scenario loader', `Loaded long-content scenario and verified rendered fields. Screenshot saved to ${relative(screenshotPath)}.`)
   } catch (error) {
@@ -553,6 +807,14 @@ async function checkEditorScenarioLoader(editorUrl) {
   } finally {
     await page.close()
     await browser.close()
+  }
+}
+
+function extractTemplateIdFromUrl(value) {
+  try {
+    return new URL(value).searchParams.get('tpl') || 'template'
+  } catch {
+    return 'template'
   }
 }
 
@@ -647,7 +909,8 @@ async function checkPage(browser, options) {
   const consoleErrors = []
   page.on('pageerror', (error) => pageErrors.push(error.message))
   page.on('console', (message) => {
-    if (message.type() === 'error') consoleErrors.push(message.text())
+    const text = message.text()
+    if (message.type() === 'error' && !isIgnoredConsoleError(text)) consoleErrors.push(text)
   })
 
   try {
@@ -687,12 +950,24 @@ async function checkPage(browser, options) {
       }
     }
 
+    const generalLayoutIssue = await checkGeneralVisualLayout(page, options)
+    if (generalLayoutIssue) {
+      fail(options.name, generalLayoutIssue)
+      return
+    }
+
     if (options.templateId === 'tablegrid') {
       const tableGridIssue = await checkTableGridLayout(page)
       if (tableGridIssue) {
         fail(options.name, tableGridIssue)
         return
       }
+    }
+
+    const layoutIssue = await checkTemplateSpecificLayout(page, options)
+    if (layoutIssue) {
+      fail(options.name, layoutIssue)
+      return
     }
 
     await page.screenshot({ path: options.screenshot, fullPage: true })
@@ -862,12 +1137,14 @@ Options:
   --pc-url <url>              Explicit authenticated PC editor/template URL.
   --scenario-loader-url <url> Dev scenario-loader URL for testing the one-click data fill UI.
   --editor-url <url>          Explicit authenticated editor URL for testing the same loader in the real editor.
+  --report                    Write a Markdown QA report under test-artifacts/reports/.
+  --reference-image <path>    Reference screenshot to embed next to implementation screenshots in the QA report.
   --print-token-secret <str>  Secret for generated /print token.
 
 Examples:
   pnpm verify:template qingyun --typecheck
   pnpm verify:template qingyun --base-url http://localhost:3000 --resume-id abc --print-token-secret dev-secret
-  pnpm verify:template lanxin --scenario-loader-url "http://localhost:3000/dev/scenario-loader?tpl=lanxin"
+  pnpm verify:template lanxin --local --base-url http://localhost:3000 --scenario-loader-url "http://localhost:3000/dev/scenario-loader?tpl=lanxin" --report --reference-image ./reference.png
   pnpm verify:template lanxin --editor-url http://localhost:3000/editor/abc
 `)
 }
@@ -879,6 +1156,193 @@ function printSummary() {
     const detail = result.details ? ` - ${result.details}` : ''
     console.log(`${result.status.padEnd(4)} ${result.name}${detail}`)
   }
+}
+
+function writeReport(templateIds) {
+  fs.mkdirSync(reportRoot, { recursive: true })
+  const id = args.all ? 'all' : templateIds[0]
+  const now = new Date()
+  const timestamp = formatTimestamp(now)
+  const reportPath = path.join(reportRoot, `template-qa-${id}-${timestamp}.md`)
+  const command = `node ${process.argv.slice(1).map(quoteArg).join(' ')}`
+  const passed = results.filter((result) => result.status === 'PASS')
+  const failed = results.filter((result) => result.status === 'FAIL')
+  const warned = results.filter((result) => result.status === 'WARN')
+  const screenshots = collectReportScreenshots(id)
+  const referenceImage = resolveReferenceImage()
+  const comparisonScreenshot = screenshots.find((screenshot) => path.basename(screenshot) === 'local-pc-full.png')
+    ?? screenshots.find((screenshot) => path.basename(screenshot) === 'long-content-loaded.png')
+    ?? screenshots[0]
+  const lines = [
+    `# Template QA Report: ${id}`,
+    '',
+    `测试对象：\`${id}\``,
+    '',
+    `测试时间：${now.toLocaleString('zh-CN', { hour12: false })}`,
+    '',
+    '## 执行命令',
+    '',
+    '```bash',
+    command,
+    '```',
+    '',
+    '## 测试结果',
+    '',
+    `- 通过项：${passed.length}`,
+    `- 失败项：${failed.length}`,
+    `- 警告项：${warned.length}`,
+    '',
+    '## 通过项',
+    '',
+    ...formatResultList(passed),
+    '',
+    '## 失败项',
+    '',
+    ...formatResultList(failed, '无。'),
+    '',
+    '## 警告项',
+    '',
+    ...formatResultList(warned, '无。'),
+    '',
+    '## 覆盖范围',
+    '',
+    '- 模板注册、懒加载、缩略图、主题契约。',
+    '- 本地 PC、移动端、稀疏数据、长内容、富文本渲染。',
+    '- 字号、行高、模块间距、标题比例、页边距、主题主色。',
+    '- 一键加载真实简历场景数据，以及预览中的基础信息、求职意向、长公司名、项目名、薪资和自定义字段。',
+    '- 模板专项布局断言会在脚本中按模板 id 执行，例如表格模板的邮箱单元格和头像单元格检查。',
+    '',
+    '## 截图/产物',
+    '',
+    ...formatScreenshotList(screenshots),
+    '',
+    '## 截图预览',
+    '',
+    ...formatScreenshotPreview(screenshots),
+    '',
+    '## 参考截图对比',
+    '',
+    ...formatReferenceComparison(referenceImage, comparisonScreenshot),
+    '',
+    '## 视觉对比清单',
+    '',
+    ...formatVisualComparisonChecklist(Boolean(referenceImage)),
+    '',
+    '## 仍需人工确认',
+    '',
+    '- 真实登录态编辑器里的细节建议在浏览器中快速扫一眼；如果 headless 测试使用 `/dev/scenario-loader`，它覆盖的是同一套场景加载 store/render 链路。',
+    '',
+    '## 结论',
+    '',
+    failed.length > 0
+      ? '本次 QA 未完全通过，需要先处理失败项再交付。'
+      : '本次 QA 通过。后续若发现视觉问题，应把对应场景补进自动化断言。',
+    '',
+  ]
+  fs.writeFileSync(reportPath, `${lines.join('\n')}\n`, 'utf8')
+  console.log(`\nQA report saved to ${relative(reportPath)}`)
+}
+
+function formatVisualComparisonChecklist(hasReferenceImage) {
+  const prefix = hasReferenceImage ? '[ ]' : '[-]'
+  const note = hasReferenceImage
+    ? '请在交付前逐项人工确认；允许不完全一致，但整体风格应接近参考图。'
+    : '未提供参考图，本轮无法完成参考图对比；创建新模板时必须补充参考图。'
+  return [
+    note,
+    '',
+    `- ${prefix} 基础信息头部：姓名、岗位/副标题、联系方式、头像布局与参考图整体一致。`,
+    `- ${prefix} 头像区域：尺寸、位置、圆角/裁切、占位状态无异常。`,
+    `- ${prefix} 模块标题：字号、字重、主色、背景/竖线/边框等装饰接近参考图。`,
+    `- ${prefix} 正文排版：字号、行高、段落间距、日期位置、字段对齐保持清晰。`,
+    `- ${prefix} 页面节奏：页边距、模块间距、信息密度与参考图同类。`,
+    `- ${prefix} 主题设置：主色、字号、行高、模块间距、页边距调整后仍不破版。`,
+    `- ${prefix} 极端数据：长邮箱、长公司名、长项目名、自定义字段不重叠、不撞格、不溢出。`,
+  ]
+}
+
+function resolveReferenceImage() {
+  const value = args['reference-image']
+  if (!value || value === true) return null
+  const filePath = path.isAbsolute(value) ? value : path.join(root, value)
+  return fs.existsSync(filePath) ? filePath : null
+}
+
+function formatResultList(items, empty = '') {
+  if (items.length === 0) return empty ? [`- ${empty}`] : []
+  return items.map((result) => {
+    const detail = result.details ? `：${result.details}` : ''
+    return `- ${result.name}${detail}`
+  })
+}
+
+function collectReportScreenshots(id) {
+  if (args.all) return []
+  const candidates = [
+    path.join(artifactRoot, id, 'local-pc-full.png'),
+    path.join(artifactRoot, id, 'local-mobile-full.png'),
+    path.join(artifactRoot, id, 'local-long.png'),
+    path.join(artifactRoot, id, 'local-rich.png'),
+    path.join(artifactRoot, id, 'local-color.png'),
+    path.join(artifactRoot, 'editor-scenarios', `long-content-loaded-${id}.png`),
+    path.join(artifactRoot, 'editor-scenarios', 'long-content-loaded.png'),
+  ]
+  return candidates.filter((filePath) => fs.existsSync(filePath))
+}
+
+function formatScreenshotList(screenshots) {
+  if (screenshots.length === 0) return ['- 无截图产物。']
+  return screenshots.map((screenshot) => `- \`${relative(screenshot)}\``)
+}
+
+function formatScreenshotPreview(screenshots) {
+  if (screenshots.length === 0) return ['无截图预览。']
+  return screenshots.map((screenshot) => {
+    const label = path.basename(screenshot, '.png')
+    const link = path.relative(reportRoot, screenshot).replaceAll(path.sep, '/')
+    return `![${label}](${link})`
+  })
+}
+
+function formatReferenceComparison(referenceImage, screenshot) {
+  if (!args['reference-image']) {
+    return [
+      '- 未提供参考截图。创建新模板时建议传入 `--reference-image <path>`，报告会自动嵌入参考图和实现图，方便人工对比头部、模块标题、色彩和间距。',
+    ]
+  }
+  if (!referenceImage) {
+    return [`- 参考截图路径无效或文件不存在：\`${args['reference-image']}\`。`]
+  }
+  const referenceLink = path.relative(reportRoot, referenceImage).replaceAll(path.sep, '/')
+  const lines = [
+    '参考截图：',
+    '',
+    `![reference](${referenceLink})`,
+    '',
+  ]
+  if (screenshot) {
+    const screenshotLink = path.relative(reportRoot, screenshot).replaceAll(path.sep, '/')
+    lines.push('实现截图：', '', `![implementation](${screenshotLink})`, '')
+  } else {
+    lines.push('- 未生成实现截图，无法形成截图对比。')
+  }
+  lines.push('人工对比重点：基础信息头部、头像区域、模块标题样式、主色、边框/装饰元素、整体信息密度。')
+  return lines
+}
+
+function formatTimestamp(date) {
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  const hh = String(date.getHours()).padStart(2, '0')
+  const mm = String(date.getMinutes()).padStart(2, '0')
+  const ss = String(date.getSeconds()).padStart(2, '0')
+  return `${y}-${m}-${d}-${hh}${mm}${ss}`
+}
+
+function quoteArg(value) {
+  if (/^[\w./:=?&-]+$/.test(value)) return value
+  return `"${value.replaceAll('"', '\\"')}"`
 }
 
 function stripTrailingSlash(value) {
