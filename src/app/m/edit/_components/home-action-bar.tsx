@@ -66,30 +66,30 @@ export function HomeActionBar(props: HomeActionBarProps): ReactElement {
   return (
     <>
       <div
-        className="fixed bottom-0 left-0 right-0 z-30 border-t border-slate-200 bg-white/95 shadow-[0_-8px_24px_rgba(15,23,42,0.06)] backdrop-blur"
+        className="fixed bottom-0 left-0 right-0 z-30 border-t border-slate-200 bg-white/95 shadow-[0_-4px_16px_rgba(15,23,42,0.05)] backdrop-blur"
         style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
       >
-        <div className="grid grid-cols-[64px_96px_minmax(0,1fr)] items-center gap-2.5 px-3.5 py-3">
+        <div className="grid grid-cols-[60px_88px_minmax(0,1fr)] items-center gap-2 px-3 py-2">
           <button
             type="button"
             onClick={(): void => { void handleOpenPcGuide() }}
             disabled={openingPcGuide}
-            className="flex h-[54px] min-w-0 flex-col items-center justify-center gap-0.5 rounded-xl bg-white text-slate-900 transition-transform active:scale-[0.98] disabled:opacity-70"
+            className="flex h-[46px] min-w-0 flex-col items-center justify-center gap-0 rounded-xl bg-white text-slate-700 transition-transform active:scale-[0.98] disabled:opacity-70"
           >
-            {openingPcGuide ? <Loader2 size={24} className="animate-spin" /> : <Monitor size={28} strokeWidth={2.2} />}
-            <span className="text-[12px] font-medium leading-none">{openingPcGuide ? '同步中' : '电脑编辑'}</span>
+            {openingPcGuide ? <Loader2 size={20} className="animate-spin" /> : <Monitor size={22} strokeWidth={2.1} />}
+            <span className="text-[11px] font-medium leading-none">{openingPcGuide ? '同步中' : '电脑编辑'}</span>
           </button>
           <button
             type="button"
             onClick={(): void => setSheetOpen(true)}
-            className="flex h-[54px] min-w-0 items-center justify-center rounded-[24px] bg-slate-100 px-2 text-[15px] font-semibold text-slate-900 transition-transform active:scale-[0.98]"
+            className="flex h-[46px] min-w-0 items-center justify-center rounded-[22px] bg-slate-100 px-2 text-[14px] font-semibold text-slate-900 transition-transform active:scale-[0.98]"
           >
             <span>模块管理</span>
           </button>
           <button
             type="button"
             onClick={handlePreview}
-            className="flex h-[54px] min-w-0 items-center justify-center rounded-[24px] bg-violet-600 px-3 text-[16px] font-semibold text-white shadow-lg shadow-violet-600/25 transition-transform hover:bg-violet-700 active:scale-[0.98]"
+            className="flex h-[48px] min-w-0 items-center justify-center rounded-[22px] bg-violet-600 px-3 text-[15px] font-semibold text-white shadow-md shadow-violet-600/20 transition-transform hover:bg-violet-700 active:scale-[0.98]"
           >
             <span>预览简历</span>
           </button>
