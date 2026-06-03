@@ -6,6 +6,7 @@ import { ArrowLeft, Loader2, Check } from 'lucide-react'
 import { toast } from 'sonner'
 import { useDraftStore } from '@/features/edit/draft/draft-store'
 import { cn } from '@/lib/utils'
+import { useVisualViewportKeyboard } from '@/hooks/use-visual-viewport-keyboard'
 import { useInMiniProgram } from '../../_components/use-mini-program'
 
 export interface ValidationResult {
@@ -42,6 +43,7 @@ export function ModuleEditShell(props: ModuleEditShellProps): ReactElement {
   const discardAll = useDraftStore((s) => s.discardAll)
   const [confirmBack, setConfirmBack] = useState<boolean>(false)
   const inMiniProgram = useInMiniProgram()
+  const { keyboardOpen } = useVisualViewportKeyboard()
 
   useEffect((): void => {
     document.title = title
@@ -133,8 +135,13 @@ export function ModuleEditShell(props: ModuleEditShellProps): ReactElement {
 
       {/* Bottom action bar — thumb-zone friendly primary save action. */}
       <div
-        className="fixed bottom-0 left-0 right-0 z-30 bg-white/95 backdrop-blur border-t border-slate-200 shadow-[0_-2px_8px_rgba(0,0,0,0.04)]"
+        className={cn(
+          'fixed bottom-0 left-0 right-0 z-30 bg-white/95 backdrop-blur border-t border-slate-200 shadow-[0_-2px_8px_rgba(0,0,0,0.04)]',
+          'transition-all duration-200 ease-out',
+          keyboardOpen && 'translate-y-full opacity-0 pointer-events-none',
+        )}
         style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+        aria-hidden={keyboardOpen}
       >
         <div className="flex items-center gap-3 px-4 py-3">
           <div className="flex items-center gap-2 text-xs text-slate-500">
