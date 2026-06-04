@@ -21,7 +21,6 @@ import { createLogger } from '@/lib/logger'
 import { useInMiniProgram } from '../_components/use-mini-program'
 import { BottomActionBar } from './_components/bottom-action-bar'
 import {
-  DEFAULT_PREVIEW_THEME,
   ONE_PAGE_BADGE_STYLES,
   PreviewSettingsSheet,
   type SettingsTab,
@@ -69,7 +68,9 @@ export default function MobilePreviewClient(): ReactElement {
   const setReadOnly = useAppStore((s) => s.setReadOnly)
   const setResume = useAppStore((s) => s.setResume)
   const getThemeForTemplate = useAppStore((s) => s.getThemeForTemplate)
+  const getDefaultThemeForTemplate = useAppStore((s) => s.getDefaultThemeForTemplate)
   const setThemeForTemplate = useAppStore((s) => s.setThemeForTemplate)
+  const resetThemeForTemplate = useAppStore((s) => s.resetThemeForTemplate)
   const loadThemes = useAppStore((s) => s.loadThemes)
   // Subscribe to themes map so live updates re-render the preview and are
   // available for syncPreviewState to persist all templates' themes to the DB.
@@ -218,6 +219,7 @@ export default function MobilePreviewClient(): ReactElement {
   }, [draftResumeId, resume, templateId, themesMap, saveThumbnail])
 
   const theme: ThemeTokens = getThemeForTemplate(templateId)
+  const defaultTheme: ThemeTokens = getDefaultThemeForTemplate(templateId)
   const templateConfig = getTemplate(templateId)
   const Template = templateConfig?.component
 
@@ -272,14 +274,10 @@ export default function MobilePreviewClient(): ReactElement {
   )
 
   const handleResetStyle = useCallback((): void => {
-    const recommendedPrimaryColor = templateConfig?.recommendedPrimaryColor ?? DEFAULT_PREVIEW_THEME.primaryColor
     setOnePageSnapshot(null)
-    updateTheme({
-      ...DEFAULT_PREVIEW_THEME,
-      primaryColor: recommendedPrimaryColor,
-    })
+    resetThemeForTemplate(templateId)
     toast.success('已恢复默认样式')
-  }, [templateConfig?.recommendedPrimaryColor, updateTheme])
+  }, [resetThemeForTemplate, templateId])
 
   const clampZoom = (z: number): number => Math.min(MAX_USER_ZOOM, Math.max(MIN_USER_ZOOM, z))
 
@@ -618,6 +616,7 @@ export default function MobilePreviewClient(): ReactElement {
           tab={tab}
           templateId={templateId}
           theme={theme}
+          defaultPrimaryColor={defaultTheme.primaryColor}
           locksPrimaryColor={Boolean(templateConfig?.locksPrimaryColor)}
           onePageStatus={onePageStatus}
           onClose={(): void => setSheetOpen(false)}

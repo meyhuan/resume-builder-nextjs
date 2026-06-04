@@ -91,4 +91,11 @@ export const templateCatalog: readonly TemplateCatalogItem[] = [
     preview: '/thumbnails/template_yiyetong.webp',
     tags: ['原创', '紧凑', '一页', '海投'],
   },
+  {
+    id: 'lanzhe',
+    name: '蓝折',
+    description: '蓝色折纸页眉 + 立体签条模块，紧凑精致，适合年轻用户、校招、实习与运营岗位',
+    preview: '/thumbnails/template_lanzhe.webp',
+    tags: ['原创', '校招', '折角', '紧凑'],
+  },
 ];

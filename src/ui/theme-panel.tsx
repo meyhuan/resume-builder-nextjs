@@ -24,6 +24,8 @@ export default function ThemePanel(props: {
   readonly theme: ThemeTokens
   readonly onUpdate: (patch: Partial<ThemeTokens>) => void
   readonly onClose: () => void
+  readonly defaultPrimaryColor?: string
+  readonly onResetPrimaryColor?: () => void
   readonly onePage?: boolean
   readonly onePageStatus?: OnePageStatus
   readonly onOnePageChange?: (isOnePage: boolean) => void
@@ -405,6 +407,22 @@ export default function ThemePanel(props: {
                 </Popover.Content>
               </Popover.Portal>
             </Popover.Root>
+            {props.defaultPrimaryColor ? (
+              <button
+                type="button"
+                onClick={props.onResetPrimaryColor}
+                className="flex w-full items-center justify-between rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-left transition-colors hover:border-slate-300 hover:bg-slate-50"
+              >
+                <span className="text-xs font-semibold text-slate-700">恢复模板默认色</span>
+                <span className="inline-flex items-center gap-2">
+                  <span className="font-mono text-[11px] text-slate-500">{props.defaultPrimaryColor.toUpperCase()}</span>
+                  <span
+                    className="h-5 w-9 rounded-md border border-black/5 shadow-sm"
+                    style={{ backgroundColor: props.defaultPrimaryColor }}
+                  />
+                </span>
+              </button>
+            ) : null}
           </div>
         </div>
         )}

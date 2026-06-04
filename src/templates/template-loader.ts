@@ -147,6 +147,15 @@ export const TEMPLATE_REGISTRY: Record<string, TemplateConfig> = {
     component: lazy(() => import('@/templates/yiyetong')),
     recommendedPrimaryColor: '#475569',
   },
+  lanzhe: {
+    id: 'lanzhe',
+    name: '蓝折',
+    description: '蓝色折纸页眉 + 立体签条模块，紧凑精致，适合年轻用户、校招、实习与运营岗位',
+    preview: '/thumbnails/template_lanzhe.webp',
+    tags: ['原创', '校招', '折角', '紧凑'],
+    component: lazy(() => import('@/templates/lanzhe')),
+    recommendedPrimaryColor: '#4f719f',
+  },
   // ——— Flagship headless templates (each owns a deliberate brand palette) —
   qingyun: {
     id: 'qingyun',

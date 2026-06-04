@@ -32,6 +32,9 @@ const defaultTheme: ThemeTokens = {
   spacingScale: 1,
   pagePaddingVertical: 19,
   pagePaddingHorizontal: 15,
+  titleScale: 1,
+  paragraphIndent: 0,
+  onePageFit: false,
 }
 
 /**
@@ -155,6 +158,7 @@ export const useAppStore = create<AppState>()(
       const state = get()
       return state.themes[templateId] || resolveInitialTheme(templateId)
     },
+    getDefaultThemeForTemplate: (templateId) => resolveInitialTheme(templateId),
     setThemeForTemplate: (templateId, updater) =>
       set((state) => {
         const currentTheme = state.themes[templateId] || resolveInitialTheme(templateId)
@@ -165,6 +169,13 @@ export const useAppStore = create<AppState>()(
           },
         }
       }, false, `theme/set/${templateId}`),
+    resetThemeForTemplate: (templateId) =>
+      set((state) => ({
+        themes: {
+          ...state.themes,
+          [templateId]: resolveInitialTheme(templateId),
+        },
+      }), false, `theme/reset/${templateId}`),
     loadThemes: (themes) =>
       set((state) => ({
         themes: { ...state.themes, ...themes },

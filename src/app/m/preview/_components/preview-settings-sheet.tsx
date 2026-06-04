@@ -54,6 +54,7 @@ interface PreviewSettingsSheetProps {
   readonly tab: SettingsTab
   readonly templateId: string
   readonly theme: ThemeTokens
+  readonly defaultPrimaryColor: string
   readonly locksPrimaryColor: boolean
   readonly onePageStatus: OnePageStatus
   readonly onClose: () => void
@@ -71,6 +72,7 @@ export function PreviewSettingsSheet(props: PreviewSettingsSheetProps): ReactEle
     tab,
     templateId,
     theme,
+    defaultPrimaryColor,
     locksPrimaryColor,
     onePageStatus,
     onClose,
@@ -100,7 +102,13 @@ export function PreviewSettingsSheet(props: PreviewSettingsSheetProps): ReactEle
           </TabsContent>
 
           <TabsContent value="appearance" className="mt-0">
-            <AppearancePanel theme={theme} locked={locksPrimaryColor} onUpdate={onUpdateTheme} />
+            <AppearancePanel
+              key={templateId}
+              theme={theme}
+              defaultPrimaryColor={defaultPrimaryColor}
+              locked={locksPrimaryColor}
+              onUpdate={onUpdateTheme}
+            />
           </TabsContent>
 
           <TabsContent value="layout" className="mt-0">
@@ -229,10 +237,12 @@ function TemplatePanel({ activeId, onSelect }: { activeId: string; onSelect: (id
 
 function AppearancePanel({
   theme,
+  defaultPrimaryColor,
   locked,
   onUpdate,
 }: {
   readonly theme: ThemeTokens
+  readonly defaultPrimaryColor: string
   readonly locked: boolean
   readonly onUpdate: ThemePatcher
 }): ReactElement {
@@ -282,6 +292,16 @@ function AppearancePanel({
               disabled={locked}
               onChange={(e): void => onUpdate({ primaryColor: e.target.value })}
               className="h-9 w-12 rounded border border-slate-200 bg-transparent p-0"
+            />
+          </div>
+          <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+            <div>
+              <div className="text-sm font-medium text-slate-800">模板默认色</div>
+              <div className="text-xs font-mono text-slate-400">{defaultPrimaryColor}</div>
+            </div>
+            <span
+              className="h-8 w-12 rounded border border-slate-200"
+              style={{ backgroundColor: defaultPrimaryColor }}
             />
           </div>
         </div>
