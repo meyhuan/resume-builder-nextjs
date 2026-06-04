@@ -21,6 +21,7 @@ const BLEED_TEMPLATE_IDS: ReadonlySet<string> = new Set([
   'zhumo',
   'lifeng',
   'qingsui',
+  'lanzhe',
 ])
 
 export const dynamic = 'force-dynamic'

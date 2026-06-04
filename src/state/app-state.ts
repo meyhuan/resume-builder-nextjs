@@ -22,7 +22,11 @@ export interface AppState {
   /** Redo the last undone resume change. */
   redo: () => void
   getThemeForTemplate: (templateId: string) => ThemeTokens
+  /** Return the default theme for a template, including its recommended primary color. */
+  getDefaultThemeForTemplate: (templateId: string) => ThemeTokens
   setThemeForTemplate: (templateId: string, updater: (draft: Draft<ThemeTokens>) => void) => void
+  /** Reset a template's saved theme override back to its default/recommended theme. */
+  resetThemeForTemplate: (templateId: string) => void
   /** Bulk-load a themes map (e.g. from DB __editorMeta) into the store, merging with existing entries. */
   loadThemes: (themes: Record<string, ThemeTokens>) => void
   /** Move a block inside a section by swapping positions based on ids. */

@@ -105,8 +105,11 @@ interface LayoutPanelProps {
 
 function LayoutPanel(props: LayoutPanelProps): ReactElement {
   const { theme, tpl, templates } = props
+  const getDefaultThemeForTemplate = useAppStore((s) => s.getDefaultThemeForTemplate)
+  const resetThemeForTemplate = useAppStore((s) => s.resetThemeForTemplate)
   const [scenarioId, setScenarioId] = useState(RESUME_SCENARIOS[0]?.id ?? '')
   const selectedScenario = RESUME_SCENARIOS.find((scenario) => scenario.id === scenarioId) ?? RESUME_SCENARIOS[0]
+  const defaultTheme = getDefaultThemeForTemplate(tpl)
 
   function handleImportClick(): void {
     const json = prompt('粘贴 JSON 简历数据：')
@@ -223,6 +226,7 @@ function LayoutPanel(props: LayoutPanelProps): ReactElement {
           <div className="flex-1 overflow-y-auto custom-scrollbar p-5">
             <div className="bg-transparent overflow-hidden">
               <ThemePanel
+                key={tpl}
                 theme={theme}
                 onUpdate={props.onThemePatch}
                 onClose={() => {}}
@@ -231,6 +235,11 @@ function LayoutPanel(props: LayoutPanelProps): ReactElement {
                 onOnePageChange={props.onOnePageChange}
                 locksPrimaryColor={templates.find((t) => t.id === tpl)?.locksPrimaryColor}
                 activeTemplateName={templates.find((t) => t.id === tpl)?.name}
+                defaultPrimaryColor={defaultTheme.primaryColor}
+                onResetPrimaryColor={(): void => {
+                  resetThemeForTemplate(tpl)
+                  props.onOnePageChange?.(false)
+                }}
               />
             </div>
           </div>
