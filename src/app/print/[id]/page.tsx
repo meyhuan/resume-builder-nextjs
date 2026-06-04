@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { verifyPrintToken } from '@/lib/print-token'
 import type { ResumeData } from '@/entities/resume/resume-data'
 import { extractEditorMeta } from '@/entities/editor/editor-meta'
+import { prepareResumeForExport } from '@/lib/resume-export-visibility'
 import PrintRenderer from './print-renderer'
 
 interface PrintPageProps {
@@ -58,7 +59,7 @@ export default async function PrintPage(props: PrintPageProps): Promise<ReactEle
   const { content, meta } = extractEditorMeta(rawContent)
 
   const templateId: string = (tpl && typeof tpl === 'string' ? tpl : record.template) || 'simple'
-  const resumeData: ResumeData = content as unknown as ResumeData
+  const resumeData: ResumeData = prepareResumeForExport(content as unknown as ResumeData)
   
   // Extract the saved theme for the selected template, if any
   const savedTheme = meta.themes[templateId]
