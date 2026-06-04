@@ -367,7 +367,7 @@ function LanzheJobIntentionSection(props: {
           gap: '6px 18px',
           paddingLeft: 24,
           color: TEXT,
-          fontSize: '0.9em',
+          fontSize: '0.95em',
           lineHeight: 1.65,
         }}
       >
@@ -603,7 +603,7 @@ function LanzheBlockBody(props: {
     title: { className: 'font-bold', color: INK },
     subtitle: { className: 'text-slate-600' },
     dateRange: { className: 'ml-4 shrink-0 whitespace-nowrap text-slate-700 font-semibold' },
-    content: 'lanzhe-rich mt-1 text-[0.82em]',
+    content: 'lanzhe-rich mt-1 text-[0.95em]',
     contentColor: TEXT,
   }
 
@@ -782,7 +782,7 @@ function TextContent(props: {
     <div
       style={{
         color: TEXT,
-        fontSize: '0.82em',
+        fontSize: '0.95em',
         lineHeight: props.lineHeight,
         fontWeight: 400,
       }}
