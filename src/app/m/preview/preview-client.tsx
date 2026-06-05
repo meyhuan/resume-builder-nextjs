@@ -624,6 +624,11 @@ export default function MobilePreviewClient(): ReactElement {
                   width: `${A4_WIDTH_PX}px`,
                   transform: `scale(${scale})`,
                   transformOrigin: 'top left',
+                  // Mobile preview is read-only. Disable template-level pointer
+                  // events so editable headers, metric buttons, and section
+                  // controls cannot be tapped while the outer stage still
+                  // handles scroll, pinch zoom, and double-tap reset.
+                  pointerEvents: 'none',
                 }}
               >
                 <Suspense fallback={<TemplateFallback />}>
