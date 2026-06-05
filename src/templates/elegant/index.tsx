@@ -24,6 +24,7 @@ import { JobIntentionSection, BlockRenderer, SectionContainer } from '@/template
 import BaseInfoModal from '@/components/modals/base-info-modal'
 import AvatarCropModal from '@/components/modals/avatar-crop-modal'
 import { IconPhone, IconMail, IconGender, IconAge, IconLocation, IconWorkYear, IconInfo } from '@/components/sections/baseinfo-icons'
+import { isUserVisibleBaseInfoCustomField } from '@/lib/template-exclusive-fields'
 import { ELEGANT_TEMPLATE_STYLES, HEADER_BG, ACCENT_GOLD } from './styles'
 
 /** Check if every block in a section is a TextBlock. */
@@ -85,7 +86,7 @@ function buildFieldDefs(baseInfo: BaseInfo | null): FieldDef[] {
   }
   if (baseInfo.customFields) {
     for (const cf of baseInfo.customFields) {
-      if (cf.label && cf.value) {
+      if (isUserVisibleBaseInfoCustomField(cf)) {
         defs.push({ key: `custom_${cf.label}`, label: cf.label, value: cf.value, icon: <IconInfo /> })
       }
     }

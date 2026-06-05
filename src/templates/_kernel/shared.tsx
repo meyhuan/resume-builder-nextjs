@@ -10,6 +10,7 @@ import {
   IconWorkYear,
   IconInfo,
 } from '@/components/sections/baseinfo-icons'
+import { isUserVisibleBaseInfoCustomField } from '@/lib/template-exclusive-fields'
 /** Field definition for base-info rendering. */
 export interface BaseInfoFieldDef {
   readonly key: string
@@ -59,7 +60,7 @@ export function buildBaseInfoFields(baseInfo: BaseInfo | null): BaseInfoFieldDef
   }
   if (baseInfo.customFields) {
     for (const cf of baseInfo.customFields) {
-      if (cf.label && cf.value) {
+      if (isUserVisibleBaseInfoCustomField(cf)) {
         defs.push({ key: `custom_${cf.label}`, label: cf.label, value: cf.value, icon: <IconInfo /> })
       }
     }

@@ -14,6 +14,7 @@ import { IconPhone, IconMail, IconGender, IconAge, IconLocation, IconWorkYear, I
 import type { BaseInfo } from '@/entities/user/base-info'
 import BaseInfoModal from '@/components/modals/base-info-modal'
 import AvatarCropModal from '@/components/modals/avatar-crop-modal'
+import { isUserVisibleBaseInfoCustomField } from '@/lib/template-exclusive-fields'
 import { useAppStore } from '@/state/store'
 import type {
   BaseInfoSectionStyles,
@@ -299,7 +300,7 @@ function buildFieldDefs(baseInfo: BaseInfo | null): FieldDef[] {
   }
   if (baseInfo.customFields) {
     for (const cf of baseInfo.customFields) {
-      if (cf.label && cf.value) {
+      if (isUserVisibleBaseInfoCustomField(cf)) {
         defs.push({ key: `custom_${cf.label}`, label: cf.label, value: cf.value, icon: <IconInfo /> })
       }
     }

@@ -12,6 +12,11 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
+  isTemplateExclusiveBaseInfoField,
+  isTemplateHighlightField,
+  isTemplateMetricField,
+} from '@/lib/template-exclusive-fields'
+import {
   AvatarSlot,
   BlockList,
   DeleteSectionDialog,
@@ -81,7 +86,7 @@ function formalCell(label: boolean): CSSProperties {
 }
 
 function visibleHeaderFields(header: EditableHeader): EditableHeader['fields'] {
-  return header.fields.filter((field) => !/^(亮点|业绩)[1-3]$/.test(field.label))
+  return header.fields.filter((field) => !isTemplateExclusiveBaseInfoField(field.label))
 }
 
 export function AvatarBox({ header, accent, radius, compact }: { readonly header: EditableHeader; readonly accent: string; readonly radius: number; readonly compact?: boolean }): ReactElement {
@@ -145,7 +150,7 @@ function defaultMetricItems(config: VariantConfig): string[][] {
 }
 
 export function buildBaseInfoWithMetrics(baseInfo: BaseInfo | null, items: string[][]): BaseInfo {
-  const existing = (baseInfo?.customFields ?? []).filter((field) => !/^业绩[1-3]$/.test(field.label))
+  const existing = (baseInfo?.customFields ?? []).filter((field) => !isTemplateMetricField(field.label))
   const metrics = items.map(([value, text], index) => ({
     label: `业绩${index + 1}`,
     value: `${value}｜${text}`,
@@ -231,7 +236,7 @@ export function campusMetricItems(config: VariantConfig, header: EditableHeader)
 }
 
 export function buildBaseInfoWithHighlights(baseInfo: BaseInfo | null, items: string[][]): BaseInfo {
-  const existing = (baseInfo?.customFields ?? []).filter((field) => !/^亮点[1-3]$/.test(field.label))
+  const existing = (baseInfo?.customFields ?? []).filter((field) => !isTemplateHighlightField(field.label))
   const highlights = items.map(([value, text], index) => ({
     label: `亮点${index + 1}`,
     value: `${value}｜${text}`,

@@ -3,7 +3,10 @@
 import { type ReactElement } from 'react'
 import { Plus, Trash2 } from 'lucide-react'
 import { useBaseInfoField } from '@/features/edit/draft/use-draft-field'
-import { isTemplateExclusiveField } from './template-metrics-fields'
+import {
+  isTemplateExclusiveBaseInfoField,
+  splitTemplateExclusiveBaseInfoFields,
+} from '@/lib/template-exclusive-fields'
 
 type CustomField = { label: string; value: string }
 
@@ -28,22 +31,27 @@ const PRESET_LABELS: ReadonlyArray<string> = [
 export function CustomBaseFields(): ReactElement {
   const field = useBaseInfoField('customFields')
   const allItems: ReadonlyArray<CustomField> = (field.value ?? []) as ReadonlyArray<CustomField>
-  const items: ReadonlyArray<CustomField> = allItems.filter((item) => !isTemplateExclusiveField(item.label))
-  const hiddenItems: ReadonlyArray<CustomField> = allItems.filter((item) => isTemplateExclusiveField(item.label))
+  const items: ReadonlyArray<CustomField> = allItems.filter((item) => !isTemplateExclusiveBaseInfoField(item.label))
+  const hiddenItems: ReadonlyArray<CustomField> = allItems.filter((item) => isTemplateExclusiveBaseInfoField(item.label))
+
+  const setOrdinaryItems = (nextItems: readonly CustomField[]): void => {
+    const { ordinaryFields } = splitTemplateExclusiveBaseInfoFields(nextItems)
+    field.setValue([...ordinaryFields, ...hiddenItems])
+  }
 
   const updateAt = (index: number, patch: Partial<CustomField>): void => {
     const next: CustomField[] = items.map((it, i) => (i === index ? { ...it, ...patch } : it))
-    field.setValue([...next, ...hiddenItems])
+    setOrdinaryItems(next)
   }
 
   const removeAt = (index: number): void => {
     const next: CustomField[] = items.filter((_, i) => i !== index)
-    field.setValue([...next, ...hiddenItems])
+    setOrdinaryItems(next)
   }
 
   const addItem = (presetLabel?: string): void => {
     const next: CustomField[] = [...items, { label: presetLabel ?? '', value: '' }]
-    field.setValue([...next, ...hiddenItems])
+    setOrdinaryItems(next)
   }
 
   const usedLabels: ReadonlySet<string> = new Set(items.map((it) => it.label))

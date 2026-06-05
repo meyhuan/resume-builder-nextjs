@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ChevronDown, Plus, Trash2 } from 'lucide-react';
+import { splitTemplateExclusiveBaseInfoFields } from '@/lib/template-exclusive-fields';
 
 interface CustomField {
   label: string;
@@ -24,6 +25,11 @@ export interface BaseInfoModalProps {
 }
 
 export default function BaseInfoModal(props: BaseInfoModalProps): ReactElement {
+  const initialCustomFields = (props.baseInfo?.customFields as CustomField[] | undefined)?.map(f => ({ ...f })) ?? [];
+  const {
+    ordinaryFields: initialOrdinaryCustomFields,
+    exclusiveFields: templateExclusiveCustomFields,
+  } = splitTemplateExclusiveBaseInfoFields(initialCustomFields);
   const [name, setName] = useState(props.name);
   const [title, setTitle] = useState(props.baseInfo?.title ?? '');
   const [phone, setPhone] = useState(props.baseInfo?.phone ?? '');
@@ -40,9 +46,7 @@ export default function BaseInfoModal(props: BaseInfoModalProps): ReactElement {
   const [height, setHeight] = useState(props.baseInfo?.height ?? '');
   const [weight, setWeight] = useState(props.baseInfo?.weight ?? '');
   const [showMoreFields, setShowMoreFields] = useState(false);
-  const [customFields, setCustomFields] = useState<CustomField[]>(
-    (props.baseInfo?.customFields as CustomField[] | undefined)?.map(f => ({ ...f })) ?? []
-  );
+  const [customFields, setCustomFields] = useState<CustomField[]>(initialOrdinaryCustomFields);
 
   function addCustomField(): void {
     setCustomFields([...customFields, { label: '', value: '' }]);
@@ -60,6 +64,9 @@ export default function BaseInfoModal(props: BaseInfoModalProps): ReactElement {
 
   function handleSave(): void {
     const validCustomFields = customFields.filter(f => f.label && f.value);
+    const { ordinaryFields: validOrdinaryCustomFields } = splitTemplateExclusiveBaseInfoFields(validCustomFields);
+    const validTemplateExclusiveCustomFields = templateExclusiveCustomFields.filter(f => f.label && f.value);
+    const nextCustomFields = [...validOrdinaryCustomFields, ...validTemplateExclusiveCustomFields];
     const updatedBaseInfo: BaseInfo = {
       title,
       phone: phone || undefined,
@@ -75,7 +82,7 @@ export default function BaseInfoModal(props: BaseInfoModalProps): ReactElement {
       politicalStatus: politicalStatus || undefined,
       height: height || undefined,
       weight: weight || undefined,
-      customFields: validCustomFields.length > 0 ? validCustomFields : undefined,
+      customFields: nextCustomFields.length > 0 ? nextCustomFields : undefined,
     };
     props.onSave(updatedBaseInfo, name);
     props.onClose();

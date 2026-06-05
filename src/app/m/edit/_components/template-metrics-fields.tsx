@@ -3,12 +3,15 @@
 import { type ReactElement } from 'react'
 import { useBaseInfoField } from '@/features/edit/draft/use-draft-field'
 import { TextField } from '@/features/edit/form-fields/text-field'
+import {
+  isTemplateExclusiveBaseInfoField,
+  isTemplateHighlightField,
+  isTemplateMetricField as isMetricField,
+} from '@/lib/template-exclusive-fields'
 
 type CustomField = { label: string; value: string }
 type MetricItem = readonly [value: string, text: string]
 
-const METRIC_LABEL_PATTERN = /^业绩[1-3]$/
-const HIGHLIGHT_LABEL_PATTERN = /^亮点[1-3]$/
 const DEFAULT_METRICS: readonly MetricItem[] = [
   ['3.8亿', '年度 GMV 规模'],
   ['46%', '渠道获客成本下降'],
@@ -21,11 +24,11 @@ const DEFAULT_HIGHLIGHTS: readonly MetricItem[] = [
 ]
 
 export function isTemplateMetricField(label: string): boolean {
-  return METRIC_LABEL_PATTERN.test(label)
+  return isMetricField(label)
 }
 
 export function isTemplateExclusiveField(label: string): boolean {
-  return METRIC_LABEL_PATTERN.test(label) || HIGHLIGHT_LABEL_PATTERN.test(label)
+  return isTemplateExclusiveBaseInfoField(label)
 }
 
 export function TemplateMetricsFields(): ReactElement {
@@ -87,7 +90,7 @@ export function TemplateHighlightsFields(): ReactElement {
       if (highlightIndex !== index) return highlight
       return part === 0 ? [nextValue, highlight[1]] : [highlight[0], nextValue]
     }) as MetricItem[]
-    const ordinaryFields = items.filter((item) => !HIGHLIGHT_LABEL_PATTERN.test(item.label))
+    const ordinaryFields = items.filter((item) => !isTemplateHighlightField(item.label))
     const highlightFields = nextHighlights.map(([value, text], highlightIndex) => ({
       label: `亮点${highlightIndex + 1}`,
       value: `${value.trim()}｜${text.trim()}`,
