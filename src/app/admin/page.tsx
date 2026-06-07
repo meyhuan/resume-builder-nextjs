@@ -25,11 +25,20 @@ interface ResumeItem {
   updatedAt: string;
 }
 
+interface CopySourceUser {
+  id: string;
+  wxId: string | null;
+  javaUserId: string | null;
+  name: string | null;
+}
+
 interface VipFormData {
   vipType: number;
   expiryDate: string;
   freeExportCount: number;
 }
+
+type CopyMode = 'to-user' | 'to-current';
 
 const VIP_TYPES = ['', '月卡', '年卡', '终身'] as const;
 
@@ -52,7 +61,11 @@ export default function AdminPage(): React.ReactElement {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [showVipForm, setShowVipForm] = useState(false);
   const [showCopySection, setShowCopySection] = useState(false);
+  const [copyMode, setCopyMode] = useState<CopyMode>('to-user');
   const [myResumes, setMyResumes] = useState<ResumeItem[]>([]);
+  const [sourceUserResumes, setSourceUserResumes] = useState<ResumeItem[]>([]);
+  const [sourceUserQuery, setSourceUserQuery] = useState('');
+  const [copySourceUser, setCopySourceUser] = useState<CopySourceUser | null>(null);
   const [selectedResumeId, setSelectedResumeId] = useState('');
   const [targetUserId, setTargetUserId] = useState('');
   const [copyLoading, setCopyLoading] = useState(false);
@@ -114,7 +127,7 @@ export default function AdminPage(): React.ReactElement {
         setMessage({ type: 'error', text: json.message || '用户未找到' });
         return;
       }
-      setUser(json.data);
+      setUser(json.data as UserInfo);
       setShowVipForm(false);
     } catch (err) {
       setMessage({ type: 'error', text: '搜索失败: ' + (err instanceof Error ? err.message : '未知错误') });
@@ -154,9 +167,30 @@ export default function AdminPage(): React.ReactElement {
 
   async function loadMyResumes(): Promise<void> {
     setShowCopySection((v) => {
-      if (!v) fetchMyResumes();
+      if (!v) {
+        if (copyMode === 'to-user') {
+          fetchMyResumes();
+        }
+      }
       return !v;
     });
+  }
+
+  function handleCopyModeChange(mode: CopyMode): void {
+    setCopyMode(mode);
+    setCopyMessage(null);
+    setSelectedResumeId('');
+    if (mode === 'to-user') {
+      if (myResumes.length > 0) {
+        setSelectedResumeId(myResumes[0].id);
+      } else {
+        void fetchMyResumes();
+      }
+      return;
+    }
+    if (sourceUserResumes.length > 0) {
+      setSelectedResumeId(sourceUserResumes[0].id);
+    }
   }
 
   async function fetchMyResumes(): Promise<void> {
@@ -172,25 +206,91 @@ export default function AdminPage(): React.ReactElement {
     }
   }
 
+  function handleSourceUserQueryChange(value: string): void {
+    setSourceUserQuery(value);
+    setCopySourceUser(null);
+    setSourceUserResumes([]);
+    if (copyMode === 'to-current') setSelectedResumeId('');
+  }
+
+  async function fetchSourceUserResumes(): Promise<void> {
+    const query = sourceUserQuery.trim();
+    if (!query) {
+      setCopyMessage({ type: 'error', text: '请输入来源用户 ID' });
+      return;
+    }
+    try {
+      const params = new URLSearchParams({ userId: query });
+      const res = await fetch(`/next-api/admin/copy-resume?${params.toString()}`, {
+        headers: { 'X-Admin-Password': password },
+      });
+      const json = await res.json();
+      if (!res.ok || json.error) {
+        setCopySourceUser(null);
+        setSourceUserResumes([]);
+        setSelectedResumeId('');
+        setCopyMessage({ type: 'error', text: json.error || '加载对方简历列表失败' });
+        return;
+      }
+      const resumes: ResumeItem[] = Array.isArray(json.resumes) ? json.resumes : [];
+      setCopySourceUser(json.user ?? null);
+      setSourceUserResumes(resumes);
+      setSelectedResumeId(resumes[0]?.id ?? '');
+      if (resumes.length === 0) {
+        setCopyMessage({ type: 'error', text: '该用户在当前系统暂无简历' });
+      } else {
+        setCopyMessage(null);
+      }
+    } catch (err) {
+      setCopyMessage({ type: 'error', text: '加载对方简历列表失败: ' + (err instanceof Error ? err.message : '未知错误') });
+    }
+  }
+
   async function copyResume(): Promise<void> {
-    if (!selectedResumeId || !targetUserId.trim()) {
-      setCopyMessage({ type: 'error', text: '请选择简历并填写目标用户 ID' });
+    if (!selectedResumeId) {
+      setCopyMessage({ type: 'error', text: '请选择要复制的简历' });
+      return;
+    }
+    if (copyMode === 'to-user' && !targetUserId.trim()) {
+      setCopyMessage({ type: 'error', text: '请填写目标用户 ID' });
+      return;
+    }
+    if (copyMode === 'to-current' && !sourceUserQuery.trim()) {
+      setCopyMessage({ type: 'error', text: '请填写来源用户 ID 并搜索简历' });
       return;
     }
     setCopyLoading(true);
     setCopyMessage(null);
     try {
+      const payload = copyMode === 'to-current'
+        ? {
+            adminPassword: password,
+            resumeId: selectedResumeId,
+            sourceUserId: sourceUserQuery.trim(),
+            direction: 'to-current' as const,
+          }
+        : {
+            adminPassword: password,
+            resumeId: selectedResumeId,
+            targetUserId: targetUserId.trim(),
+            direction: 'to-user' as const,
+          };
       const res = await fetch('/next-api/admin/copy-resume', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ adminPassword: password, resumeId: selectedResumeId, targetUserId: targetUserId.trim() }),
+        body: JSON.stringify(payload),
       });
       const json = await res.json();
       if (!res.ok || json.error) {
         setCopyMessage({ type: 'error', text: json.error || '复制失败' });
         return;
       }
-      setCopyMessage({ type: 'success', text: `简历已成功复制到用户 ${json.targetUserId}，新简历 ID: ${json.resumeId}` });
+      setCopyMessage({
+        type: 'success',
+        text: copyMode === 'to-current'
+          ? `简历已成功复制到我的账号，新简历 ID: ${json.resumeId}`
+          : `简历已成功复制到用户 ${json.targetUserId}，新简历 ID: ${json.resumeId}`,
+      });
       setTargetUserId('');
     } catch (err) {
       setCopyMessage({ type: 'error', text: '复制失败: ' + (err instanceof Error ? err.message : '未知错误') });
@@ -226,6 +326,12 @@ export default function AdminPage(): React.ReactElement {
     if (vipStatus === 0) return '非VIP';
     return `VIP (${VIP_TYPES[vipType] || '未知'})`;
   }
+
+  const activeCopyResumes: ResumeItem[] = copyMode === 'to-user' ? myResumes : sourceUserResumes;
+  const copyButtonDisabled: boolean = copyLoading
+    || !selectedResumeId
+    || (copyMode === 'to-user' && !targetUserId.trim())
+    || (copyMode === 'to-current' && !sourceUserQuery.trim());
 
   if (!authed) {
     return (
@@ -441,13 +547,34 @@ export default function AdminPage(): React.ReactElement {
           >
             <div className="flex items-center gap-2">
               <Copy className="w-5 h-5 text-violet-500" />
-              <span className="font-semibold text-slate-700">简历同步 · 复制到他人账号</span>
+              <span className="font-semibold text-slate-700">简历同步 · 账号间复制</span>
             </div>
             {showCopySection ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
           </button>
 
           {showCopySection && (
             <div className="px-6 pb-6 space-y-4 border-t border-slate-100 pt-4">
+              <div className="grid grid-cols-2 gap-2 rounded-xl bg-slate-50 p-1">
+                {([
+                  ['to-user', '我的简历 → 他人账号'],
+                  ['to-current', '他人简历 → 我的账号'],
+                ] as [CopyMode, string][]).map(([mode, label]) => (
+                  <button
+                    key={mode}
+                    type="button"
+                    onClick={() => handleCopyModeChange(mode)}
+                    className={cn(
+                      'rounded-lg px-3 py-2 text-xs font-medium transition-all',
+                      copyMode === mode
+                        ? 'bg-white text-violet-700 shadow-sm ring-1 ring-violet-100'
+                        : 'text-slate-500 hover:text-slate-700',
+                    )}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+
               {copyMessage && (
                 <div className={`p-3 rounded-xl flex items-start gap-2 text-sm ${
                   copyMessage.type === 'success' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'
@@ -457,13 +584,61 @@ export default function AdminPage(): React.ReactElement {
                 </div>
               )}
 
+              {copyMode === 'to-current' && (
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                  <label className="block text-xs text-slate-500 mb-1.5">来源用户 ID（Java User ID、wxId 或数据库 ID）</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={sourceUserQuery}
+                      onChange={(e) => handleSourceUserQueryChange(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') void fetchSourceUserResumes();
+                      }}
+                      placeholder="输入要复制来源的用户 ID / wxId / 数据库 ID"
+                      className="min-w-0 flex-1 px-3 py-2.5 border border-slate-200 rounded-xl bg-white text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => void fetchSourceUserResumes()}
+                      disabled={copyLoading || !sourceUserQuery.trim()}
+                      className="shrink-0 px-4 py-2.5 rounded-xl bg-violet-600 text-white text-sm font-medium hover:bg-violet-700 disabled:opacity-50"
+                    >
+                      搜索简历
+                    </button>
+                  </div>
+                  {copySourceUser && (
+                    <div className="mt-2 text-xs leading-relaxed text-slate-500">
+                      已加载来源账号：{copySourceUser.name || '未命名用户'}，
+                      数据库 ID：<span className="font-mono">{copySourceUser.id}</span>
+                      {copySourceUser.javaUserId ? <>，Java ID：<span className="font-mono">{copySourceUser.javaUserId}</span></> : null}
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div>
-                <label className="block text-xs text-slate-500 mb-1.5">选择要复制的简历（当前账号）</label>
-                {myResumes.length === 0 ? (
-                  <p className="text-sm text-slate-400 py-2">暂无简历</p>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs text-slate-500">
+                    {copyMode === 'to-user' ? '选择要复制的简历（当前账号）' : '选择要复制的简历（来源账号）'}
+                  </label>
+                  {copyMode === 'to-current' && copySourceUser && (
+                    <button
+                      type="button"
+                      onClick={() => void fetchSourceUserResumes()}
+                      className="text-xs text-violet-600 hover:text-violet-700"
+                    >
+                      重新加载
+                    </button>
+                  )}
+                </div>
+                {copyMode === 'to-current' && !copySourceUser ? (
+                  <p className="text-sm text-slate-400 py-2">请输入来源用户 ID，并点击“搜索简历”</p>
+                ) : activeCopyResumes.length === 0 ? (
+                  <p className="text-sm text-slate-400 py-2">{copyMode === 'to-user' ? '当前账号暂无简历' : '该用户暂无简历'}</p>
                 ) : (
                   <div className="space-y-2 max-h-48 overflow-y-auto">
-                    {myResumes.map((r) => (
+                    {activeCopyResumes.map((r) => (
                       <label
                         key={r.id}
                         className={cn(
@@ -492,24 +667,31 @@ export default function AdminPage(): React.ReactElement {
                 )}
               </div>
 
-              <div>
-                <label className="block text-xs text-slate-500 mb-1.5">目标用户 ID（wxId 或数据库 ID）</label>
-                <input
-                  type="text"
-                  value={targetUserId}
-                  onChange={(e) => setTargetUserId(e.target.value)}
-                  placeholder="输入对方的 wxId 或 User ID"
-                  className="w-full px-3 py-2.5 border border-slate-200 rounded-xl bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
-                />
-              </div>
+              {copyMode === 'to-user' ? (
+                <div>
+                  <label className="block text-xs text-slate-500 mb-1.5">目标用户 ID（Java User ID、wxId 或数据库 ID）</label>
+                  <input
+                    type="text"
+                    value={targetUserId}
+                    onChange={(e) => setTargetUserId(e.target.value)}
+                    placeholder="输入对方的 User ID / wxId / 数据库 ID"
+                    className="w-full px-3 py-2.5 border border-slate-200 rounded-xl bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  />
+                </div>
+              ) : (
+                <div className="rounded-xl border border-violet-100 bg-violet-50 px-3 py-2.5 text-xs leading-relaxed text-violet-700">
+                  来源账号：{copySourceUser ? `${copySourceUser.name || '未命名用户'}（ID: ${copySourceUser.id}）` : '未加载'}。
+                  复制后会生成一份新的简历到当前登录的管理账号，不会移动或删除对方原简历。
+                </div>
+              )}
 
               <button
                 onClick={copyResume}
-                disabled={copyLoading || !selectedResumeId || !targetUserId.trim()}
+                disabled={copyButtonDisabled}
                 className="w-full py-2.5 bg-violet-600 hover:bg-violet-700 text-white font-medium rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 <Copy className="w-4 h-4" />
-                {copyLoading ? '复制中...' : '确认复制到该用户'}
+                {copyLoading ? '复制中...' : copyMode === 'to-current' ? '确认复制到我的账号' : '确认复制到该用户'}
               </button>
             </div>
           )}
