@@ -4,6 +4,7 @@ import { useCallback, useMemo } from 'react'
 import type { ResumeBlock } from '@/entities/blocks/resume-block'
 import type { Section } from '@/entities/resume/section'
 import { createDefaultBlock } from '@/entities/blocks/block-factory'
+import { MODULES, getSectionTitleCandidates } from '@/entities/module/module-config'
 import { useDraftStore } from './draft-store'
 
 /**
@@ -14,9 +15,22 @@ function createId(prefix: string): string {
   return `${prefix}-${Date.now().toString(36)}-${rnd}`
 }
 
+function normalizeTitle(title: string): string {
+  return title.replace(/\s/g, '')
+}
+
+function getTitleCandidates(title: string): readonly string[] {
+  const normalized: string = normalizeTitle(title)
+  const module = MODULES.find((m) =>
+    getSectionTitleCandidates(m).some((candidate) => normalizeTitle(candidate) === normalized),
+  )
+  const candidates = module ? [title, ...getSectionTitleCandidates(module)] : [title]
+  return Array.from(new Set(candidates.filter(Boolean)))
+}
+
 function findSectionIndex(sections: readonly Section[], title: string): number {
-  const normalized: string = title.replace(/\s/g, '')
-  return sections.findIndex((s) => s.title.replace(/\s/g, '') === normalized)
+  const candidateSet = new Set(getTitleCandidates(title).map(normalizeTitle))
+  return sections.findIndex((s) => candidateSet.has(normalizeTitle(s.title)))
 }
 
 export interface SectionListBinding {

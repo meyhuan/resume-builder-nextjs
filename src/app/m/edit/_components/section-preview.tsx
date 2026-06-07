@@ -96,13 +96,7 @@ export function SectionPreview(
         )}
         <button
           type="button"
-          onClick={(): void => {
-            if (module?.isList && section.blocks.length === 1) {
-              router.push(`${baseRoute}/0`)
-            } else {
-              router.push(baseRoute)
-            }
-          }}
+          onClick={(): void => router.push(baseRoute)}
           className="min-w-0 text-left"
         >
           <div className="truncate text-[14px] font-semibold leading-5 text-slate-950">{label}</div>
