@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useLayoutEffect, useMemo, useRef, type ReactElement } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, type ReactElement, type SyntheticEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { ArrowLeft } from 'lucide-react'
@@ -36,7 +36,11 @@ interface MobileEditHomeClientProps {
 }
 
 const log = createLogger('m/edit')
+const anchorLog = createLogger('m/edit/anchor')
 const SCROLL_STORAGE_PREFIX = 'm-edit-home-scroll'
+const ANCHOR_STORAGE_PREFIX = 'm-edit-home-anchor'
+const ANCHOR_RESTORE_DELAYS = [0, 50, 120, 300, 520] as const
+const EDIT_HOME_ANCHOR_SELECTOR = '[data-edit-home-anchor]'
 
 function findScrollContainer(node: HTMLElement | null): HTMLElement | null {
   let current = node?.parentElement ?? null
@@ -47,6 +51,28 @@ function findScrollContainer(node: HTMLElement | null): HTMLElement | null {
     current = current.parentElement
   }
   return document.scrollingElement instanceof HTMLElement ? document.scrollingElement : null
+}
+
+function findEditHomeAnchorValue(target: EventTarget | null): string | null {
+  if (!(target instanceof Element)) return null
+  const anchorEl = target.closest<HTMLElement>(EDIT_HOME_ANCHOR_SELECTOR)
+  return anchorEl?.dataset.editHomeAnchor ?? null
+}
+
+function findEditHomeAnchorElement(anchor: string): HTMLElement | null {
+  const anchors = document.querySelectorAll<HTMLElement>(EDIT_HOME_ANCHOR_SELECTOR)
+  return Array.from(anchors).find((el) => el.dataset.editHomeAnchor === anchor) ?? null
+}
+
+function scrollAnchorIntoContainer(scroller: HTMLElement, anchorEl: HTMLElement): number {
+  const scrollerRect = scroller.getBoundingClientRect()
+  const anchorRect = anchorEl.getBoundingClientRect()
+  const offsetToCenter = Math.max(16, Math.round((scroller.clientHeight - anchorRect.height) / 2))
+  const rawTop = scroller.scrollTop + anchorRect.top - scrollerRect.top - offsetToCenter
+  const maxTop = Math.max(0, scroller.scrollHeight - scroller.clientHeight)
+  const targetTop = Math.max(0, Math.min(maxTop, Math.round(rawTop)))
+  scroller.scrollTo({ top: targetTop, left: 0, behavior: 'instant' })
+  return targetTop
 }
 
 /**
@@ -67,8 +93,11 @@ export default function MobileEditHomeClient(
   const draftTemplateId = useDraftStore((s): string => s.templateId)
   const hydratedRef = useRef<boolean>(false)
   const restoredScrollRef = useRef<boolean>(false)
+  const restoredAnchorRef = useRef<boolean>(false)
+  const lastSavedAnchorRef = useRef<string | null>(null)
   const rootRef = useRef<HTMLDivElement>(null)
   const scrollStorageKey = `${SCROLL_STORAGE_PREFIX}:${initial?.id ?? resumeId ?? 'default'}`
+  const anchorStorageKey = `${ANCHOR_STORAGE_PREFIX}:${initial?.id ?? resumeId ?? 'default'}`
 
   log.info('store snapshot', {
     storeResumeId: resumeId,
@@ -116,6 +145,7 @@ export default function MobileEditHomeClient(
 
   useLayoutEffect((): (() => void) | void => {
     if (restoredScrollRef.current) return
+    if (sessionStorage.getItem(anchorStorageKey)) return
     const scroller = findScrollContainer(rootRef.current)
     if (!scroller) return
 
@@ -140,7 +170,7 @@ export default function MobileEditHomeClient(
       cancelAnimationFrame(frameId)
       if (timeoutId) clearTimeout(timeoutId)
     }
-  }, [scrollStorageKey])
+  }, [anchorStorageKey, scrollStorageKey])
 
   useEffect((): (() => void) => {
     const scroller = findScrollContainer(rootRef.current)
@@ -177,7 +207,16 @@ export default function MobileEditHomeClient(
     }
   }, [scrollStorageKey])
 
-  const saveCurrentScroll = (): void => {
+  const saveCurrentScroll = (event?: SyntheticEvent): void => {
+    const anchor = event ? findEditHomeAnchorValue(event.target) : null
+    if (anchor) {
+      sessionStorage.setItem(anchorStorageKey, anchor)
+      if (lastSavedAnchorRef.current !== anchor) {
+        lastSavedAnchorRef.current = anchor
+        anchorLog.info('save anchor', { anchor, eventType: event?.type })
+      }
+    }
+
     const scroller = findScrollContainer(rootRef.current)
     if (!scroller) return
     sessionStorage.setItem(scrollStorageKey, String(Math.max(0, Math.round(scroller.scrollTop))))
@@ -268,6 +307,68 @@ export default function MobileEditHomeClient(
     })
   }, [resume])
 
+  const currentTemplateId = draftTemplateId || initial?.template || 'simple'
+  const sectionCount = resume?.sections.length ?? 0
+
+  useLayoutEffect((): (() => void) | void => {
+    if (!resume || restoredAnchorRef.current) return
+    const anchor = sessionStorage.getItem(anchorStorageKey)
+    if (!anchor) return
+
+    let loggedSuccess = false
+    let loggedMissing = false
+    const finalDelay = ANCHOR_RESTORE_DELAYS[ANCHOR_RESTORE_DELAYS.length - 1]
+
+    const restoreAnchor = (delay: number): void => {
+      const anchorEl = findEditHomeAnchorElement(anchor)
+      const scroller = findScrollContainer(rootRef.current)
+      if (!anchorEl) {
+        if (!loggedMissing && delay === finalDelay) {
+          loggedMissing = true
+          anchorLog.warn('anchor not found', { anchor, sectionCount, templateId: currentTemplateId })
+          sessionStorage.removeItem(anchorStorageKey)
+        }
+        return
+      }
+      if (!scroller) {
+        if (!loggedMissing && delay === finalDelay) {
+          loggedMissing = true
+          anchorLog.warn('scroll container not found', { anchor, sectionCount, templateId: currentTemplateId })
+          sessionStorage.removeItem(anchorStorageKey)
+        }
+        return
+      }
+
+      const targetTop = scrollAnchorIntoContainer(scroller, anchorEl)
+      if (!loggedSuccess) {
+        loggedSuccess = true
+        anchorLog.info('restore anchor', {
+          anchor,
+          targetTop,
+          scrollHeight: scroller.scrollHeight,
+          clientHeight: scroller.clientHeight,
+          sectionCount,
+          templateId: currentTemplateId,
+        })
+      }
+      if (delay === finalDelay) {
+        restoredAnchorRef.current = true
+        sessionStorage.removeItem(anchorStorageKey)
+      }
+    }
+
+    restoreAnchor(0)
+    const frameId = requestAnimationFrame((): void => restoreAnchor(0))
+    const timeoutIds = ANCHOR_RESTORE_DELAYS.map((delay) =>
+      setTimeout((): void => restoreAnchor(delay), delay),
+    )
+
+    return (): void => {
+      cancelAnimationFrame(frameId)
+      timeoutIds.forEach(clearTimeout)
+    }
+  }, [anchorStorageKey, currentTemplateId, resume, sectionCount])
+
   const handleCreateNew = async (): Promise<void> => {
     log.info('create new resume start')
     try {
@@ -307,8 +408,6 @@ export default function MobileEditHomeClient(
   }
 
   log.info('render resume', { id: initial?.id, name: resume.name })
-  const currentTemplateId = draftTemplateId || initial?.template || 'simple'
-
   return (
     <div
       ref={rootRef}
@@ -316,6 +415,8 @@ export default function MobileEditHomeClient(
       style={{
         paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 112px)',
       }}
+      onPointerDownCapture={saveCurrentScroll}
+      onTouchStartCapture={saveCurrentScroll}
       onClickCapture={saveCurrentScroll}
     >
       {/* Viewport-fixed background layer to bypass iOS Safari / WeChat WebView background-attachment limitation */}

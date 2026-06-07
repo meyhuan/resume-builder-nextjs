@@ -54,6 +54,7 @@ function TemplateMetricsPreview({ resume }: TemplateMetricsPreviewProps): ReactE
   return (
     <button
       type="button"
+      data-edit-home-anchor="template-specific"
       onClick={(): void => router.push('/m/edit/metrics')}
       className="w-full rounded-[18px] border border-amber-100 bg-white p-3.5 text-left shadow-[0_8px_24px_rgba(15,23,42,0.045)] active:scale-[0.99] transition-transform"
     >
@@ -86,6 +87,7 @@ function TemplateHighlightsPreview({ resume }: TemplateMetricsPreviewProps): Rea
   return (
     <button
       type="button"
+      data-edit-home-anchor="template-specific"
       onClick={(): void => router.push('/m/edit/highlights')}
       className="w-full rounded-[18px] border border-cyan-100 bg-white p-3.5 text-left shadow-[0_8px_24px_rgba(15,23,42,0.045)] active:scale-[0.99] transition-transform"
     >

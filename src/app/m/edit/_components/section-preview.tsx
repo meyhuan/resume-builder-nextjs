@@ -79,6 +79,7 @@ export function SectionPreview(
 
   return (
     <article
+      data-edit-home-anchor={section.id}
       className={cn(
         'rounded-[18px] border border-[#edf0f5] bg-white p-3.5 shadow-[0_8px_24px_rgba(15,23,42,0.045)] transition-shadow',
         dragging && 'ring-2 ring-violet-300 shadow-lg',

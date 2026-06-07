@@ -34,7 +34,7 @@ export function ResumeProfileCard(
     <section className={cn(
       'mx-3 mt-2 rounded-[18px] border bg-white p-3.5 shadow-[0_8px_24px_rgba(15,23,42,0.045)]',
       !name ? 'border-violet-200' : 'border-[#edf0f5]',
-    )}>
+    )} data-edit-home-anchor="base">
       <div className="flex items-center gap-3">
         {/* Avatar — tapping navigates to base-info edit */}
         <button

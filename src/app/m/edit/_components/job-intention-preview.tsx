@@ -30,6 +30,7 @@ export function JobIntentionPreview({ resume }: JobIntentionPreviewProps): React
   return (
     <button
       type="button"
+      data-edit-home-anchor="intention"
       onClick={(): void => router.push('/m/edit/intention')}
       className={cn(
         'group w-full rounded-[18px] border border-[#edf0f5] bg-white p-3.5 text-left',
