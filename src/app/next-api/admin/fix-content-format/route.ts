@@ -5,6 +5,7 @@ import { cookies } from 'next/headers'
 import { toExternalResume } from '@/features/migration/java-resume-converter'
 import { mapExternalResume } from '@/io/external-resume-importer'
 import type { ResumeData } from '@/entities/resume/resume-data'
+import { normalizeResumeContent } from '@/entities/resume/normalize-resume-content'
 
 /**
  * POST /next-api/admin/fix-content-format
@@ -35,7 +36,8 @@ export async function POST(req: Request): Promise<NextResponse> {
   })
 
   let converted = 0
-  let skipped = 0
+  let normalized = 0
+  const skipped = 0
   const errors: Array<{ id: string; error: string }> = []
 
   for (const resume of resumes) {
@@ -43,16 +45,15 @@ export async function POST(req: Request): Promise<NextResponse> {
       const raw = resume.content as Record<string, unknown>
       const isJavaFormat: boolean =
         raw?.base_info !== undefined || !Array.isArray(raw?.sections)
-      if (!isJavaFormat) {
-        skipped++
-        continue
-      }
-      const newContent: ResumeData = mapExternalResume(toExternalResume(raw))
+      const newContent: ResumeData = isJavaFormat
+        ? mapExternalResume(toExternalResume(raw))
+        : normalizeResumeContent(raw as Partial<ResumeData> & Record<string, unknown>, { fallbackId: resume.id })
       await prisma.resume.update({
         where: { id: resume.id },
         data: { content: newContent as unknown as Prisma.InputJsonValue },
       })
-      converted++
+      if (isJavaFormat) converted++
+      else normalized++
     } catch (e: unknown) {
       errors.push({
         id: resume.id,
@@ -64,6 +65,7 @@ export async function POST(req: Request): Promise<NextResponse> {
   return NextResponse.json({
     total: resumes.length,
     converted,
+    normalized,
     skipped,
     errors,
   })

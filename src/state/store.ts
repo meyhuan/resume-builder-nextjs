@@ -15,6 +15,7 @@ import { mapExternalResume } from '@/io/external-resume-importer'
 import { TEST_RESUME_JSON } from '@/io/default-resume-data'
 import { createDefaultResume } from '@/lib/default-resume'
 import { createDefaultBlock } from '@/entities/blocks/block-factory'
+import { normalizeResumeContent } from '@/entities/resume/normalize-resume-content'
 import { TEMPLATE_REGISTRY } from '@/templates/template-loader'
 import {
   syncJobPositionFromBaseInfo,
@@ -135,7 +136,7 @@ export const useAppStore = create<AppState>()(
       set(() => ({
         pastStates: pushHistory(state.resume, state.pastStates),
         futureStates: [],
-        resume: withNormalizedJobPosition(testResume),
+        resume: withNormalizedJobPosition(normalizeResumeContent(testResume)),
       }), false, 'resume/loadTest')
     },
     loadScenarioData: (resume) => {
@@ -143,15 +144,16 @@ export const useAppStore = create<AppState>()(
       set(() => ({
         pastStates: pushHistory(state.resume, state.pastStates),
         futureStates: [],
-        resume: withNormalizedJobPosition(resume),
+        resume: withNormalizedJobPosition(normalizeResumeContent(resume)),
       }), false, 'resume/loadScenario')
     },
     setResume: (updater) => {
       const state = get()
+      const nextResume = produce(state.resume, updater)
       set(() => ({
         pastStates: pushHistory(state.resume, state.pastStates),
         futureStates: [],
-        resume: withNormalizedJobPosition(produce(state.resume, updater)),
+        resume: withNormalizedJobPosition(normalizeResumeContent(nextResume)),
       }), false, 'resume/set')
     },
     getThemeForTemplate: (templateId) => {
@@ -346,7 +348,7 @@ export const useAppStore = create<AppState>()(
       set(() => ({
         pastStates: pushHistory(state.resume, state.pastStates),
         futureStates: [],
-        resume: withNormalizedJobPosition(mapExternalResume(external)),
+        resume: withNormalizedJobPosition(normalizeResumeContent(mapExternalResume(external))),
       }), false, 'resume/import')
     },
     updateBaseInfo: (baseInfo, name) => {

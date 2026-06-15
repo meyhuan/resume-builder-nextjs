@@ -5,6 +5,7 @@ import { persist, createJSONStorage } from 'zustand/middleware'
 import { get as idbGet, set as idbSet, del as idbDel } from 'idb-keyval'
 import type { ResumeData } from '@/entities/resume/resume-data'
 import { withNormalizedJobPosition } from '@/entities/resume/sync-job-position'
+import { normalizeResumeContent } from '@/entities/resume/normalize-resume-content'
 
 /**
  * Result returned by saveAll().
@@ -66,7 +67,7 @@ function normalizeResume(resume: ResumeData | null | undefined, fallbackId: stri
     jobIntentionVisible: base.jobIntentionVisible,
     sections: Array.isArray(base.sections) ? base.sections : [],
   }
-  return withNormalizedJobPosition(normalized)
+  return withNormalizedJobPosition(normalizeResumeContent(normalized, { fallbackId }))
 }
 
 /**
@@ -136,7 +137,7 @@ export const useDraftStore = create<DraftState>()(
         set({ draft: next, dirtyPaths: Array.from(dirty) })
       },
       replaceDraft: (next): void => {
-        set({ draft: next, dirtyPaths: ['*'] })
+        set({ draft: normalizeResume(next, next.id || 'resume-draft'), dirtyPaths: ['*'] })
       },
       reorderSections: (fromIdx, toIdx): void => {
         const current = get().draft
@@ -181,17 +182,19 @@ export const useDraftStore = create<DraftState>()(
         }
         set({ isSaving: true })
         try {
+          const normalizedDraft = normalizeResume(draft, resumeId)
           const res = await fetch(`/next-api/resumes/${resumeId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ content: draft }),
+            body: JSON.stringify({ content: normalizedDraft }),
           })
           if (!res.ok) {
             const text = await res.text().catch(() => '')
             throw new Error(text || `保存失败 (${res.status})`)
           }
           set({
-            server: draft,
+            draft: normalizedDraft,
+            server: normalizedDraft,
             dirtyPaths: [],
             lastSavedAt: Date.now(),
             isSaving: false,
@@ -209,10 +212,11 @@ export const useDraftStore = create<DraftState>()(
           return { ok: false, error: '无可保存的简历' }
         }
         try {
+          const normalizedDraft = normalizeResume(draft, resumeId)
           const res = await fetch(`/next-api/resumes/${resumeId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ content: draft, thumbnail: dataUrl }),
+            body: JSON.stringify({ content: normalizedDraft, thumbnail: dataUrl }),
           })
           if (!res.ok) {
             const text = await res.text().catch(() => '')

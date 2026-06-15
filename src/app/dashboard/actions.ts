@@ -4,6 +4,8 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
+import type { ResumeData } from '@/entities/resume/resume-data';
+import { normalizeResumeContent } from '@/entities/resume/normalize-resume-content';
 
 export async function createResume() {
   const cookieStore = await cookies();
@@ -54,7 +56,10 @@ export async function duplicateResume(id: string) {
   const newResume = await prisma.resume.create({
     data: {
       title: `${existingResume.title} - 副本`,
-      content: existingResume.content as Prisma.InputJsonValue,
+      content: normalizeResumeContent(
+        existingResume.content as unknown as Partial<ResumeData> & Record<string, unknown>,
+        { fallbackId: `${existingResume.id}-copy` },
+      ) as unknown as Prisma.InputJsonValue,
       template: existingResume.template,
       thumbnail: existingResume.thumbnail,
       user: { connect: { wxId: userId } },

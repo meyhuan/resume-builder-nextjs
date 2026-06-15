@@ -3,6 +3,8 @@ import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { cookies } from 'next/headers'
 import { persistResumeAssets } from '@/lib/persist-resume-assets'
+import type { ResumeData } from '@/entities/resume/resume-data'
+import { normalizeResumeContent } from '@/entities/resume/normalize-resume-content'
 
 interface RouteParams {
   params: Promise<{
@@ -56,9 +58,13 @@ export async function PUT(req: Request, { params }: RouteParams) {
     updateStep = 'parse-body'
     const body = await req.json()
     const { title, content, template, thumbnail } = body
+    const normalizedContent = normalizeResumeContent(
+      content as Partial<ResumeData> & Record<string, unknown>,
+      { fallbackId: resumeId },
+    )
     updateStep = 'persist-assets'
     const persistedAssets = await persistResumeAssets({
-      content,
+      content: normalizedContent as unknown as Record<string, unknown>,
       thumbnail,
       customPrefix: resumeId,
     })

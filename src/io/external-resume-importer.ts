@@ -9,6 +9,7 @@ import type { CampusBlock } from '@/entities/blocks/campus-block';
 import type { TextBlock } from '@/entities/blocks/text-block';
 import type { ExternalResume } from './external-resume-types';
 import { MODULE_SECTION_TITLES } from '@/entities/module/module-config';
+import { normalizeResumeContent } from '@/entities/resume/normalize-resume-content';
 
 /**
  * Maps external JSON resume to internal ResumeData model.
@@ -66,14 +67,14 @@ export function mapExternalResume(ext: ExternalResume): ResumeData {
     sections.push(...customSections);
   }
 
-  return {
+  return normalizeResumeContent({
     id: 'resume-imported',
     name: ext.base_info?.name ?? '',
     baseInfo,
     jobIntention,
     jobIntentionVisible,
     sections,
-  };
+  });
 }
 
 function mapJobIntentionData(ext: ExternalResume): JobIntention | undefined {

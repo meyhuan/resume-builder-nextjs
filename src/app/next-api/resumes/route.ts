@@ -6,6 +6,7 @@ import { persistResumeAssets } from '@/lib/persist-resume-assets'
 import { toExternalResume } from '@/features/migration/java-resume-converter'
 import { mapExternalResume } from '@/io/external-resume-importer'
 import type { ResumeData } from '@/entities/resume/resume-data'
+import { normalizeResumeContent } from '@/entities/resume/normalize-resume-content'
 
 /**
  * Detect and convert Java/ExternalResume format to ResumeData if needed.
@@ -21,7 +22,7 @@ function normalizeContent(raw: unknown): ResumeData {
   if (isJavaFormat) {
     return mapExternalResume(toExternalResume(obj))
   }
-  return raw as ResumeData
+  return normalizeResumeContent(raw as Partial<ResumeData> & Record<string, unknown>)
 }
 
 // GET /next-api/resumes - List all resumes for current user

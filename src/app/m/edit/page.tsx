@@ -7,6 +7,7 @@ import { prisma } from '@/lib/prisma'
 import { createLogger } from '@/lib/logger'
 import { createDefaultResume } from '@/lib/default-resume'
 import type { ResumeData } from '@/entities/resume/resume-data'
+import { normalizeResumeContent } from '@/entities/resume/normalize-resume-content'
 import MobileEditHomeClient, { type InitialResume } from './edit-home-client'
 
 const log = createLogger('m/edit/page')
@@ -90,6 +91,12 @@ export default async function MobileEditHomePage(
       where: { id: resume.id },
       data: { content: initialContent as unknown as Prisma.InputJsonValue },
     })
+  }
+  if (resume && initialContent) {
+    initialContent = normalizeResumeContent(
+      initialContent as unknown as Partial<ResumeData> & Record<string, unknown>,
+      { fallbackId: resume.id },
+    )
   }
 
   const initial: InitialResume | null = resume && initialContent

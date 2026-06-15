@@ -3,6 +3,8 @@ import { Prisma, type Resume, type User } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { cookies } from 'next/headers';
 import { getServerJavaApiBaseUrl } from '@/lib/java-api-base';
+import type { ResumeData } from '@/entities/resume/resume-data';
+import { normalizeResumeContent } from '@/entities/resume/normalize-resume-content';
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '';
 
@@ -179,7 +181,10 @@ export async function POST(req: Request): Promise<NextResponse> {
   const copied = await prisma.resume.create({
     data: {
       title: sourceResume.title,
-      content: sourceResume.content as Prisma.InputJsonValue,
+      content: normalizeResumeContent(
+        sourceResume.content as unknown as Partial<ResumeData> & Record<string, unknown>,
+        { fallbackId: `${sourceResume.id}-copy` },
+      ) as unknown as Prisma.InputJsonValue,
       template: sourceResume.template,
       thumbnail: sourceResume.thumbnail,
       userId: targetUser.id,

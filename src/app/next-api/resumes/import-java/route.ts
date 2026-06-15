@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { verifyMiniSign } from '@/lib/verify-mini-sign'
+import type { ResumeData } from '@/entities/resume/resume-data'
+import { normalizeResumeContent } from '@/entities/resume/normalize-resume-content'
 
 interface ImportJavaBody {
   readonly wxId: unknown
@@ -66,12 +68,17 @@ export async function POST(req: Request): Promise<NextResponse> {
     return NextResponse.json({ created: false, reason: 'already_exists' })
   }
 
+  const normalizedContent = normalizeResumeContent(
+    content as Partial<ResumeData> & Record<string, unknown>,
+    { fallbackId: `migrated-${javaId}` },
+  )
+
   await prisma.resume.create({
     data: {
       userId: user.id,
       title: title || '我的简历',
       template: template || 'simple',
-      content: content as Prisma.InputJsonValue,
+      content: normalizedContent as unknown as Prisma.InputJsonValue,
       meta: {
         javaId,
         importedAt: new Date().toISOString(),

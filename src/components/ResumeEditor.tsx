@@ -34,6 +34,7 @@ import { useVipCheck } from '@/hooks/use-vip-check'
 import VipUpgradeDialog from '@/components/vip/vip-upgrade-dialog'
 import type { ResumeData } from '@/entities/resume/resume-data'
 import { getRenderableResume } from '@/entities/resume/renderable-resume'
+import { normalizeResumeContent } from '@/entities/resume/normalize-resume-content'
 import { joinExportFileNameParts, sanitizeExportFileName } from '@/lib/export-file-name'
 
 const AI_CACHE_KEYS: Record<string, string> = {
@@ -120,7 +121,11 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
     if (initialData.content && typeof initialData.content === 'object' && Object.keys(initialData.content).length > 0) {
       const raw = initialData.content as Record<string, unknown>
       const { content: cleanContent, meta } = extractEditorMeta(raw)
-      setResume(() => cleanContent)
+      const normalizedContent = normalizeResumeContent(
+        cleanContent as Partial<ResumeData> & Record<string, unknown>,
+        { fallbackId: initialData.id },
+      )
+      setResume(() => normalizedContent)
       // Restore per-resume theme overrides
       const tplId = initialData.template || 'simple'
       restoredTheme = meta.themes[tplId]
@@ -139,7 +144,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
       // Build initial composite fingerprint after all state is restored
       const initTheme = restoredTheme ?? getThemeForTemplate(tplId)
       setSavedSnapshot(JSON.stringify({
-        resume: cleanContent,
+        resume: normalizedContent,
         theme: initTheme,
         tpl: tplId,
         onePageMode: restoredOnePage,
@@ -168,7 +173,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
     cachedDataApplied.current = true
     try {
       const resumeData = JSON.parse(cached) as ResumeData
-      setResume(() => resumeData)
+      setResume(() => normalizeResumeContent(resumeData, { fallbackId: 'resume-cached' }))
       localStorage.removeItem(cacheKey)
       toast.success(source === 'ai' ? '✨ AI 简历生成完毕，快来完善细节吧' : '✨ 简历解析成功，快来完善细节吧')
     } catch {

@@ -16,6 +16,7 @@ import { getDefaultModel, resolveApiKey } from '@/lib/ai/ai-config'
 import { buildImportSystemPrompt, buildImportUserPrompt } from '@/lib/ai/import-prompt-builder'
 import { createDefaultResume } from '@/lib/default-resume'
 import { buildImportResumeTitle } from '@/lib/import-resume-title'
+import { normalizeResumeContent } from '@/entities/resume/normalize-resume-content'
 
 /**
  * POST /next-api/resumes/mini
@@ -115,7 +116,10 @@ export async function POST(req: Request): Promise<NextResponse> {
         userId: user.id,
         title: source.title + ' (副本)',
         template: source.template ?? 'simple',
-        content: source.content as Prisma.InputJsonValue,
+        content: normalizeResumeContent(
+          source.content as unknown as Partial<ResumeData> & Record<string, unknown>,
+          { fallbackId: `${resumeId}-copy` },
+        ) as unknown as Prisma.InputJsonValue,
         thumbnail: source.thumbnail,
       },
       select: { id: true, title: true, template: true, updatedAt: true },

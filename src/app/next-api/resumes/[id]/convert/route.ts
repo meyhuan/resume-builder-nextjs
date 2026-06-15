@@ -5,6 +5,7 @@ import { cookies } from 'next/headers'
 import { toExternalResume } from '@/features/migration/java-resume-converter'
 import { mapExternalResume } from '@/io/external-resume-importer'
 import type { ResumeData } from '@/entities/resume/resume-data'
+import { normalizeResumeContent } from '@/entities/resume/normalize-resume-content'
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -37,15 +38,13 @@ export async function POST(_req: Request, { params }: RouteParams): Promise<Next
   const isJavaFormat: boolean =
     raw?.base_info !== undefined || !Array.isArray(raw?.sections)
 
-  if (!isJavaFormat) {
-    return NextResponse.json({ converted: false, message: 'Already in new format' })
-  }
-
-  const newContent: ResumeData = mapExternalResume(toExternalResume(raw))
+  const newContent: ResumeData = isJavaFormat
+    ? mapExternalResume(toExternalResume(raw))
+    : normalizeResumeContent(raw as Partial<ResumeData> & Record<string, unknown>, { fallbackId: id })
   await prisma.resume.update({
     where: { id },
     data: { content: newContent as unknown as Prisma.InputJsonValue },
   })
 
-  return NextResponse.json({ converted: true })
+  return NextResponse.json({ converted: isJavaFormat, normalized: true })
 }
