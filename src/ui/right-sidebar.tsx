@@ -160,6 +160,7 @@ function LayoutPanel(props: LayoutPanelProps): ReactElement {
               <button
                 key={template.id}
                 type="button"
+                data-template-id={template.id}
                 aria-pressed={tpl === template.id}
                 aria-label={`选择模板 ${template.name}：${template.description}`}
                 className={`group relative cursor-pointer rounded-xl border transition-all duration-200 overflow-hidden ${

@@ -339,7 +339,7 @@ export default function ThemePanel(props: {
                   />
                   <div className="flex-1 text-left">
                     <div className="text-xs font-medium text-slate-700">当前颜色</div>
-                    <div className="text-[11px] font-mono text-slate-500">{selectedColor}</div>
+                    <div className="text-[11px] font-mono text-slate-500" data-theme-primary-color={selectedColor}>{selectedColor}</div>
                   </div>
                   <ChevronDown className="h-4 w-4 text-slate-400" />
                 </button>
@@ -411,6 +411,8 @@ export default function ThemePanel(props: {
               <button
                 type="button"
                 onClick={props.onResetPrimaryColor}
+                data-theme-reset-primary="true"
+                data-theme-default-primary={props.defaultPrimaryColor.toUpperCase()}
                 className="flex w-full items-center justify-between rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-left transition-colors hover:border-slate-300 hover:bg-slate-50"
               >
                 <span className="text-xs font-semibold text-slate-700">恢复模板默认色</span>

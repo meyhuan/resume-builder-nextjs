@@ -752,6 +752,16 @@ async function checkLocalInteractions(browser, baseUrl, id, artifactDir) {
     await page.waitForSelector('[data-scenario-preview="true"] .resume-container', { timeout: 20_000 })
     await page.waitForFunction(() => document.body.innerText.includes('李小满'), { timeout: 10_000 })
 
+    await runInteractionStep(page, `Template switch flow (${id})`, async () => {
+      await closeOpenDialogs(page)
+      return checkTemplateSwitchFlow(page, id)
+    })
+
+    await runInteractionStep(page, `Theme update/reset flow (${id})`, async () => {
+      await closeOpenDialogs(page)
+      return checkThemeUpdateResetFlow(page)
+    })
+
     await runInteractionStep(page, `Base info modal (${id})`, async () => {
       await closeOpenDialogs(page)
       const opened = await openModalFromPreview(page, ['电话：', '邮箱：', '性别：', '现居：', '年龄：'], 'input#phone')
@@ -802,6 +812,11 @@ async function checkLocalInteractions(browser, baseUrl, id, artifactDir) {
       return `Updated company field to ${company}.`
     })
 
+    await runInteractionStep(page, `Section action controls (${id})`, async () => {
+      await closeOpenDialogs(page)
+      return checkSectionActionControls(page)
+    })
+
     await runInteractionStep(page, `Hover contrast (${id})`, async () => {
       await closeOpenDialogs(page)
       return checkDarkHoverContrast(page)
@@ -840,6 +855,11 @@ async function checkLocalInteractions(browser, baseUrl, id, artifactDir) {
       return `Editing color ${metrics.color} on ${metrics.backgroundColor}.`
     })
 
+    await runInteractionStep(page, `Scenario data load flow (${id})`, async () => {
+      await closeOpenDialogs(page)
+      return checkScenarioDataLoadFlow(page)
+    })
+
     const screenshot = path.join(artifactDir, 'local-interactions.png')
     await page.screenshot({ path: screenshot, fullPage: true })
 
@@ -865,6 +885,129 @@ async function runInteractionStep(page, name, action) {
     fail(name, error.message)
     await closeOpenDialogs(page)
   }
+}
+
+async function checkTemplateSwitchFlow(page, originalTemplateId) {
+  await openLayoutTemplatesTab(page)
+
+  const originalTemplateIsVisible = await page.evaluate((currentId) => {
+    return Array.from(document.querySelectorAll('button[data-template-id]'))
+      .some((button) => button.getAttribute('data-template-id') === currentId)
+  }, originalTemplateId)
+  if (!originalTemplateIsVisible) {
+    return `Skipped template switch flow because ${originalTemplateId} is hidden from the template sidebar.`
+  }
+
+  const alternateTemplateId = await page.evaluate((currentId) => {
+    const buttons = Array.from(document.querySelectorAll('button[data-template-id]'))
+    const alternate = buttons.find((button) => button.getAttribute('data-template-id') !== currentId)
+    return alternate?.getAttribute('data-template-id') || ''
+  }, originalTemplateId)
+
+  if (!alternateTemplateId) throw new Error('Cannot find an alternate template button in the layout sidebar.')
+
+  await page.click(`button[data-template-id="${escapeAttributeValue(alternateTemplateId)}"]`)
+  await waitForActiveTemplate(page, alternateTemplateId)
+  await page.waitForSelector('[data-scenario-preview="true"] .resume-container', { timeout: 10_000 })
+  await page.waitForFunction(() => document.querySelector('[data-scenario-preview="true"]')?.textContent?.includes('李小满'), { timeout: 8_000 })
+
+  await page.click(`button[data-template-id="${escapeAttributeValue(originalTemplateId)}"]`)
+  await waitForActiveTemplate(page, originalTemplateId)
+  await page.waitForSelector('[data-scenario-preview="true"] .resume-container', { timeout: 10_000 })
+  await page.waitForFunction(() => document.querySelector('[data-scenario-preview="true"]')?.textContent?.includes('李小满'), { timeout: 8_000 })
+
+  return `Switched ${originalTemplateId} -> ${alternateTemplateId} -> ${originalTemplateId}.`
+}
+
+async function checkThemeUpdateResetFlow(page) {
+  await openLayoutSettingsTab(page)
+  await clickByTextIfPresent(page, '仍要自定义主色', ['button'])
+
+  const defaultColor = await readDefaultPrimaryColor(page)
+  if (!defaultColor) throw new Error('Cannot read the template default primary color from the theme panel.')
+
+  const targetColor = defaultColor === '#000000' ? '#2563EB' : '#000000'
+  await page.click('button[aria-label="选择主题主色"]')
+  await page.waitForSelector(`button[aria-label="选择颜色 ${escapeAttributeValue(targetColor)}"]`, { timeout: 5_000 })
+  await page.click(`button[aria-label="选择颜色 ${escapeAttributeValue(targetColor)}"]`)
+  await waitForThemeColor(page, targetColor)
+
+  await page.click('[data-theme-reset-primary="true"]')
+  await waitForThemeColor(page, defaultColor)
+
+  return `Changed primary color to ${targetColor}, then reset to ${defaultColor}.`
+}
+
+async function checkScenarioDataLoadFlow(page) {
+  await openLayoutSettingsTab(page)
+  const changed = await page.evaluate(() => {
+    const select = Array.from(document.querySelectorAll('select')).find((node) =>
+      Array.from(node.options).some((option) => option.value === 'long-content')
+    )
+    if (!select) return false
+    select.value = 'long-content'
+    select.dispatchEvent(new Event('input', { bubbles: true }))
+    select.dispatchEvent(new Event('change', { bubbles: true }))
+    return true
+  })
+  if (!changed) throw new Error('Cannot find the scenario data select with long-content option.')
+
+  await clickButtonByExactText(page, '加载场景数据')
+  await page.waitForFunction(() => document.querySelector('[data-scenario-preview="true"]')?.textContent?.includes('欧阳晨曦'), { timeout: 8_000 })
+
+  const verification = await page.evaluate(() => {
+    const text = document.querySelector('[data-scenario-preview="true"]')?.textContent || ''
+    return {
+      hasName: text.includes('欧阳晨曦'),
+      hasPosition: text.includes('高级增长产品经理'),
+      hasSalary: text.includes('35k-50k'),
+      hasLongCompany: text.includes('北京云启未来智能科技股份有限公司商业化增长产品中心'),
+      hasProject: text.includes('企业版商业化线索评分与试用转化系统'),
+      hasCustomField: text.includes('期望工作模式'),
+    }
+  })
+  const missing = Object.entries(verification)
+    .filter(([, value]) => !value)
+    .map(([key]) => key)
+  if (missing.length > 0) {
+    throw new Error(`Scenario loaded but expected fields are missing: ${missing.join(', ')}.`)
+  }
+
+  const layoutIssue = await checkGeneralVisualLayout(page, {
+    fixture: 'scenario-long',
+    viewport: { width: 1400, height: 1000 },
+  })
+  if (layoutIssue) throw new Error(layoutIssue)
+
+  return 'Loaded long-content scenario and verified key fields in preview.'
+}
+
+async function openLayoutSettingsTab(page) {
+  await clickButtonByExactText(page, '排版设置')
+  await page.waitForFunction(() => document.body.innerText.includes('文字排版') && document.body.innerText.includes('色彩风格'), { timeout: 5_000 })
+}
+
+async function openLayoutTemplatesTab(page) {
+  await clickButtonByExactText(page, '切换模板')
+  await page.waitForSelector('button[data-template-id]', { timeout: 5_000 })
+}
+
+async function waitForActiveTemplate(page, templateId) {
+  await page.waitForFunction((nextId) => {
+    return document.querySelector('[data-scenario-active-template]')?.getAttribute('data-scenario-active-template') === nextId
+  }, { timeout: 8_000 }, templateId)
+}
+
+async function readDefaultPrimaryColor(page) {
+  return page.evaluate(() => {
+    return document.querySelector('[data-theme-reset-primary]')?.getAttribute('data-theme-default-primary') || ''
+  })
+}
+
+async function waitForThemeColor(page, color) {
+  await page.waitForFunction((expectedColor) => {
+    return document.querySelector('[data-theme-primary-color]')?.textContent?.toUpperCase().includes(expectedColor)
+  }, { timeout: 5_000 }, color)
 }
 
 async function openModalFromPreview(page, labels, modalSelector) {
@@ -1002,6 +1145,97 @@ async function clickRichTextCandidate(page) {
   return true
 }
 
+async function checkSectionActionControls(page) {
+  const handle = await page.evaluateHandle(() => {
+    const root = document.querySelector('[data-scenario-preview="true"]')
+    if (!root) return null
+    const sectionsWithActions = Array.from(root.querySelectorAll('section'))
+      .filter((section) => {
+        if (section.closest('[role="dialog"]')) return false
+        const rect = section.getBoundingClientRect()
+        return rect.width > 80 && rect.height > 24 && section.querySelector('button[title="拖动"], button[title="删除"]')
+      })
+    if (sectionsWithActions.length > 0) {
+      return sectionsWithActions.find((section) => section.querySelector('button[title="添加"]')) ?? sectionsWithActions[0]
+    }
+
+    const hoverTargets = Array.from(root.querySelectorAll('section, [class*="group/header"], h2, h3'))
+      .map((node) => {
+        if (node.matches('h2,h3')) return node.closest('[class*="group/header"]') ?? node.closest('section') ?? node
+        return node
+      })
+      .filter((node, index, nodes) => {
+        if (!node || nodes.indexOf(node) !== index) return false
+        if (node.closest('[role="dialog"]')) return false
+        const rect = node.getBoundingClientRect()
+        const text = node.textContent || ''
+        return rect.width > 60 && rect.height > 18 && /经历|项目|教育|证书|技能|评价|意向/.test(text)
+      })
+    return hoverTargets[0] ?? null
+  })
+  const section = handle.asElement()
+  if (!section) {
+    await handle.dispose()
+    throw new Error('Cannot find a preview section/header candidate for section action controls.')
+  }
+
+  await section.hover()
+  await sleep(260)
+
+  const metrics = await page.evaluate(() => {
+    const root = document.querySelector('[data-scenario-preview="true"]')
+    if (!root) return null
+    const requiredTitles = ['拖动', '删除']
+    const optionalTitles = ['添加']
+    const allTitles = [...requiredTitles, ...optionalTitles]
+    const buttons = allTitles.map((title) => {
+      const selector = title === '添加' ? 'button[title="添加"], button[title^="添加"]' : `button[title="${title}"]`
+      const candidates = Array.from(root.querySelectorAll(selector))
+      const button = candidates.find((candidate) => {
+        const rect = candidate.getBoundingClientRect()
+        const style = window.getComputedStyle(candidate)
+        return rect.width > 8 && rect.height > 8 && Number(style.opacity || 0) > 0.5 && style.pointerEvents !== 'none'
+      }) ?? candidates[0]
+      if (!button) return { title, exists: false, required: requiredTitles.includes(title) }
+      const rect = button.getBoundingClientRect()
+      const style = window.getComputedStyle(button)
+      return {
+        title,
+        exists: true,
+        required: requiredTitles.includes(title),
+        width: rect.width,
+        height: rect.height,
+        opacity: Number(style.opacity || 0),
+        pointerEvents: style.pointerEvents,
+        visible: rect.width > 8 && rect.height > 8 && Number(style.opacity || 0) > 0.5 && style.pointerEvents !== 'none',
+      }
+    })
+    return {
+      previewText: (root.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 80),
+      buttons,
+    }
+  })
+  await handle.dispose()
+  if (!metrics) throw new Error('Cannot inspect section action controls because the preview root is missing.')
+
+  const requiredIssues = metrics.buttons
+    .filter((button) => button.required && (!button.exists || !button.visible))
+    .map((button) => button.title)
+  if (requiredIssues.length > 0) {
+    throw new Error(`Required section actions are not visible after hover: ${requiredIssues.join(', ')}. ${JSON.stringify(metrics)}`)
+  }
+
+  const addButton = metrics.buttons.find((button) => button.title === '添加')
+  if (addButton?.exists && !addButton.visible) {
+    throw new Error(`Add action exists but is not visible after hover. ${JSON.stringify(metrics)}`)
+  }
+
+  const visibleTitles = metrics.buttons
+    .filter((button) => button.exists && button.visible)
+    .map((button) => button.title)
+  return `Section actions visible after hover: ${visibleTitles.join(', ')}.`
+}
+
 async function checkDarkHoverContrast(page) {
   const handles = await page.$$('[data-scenario-preview="true"] .cursor-text, [data-scenario-preview="true"] [class*="hover:bg-gray-100"]')
   let checked = 0
@@ -1094,14 +1328,18 @@ async function replaceFocusedInputValue(page, value) {
 }
 
 async function clickButtonByExactText(page, text) {
-  const clicked = await page.evaluate((targetText) => {
-    const buttons = Array.from(document.querySelectorAll('button'))
-    const button = buttons.find((node) => (node.textContent || '').trim() === targetText)
-    if (!button) return false
-    button.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }))
-    return true
-  }, text)
-  if (!clicked) throw new Error(`Cannot find button with exact text: ${text}`)
+  const handles = await page.$$('button')
+  for (const handle of handles) {
+    const matches = await handle.evaluate((node, targetText) => (node.textContent || '').trim() === targetText, text)
+    if (!matches) {
+      await handle.dispose()
+      continue
+    }
+    await handle.click({ delay: 20 })
+    await handle.dispose()
+    return
+  }
+  throw new Error(`Cannot find button with exact text: ${text}`)
 }
 
 async function closeOpenDialogs(page) {
@@ -1606,8 +1844,8 @@ function writeReport(templateIds) {
     '- 模板注册、懒加载、缩略图、主题契约。',
     '- 本地 PC、移动端、稀疏数据、长内容、富文本渲染。',
     '- 字号、行高、模块间距、标题比例、页边距、主题主色。',
-    '- 本地交互 QA：基础信息弹窗、头像上传入口、求职意向弹窗、经历字段编辑、富文本编辑态、深色背景 hover 对比。',
-    '- 一键加载真实简历场景数据，以及预览中的基础信息、求职意向、长公司名、项目名、薪资和自定义字段。',
+    '- 本地交互 QA：模板切换、主题改色与恢复默认、基础信息弹窗、头像上传入口、求职意向弹窗、经历字段编辑、模块操作入口、富文本编辑态、深色背景 hover 对比。',
+    '- 一键加载真实简历场景数据，以及预览中的基础信息、求职意向、长公司名、项目名、薪资、自定义字段和长内容布局。',
     '- 模板专项布局断言会在脚本中按模板 id 执行，例如表格模板的邮箱单元格和头像单元格检查。',
     '',
     '## 截图/产物',
@@ -1628,7 +1866,8 @@ function writeReport(templateIds) {
     '',
     '## 仍需人工确认',
     '',
-    '- 真实登录态编辑器里的细节建议在浏览器中快速扫一眼；如果 headless 测试使用 `/dev/scenario-loader`，它覆盖的是同一套场景加载 store/render 链路。',
+    '- 真实登录态编辑器里的细节建议在浏览器中快速扫一眼；如果 headless 测试使用 `/dev/scenario-loader`，它覆盖的是同一套右侧栏、场景加载、store 更新和模板渲染链路。',
+    '- 移动端表单编辑、真实导出 PDF/图片、AI 润色/生成和会员权限依赖真实账号或外部服务，发布前需要用线上/预发环境补测。',
     '',
     '## 结论',
     '',
@@ -1758,6 +1997,10 @@ function firstLines(value, count) {
 
 function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+function escapeAttributeValue(value) {
+  return String(value).replaceAll('\\', '\\\\').replaceAll('"', '\\"')
 }
 
 function sleep(ms) {

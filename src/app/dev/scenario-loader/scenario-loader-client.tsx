@@ -48,7 +48,7 @@ export default function ScenarioLoaderClient(): ReactElement {
       <main className="min-h-screen bg-slate-100 p-6">
         <div className="mx-auto mb-4 flex max-w-7xl items-center justify-between rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs text-slate-600">
           <span>Scenario Loader QA</span>
-          <span>{tpl} / {resume.name}</span>
+          <span data-scenario-active-template={tpl}>{tpl} / {resume.name}</span>
         </div>
 
         <div className="mx-auto grid max-w-7xl grid-cols-[1fr_360px] gap-5">

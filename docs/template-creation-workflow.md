@@ -133,9 +133,25 @@ What these checks must cover:
 - Generated `.webp` cover exists, has A4 thumbnail dimensions, and is referenced by both template registries when applicable.
 - Local PC rendering, mobile rendering, sparse data, long content, and rich text.
 - Theme controls: font size, line height, spacing, title scale, page padding, and primary color when not intentionally locked.
-- Local interaction QA runs automatically with `--local`: base info modal, avatar upload overlay, job intention modal, experience field editing, rich-text editing state, and dark-background hover contrast. Use `--skip-interactions` only for a temporary render-only check.
+- Local interaction QA runs automatically with `--local`: template switch flow, theme color update/reset flow, base info modal, avatar upload overlay, job intention modal, experience field editing, section action controls, rich-text editing state, dark-background hover contrast, and long-content scenario loading. Use `--skip-interactions` only for a temporary render-only check.
 - One-click realistic resume data fill through the scenario loader.
 - Rendered output after one-click fill, including base info, job intention, long company/project text, salary, and custom fields.
+
+Critical user-flow coverage for every new template:
+
+- Switching away from the template and back through the real right sidebar must keep the preview alive and preserve scenario data.
+- Changing the primary color and clicking "恢复模板默认色" must update both the visible control value and rendered template state.
+- Clicking base information, job intention, and a representative experience field must open the expected editing UI and persist changes back into the preview.
+- Hovering/clicking module areas must expose section actions such as drag, add, and delete where the template supports editable sections.
+- Loading the long-content scenario must render long names, company/project text, salary, and custom fields without overlap or horizontal overflow.
+
+Still run these checks manually or in a staging environment before release when the change touches the related behavior:
+
+- Real authenticated editor route, including saving to the database and re-opening the resume.
+- Mobile form editing in `/m/edit`, especially template-specific modules.
+- Mobile preview in `/m/preview` for a real resume id.
+- Print/export PDF or image generation.
+- AI polish/generate actions, quota/permission states, and member-only flows.
 
 When multiple templates changed, run the local check for each template. The scenario loader check can run once for the primary template being verified unless the one-click fill behavior is template-specific.
 
