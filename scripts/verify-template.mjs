@@ -364,6 +364,11 @@ async function runLocalChecks(templateIds, registries) {
       })
 
       await checkThemeControls(browser, baseUrl, id, registry, artifactDir)
+      if (!args['skip-interactions']) {
+        await checkLocalInteractions(browser, baseUrl, id, artifactDir)
+      } else {
+        warn(`Local interactions (${id})`, 'Skipped by --skip-interactions.')
+      }
       pass(`Local artifacts (${id})`, relative(artifactDir))
     }
   } finally {
@@ -716,6 +721,397 @@ async function checkThemeControls(browser, baseUrl, id, registry, artifactDir) {
   } else {
     fail(`Primary color (${id})`, 'Configurable template did not expose the lab primary color in text, border, or background styles.')
   }
+}
+
+function scenarioLoaderUrl(baseUrl, templateId) {
+  const params = new URLSearchParams({ tpl: templateId, avatar: '/avatar.jpg' })
+  return `${baseUrl}/dev/scenario-loader?${params.toString()}`
+}
+
+async function checkLocalInteractions(browser, baseUrl, id, artifactDir) {
+  const page = await browser.newPage()
+  const pageErrors = []
+  const consoleErrors = []
+  page.on('pageerror', (error) => pageErrors.push(error.message))
+  page.on('console', (message) => {
+    const text = message.text()
+    if (message.type() === 'error' && !isIgnoredConsoleError(text)) consoleErrors.push(text)
+  })
+  page.on('dialog', async (dialog) => {
+    await dialog.accept()
+  })
+
+  try {
+    await page.setViewport({ width: 1400, height: 1000, deviceScaleFactor: 1 })
+    const response = await page.goto(scenarioLoaderUrl(baseUrl, id), { waitUntil: 'networkidle2', timeout: 60_000 })
+    if (!response || !response.ok()) {
+      fail(`Local interactions (${id})`, `${scenarioLoaderUrl(baseUrl, id)} returned HTTP ${response ? response.status() : 'no response'}.`)
+      return
+    }
+
+    await page.waitForSelector('[data-scenario-preview="true"] .resume-container', { timeout: 20_000 })
+    await page.waitForFunction(() => document.body.innerText.includes('李小满'), { timeout: 10_000 })
+
+    await runInteractionStep(page, `Base info modal (${id})`, async () => {
+      await closeOpenDialogs(page)
+      const opened = await openModalFromPreview(page, ['电话：', '邮箱：', '性别：', '现居：', '年龄：'], 'input#phone')
+      if (!opened) throw new Error('Clicking base-info fields did not open the 基本信息 modal.')
+      const phone = `199-0000-${String(Date.now()).slice(-4)}`
+      await replaceInputValue(page, 'input#phone', phone)
+      await clickButtonByExactText(page, '确定')
+      await page.waitForFunction((nextPhone) => {
+        return document.querySelector('[data-scenario-preview="true"]')?.textContent?.includes(nextPhone)
+      }, { timeout: 5_000 }, phone)
+      return `Updated phone to ${phone}.`
+    })
+
+    await runInteractionStep(page, `Avatar upload entry (${id})`, async () => {
+      await closeOpenDialogs(page)
+      const avatar = await page.$('[data-scenario-preview="true"] img')
+      if (!avatar) throw new Error('No avatar image rendered in scenario-loader while avatar=/avatar.jpg is set.')
+      await avatar.hover()
+      await page.waitForFunction(() => document.body.innerText.includes('本地上传'), { timeout: 3_000 })
+      return 'Avatar hover exposes local upload action.'
+    })
+
+    await runInteractionStep(page, `Job intention modal (${id})`, async () => {
+      await closeOpenDialogs(page)
+      const opened = await openModalFromPreview(page, ['意向岗位：', '期望薪资：', '求职意向', '意向城市：'], 'input#salary')
+      if (!opened) throw new Error('Clicking job-intention content did not open the 求职意向 modal.')
+      const salary = `13k-18k-${String(Date.now()).slice(-3)}`
+      await replaceInputValue(page, 'input#salary', salary)
+      await clickButtonByExactText(page, '确定')
+      await page.waitForFunction((nextSalary) => {
+        return document.querySelector('[data-scenario-preview="true"]')?.textContent?.includes(nextSalary)
+      }, { timeout: 5_000 }, salary)
+      return `Updated salary to ${salary}.`
+    })
+
+    await runInteractionStep(page, `Block field editing (${id})`, async () => {
+      await closeOpenDialogs(page)
+      const clicked = await clickPreviewElementByTitle(page, ['点击编辑公司名称', '点击编辑公司'])
+        || await clickPreviewElementByText(page, ['上海星河智能科技有限公司'])
+      if (!clicked) throw new Error('Cannot find an editable company field in scenario-loader.')
+      await page.waitForSelector('[data-scenario-preview="true"] input', { timeout: 5_000 })
+      const company = `上海星河智能科技有限公司测试${String(Date.now()).slice(-3)}`
+      await replaceFocusedInputValue(page, company)
+      await page.keyboard.press('Enter')
+      await page.waitForFunction((nextCompany) => {
+        return document.querySelector('[data-scenario-preview="true"]')?.textContent?.includes(nextCompany)
+      }, { timeout: 5_000 }, company)
+      return `Updated company field to ${company}.`
+    })
+
+    await runInteractionStep(page, `Hover contrast (${id})`, async () => {
+      await closeOpenDialogs(page)
+      return checkDarkHoverContrast(page)
+    })
+
+    await runInteractionStep(page, `Rich text editing contrast (${id})`, async () => {
+      await closeOpenDialogs(page)
+      const clicked = await clickRichTextCandidate(page)
+      if (!clicked) throw new Error('Cannot find clickable rich-text content in scenario-loader.')
+      await page.waitForSelector('[data-scenario-preview="true"] .rb-editing, [data-scenario-preview="true"] [contenteditable="true"]', { timeout: 5_000 })
+      const metrics = await page.evaluate(() => {
+        const root = document.querySelector('[data-scenario-preview="true"]')
+        const editing = root?.querySelector('.rb-editing') ?? root?.querySelector('[contenteditable="true"]')
+        if (!editing) return null
+        const style = window.getComputedStyle(editing)
+        return {
+          color: style.color,
+          backgroundColor: style.backgroundColor,
+          colorLightness: colorLightness(style.color),
+          backgroundLightness: colorLightness(style.backgroundColor),
+        }
+
+        function colorLightness(value) {
+          const oklch = /^oklch\(([-0-9.]+)/.exec(value)
+          if (oklch) return Number(oklch[1])
+          const rgb = /^rgba?\((\d+),\s*(\d+),\s*(\d+)/.exec(value)
+          if (!rgb) return null
+          const [r, g, b] = rgb.slice(1, 4).map((part) => Number(part) / 255)
+          return 0.2126 * r + 0.7152 * g + 0.0722 * b
+        }
+      })
+      if (!metrics) throw new Error('Rich-text editor opened but no editable element could be inspected.')
+      if ((metrics.backgroundLightness ?? 0) > 0.72 && (metrics.colorLightness ?? 1) > 0.62) {
+        throw new Error(`Editing contrast is too low on a light editor background: ${JSON.stringify(metrics)}.`)
+      }
+      return `Editing color ${metrics.color} on ${metrics.backgroundColor}.`
+    })
+
+    const screenshot = path.join(artifactDir, 'local-interactions.png')
+    await page.screenshot({ path: screenshot, fullPage: true })
+
+    if (pageErrors.length > 0) {
+      fail(`Local interaction runtime (${id})`, `Page errors: ${pageErrors.slice(0, 3).join(' | ')}`)
+    } else if (consoleErrors.length > 0) {
+      warn(`Local interaction runtime (${id})`, `Console errors observed; screenshot saved to ${relative(screenshot)}.`)
+    } else {
+      pass(`Local interaction runtime (${id})`, `Screenshot saved to ${relative(screenshot)}.`)
+    }
+  } catch (error) {
+    fail(`Local interactions (${id})`, error.message)
+  } finally {
+    await page.close()
+  }
+}
+
+async function runInteractionStep(page, name, action) {
+  try {
+    const detail = await action()
+    pass(name, detail)
+  } catch (error) {
+    fail(name, error.message)
+    await closeOpenDialogs(page)
+  }
+}
+
+async function openModalFromPreview(page, labels, modalSelector) {
+  for (const label of labels) {
+    await closeInlineInputs(page)
+    const clicked = await clickPreviewElementByText(page, [label])
+    if (!clicked) continue
+    if (await waitForSelectorQuiet(page, modalSelector, 1_800)) return true
+  }
+
+  const headerClicked = await clickFirstPreviewSelector(page, 'header, aside, h1')
+  if (headerClicked && await waitForSelectorQuiet(page, modalSelector, 1_800)) return true
+  await closeInlineInputs(page)
+  return false
+}
+
+async function clickPreviewElementByText(page, labels) {
+  const handle = await page.evaluateHandle((targetLabels) => {
+    const root = document.querySelector('[data-scenario-preview="true"]')
+    if (!root) return null
+    const labels = targetLabels.map((label) => String(label))
+    const nodes = Array.from(root.querySelectorAll('h1,h2,h3,p,span,div,section,header,button'))
+      .filter((node) => {
+        if (node.closest('[role="dialog"]')) return false
+        const text = node.textContent || ''
+        if (!labels.some((label) => text.includes(label))) return false
+        const rect = node.getBoundingClientRect()
+        return rect.width > 2 && rect.height > 2
+      })
+      .sort((a, b) => {
+        const ar = a.getBoundingClientRect()
+        const br = b.getBoundingClientRect()
+        return (ar.width * ar.height) - (br.width * br.height)
+      })
+    return nodes[0] ?? null
+  }, labels)
+  const element = handle.asElement()
+  if (!element) {
+    await handle.dispose()
+    return false
+  }
+  await element.evaluate((node) => {
+    node.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }))
+  })
+  await handle.dispose()
+  return true
+}
+
+async function clickPreviewElementByTitle(page, titleParts) {
+  const handle = await page.evaluateHandle((parts) => {
+    const root = document.querySelector('[data-scenario-preview="true"]')
+    if (!root) return null
+    const nodes = Array.from(root.querySelectorAll('[title]'))
+      .filter((node) => {
+        if (node.closest('[role="dialog"]')) return false
+        const title = node.getAttribute('title') || ''
+        if (!parts.some((part) => title.includes(part))) return false
+        const rect = node.getBoundingClientRect()
+        return rect.width > 2 && rect.height > 2
+      })
+      .sort((a, b) => {
+        const ar = a.getBoundingClientRect()
+        const br = b.getBoundingClientRect()
+        return (ar.width * ar.height) - (br.width * br.height)
+      })
+    return nodes[0] ?? null
+  }, titleParts)
+  const element = handle.asElement()
+  if (!element) {
+    await handle.dispose()
+    return false
+  }
+  await element.click({ delay: 20 })
+  await handle.dispose()
+  return true
+}
+
+async function clickFirstPreviewSelector(page, selector) {
+  const handle = await page.evaluateHandle((targetSelector) => {
+    const root = document.querySelector('[data-scenario-preview="true"]')
+    if (!root) return null
+    const nodes = Array.from(root.querySelectorAll(targetSelector))
+      .filter((node) => {
+        if (node.closest('[role="dialog"]')) return false
+        const rect = node.getBoundingClientRect()
+        return rect.width > 2 && rect.height > 2
+      })
+    return nodes[0] ?? null
+  }, selector)
+  const element = handle.asElement()
+  if (!element) {
+    await handle.dispose()
+    return false
+  }
+  await element.click({ delay: 20 })
+  await handle.dispose()
+  return true
+}
+
+async function clickRichTextCandidate(page) {
+  const handle = await page.evaluateHandle(() => {
+    const root = document.querySelector('[data-scenario-preview="true"]')
+    if (!root) return null
+    const preferred = ['产品需求分析', '市场调研', 'GPA', '项目概述']
+    const richNodes = Array.from(root.querySelectorAll('.original-rich'))
+      .filter((node) => {
+        if (node.closest('[role="dialog"]')) return false
+        const text = node.textContent || ''
+        const rect = node.getBoundingClientRect()
+        return text.trim().length > 12 && rect.width > 20 && rect.height > 12
+      })
+    if (richNodes.length > 0) {
+      return richNodes.find((node) => preferred.some((text) => (node.textContent || '').includes(text))) ?? richNodes[0]
+    }
+
+    const nodes = Array.from(root.querySelectorAll('.cursor-text, [class*="cursor-text"]'))
+      .filter((node) => {
+        if (node.closest('[role="dialog"]')) return false
+        if (node.getAttribute('title')) return false
+        const text = node.textContent || ''
+        const rect = node.getBoundingClientRect()
+        return text.trim().length > 12 && rect.width > 20 && rect.height > 12
+      })
+    return nodes.find((node) => preferred.some((text) => (node.textContent || '').includes(text))) ?? nodes[0] ?? null
+  })
+  const element = handle.asElement()
+  if (!element) {
+    await handle.dispose()
+    return false
+  }
+  await element.evaluate((node) => {
+    node.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }))
+  })
+  await handle.dispose()
+  return true
+}
+
+async function checkDarkHoverContrast(page) {
+  const handles = await page.$$('[data-scenario-preview="true"] .cursor-text, [data-scenario-preview="true"] [class*="hover:bg-gray-100"]')
+  let checked = 0
+  const issues = []
+  for (const handle of handles) {
+    const before = await readHoverCandidateMetrics(handle)
+    if (!before?.isCandidate) {
+      await handle.dispose()
+      continue
+    }
+    await handle.hover()
+    await sleep(120)
+    const after = await readHoverCandidateMetrics(handle)
+    checked += 1
+    if ((after?.backgroundLightness ?? 0) > 0.72 && (after?.colorLightness ?? 1) > 0.62) {
+      issues.push({ text: before.text, before, after })
+    }
+    await handle.dispose()
+    if (checked >= 8) break
+  }
+  if (issues.length > 0) {
+    throw new Error(`Low hover contrast on dark background: ${JSON.stringify(issues.slice(0, 2))}`)
+  }
+  return checked > 0
+    ? `Checked ${checked} dark-background hover candidate(s).`
+    : 'No dark-background hover candidates found.'
+}
+
+async function readHoverCandidateMetrics(handle) {
+  return handle.evaluate((node) => {
+    const rect = node.getBoundingClientRect()
+    const text = (node.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 80)
+    if (rect.width <= 2 || rect.height <= 2 || !text) return null
+    const style = window.getComputedStyle(node)
+    const colorLightnessValue = colorLightness(style.color)
+    const backgroundLightnessValue = effectiveBackgroundLightness(node)
+    return {
+      text,
+      color: style.color,
+      backgroundColor: style.backgroundColor,
+      colorLightness: colorLightnessValue,
+      backgroundLightness: backgroundLightnessValue,
+      isCandidate: (backgroundLightnessValue ?? 1) < 0.45 && (colorLightnessValue ?? 0) > 0.55,
+    }
+
+    function effectiveBackgroundLightness(element) {
+      let current = element
+      while (current && current instanceof Element) {
+        const bg = window.getComputedStyle(current).backgroundColor
+        if (!isTransparent(bg)) return colorLightness(bg)
+        current = current.parentElement
+      }
+      return 1
+    }
+
+    function isTransparent(value) {
+      return value === 'transparent' || value === 'rgba(0, 0, 0, 0)' || value.endsWith(', 0)')
+    }
+
+    function colorLightness(value) {
+      const oklch = /^oklch\(([-0-9.]+)/.exec(value)
+      if (oklch) return Number(oklch[1])
+      const rgb = /^rgba?\((\d+),\s*(\d+),\s*(\d+)/.exec(value)
+      if (!rgb) return null
+      const [r, g, b] = rgb.slice(1, 4).map((part) => Number(part) / 255)
+      return 0.2126 * r + 0.7152 * g + 0.0722 * b
+    }
+  })
+}
+
+async function waitForSelectorQuiet(page, selector, timeout) {
+  try {
+    await page.waitForSelector(selector, { timeout })
+    return true
+  } catch {
+    return false
+  }
+}
+
+async function replaceInputValue(page, selector, value) {
+  await page.click(selector)
+  await replaceFocusedInputValue(page, value)
+}
+
+async function replaceFocusedInputValue(page, value) {
+  await page.keyboard.down('Control')
+  await page.keyboard.press('KeyA')
+  await page.keyboard.up('Control')
+  await page.keyboard.type(value)
+}
+
+async function clickButtonByExactText(page, text) {
+  const clicked = await page.evaluate((targetText) => {
+    const buttons = Array.from(document.querySelectorAll('button'))
+    const button = buttons.find((node) => (node.textContent || '').trim() === targetText)
+    if (!button) return false
+    button.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }))
+    return true
+  }, text)
+  if (!clicked) throw new Error(`Cannot find button with exact text: ${text}`)
+}
+
+async function closeOpenDialogs(page) {
+  await page.keyboard.press('Escape')
+  await sleep(120)
+}
+
+async function closeInlineInputs(page) {
+  await page.keyboard.press('Escape')
+  await sleep(80)
 }
 
 async function checkEditorScenarioLoader(editorUrl) {
@@ -1137,6 +1533,7 @@ Options:
   --pc-url <url>              Explicit authenticated PC editor/template URL.
   --scenario-loader-url <url> Dev scenario-loader URL for testing the one-click data fill UI.
   --editor-url <url>          Explicit authenticated editor URL for testing the same loader in the real editor.
+  --skip-interactions         Skip local interaction QA when using --local.
   --report                    Write a Markdown QA report under test-artifacts/reports/.
   --reference-image <path>    Reference screenshot to embed next to implementation screenshots in the QA report.
   --print-token-secret <str>  Secret for generated /print token.
@@ -1209,6 +1606,7 @@ function writeReport(templateIds) {
     '- 模板注册、懒加载、缩略图、主题契约。',
     '- 本地 PC、移动端、稀疏数据、长内容、富文本渲染。',
     '- 字号、行高、模块间距、标题比例、页边距、主题主色。',
+    '- 本地交互 QA：基础信息弹窗、头像上传入口、求职意向弹窗、经历字段编辑、富文本编辑态、深色背景 hover 对比。',
     '- 一键加载真实简历场景数据，以及预览中的基础信息、求职意向、长公司名、项目名、薪资和自定义字段。',
     '- 模板专项布局断言会在脚本中按模板 id 执行，例如表格模板的邮箱单元格和头像单元格检查。',
     '',
@@ -1284,6 +1682,7 @@ function collectReportScreenshots(id) {
     path.join(artifactRoot, id, 'local-long.png'),
     path.join(artifactRoot, id, 'local-rich.png'),
     path.join(artifactRoot, id, 'local-color.png'),
+    path.join(artifactRoot, id, 'local-interactions.png'),
     path.join(artifactRoot, 'editor-scenarios', `long-content-loaded-${id}.png`),
     path.join(artifactRoot, 'editor-scenarios', 'long-content-loaded.png'),
   ]

@@ -243,6 +243,7 @@ function renderBlockContent(
   const contentClassName = styles.content || 'mt-2'
   const contentFontSize = contentClassName.match(/text-\[([^\]]+)\]/)?.[1]
     || (styles.content?.includes('text-') ? undefined : styles.content)
+  const contentEditingStyle = styles.contentEditingColor ? { color: styles.contentEditingColor } : undefined
 
   if (block.type === 'text') {
     return (
@@ -252,6 +253,7 @@ function renderBlockContent(
           contentField="html"
           contentSize="sm"
           className={contentClassName}
+          editingStyle={contentEditingStyle}
           onEditingChange={onEditingChange}
         />
       </div>
@@ -266,6 +268,7 @@ function renderBlockContent(
           contentField="contentHtml"
           contentSize="xs"
           className={contentClassName}
+          editingStyle={contentEditingStyle}
           onEditingChange={onEditingChange}
         />
       </div>
@@ -280,6 +283,7 @@ function renderBlockContent(
           contentField="courseHtml"
           contentSize="xs"
           className={contentClassName}
+          editingStyle={contentEditingStyle}
           onEditingChange={onEditingChange}
         />
       </div>

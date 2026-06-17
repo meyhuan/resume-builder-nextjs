@@ -133,6 +133,7 @@ What these checks must cover:
 - Generated `.webp` cover exists, has A4 thumbnail dimensions, and is referenced by both template registries when applicable.
 - Local PC rendering, mobile rendering, sparse data, long content, and rich text.
 - Theme controls: font size, line height, spacing, title scale, page padding, and primary color when not intentionally locked.
+- Local interaction QA runs automatically with `--local`: base info modal, avatar upload overlay, job intention modal, experience field editing, rich-text editing state, and dark-background hover contrast. Use `--skip-interactions` only for a temporary render-only check.
 - One-click realistic resume data fill through the scenario loader.
 - Rendered output after one-click fill, including base info, job intention, long company/project text, salary, and custom fields.
 

@@ -275,17 +275,42 @@ export function TwoColumnDark(props: {
   const sidebarSections = resume.sections.filter((s) => /技能|证书|资格|自我|评价|优势/i.test(s.title))
   const sidebarIds = new Set(sidebarSections.map((s) => s.id))
   const mainSections = resume.sections.filter((s) => !sidebarIds.has(s.id))
+  const showAvatar = header.baseInfo?.showAvatar !== false
   return (
     <div className="grid" style={{ gridTemplateColumns: '238px 1fr', minHeight: '297mm', padding: `${padV}px ${padH}px`, backgroundColor: '#fff' }}>
       <aside style={{ padding: '40px 26px', backgroundColor: '#111827', color: '#f8fafc' }}>
-        <EditableText as="h1" value={header.name} onCommit={header.onCommitName} style={{ margin: 0, fontSize: '1.8em', lineHeight: 1.15, fontWeight: 800, color: '#fff' }} />
-        <div style={{ marginTop: 8, color: '#cbd5e1', fontSize: '0.92em' }}>{header.baseInfo?.title || props.resume.jobIntention?.position || ''}</div>
-        <HeaderFields header={header} color="#cbd5e1" accent={config.accent} vertical light />
+        <div className="group relative" onClick={header.openEditModal} style={{ cursor: 'pointer' }}>
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: showAvatar ? 'center' : 'flex-start',
+              paddingBottom: 20,
+              marginBottom: 18,
+              borderBottom: '1px solid rgba(148, 163, 184, 0.24)',
+            }}
+          >
+            {showAvatar ? (
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 18 }}>
+                <AvatarBox header={header} accent={config.accent} radius={18} compact />
+              </div>
+            ) : null}
+            <EditableText
+              as="h1"
+              value={header.name}
+              style={{ width: '100%', margin: 0, fontSize: '1.8em', lineHeight: 1.15, fontWeight: 800, color: '#fff', textAlign: showAvatar ? 'center' : 'left' }}
+            />
+            <div style={{ width: '100%', marginTop: 8, color: '#cbd5e1', fontSize: '0.92em', textAlign: showAvatar ? 'center' : 'left' }}>
+              {header.baseInfo?.title || props.resume.jobIntention?.position || ''}
+            </div>
+          </div>
+          <HeaderFields header={header} color="#cbd5e1" accent={config.accent} vertical light />
+        </div>
         {showJob && jobIntention.fields.length > 0 ? <SidebarJob jobIntention={jobIntention} accent={config.accent} /> : null}
         <SidebarSections sections={sidebarSections} theme={theme} config={config} dark />
       </aside>
-      <main style={{ padding: '42px 40px' }}>
-        <SectionStack sections={mainSections} theme={theme} config={config} />
+      <main style={{ padding: '40px 40px' }}>
+        <SectionStack sections={mainSections} theme={theme} config={config} topMargin={0} />
       </main>
     </div>
   )

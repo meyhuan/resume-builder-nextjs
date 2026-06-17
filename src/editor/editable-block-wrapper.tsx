@@ -2,7 +2,7 @@
  * EditableBlockWrapper - A reusable wrapper that adds editing capabilities to any block component.
  * This separates editing logic from display logic, making it easy to create multiple templates.
  */
-import { useState, useEffect, type ReactElement, type ReactNode } from 'react'
+import { useState, useEffect, type ReactElement, type ReactNode, type CSSProperties } from 'react'
 import InlineEditor from '@/editor/inline-editor'
 import { useAppStore } from '@/state/store'
 import { CONTENT_DISPLAY_STYLES_XS, CONTENT_EDITING_STYLES_XS } from '@/editor/editor-styles'
@@ -13,6 +13,7 @@ interface EditableBlockWrapperProps {
   readonly contentField: 'contentHtml' | 'courseHtml' | 'html'
   readonly contentSize?: 'xs' | 'sm'
   readonly className?: string
+  readonly editingStyle?: CSSProperties
   readonly onEditingChange?: (isEditing: boolean) => void
   readonly children?: (props: {
     isEditing: boolean
@@ -102,7 +103,7 @@ export default function EditableBlockWrapper(props: EditableBlockWrapperProps): 
 
   if (isEditing) {
     return (
-      <div className={`${editingStyles} ${className || ''}`.trim()}>
+      <div className={`${editingStyles} ${className || ''}`.trim()} style={props.editingStyle}>
         <InlineEditor
           initialHtml={content}
           onChange={handleContentChange}

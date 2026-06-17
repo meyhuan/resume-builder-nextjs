@@ -355,10 +355,11 @@ function JobField(props: {
   )
 }
 
-export function SectionStack({ sections, theme, config }: { readonly sections: readonly Section[]; readonly theme: ThemeTokens; readonly config: VariantConfig }): ReactElement {
+export function SectionStack({ sections, theme, config, topMargin }: { readonly sections: readonly Section[]; readonly theme: ThemeTokens; readonly config: VariantConfig; readonly topMargin?: number }): ReactElement {
   const gap = config.density === 'ultra' ? 12 : config.density === 'compact' ? 16 : config.formal ? 18 : 22
+  const marginTop = topMargin ?? (config.density === 'ultra' ? 12 : config.formal ? 18 : 22)
   return (
-    <main className="flex flex-col" style={{ gap: `${gap * theme.spacingScale}px`, marginTop: config.density === 'ultra' ? 12 : config.formal ? 18 : 22 }}>
+    <main className="flex flex-col" style={{ gap: `${gap * theme.spacingScale}px`, marginTop }}>
       {sections.map((section, index) => (
         <SortableSection key={section.id} sectionId={section.id}>
           {(dragProps) => <ConceptSection section={section} dragProps={dragProps} theme={theme} config={config} index={index} />}
@@ -398,6 +399,7 @@ export function ConceptSection(props: {
     dateRange: { className: dark ? 'text-slate-300 ml-4 shrink-0' : 'text-gray-500 ml-4 shrink-0' },
     content: `original-rich mt-2 ${dark ? 'text-slate-200' : ''}`,
     contentColor: dark ? '#e2e8f0' : undefined,
+    contentEditingColor: dark ? '#0f172a' : undefined,
   }
 
   return (

@@ -116,7 +116,7 @@ export default function EditableDateField(props: EditableDateFieldProps): ReactE
         <button
           type="button"
           className={cn(
-            'inline-flex items-center gap-1 px-1 rounded hover:bg-gray-100 transition-colors',
+            'inline-flex items-center gap-1 px-1 rounded hover:bg-gray-100 hover:!text-slate-900 transition-colors',
             className
           )}
         >
