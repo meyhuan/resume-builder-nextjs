@@ -54,6 +54,7 @@ type TemplateRoleDataApi = {
   getTemplateRoleCategoryBySlug: (slug: string) => TemplateRoleCategoryGroup | undefined;
   getTemplateRoleIndustryBySlug: (slug: string) => TemplateRoleIndustryGroup | undefined;
   getEmergingTemplateRoles: (limit: number) => TemplateRoleRecord[];
+  getAiNewCareerTemplateRoles: (limit: number) => TemplateRoleRecord[];
   getTemplateRoleBySlug: (slug: string) => TemplateRoleRecord | undefined;
   getFeaturedTemplateRoles: (limit: number) => TemplateRoleRecord[];
   getTemplateRoleGroups: () => TemplateRoleGroup[];
@@ -80,6 +81,35 @@ const CATEGORY_KEYWORD_MAP: Record<TemplateRoleRecord['articleCategoryId'], read
 const TEMPLATE_IDS: readonly string[] = templateCatalog.map((template) => template.id);
 const DEFAULT_TEMPLATE_IDS: readonly string[] = TEMPLATE_IDS.slice(0, 3);
 const EMERGING_ROLE_NAMES: ReadonlySet<string> = new Set<string>(emergingTemplateRoles.map((role: EmergingTemplateRole) => role.role));
+const AI_NEW_CAREER_ROLE_NAMES: readonly string[] = [
+  'AI产品经理',
+  'AIGC运营',
+  '提示词工程师',
+  '大模型应用工程师',
+  'AI Agent工程师',
+  'RAG工程师',
+  '大模型算法工程师',
+  'AI应用开发工程师',
+  'AI测试工程师',
+  'MLOps工程师',
+  '大模型产品经理',
+  'AIGC产品经理',
+  'AI工具运营',
+  'AI内容运营',
+  'AI解决方案顾问',
+  '生成式人工智能系统测试员',
+  '跨境电商运营管理师',
+  'TikTok Shop运营',
+  '无人机群飞行规划员',
+  '智慧仓运维员',
+  '储能工程师',
+  '光伏运维工程师',
+  '工业机器人调试工程师',
+  '养老顾问',
+];
+const AI_NEW_CAREER_PRIORITY: ReadonlyMap<string, number> = new Map<string, number>(
+  AI_NEW_CAREER_ROLE_NAMES.map((role: string, index: number) => [role, index]),
+);
 
 function normalizeSlug(value: string): string {
   return value
@@ -316,6 +346,14 @@ export const templateRoleData: TemplateRoleDataApi = {
   },
   getEmergingTemplateRoles(limit: number): TemplateRoleRecord[] {
     return TEMPLATE_ROLE_RECORDS.filter((role: TemplateRoleRecord) => EMERGING_ROLE_NAMES.has(role.role)).slice(0, Math.max(limit, 0));
+  },
+  getAiNewCareerTemplateRoles(limit: number): TemplateRoleRecord[] {
+    return TEMPLATE_ROLE_RECORDS
+      .filter((role: TemplateRoleRecord) => AI_NEW_CAREER_PRIORITY.has(role.role))
+      .sort((left: TemplateRoleRecord, right: TemplateRoleRecord) => {
+        return (AI_NEW_CAREER_PRIORITY.get(left.role) ?? 999) - (AI_NEW_CAREER_PRIORITY.get(right.role) ?? 999);
+      })
+      .slice(0, Math.max(limit, 0));
   },
   getTemplateRoleBySlug(slug: string): TemplateRoleRecord | undefined {
     const normalizedSlug: string = normalizeIncomingSlug(slug);

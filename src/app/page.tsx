@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { LandingHeader } from "@/components/landing/LandingHeader";
 import { LandingHero } from "@/components/landing/LandingHero";
 import { LandingEditorDemo } from "@/components/landing/LandingEditorDemo";
@@ -9,6 +10,14 @@ import { LandingWhyFree } from "@/components/landing/LandingWhyFree";
 import { LandingFAQ } from "@/components/landing/LandingFAQ";
 import { LandingFooter } from "@/components/landing/LandingFooter";
 import { JsonLd } from "@/components/seo/JsonLd";
+
+const SITE_URL = "https://aijianli.cn";
+
+export const metadata: Metadata = {
+  alternates: {
+    canonical: SITE_URL,
+  },
+};
 
 export default function Home() {
   return (

@@ -17,6 +17,9 @@ export const metadata: Metadata = {
   title: '求职攻略 - 简历写作·面试技巧·职场指南',
   description:
     '汇集简历写作技巧、应届生求职指南、面试攻略、职场发展建议等实用文章，助你高效求职，斩获理想 Offer。',
+  alternates: {
+    canonical: 'https://aijianli.cn/articles',
+  },
   keywords: [
     '求职攻略', '简历写作', '面试技巧', '职场指南', '应届生求职',
     '简历优化', '求职面试', '职业规划', '简历模板', '求职技巧',

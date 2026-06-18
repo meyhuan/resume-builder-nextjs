@@ -8,6 +8,9 @@ import { Metadata } from "next";
 export const metadata: Metadata = {
   title: '关于开发者 - 智简简历',
   description: '独立开发者倾力打造，永久免费的 AI 简历工具。',
+  alternates: {
+    canonical: 'https://aijianli.cn/about',
+  },
 };
 
 export default function AboutPage(): React.ReactElement {

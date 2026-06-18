@@ -6,6 +6,9 @@ import { Scale, CheckCircle, XCircle, CreditCard, RotateCcw, AlertTriangle } fro
 export const metadata: Metadata = {
   title: '服务条款 - 智简简历',
   description: '智简简历服务条款，了解使用规则、退款政策等内容。',
+  alternates: {
+    canonical: 'https://aijianli.cn/terms',
+  },
 };
 
 export default function TermsPage(): React.ReactElement {

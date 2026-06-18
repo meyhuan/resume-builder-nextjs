@@ -6,6 +6,9 @@ import { Shield, Eye, Database, Share2, Lock, Mail } from "lucide-react";
 export const metadata: Metadata = {
   title: '隐私政策 - 智简简历',
   description: '智简简历隐私政策，了解我们如何保护您的个人信息。',
+  alternates: {
+    canonical: 'https://aijianli.cn/privacy',
+  },
 };
 
 export default function PrivacyPage(): React.ReactElement {
