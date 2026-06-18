@@ -130,7 +130,7 @@ function assertEnv(name) {
 
 async function submitIndexNow(urls) {
   const key = assertEnv('INDEXNOW_KEY');
-  const keyLocation = process.env.INDEXNOW_KEY_LOCATION || `${SITE_URL}/.well-known/indexnow.txt`;
+  const keyLocation = process.env.INDEXNOW_KEY_LOCATION || `${SITE_URL}/indexnow.txt`;
   const response = await fetch(INDEX_NOW_ENDPOINT, {
     method: 'POST',
     headers: {
@@ -203,4 +203,3 @@ main().catch((error) => {
   console.error(`[seo:submit] ${error instanceof Error ? error.message : String(error)}`);
   process.exitCode = 1;
 });
-
