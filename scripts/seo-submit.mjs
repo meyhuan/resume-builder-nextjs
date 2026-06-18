@@ -3,7 +3,7 @@
 const SITE_URL = 'https://aijianli.cn';
 const DEFAULT_SITEMAP_URL = `${SITE_URL}/sitemap.xml`;
 const INDEX_NOW_ENDPOINT = 'https://api.indexnow.org/indexnow';
-const BAIDU_PUSH_ENDPOINT = 'https://data.zz.baidu.com/urls';
+const BAIDU_PUSH_ENDPOINT = 'http://data.zz.baidu.com/urls';
 
 function printUsage() {
   console.log([

@@ -1,5 +1,5 @@
 const SITE_URL: string = 'https://aijianli.cn';
-const BAIDU_PUSH_ENDPOINT: string = 'https://data.zz.baidu.com/urls';
+const BAIDU_PUSH_ENDPOINT: string = 'http://data.zz.baidu.com/urls';
 
 type BaiduPushResult = {
   submitted: boolean;
@@ -46,4 +46,3 @@ export async function submitBaiduUrls(urls: ReadonlyArray<string>): Promise<Baid
     message: response.ok ? 'Baidu URL submission succeeded.' : await response.text(),
   };
 }
-
