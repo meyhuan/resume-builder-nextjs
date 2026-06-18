@@ -32,7 +32,7 @@ export async function submitBaiduUrls(urls: ReadonlyArray<string>): Promise<Baid
     };
   }
   const token: string = getBaiduPushToken();
-  const endpoint: string = `${BAIDU_PUSH_ENDPOINT}?site=${encodeURIComponent(SITE_URL)}&token=${encodeURIComponent(token)}`;
+  const endpoint: string = `${BAIDU_PUSH_ENDPOINT}?site=${SITE_URL}&token=${encodeURIComponent(token)}`;
   const response: Response = await fetch(endpoint, {
     method: 'POST',
     headers: {

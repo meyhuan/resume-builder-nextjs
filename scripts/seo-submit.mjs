@@ -149,7 +149,7 @@ async function submitIndexNow(urls) {
 
 async function submitBaidu(urls) {
   const token = assertEnv('BAIDU_PUSH_TOKEN');
-  const endpoint = `${BAIDU_PUSH_ENDPOINT}?site=${encodeURIComponent(SITE_URL)}&token=${encodeURIComponent(token)}`;
+  const endpoint = `${BAIDU_PUSH_ENDPOINT}?site=${SITE_URL}&token=${encodeURIComponent(token)}`;
   const response = await fetch(endpoint, {
     method: 'POST',
     headers: {
