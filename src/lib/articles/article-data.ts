@@ -7,6 +7,7 @@ import type {
   AdjacentArticles,
 } from './article-types';
 import rawArticles from '../../../files/aijianli.articles.json';
+import { seoArticles } from './seo-articles';
 
 // ---------------------------------------------------------------------------
 // Category registry
@@ -92,7 +93,10 @@ function transformArticle(raw: RawArticle): Article {
 // Cached article list (built once at import time — fine for SSG/SSR)
 // ---------------------------------------------------------------------------
 
-const RAW_ARTICLES: RawArticle[] = Array.isArray(rawArticles) ? (rawArticles as RawArticle[]) : [];
+const RAW_ARTICLES: RawArticle[] = [
+  ...seoArticles,
+  ...(Array.isArray(rawArticles) ? (rawArticles as RawArticle[]) : []),
+];
 const ALL_ARTICLES: Article[] = RAW_ARTICLES.map(transformArticle);
 
 // ---------------------------------------------------------------------------

@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import type { ReactElement } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowRight, BriefcaseBusiness, Sparkles } from 'lucide-react';
+import { ArrowRight, BookOpen, BriefcaseBusiness, Sparkles } from 'lucide-react';
 import { LandingFooter } from '@/components/landing/LandingFooter';
 import { LandingHeader } from '@/components/landing/LandingHeader';
 import { templateCatalog } from '@/lib/templates/template-catalog';
@@ -165,7 +165,16 @@ export default function TemplatesPage(): ReactElement {
                 <h2 className="text-2xl font-extrabold text-slate-900">AI 新职业简历模板</h2>
                 <p className="text-sm text-slate-500 mt-2">优先布局 AI 产品、大模型工程、AIGC 运营和新职业方向，覆盖正在增长的求职长尾关键词。</p>
               </div>
-              <div className="text-sm font-medium text-violet-600">AI产品经理优先推荐</div>
+              <Link href="/articles/ai-product-manager-resume-guide" className="inline-flex items-center gap-2 text-sm font-semibold text-violet-600 hover:text-violet-700 transition-colors">
+                <BookOpen className="w-4 h-4" />
+                AI产品经理简历攻略
+              </Link>
+            </div>
+            <div className="mb-6 rounded-2xl border border-violet-100 bg-violet-50/60 p-5">
+              <div className="text-sm font-semibold text-violet-700">AI产品经理优先推荐</div>
+              <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                先查看 AI产品经理、大模型产品经理、AIGC产品经理的写作差异，再选择模板和生成路径，能更快把项目经历写到招聘 JD 上。
+              </p>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {aiNewCareerRoles.map((role, index) => (

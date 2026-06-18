@@ -55,8 +55,14 @@ type DeliverySuggestion = {
   description: string;
 };
 
+type RoleSpecialtyBlock = {
+  title: string;
+  description: string;
+  bullets: readonly string[];
+};
+
 function createPageTitle(roleName: string): string {
-  return `${roleName}简历模板 - ${roleName}简历怎么写 | 智简简历`;
+  return `${roleName}简历模板 - ${roleName}简历怎么写`;
 }
 
 function createPageDescription(roleName: string, industry: string): string {
@@ -220,6 +226,18 @@ function createResumeSectionSuggestions(roleName: string, category: string): rea
 }
 
 function createKeywordSuggestions(roleName: string, category: string, searchKeywords: readonly string[]): readonly string[] {
+  if (roleName === 'AI产品经理') {
+    return [
+      'AI产品经理',
+      '大语言模型',
+      'Prompt Engineering',
+      'RAG',
+      'AI Agent',
+      '模型评测',
+      '用户反馈闭环',
+      'Token成本',
+    ];
+  }
   const categoryKeywords: Record<string, readonly string[]> = {
     技术: ['技术栈', '系统设计', '性能优化', '稳定性', '项目交付'],
     产品: ['需求分析', '产品规划', '用户调研', '跨团队协作', '版本迭代'],
@@ -229,6 +247,41 @@ function createKeywordSuggestions(roleName: string, category: string, searchKeyw
   };
   const mergedKeywords: string[] = [...(categoryKeywords[category] ?? []), ...searchKeywords, roleName];
   return Array.from(new Set<string>(mergedKeywords)).slice(0, 8);
+}
+
+function createRoleSpecialtyBlocks(roleName: string): readonly RoleSpecialtyBlock[] {
+  if (roleName !== 'AI产品经理') {
+    return [];
+  }
+  return [
+    {
+      title: '产品能力要贴近 AI 场景',
+      description: 'AI产品经理简历要证明你不只是会写 PRD，而是能把真实业务问题拆成可验证的 AI 产品方案。',
+      bullets: [
+        '写清楚场景：智能客服、企业知识库、内容生成、销售助手、办公自动化等。',
+        '写清楚用户问题：检索效率低、重复咨询多、内容生产慢、人工跟进成本高。',
+        '写清楚产品闭环：需求拆解、原型设计、灰度上线、反馈采集和版本迭代。',
+      ],
+    },
+    {
+      title: 'AI 技术理解要服务业务结果',
+      description: '不要把大模型关键词堆成技术清单，要说明这些技术如何支撑产品方案落地。',
+      bullets: [
+        'RAG 项目重点写文档解析、切片、向量检索、答案引用和纠错反馈。',
+        'AI Agent 项目重点写任务拆解、工具调用、流程编排和异常兜底。',
+        'AIGC 项目重点写 Prompt 模板、内容审核、品牌语气和采纳率提升。',
+      ],
+    },
+    {
+      title: '评测指标要比普通产品更明确',
+      description: 'AI 产品是否可靠，不能只靠上线描述，要用质量、效率和成本指标建立可信度。',
+      bullets: [
+        '质量指标：命中率、采纳率、人工接管率、生成质量评分、用户满意度。',
+        '效率指标：响应时延、任务完成时间、内容生产效率、客服处理时长。',
+        '成本指标：Token 成本、人工审核成本、重复咨询下降、错误召回减少。',
+      ],
+    },
+  ];
 }
 
 function createHiringFocusItems(roleName: string, industry: string, category: string): readonly HiringFocusItem[] {
@@ -474,6 +527,22 @@ function createMistakes(roleName: string): readonly string[] {
 }
 
 function createFaqItems(roleName: string): readonly FaqItem[] {
+  if (roleName === 'AI产品经理') {
+    return [
+      {
+        question: 'AI产品经理简历最应该突出什么？',
+        answer: '优先突出 AI 产品场景、业务问题、方案拆解和评测结果，让招聘方看到你能把模型能力转化为可落地的产品价值。',
+      },
+      {
+        question: '没有算法背景可以投 AI产品经理吗？',
+        answer: '可以，但简历里要体现你理解大模型、RAG、Prompt、Agent 等基础概念，并能与算法、研发协作完成产品落地。',
+      },
+      {
+        question: 'AI产品经理项目经历怎么写更有说服力？',
+        answer: '建议按业务问题、AI 方案、评测指标、上线结果四段写，避免只写“负责 AI 产品设计”这类空泛描述。',
+      },
+    ];
+  }
   return [
     {
       question: `${roleName}简历模板应该优先选哪种风格？`,
@@ -550,6 +619,7 @@ export default async function TemplateRolePage({ params }: RolePageParams): Prom
   const audienceProfiles = createAudienceProfiles(roleRecord.role, roleRecord.industry, roleRecord.category);
   const resumeSectionSuggestions = createResumeSectionSuggestions(roleRecord.role, roleRecord.category);
   const keywordSuggestions = createKeywordSuggestions(roleRecord.role, roleRecord.category, roleRecord.searchKeywords);
+  const roleSpecialtyBlocks = createRoleSpecialtyBlocks(roleRecord.role);
   const hiringFocusItems = createHiringFocusItems(roleRecord.role, roleRecord.industry, roleRecord.category);
   const deliverySuggestions = createDeliverySuggestions(roleRecord.role, roleRecord.category);
   const commonMistakes = createMistakes(roleRecord.role);
@@ -627,6 +697,38 @@ export default async function TemplateRolePage({ params }: RolePageParams): Prom
               </div>
             </div>
           </section>
+          {roleSpecialtyBlocks.length > 0 ? (
+            <section className="rounded-3xl bg-white/80 backdrop-blur-sm border border-violet-100 shadow-sm p-6 md:p-8">
+              <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+                <div>
+                  <h2 className="text-2xl font-extrabold text-slate-900">AI产品经理专项优化</h2>
+                  <p className="text-sm text-slate-500 mt-2 leading-relaxed">
+                    围绕大模型产品落地、RAG、AI Agent、评测指标和业务结果，把经历写得更像目标岗位，而不是泛泛的产品经理简历。
+                  </p>
+                </div>
+                <Link href="/articles/ai-product-manager-resume-guide" className="inline-flex items-center gap-2 text-sm font-semibold text-violet-600 hover:text-violet-700 transition-colors">
+                  查看完整写作攻略
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+              </div>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-6">
+                {roleSpecialtyBlocks.map((block: RoleSpecialtyBlock) => (
+                  <div key={block.title} className="rounded-2xl bg-violet-50/60 border border-violet-100 p-5">
+                    <h3 className="text-base font-bold text-slate-900">{block.title}</h3>
+                    <p className="text-sm text-slate-600 leading-relaxed mt-2">{block.description}</p>
+                    <ul className="space-y-2 mt-4">
+                      {block.bullets.map((bullet: string) => (
+                        <li key={bullet} className="flex gap-2 text-sm text-slate-600 leading-relaxed">
+                          <CircleCheckBig className="w-4 h-4 text-violet-500 shrink-0 mt-0.5" />
+                          <span>{bullet}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            </section>
+          ) : null}
           <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="rounded-3xl bg-white/80 backdrop-blur-sm border border-white shadow-sm p-6 md:p-8">
               <div className="flex items-center gap-2 text-slate-900">
