@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { ArrowLeft } from 'lucide-react'
 import { createLogger } from '@/lib/logger'
+import { track } from '@/lib/analytics'
 import type { ResumeData } from '@/entities/resume/resume-data'
 import { MODULES, findModuleBySectionTitle } from '@/entities/module/module-config'
 import { useDraftStore } from '@/features/edit/draft/draft-store'
@@ -371,6 +372,11 @@ export default function MobileEditHomeClient(
 
   const handleCreateNew = async (): Promise<void> => {
     log.info('create new resume start')
+    track('resume_create_start', {
+      createMethod: 'manual',
+      templateId: 'simple',
+      entry: 'mobile_edit_home',
+    })
     try {
       const res: Response = await fetch('/next-api/resumes', {
         method: 'POST',
@@ -382,9 +388,21 @@ export default function MobileEditHomeClient(
       if (!res.ok) throw new Error('创建失败')
       const created: { id: string } = await res.json()
       log.info('create resume done', { id: created.id })
+      track('resume_create_success', {
+        resumeId: created.id,
+        createMethod: 'manual',
+        templateId: 'simple',
+        entry: 'mobile_edit_home',
+      })
       router.replace(`/m/edit?id=${created.id}`)
     } catch (e: unknown) {
       log.error('create resume failed', { error: e instanceof Error ? e.message : String(e) })
+      track('resume_create_failed', {
+        createMethod: 'manual',
+        templateId: 'simple',
+        entry: 'mobile_edit_home',
+        failureReason: e instanceof Error ? e.message : String(e),
+      })
       toast.error('创建简历失败，请稍后再试')
     }
   }

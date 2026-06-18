@@ -36,6 +36,7 @@ import type { ResumeData } from '@/entities/resume/resume-data'
 import { getRenderableResume } from '@/entities/resume/renderable-resume'
 import { normalizeResumeContent } from '@/entities/resume/normalize-resume-content'
 import { joinExportFileNameParts, sanitizeExportFileName } from '@/lib/export-file-name'
+import { track } from '@/lib/analytics'
 
 const AI_CACHE_KEYS: Record<string, string> = {
   ai: 'wizard_pending_resume',
@@ -238,10 +239,14 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
    */
   const doSave = useCallback(async () => {
     setIsSaving(true)
+    let createStarted = false
+    let createCompleted = false
+    let createFailureTracked = false
     try {
       let currentId = resumeId
       // 1. If no resumeId yet, create the resume first
       if (!currentId) {
+        createStarted = true
         const editorMeta = {
           themes: { [tpl]: theme },
           onePageMode,
@@ -257,15 +262,37 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
           content: contentWithMeta,
           template: tpl,
         }
+        track('resume_create_start', {
+          createMethod: 'manual',
+          templateId: tpl,
+          entry: 'pc_editor_save',
+        })
         const createRes = await fetch('/next-api/resumes', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(createPayload),
         })
-        if (!createRes.ok) throw new Error('Failed to create resume')
+        if (!createRes.ok) {
+          createFailureTracked = true
+          track('resume_create_failed', {
+            createMethod: 'manual',
+            templateId: tpl,
+            entry: 'pc_editor_save',
+            statusCode: createRes.status,
+            failureReason: 'create_resume_http_error',
+          })
+          throw new Error('Failed to create resume')
+        }
         const created: { id: string } = await createRes.json()
+        createCompleted = true
         currentId = created.id
         setResumeId(currentId)
+        track('resume_create_success', {
+          resumeId: currentId,
+          createMethod: 'manual',
+          templateId: tpl,
+          entry: 'pc_editor_save',
+        })
         // Update browser URL without full navigation
         window.history.replaceState(null, '', `/editor/${currentId}`)
       }
@@ -305,6 +332,14 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
       toast.success('保存成功')
     } catch (e) {
       console.error(e)
+      if (createStarted && !createCompleted && !createFailureTracked) {
+        track('resume_create_failed', {
+          createMethod: 'manual',
+          templateId: tpl,
+          entry: 'pc_editor_save',
+          failureReason: e instanceof Error ? e.message : String(e),
+        })
+      }
       toast.error('保存失败，请重试')
     } finally {
       setIsSaving(false)
@@ -424,7 +459,31 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
 
   async function handleExportPng(): Promise<void> {
     if (!requirePdf()) return
-    await exportImage<HTMLDivElement>(printRef, { fileName: 'resume', pixelRatio: 2 })
+    track('export_click', {
+      resumeId,
+      templateId: tpl,
+      exportType: 'image',
+      entry: 'pc_editor_toolbar',
+    })
+    try {
+      await exportImage<HTMLDivElement>(printRef, { fileName: 'resume', pixelRatio: 2 })
+      track('export_success', {
+        resumeId,
+        templateId: tpl,
+        exportType: 'image',
+        entry: 'pc_editor_toolbar',
+      })
+    } catch (err) {
+      track('export_failed', {
+        resumeId,
+        templateId: tpl,
+        exportType: 'image',
+        entry: 'pc_editor_toolbar',
+        stage: 'browser_export_image',
+        failureReason: err instanceof Error ? err.message : String(err),
+      })
+      toast.error('图片导出失败，请重试')
+    }
   }
 
   /** Generate PDF preview WITHOUT consuming quota. */
@@ -460,6 +519,12 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
   async function handleConfirmExport(): Promise<void> {
     if (!pdfBlob || isConfirmingExport) return
     setIsConfirmingExport(true)
+    track('export_click', {
+      resumeId,
+      templateId: tpl,
+      exportType: 'pdf',
+      entry: 'pc_export_preview',
+    })
     try {
 
     // Auto-generate professional filename: Name-Position-Phone
@@ -470,11 +535,20 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
     const fileName = joinExportFileNameParts([name, position, phone], { separator: '-', fallback: resume.name || 'export' })
 
     if (!resumeId) {
+      track('export_failed', {
+        resumeId,
+        templateId: tpl,
+        exportType: 'pdf',
+        entry: 'pc_export_preview',
+        stage: 'preflight',
+        failureReason: 'missing_resume_id',
+      })
       toast.error('请先保存简历，再导出 PDF')
       return
     }
 
     let downloadUrl = ''
+    let exportId = ''
     try {
       const form = new FormData()
       form.append('file', pdfBlob, `${fileName}.pdf`)
@@ -487,6 +561,15 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
       })
       if (!exportRes.ok) {
         const errorData = await exportRes.json()
+        track('export_failed', {
+          resumeId,
+          templateId: tpl,
+          exportType: 'pdf',
+          entry: 'pc_export_preview',
+          stage: 'create_export_record',
+          statusCode: exportRes.status,
+          failureReason: errorData.error || (errorData.quotaExceeded ? 'quota_exceeded' : 'export_http_error'),
+        })
         if (errorData.quotaExceeded) {
           setShowUpgrade(true)
         } else {
@@ -494,14 +577,32 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
         }
         return
       }
-      const exported = await exportRes.json() as { downloadUrl?: string }
+      const exported = await exportRes.json() as { id?: string; downloadUrl?: string }
+      exportId = exported.id || ''
       downloadUrl = exported.downloadUrl || ''
-    } catch {
+    } catch (err) {
+      track('export_failed', {
+        resumeId,
+        templateId: tpl,
+        exportType: 'pdf',
+        entry: 'pc_export_preview',
+        stage: 'create_export_record',
+        failureReason: err instanceof Error ? err.message : String(err),
+      })
       toast.error('导出保存失败，请重试')
       return
     }
 
     if (!downloadUrl) {
+      track('export_failed', {
+        resumeId,
+        templateId: tpl,
+        exportType: 'pdf',
+        exportId,
+        entry: 'pc_export_preview',
+        stage: 'download_url',
+        failureReason: 'missing_download_url',
+      })
       toast.error('导出链接生成失败，请重试')
       return
     }
@@ -512,6 +613,13 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
     a.click()
     handleClosePreview()
     toast.success('PDF 导出成功')
+    track('export_success', {
+      resumeId,
+      templateId: tpl,
+      exportType: 'pdf',
+      exportId,
+      entry: 'pc_export_preview',
+    })
     // 刷新额度显示
     await refreshQuota()
     } finally {

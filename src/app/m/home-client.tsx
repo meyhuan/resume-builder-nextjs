@@ -17,6 +17,7 @@ import {
   LogIn,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { track } from '@/lib/analytics'
 import { getAllTemplates, type TemplateConfig } from '@/templates/template-loader'
 import { defaultResume } from '@/state/store'
 import {
@@ -145,6 +146,11 @@ export default function MobileHomeClient(props: MobileHomeClientProps = {}): Rea
     if (!requireLogin('/m/edit')) return
     if (creating) return
     setCreating(true)
+    track('resume_create_start', {
+      createMethod: 'manual',
+      templateId: 'simple',
+      entry: 'mobile_home',
+    })
     try {
       log.info('create resume start')
       const res: Response = await fetch('/next-api/resumes', {
@@ -157,9 +163,21 @@ export default function MobileHomeClient(props: MobileHomeClientProps = {}): Rea
       if (!res.ok) throw new Error(`${res.status}`)
       const created: { id: string } = await res.json()
       log.info('create resume done', { id: created.id })
+      track('resume_create_success', {
+        resumeId: created.id,
+        createMethod: 'manual',
+        templateId: 'simple',
+        entry: 'mobile_home',
+      })
       router.push(`/m/edit?id=${created.id}`)
     } catch (e: unknown) {
       log.error('create resume failed', { error: e instanceof Error ? e.message : String(e) })
+      track('resume_create_failed', {
+        createMethod: 'manual',
+        templateId: 'simple',
+        entry: 'mobile_home',
+        failureReason: e instanceof Error ? e.message : String(e),
+      })
       toast.error('创建简历失败，请稍后再试')
     } finally {
       setCreating(false)

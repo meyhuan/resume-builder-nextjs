@@ -114,6 +114,11 @@ export const WizardLayout = ({ children }: { children: React.ReactNode }) => {
 
   const saveResume = useCallback(async (resumeData: ResumeData): Promise<void> => {
     try {
+      track('resume_create_start', {
+        createMethod: 'ai',
+        templateId: 'simple',
+        entry: inMiniProgram ? 'mini_ai_wizard' : isMobile ? 'mobile_ai_wizard' : 'pc_ai_wizard',
+      });
       const res: Response = await fetch('/next-api/resumes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -152,6 +157,12 @@ export const WizardLayout = ({ children }: { children: React.ReactNode }) => {
       }
     } catch (err) {
       console.error('[AI] Failed to save resume:', err);
+      track('resume_create_failed', {
+        createMethod: 'ai',
+        templateId: 'simple',
+        entry: inMiniProgram ? 'mini_ai_wizard' : isMobile ? 'mobile_ai_wizard' : 'pc_ai_wizard',
+        failureReason: err instanceof Error ? err.message : String(err),
+      });
     }
   }, [router, isMobile, setDraftFromServer, inMiniProgram]);
 

@@ -355,12 +355,6 @@ export default function MobilePreviewClient(): ReactElement {
     if (!response.ok) {
       const errorData = await response.json().catch(() => null)
       if (response.status === 402) {
-        track('export_failed', {
-          resumeId: payload.resumeId,
-          templateId: payload.templateId,
-          exportType: payload.type,
-          failureReason: 'quota_exceeded',
-        })
         // In mini-program: navigate to native payment page for better UX
         // In H5/PC: show the upgrade dialog
         if (inMiniProgram && typeof window.wx?.miniProgram?.navigateTo === 'function') {
@@ -373,12 +367,6 @@ export default function MobilePreviewClient(): ReactElement {
         }
         throw new Error(errorData?.error ?? '导出次数已用完')
       }
-      track('export_failed', {
-        resumeId: payload.resumeId,
-        templateId: payload.templateId,
-        exportType: payload.type,
-        failureReason: errorData?.error ?? `http_${response.status}`,
-      })
       throw new Error(errorData?.error ?? `导出失败 (${response.status})`)
     }
     const job = await response.json() as ExportJobResponse
@@ -556,6 +544,7 @@ export default function MobilePreviewClient(): ReactElement {
         resumeId: targetResumeIdForTrack,
         templateId,
         exportType: type,
+        stage: 'create_export_job',
         failureReason: msg,
       })
       toast.error(msg)
