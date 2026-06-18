@@ -8,6 +8,7 @@ import { toast } from 'sonner'
 import { createLogger } from '@/lib/logger'
 import { ArrowLeft, MoreHorizontal, Plus, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { track } from '@/lib/analytics'
 import {
   renameResume as renameResumeAction,
   duplicateResume as duplicateResumeAction,
@@ -101,6 +102,11 @@ export default function MobileResumesClient(): ReactElement {
   const handleCreate = useCallback(async (): Promise<void> => {
     if (creating) return
     setCreating(true)
+    track('resume_create_start', {
+      createMethod: 'manual',
+      templateId: 'simple',
+      entry: 'mobile_resume_list',
+    })
     try {
       log.info('create resume start')
       const res: Response = await fetch('/next-api/resumes', {
@@ -113,9 +119,21 @@ export default function MobileResumesClient(): ReactElement {
       if (!res.ok) throw new Error(`${res.status}`)
       const created: { id: string } = await res.json()
       log.info('create resume done', { id: created.id })
+      track('resume_create_success', {
+        resumeId: created.id,
+        createMethod: 'manual',
+        templateId: 'simple',
+        entry: 'mobile_resume_list',
+      })
       router.push(`/m/edit?id=${created.id}`)
     } catch (e: unknown) {
       log.error('create resume failed', { error: e instanceof Error ? e.message : String(e) })
+      track('resume_create_failed', {
+        createMethod: 'manual',
+        templateId: 'simple',
+        entry: 'mobile_resume_list',
+        failureReason: e instanceof Error ? e.message : String(e),
+      })
       toast.error('创建简历失败，请稍后再试')
     } finally {
       setCreating(false)

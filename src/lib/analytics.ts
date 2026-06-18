@@ -7,6 +7,7 @@ export type AnalyticsEventName =
   | 'login_success'
   | 'resume_create_start'
   | 'resume_create_success'
+  | 'resume_create_failed'
   | 'resume_import_start'
   | 'resume_import_success'
   | 'resume_import_failed'
@@ -20,6 +21,7 @@ export type AnalyticsEventName =
   | 'export_failed'
   | 'pay_page_view'
   | 'pay_plan_click'
+  | 'pay_submit_click'
   | 'pay_order_create'
   | 'pay_invoke_wechat'
   | 'pay_success'
@@ -65,6 +67,44 @@ function getUserId(): number | undefined {
   }
 }
 
+function isMiniProgramWebView(url: URL): boolean {
+  if (url.searchParams.get('source') === 'mini' || url.searchParams.get('mini') === '1') return true
+  const runtime = window as unknown as { __wxjs_environment?: string; wx?: { miniProgram?: unknown } }
+  return runtime.__wxjs_environment === 'miniprogram' || Boolean(runtime.wx?.miniProgram)
+}
+
+function getPlatform(url: URL): 'web' | 'mini_program' {
+  return isMiniProgramWebView(url) ? 'mini_program' : 'web'
+}
+
+function stringProperty(properties: AnalyticsProperties, key: string): string {
+  const value = properties[key]
+  return typeof value === 'string' ? value : ''
+}
+
+function isInternalRenderContext(properties: AnalyticsProperties): boolean {
+  const pathname = window.location.pathname
+  const userAgent = window.navigator.userAgent || ''
+  const file = stringProperty(properties, 'file')
+  const requestPath = stringProperty(properties, 'requestPath')
+
+  return pathname.startsWith('/print')
+    || /HeadlessChrome|Puppeteer|Playwright/i.test(userAgent)
+    || file.includes('localhost:3000/_next/static/')
+    || requestPath.startsWith('/print/')
+}
+
+function shouldSuppressAppError(properties: AnalyticsProperties): boolean {
+  if (!isInternalRenderContext(properties)) return false
+  const file = stringProperty(properties, 'file')
+  const requestPath = stringProperty(properties, 'requestPath')
+  const errorMessage = stringProperty(properties, 'errorMessage')
+  return window.location.pathname.startsWith('/print')
+    || file.includes('/_next/static/')
+    || requestPath.includes('/_next/static/')
+    || /ChunkLoadError|Loading chunk|dynamically imported module/i.test(errorMessage)
+}
+
 export function track(eventName: AnalyticsEventName, properties: AnalyticsProperties = {}): void {
   if (typeof window === 'undefined') return
   let baseUrl: string
@@ -83,7 +123,7 @@ export function track(eventName: AnalyticsEventName, properties: AnalyticsProper
     userId,
     anonymousId,
     sessionId,
-    platform: 'web',
+    platform: getPlatform(url),
     page: url.pathname,
     source: url.searchParams.get('source') || document.referrer || undefined,
     channel: url.searchParams.get('channel') || undefined,
@@ -133,9 +173,13 @@ function getRequestInfo(input: RequestInfo | URL, init?: RequestInit): { url: st
 
 export function trackError(error: unknown, properties: AnalyticsProperties = {}): void {
   const normalized = normalizeError(error)
-  track('app_error', {
+  const nextProperties = {
     ...properties,
     ...normalized,
+  }
+  if (shouldSuppressAppError(nextProperties)) return
+  track('app_error', {
+    ...nextProperties,
   })
 }
 
