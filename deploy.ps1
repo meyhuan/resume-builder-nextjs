@@ -1,107 +1,144 @@
-# ==========================================
-# Next.js 自动化本地打包与上传部署脚本 (Windows)
-# ==========================================
-
 param(
     [switch]$SkipBuild,
-    [switch]$RemoteOnly
+    [switch]$RemoteOnly,
+    [switch]$KeepPackage,
+    [string]$HostAlias = "ajl-prod",
+    [string]$ServerDir = "/home/webapp/aijianli-nextjs/resume-builder-nextjs",
+    [string]$ReleaseRoot = "/home/releases/aijianli-nextjs",
+    [string]$ReleaseId
 )
 
-# 服务器配置
-$SERVER_IP = "47.120.35.34"
-$SERVER_USER = "root"
-$SERVER_DIR = "/home/webapp/aijianli-nextjs/resume-builder-nextjs"
-$SSH_KEY = "C:\Users\62765\Marker\Aliyun\key-8G-20260504.pem"
+$ErrorActionPreference = "Stop"
+Set-Location -LiteralPath $PSScriptRoot
+
+function Invoke-Native {
+    param(
+        [Parameter(Mandatory = $true)][string]$FilePath,
+        [Parameter(Mandatory = $true)][string[]]$Arguments,
+        [int[]]$SuccessExitCodes = @(0)
+    )
+
+    & $FilePath @Arguments
+    $exitCode = $LASTEXITCODE
+    if ($SuccessExitCodes -notcontains $exitCode) {
+        throw "$FilePath failed with exit code $exitCode"
+    }
+}
+
+function Copy-Tree {
+    param(
+        [Parameter(Mandatory = $true)][string]$Source,
+        [Parameter(Mandatory = $true)][string]$Destination,
+        [string[]]$ExcludeDirectories = @()
+    )
+
+    if (-not (Test-Path -LiteralPath $Source)) {
+        return
+    }
+
+    $args = @($Source, $Destination, "/E")
+    if ($ExcludeDirectories.Count -gt 0) {
+        $args += "/XD"
+        $args += $ExcludeDirectories
+    }
+
+    Invoke-Native -FilePath "robocopy" -Arguments $args -SuccessExitCodes (0..7)
+}
+
+function Get-ReleaseId {
+    $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
+    $sha = "local"
+    try {
+        $candidate = (& git rev-parse --short HEAD 2>$null).Trim()
+        if ($candidate) {
+            $sha = $candidate
+        }
+    } catch {
+        $sha = "local"
+    }
+
+    return "$timestamp-$sha"
+}
+
+if (-not $ReleaseId) {
+    $ReleaseId = Get-ReleaseId
+}
+
+$DeployZip = Join-Path $PSScriptRoot "deploy.zip"
+$StageDir = Join-Path $PSScriptRoot "deploy_stage"
+$IncomingDir = "$ReleaseRoot/.incoming"
+$RemotePackage = "$IncomingDir/$ReleaseId.zip"
+$RemoteDeployScript = "$ReleaseRoot/deploy.sh"
+
+Write-Host "Next.js release id: $ReleaseId" -ForegroundColor Cyan
 
 if ($RemoteOnly) {
-    Write-Host "⏭️ 跳过本地构建和 deploy.zip 上传，仅上传 deploy.sh 并执行远端部署..." -ForegroundColor Yellow
+    Write-Host "Remote-only mode: expecting package at $RemotePackage" -ForegroundColor Yellow
 } elseif (-not $SkipBuild) {
-    Write-Host "🚀 开始进行本地构建..." -ForegroundColor Cyan
-    pnpm run build
-
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "❌ 构建失败！请检查错误信息。" -ForegroundColor Red
-        exit 1
-    }
-    Write-Host "✅ 构建成功！" -ForegroundColor Green
+    Write-Host "Building Next.js locally..." -ForegroundColor Cyan
+    Invoke-Native -FilePath "pnpm" -Arguments @("run", "build")
+    Write-Host "Build completed." -ForegroundColor Green
 } else {
-    Write-Host "⏭️ 跳过本地构建，直接使用现有产物部署..." -ForegroundColor Yellow
+    Write-Host "Skip local build; deploy existing build output..." -ForegroundColor Yellow
 }
 
-if (-not $RemoteOnly) {
-    Write-Host "📦 准备打包需要上传的文件..." -ForegroundColor Cyan
-    # 每次打包前先清理旧包
-    if (Test-Path "deploy.zip") {
-        Remove-Item "deploy.zip" -Force
+try {
+    if (-not $RemoteOnly) {
+        Write-Host "Packaging deploy files..." -ForegroundColor Cyan
+
+        if (Test-Path -LiteralPath $DeployZip) {
+            Remove-Item -LiteralPath $DeployZip -Force
+        }
+        if (Test-Path -LiteralPath $StageDir) {
+            Remove-Item -LiteralPath $StageDir -Recurse -Force
+        }
+
+        New-Item -ItemType Directory -Path $StageDir | Out-Null
+
+        Copy-Tree -Source ".next" -Destination (Join-Path $StageDir ".next") -ExcludeDirectories @("cache")
+        Copy-Tree -Source "public" -Destination (Join-Path $StageDir "public")
+        Copy-Tree -Source "prisma" -Destination (Join-Path $StageDir "prisma")
+
+        foreach ($file in @("package.json", "pnpm-lock.yaml", "pnpm-workspace.yaml", "next.config.ts", "next.config.mjs", "next.config.js")) {
+            if (Test-Path -LiteralPath $file) {
+                Copy-Item -LiteralPath $file -Destination (Join-Path $StageDir $file) -Force
+            }
+        }
+
+        $metadata = @"
+release_id=$ReleaseId
+commit=$(try { (& git rev-parse HEAD 2>$null).Trim() } catch { "unknown" })
+created_at=$(Get-Date -Format o)
+service=aijianli-nextjs
+"@
+        Set-Content -LiteralPath (Join-Path $StageDir "RELEASE") -Value $metadata -Encoding ASCII
+
+        Compress-Archive -Path (Join-Path $StageDir "*") -DestinationPath $DeployZip -Force
+        Write-Host "Package created: $DeployZip" -ForegroundColor Green
+
+        Write-Host "Ensuring remote incoming directory exists: ${HostAlias}:${IncomingDir}" -ForegroundColor Cyan
+        Invoke-Native -FilePath "ssh" -Arguments @($HostAlias, "mkdir -p '$IncomingDir'")
+
+        Write-Host "Uploading package to $RemotePackage..." -ForegroundColor Cyan
+        Invoke-Native -FilePath "scp" -Arguments @($DeployZip, "${HostAlias}:${RemotePackage}")
+        Write-Host "Package uploaded." -ForegroundColor Green
     }
 
-    # 用临时目录暂存需要打包的文件，排除 .next/cache
-    $STAGE_DIR = ".\deploy_stage"
-    if (Test-Path $STAGE_DIR) { Remove-Item $STAGE_DIR -Recurse -Force }
-    New-Item -ItemType Directory -Path $STAGE_DIR | Out-Null
+    Write-Host "Uploading latest deploy.sh..." -ForegroundColor Cyan
+    Invoke-Native -FilePath "ssh" -Arguments @($HostAlias, "mkdir -p '$ReleaseRoot'")
+    Invoke-Native -FilePath "scp" -Arguments @((Join-Path $PSScriptRoot "deploy.sh"), "${HostAlias}:${RemoteDeployScript}")
+    Write-Host "deploy.sh uploaded." -ForegroundColor Green
 
-    # 复制 .next（排除 cache 子目录）
-    robocopy ".next" "$STAGE_DIR\.next" /E /XD "cache" | Out-Null
-    # 复制其余文件
-    robocopy "public"  "$STAGE_DIR\public"  /E | Out-Null
-    robocopy "prisma"  "$STAGE_DIR\prisma"  /E | Out-Null
-    Copy-Item "package.json"   "$STAGE_DIR\package.json"
-    Copy-Item "pnpm-lock.yaml" "$STAGE_DIR\pnpm-lock.yaml"
-    Copy-Item "next.config.ts" "$STAGE_DIR\next.config.ts"
-
-    # 整体压缩，保留目录结构
-    Compress-Archive -Path "$STAGE_DIR\*" -DestinationPath "deploy.zip" -Force
-
-    # 清理临时目录
-    Remove-Item $STAGE_DIR -Recurse -Force
-
-    Write-Host "✅ 打包完成：deploy.zip" -ForegroundColor Green
-
-    Write-Host "🚀 开始上传文件到服务器: $SERVER_IP ..." -ForegroundColor Cyan
-    # 确保目标文件夹存在
-    # ssh ${SERVER_USER}@${SERVER_IP} "mkdir -p $SERVER_DIR"
-    # if ($LASTEXITCODE -ne 0) {
-    #     Write-Host "❌ 创建远端目录失败。" -ForegroundColor Red
-    #     exit 1
-    # }
-
-    # 上传 zip 文件
-    scp -i $SSH_KEY deploy.zip ${SERVER_USER}@${SERVER_IP}:${SERVER_DIR}/deploy.zip
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "❌ 上传 deploy.zip 失败。" -ForegroundColor Red
-        exit 1
+    Write-Host "Running remote release deploy..." -ForegroundColor Cyan
+    $remoteCommand = "sed -i 's/\r`$//' '$RemoteDeployScript' && chmod +x '$RemoteDeployScript' && RELEASE_ID='$ReleaseId' PACKAGE_PATH='$RemotePackage' LEGACY_DIR='$ServerDir' RELEASE_ROOT='$ReleaseRoot' bash -x '$RemoteDeployScript'"
+    Invoke-Native -FilePath "ssh" -Arguments @($HostAlias, $remoteCommand)
+    Write-Host "Remote deploy completed." -ForegroundColor Green
+} finally {
+    if (Test-Path -LiteralPath $StageDir) {
+        Remove-Item -LiteralPath $StageDir -Recurse -Force
     }
-    # 上传部署脚本
-    # scp deploy.sh ${SERVER_USER}@${SERVER_IP}:${SERVER_DIR}/deploy.sh
-    # if ($LASTEXITCODE -ne 0) {
-    #     Write-Host "❌ 上传 deploy.sh 失败。" -ForegroundColor Red
-    #     exit 1
-    # }
 
-    Write-Host "✅ 上传完成！" -ForegroundColor Green
-}
-
-if ($RemoteOnly) {
-    Write-Host "🚀 开始上传最新部署脚本到服务器: $SERVER_IP ..." -ForegroundColor Cyan
-    scp -i $SSH_KEY deploy.sh ${SERVER_USER}@${SERVER_IP}:${SERVER_DIR}/deploy.sh
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "❌ 上传 deploy.sh 失败。" -ForegroundColor Red
-        exit 1
+    if ((-not $RemoteOnly) -and (-not $KeepPackage) -and (Test-Path -LiteralPath $DeployZip)) {
+        Remove-Item -LiteralPath $DeployZip -Force
     }
-    Write-Host "✅ deploy.sh 上传完成！" -ForegroundColor Green
-}
-
-Write-Host "⚙️  开始在服务器上执行部署..." -ForegroundColor Cyan
-# 转换 deploy.sh 为 LF 并执行，避免 Windows CRLF 在 Linux 上报错
-ssh -i $SSH_KEY ${SERVER_USER}@${SERVER_IP} "sed -i 's/\r$//' $SERVER_DIR/deploy.sh && chmod +x $SERVER_DIR/deploy.sh && bash -x $SERVER_DIR/deploy.sh"
-if ($LASTEXITCODE -ne 0) {
-    Write-Host "❌ 远端部署失败，请检查上方日志。" -ForegroundColor Red
-    exit 1
-}
-
-Write-Host "🎉 部署脚本执行完毕！" -ForegroundColor Green
-
-# 清理本地的部署包
-if ((-not $RemoteOnly) -and (Test-Path "deploy.zip")) {
-    Remove-Item "deploy.zip" -Force
 }
