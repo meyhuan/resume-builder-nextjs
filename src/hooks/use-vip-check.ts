@@ -25,6 +25,7 @@ export const useVipCheck = () => {
   const quota = useVipStore((state) => state.quota);
   const showUpgrade = useVipStore((state) => state.showUpgrade);
   const setShowUpgrade = useVipStore((state) => state.setShowUpgrade);
+  const upgradeContext = useVipStore((state) => state.upgradeContext);
   const initialize = useVipStore((state) => state.initialize);
   const refreshVipStore = useVipStore((state) => state.refreshVip);
   const refreshQuotaStore = useVipStore((state) => state.refreshQuota);
@@ -57,7 +58,7 @@ export const useVipCheck = () => {
    */
   const requireVip = useCallback((): boolean => {
     if (isVip) return true;
-    setShowUpgrade(true);
+    setShowUpgrade(true, 'generic');
     return false;
   }, [isVip, setShowUpgrade]);
 
@@ -68,7 +69,7 @@ export const useVipCheck = () => {
   const requireAiFeature = useCallback((feature: keyof QuotaStatus): boolean => {
     const featureQuota = quota[feature];
     if (featureQuota.isVip || featureQuota.allowed) return true;
-    setShowUpgrade(true);
+    setShowUpgrade(true, 'ai');
     return false;
   }, [quota, setShowUpgrade]);
 
@@ -80,7 +81,7 @@ export const useVipCheck = () => {
     if (isVip) return true;
     const hasAnyQuota = Object.values(quota).some((q) => q.allowed);
     if (hasAnyQuota) return true;
-    setShowUpgrade(true);
+    setShowUpgrade(true, 'ai');
     return false;
   }, [quota, isVip, setShowUpgrade]);
 
@@ -91,7 +92,7 @@ export const useVipCheck = () => {
   const requirePdf = useCallback((): boolean => {
     log.info('require PDF check', { quotaLoaded, isLoading, pdfExport: quota.pdfExport });
     if (quota.pdfExport.isVip || quota.pdfExport.allowed) return true;
-    setShowUpgrade(true);
+    setShowUpgrade(true, 'pdf-export');
     return false;
   }, [quotaLoaded, isLoading, quota.pdfExport, setShowUpgrade]);
 
@@ -102,6 +103,7 @@ export const useVipCheck = () => {
     refreshVip,
     refreshQuota,
     quota,
+    upgradeContext,
     requireVip,
     requireAi,
     requireAiFeature,

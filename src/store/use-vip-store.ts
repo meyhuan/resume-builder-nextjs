@@ -3,15 +3,18 @@ import { DEFAULT_QUOTA_LIMITS } from '@/lib/quota/quota-config';
 import type { VipPollData, VipQuotaStatus, VipFeatureQuota } from '@/lib/quota/vip-types';
 import { useAuthStore } from '@/store/use-auth-store';
 
+export type UpgradeContext = 'generic' | 'pdf-export' | 'ai';
+
 interface VipStoreState {
   readonly isLoading: boolean;
   readonly quotaLoaded: boolean;
   readonly quota: VipQuotaStatus;
   readonly showUpgrade: boolean;
+  readonly upgradeContext: UpgradeContext;
   readonly initializedToken: string | null;
   readonly quotaRequestPromise: Promise<VipQuotaStatus | null> | null;
   readonly vipRequestPromise: Promise<VipPollData | null> | null;
-  setShowUpgrade: (showUpgrade: boolean) => void;
+  setShowUpgrade: (showUpgrade: boolean, context?: UpgradeContext) => void;
   refreshQuota: (token: string | null) => Promise<void>;
   refreshVip: (token: string | null) => Promise<void>;
   initialize: (token: string | null) => Promise<void>;
@@ -42,10 +45,15 @@ export const useVipStore = create<VipStoreState>()((set, get) => ({
   quotaLoaded: false,
   quota: EMPTY_QUOTA,
   showUpgrade: false,
+  upgradeContext: 'generic',
   initializedToken: null,
   quotaRequestPromise: null,
   vipRequestPromise: null,
-  setShowUpgrade: (showUpgrade: boolean): void => set({ showUpgrade }),
+  setShowUpgrade: (showUpgrade: boolean, context?: UpgradeContext): void => set({
+    showUpgrade,
+    ...(context ? { upgradeContext: context } : {}),
+    ...(!showUpgrade ? { upgradeContext: 'generic' as UpgradeContext } : {}),
+  }),
   refreshQuota: async (token: string | null): Promise<void> => {
     if (!token) return;
     let requestPromise: Promise<VipQuotaStatus | null> | null = get().quotaRequestPromise;
@@ -127,6 +135,7 @@ export const useVipStore = create<VipStoreState>()((set, get) => ({
       quotaLoaded: false,
       quota: EMPTY_QUOTA,
       showUpgrade: false,
+      upgradeContext: 'generic',
       initializedToken: null,
       quotaRequestPromise: null,
       vipRequestPromise: null,

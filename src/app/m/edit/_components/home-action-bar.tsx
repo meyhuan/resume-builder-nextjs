@@ -3,10 +3,9 @@
 import { useState, type ReactElement } from 'react'
 import { useRouter } from 'next/navigation'
 import { Loader2, Monitor } from 'lucide-react'
-import { toast } from 'sonner'
 import { useDraftStore } from '@/features/edit/draft/draft-store'
-import { createLogger } from '@/lib/logger'
 import { ModuleManageSheet } from './module-manage-sheet'
+import { usePcGuideEntry } from './use-pc-guide-entry'
 
 interface HomeActionBarProps {
   readonly resumeId: string | null
@@ -17,50 +16,21 @@ interface HomeActionBarProps {
  * Fixed bottom action bar for the mobile edit home.
  * "模块管理" opens a bottom sheet; "预览简历" navigates to the preview page.
  */
-const log = createLogger('m/edit/home-action-bar')
-
 export function HomeActionBar(props: HomeActionBarProps): ReactElement {
   const { resumeId, template } = props
   const router = useRouter()
   const draftTemplateId = useDraftStore((s): string => s.templateId)
-  const dirtyCount = useDraftStore((s): number => s.dirtyPaths.length)
-  const saveAll = useDraftStore((s): typeof s.saveAll => s.saveAll)
   const [sheetOpen, setSheetOpen] = useState<boolean>(false)
-  const [openingPcGuide, setOpeningPcGuide] = useState<boolean>(false)
-
-  const buildPcGuideUrl = (): string => {
-    const params = new URLSearchParams()
-    if (resumeId) params.set('id', resumeId)
-    const currentTemplate = draftTemplateId || template
-    if (currentTemplate) params.set('tpl', currentTemplate)
-    const query = params.toString()
-    return query ? `/m/edit/pc?${query}` : '/m/edit/pc'
-  }
+  const { openingPcGuide, openPcGuide } = usePcGuideEntry({
+    resumeId,
+    template,
+    source: 'home-action-bar',
+  })
 
   const handlePreview = (): void => {
     const currentTemplate = draftTemplateId || template
     const tpl = currentTemplate ? `&tpl=${encodeURIComponent(currentTemplate)}` : ''
     router.push(`/m/preview?id=${resumeId ?? ''}${tpl}`)
-  }
-
-  const handleOpenPcGuide = async (): Promise<void> => {
-    if (openingPcGuide) return
-    log.info('open pc guide requested', { resumeId, dirtyCount })
-    setOpeningPcGuide(true)
-    try {
-      if (dirtyCount > 0) {
-        const result = await saveAll()
-        if (!result.ok) {
-          log.warn('save before pc guide failed', { error: result.error })
-          toast.error(result.error || '保存失败，暂时无法同步到电脑端')
-          return
-        }
-        toast.success('已同步最新内容')
-      }
-      router.push(buildPcGuideUrl())
-    } finally {
-      setOpeningPcGuide(false)
-    }
   }
 
   return (
@@ -72,7 +42,7 @@ export function HomeActionBar(props: HomeActionBarProps): ReactElement {
         <div className="grid grid-cols-[60px_88px_minmax(0,1fr)] items-center gap-2 px-3 py-2">
           <button
             type="button"
-            onClick={(): void => { void handleOpenPcGuide() }}
+            onClick={(): void => { void openPcGuide() }}
             disabled={openingPcGuide}
             className="flex h-[46px] min-w-0 flex-col items-center justify-center gap-0 rounded-xl bg-white text-slate-700 transition-transform active:scale-[0.98] disabled:opacity-70"
           >

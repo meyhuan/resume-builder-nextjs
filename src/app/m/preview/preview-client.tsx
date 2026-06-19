@@ -363,7 +363,7 @@ export default function MobilePreviewClient(): ReactElement {
             url: '/pages/payment/payment?from=export'
           })
         } else {
-          setShowUpgrade(true)
+          setShowUpgrade(true, 'pdf-export')
         }
         throw new Error(errorData?.error ?? '导出次数已用完')
       }

@@ -571,7 +571,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
           failureReason: errorData.error || (errorData.quotaExceeded ? 'quota_exceeded' : 'export_http_error'),
         })
         if (errorData.quotaExceeded) {
-          setShowUpgrade(true)
+          setShowUpgrade(true, 'pdf-export')
         } else {
           toast.error(errorData.error || '导出次数已用完，升级VIP可无限导出')
         }
@@ -869,7 +869,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
         onOpenChange={(next: boolean) => { if (!next) handleClosePreview() }}
         pdfUrl={pdfBlobUrl}
         onConfirmExport={handleConfirmExport}
-        onUpgradeClick={() => setShowUpgrade(true)}
+        onUpgradeClick={() => setShowUpgrade(true, 'pdf-export')}
         remainingQuota={quota.pdfExport.remaining}
         isVip={isVip}
         isConfirming={isConfirmingExport}
