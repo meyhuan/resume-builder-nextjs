@@ -20,7 +20,7 @@ function getIndexNowKeyLocation(): string {
   if (keyLocation) {
     return keyLocation;
   }
-  return `${SITE_URL}/.well-known/indexnow.txt`;
+  return `${SITE_URL}/indexnow.txt`;
 }
 
 function normalizeUrls(urls: ReadonlyArray<string>): string[] {

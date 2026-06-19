@@ -78,6 +78,9 @@ export async function generateMetadata({ params }: SlugPageProps): Promise<Metad
     title: `${article.title} - ${catMeta.label}`,
     description: article.abstract.slice(0, 160),
     keywords: [...article.tags, catMeta.label, '求职攻略', '智简简历'],
+    alternates: {
+      canonical: `https://aijianli.cn/articles/${article.slug}`,
+    },
     openGraph: {
       title: article.title,
       description: article.abstract.slice(0, 160),

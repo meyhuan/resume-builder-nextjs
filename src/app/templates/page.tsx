@@ -9,8 +9,8 @@ import { templateCatalog } from '@/lib/templates/template-catalog';
 import { templateRoleData } from '@/lib/templates/template-role-data';
 
 const SITE_URL: string = 'https://aijianli.cn';
-const PAGE_TITLE: string = '免费极简简历模板中心 - AI 简历生成与在线制作';
-const PAGE_DESCRIPTION: string = '提供最新、专业的极简简历模板，覆盖前端开发、产品经理、运营、新媒体等岗位。完全免费的 AI 简历制作在线网站，支持一键智能生成、PDF与Markdown免费导出。';
+const PAGE_TITLE: string = '免费极简简历模板中心 - AI 新职业简历模板与在线制作';
+const PAGE_DESCRIPTION: string = '提供最新、专业的极简简历模板，覆盖 AI 产品经理、大模型应用工程师、AIGC 运营、前端开发、产品经理等岗位。完全免费的 AI 简历制作在线网站，支持一键智能生成、PDF与Markdown免费导出。';
 
 type JsonLdPrimitive = string | number | boolean;
 
@@ -21,7 +21,7 @@ type JsonLdNode = {
 export const metadata: Metadata = {
   title: PAGE_TITLE,
   description: PAGE_DESCRIPTION,
-  keywords: ['极简简历模板', '简历模板免费', '免费简历在线制作', 'AI简历', '产品经理简历', '大学生简历制作', '秋招简历在线模版', '免费导出PDF', '智简简历'],
+  keywords: ['极简简历模板', '简历模板免费', '免费简历在线制作', 'AI新职业简历模板', 'AI产品经理简历', '大模型应用工程师简历', 'AIGC运营简历', '产品经理简历', '秋招简历在线模版', '免费导出PDF', '智简简历'],
   alternates: {
     canonical: `${SITE_URL}/templates`,
   },
@@ -86,6 +86,7 @@ function createCollectionSchema(roleCount: number): JsonLdNode {
 export default function TemplatesPage(): ReactElement {
   const featuredRoles = templateRoleData.getFeaturedTemplateRoles(18);
   const emergingRoles = templateRoleData.getEmergingTemplateRoles(12);
+  const aiNewCareerRoles = templateRoleData.getAiNewCareerTemplateRoles(24);
   const categoryGroups = templateRoleData.getAllTemplateRoleCategories();
   const industryGroups = templateRoleData.getAllTemplateRoleIndustries();
   const roleGroups = templateRoleData.getTemplateRoleGroups().slice(0, 6);
@@ -157,6 +158,31 @@ export default function TemplatesPage(): ReactElement {
                 </div>
               </div>
             ))}
+          </section>
+          <section className="rounded-3xl bg-white/80 backdrop-blur-sm border border-violet-100 shadow-sm p-6 md:p-8">
+            <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6">
+              <div>
+                <h2 className="text-2xl font-extrabold text-slate-900">AI 新职业简历模板</h2>
+                <p className="text-sm text-slate-500 mt-2">优先布局 AI 产品、大模型工程、AIGC 运营和新职业方向，覆盖正在增长的求职长尾关键词。</p>
+              </div>
+              <div className="text-sm font-medium text-violet-600">AI产品经理优先推荐</div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {aiNewCareerRoles.map((role, index) => (
+                <Link key={role.slug} href={`/templates/${role.slug}`} className="group rounded-2xl border border-slate-100 bg-slate-50 hover:bg-white hover:border-violet-200 hover:shadow-sm transition-all p-5">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="text-xs font-semibold text-violet-600">{role.industry} / {role.category}</div>
+                    {index < 4 ? (
+                      <span className="rounded-full bg-violet-100 px-2 py-0.5 text-[11px] font-semibold text-violet-600">重点</span>
+                    ) : null}
+                  </div>
+                  <h3 className="text-lg font-bold text-slate-900 mt-2 group-hover:text-violet-600 transition-colors">{role.role}简历模板</h3>
+                  <p className="text-sm text-slate-500 mt-2 leading-relaxed line-clamp-2">
+                    查看 {role.role} 的岗位关键词、简历模块建议、推荐模板和 AI 生成入口。
+                  </p>
+                </Link>
+              ))}
+            </div>
           </section>
           <section className="rounded-3xl bg-white/80 backdrop-blur-sm border border-white shadow-sm p-6 md:p-8">
             <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6">
