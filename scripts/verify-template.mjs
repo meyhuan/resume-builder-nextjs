@@ -593,6 +593,8 @@ async function checkTemplateSpecificLayout(page, options) {
       if (alignmentIssue) return alignmentIssue
       const heroMetaIssue = checkZijiHeroMetaWrap()
       if (heroMetaIssue) return heroMetaIssue
+      const avatarOverlapIssue = checkZijiAvatarPanelOverlap()
+      if (avatarOverlapIssue) return avatarOverlapIssue
       const shortTitleIssue = checkZijiShortTitleWrap()
       if (shortTitleIssue) return shortTitleIssue
       const titleContentGapIssue = checkZijiTitleContentGap()
@@ -638,6 +640,24 @@ async function checkTemplateSpecificLayout(page, options) {
           if (Number.isFinite(lineHeight) && rect.height > lineHeight * 1.45) {
             return `Ziji short section title wraps unexpectedly: ${text}.`
           }
+        }
+        return ''
+      }
+
+      function checkZijiAvatarPanelOverlap() {
+        const avatar = root.querySelector('.ziji-avatar')
+        if (!avatar) return ''
+        const avatarRect = avatar.getBoundingClientRect()
+        const panelRect = panel.getBoundingClientRect()
+        const heroStyle = window.getComputedStyle(hero)
+        if (heroStyle.overflow === 'hidden') {
+          return 'Ziji hero should allow the avatar to extend under the main panel.'
+        }
+        const viewport = document.querySelector('[data-template-lab]')?.getAttribute('data-viewport')
+        const minOverlap = viewport === 'mobile' ? 3 : 8
+        const overlap = avatarRect.bottom - panelRect.top
+        if (overlap < minOverlap) {
+          return `Ziji avatar should tuck under the main panel; overlap is only ${Math.round(overlap)}px.`
         }
         return ''
       }

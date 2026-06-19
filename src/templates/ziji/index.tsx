@@ -395,7 +395,7 @@ function ZijiHero(props: {
 
   return (
     <section
-      className="relative overflow-hidden"
+      className="relative overflow-visible"
       style={{
         height: 216,
         background: heroGradient,
@@ -418,7 +418,7 @@ function ZijiHero(props: {
             title="建议上传透明背景 PNG，头图效果更自然"
             style={{
               left: 42,
-              top: 30,
+              top: 54,
               width: 180,
               height: 174,
             }}
