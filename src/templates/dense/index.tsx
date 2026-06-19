@@ -1,3 +1,5 @@
+'use client'
+
 import { useCallback, useRef, useState, type ChangeEvent, type ReactElement, type ReactNode } from 'react'
 import { Mail, Phone, PlusCircle, Trash2, GripVertical, Upload } from 'lucide-react'
 import { useDroppable } from '@dnd-kit/core'
