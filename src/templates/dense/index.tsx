@@ -62,7 +62,7 @@ export default function DenseTemplate(props: DenseTemplateProps): ReactElement {
 
   return (
     <div
-      className="resume-container mx-auto bg-white text-black shadow-sm"
+      className="resume-container mx-auto bg-white text-black"
       data-page-padding-vertical={theme.pagePaddingVertical}
       style={{
         color: theme.textColor || INK,

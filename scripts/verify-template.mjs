@@ -126,12 +126,18 @@ function runStaticChecks(id) {
 
   const locksPrimaryColor = /\blocksPrimaryColor\s*:\s*true\b/.test(entry)
   const recommendedPrimaryColor = matchStringProp(entry, 'recommendedPrimaryColor')
+  const exportLayout = matchStringProp(entry, 'exportLayout')
   if (locksPrimaryColor && !recommendedPrimaryColor) {
     fail('Theme contract', 'locksPrimaryColor is true but recommendedPrimaryColor is missing.')
   } else if (recommendedPrimaryColor && !/^#[0-9a-fA-F]{6}$/.test(recommendedPrimaryColor)) {
     fail('Theme contract', `recommendedPrimaryColor must be a 6-digit hex color, got ${recommendedPrimaryColor}.`)
   } else {
     pass('Theme contract', locksPrimaryColor ? `Locked ${recommendedPrimaryColor}` : 'Primary color is configurable.')
+  }
+  if (exportLayout && !['standard', 'bleed'].includes(exportLayout)) {
+    fail('Export layout contract', `exportLayout must be "standard" or "bleed", got ${exportLayout}.`)
+  } else {
+    pass('Export layout contract', exportLayout ? `exportLayout: ${exportLayout}` : 'standard')
   }
 
   const templateDir = path.join(root, 'src', 'templates', id)
@@ -148,6 +154,15 @@ function runStaticChecks(id) {
 
     if (/\btheme\b/.test(implementationSource)) pass('Theme usage', 'Template implementation references theme tokens.')
     else warn('Theme usage', 'No "theme" reference found in template implementation.')
+
+    if (exportLayout === 'bleed') {
+      const hasBleedMarker = /data-bleed\s*=\s*["'{]true|<ResumeFrame[\s\S]{0,260}\bbleed\b|bleed=\{config\.bleed\}/.test(implementationSource)
+      if (hasBleedMarker) {
+        pass('Bleed export marker', 'Template implementation emits data-bleed for export.')
+      } else {
+        fail('Bleed export marker', 'exportLayout is bleed, but the template implementation does not appear to emit data-bleed.')
+      }
+    }
 
     const editablePrimitives = [
       'ResumeFrame',
@@ -173,7 +188,7 @@ function runStaticChecks(id) {
     fail('Template entry file', `Missing ${relative(indexPath)}.`)
   }
 
-  return { entry, preview, locksPrimaryColor, recommendedPrimaryColor }
+  return { entry, preview, locksPrimaryColor, recommendedPrimaryColor, exportLayout }
 }
 
 function getTemplateImplementationSource(indexSource) {
@@ -181,9 +196,11 @@ function getTemplateImplementationSource(indexSource) {
   if (/OriginalTemplate/.test(indexSource)) {
     const sharedSourcePaths = [
       path.join(root, 'src', 'templates', '_originals', 'shared.tsx'),
+      path.join(root, 'src', 'templates', '_originals', 'configs.ts'),
       path.join(root, 'src', 'templates', '_originals', 'layouts.tsx'),
       path.join(root, 'src', 'templates', '_originals', 'components.tsx'),
       path.join(root, 'src', 'templates', 'originals', 'shared.tsx'),
+      path.join(root, 'src', 'templates', 'originals', 'configs.ts'),
       path.join(root, 'src', 'templates', 'originals', 'layouts.tsx'),
       path.join(root, 'src', 'templates', 'originals', 'components.tsx'),
     ]
@@ -2120,7 +2137,7 @@ function writeReport(templateIds) {
     '',
     '## 覆盖范围',
     '',
-    '- 模板注册、懒加载、缩略图、主题契约。',
+    '- 模板注册、懒加载、缩略图、主题契约、导出布局契约。',
     '- 本地 PC、移动端、稀疏数据、长内容、富文本渲染。',
     '- 字号、行高、模块间距、标题比例、页边距、主题主色。',
     '- 本地交互 QA：模板切换、主题改色与恢复默认、基础信息弹窗、头像上传入口、求职意向弹窗、经历字段编辑、模块操作入口、富文本编辑态、深色背景 hover 对比。',

@@ -4,6 +4,7 @@ import type { Area, Point } from 'react-easy-crop'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { X } from 'lucide-react'
+import { exportAvatarCanvasDataUrl } from '@/lib/image/export-avatar-canvas'
 
 /**
  * Props for the avatar crop modal.
@@ -117,7 +118,7 @@ function getCroppedImage(imageSrc: string, pixelCrop: Area): Promise<string> {
         pixelCrop.width,
         pixelCrop.height,
       )
-      resolve(canvas.toDataURL('image/jpeg', 0.92))
+      resolve(exportAvatarCanvasDataUrl(canvas, 0.92))
     }
     image.onerror = (): void => reject(new Error('Failed to load image'))
     image.src = imageSrc

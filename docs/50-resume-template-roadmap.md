@@ -177,7 +177,7 @@
 - 注册到 `src/templates/template-loader.ts`
 - 注册到 `src/lib/templates/template-catalog.ts`
 - 新增缩略图到 `public/thumbnails/`
-- 如使用全出血页眉或特殊顶部布局，加入 `src/app/print/[id]/page.tsx` 的 `BLEED_TEMPLATE_IDS`
+- 如使用全出血页眉或特殊顶部布局，在 `src/templates/template-loader.ts` 设置 `exportLayout: 'bleed'`，并确保模板根节点通过 `ResumeFrame bleed` 或等效属性输出 `data-bleed="true"`
 - 必须保留编辑器能力：
   - 基础信息编辑
   - 头像上传

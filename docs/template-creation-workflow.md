@@ -78,7 +78,7 @@ For a new template `<id>`:
 3. If public/template gallery data is separate, register it in `src/lib/templates/template-catalog.ts`.
 4. Add or generate a thumbnail under `public/thumbnails/`.
 5. Use a real rendered resume thumbnail in `.webp` format for new production templates. Do not hand-draw an SVG thumbnail unless it is a temporary placeholder while the template is still being designed.
-6. If the template has a full-bleed header or special top layout, add the id to `BLEED_TEMPLATE_IDS` in `src/app/print/[id]/page.tsx`.
+6. If the template has a full-bleed header or special top layout, set `exportLayout: 'bleed'` in `src/templates/template-loader.ts` and make sure the template root emits `data-bleed="true"` via `ResumeFrame bleed` or an equivalent root attribute.
 
 ## Thumbnail Generation
 

@@ -24,6 +24,12 @@ export interface TemplateConfig {
   readonly tags?: string[]
   readonly component: ComponentType<TemplateProps>
   /**
+   * Export layout contract shared by PC preview, mobile preview and server-side print.
+   * - standard: native @page margins provide repeated top/bottom whitespace.
+   * - bleed: the template owns the full A4 canvas and should export with zero @page margin.
+   */
+  readonly exportLayout?: 'standard' | 'bleed'
+  /**
    * Flagship templates own a deliberate brand palette that should not be
    * overridden by the user's chosen primaryColor. When true, the theme panel
    * will disable the primary-color section for this template and explain why.
@@ -60,6 +66,7 @@ export const TEMPLATE_REGISTRY: Record<string, TemplateConfig> = {
     preview: '/thumbnails/template_elegant.webp',
     tags: ['正式', '庄重', '典雅', '金色'],
     component: lazy(() => import('@/templates/elegant')),
+    exportLayout: 'bleed',
   },
   warm: {
     id: 'warm',
@@ -68,6 +75,7 @@ export const TEMPLATE_REGISTRY: Record<string, TemplateConfig> = {
     preview: '/thumbnails/template_warm.webp',
     tags: ['通用', '双列', '淡黄', '侧边栏'],
     component: lazy(() => import('@/templates/warm')),
+    exportLayout: 'bleed',
   },
   timeline: {
     id: 'timeline',
@@ -84,6 +92,7 @@ export const TEMPLATE_REGISTRY: Record<string, TemplateConfig> = {
     preview: '/thumbnails/template_lanxin.webp',
     tags: ['通用', '时间轴', '浅蓝', '专业'],
     component: lazy(() => import('@/templates/lanxin')),
+    exportLayout: 'bleed',
     recommendedPrimaryColor: '#3a8ec7',
   },
   tablegrid: {
@@ -111,6 +120,7 @@ export const TEMPLATE_REGISTRY: Record<string, TemplateConfig> = {
     preview: '/thumbnails/template_lifeng.webp',
     tags: ['原创', '紧凑', '双栏', '技术'],
     component: lazy(() => import('@/templates/lifeng')),
+    exportLayout: 'bleed',
     recommendedPrimaryColor: '#7c3aed',
   },
   qingsui: {
@@ -120,6 +130,7 @@ export const TEMPLATE_REGISTRY: Record<string, TemplateConfig> = {
     preview: '/thumbnails/template_qingsui.webp',
     tags: ['原创', '校招', '应届生', '清爽'],
     component: lazy(() => import('@/templates/qingsui')),
+    exportLayout: 'bleed',
     recommendedPrimaryColor: '#0891b2',
   },
   yuanshan: {
@@ -156,6 +167,7 @@ export const TEMPLATE_REGISTRY: Record<string, TemplateConfig> = {
     preview: '/thumbnails/template_lanzhe.webp',
     tags: ['原创', '校招', '折角', '紧凑'],
     component: lazy(() => import('@/templates/lanzhe')),
+    exportLayout: 'bleed',
     recommendedPrimaryColor: '#4f719f',
   },
   dense: {
@@ -174,6 +186,7 @@ export const TEMPLATE_REGISTRY: Record<string, TemplateConfig> = {
     preview: '/thumbnails/template_ziji.webp',
     tags: ['原创', '双栏', '紫色', '个人履历'],
     component: lazy(() => import('@/templates/ziji')),
+    exportLayout: 'bleed',
     recommendedPrimaryColor: '#7c3aed',
   },
   // ——— Flagship headless templates (each owns a deliberate brand palette) —
@@ -184,6 +197,7 @@ export const TEMPLATE_REGISTRY: Record<string, TemplateConfig> = {
     preview: '/thumbnails/template_qingyun.webp',
     tags: ['旗舰', '校招', '应届生', '天青蓝', 'Headless'],
     component: lazy(() => import('@/templates/qingyun')),
+    exportLayout: 'bleed',
     locksPrimaryColor: true,
     recommendedPrimaryColor: '#0891b2',
   },
@@ -194,6 +208,7 @@ export const TEMPLATE_REGISTRY: Record<string, TemplateConfig> = {
     preview: '/thumbnails/template_mashang.webp',
     tags: ['旗舰', '开发', '算法', '技术', '终端', 'Headless'],
     component: lazy(() => import('@/templates/mashang')),
+    exportLayout: 'bleed',
     locksPrimaryColor: true,
     recommendedPrimaryColor: '#10b981',
   },
@@ -204,6 +219,7 @@ export const TEMPLATE_REGISTRY: Record<string, TemplateConfig> = {
     preview: '/thumbnails/template_zhumo.webp',
     tags: ['旗舰', '编辑', '文案', '内容', '衬线', 'Headless'],
     component: lazy(() => import('@/templates/zhumo')),
+    exportLayout: 'bleed',
     locksPrimaryColor: true,
     recommendedPrimaryColor: '#b91c1c',
   },
@@ -214,6 +230,7 @@ export const TEMPLATE_REGISTRY: Record<string, TemplateConfig> = {
     preview: '/thumbnails/template_xingtan.webp',
     tags: ['旗舰', '教师', '学术', '教育', '古籍', 'Headless'],
     component: lazy(() => import('@/templates/xingtan')),
+    exportLayout: 'bleed',
     locksPrimaryColor: true,
     recommendedPrimaryColor: '#a16207',
   },

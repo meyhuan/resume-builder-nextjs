@@ -6,26 +6,13 @@ import type { ResumeData } from '@/entities/resume/resume-data'
 import { extractEditorMeta } from '@/entities/editor/editor-meta'
 import { normalizeResumeContent } from '@/entities/resume/normalize-resume-content'
 import { prepareResumeForExport } from '@/lib/resume-export-visibility'
+import { TEMPLATE_REGISTRY } from '@/templates/template-loader'
 import PrintRenderer from './print-renderer'
 
 interface PrintPageProps {
   params: Promise<{ id: string }>
   searchParams: Promise<{ token?: string; tpl?: string }>
 }
-
-const BLEED_TEMPLATE_IDS: ReadonlySet<string> = new Set([
-  'elegant',
-  'warm',
-  'lanxin',
-  'qingyun',
-  'mashang',
-  'xingtan',
-  'zhumo',
-  'lifeng',
-  'qingsui',
-  'lanzhe',
-  'ziji',
-])
 
 export const dynamic = 'force-dynamic'
 
@@ -73,7 +60,7 @@ export default async function PrintPage(props: PrintPageProps): Promise<ReactEle
   // In one-page mode, we remove the native CSS @page margins completely to give the container maximum space.
   // We also conditionally build the per-page margin overrides.
   const isOnePage = meta.onePageMode
-  const isBleedTemplate: boolean = BLEED_TEMPLATE_IDS.has(templateId)
+  const isBleedTemplate: boolean = TEMPLATE_REGISTRY[templateId]?.exportLayout === 'bleed'
   const pagePaddingV = savedTheme?.pagePaddingVertical ?? 22
   const pageMarginCss = isOnePage || isBleedTemplate ? 'margin: 0;' : `margin: ${pagePaddingV}mm 0;`
   const bleedFirstPageCss = ''

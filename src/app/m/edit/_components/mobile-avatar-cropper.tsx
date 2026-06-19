@@ -4,6 +4,7 @@ import { useCallback, useState, type ReactElement } from 'react'
 import Cropper from 'react-easy-crop'
 import type { Area, Point } from 'react-easy-crop'
 import { X, Check, Loader2 } from 'lucide-react'
+import { exportAvatarCanvasDataUrl } from '@/lib/image/export-avatar-canvas'
 
 export interface MobileAvatarCropperProps {
   readonly imageSrc: string
@@ -127,7 +128,7 @@ export function MobileAvatarCropper(props: MobileAvatarCropperProps): ReactEleme
 }
 
 /**
- * Crop an image using canvas and return a JPEG data URL.
+ * Crop an image using canvas and return a data URL.
  */
 function cropImageToDataUrl(src: string, pixelCrop: Area): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -153,7 +154,7 @@ function cropImageToDataUrl(src: string, pixelCrop: Area): Promise<string> {
         pixelCrop.width,
         pixelCrop.height,
       )
-      resolve(canvas.toDataURL('image/jpeg', 0.9))
+      resolve(exportAvatarCanvasDataUrl(canvas, 0.9))
     }
     image.onerror = (): void => reject(new Error('Failed to load image'))
     image.src = src
