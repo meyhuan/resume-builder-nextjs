@@ -24,6 +24,8 @@ export interface ResumeFrameProps {
   readonly style?: CSSProperties
   /** If true, pins `data-bleed=true` so export tooling skips top padding. */
   readonly bleed?: boolean
+  /** Let templates with custom multi-column DnD provide their own context. */
+  readonly disableDnd?: boolean
   readonly children: ReactNode
 }
 
@@ -46,15 +48,19 @@ export function ResumeFrame(props: ResumeFrameProps): ReactElement {
         ...style,
       }}
     >
-      <DragDropProvider
-        resume={resume}
-        theme={theme}
-        onMoveSection={onMoveSection}
-        onMoveWithinSection={onMoveWithinSection}
-        onMoveToSection={onMoveToSection}
-      >
-        {children}
-      </DragDropProvider>
+      {props.disableDnd ? (
+        children
+      ) : (
+        <DragDropProvider
+          resume={resume}
+          theme={theme}
+          onMoveSection={onMoveSection}
+          onMoveWithinSection={onMoveWithinSection}
+          onMoveToSection={onMoveToSection}
+        >
+          {children}
+        </DragDropProvider>
+      )}
     </div>
   )
 }

@@ -38,12 +38,15 @@ interface CrossColumnDragState {
   readonly hoverColumnId: string | null
   /** Which column the dragged section originally belongs to. */
   readonly sourceColumnId: string | null
+  /** Whether the active section is allowed to move to the other column. */
+  readonly canMoveAcrossColumns: boolean
 }
 
 const CrossColumnDragContext = createContext<CrossColumnDragState>({
   activeSectionId: null,
   hoverColumnId: null,
   sourceColumnId: null,
+  canMoveAcrossColumns: false,
 })
 
 /** Hook to read cross-column drag state from any child. */
@@ -70,6 +73,8 @@ interface TwoColumnDndProviderProps {
   readonly onMoveToSection: (fromSectionId: string, blockId: string, toSectionId: string, toIndex: number) => void
   /** Called when a TextBlock section moves from one column to the other. */
   readonly onMoveSectionToColumn: (sectionId: string, toColumn: 'left' | 'right') => void
+  /** Which sections may move between columns. Defaults to text-only sections. */
+  readonly canMoveSectionToColumn?: (section: Section) => boolean
   readonly renderSectionOverlay?: (sectionId: string) => ReactNode
 }
 
@@ -83,8 +88,9 @@ export function ColumnDroppable(props: {
   readonly className?: string
 }): ReactElement {
   const { setNodeRef, isOver } = useDroppable({ id: props.id })
-  const { activeSectionId, hoverColumnId, sourceColumnId } = useCrossColumnDrag()
+  const { activeSectionId, hoverColumnId, sourceColumnId, canMoveAcrossColumns } = useCrossColumnDrag()
   const isCrossColumnHover = activeSectionId !== null
+    && canMoveAcrossColumns
     && hoverColumnId === props.id
     && sourceColumnId !== null
     && sourceColumnId !== props.id
@@ -102,8 +108,9 @@ export function ColumnDroppable(props: {
 export function CrossColumnPlaceholder(props: {
   readonly columnId: string
 }): ReactElement | null {
-  const { activeSectionId, hoverColumnId, sourceColumnId } = useCrossColumnDrag()
+  const { activeSectionId, hoverColumnId, sourceColumnId, canMoveAcrossColumns } = useCrossColumnDrag()
   const show = activeSectionId !== null
+    && canMoveAcrossColumns
     && hoverColumnId === props.columnId
     && sourceColumnId !== null
     && sourceColumnId !== props.columnId
@@ -129,6 +136,7 @@ export default function TwoColumnDndProvider(props: TwoColumnDndProviderProps): 
     onMoveWithinSection,
     onMoveToSection,
     onMoveSectionToColumn,
+    canMoveSectionToColumn,
     renderSectionOverlay,
   } = props
 
@@ -157,6 +165,11 @@ export default function TwoColumnDndProvider(props: TwoColumnDndProviderProps): 
     return leftSections.some((s) => s.id === sectionId)
   }
 
+  function canSectionMoveAcrossColumns(section: Section | undefined): boolean {
+    if (!section) return false
+    return canMoveSectionToColumn ? canMoveSectionToColumn(section) : isTextOnlySection(section)
+  }
+
   function handleDragStart(event: DragStartEvent): void {
     const id: string = String(event.active.id)
     if (id.startsWith(DndIds.SECTION_SORT_ID_PREFIX)) {
@@ -170,6 +183,11 @@ export default function TwoColumnDndProvider(props: TwoColumnDndProviderProps): 
   function handleDragOver(event: DragOverEvent): void {
     const overId = event.over ? String(event.over.id) : null
     if (!overId || !active || active.kind !== 'section') {
+      setHoverColumnId(null)
+      return
+    }
+    const activeSection = allSections.find((s) => s.id === active.id)
+    if (!canSectionMoveAcrossColumns(activeSection)) {
       setHoverColumnId(null)
       return
     }
@@ -197,6 +215,7 @@ export default function TwoColumnDndProvider(props: TwoColumnDndProviderProps): 
   const sourceColumnId: string | null = active?.kind === 'section'
     ? (isInLeftColumn(active.id) ? COLUMN_LEFT_ID : COLUMN_RIGHT_ID)
     : null
+  const activeSection = active?.kind === 'section' ? allSections.find((s) => s.id === active.id) : undefined
 
   function handleDragEnd(event: DragEndEvent): void {
     const activeId: string = String(event.active.id)
@@ -213,7 +232,7 @@ export default function TwoColumnDndProvider(props: TwoColumnDndProviderProps): 
 
       // Cross-column drop: dropped on a column droppable
       if (overId === COLUMN_LEFT_ID || overId === COLUMN_RIGHT_ID) {
-        if (!section || !isTextOnlySection(section)) {
+        if (!canSectionMoveAcrossColumns(section)) {
           setActive(null)
           return
         }
@@ -240,7 +259,7 @@ export default function TwoColumnDndProvider(props: TwoColumnDndProviderProps): 
         // Cross-column: dragged section onto a section in the other column
         const activeInLeft = isInLeftColumn(activeSectionId)
         const overInLeft = isInLeftColumn(overSectionId)
-        if (activeInLeft !== overInLeft && section && isTextOnlySection(section)) {
+        if (activeInLeft !== overInLeft && canSectionMoveAcrossColumns(section)) {
           onMoveSectionToColumn(activeSectionId, overInLeft ? 'left' : 'right')
         } else if (activeInLeft === overInLeft) {
           // Same column reorder
@@ -281,6 +300,7 @@ export default function TwoColumnDndProvider(props: TwoColumnDndProviderProps): 
     activeSectionId: active?.kind === 'section' ? active.id : null,
     hoverColumnId,
     sourceColumnId,
+    canMoveAcrossColumns: canSectionMoveAcrossColumns(activeSection),
   }
 
   return (

@@ -158,6 +158,24 @@ export const TEMPLATE_REGISTRY: Record<string, TemplateConfig> = {
     component: lazy(() => import('@/templates/lanzhe')),
     recommendedPrimaryColor: '#4f719f',
   },
+  dense: {
+    id: 'dense',
+    name: '密排',
+    description: '青绿时间线 + 极高信息密度，适合内容较多、希望尽量压缩到一页的简历',
+    preview: '/thumbnails/template_dense.webp',
+    tags: ['原创', '紧凑', '时间轴', '一页'],
+    component: lazy(() => import('@/templates/dense')),
+    recommendedPrimaryColor: '#4fb8ba',
+  },
+  ziji: {
+    id: 'ziji',
+    name: '紫记',
+    description: '紫色渐变头图 + 双栏履历笔记，适合个人主页感、运营、产品与创意岗位',
+    preview: '/thumbnails/template_ziji.webp',
+    tags: ['原创', '双栏', '紫色', '个人履历'],
+    component: lazy(() => import('@/templates/ziji')),
+    recommendedPrimaryColor: '#7c3aed',
+  },
   // ——— Flagship headless templates (each owns a deliberate brand palette) —
   qingyun: {
     id: 'qingyun',

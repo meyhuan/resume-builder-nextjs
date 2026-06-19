@@ -119,7 +119,7 @@ const productFullResume: ResumeData = {
     },
     {
       id: 'scenario-product-skills',
-      title: '职业技能',
+      title: '相关技能',
       columns: 1,
       blocks: [
         {
@@ -313,7 +313,7 @@ const compactResume: ResumeData = {
     },
     {
       id: 'scenario-compact-skills',
-      title: '职业技能',
+      title: '相关技能',
       columns: 1,
       blocks: [
         { id: 'scenario-compact-skills-text', type: 'text', html: '<p>熟悉HTML、CSS、JavaScript、React。</p>' },
@@ -375,6 +375,109 @@ const edgeCaseResume: ResumeData = {
   ],
 }
 
+const thumbnailCoverResume: ResumeData = {
+  id: 'scenario-thumbnail-cover',
+  name: '智小简',
+  baseInfo: {
+    title: 'AI 简历产品经理',
+    phone: '188-0000-2026',
+    email: 'demo@aijianli.cn',
+    gender: '女',
+    age: 26,
+    currentLocation: '上海',
+    workStartTime: '2022.07',
+    showAvatar: true,
+    customFields: [
+      { label: '产品', value: '智简简历' },
+    ],
+  },
+  jobIntention: {
+    position: 'AI 产品经理',
+    city: '上海 / 远程',
+    salary: '20k-30k',
+    type: '全职',
+    industry: 'AI 工具 / 在线简历',
+    currentStatus: '在职，机会合适可快速到岗',
+  },
+  jobIntentionVisible: true,
+  sections: [
+    {
+      id: 'scenario-cover-education',
+      title: '教育经历',
+      columns: 1,
+      blocks: [
+        {
+          id: 'scenario-cover-edu-1',
+          type: 'education',
+          school: '示例大学',
+          major: '信息管理与信息系统',
+          degree: '本科',
+          startDate: '2018.09',
+          endDate: '2022.06',
+          courseHtml: '<p>主修课程：产品设计、数据分析、用户研究、管理信息系统、人工智能导论。</p>',
+        },
+      ],
+    },
+    {
+      id: 'scenario-cover-experience',
+      title: '工作经历',
+      columns: 1,
+      blocks: [
+        {
+          id: 'scenario-cover-exp-1',
+          type: 'experience',
+          company: '智简简历',
+          position: 'AI 产品经理',
+          industry: 'AI 应用',
+          startDate: '2023.03',
+          endDate: '至今',
+          contentHtml: '<p>负责 AI 简历生成、智能润色和模板编辑体验，围绕用户从导入经历到导出 PDF 的路径持续优化。</p><p>联合设计、算法和前端团队改进模板选择、字段填写和一键生成流程，帮助求职者更快完成专业简历。</p>',
+        },
+      ],
+    },
+    {
+      id: 'scenario-cover-projects',
+      title: '项目经历',
+      columns: 1,
+      blocks: [
+        {
+          id: 'scenario-cover-project-1',
+          type: 'project',
+          name: 'AI 简历优化助手',
+          role: '产品负责人',
+          startDate: '2023.09',
+          endDate: '2024.06',
+          contentHtml: '<p>设计岗位画像、简历诊断、AI 改写建议和导出预览能力，让用户在 10 分钟内完成一份清晰、可信、匹配岗位的简历。</p>',
+        },
+      ],
+    },
+    {
+      id: 'scenario-cover-skills',
+      title: '相关技能',
+      columns: 1,
+      blocks: [
+        {
+          id: 'scenario-cover-skills-text',
+          type: 'text',
+          html: '<p>产品设计：用户访谈、PRD、原型设计、增长漏斗。</p><p>数据分析：熟悉 Excel、SQL、埋点分析和转化率优化。</p>',
+        },
+      ],
+    },
+    {
+      id: 'scenario-cover-summary',
+      title: '自我评价',
+      columns: 1,
+      blocks: [
+        {
+          id: 'scenario-cover-summary-text',
+          type: 'text',
+          html: '<p>关注 AI 简历工具和求职效率提升，能够把复杂经历整理成结构清晰、重点突出的表达。</p>',
+        },
+      ],
+    },
+  ],
+}
+
 export const RESUME_SCENARIOS: readonly ResumeScenario[] = [
   {
     id: 'product-full',
@@ -399,5 +502,11 @@ export const RESUME_SCENARIOS: readonly ResumeScenario[] = [
     name: '边界场景',
     description: '隐藏头像、隐藏求职意向、双列模块和长自定义字段。',
     resume: edgeCaseResume,
+  },
+  {
+    id: 'cover',
+    name: '模板封面展示',
+    description: '用于模板封面截图的品牌化示例数据，不替代 QA 压力测试场景。',
+    resume: thumbnailCoverResume,
   },
 ]

@@ -63,6 +63,29 @@ interface ResumeEditorProps {
   initialData?: DbResumeRecord | null
 }
 
+interface InitialBaselineTarget {
+  readonly resumeId: string
+  readonly tpl: string
+  readonly theme: ThemeTokens
+  readonly onePageMode: boolean
+  readonly onePageSnapshot: AdjustableTokens | null
+  readonly sidebarSectionIds?: readonly string[]
+}
+
+function areStringArraysEqual(
+  left: readonly string[] | undefined,
+  right: readonly string[] | undefined,
+): boolean {
+  if (left === right) return true
+  if (!left || !right) return false
+  if (left.length !== right.length) return false
+  return left.every((value, index) => value === right[index])
+}
+
+function isJsonEqual(left: unknown, right: unknown): boolean {
+  return JSON.stringify(left) === JSON.stringify(right)
+}
+
 export default function ResumeEditor({ resumeId: initialResumeId, initialData }: ResumeEditorProps): ReactElement {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -113,12 +136,16 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
 
   // Initialize from DB data if provided
   const initApplied = useRef(false)
+  const pendingInitialBaselineRef = useRef<InitialBaselineTarget | null>(null)
   useEffect(() => {
     if (!initialData || initApplied.current) return
     initApplied.current = true
+    setSavedSnapshot('')
     let restoredTheme: ThemeTokens | undefined
     let restoredOnePage = false
     let restoredSnapshot: AdjustableTokens | null = null
+    let restoredSidebarSectionIds: readonly string[] | undefined
+    const tplId = initialData.template || 'simple'
     if (initialData.content && typeof initialData.content === 'object' && Object.keys(initialData.content).length > 0) {
       const raw = initialData.content as Record<string, unknown>
       const { content: cleanContent, meta } = extractEditorMeta(raw)
@@ -128,7 +155,6 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
       )
       setResume(() => normalizedContent)
       // Restore per-resume theme overrides
-      const tplId = initialData.template || 'simple'
       restoredTheme = meta.themes[tplId]
       if (restoredTheme) {
         setThemeForTemplate(tplId, (draft) => { Object.assign(draft, restoredTheme!) })
@@ -140,21 +166,23 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
       setOnePageSnapshot(restoredSnapshot)
       // Restore sidebar section IDs (for two-column templates)
       if (meta.sidebarSectionIds) {
-        setSidebarSectionIds(meta.sidebarSectionIds as readonly string[])
+        restoredSidebarSectionIds = meta.sidebarSectionIds as readonly string[]
+        setSidebarSectionIds(restoredSidebarSectionIds)
       }
-      // Build initial composite fingerprint after all state is restored
-      const initTheme = restoredTheme ?? getThemeForTemplate(tplId)
-      setSavedSnapshot(JSON.stringify({
-        resume: normalizedContent,
-        theme: initTheme,
-        tpl: tplId,
-        onePageMode: restoredOnePage,
-        onePageSnapshot: restoredSnapshot,
-        sidebarSectionIds: meta.sidebarSectionIds,
-      }))
+    } else {
+      setOnePageMode(false)
+      setOnePageSnapshot(null)
+      setSidebarSectionIds(undefined)
     }
-    if (initialData.template) {
-      setTpl(initialData.template)
+
+    setTpl(tplId)
+    pendingInitialBaselineRef.current = {
+      resumeId: initialData.id,
+      tpl: tplId,
+      theme: getThemeForTemplate(tplId),
+      onePageMode: restoredOnePage,
+      onePageSnapshot: restoredSnapshot,
+      sidebarSectionIds: restoredSidebarSectionIds,
     }
   }, [initialData, setResume, setThemeForTemplate, getThemeForTemplate])
 
@@ -194,25 +222,24 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
   // Set initial snapshot for new resumes (no initialData) so changes are detected
   const initialSnapshotSet = useRef(false)
   useEffect(() => {
+    if (initialData) return
     if (initialSnapshotSet.current || savedSnapshot) return
-    if (initApplied.current || !initialData) {
-      initialSnapshotSet.current = true
-      
-      // If a template was specified in URL and we have no initialData, load test data to showcase the template
-      if (!initialData && searchParams.has('template') && !searchParams.has('source')) {
-        loadTestData()
-      }
-
-      const initTheme = getThemeForTemplate(tpl)
-      setSavedSnapshot(JSON.stringify({
-        resume,
-        theme: initTheme,
-        tpl,
-        onePageMode: false,
-        onePageSnapshot: null,
-        sidebarSectionIds: undefined,
-      }))
+    initialSnapshotSet.current = true
+    
+    // If a template was specified in URL and we have no initialData, load test data to showcase the template
+    if (searchParams.has('template') && !searchParams.has('source')) {
+      loadTestData()
     }
+
+    const initTheme = getThemeForTemplate(tpl)
+    setSavedSnapshot(JSON.stringify({
+      resume,
+      theme: initTheme,
+      tpl,
+      onePageMode: false,
+      onePageSnapshot: null,
+      sidebarSectionIds: undefined,
+    }))
   }, [initialData, resume, tpl, savedSnapshot, getThemeForTemplate, searchParams, loadTestData])
 
   // Subscribe to theme changes for current template
@@ -227,6 +254,20 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
     if (!savedSnapshot) return false
     return currentFingerprint !== savedSnapshot
   }, [currentFingerprint, savedSnapshot])
+
+  useEffect(() => {
+    const pending = pendingInitialBaselineRef.current
+    if (!pending) return
+    if (initialData?.id !== pending.resumeId) return
+    if (tpl !== pending.tpl) return
+    if (onePageMode !== pending.onePageMode) return
+    if (!isJsonEqual(theme, pending.theme)) return
+    if (!isJsonEqual(onePageSnapshot, pending.onePageSnapshot)) return
+    if (!areStringArraysEqual(sidebarSectionIds, pending.sidebarSectionIds)) return
+
+    setSavedSnapshot(currentFingerprint)
+    pendingInitialBaselineRef.current = null
+  }, [currentFingerprint, initialData?.id, onePageMode, onePageSnapshot, sidebarSectionIds, theme, tpl])
 
   // Keep ref in sync for beforeunload handler
   useEffect(() => {

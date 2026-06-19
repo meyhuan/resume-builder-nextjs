@@ -18,7 +18,12 @@ const width = Number(args.width || DEFAULT_WIDTH)
 const height = Number(args.height || DEFAULT_HEIGHT)
 const quality = Number(args.quality || 82)
 const defaultAvatar = fs.existsSync(path.join(root, 'public', 'avatar.jpg')) ? '/avatar.jpg' : ''
-const avatar = args.avatar === 'none' ? '' : (args.avatar || defaultAvatar)
+const zijiCoverAvatar = fs.existsSync(path.join(root, 'public', 'avatar_transpant.png'))
+  ? '/avatar_transpant.png'
+  : fs.existsSync(path.join(root, 'public', 'avatar_trans.png'))
+    ? '/avatar_trans.png'
+    : defaultAvatar
+const scenario = args.scenario || 'cover'
 const ids = args._.length > 0 ? args._ : args.all ? getRegisteredTemplateIds() : getSvgTemplateIds()
 
 if (ids.length === 0) {
@@ -47,8 +52,21 @@ console.log(`Generated ${ids.length} template thumbnail(s): ${ids.join(', ')}`)
 async function generateThumbnail(browser, id) {
   const page = await browser.newPage()
   try {
-    const url = `${baseUrl}/dev/scenario-loader?tpl=${encodeURIComponent(id)}${avatar ? `&avatar=${encodeURIComponent(avatar)}` : ''}`
+    const avatar = resolveAvatarForTemplate(id)
+    const url = `${baseUrl}/dev/scenario-loader?tpl=${encodeURIComponent(id)}&scenario=${encodeURIComponent(scenario)}${avatar ? `&avatar=${encodeURIComponent(avatar)}` : ''}`
     await page.goto(url, { waitUntil: 'networkidle0', timeout: 60000 })
+    if (scenario === 'cover') {
+      await page.waitForFunction(() => {
+        const preview = document.querySelector('[data-scenario-preview="true"]')
+        return preview?.textContent?.includes('智小简')
+      }, { timeout: 15000 })
+    }
+    if (id === 'ziji' && scenario === 'cover' && avatar) {
+      await page.waitForFunction((expectedAvatar) => {
+        const avatarImage = document.querySelector('[data-scenario-preview="true"] .ziji-avatar img')
+        return avatarImage?.getAttribute('src') === expectedAvatar
+      }, { timeout: 15000 }, avatar)
+    }
     await page.evaluate(async () => {
       if (document.fonts) await document.fonts.ready
       await Promise.all(Array.from(document.images).map((img) => {
@@ -59,22 +77,55 @@ async function generateThumbnail(browser, id) {
         })
       }))
     })
-
     const element = await page.waitForSelector('[data-scenario-preview="true"]', { timeout: 30000 })
     const png = await element.screenshot({ type: 'png' })
     const outputPath = path.join(outputDir, `template_${id}.webp`)
-    await sharp(png)
-      .resize(width, height, {
-        fit: 'cover',
-        position: 'top',
-        background: '#ffffff',
-      })
+    const normalized = await normalizeToThumbnailRatio(png, width, height)
+    await sharp(normalized)
+      .resize(width, height, { fit: 'fill' })
       .webp({ quality, effort: 5 })
       .toFile(outputPath)
     console.log(`- ${id}: ${relative(outputPath)}`)
   } finally {
     await page.close()
   }
+}
+
+function resolveAvatarForTemplate(id) {
+  if (args.avatar === 'none') return ''
+  if (args.avatar) return args.avatar
+  if (id === 'ziji' && scenario === 'cover') return zijiCoverAvatar
+  return defaultAvatar
+}
+
+async function normalizeToThumbnailRatio(png, width, height) {
+  const image = sharp(png)
+  const metadata = await image.metadata()
+  if (!metadata.width || !metadata.height) return png
+
+  const targetSourceHeight = Math.round(metadata.width * height / width)
+  if (metadata.height === targetSourceHeight) return png
+
+  if (metadata.height < targetSourceHeight) {
+    return sharp(png)
+      .extend({
+        top: 0,
+        bottom: targetSourceHeight - metadata.height,
+        left: 0,
+        right: 0,
+        background: '#ffffff',
+      })
+      .toBuffer()
+  }
+
+  return sharp(png)
+    .extract({
+      left: 0,
+      top: 0,
+      width: metadata.width,
+      height: targetSourceHeight,
+    })
+    .toBuffer()
 }
 
 function getSvgTemplateIds() {

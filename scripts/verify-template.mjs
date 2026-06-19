@@ -551,6 +551,158 @@ async function checkTemplateSpecificLayout(page, options) {
     })
   }
 
+  if (options.templateId === 'ziji' && ['full', 'sparse', 'long', 'rich'].includes(options.fixture)) {
+    return page.evaluate(() => {
+      const root = document.querySelector('.ziji-root')
+      const hero = root?.querySelector(':scope > section')
+      const backdrop = root?.querySelector('[data-ziji-hero-backdrop="true"]')
+      const panel = root?.querySelector('[data-ziji-panel="true"]')
+      if (!root || !hero || !backdrop || !panel) {
+        return 'Ziji missing hero backdrop or panel QA markers.'
+      }
+
+      const heroRect = hero.getBoundingClientRect()
+      const backdropRect = backdrop.getBoundingClientRect()
+      const panelRect = panel.getBoundingClientRect()
+      const panelStyle = window.getComputedStyle(panel)
+      const backdropExtendsBehindPanel = backdropRect.bottom - panelRect.top
+      if (Math.abs(heroRect.bottom - panelRect.top) > 2) {
+        return `Ziji panel should start at the hero bottom. hero=${Math.round(heroRect.bottom)}, panel=${Math.round(panelRect.top)}.`
+      }
+      const minBackdropOverlap = heroRect.height * 0.16
+      if (backdropExtendsBehindPanel < minBackdropOverlap) {
+        return `Ziji hero backdrop must extend behind the rounded panel top; only ${Math.round(backdropExtendsBehindPanel)}px overlap.`
+      }
+
+      const topRadius = Number.parseFloat(panelStyle.borderTopLeftRadius)
+      if (!Number.isFinite(topRadius) || topRadius < 12) {
+        return `Ziji panel top radius is too small: ${panelStyle.borderTopLeftRadius}.`
+      }
+
+      const background = panelStyle.backgroundImage
+      const alphaValues = Array.from(background.matchAll(/rgba\(\s*255\s*,\s*255\s*,\s*255\s*,\s*([0-9.]+)\s*\)/g))
+        .map((match) => Number.parseFloat(match[1]))
+        .filter((value) => Number.isFinite(value))
+      const hasTransparentStart = alphaValues.some((value) => value <= 0.02)
+      const hasSoftTopOverlay = alphaValues.some((value) => value >= 0.14 && value <= 0.34)
+      if (!hasTransparentStart || !hasSoftTopOverlay) {
+        return `Ziji panel background must keep a soft transparent top overlay; found alpha values: ${alphaValues.join(', ')}.`
+      }
+
+      const alignmentIssue = checkZijiTextAlignment()
+      if (alignmentIssue) return alignmentIssue
+      const heroMetaIssue = checkZijiHeroMetaWrap()
+      if (heroMetaIssue) return heroMetaIssue
+      const shortTitleIssue = checkZijiShortTitleWrap()
+      if (shortTitleIssue) return shortTitleIssue
+      const titleContentGapIssue = checkZijiTitleContentGap()
+      if (titleContentGapIssue) return titleContentGapIssue
+
+      return ''
+
+      function checkZijiTextAlignment() {
+        const sections = [
+          ...Array.from(root.querySelectorAll('[data-ziji-column="left"] section')),
+          ...Array.from(root.querySelectorAll('[data-ziji-column="right"] section')),
+        ]
+        for (const section of sections) {
+          const title = section.querySelector('h2, h3')
+          if (!title) continue
+          const titleLeft = title.getBoundingClientRect().left
+          const heading = section.querySelector('h4')
+          if (heading && Math.abs(heading.getBoundingClientRect().left - titleLeft) > 3) {
+            return `Ziji block heading is not left-aligned with section title: ${title.textContent?.trim() || 'section'}.`
+          }
+          const bodyText = section.querySelector('.ziji-body-text p, .ziji-body-text li')
+          if (!bodyText) continue
+          const diff = bodyText.getBoundingClientRect().left - titleLeft
+          const maxDiff = bodyText.tagName === 'LI' ? 14 : 3
+          if (diff < -2 || diff > maxDiff) {
+            return `Ziji body text left alignment drift is too large: ${Math.round(diff)}px in ${title.textContent?.trim() || 'section'}.`
+          }
+        }
+        return ''
+      }
+
+      function checkZijiShortTitleWrap() {
+        const titles = Array.from(root.querySelectorAll('[data-ziji-column="left"] h3, [data-ziji-column="right"] h2'))
+        for (const title of titles) {
+          const text = (title.textContent || '').replace(/\s+/g, '').trim()
+          if (text.length === 0 || text.length > 6) continue
+          const rect = title.getBoundingClientRect()
+          const lineHeight = Number.parseFloat(window.getComputedStyle(title).lineHeight)
+          if (Number.isFinite(lineHeight) && rect.height > lineHeight * 1.45) {
+            return `Ziji short section title wraps unexpectedly: ${text}.`
+          }
+        }
+        return ''
+      }
+
+      function checkZijiTitleContentGap() {
+        const sections = [
+          ...Array.from(root.querySelectorAll('[data-ziji-column="left"] section')).map((section) => ({ section, selector: 'h3' })),
+          ...Array.from(root.querySelectorAll('[data-ziji-column="right"] section')).map((section) => ({ section, selector: 'h2' })),
+        ]
+        for (const item of sections) {
+          const title = item.section.querySelector(item.selector)
+          const contentTitle = findFirstStructuredContentTitle(item.section, title)
+          if (!title || !contentTitle) continue
+          const titleRect = title.getBoundingClientRect()
+          const contentRect = contentTitle.getBoundingClientRect()
+          const gap = contentRect.top - titleRect.bottom
+          if (gap > 26) {
+            return `Ziji section title-to-content gap is too large: ${Math.round(gap)}px in ${title.textContent?.trim() || 'section'}.`
+          }
+          if (gap < 4) {
+            return `Ziji section title-to-content gap is too tight: ${Math.round(gap)}px in ${title.textContent?.trim() || 'section'}.`
+          }
+        }
+        return ''
+      }
+
+      function findFirstStructuredContentTitle(section, title) {
+        if (!title) return null
+        const titleBottom = title.getBoundingClientRect().bottom
+        const candidates = Array.from(section.querySelectorAll('h4, .ziji-body-text p, .ziji-body-text li'))
+          .filter((node) => {
+            if (node.closest('button, [role="button"], [aria-hidden="true"]')) return false
+            const text = (node.textContent || '').replace(/\s+/g, '').trim()
+            if (!text) return false
+            const rect = node.getBoundingClientRect()
+            return rect.width > 1 && rect.height > 1 && rect.top >= titleBottom - 1
+          })
+          .sort((a, b) => {
+            const ar = a.getBoundingClientRect()
+            const br = b.getBoundingClientRect()
+            return ar.top === br.top ? ar.left - br.left : ar.top - br.top
+          })
+        const first = candidates[0]
+        return first?.tagName === 'H4' && !first.closest('.ziji-body-text') ? first : null
+      }
+
+      function checkZijiHeroMetaWrap() {
+        const meta = root.querySelector('[data-template-base-info-trigger="true"]')
+        if (!meta) return ''
+        const metaRect = meta.getBoundingClientRect()
+        const children = Array.from(meta.children)
+          .map((node) => ({ node, rect: node.getBoundingClientRect(), text: node.textContent?.trim() || '' }))
+          .filter((item) => item.rect.width > 1 && item.rect.height > 1)
+        if (children.length < 2) return ''
+        const firstTop = children[0].rect.top
+        const firstRow = children.filter((item) => Math.abs(item.rect.top - firstTop) < 3)
+        const wraps = firstRow.length < children.length
+        if (!wraps) return ''
+        const firstRowRight = Math.max(...firstRow.map((item) => item.rect.right))
+        const unused = metaRect.right - firstRowRight
+        const nextRowFirst = children[firstRow.length]
+        if (unused > 48 && nextRowFirst && nextRowFirst.rect.width < unused - 8) {
+          return `Ziji hero base-info wraps too early; first row leaves ${Math.round(unused)}px unused before ${nextRowFirst.text}.`
+        }
+        return ''
+      }
+    })
+  }
+
   return ''
 }
 
@@ -691,6 +843,7 @@ async function checkThemeControls(browser, baseUrl, id, registry, artifactDir) {
   const changed = [
     relaxedMetrics.fontSize > baseMetrics.fontSize,
     relaxedMetrics.lineHeight > baseMetrics.lineHeight,
+    relaxedMetrics.bodyTextLineHeight > baseMetrics.bodyTextLineHeight,
     relaxedMetrics.paddingTop > baseMetrics.paddingTop,
     relaxedMetrics.paddingLeft > baseMetrics.paddingLeft,
     relaxedMetrics.headingFontSize > baseMetrics.headingFontSize,
@@ -698,7 +851,7 @@ async function checkThemeControls(browser, baseUrl, id, registry, artifactDir) {
   ]
 
   if (changed.every(Boolean)) {
-    pass(`Theme settings (${id})`, 'Font size, line height, padding, title scale, and paragraph indent respond to theme changes.')
+    pass(`Theme settings (${id})`, 'Font size, container/body line height, padding, title scale, and paragraph indent respond to theme changes.')
   } else {
     fail(`Theme settings (${id})`, `Theme metrics did not all change as expected: ${JSON.stringify({ baseMetrics, relaxedMetrics })}`)
   }
@@ -816,6 +969,10 @@ async function checkLocalInteractions(browser, baseUrl, id, artifactDir) {
       await closeOpenDialogs(page)
       return checkSectionActionControls(page)
     })
+
+    if (id === 'ziji') {
+      await runInteractionStep(page, `Cross-column section drag (${id})`, async () => checkZijiCrossColumnDrag(page))
+    }
 
     await runInteractionStep(page, `Hover contrast (${id})`, async () => {
       await closeOpenDialogs(page)
@@ -1010,7 +1167,70 @@ async function waitForThemeColor(page, color) {
   }, { timeout: 5_000 }, color)
 }
 
+async function checkZijiCrossColumnDrag(page) {
+  await closeOpenDialogs(page)
+  await page.waitForSelector('[data-ziji-column="left"], [data-ziji-column="right"]', { timeout: 5_000 })
+  const before = await page.evaluate(() => ({
+    leftHasProject: (document.querySelector('[data-ziji-column="left"]')?.textContent ?? '').includes('项目经历'),
+    rightHasProject: (document.querySelector('[data-ziji-column="right"]')?.textContent ?? '').includes('项目经历'),
+  }))
+  if (before.leftHasProject || !before.rightHasProject) {
+    return `Skipped drag because initial columns were already changed: ${JSON.stringify(before)}.`
+  }
+
+  const sectionHandle = await page.evaluateHandle(() => {
+    const sections = Array.from(document.querySelectorAll('[data-ziji-column="right"] section'))
+    return sections.find((section) => section.textContent?.includes('项目经历')) ?? null
+  })
+  const section = sectionHandle.asElement()
+  if (!section) {
+    await sectionHandle.dispose()
+    throw new Error('Cannot find 项目经历 section in the right column.')
+  }
+  await section.hover()
+  await new Promise((resolve) => setTimeout(resolve, 250))
+  const buttonHandle = await section.evaluateHandle((node) => node.querySelector('button[title="拖动"]'))
+  const button = buttonHandle.asElement()
+  if (!button) {
+    await buttonHandle.dispose()
+    await sectionHandle.dispose()
+    throw new Error('The 项目经历 section did not expose a drag handle.')
+  }
+  const buttonBox = await button.boundingBox()
+  if (!buttonBox) {
+    await buttonHandle.dispose()
+    await sectionHandle.dispose()
+    throw new Error('The 项目经历 drag handle is not visible.')
+  }
+  const leftBox = await page.$eval('[data-ziji-column="left"]', (node) => {
+    const rect = node.getBoundingClientRect()
+    return { x: rect.x, y: rect.y, width: rect.width, height: rect.height }
+  })
+  await page.mouse.move(buttonBox.x + buttonBox.width / 2, buttonBox.y + buttonBox.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(leftBox.x + leftBox.width / 2, leftBox.y + Math.min(leftBox.height - 24, 360), { steps: 30 })
+  await page.mouse.up()
+  await page.waitForFunction(() => {
+    const left = document.querySelector('[data-ziji-column="left"]')?.textContent ?? ''
+    const right = document.querySelector('[data-ziji-column="right"]')?.textContent ?? ''
+    return left.includes('项目经历') && !right.includes('项目经历')
+  }, { timeout: 8_000 })
+  await buttonHandle.dispose()
+  await sectionHandle.dispose()
+  return 'Moved 项目经历 from the right column to the left column.'
+}
+
 async function openModalFromPreview(page, labels, modalSelector) {
+  const triggerSelector = modalSelector.includes('phone')
+    ? '[data-template-base-info-trigger="true"]'
+    : modalSelector.includes('salary')
+      ? '[data-template-job-intention-trigger="true"]'
+      : ''
+  if (triggerSelector) {
+    const clicked = await clickFirstPreviewSelector(page, triggerSelector)
+    if (clicked && await waitForSelectorQuiet(page, modalSelector, 1_800)) return true
+  }
+
   for (const label of labels) {
     await closeInlineInputs(page)
     const clicked = await clickPreviewElementByText(page, [label])
@@ -1493,7 +1713,23 @@ async function readThemeMetrics(browser, url, screenshot) {
       const containerStyle = getComputedStyle(container)
       const headingStyle = heading ? getComputedStyle(heading) : null
       const paragraphStyle = paragraph ? getComputedStyle(paragraph) : null
-      const paddingTargets = [container, ...Array.from(container.children)]
+      const bodyTextCandidates = Array.from(root.querySelectorAll('.dense-body-text, .ziji-body-text, [data-template-body-text="true"], main p, main li, main article p, main article li'))
+        .filter((node) => {
+          if (node.closest('button, [role="button"], svg, [aria-hidden="true"]')) return false
+          const text = (node.textContent || '').replace(/\s+/g, ' ').trim()
+          if (text.length < 12) return false
+          const rect = node.getBoundingClientRect()
+          if (rect.width <= 1 || rect.height <= 1) return false
+          const style = getComputedStyle(node)
+          return style.display !== 'none' && style.visibility !== 'hidden' && Number(style.opacity) !== 0
+        })
+      const bodyText = bodyTextCandidates[0] || paragraph || container
+      const bodyTextStyle = getComputedStyle(bodyText)
+      const paddingTargets = [
+        container,
+        ...Array.from(container.children),
+        ...Array.from(root.querySelectorAll('[data-template-padding-probe="true"]')),
+      ]
       const paddingTop = Math.max(...paddingTargets.map((node) => parseFloat(getComputedStyle(node).paddingTop) || 0))
       const paddingLeft = Math.max(...paddingTargets.map((node) => parseFloat(getComputedStyle(node).paddingLeft) || 0))
       const labPrimary = 'rgb(219, 39, 119)'
@@ -1504,6 +1740,7 @@ async function readThemeMetrics(browser, url, screenshot) {
       return {
         fontSize: parseFloat(containerStyle.fontSize),
         lineHeight: parseFloat(containerStyle.lineHeight),
+        bodyTextLineHeight: parseFloat(bodyTextStyle.lineHeight),
         paddingTop,
         paddingLeft,
         headingFontSize: headingStyle ? parseFloat(headingStyle.fontSize) : 0,

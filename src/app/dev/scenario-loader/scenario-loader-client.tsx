@@ -15,6 +15,7 @@ export default function ScenarioLoaderClient(): ReactElement {
   const searchParams = useSearchParams()
   const initialTemplate = searchParams.get('tpl') || DEFAULT_TEMPLATE
   const avatarUrl = searchParams.get('avatar')
+  const scenarioId = searchParams.get('scenario') || ''
   const [tpl, setTpl] = useState(initialTemplate)
   const resume = useAppStore((s) => s.resume)
   const loadScenarioData = useAppStore((s) => s.loadScenarioData)
@@ -25,7 +26,7 @@ export default function ScenarioLoaderClient(): ReactElement {
   const Template = getTemplate(tpl)?.component
 
   useEffect(() => {
-    const firstScenario = RESUME_SCENARIOS[0]
+    const firstScenario = RESUME_SCENARIOS.find((scenario) => scenario.id === scenarioId) ?? RESUME_SCENARIOS[0]
     if (firstScenario) {
       loadScenarioData({
         ...firstScenario.resume,
@@ -35,7 +36,7 @@ export default function ScenarioLoaderClient(): ReactElement {
         },
       })
     }
-  }, [avatarUrl, loadScenarioData])
+  }, [avatarUrl, loadScenarioData, scenarioId])
 
   function patchTheme(patch: Partial<ThemeTokens>): void {
     setThemeForTemplate(tpl, (draft) => {
