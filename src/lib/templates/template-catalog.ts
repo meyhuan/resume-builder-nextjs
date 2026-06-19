@@ -6,7 +6,7 @@ type TemplateCatalogItem = {
   tags: readonly string[];
 };
 
-const HIDDEN_TEMPLATE_IDS: ReadonlySet<string> = new Set(['lanxin', 'tablegrid']);
+const HIDDEN_TEMPLATE_IDS: ReadonlySet<string> = new Set(['lanxin']);
 
 export const templateCatalog: readonly TemplateCatalogItem[] = [
   {

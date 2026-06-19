@@ -37,7 +37,7 @@ export interface TemplateConfig {
   readonly recommendedPrimaryColor?: string
 }
 
-const HIDDEN_TEMPLATE_IDS: ReadonlySet<string> = new Set(['lanxin', 'tablegrid'])
+const HIDDEN_TEMPLATE_IDS: ReadonlySet<string> = new Set(['lanxin'])
 
 /**
  * 模板注册表
