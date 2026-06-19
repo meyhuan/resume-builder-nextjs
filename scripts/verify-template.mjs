@@ -953,6 +953,9 @@ async function checkLocalInteractions(browser, baseUrl, id, artifactDir) {
       if (!avatar) throw new Error('No avatar image rendered in scenario-loader while avatar=/avatar.jpg is set.')
       await avatar.hover()
       await page.waitForFunction(() => document.body.innerText.includes('本地上传'), { timeout: 3_000 })
+      if (id === 'ziji') {
+        await page.waitForFunction(() => document.body.innerText.includes('透明背景 PNG'), { timeout: 3_000 })
+      }
       return 'Avatar hover exposes local upload action.'
     })
 

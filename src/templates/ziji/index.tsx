@@ -412,19 +412,35 @@ function ZijiHero(props: {
 
       <AvatarSlot
         header={header}
-        render={({ image, uploadOverlay }) => (
+        render={({ image, hovered }) => (
           <div
             className="ziji-avatar absolute overflow-visible"
             title="建议上传透明背景 PNG，头图效果更自然"
             style={{
-              left: 34,
-              top: 24,
-              width: 205,
-              height: 192,
+              left: 42,
+              top: 30,
+              width: 180,
+              height: 174,
             }}
           >
             {image}
-            {uploadOverlay}
+            {hovered ? (
+              <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-1.5 bg-black/65 px-3 text-center text-white print:hidden">
+                <div className="text-[11px] font-semibold leading-snug">
+                  请上传透明背景 PNG
+                </div>
+                <div className="text-[9px] leading-snug text-white/85">
+                  普通证件照会露出白底
+                </div>
+                <button
+                  type="button"
+                  className="mt-1 rounded border border-white/80 px-2.5 py-1 text-[10px] font-semibold transition-colors hover:bg-white/20"
+                  onClick={(event) => { event.stopPropagation(); header.openAvatarUpload() }}
+                >
+                  本地上传
+                </button>
+              </div>
+            ) : null}
           </div>
         )}
       />
