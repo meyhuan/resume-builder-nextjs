@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { CSSProperties, KeyboardEvent, ReactElement, ReactNode } from 'react'
 import { GripVertical, Plus, Trash2, XCircle } from 'lucide-react'
 import { SortableContext, rectSortingStrategy } from '@dnd-kit/sortable'
@@ -102,12 +102,12 @@ function normalizeTitle(title: string): string {
   return title.replace(/\s/g, '').toLowerCase()
 }
 
-function isEducationSection(section: Section): boolean {
-  return normalizeTitle(section.title).includes('教育')
+function isTextOnlySection(section: Section): boolean {
+  return section.blocks.length > 0 && section.blocks.every((block) => block.type === 'text')
 }
 
 function shouldDefaultToLeft(section: Section): boolean {
-  return isEducationSection(section)
+  return isTextOnlySection(section)
 }
 
 function isSelfSection(section: Section): boolean {
@@ -177,10 +177,13 @@ export default function ZijiTemplate(props: TemplateProps): ReactElement {
   const panelPadBottom = Math.max(38, mmToPx(theme.pagePaddingVertical) * 0.58)
   const sideColumnWidth = Math.max(166, 174 + (panelPadX - 51) * 0.25)
   const railColumnWidth = 42
+  const sectionIds = useMemo(() => resume.sections.map((section) => section.id), [resume.sections])
   const defaultSidebarIds = useMemo(() => resume.sections.filter(shouldDefaultToLeft).map((section) => section.id), [resume.sections])
   const [localSidebarIds, setLocalSidebarIds] = useState<readonly string[]>(defaultSidebarIds)
   const sidebarIds = externalIds ?? localSidebarIds
-  const validSectionIds = useMemo(() => new Set(resume.sections.map((section) => section.id)), [resume.sections])
+  const validSectionIds = useMemo(() => new Set(sectionIds), [sectionIds])
+  const resumeIdRef = useRef(resume.id)
+  const knownSectionIdsRef = useRef<ReadonlySet<string>>(new Set(sectionIds))
   const normalizedSidebarIds = useMemo(
     () => sidebarIds.filter((id, index) => validSectionIds.has(id) && sidebarIds.indexOf(id) === index),
     [sidebarIds, validSectionIds],
@@ -188,6 +191,29 @@ export default function ZijiTemplate(props: TemplateProps): ReactElement {
   const sidebarSet = useMemo(() => new Set(normalizedSidebarIds), [normalizedSidebarIds])
   const leftSections = useMemo(() => resume.sections.filter((section) => sidebarSet.has(section.id)), [resume.sections, sidebarSet])
   const rightSections = useMemo(() => resume.sections.filter((section) => !sidebarSet.has(section.id)), [resume.sections, sidebarSet])
+
+  useEffect(() => {
+    if (externalIds) {
+      resumeIdRef.current = resume.id
+      knownSectionIdsRef.current = validSectionIds
+      return
+    }
+
+    const resumeChanged = resumeIdRef.current !== resume.id
+    const knownSectionIds = knownSectionIdsRef.current
+    resumeIdRef.current = resume.id
+    knownSectionIdsRef.current = validSectionIds
+
+    setLocalSidebarIds((currentIds) => {
+      if (resumeChanged) return defaultSidebarIds
+
+      const nextIds = currentIds.filter((id, index) => validSectionIds.has(id) && currentIds.indexOf(id) === index)
+      for (const id of defaultSidebarIds) {
+        if (!knownSectionIds.has(id) && !nextIds.includes(id)) nextIds.push(id)
+      }
+      return nextIds
+    })
+  }, [defaultSidebarIds, externalIds, resume.id, validSectionIds])
 
   const updateSidebar = useCallback((ids: readonly string[]): void => {
     const normalized = ids.filter((id, index) => validSectionIds.has(id) && ids.indexOf(id) === index)
@@ -392,9 +418,9 @@ function ZijiHero(props: {
             title="建议上传透明背景 PNG，头图效果更自然"
             style={{
               left: 34,
-              top: 8,
+              top: 24,
               width: 205,
-              height: 210,
+              height: 192,
             }}
           >
             {image}

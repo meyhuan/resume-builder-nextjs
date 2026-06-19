@@ -552,7 +552,7 @@ async function checkTemplateSpecificLayout(page, options) {
   }
 
   if (options.templateId === 'ziji' && ['full', 'sparse', 'long', 'rich'].includes(options.fixture)) {
-    return page.evaluate(() => {
+    return page.evaluate((fixture) => {
       const root = document.querySelector('.ziji-root')
       const hero = root?.querySelector(':scope > section')
       const backdrop = root?.querySelector('[data-ziji-hero-backdrop="true"]')
@@ -597,6 +597,10 @@ async function checkTemplateSpecificLayout(page, options) {
       if (shortTitleIssue) return shortTitleIssue
       const titleContentGapIssue = checkZijiTitleContentGap()
       if (titleContentGapIssue) return titleContentGapIssue
+      if (fixture === 'full') {
+        const columnPlacementIssue = checkZijiDefaultColumnPlacement()
+        if (columnPlacementIssue) return columnPlacementIssue
+      }
 
       return ''
 
@@ -660,6 +664,21 @@ async function checkTemplateSpecificLayout(page, options) {
         return ''
       }
 
+      function checkZijiDefaultColumnPlacement() {
+        const leftText = document.querySelector('[data-ziji-column="left"]')?.textContent ?? ''
+        const rightText = document.querySelector('[data-ziji-column="right"]')?.textContent ?? ''
+        if (!leftText.includes('相关技能') || (!leftText.includes('自我评价') && !leftText.includes('自定义模块'))) {
+          return 'Ziji text-only sections should default to the left column.'
+        }
+        if (leftText.includes('教育经历')) {
+          return 'Ziji education section should not default to the left column.'
+        }
+        if (!rightText.includes('教育经历')) {
+          return 'Ziji education section should remain in the main/right column by default.'
+        }
+        return ''
+      }
+
       function findFirstStructuredContentTitle(section, title) {
         if (!title) return null
         const titleBottom = title.getBoundingClientRect().bottom
@@ -700,7 +719,7 @@ async function checkTemplateSpecificLayout(page, options) {
         }
         return ''
       }
-    })
+    }, options.fixture)
   }
 
   return ''
