@@ -1,5 +1,7 @@
 import type { MetadataRoute } from 'next';
 import { getAllArticles } from '@/lib/articles/article-data';
+import { getAllResumeExamples } from '@/lib/examples/resume-examples';
+import { aeoPages } from '@/lib/seo/aeo-pages';
 import { templateRoleData } from '@/lib/templates/template-role-data';
 
 const SITE_URL = 'https://aijianli.cn';
@@ -12,8 +14,10 @@ const STATIC_ROUTES: ReadonlyArray<{
   { path: '/about', changeFrequency: 'monthly', priority: 0.5 },
   { path: '/ai', changeFrequency: 'weekly', priority: 0.9 },
   { path: '/articles', changeFrequency: 'weekly', priority: 0.8 },
+  { path: '/examples', changeFrequency: 'weekly', priority: 0.8 },
   { path: '/import', changeFrequency: 'monthly', priority: 0.8 },
   { path: '/templates', changeFrequency: 'weekly', priority: 0.8 },
+  { path: '/tools/jd-resume-match', changeFrequency: 'weekly', priority: 0.85 },
 ];
 
 function createAbsoluteUrl(path: string): string {
@@ -23,6 +27,7 @@ function createAbsoluteUrl(path: string): string {
 export default function sitemap(): MetadataRoute.Sitemap {
   const now: Date = new Date();
   const allArticles = getAllArticles();
+  const allExamples = getAllResumeExamples();
   const allTemplateRoles = templateRoleData.getAllTemplateRoles();
   const allTemplateCategories = templateRoleData.getAllTemplateRoleCategories();
   const allTemplateIndustries = templateRoleData.getAllTemplateRoleIndustries();
@@ -46,6 +51,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
     changeFrequency: 'monthly',
     priority: 0.7,
   }));
+  const aeoContentPages: MetadataRoute.Sitemap = aeoPages.map((page) => ({
+    url: createAbsoluteUrl(page.path),
+    lastModified: new Date(page.updatedAt),
+    changeFrequency: 'monthly',
+    priority: 0.86,
+  }));
+  const examplePages: MetadataRoute.Sitemap = allExamples.map((example) => ({
+    url: createAbsoluteUrl(`/examples/${encodeURIComponent(example.slug)}`),
+    lastModified: new Date(example.updatedAt),
+    changeFrequency: 'monthly',
+    priority: 0.74,
+  }));
   const templatePages: MetadataRoute.Sitemap = allTemplateRoles.map((role) => ({
     url: createAbsoluteUrl(`/templates/${encodeURIComponent(role.slug)}`),
     lastModified: now,
@@ -65,5 +82,5 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.71,
   }));
 
-  return [...staticPages, ...articlePages, ...templateCategoryPages, ...templateIndustryPages, ...templatePages];
+  return [...staticPages, ...aeoContentPages, ...articlePages, ...examplePages, ...templateCategoryPages, ...templateIndustryPages, ...templatePages];
 }

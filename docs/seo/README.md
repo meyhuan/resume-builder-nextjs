@@ -14,6 +14,14 @@
   - 用途：竞品定位、SEO/AEO、内容矩阵、站外分发、Agent/MCP 与产品借鉴分析
   - 结论：优先补 AEO 对比页、AI 新职业范文库、JD 匹配微工具和站外分发矩阵
 
+- **`pricing-membership-experiment.md`**
+  - 用途：价格与会员策略验证
+  - 结论：保持基础简历制作和导出免费，优先验证 JD 深度优化、多岗位版本和高级 AI 能力付费
+
+- **`offsite-aeo-distribution-plan.md`**
+  - 用途：站外 SEO/AEO 分发计划
+  - 渠道：小红书、知乎、掘金/CSDN、V2EX、AI 工具导航、简历工具合集站
+
 - **`01-v2ex-独立开发者免费-ai-简历工具.md`**
   - 平台：V2EX
   - 方向：独立开发者 / 产品发布 / 反套路

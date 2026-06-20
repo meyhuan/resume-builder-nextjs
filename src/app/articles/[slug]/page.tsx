@@ -14,6 +14,7 @@ import {
   getCategoryMeta,
 } from '@/lib/articles/article-data';
 import type { Article, TocHeading } from '@/lib/articles/article-types';
+import { getAllResumeExamples, type ResumeExample } from '@/lib/examples/resume-examples';
 import { templateRoleData } from '@/lib/templates/template-role-data';
 import '@/styles/article-prose.css';
 import { ArticleTocSidebar } from '@/components/articles/article-toc-sidebar';
@@ -51,6 +52,25 @@ function getRelatedTemplateRolesForArticle(article: Article): TemplateRoleRecord
     .sort((left: { role: TemplateRoleRecord; relevanceScore: number }, right: { role: TemplateRoleRecord; relevanceScore: number }) => right.relevanceScore - left.relevanceScore)
     .slice(0, 6)
     .map((entry: { role: TemplateRoleRecord; relevanceScore: number }) => entry.role);
+}
+
+function getRelatedExamplesForArticle(article: Article): ResumeExample[] {
+  const normalizedContent: string = `${article.title} ${article.abstract} ${article.tags.join(' ')} ${article.textContent}`.toLowerCase();
+  return [...getAllResumeExamples()]
+    .map((example: ResumeExample) => {
+      let relevanceScore = 0;
+      if (normalizedContent.includes(example.role.toLowerCase())) {
+        relevanceScore += 6;
+      }
+      relevanceScore += example.keywords.reduce((score: number, keyword: string) => (
+        normalizedContent.includes(keyword.toLowerCase()) ? score + 1 : score
+      ), 0);
+      return { example, relevanceScore };
+    })
+    .filter((entry: { example: ResumeExample; relevanceScore: number }) => entry.relevanceScore > 0)
+    .sort((left: { example: ResumeExample; relevanceScore: number }, right: { example: ResumeExample; relevanceScore: number }) => right.relevanceScore - left.relevanceScore)
+    .slice(0, 3)
+    .map((entry: { example: ResumeExample; relevanceScore: number }) => entry.example);
 }
 
 // ---------------------------------------------------------------------------
@@ -106,6 +126,7 @@ export default async function ArticleDetailPage({ params }: SlugPageProps): Prom
   const htmlWithIds: string = injectHeadingIds(article.htmlContent);
   const catMeta = getCategoryMeta(article.category);
   const relatedTemplateRoles: TemplateRoleRecord[] = getRelatedTemplateRolesForArticle(article);
+  const relatedExamples: ResumeExample[] = getRelatedExamplesForArticle(article);
 
   const articleJsonLd = {
     '@context': 'https://schema.org',
@@ -227,6 +248,30 @@ export default async function ArticleDetailPage({ params }: SlugPageProps): Prom
                   ))}
                 </div>
               </section>
+
+              {relatedExamples.length > 0 ? (
+                <section className="rounded-2xl bg-white/70 backdrop-blur-md border border-white shadow-sm p-6 md:p-8 mt-8">
+                  <div className="flex items-center gap-2 text-slate-900">
+                    <BookOpen className="w-5 h-5 text-violet-500" />
+                    <h2 className="text-2xl font-extrabold">相关简历范文</h2>
+                  </div>
+                  <p className="text-sm text-slate-500 mt-3 leading-relaxed">
+                    读完写作方法后，可以继续查看匿名范文，把结构、关键词和项目表达转成自己的真实经历。
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+                    {relatedExamples.map((example: ResumeExample) => (
+                      <Link
+                        key={example.slug}
+                        href={`/examples/${example.slug}`}
+                        className="rounded-2xl bg-slate-50 border border-slate-100 p-5 hover:bg-white hover:border-violet-200 transition-all"
+                      >
+                        <h3 className="text-base font-bold text-slate-900 hover:text-violet-600 transition-colors">{example.role}简历范文</h3>
+                        <p className="text-sm text-slate-500 leading-relaxed mt-2 line-clamp-2">{example.description}</p>
+                      </Link>
+                    ))}
+                  </div>
+                </section>
+              ) : null}
 
               {/* Prev / Next */}
               <nav className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-10">

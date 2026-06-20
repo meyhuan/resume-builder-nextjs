@@ -8,6 +8,7 @@ import { LandingFooter } from '@/components/landing/LandingFooter';
 import { LandingHeader } from '@/components/landing/LandingHeader';
 import { getAllArticles } from '@/lib/articles/article-data';
 import type { Article } from '@/lib/articles/article-types';
+import { getAllResumeExamples, type ResumeExample } from '@/lib/examples/resume-examples';
 import { templateCatalog } from '@/lib/templates/template-catalog';
 import { templateRoleData } from '@/lib/templates/template-role-data';
 
@@ -141,6 +142,29 @@ function getRecommendedArticlesForRole(
     .sort((left: { article: Article; relevanceScore: number }, right: { article: Article; relevanceScore: number }) => right.relevanceScore - left.relevanceScore)
     .slice(0, 4)
     .map((entry: { article: Article; relevanceScore: number }) => entry.article);
+}
+
+function getRecommendedExamplesForRole(roleName: string, searchKeywords: readonly string[]): ResumeExample[] {
+  const relevanceKeywords: string[] = [roleName, ...searchKeywords];
+  return [...getAllResumeExamples()]
+    .map((example: ResumeExample) => {
+      const normalizedContent: string = `${example.role} ${example.title} ${example.description} ${example.keywords.join(' ')}`.toLowerCase();
+      let relevanceScore = 0;
+      if (example.role === roleName) {
+        relevanceScore += 8;
+      }
+      if (example.role.includes(roleName) || roleName.includes(example.role)) {
+        relevanceScore += 4;
+      }
+      relevanceScore += relevanceKeywords.reduce((score: number, keyword: string) => (
+        normalizedContent.includes(keyword.toLowerCase()) ? score + 1 : score
+      ), 0);
+      return { example, relevanceScore };
+    })
+    .filter((entry: { example: ResumeExample; relevanceScore: number }) => entry.relevanceScore > 0)
+    .sort((left: { example: ResumeExample; relevanceScore: number }, right: { example: ResumeExample; relevanceScore: number }) => right.relevanceScore - left.relevanceScore)
+    .slice(0, 3)
+    .map((entry: { example: ResumeExample; relevanceScore: number }) => entry.example);
 }
 
 function createAudienceProfiles(roleName: string, industry: string, category: string): readonly AudienceProfile[] {
@@ -613,6 +637,7 @@ export default async function TemplateRolePage({ params }: RolePageParams): Prom
     roleRecord.category,
     roleRecord.searchKeywords,
   );
+  const recommendedExamples: ResumeExample[] = getRecommendedExamplesForRole(roleRecord.role, roleRecord.searchKeywords);
   const relatedRoles = templateRoleData.getRelatedTemplateRoles(roleRecord.slug, 8);
   const writingPoints = createWritingPoints(roleRecord.role, roleRecord.category);
   const roleSummary = createRoleSummary(roleRecord.role, roleRecord.industry, roleRecord.category);
@@ -665,6 +690,9 @@ export default async function TemplateRolePage({ params }: RolePageParams): Prom
               </Link>
               <Link href="/editor" className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white text-slate-700 font-semibold border border-slate-200 hover:border-violet-200 hover:text-violet-600 transition-colors">
                 直接开始编辑
+              </Link>
+              <Link href="/tools/jd-resume-match" className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white text-slate-700 font-semibold border border-slate-200 hover:border-violet-200 hover:text-violet-600 transition-colors">
+                做 JD 匹配检查
               </Link>
             </div>
           </section>
@@ -838,7 +866,7 @@ export default async function TemplateRolePage({ params }: RolePageParams): Prom
               ))}
             </div>
           </section>
-          <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="rounded-3xl bg-white/80 backdrop-blur-sm border border-white shadow-sm p-6 md:p-8">
               <div className="flex items-center gap-2 text-slate-900">
                 <BookOpen className="w-5 h-5 text-violet-500" />
@@ -851,6 +879,22 @@ export default async function TemplateRolePage({ params }: RolePageParams): Prom
                     <p className="text-sm text-slate-500 mt-2 leading-relaxed line-clamp-2">{article.abstract}</p>
                   </Link>
                 ))}
+              </div>
+            </div>
+            <div className="rounded-3xl bg-white/80 backdrop-blur-sm border border-white shadow-sm p-6 md:p-8">
+              <h2 className="text-2xl font-extrabold text-slate-900">相关简历范文</h2>
+              <div className="space-y-4 mt-6">
+                {recommendedExamples.length > 0 ? recommendedExamples.map((example: ResumeExample) => (
+                  <Link key={example.slug} href={`/examples/${example.slug}`} className="block rounded-2xl bg-slate-50 border border-slate-100 p-5 hover:bg-white hover:border-violet-200 transition-all">
+                    <h3 className="text-base font-bold text-slate-900 hover:text-violet-600 transition-colors">{example.role}简历范文</h3>
+                    <p className="text-sm text-slate-500 mt-2 leading-relaxed line-clamp-2">{example.description}</p>
+                  </Link>
+                )) : (
+                  <Link href="/examples" className="block rounded-2xl bg-slate-50 border border-slate-100 p-5 hover:bg-white hover:border-violet-200 transition-all">
+                    <h3 className="text-base font-bold text-slate-900 hover:text-violet-600 transition-colors">AI 新职业简历范文库</h3>
+                    <p className="text-sm text-slate-500 mt-2 leading-relaxed">查看项目经历、技能关键词和常见错误写法。</p>
+                  </Link>
+                )}
               </div>
             </div>
             <div className="rounded-3xl bg-white/80 backdrop-blur-sm border border-white shadow-sm p-6 md:p-8">

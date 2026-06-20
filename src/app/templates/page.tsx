@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import type { ReactElement } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowRight, BookOpen, BriefcaseBusiness, Sparkles } from 'lucide-react';
+import { ArrowRight, BookOpen, BriefcaseBusiness, ClipboardList, Sparkles } from 'lucide-react';
 import { LandingFooter } from '@/components/landing/LandingFooter';
 import { LandingHeader } from '@/components/landing/LandingHeader';
 import { templateCatalog } from '@/lib/templates/template-catalog';
@@ -175,6 +175,16 @@ export default function TemplatesPage(): ReactElement {
               <p className="mt-2 text-sm leading-relaxed text-slate-600">
                 先查看 AI产品经理、大模型产品经理、AIGC产品经理的写作差异，再选择模板和生成路径，能更快把项目经历写到招聘 JD 上。
               </p>
+              <div className="mt-4 flex flex-wrap gap-3">
+                <Link href="/examples" className="inline-flex items-center gap-2 text-sm font-semibold text-violet-600 hover:text-violet-700 transition-colors">
+                  <BookOpen className="w-4 h-4" />
+                  查看 AI 新职业范文
+                </Link>
+                <Link href="/tools/jd-resume-match" className="inline-flex items-center gap-2 text-sm font-semibold text-violet-600 hover:text-violet-700 transition-colors">
+                  <ClipboardList className="w-4 h-4" />
+                  做 JD 匹配检查
+                </Link>
+              </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {aiNewCareerRoles.map((role, index) => (
