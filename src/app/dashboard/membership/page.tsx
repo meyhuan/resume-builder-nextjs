@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Crown, ArrowLeft, LogOut, Copy, Check, X, Sparkles, Shield, FileText, Zap, Trash2, AlertTriangle } from 'lucide-react';
+import { Crown, ArrowLeft, LogOut, Copy, Check, X, Sparkles, FileText, Zap, Trash2, AlertTriangle } from 'lucide-react';
 import { useAuthStore } from '@/store/use-auth-store';
 import { useVipCheck } from '@/hooks/use-vip-check';
 import VipUpgradeDialog from '@/components/vip/vip-upgrade-dialog';
@@ -37,9 +37,10 @@ const COMPARE_ROWS: Array<{ label: string; free: string | false; vip: string | t
   { label: 'AI 生成简历', free: '每日 3 次', vip: '无限次' },
   { label: 'AI 续写 & 润色', free: '每日 5 次', vip: '无限次' },
   { label: 'PDF 导出', free: '免费限 1 次', vip: '无水印 · 高清 · 无限' },
+  { label: 'Markdown 导出', free: false, vip: true },
+  { label: '图片导出', free: false, vip: true },
   { label: '精品模板', free: '部分可用', vip: '全部解锁' },
   { label: 'AI 导入解析', free: '每日 3 次', vip: '无限次' },
-  { label: '简历私密保存', free: false, vip: true },
 ];
 
 export default function MembershipPage(): React.ReactElement {
@@ -209,8 +210,8 @@ export default function MembershipPage(): React.ReactElement {
                     {[
                       { icon: Zap, label: 'AI 功能无限次' },
                       { icon: FileText, label: 'PDF 无水印导出' },
+                      { icon: FileText, label: 'Markdown / 图片导出' },
                       { icon: Sparkles, label: '全站模板解锁' },
-                      { icon: Shield, label: '简历私密保存' },
                     ].map(({ icon: Icon, label }) => (
                       <div key={label} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/8 border border-white/10">
                         <Icon className="w-3 h-3 text-amber-400" />

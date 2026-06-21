@@ -10,6 +10,7 @@ const ENDPOINTS: Record<string, string> = {
   export: '/analytics/admin/funnel/export',
   create: '/analytics/admin/funnel/create',
   errors: '/analytics/admin/errors',
+  revenue: '/analytics/admin/revenue',
 };
 
 export async function POST(request: NextRequest): Promise<NextResponse> {

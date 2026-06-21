@@ -39,7 +39,7 @@ export default function VipPromoBanner({ onUpgrade }: VipPromoBannerProps): Reac
           <div className="min-w-0">
             <p className="font-bold text-sm flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5" />
-              解锁无限导出、AI 优化、全部模板
+              解锁 PDF / Markdown / 图片导出、AI 优化、全部模板
             </p>
             <p className="text-xs text-white/80 hidden sm:block">
               升级 VIP 享受终身权益，制作专业简历更高效

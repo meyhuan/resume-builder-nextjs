@@ -58,17 +58,17 @@ export function VipExpirationReminder({ vipExpireTime, isVip }: VipExpirationRem
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
               <Crown className="w-4 h-4" />
-              <span className="font-bold text-sm">会员即将过期</span>
+              <span className="font-bold text-sm">会员续费提醒</span>
             </div>
             <p className="text-sm text-white/90 mb-3">
-              您的 VIP 会员将在 <strong>{daysRemaining} 天</strong> 后过期，请及时续费以保持权益。
+              会员将在 <strong>{daysRemaining} 天</strong> 后过期，可续费月会员或直接购买永久会员。
             </p>
             <div className="flex items-center gap-2">
               <Link
                 href="/dashboard/membership"
                 className="inline-flex items-center px-4 py-1.5 bg-white text-orange-600 text-sm font-medium rounded-lg hover:bg-white/90 transition-colors"
               >
-                立即续费
+                去续费
               </Link>
               <button
                 onClick={handleDismiss}

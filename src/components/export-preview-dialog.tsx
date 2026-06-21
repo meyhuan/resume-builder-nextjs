@@ -36,10 +36,10 @@ export default function ExportPreviewDialog({
   const isQuotaDepleted = !isVip && remainingQuota === 0
   const showLowQuotaWarning = !isVip && typeof remainingQuota === 'number' && remainingQuota <= 1
   const helperText = isVip
-    ? '会员权益：PDF 无限导出'
+    ? '会员权益：高清 PDF 导出'
     : isQuotaDepleted
       ? '免费导出次数已用完，开通会员后可立即导出当前 PDF'
-      : '免费用户限 1 次导出，会员可无限导出'
+      : '免费用户限 1 次 PDF 导出，会员可高清导出当前简历'
 
   const handlePrimaryAction = (): void => {
     if (isQuotaDepleted) {
@@ -118,7 +118,7 @@ export default function ExportPreviewDialog({
             ) : (
               <Download className="h-3.5 w-3.5 mr-1.5" />
             )}
-            {isConfirming ? '处理中...' : isQuotaDepleted ? '开通会员，无限导出' : '确认导出 PDF'}
+            {isConfirming ? '处理中...' : isQuotaDepleted ? '开通会员，导出 PDF' : '确认导出 PDF'}
           </Button>
         </DialogFooter>
       </DialogContent>

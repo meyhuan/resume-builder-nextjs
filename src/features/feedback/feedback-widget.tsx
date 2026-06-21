@@ -138,7 +138,7 @@ export function FeedbackWidget(): ReactElement {
                   value={content}
                   onChange={(event: ChangeEvent<HTMLTextAreaElement>): void => setContent(event.target.value.slice(0, MAX_CONTENT_CHARS))}
                   className="min-h-32 w-full resize-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm leading-6 text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-violet-300 focus:ring-2 focus:ring-violet-100"
-                  placeholder="例如：导出 PDF 没反应 / 登录后又弹登录 / 这个按钮没看懂 / 希望支持 Word 导出..."
+                  placeholder="例如：导出 PDF 没反应 / 登录后又弹登录 / 这个按钮没看懂 / 希望支持更多导出样式..."
                 />
               </div>
               <div className="space-y-2">

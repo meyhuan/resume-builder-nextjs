@@ -652,7 +652,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
         if (errorData.quotaExceeded) {
           setShowUpgrade(true, 'pdf-export')
         } else {
-          toast.error(errorData.error || '导出次数已用完，升级VIP可无限导出')
+          toast.error(errorData.error || '导出次数已用完，开通会员可继续导出 PDF')
         }
         return
       }
