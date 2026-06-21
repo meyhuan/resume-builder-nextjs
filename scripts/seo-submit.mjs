@@ -1,9 +1,47 @@
 #!/usr/bin/env node
 
+import fs from 'node:fs';
+import path from 'node:path';
+import process from 'node:process';
+
+loadEnvFiles();
+
 const SITE_URL = 'https://aijianli.cn';
 const DEFAULT_SITEMAP_URL = `${SITE_URL}/sitemap.xml`;
 const INDEX_NOW_ENDPOINT = 'https://api.indexnow.org/indexnow';
 const BAIDU_PUSH_ENDPOINT = 'http://data.zz.baidu.com/urls';
+
+function loadEnvFiles() {
+  for (const fileName of ['.env.local', '.env']) {
+    const filePath = path.join(process.cwd(), fileName);
+    if (!fs.existsSync(filePath)) continue;
+
+    const content = fs.readFileSync(filePath, 'utf8');
+    for (const rawLine of content.split(/\r?\n/)) {
+      const line = rawLine.trim();
+      if (!line || line.startsWith('#')) continue;
+
+      const normalizedLine = line.startsWith('export ') ? line.slice(7).trim() : line;
+      const separatorIndex = normalizedLine.indexOf('=');
+      if (separatorIndex <= 0) continue;
+
+      const key = normalizedLine.slice(0, separatorIndex).trim();
+      if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(key) || process.env[key] !== undefined) {
+        continue;
+      }
+
+      let value = normalizedLine.slice(separatorIndex + 1).trim();
+      const isQuoted = (
+        (value.startsWith('"') && value.endsWith('"'))
+        || (value.startsWith("'") && value.endsWith("'"))
+      );
+      if (isQuoted) {
+        value = value.slice(1, -1);
+      }
+      process.env[key] = value.replace(/\\n/g, '\n');
+    }
+  }
+}
 
 function printUsage() {
   console.log([
@@ -130,7 +168,7 @@ function assertEnv(name) {
 
 async function submitIndexNow(urls) {
   const key = assertEnv('INDEXNOW_KEY');
-  const keyLocation = process.env.INDEXNOW_KEY_LOCATION || `${SITE_URL}/indexnow.txt`;
+  const keyLocation = process.env.INDEXNOW_KEY_LOCATION || `${SITE_URL}/${encodeURIComponent(key)}.txt`;
   const response = await fetch(INDEX_NOW_ENDPOINT, {
     method: 'POST',
     headers: {

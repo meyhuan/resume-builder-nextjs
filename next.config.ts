@@ -19,6 +19,17 @@ const nextConfig: NextConfig = {
     ],
   },
   experimental: {},
+  async rewrites() {
+    const indexNowKey: string | undefined = process.env.INDEXNOW_KEY;
+    if (!indexNowKey) return [];
+
+    return [
+      {
+        source: `/${indexNowKey}.txt`,
+        destination: '/indexnow.txt',
+      },
+    ];
+  },
 };
 
 export default nextConfig;
