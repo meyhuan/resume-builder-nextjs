@@ -1,0 +1,59 @@
+{
+  "generated_at": "2026-06-21T08:28:00.585Z",
+  "screenshots": [
+    {
+      "order": 1,
+      "file": "images/01-cover-compare-ai-resume-builders.png",
+      "source_url": "https://aijianli.cn/compare/ai-resume-builders",
+      "overlay_title": "AI简历工具怎么选？看这 6 点",
+      "width": 1080,
+      "height": 1440,
+      "ratio": "3:4"
+    },
+    {
+      "order": 2,
+      "file": "images/02-selection-criteria-free-ai-resume-builder.png",
+      "source_url": "https://aijianli.cn/answers/free-ai-resume-builder",
+      "overlay_title": "不是只会生成文字，还要能编辑成简历",
+      "width": 1080,
+      "height": 1440,
+      "ratio": "3:4"
+    },
+    {
+      "order": 3,
+      "file": "images/03-ai-generate-resume-entry.png",
+      "source_url": "https://aijianli.cn/ai",
+      "overlay_title": "不会写，先让 AI 搭初稿",
+      "width": 1080,
+      "height": 1440,
+      "ratio": "3:4"
+    },
+    {
+      "order": 4,
+      "file": "images/04-jd-resume-match-tool.png",
+      "source_url": "https://aijianli.cn/tools/jd-resume-match",
+      "overlay_title": "投递前检查岗位关键词",
+      "width": 1080,
+      "height": 1440,
+      "ratio": "3:4"
+    },
+    {
+      "order": 5,
+      "file": "images/05-ai-product-manager-example.png",
+      "source_url": "https://aijianli.cn/examples/ai-product-manager-resume-example",
+      "overlay_title": "新职业也要有可参考写法",
+      "width": 1080,
+      "height": 1440,
+      "ratio": "3:4"
+    },
+    {
+      "order": 6,
+      "file": "images/06-ai-product-manager-template.png",
+      "source_url": "https://aijianli.cn/templates/ai产品经理",
+      "overlay_title": "中文求职、免费导出、无水印",
+      "width": 1080,
+      "height": 1440,
+      "ratio": "3:4"
+    }
+  ]
+}

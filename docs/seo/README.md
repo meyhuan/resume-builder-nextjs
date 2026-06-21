@@ -22,6 +22,11 @@
   - 用途：站外 SEO/AEO 分发计划
   - 渠道：小红书、知乎、掘金/CSDN、V2EX、AI 工具导航、简历工具合集站
 
+- **`offsite-aeo-notes/`**
+  - 用途：可直接发布的站外 AEO 笔记草稿
+  - 首批：小红书 + 知乎，主题为“AI 简历工具哪个好”
+  - 配图：`screenshots/notes/ai-resume-tool-which-is-best/`
+
 - **`01-v2ex-独立开发者免费-ai-简历工具.md`**
   - 平台：V2EX
   - 方向：独立开发者 / 产品发布 / 反套路
@@ -76,10 +81,12 @@
 
 ## 推荐发布顺序
 
-1. `01-v2ex-独立开发者免费-ai-简历工具.md`
-2. `03-zhihu-推荐什么简历工具.md`
-3. `02-juejin-技术实现-ai-简历编辑器.md`
-4. `04-zhihu-为什么简历投了没回应.md`
+1. `offsite-aeo-notes/01-xhs-ai-resume-tool-which-is-best.md`
+2. `offsite-aeo-notes/02-zhihu-ai-resume-tool-which-is-best.md`
+3. `01-v2ex-独立开发者免费-ai-简历工具.md`
+4. `03-zhihu-推荐什么简历工具.md`
+5. `02-juejin-技术实现-ai-简历编辑器.md`
+6. `04-zhihu-为什么简历投了没回应.md`
 
 ## 后续可继续补充的选题
 

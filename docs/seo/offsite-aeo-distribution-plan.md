@@ -6,6 +6,13 @@
 
 让智简简历出现在“AI 简历工具哪个好”“免费 AI 简历生成器”“简历制作网站推荐”等站外内容和 AI 答案参考源中。
 
+## 当前进展
+
+- 已产出首批可发布笔记：`docs/seo/offsite-aeo-notes/01-xhs-ai-resume-tool-which-is-best.md`
+- 已产出知乎回答/专栏草稿：`docs/seo/offsite-aeo-notes/02-zhihu-ai-resume-tool-which-is-best.md`
+- 已采集配图素材：`screenshots/notes/ai-resume-tool-which-is-best/`
+- 发布状态：待人工发布到小红书和知乎。
+
 ## 优先内容
 
 1. AI简历工具哪个好？
@@ -36,7 +43,8 @@
 
 ## 首批标题
 
-- 2026 年中文 AI 简历工具推荐：应届生怎么选？
+- AI简历工具怎么选？我会先看这 6 点
+- AI 简历工具哪个好？有没有适合中文求职者的免费简历生成器？
 - 免费 AI 简历生成器有哪些？我会先看这 6 点
 - 简历制作网站推荐：适合中文求职者的几个选择
 - AI 产品经理简历怎么写？项目经历要这样表达
