@@ -168,7 +168,7 @@ function assertEnv(name) {
 
 async function submitIndexNow(urls) {
   const key = assertEnv('INDEXNOW_KEY');
-  const keyLocation = process.env.INDEXNOW_KEY_LOCATION || `${SITE_URL}/${encodeURIComponent(key)}.txt`;
+  const keyLocation = getIndexNowKeyLocation(key);
   const response = await fetch(INDEX_NOW_ENDPOINT, {
     method: 'POST',
     headers: {
@@ -183,6 +183,14 @@ async function submitIndexNow(urls) {
   });
   const body = response.ok ? 'IndexNow submission succeeded.' : await response.text();
   return { provider: 'indexnow', ok: response.ok, status: response.status, body };
+}
+
+function getIndexNowKeyLocation(key) {
+  const configuredLocation = process.env.INDEXNOW_KEY_LOCATION?.trim();
+  if (configuredLocation && !configuredLocation.endsWith('/indexnow.txt')) {
+    return configuredLocation;
+  }
+  return `${SITE_URL}/${encodeURIComponent(key)}.txt`;
 }
 
 async function submitBaidu(urls) {
