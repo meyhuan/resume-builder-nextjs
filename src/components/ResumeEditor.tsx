@@ -86,6 +86,24 @@ function isJsonEqual(left: unknown, right: unknown): boolean {
   return JSON.stringify(left) === JSON.stringify(right)
 }
 
+function wait(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms)
+  })
+}
+
+async function fetchWithNetworkRetry(input: RequestInfo | URL, init?: RequestInit, attempts = 2): Promise<Response> {
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      return await fetch(input, init)
+    } catch (error) {
+      if (attempt === attempts) throw error
+      await wait(350)
+    }
+  }
+  return fetch(input, init)
+}
+
 export default function ResumeEditor({ resumeId: initialResumeId, initialData }: ResumeEditorProps): ReactElement {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -278,7 +296,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
    * Persist resume to DB. In guest mode (no resumeId), creates a new
    * resume first, then saves. Auth is checked before any API call.
    */
-  const doSave = useCallback(async () => {
+  const doSave = useCallback(async (): Promise<string | undefined> => {
     setIsSaving(true)
     let createStarted = false
     let createCompleted = false
@@ -308,7 +326,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
           templateId: tpl,
           entry: 'pc_editor_save',
         })
-        const createRes = await fetch('/next-api/resumes', {
+        const createRes = await fetchWithNetworkRetry('/next-api/resumes', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(createPayload),
@@ -361,7 +379,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
         thumbnail,
       }
       // 4. Save to DB
-      const res = await fetch(`/next-api/resumes/${currentId}`, {
+      const res = await fetchWithNetworkRetry(`/next-api/resumes/${currentId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(savePayload),
@@ -371,6 +389,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
       setSavedSnapshot(JSON.stringify({ resume, theme, tpl, onePageMode, onePageSnapshot, sidebarSectionIds }))
       await revalidateDashboard()
       toast.success('保存成功')
+      return currentId
     } catch (e) {
       console.error(e)
       if (createStarted && !createCompleted && !createFailureTracked) {
@@ -382,6 +401,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
         })
       }
       toast.error('保存失败，请重试')
+      return undefined
     } finally {
       setIsSaving(false)
     }
@@ -575,9 +595,27 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
     const phone = baseInfo?.phone?.trim() || ''
     const fileName = joinExportFileNameParts([name, position, phone], { separator: '-', fallback: resume.name || 'export' })
 
-    if (!resumeId) {
+    let exportResumeId = resumeId
+    if (!exportResumeId || hasUnsavedChanges) {
+      const savedId = await doSave()
+      if (!savedId) {
+        track('export_failed', {
+          resumeId: exportResumeId,
+          templateId: tpl,
+          exportType: 'pdf',
+          entry: 'pc_export_preview',
+          stage: 'save_before_export',
+          failureReason: exportResumeId ? 'save_latest_resume_failed' : 'create_resume_before_export_failed',
+        })
+        toast.error(exportResumeId ? '保存最新简历失败，请重试后再导出' : '请先保存简历，再导出 PDF')
+        return
+      }
+      exportResumeId = savedId
+    }
+
+    if (!exportResumeId) {
       track('export_failed', {
-        resumeId,
+        resumeId: exportResumeId,
         templateId: tpl,
         exportType: 'pdf',
         entry: 'pc_export_preview',
@@ -593,7 +631,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
     try {
       const form = new FormData()
       form.append('file', pdfBlob, `${fileName}.pdf`)
-      form.append('resumeId', resumeId)
+      form.append('resumeId', exportResumeId)
       form.append('templateId', tpl)
       form.append('fileName', fileName)
       const exportRes = await fetch('/next-api/exports/pc', {
@@ -603,7 +641,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
       if (!exportRes.ok) {
         const errorData = await exportRes.json()
         track('export_failed', {
-          resumeId,
+          resumeId: exportResumeId,
           templateId: tpl,
           exportType: 'pdf',
           entry: 'pc_export_preview',
@@ -623,7 +661,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
       downloadUrl = exported.downloadUrl || ''
     } catch (err) {
       track('export_failed', {
-        resumeId,
+        resumeId: exportResumeId,
         templateId: tpl,
         exportType: 'pdf',
         entry: 'pc_export_preview',
@@ -636,7 +674,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
 
     if (!downloadUrl) {
       track('export_failed', {
-        resumeId,
+        resumeId: exportResumeId,
         templateId: tpl,
         exportType: 'pdf',
         exportId,
@@ -655,7 +693,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
     handleClosePreview()
     toast.success('PDF 导出成功')
     track('export_success', {
-      resumeId,
+      resumeId: exportResumeId,
       templateId: tpl,
       exportType: 'pdf',
       exportId,
