@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { ArrowLeft, Copy, ExternalLink, Download } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
+import JobSprintOffer from '@/components/vip/job-sprint-offer'
 import { createLogger } from '@/lib/logger'
 import { sanitizeExportFileName } from '@/lib/export-file-name'
 
@@ -121,6 +122,10 @@ export default function ExportResultClient(): ReactElement {
               <img src={absoluteUrl} alt="导出图片预览" className="w-full rounded-2xl bg-white border border-slate-200" />
             )}
           </div>
+        </div>
+
+        <div className="mt-4">
+          <JobSprintOffer entry="export-result" compact />
         </div>
       </main>
 

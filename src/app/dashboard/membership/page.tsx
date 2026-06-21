@@ -7,6 +7,7 @@ import { Crown, ArrowLeft, LogOut, Copy, Check, X, Sparkles, FileText, Zap, Tras
 import { useAuthStore } from '@/store/use-auth-store';
 import { useVipCheck } from '@/hooks/use-vip-check';
 import VipUpgradeDialog from '@/components/vip/vip-upgrade-dialog';
+import JobSprintOffer from '@/components/vip/job-sprint-offer';
 
 interface VipInfo {
   isVip: boolean;
@@ -356,6 +357,8 @@ export default function MembershipPage(): React.ReactElement {
                 </div>
               )}
             </div>
+
+            <JobSprintOffer entry="membership" />
 
             {/* ══ FOOTER ══ */}
             <div className="flex items-center gap-5 px-1 py-3">

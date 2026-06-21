@@ -27,6 +27,8 @@ export type AnalyticsEventName =
   | 'pay_success'
   | 'pay_cancel'
   | 'pay_failed'
+  | 'job_sprint_offer_view'
+  | 'job_sprint_offer_click'
   | 'app_error'
 
 type AnalyticsProperties = Record<string, unknown>
