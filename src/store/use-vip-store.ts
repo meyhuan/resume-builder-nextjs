@@ -40,6 +40,35 @@ function applyVipStatus(data: VipPollData | null): void {
   });
 }
 
+function wait(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
+async function fetchQuotaSnapshot(): Promise<VipQuotaStatus | null> {
+  const maxAttempts = 2;
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      const response: Response = await fetch('/next-api/quota');
+      if (!response.ok) return null;
+      const data: Record<string, VipFeatureQuota | undefined> = await response.json();
+      return {
+        aiGenerateResume: data.aiGenerateResume || EMPTY_QUOTA.aiGenerateResume,
+        aiImportSection: data.aiImportSection || EMPTY_QUOTA.aiImportSection,
+        aiGenerateSection: data.aiGenerateSection || EMPTY_QUOTA.aiGenerateSection,
+        aiPolishSection: data.aiPolishSection || EMPTY_QUOTA.aiPolishSection,
+        aiOptimizeResume: data.aiOptimizeResume || EMPTY_QUOTA.aiOptimizeResume,
+        pdfExport: data.pdfExport || EMPTY_QUOTA.pdfExport,
+      };
+    } catch (error) {
+      if (attempt === maxAttempts) throw error;
+      await wait(350);
+    }
+  }
+  return null;
+}
+
 export const useVipStore = create<VipStoreState>()((set, get) => ({
   isLoading: false,
   quotaLoaded: false,
@@ -58,19 +87,7 @@ export const useVipStore = create<VipStoreState>()((set, get) => ({
     if (!token) return;
     let requestPromise: Promise<VipQuotaStatus | null> | null = get().quotaRequestPromise;
     if (!requestPromise) {
-      requestPromise = (async (): Promise<VipQuotaStatus | null> => {
-        const response: Response = await fetch('/next-api/quota');
-        if (!response.ok) return null;
-        const data: Record<string, VipFeatureQuota | undefined> = await response.json();
-        return {
-          aiGenerateResume: data.aiGenerateResume || EMPTY_QUOTA.aiGenerateResume,
-          aiImportSection: data.aiImportSection || EMPTY_QUOTA.aiImportSection,
-          aiGenerateSection: data.aiGenerateSection || EMPTY_QUOTA.aiGenerateSection,
-          aiPolishSection: data.aiPolishSection || EMPTY_QUOTA.aiPolishSection,
-          aiOptimizeResume: data.aiOptimizeResume || EMPTY_QUOTA.aiOptimizeResume,
-          pdfExport: data.pdfExport || EMPTY_QUOTA.pdfExport,
-        };
-      })();
+      requestPromise = fetchQuotaSnapshot();
       set({ quotaRequestPromise: requestPromise });
     }
     try {

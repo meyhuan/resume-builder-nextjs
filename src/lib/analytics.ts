@@ -33,7 +33,9 @@ type AnalyticsProperties = Record<string, unknown>
 
 const ANONYMOUS_ID_KEY = 'analytics_anonymous_id'
 const SESSION_ID_KEY = 'analytics_session_id'
+const CHUNK_LOAD_RELOAD_KEY = 'analytics_chunk_load_reloaded_at'
 const DEDUPE_WINDOW_MS = 1500
+const CHUNK_LOAD_RELOAD_COOLDOWN_MS = 60 * 1000
 
 const recentEvents = new Map<string, number>()
 let errorTrackingInstalled = false
@@ -95,14 +97,41 @@ function isInternalRenderContext(properties: AnalyticsProperties): boolean {
 }
 
 function shouldSuppressAppError(properties: AnalyticsProperties): boolean {
+  const errorType = stringProperty(properties, 'errorType')
+  const errorMessage = stringProperty(properties, 'errorMessage')
+  if (errorType === 'AbortError'
+    || /signal is aborted|fetch is aborted|user aborted a request|request aborted/i.test(errorMessage)) {
+    return true
+  }
+
   if (!isInternalRenderContext(properties)) return false
   const file = stringProperty(properties, 'file')
   const requestPath = stringProperty(properties, 'requestPath')
-  const errorMessage = stringProperty(properties, 'errorMessage')
   return window.location.pathname.startsWith('/print')
     || file.includes('/_next/static/')
     || requestPath.includes('/_next/static/')
     || /ChunkLoadError|Loading chunk|dynamically imported module/i.test(errorMessage)
+}
+
+function isChunkLoadFailure(properties: AnalyticsProperties): boolean {
+  const errorType = stringProperty(properties, 'errorType')
+  const errorMessage = stringProperty(properties, 'errorMessage')
+  return errorType === 'ChunkLoadError'
+    || /ChunkLoadError|Loading chunk|dynamically imported module/i.test(errorMessage)
+}
+
+function recoverFromChunkLoadFailure(): void {
+  try {
+    const lastReloadedAt = Number(window.sessionStorage.getItem(CHUNK_LOAD_RELOAD_KEY) || '0')
+    const now = Date.now()
+    if (Number.isFinite(lastReloadedAt) && now - lastReloadedAt < CHUNK_LOAD_RELOAD_COOLDOWN_MS) return
+    window.sessionStorage.setItem(CHUNK_LOAD_RELOAD_KEY, String(now))
+    window.setTimeout(() => {
+      window.location.reload()
+    }, 250)
+  } catch {
+    window.location.reload()
+  }
 }
 
 export function track(eventName: AnalyticsEventName, properties: AnalyticsProperties = {}): void {
@@ -171,16 +200,40 @@ function getRequestInfo(input: RequestInfo | URL, init?: RequestInit): { url: st
   return { url: url.pathname, method: method.toUpperCase() }
 }
 
+function getNetworkContext(startedAt: number): AnalyticsProperties {
+  const connection = navigator as Navigator & {
+    connection?: {
+      effectiveType?: string
+      downlink?: number
+      rtt?: number
+      saveData?: boolean
+    }
+  }
+
+  return {
+    elapsedMs: Date.now() - startedAt,
+    online: navigator.onLine,
+    visibilityState: document.visibilityState,
+    networkType: connection.connection?.effectiveType,
+    downlink: connection.connection?.downlink,
+    rtt: connection.connection?.rtt,
+    saveData: connection.connection?.saveData,
+  }
+}
+
 export function trackError(error: unknown, properties: AnalyticsProperties = {}): void {
   const normalized = normalizeError(error)
   const nextProperties = {
     ...properties,
     ...normalized,
   }
-  if (shouldSuppressAppError(nextProperties)) return
+  const shouldReloadForChunk = isChunkLoadFailure(nextProperties)
+  if (!shouldReloadForChunk && shouldSuppressAppError(nextProperties)) return
   track('app_error', {
     ...nextProperties,
+    ...(shouldReloadForChunk ? { recoveryAction: 'reload_page_once' } : {}),
   })
+  if (shouldReloadForChunk) recoverFromChunkLoadFailure()
 }
 
 export function installAnalyticsErrorTracking(): void {
@@ -205,6 +258,7 @@ export function installAnalyticsErrorTracking(): void {
   originalFetch = window.fetch.bind(window)
   window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
     const info = getRequestInfo(input, init)
+    const startedAt = Date.now()
     try {
       const response = await originalFetch!(input, init)
       if (response.status >= 500 && !info.url.includes('/analytics/events')) {
@@ -213,6 +267,7 @@ export function installAnalyticsErrorTracking(): void {
           statusCode: response.status,
           requestPath: info.url,
           method: info.method,
+          ...getNetworkContext(startedAt),
         })
       }
       return response
@@ -222,6 +277,7 @@ export function installAnalyticsErrorTracking(): void {
           source: 'fetch_error',
           requestPath: info.url,
           method: info.method,
+          ...getNetworkContext(startedAt),
         })
       }
       throw error

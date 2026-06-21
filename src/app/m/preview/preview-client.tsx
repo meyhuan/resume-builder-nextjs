@@ -58,6 +58,24 @@ function buildDefaultExportFileName(resume: ResumeData): string {
   )
 }
 
+function wait(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms)
+  })
+}
+
+async function fetchWithNetworkRetry(input: RequestInfo | URL, init?: RequestInit, attempts = 2): Promise<Response> {
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      return await fetch(input, init)
+    } catch (error) {
+      if (attempt === attempts) throw error
+      await wait(350)
+    }
+  }
+  return fetch(input, init)
+}
+
 /**
  * Main client for /m/preview. Owns the current template id, mounts read-only mode,
  * and renders the active template alongside a bottom-sheet settings panel.
@@ -457,7 +475,7 @@ export default function MobilePreviewClient(): ReactElement {
     )
     const contentWithMeta = embedEditorMeta(cleanContent, editorMeta)
 
-    const response = await fetch(`/next-api/resumes/${targetId}`, {
+    const response = await fetchWithNetworkRetry(`/next-api/resumes/${targetId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
