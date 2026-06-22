@@ -79,21 +79,30 @@ function buildZijiPalette(themePrimaryColor: string | undefined): {
   readonly primary: string
   readonly heroGradient: string
   readonly panelBackground: string
+  readonly panelPrintBackground: string
 } {
   const primary = normalizeHexColor(themePrimaryColor)
   const glow = mixHex(primary, SIGNATURE_FUCHSIA, 0.32)
   const heroMid = mixHex(primary, '#ffffff', 0.16)
   const heroEnd = mixHex(glow, '#ffffff', 0.08)
-  const panelWash = mixHex(primary, '#ffffff', 0.82)
-  const panelWashLight = mixHex(primary, '#ffffff', 0.9)
-  const panelBottom = mixHex(glow, '#ffffff', 0.92)
+  const paperHue = mixHex(primary, DEFAULT_PURPLE, 0.72)
+  const paperGlow = mixHex(glow, DEFAULT_PURPLE, 0.78)
+  const paperStart = mixHex(paperHue, '#ffffff', 0.94)
+  const paperMid = mixHex(paperHue, '#ffffff', 0.965)
+  const paperEnd = mixHex(paperGlow, '#ffffff', 0.955)
+  const printStart = mixHex(paperHue, '#ffffff', 0.975)
+  const printEnd = mixHex(paperGlow, '#ffffff', 0.982)
 
   return {
     primary,
     heroGradient: `linear-gradient(106deg, ${primary} 0%, ${heroMid} 48%, ${heroEnd} 100%)`,
     panelBackground: `
-      linear-gradient(180deg, rgba(255, 255, 255, 0) 0, rgba(255, 255, 255, 0.22) 34px, rgba(255, 255, 255, 0.74) 112px, #fff 178px, #fff 84%, ${panelBottom} 100%),
-      linear-gradient(100deg, ${panelWash} 0%, ${panelWashLight} 58%, ${panelBottom} 100%)
+      linear-gradient(180deg, rgba(255, 255, 255, 0) 0, rgba(255, 255, 255, 0.22) 34px, rgba(255, 255, 255, 0.86) 112px, #fff 178px, #fff 84%, ${paperEnd} 100%),
+      linear-gradient(100deg, ${paperStart} 0%, ${paperMid} 58%, ${paperEnd} 100%)
+    `,
+    panelPrintBackground: `
+      linear-gradient(180deg, rgba(255, 255, 255, 0) 0, rgba(255, 255, 255, 0.24) 34px, rgba(255, 255, 255, 0.9) 112px, #fff 178px, #fff 88%, ${printEnd} 100%),
+      linear-gradient(100deg, ${printStart} 0%, #fff 62%, ${printEnd} 100%)
     `,
   }
 }
@@ -237,6 +246,8 @@ export default function ZijiTemplate(props: TemplateProps): ReactElement {
     color: BODY,
     fontFamily: theme.fontFamily || SANS,
     '--ziji-purple': primaryColor,
+    '--ziji-panel-background': palette.panelBackground,
+    '--ziji-panel-print-background': palette.panelPrintBackground,
     '--ziji-panel-pad-x': `${panelPadX}px`,
     '--ziji-panel-pad-top': `${panelPadTop}px`,
     '--ziji-print-page-padding-v': `${theme.pagePaddingVertical}mm`,
@@ -262,6 +273,7 @@ export default function ZijiTemplate(props: TemplateProps): ReactElement {
             min-height: auto !important;
             padding-bottom: 0 !important;
             overflow: visible !important;
+            background: var(--ziji-panel-print-background) !important;
           }
           .ziji-root { box-shadow: none !important; }
         }
@@ -311,7 +323,7 @@ export default function ZijiTemplate(props: TemplateProps): ReactElement {
               padding: `${panelPadTop}px ${panelPadX}px ${panelPadBottom}px ${panelPadX}px`,
               zIndex: 2,
               overflow: 'hidden',
-              background: palette.panelBackground,
+              background: 'var(--ziji-panel-background)',
             }}
           >
             <div
