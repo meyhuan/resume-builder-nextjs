@@ -17,7 +17,6 @@ import { AddMoreModules } from './_components/add-more-modules'
 import { DeveloperNote } from './_components/developer-note'
 import { HomeActionBar } from './_components/home-action-bar'
 import { JobIntentionPreview } from './_components/job-intention-preview'
-import { QuickActions } from './_components/quick-actions'
 import { ResumeProfileCard } from './_components/resume-profile-card'
 import { SectionsList } from './_components/sections-list'
 import { TemplateSpecificSettings } from './_components/template-metrics-preview'
@@ -469,11 +468,6 @@ export default function MobileEditHomeClient(
       )}
 
       <ResumeProfileCard resume={resume} progress={progress} missingItems={missingItems} />
-
-      <QuickActions
-        resumeId={resumeId ?? initial?.id ?? null}
-        template={currentTemplateId}
-      />
 
       <div className="mt-2 px-3">
         <JobIntentionPreview resume={resume} />

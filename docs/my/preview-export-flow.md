@@ -247,3 +247,46 @@ exportResult.wxml → <image src="{{item}}" /> 展示
 ```
 
 **核心保证**：用户在预览页看到的主题色，一定会反映在导出结果中，因为 `syncPreviewState` 在 Puppeteer 渲染之前已经把最新 theme 写入了数据库。
+
+---
+
+## 发布兼容复盘：H5 先上线，小程序原生能力未审核通过
+
+### 问题
+
+Markdown 导出服务端和 H5 代码先发布后，小程序原生 `exportResult` 对 Markdown 的支持还未通过微信审核。此时如果 H5 在小程序 web-view 中直接展示“导出 Markdown”，旧版小程序会把 `type=markdown` 跳转给原生页面，但旧原生页面并不知道 Markdown 的文件类型、后缀、预览和分享逻辑，导致线上兼容风险。
+
+### 根因
+
+这是“小程序壳能力”和“H5/Next.js 能力”发布节奏不一致的问题，不是普通 Web feature flag 问题。只要 H5 会调用小程序原生页面、原生 API、分享/下载能力，就必须假设线上存在多个小程序版本并行运行。
+
+### 后续规则
+
+凡是 H5 新功能依赖小程序原生代码能力时，必须使用小程序版本门控：
+
+```text
+H5 中展示依赖原生能力的入口 =
+  非小程序环境
+  OR
+  小程序版本 >= 该原生能力支持的最低版本
+```
+
+不要只用 Next.js 是否已发布、构建期环境变量、接口是否支持来判断入口是否展示。服务端可以提前兼容新类型，但 UI 入口必须等当前小程序版本具备原生能力后再开放。
+
+### 当前 Markdown 导出方案
+
+- 小程序打开 H5 web-view 时，在 SSO redirect path 上追加 `miniVersion`。
+- H5 `/m/preview` 读取 `miniVersion`，并用语义化版本比较判断是否展示“导出 Markdown”。
+- 当前最低支持版本在 `use-mini-program-capabilities.ts` 中声明为 `MINI_MARKDOWN_EXPORT_MIN_VERSION = '2.0.0'`。
+- H5 内部跳转时用 `sessionStorage` 记住小程序环境和版本，避免从 `/m/edit` 到 `/m/preview` 后丢参数。
+- 普通浏览器/H5 不受小程序版本门控影响，仍可展示 Markdown。
+
+### 实施清单
+
+新增任何依赖小程序原生能力的 H5 功能时，先完成以下检查：
+
+1. 明确原生能力最低支持版本，例如 `MINI_XXX_MIN_VERSION`。
+2. 小程序进入 H5 时传递 `miniVersion`，优先使用 `wx.getAccountInfoSync().miniProgram.version`。
+3. H5 对入口做 `miniVersion >= minVersion` 判断。
+4. 服务端保持向后兼容，旧客户端不知道新类型时不能被动进入新流程。
+5. 测试旧版本小程序：入口不可见；测试新版本小程序：入口可见且原生页能完成完整流程。

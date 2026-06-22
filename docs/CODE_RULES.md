@@ -162,7 +162,33 @@ Extract helpers. Deeply nested conditionals → early returns.
 
 ---
 
-## 7. Code review checklist (PR template)
+## 7. Reuse & readability
+
+### Rule 7.1 — Design repeated logic as a small reusable primitive
+
+When adding logic that may apply to another page, feature, or platform
+boundary, extract it into a named helper/module instead of burying it in a
+component. Examples: version comparison, capability checks, filename
+normalization, export-type metadata, and mini-program environment detection.
+
+**Why:** one-off fixes solve today's bug but create the next inconsistency.
+Reusable primitives make behavior easier to test, reason about, and extend.
+
+### Rule 7.2 — Prefer readable names over clever compactness
+
+Names should describe the business condition, not just the implementation.
+For example, prefer `miniMarkdownExportSupported` over `enabled`, and
+`supportsMiniMarkdownExport(version)` over an inline version comparison.
+
+### Rule 7.3 — Keep feature policy separate from UI rendering
+
+Components should receive simple booleans or data structures such as
+`showMarkdownExport`; policy decisions such as version gates, quotas, or
+capability checks belong in helpers/hooks near the feature boundary.
+
+---
+
+## 8. Code review checklist (PR template)
 
 - [ ] Initial data loaded via Server Component, not `useEffect + fetch`.
 - [ ] No `cancelled` flag in effects (unless polling).
@@ -170,3 +196,5 @@ Extract helpers. Deeply nested conditionals → early returns.
 - [ ] New async flows use `createLogger` for entry/exit/error.
 - [ ] Redirects don't rely on `request.url`.
 - [ ] All effects' dep arrays contain only primitive inputs.
+- [ ] Repeated logic is extracted into readable reusable helpers.
+- [ ] UI components do not own cross-platform policy decisions.

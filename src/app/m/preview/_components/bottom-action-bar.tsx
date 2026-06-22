@@ -8,6 +8,7 @@ interface BottomActionBarProps {
   readonly onExportPdf: () => Promise<void>
   readonly onExportImage: () => Promise<void>
   readonly onExportMarkdown: () => Promise<void>
+  readonly showMarkdownExport?: boolean
   readonly isExporting: boolean
 }
 
@@ -15,7 +16,14 @@ interface BottomActionBarProps {
  * Fixed bottom action bar with thumb-zone friendly primary actions.
  */
 export function BottomActionBar(props: BottomActionBarProps): ReactElement {
-  const { onOpenSettings, onExportPdf, onExportImage, onExportMarkdown, isExporting } = props
+  const {
+    onOpenSettings,
+    onExportPdf,
+    onExportImage,
+    onExportMarkdown,
+    showMarkdownExport = true,
+    isExporting,
+  } = props
   const [showExportMenu, setShowExportMenu] = useState<boolean>(false)
 
   return (
@@ -80,16 +88,18 @@ export function BottomActionBar(props: BottomActionBarProps): ReactElement {
                 >
                   导出图片
                 </button>
-                <button
-                  type="button"
-                  className="w-full px-4 py-3 text-sm text-left text-slate-700 hover:bg-slate-50 active:bg-slate-100"
-                  onClick={(): void => {
-                    setShowExportMenu(false)
-                    void onExportMarkdown()
-                  }}
-                >
-                  导出 Markdown
-                </button>
+                {showMarkdownExport ? (
+                  <button
+                    type="button"
+                    className="w-full px-4 py-3 text-sm text-left text-slate-700 hover:bg-slate-50 active:bg-slate-100"
+                    onClick={(): void => {
+                      setShowExportMenu(false)
+                      void onExportMarkdown()
+                    }}
+                  >
+                    导出 Markdown
+                  </button>
+                ) : null}
               </div>
             </>
           )}

@@ -22,6 +22,7 @@ import { createLogger } from '@/lib/logger'
 import { track } from '@/lib/analytics'
 import { joinExportFileNameParts } from '@/lib/export-file-name'
 import { useInMiniProgram } from '../_components/use-mini-program'
+import { useMiniProgramCapabilities } from '../_components/use-mini-program-capabilities'
 import { BottomActionBar } from './_components/bottom-action-bar'
 import {
   ONE_PAGE_BADGE_STYLES,
@@ -355,6 +356,9 @@ export default function MobilePreviewClient(): ReactElement {
   const [isExporting, setIsExporting] = useState<boolean>(false)
 
   const inMiniProgram = useInMiniProgram()
+  const miniProgramCapabilities = useMiniProgramCapabilities()
+  const miniMarkdownExportSupported = miniProgramCapabilities.markdownExportSupported
+  const showMarkdownExport = !inMiniProgram || miniMarkdownExportSupported
 
   /**
    * Call /next-api/exports/mini to render and save the export asset.
@@ -404,7 +408,8 @@ export default function MobilePreviewClient(): ReactElement {
    * H5: /m/export-result page.
    */
   const openExportResult = useCallback((job: ExportJobResponse): void => {
-    if (inMiniProgram) {
+    const canUseNativeResult = job.type !== 'markdown' || miniMarkdownExportSupported
+    if (inMiniProgram && canUseNativeResult) {
       // Try navigating to mini-program native page for better share/download UX
       const canNavigateTo = typeof window.wx?.miniProgram?.navigateTo === 'function'
       if (canNavigateTo) {
@@ -439,7 +444,7 @@ export default function MobilePreviewClient(): ReactElement {
       params.set('previewImages', JSON.stringify(job.previewImages))
     }
     router.push(`/m/export-result?${params.toString()}`)
-  }, [router, inMiniProgram])
+  }, [router, inMiniProgram, miniMarkdownExportSupported])
 
   /**
    * Sync the local theme overrides and template choice back to the DB before
@@ -525,6 +530,10 @@ export default function MobilePreviewClient(): ReactElement {
    */
   const handleExport = useCallback(async (type: ExportType): Promise<void> => {
     if (!innerRef.current) return
+    if (type === 'markdown' && inMiniProgram && !miniMarkdownExportSupported) {
+      toast.info('当前小程序版本暂不支持 Markdown 导出，请更新后再试')
+      return
+    }
     setIsExporting(true)
     const fileName: string = buildDefaultExportFileName(resume)
     const targetResumeIdForTrack: string | null = draftResumeId || searchParams.get('id')
@@ -542,7 +551,8 @@ export default function MobilePreviewClient(): ReactElement {
       }
 
       await syncPreviewState(targetResumeId)
-      if (inMiniProgram && typeof window.wx?.miniProgram?.navigateTo === 'function') {
+      const canUseNativeResult = type !== 'markdown' || miniMarkdownExportSupported
+      if (inMiniProgram && canUseNativeResult && typeof window.wx?.miniProgram?.navigateTo === 'function') {
         const params = new URLSearchParams({
           resumeId: targetResumeId,
           templateId,
@@ -575,7 +585,7 @@ export default function MobilePreviewClient(): ReactElement {
     } finally {
       setIsExporting(false)
     }
-  }, [resume, createExportJob, openExportResult, draftResumeId, searchParams, templateId, syncPreviewState, inMiniProgram])
+  }, [resume, createExportJob, openExportResult, draftResumeId, searchParams, templateId, syncPreviewState, inMiniProgram, miniMarkdownExportSupported])
 
   const handleExportPdf = useCallback(async (): Promise<void> => {
     await handleExport('pdf')
@@ -677,6 +687,7 @@ export default function MobilePreviewClient(): ReactElement {
           onExportPdf={handleExportPdf}
           onExportImage={handleExportImage}
           onExportMarkdown={handleExportMarkdown}
+          showMarkdownExport={showMarkdownExport}
           isExporting={isExporting}
         />
 

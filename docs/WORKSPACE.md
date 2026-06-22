@@ -347,7 +347,7 @@ ALIYUN_OSS_*            — 阿里云 OSS（可选）
   → sso.obtainWebViewUrl('/m/edit?id=xxx')
     → wx.login() → code
     → POST Java /sso/issue { code } → { token }
-    → 构建 https://aijianli.cn/m/sso?token=XXX&r=/m/edit?id=xxx
+    → 构建 https://aijianli.cn/m/sso?token=XXX&r=/m/edit?id=xxx&miniVersion=x.y.z
   → <web-view src=上述URL>
   → Next.js GET /m/sso
     → POST Java /sso/verify { token } → { uid(cvUserId 或 openid), openid }
@@ -356,6 +356,8 @@ ALIYUN_OSS_*            — 阿里云 OSS（可选）
     → 设置 auth_uid cookie
     → 302 → /m/edit?id=xxx
 ```
+
+> H5 若调用小程序原生页面/API（例如导出结果页、分享文件等），入口必须按 `miniVersion >= 原生能力支持版本` 判断，避免 Next.js 先发布而小程序审核未通过时暴露旧壳不支持的功能。
 
 ### 防重复用户创建机制
 
