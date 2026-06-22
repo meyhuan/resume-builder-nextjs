@@ -34,6 +34,7 @@ const COMPARISON_FEATURES: ComparisonFeature[] = [
   { feature: 'AI 优化简历', nonVip: 'limited', vip: 'infinity' },
   { feature: '精品模板', nonVip: 'cross', vip: 'check' },
   { feature: '无水印导出', nonVip: 'cross', vip: 'check' },
+  { feature: '简历答疑支持', nonVip: 'cross', vip: 'check' },
 ];
 
 const CONTEXT_COPY = {
@@ -47,7 +48,7 @@ const CONTEXT_COPY = {
   },
   generic: {
     title: '升级会员',
-    description: '解锁高清导出、AI 优化、无水印和精品模板',
+    description: '解锁高清导出、AI 优化、无水印、精品模板和简历答疑',
   },
 };
 
