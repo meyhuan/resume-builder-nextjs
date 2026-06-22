@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>智简简历营销工作台</title>
+  <style>
+    :root { color-scheme: light; --line:#e5e7eb; --text:#171717; --muted:#6b7280; --bg:#f8fafc; --panel:#fff; --brand:#0f766e; }
+    body { margin: 0; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: var(--text); background: var(--bg); }
+    header { padding: 28px 36px 20px; background: #ffffff; border-bottom: 1px solid var(--line); }
+    main { padding: 28px 36px 48px; max-width: 1280px; margin: 0 auto; }
+    h1 { margin: 0; font-size: 28px; }
+    h2 { margin: 0 0 14px; font-size: 18px; }
+    p { margin: 6px 0; color: var(--muted); }
+    a { color: #155dfc; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .grid { display: grid; gap: 16px; }
+    .stats { grid-template-columns: repeat(4, minmax(0, 1fr)); margin-bottom: 20px; }
+    .two { grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr); }
+    .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 18px; }
+    .stat strong { display: block; font-size: 30px; line-height: 1.1; }
+    .stat span { color: var(--muted); font-size: 13px; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    th { color: #374151; font-weight: 650; background: #f9fafb; }
+    .pill { display: inline-flex; align-items: center; border-radius: 999px; padding: 3px 9px; background: #ecfdf5; color: #047857; font-size: 12px; }
+    .muted { color: var(--muted); }
+    .actions li { margin-bottom: 8px; }
+    .links { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 12px; }
+    .links a { border: 1px solid var(--line); border-radius: 6px; padding: 7px 10px; background: #fff; }
+    .score { font-weight: 700; color: var(--brand); }
+    @media (max-width: 900px) { .stats, .two { grid-template-columns: 1fr; } header, main { padding-left: 18px; padding-right: 18px; } }
+  </style>
+</head>
+<body>
+<header>
+  <h1>智简简历营销工作台</h1>
+  <p>更新时间：2026/6/22 13:49:54</p>
+  <div class="links">
+    <a href="marketing-publish-log.json">发布记录总表</a>
+    <a href="../../screenshots/index/screenshot-index.json">截图索引</a>
+    <a href="../../screenshots/index/product-feature-map.md">产品功能地图</a>
+    <a href="xiaohongshu-publishing-automation.md">发布自动化说明</a>
+  </div>
+</header>
+<main>
+  <section class="grid stats">
+    <div class="panel stat"><strong>102</strong><span>截图资产</span><p>可用于内容配图的索引截图</p></div>
+    <div class="panel stat"><strong>7</strong><span>内容草稿</span><p>站外 AEO/社媒/知乎草稿</p></div>
+    <div class="panel stat"><strong>3</strong><span>发布包</span><p>已生成的可发布任务</p></div>
+    <div class="panel stat"><strong>3</strong><span>已发布</span><p>待发布 0 篇</p></div>
+  </section>
+
+  <section class="grid two">
+    <div class="panel">
+      <h2>下一步</h2>
+      <ul class="actions"><li>有 3 篇已发布笔记还没有回填数据表现。</li><li>有社媒草稿尚未生成发布包，可继续做成待发布任务。</li><li>下一组内容建议围绕 AI 生成、JD 匹配、模板切换、模块拖拽，分别改写成小红书、公众号和抖音图文。</li></ul>
+    </div>
+    <div class="panel">
+      <h2>截图图库</h2>
+      <table><tbody><tr><td>[object Object]</td><td>95</td></tr><tr><td>unknown</td><td>7</td></tr></tbody></table>
+      <p class="muted">高频用途：编辑场景专项图 45；小红书正文配图 28；蓝折编辑核心卖点 19；移动端编辑展示 17；小红书步骤图 17；产品功能展示 9；封面图 4；核心功能图 4</p>
+    </div>
+  </section>
+
+  <section class="panel" style="margin-top:16px;">
+    <h2>平台发布包</h2>
+    <table>
+    <thead><tr><th>标题</th><th>平台</th><th>封面策略</th><th>状态</th><th>图片</th><th>入口</th><th>链接</th></tr></thead>
+    <tbody><tr>
+          <td>做简历别再手调 Word</td>
+          <td>抖音图文</td>
+          <td><strong>简历别再手调 Word</strong><br><span class="score">27/30</span> <span class="muted">痛点型</span></td>
+          <td><span class="pill">已发布</span></td>
+          <td>5</td>
+          <td><a href="../../screenshots/notes/douyin-resume-click-to-edit/publish-checklist.html">发布清单</a> · <a href="../../screenshots/notes/douyin-resume-click-to-edit/cover-strategy.html">封面策略</a> · <a href="../../screenshots/notes/douyin-resume-click-to-edit/platform-images.html">成品图</a> · <a href="../../screenshots/notes/douyin-resume-click-to-edit/publish-task.json">JSON</a></td>
+          <td><a href="https://www.douyin.com/note/7654055663504559410">打开笔记</a></td>
+        </tr><tr>
+          <td>简历别再手调 Word</td>
+          <td>公众号贴图</td>
+          <td><strong>简历别再手调 Word</strong><br><span class="score">27/30</span> <span class="muted">痛点型</span></td>
+          <td><span class="pill">已发布</span></td>
+          <td>5</td>
+          <td><a href="../../screenshots/notes/wechat-image-resume-click-to-edit/publish-checklist.html">发布清单</a> · <a href="../../screenshots/notes/wechat-image-resume-click-to-edit/cover-strategy.html">封面策略</a> · <a href="../../screenshots/notes/wechat-image-resume-click-to-edit/platform-images.html">成品图</a> · <a href="../../screenshots/notes/wechat-image-resume-click-to-edit/publish-task.json">JSON</a></td>
+          <td><a href="https://mp.weixin.qq.com/s/NvKgtgF-DX7ARfZRm9yOAg">打开笔记</a></td>
+        </tr><tr>
+          <td>简历别折腾 Word，点哪里就能改</td>
+          <td>小红书</td>
+          <td><strong>简历别再手调 Word</strong><br><span class="score">27/30</span> <span class="muted">痛点型</span></td>
+          <td><span class="pill">已发布</span></td>
+          <td>5</td>
+          <td><a href="../../screenshots/notes/ai-resume-editor-click-to-edit/publish-checklist.html">发布清单</a> · <a href="../../screenshots/notes/ai-resume-editor-click-to-edit/cover-strategy.html">封面策略</a> · <a href="../../screenshots/notes/ai-resume-editor-click-to-edit/platform-images.html">成品图</a> · <a href="../../screenshots/notes/ai-resume-editor-click-to-edit/publish-task.json">JSON</a></td>
+          <td><a href="https://www.xiaohongshu.com/discovery/item/6a38986e000000002100a2c5?source=webshare&amp;xhsshare=pc_web&amp;xsec_token=YBLuN67aeB4QFZTlRD-VxeWr6tqjE58PyMUI0HAsqxsdQ=&amp;xsec_source=pc_share">打开笔记</a></td>
+        </tr></tbody>
+  </table>
+  </section>
+
+  <section class="panel" style="margin-top:16px;">
+    <h2>内容草稿</h2>
+    <table>
+    <thead><tr><th>标题</th><th>平台</th><th>文件</th><th>更新时间</th></tr></thead>
+    <tbody><tr>
+          <td>简历别再手调 Word</td>
+          <td>公众号贴图</td>
+          <td><a href="offsite-aeo-notes/07-wechat-image-resume-click-to-edit.md">docs/seo/offsite-aeo-notes/07-wechat-image-resume-click-to-edit.md</a></td>
+          <td>2026-06-22</td>
+        </tr><tr>
+          <td>做简历别再手调 Word</td>
+          <td>抖音图文</td>
+          <td><a href="offsite-aeo-notes/06-douyin-resume-click-to-edit.md">docs/seo/offsite-aeo-notes/06-douyin-resume-click-to-edit.md</a></td>
+          <td>2026-06-22</td>
+        </tr><tr>
+          <td>AI 简历工具怎么帮你从内容写到排版导出</td>
+          <td>公众号贴图</td>
+          <td><a href="offsite-aeo-notes/05-wechat-ai-resume-editor-click-to-edit.md">docs/seo/offsite-aeo-notes/05-wechat-ai-resume-editor-click-to-edit.md</a></td>
+          <td>2026-06-22</td>
+        </tr><tr>
+          <td>做简历别再折腾 Word 了，点哪里就能改</td>
+          <td>小红书</td>
+          <td><a href="offsite-aeo-notes/04-xhs-ai-resume-editor-click-to-edit.md">docs/seo/offsite-aeo-notes/04-xhs-ai-resume-editor-click-to-edit.md</a></td>
+          <td>2026-06-22</td>
+        </tr><tr>
+          <td>小红书图文笔记：简历投了没回应怎么办</td>
+          <td>小红书</td>
+          <td><a href="offsite-aeo-notes/03-xhs-resume-no-response-jd-match.md">docs/seo/offsite-aeo-notes/03-xhs-resume-no-response-jd-match.md</a></td>
+          <td>2026-06-21</td>
+        </tr><tr>
+          <td>小红书图文笔记：AI 简历工具哪个好</td>
+          <td>小红书</td>
+          <td><a href="offsite-aeo-notes/01-xhs-ai-resume-tool-which-is-best.md">docs/seo/offsite-aeo-notes/01-xhs-ai-resume-tool-which-is-best.md</a></td>
+          <td>2026-06-21</td>
+        </tr><tr>
+          <td>知乎回答 / 专栏：AI 简历工具哪个好</td>
+          <td>知乎</td>
+          <td><a href="offsite-aeo-notes/02-zhihu-ai-resume-tool-which-is-best.md">docs/seo/offsite-aeo-notes/02-zhihu-ai-resume-tool-which-is-best.md</a></td>
+          <td>2026-06-21</td>
+        </tr></tbody>
+  </table>
+  </section>
+
+  <section class="panel" style="margin-top:16px;">
+    <h2>发布记录</h2>
+    <table>
+    <thead><tr><th>标题</th><th>平台</th><th>发布时间</th><th>复查</th></tr></thead>
+    <tbody><tr>
+          <td>做简历别再手调 Word<br><a href="https://www.douyin.com/note/7654055663504559410">发布链接</a></td>
+          <td>抖音图文</td>
+          <td>2026-06-22T03:29:04.410Z</td>
+          <td>24h 2026-06-23<br>72h 2026-06-25<br>7d 2026-06-29</td>
+        </tr><tr>
+          <td>简历别再手调 Word<br><a href="https://mp.weixin.qq.com/s/NvKgtgF-DX7ARfZRm9yOAg">发布链接</a></td>
+          <td>公众号贴图</td>
+          <td>2026-06-22T03:18:20.476Z</td>
+          <td>24h 2026-06-23<br>72h 2026-06-25<br>7d 2026-06-29</td>
+        </tr><tr>
+          <td>简历别折腾 Word，点哪里就能改<br><a href="https://www.xiaohongshu.com/discovery/item/6a38986e000000002100a2c5?source=webshare&amp;xhsshare=pc_web&amp;xsec_token=YBLuN67aeB4QFZTlRD-VxeWr6tqjE58PyMUI0HAsqxsdQ=&amp;xsec_source=pc_share">发布链接</a></td>
+          <td>小红书</td>
+          <td>2026-06-22T02:10:20.855Z</td>
+          <td>24h 2026-06-23<br>72h 2026-06-25<br>7d 2026-06-29</td>
+        </tr></tbody>
+  </table>
+  </section>
+</main>
+</body>
+</html>

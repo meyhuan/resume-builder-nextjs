@@ -1,0 +1,220 @@
+{
+  "platform": "wechat",
+  "slug": "wechat-ai-resume-editor-click-to-edit",
+  "status": "archived",
+  "title": "AI 简历工具怎么帮你从内容写到排版导出",
+  "body": "很多人做简历时，真正卡住的地方不只是“不会写”，而是写完之后还要把内容整理成一份能投递的简历。\n\n常见情况是这样的：\n\n- 用 Word 模板改格式，一不小心整页布局就乱了。\n- 用 AI 写出一段经历，但还要自己复制到模板里排版。\n- 想把项目经历、工作经历、技能模块调整顺序，需要反复剪切粘贴。\n- 简历模板看着好看，但真正改起来并不顺手。\n\n所以，一个 AI 简历工具如果只生成文字，其实还不够完整。更理想的流程应该是：先生成内容，再继续编辑、排版、换模板，最后导出可投递文件。\n\n## 先用 AI 搭出简历初稿\n\n对于应届生、转行求职者、0-3 年职场人来说，第一步往往是不知道简历结构怎么搭，也不知道经历应该怎么写。\n\n智简简历的思路是先用 AI 帮用户搭一份初稿，再进入编辑器继续修改。这样不是让用户从空白文档开始，也不是只给一段无法直接投递的文字。\n\n## 进入编辑器后，能看到真实简历效果\n\n它更像一个在线简历工作台：左侧能看到完整简历预览，顶部有模块管理、排版美化、AI 优化、保存和导出入口。\n\n这个点对新手很重要。因为很多人不是不会改内容，而是不知道改完之后版面会不会乱。所见即所得的编辑方式，可以边改边看最终效果。\n\n## 正文内容可以点哪里改哪里\n\n工作经历、项目经历、自我评价这类长文本，通常最需要反复调整。\n\n在蓝折模板示例里，点击经历正文后，可以直接进入富文本编辑状态，并出现加粗、列表、缩进、撤销、重做等工具。也就是说，用户不用在表单和预览之间来回切换。\n\n这类编辑方式比较适合修改成果描述、项目亮点和岗位关键词。\n\n## 模块顺序可以拖拽调整\n\n不同求职阶段的简历重点不一样。\n\n应届生可能希望项目经历靠前，转行用户可能希望技能和项目更突出，有工作经验的人则可能把工作经历放在更核心的位置。\n\n模块拖拽排序能解决这个问题：不用复制粘贴，不用手动重排版，直接把重点模块前置。\n\n## 模板和主题色可以继续调整\n\n同一份内容，换一个模板或主题色，给人的感觉会很不一样。\n\n比如偏正式岗位可以选择更稳重的模板，互联网或产品方向可以选择更清爽的视觉。主题色切换适合在不重写内容的情况下，快速调整简历气质。\n\n## 适合哪些人\n\n这套流程比较适合：\n\n- 第一次做简历的应届生。\n- 旧简历太乱，想重新整理的人。\n- 用 ChatGPT、豆包、DeepSeek 写了简历内容，但不知道怎么排版导出的人。\n- 想把简历按岗位重点重新组织的人。\n- 不想在 Word 里反复调格式的人。\n\n需要注意的是，AI 生成和润色应该基于真实经历，不建议编造项目、数据或工作成果。比较稳妥的方式是：让 AI 先搭结构和表达，再由自己补充真实细节。\n\n## 总结\n\n我更看重这类简历工具是不是能形成完整闭环：\n\nAI 生成内容 -> 可视化编辑 -> 模板排版 -> 模块调整 -> 导出投递。\n\n如果一个工具只能生成文字，后面仍然要自己排版，那只能解决一半问题。真正省时间的地方，是把内容和排版连在一起。\n\n标签：AI简历、简历制作、应届生简历、求职工具、简历排版",
+  "hashtags": [
+    "AI简历",
+    "简历制作",
+    "求职工具",
+    "应届生简历",
+    "简历排版"
+  ],
+  "images": [
+    {
+      "order": 1,
+      "file": "images/01-cover.png",
+      "role": "cover",
+      "source": "screenshots/raw/desktop/editor-lanzhe-workbench-overview-desktop.png",
+      "overlay_title": "从内容到排版导出"
+    },
+    {
+      "order": 2,
+      "file": "images/02-process.png",
+      "role": "process",
+      "source": "screenshots/process/process-ai-generate-input-to-formatted-resume.png",
+      "overlay_title": "AI先生成初稿"
+    },
+    {
+      "order": 3,
+      "file": "images/03-rich-text.png",
+      "role": "rich-text",
+      "source": "screenshots/raw/desktop/editor-lanzhe-rich-text-active-desktop.png",
+      "overlay_title": "正文可以直接编辑"
+    },
+    {
+      "order": 4,
+      "file": "images/04-module-drag.png",
+      "role": "module-drag",
+      "source": "screenshots/process/process-lanzhe-module-drag-reorder.png",
+      "overlay_title": "模块顺序拖拽调整"
+    },
+    {
+      "order": 5,
+      "file": "images/05-theme-color.png",
+      "role": "theme-color",
+      "source": "screenshots/process/process-lanzhe-theme-color-before-after.png",
+      "overlay_title": "同一份内容切换风格"
+    }
+  ],
+  "publish": {
+    "mode": "manual_confirm",
+    "creator_url": "https://mp.weixin.qq.com/",
+    "published_url": "",
+    "published_at": ""
+  },
+  "generated_at": "2026-06-22T02:31:23.234Z",
+  "cover_strategy": {
+    "generated_at": "2026-06-22T02:39:23.584Z",
+    "platform": "wechat",
+    "platform_label": "微信公众号",
+    "metric_focus": [
+      "打开率",
+      "分享",
+      "在看",
+      "收藏"
+    ],
+    "scoring_dimensions": [
+      "one_second_clarity",
+      "pain_strength",
+      "benefit_clarity",
+      "mobile_readability",
+      "screenshot_proof",
+      "platform_fit"
+    ],
+    "recommended": {
+      "angle": "教程型",
+      "title": "AI 简历从内容到导出",
+      "subtitle": "生成、编辑、排版、导出完整流程",
+      "source_image": "images/02-process.png",
+      "scores": {
+        "one_second_clarity": 5,
+        "pain_strength": 3,
+        "benefit_clarity": 5,
+        "mobile_readability": 5,
+        "screenshot_proof": 4,
+        "platform_fit": 5
+      },
+      "total_score": 27,
+      "max_score": 30,
+      "recommendation_reason": "收益明确，手机端可读性好，符合平台封面节奏"
+    },
+    "candidates": [
+      {
+        "angle": "教程型",
+        "title": "AI 简历从内容到导出",
+        "subtitle": "生成、编辑、排版、导出完整流程",
+        "source_image": "images/02-process.png",
+        "scores": {
+          "one_second_clarity": 5,
+          "pain_strength": 3,
+          "benefit_clarity": 5,
+          "mobile_readability": 5,
+          "screenshot_proof": 4,
+          "platform_fit": 5
+        },
+        "total_score": 27,
+        "max_score": 30,
+        "recommendation_reason": "收益明确，手机端可读性好，符合平台封面节奏"
+      },
+      {
+        "angle": "信任型",
+        "title": "真实简历编辑流程拆解",
+        "subtitle": "用真实界面说明怎么改简历",
+        "source_image": "images/01-cover.png",
+        "scores": {
+          "one_second_clarity": 5,
+          "pain_strength": 3,
+          "benefit_clarity": 5,
+          "mobile_readability": 5,
+          "screenshot_proof": 4,
+          "platform_fit": 5
+        },
+        "total_score": 27,
+        "max_score": 30,
+        "recommendation_reason": "收益明确，手机端可读性好，符合平台封面节奏"
+      },
+      {
+        "angle": "结果型",
+        "title": "从初稿到导出一套做完",
+        "subtitle": "把 AI 文案变成可投递简历",
+        "source_image": "images/03-rich-text.png",
+        "scores": {
+          "one_second_clarity": 5,
+          "pain_strength": 3,
+          "benefit_clarity": 5,
+          "mobile_readability": 5,
+          "screenshot_proof": 4,
+          "platform_fit": 5
+        },
+        "total_score": 27,
+        "max_score": 30,
+        "recommendation_reason": "收益明确，手机端可读性好，符合平台封面节奏"
+      }
+    ],
+    "post_publish_review": {
+      "compare_by": [
+        "打开率",
+        "分享",
+        "在看",
+        "收藏"
+      ],
+      "decision_rule": "优先保留点击/打开表现更好的标题角度，再看收藏、分享和评论质量。"
+    }
+  },
+  "platform_assets": {
+    "generated_at": "2026-06-22T02:44:14.314Z",
+    "platform": "wechat",
+    "status": "ready",
+    "output_dir": "platform-images",
+    "images": [
+      {
+        "role": "cover",
+        "file": "platform-images/cover-900x383.png",
+        "width": 900,
+        "height": 383,
+        "source": "images/01-cover.png"
+      },
+      {
+        "role": "share-cover",
+        "file": "platform-images/share-500x500.png",
+        "width": 500,
+        "height": 500,
+        "source": "images/01-cover.png"
+      },
+      {
+        "order": 1,
+        "role": "body-cover",
+        "file": "platform-images/body-01-cover.png",
+        "width": 1080,
+        "height": 903,
+        "source": "images/01-cover.png"
+      },
+      {
+        "order": 2,
+        "role": "body-process",
+        "file": "platform-images/body-02-process.png",
+        "width": 1080,
+        "height": 1450,
+        "source": "images/02-process.png"
+      },
+      {
+        "order": 3,
+        "role": "body-rich-text",
+        "file": "platform-images/body-03-rich-text.png",
+        "width": 1080,
+        "height": 903,
+        "source": "images/03-rich-text.png"
+      },
+      {
+        "order": 4,
+        "role": "body-module-drag",
+        "file": "platform-images/body-04-module-drag.png",
+        "width": 1080,
+        "height": 1450,
+        "source": "images/04-module-drag.png"
+      },
+      {
+        "order": 5,
+        "role": "body-theme-color",
+        "file": "platform-images/body-05-theme-color.png",
+        "width": 1080,
+        "height": 1450,
+        "source": "images/05-theme-color.png"
+      }
+    ]
+  },
+  "archive_reason": "用户确认微信公众号只做贴图，不再维护公众号长文发布包。",
+  "updated_at": "2026-06-22T02:56:18.590Z"
+}

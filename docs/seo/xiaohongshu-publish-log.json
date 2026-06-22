@@ -1,0 +1,48 @@
+{
+  "generated_at": "2026-06-22T02:13:51.731Z",
+  "updated_at": "2026-06-22T02:14:02.401Z",
+  "records": [
+    {
+      "slug": "ai-resume-editor-click-to-edit",
+      "platform": "xiaohongshu",
+      "status": "published",
+      "title": "简历别折腾 Word，点哪里就能改",
+      "published_url": "https://www.xiaohongshu.com/discovery/item/6a38986e000000002100a2c5?source=webshare&xhsshare=pc_web&xsec_token=YBLuN67aeB4QFZTlRD-VxeWr6tqjE58PyMUI0HAsqxsdQ=&xsec_source=pc_share",
+      "published_at": "2026-06-22T02:10:20.855Z",
+      "note_file": "screenshots/notes/ai-resume-editor-click-to-edit/note.md",
+      "task_file": "screenshots/notes/ai-resume-editor-click-to-edit/publish-task.json",
+      "image_count": 5,
+      "image_roles": [
+        "cover",
+        "workbench",
+        "rich-text",
+        "module-drag",
+        "theme-color"
+      ],
+      "hashtags": [
+        "简历",
+        "AI简历",
+        "简历模板",
+        "应届生简历",
+        "求职简历",
+        "转行简历",
+        "简历排版",
+        "在线简历工具"
+      ],
+      "review_due": {
+        "after_24h": "2026-06-23T02:10:20.855Z",
+        "after_72h": "2026-06-25T02:10:20.855Z",
+        "after_7d": "2026-06-29T02:10:20.855Z"
+      },
+      "metrics": {
+        "views": null,
+        "likes": null,
+        "collects": null,
+        "comments": null,
+        "shares": null,
+        "updated_at": ""
+      },
+      "updated_at": "2026-06-22T02:14:02.401Z"
+    }
+  ]
+}

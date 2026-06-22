@@ -1,0 +1,204 @@
+{
+  "platform": "wechat_image",
+  "slug": "wechat-image-resume-click-to-edit",
+  "status": "published",
+  "title": "简历别再手调 Word",
+  "body": "做简历最烦的不是写不出来，而是写完还要排版。\n\nWord 模板一改就乱，AI 生成的内容还要复制粘贴，想调整模块顺序也很麻烦。\n\n这个工具的思路是：先用 AI 搭初稿，再直接在成品简历上编辑。\n\n点正文就能改，经历描述支持富文本，模块可以拖拽排序，模板和主题色也能继续调整。\n\n比较适合应届生、转行、0-3 年职场人，以及旧简历太乱想重新整理的人。\n\n提醒：AI 适合帮你组织表达，经历和成果还是要基于真实情况改。\n\n#AI简历 #简历制作 #应届生简历 #求职工具 #简历排版",
+  "hashtags": [
+    "AI简历",
+    "简历制作",
+    "求职工具",
+    "应届生简历",
+    "简历排版"
+  ],
+  "images": [
+    {
+      "order": 1,
+      "file": "images/01-cover.png",
+      "role": "cover",
+      "source": "screenshots/process/process-lanzhe-rich-text-click-to-edit.png",
+      "overlay_title": "点哪里就改哪里"
+    },
+    {
+      "order": 2,
+      "file": "images/02-workbench.png",
+      "role": "workbench",
+      "source": "screenshots/raw/desktop/editor-lanzhe-workbench-overview-desktop.png",
+      "overlay_title": "AI生成后继续排版"
+    },
+    {
+      "order": 3,
+      "file": "images/03-rich-text.png",
+      "role": "rich-text",
+      "source": "screenshots/raw/desktop/editor-lanzhe-rich-text-active-desktop.png",
+      "overlay_title": "经历描述精细调整"
+    },
+    {
+      "order": 4,
+      "file": "images/04-module-drag.png",
+      "role": "module-drag",
+      "source": "screenshots/process/process-lanzhe-module-drag-reorder.png",
+      "overlay_title": "重点模块拖到前面"
+    },
+    {
+      "order": 5,
+      "file": "images/05-theme-color.png",
+      "role": "theme-color",
+      "source": "screenshots/process/process-lanzhe-theme-color-before-after.png",
+      "overlay_title": "一键换简历风格"
+    }
+  ],
+  "publish": {
+    "mode": "manual_confirm",
+    "creator_url": "https://mp.weixin.qq.com/",
+    "published_url": "https://mp.weixin.qq.com/s/NvKgtgF-DX7ARfZRm9yOAg",
+    "published_at": "2026-06-22T03:18:20.476Z"
+  },
+  "generated_at": "2026-06-22T02:54:28.636Z",
+  "cover_strategy": {
+    "generated_at": "2026-06-22T02:54:29.077Z",
+    "platform": "wechat_image",
+    "platform_label": "公众号贴图",
+    "metric_focus": [
+      "打开率",
+      "分享",
+      "在看",
+      "收藏"
+    ],
+    "scoring_dimensions": [
+      "one_second_clarity",
+      "pain_strength",
+      "benefit_clarity",
+      "mobile_readability",
+      "screenshot_proof",
+      "platform_fit"
+    ],
+    "recommended": {
+      "angle": "痛点型",
+      "title": "简历别再手调 Word",
+      "subtitle": "点一下，直接改",
+      "source_image": "images/01-cover.png",
+      "scores": {
+        "one_second_clarity": 5,
+        "pain_strength": 5,
+        "benefit_clarity": 3,
+        "mobile_readability": 5,
+        "screenshot_proof": 4,
+        "platform_fit": 5
+      },
+      "total_score": 27,
+      "max_score": 30,
+      "recommendation_reason": "痛点直接，手机端可读性好，符合平台封面节奏"
+    },
+    "candidates": [
+      {
+        "angle": "痛点型",
+        "title": "简历别再手调 Word",
+        "subtitle": "点一下，直接改",
+        "source_image": "images/01-cover.png",
+        "scores": {
+          "one_second_clarity": 5,
+          "pain_strength": 5,
+          "benefit_clarity": 3,
+          "mobile_readability": 5,
+          "screenshot_proof": 4,
+          "platform_fit": 5
+        },
+        "total_score": 27,
+        "max_score": 30,
+        "recommendation_reason": "痛点直接，手机端可读性好，符合平台封面节奏"
+      },
+      {
+        "angle": "动作型",
+        "title": "点哪里就改哪里",
+        "subtitle": "正文、模块、主题都能改",
+        "source_image": "images/01-cover.png",
+        "scores": {
+          "one_second_clarity": 5,
+          "pain_strength": 3,
+          "benefit_clarity": 5,
+          "mobile_readability": 5,
+          "screenshot_proof": 4,
+          "platform_fit": 5
+        },
+        "total_score": 27,
+        "max_score": 30,
+        "recommendation_reason": "收益明确，手机端可读性好，符合平台封面节奏"
+      },
+      {
+        "angle": "结果型",
+        "title": "AI 生成后直接排版",
+        "subtitle": "从 AI 初稿到可投递简历",
+        "source_image": "images/02-workbench.png",
+        "scores": {
+          "one_second_clarity": 5,
+          "pain_strength": 3,
+          "benefit_clarity": 5,
+          "mobile_readability": 5,
+          "screenshot_proof": 4,
+          "platform_fit": 5
+        },
+        "total_score": 27,
+        "max_score": 30,
+        "recommendation_reason": "收益明确，手机端可读性好，符合平台封面节奏"
+      }
+    ],
+    "post_publish_review": {
+      "compare_by": [
+        "打开率",
+        "分享",
+        "在看",
+        "收藏"
+      ],
+      "decision_rule": "优先保留点击/打开表现更好的标题角度，再看收藏、分享和评论质量。"
+    }
+  },
+  "platform_assets": {
+    "generated_at": "2026-06-22T02:54:30.074Z",
+    "platform": "wechat_image",
+    "status": "ready",
+    "output_dir": "platform-images",
+    "images": [
+      {
+        "order": 1,
+        "role": "cover",
+        "file": "platform-images/01-cover-1080x1440.png",
+        "width": 1080,
+        "height": 1440,
+        "source": "images/01-cover.png"
+      },
+      {
+        "order": 2,
+        "role": "workbench",
+        "file": "platform-images/02-workbench-1080x1440.png",
+        "width": 1080,
+        "height": 1440,
+        "source": "images/02-workbench.png"
+      },
+      {
+        "order": 3,
+        "role": "rich-text",
+        "file": "platform-images/03-rich-text-1080x1440.png",
+        "width": 1080,
+        "height": 1440,
+        "source": "images/03-rich-text.png"
+      },
+      {
+        "order": 4,
+        "role": "module-drag",
+        "file": "platform-images/04-module-drag-1080x1440.png",
+        "width": 1080,
+        "height": 1440,
+        "source": "images/04-module-drag.png"
+      },
+      {
+        "order": 5,
+        "role": "theme-color",
+        "file": "platform-images/05-theme-color-1080x1440.png",
+        "width": 1080,
+        "height": 1440,
+        "source": "images/05-theme-color.png"
+      }
+    ]
+  }
+}

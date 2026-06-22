@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-05-31T01:39:34.180Z",
-  "base_url": "http://127.0.0.1:3002",
+  "generated_at": "2026-06-21T12:29:54.670Z",
+  "base_url": "http://127.0.0.1:3004",
   "project": "resume-builder-nextjs",
   "screenshots": [
     {
@@ -45,7 +45,11 @@
         "突出免费 AI 简历制作",
         "指向开始使用按钮",
         "弱化长说明文字"
-      ]
+      ],
+      "actual_size": {
+        "width": 1440,
+        "height": 1000
+      }
     },
     {
       "id": "landing-editor-demo-desktop",
@@ -85,7 +89,11 @@
       "annotation_suggestions": [
         "高亮编辑区和预览区",
         "添加标题：边写边看到成品效果"
-      ]
+      ],
+      "actual_size": {
+        "width": 1440,
+        "height": 1000
+      }
     },
     {
       "id": "landing-features-desktop",
@@ -125,7 +133,11 @@
       "annotation_suggestions": [
         "圈出 3-4 个关键功能卡片",
         "标题强调：写简历常见需求一次覆盖"
-      ]
+      ],
+      "actual_size": {
+        "width": 1440,
+        "height": 1000
+      }
     },
     {
       "id": "templates-center-desktop",
@@ -166,7 +178,11 @@
       "annotation_suggestions": [
         "高亮岗位模板入口",
         "标题：按岗位直接选合适模板"
-      ]
+      ],
+      "actual_size": {
+        "width": 1440,
+        "height": 1000
+      }
     },
     {
       "id": "ai-resume-wizard-desktop",
@@ -205,7 +221,11 @@
       "annotation_suggestions": [
         "高亮输入/步骤区域",
         "标题：不会写简历就让 AI 先生成初稿"
-      ]
+      ],
+      "actual_size": {
+        "width": 1440,
+        "height": 1000
+      }
     },
     {
       "id": "import-resume-desktop",
@@ -246,7 +266,11 @@
       "annotation_suggestions": [
         "高亮上传区域或粘贴区域",
         "标题：旧简历一键导入再优化"
-      ]
+      ],
+      "actual_size": {
+        "width": 1440,
+        "height": 1000
+      }
     },
     {
       "id": "mobile-home-hero",
@@ -286,7 +310,11 @@
       "annotation_suggestions": [
         "添加短标题：手机上也能快速做简历",
         "保留首屏 CTA"
-      ]
+      ],
+      "actual_size": {
+        "width": 390,
+        "height": 844
+      }
     },
     {
       "id": "landing-home-hero-vertical",
@@ -325,7 +353,11 @@
       "annotation_suggestions": [
         "添加大标题：不会写简历？AI 帮你先写好",
         "保留 CTA 和产品预览"
-      ]
+      ],
+      "actual_size": {
+        "width": 1080,
+        "height": 1440
+      }
     },
     {
       "id": "templates-center-vertical",
@@ -363,8 +395,4420 @@
       "annotation_suggestions": [
         "标题：按岗位选模板，不再套错简历",
         "高亮模板卡片区域"
+      ],
+      "actual_size": {
+        "width": 1080,
+        "height": 1440
+      }
+    },
+    {
+      "id": "seo-landing-hero",
+      "file": "docs/seo/website-screenshot/Landing-Hero.png",
+      "page": "首页 Hero SEO 截图",
+      "summary": "展示智简简历首页首屏，用于说明免费 AI 简历制作、在线编辑和无水印导出等总体价值。",
+      "visible_elements": [
+        "首页主标题",
+        "免费生成简历入口",
+        "产品界面预览",
+        "核心数据"
+      ],
+      "features": [
+        "免费 AI 简历制作",
+        "在线简历生成",
+        "PDF 导出",
+        "产品总览"
+      ],
+      "scenarios": [
+        "工具推荐",
+        "免费 AI 简历生成器",
+        "产品总览型推广"
+      ],
+      "best_for": [
+        "封面图",
+        "产品介绍",
+        "SEO 文章配图",
+        "小红书总览笔记"
+      ],
+      "not_for": [
+        "编辑器细节",
+        "导出流程",
+        "AI 润色细节"
+      ],
+      "visual_notes": "已有 SEO 素材，适合和首页首屏截图互补，用作外部文章或小红书封面。",
+      "annotation_suggestions": [
+        "突出免费 AI 简历制作",
+        "高亮产品入口"
+      ],
+      "viewport": {
+        "width": 2572,
+        "height": 1719
+      },
+      "source_type": "existing-seo-screenshot",
+      "actual_size": {
+        "width": 2572,
+        "height": 1719
+      }
+    },
+    {
+      "id": "seo-ai-generation-page",
+      "file": "docs/seo/website-screenshot/AIGenerationPage.png",
+      "page": "AI 简历生成页 SEO 截图",
+      "summary": "展示 AI 简历生成流程页面，适合表达通过引导式问题生成简历初稿。",
+      "visible_elements": [
+        "AI 生成页面",
+        "步骤/选项",
+        "生成入口"
+      ],
+      "features": [
+        "AI 一键生成简历",
+        "身份定制引导",
+        "从零生成初稿"
+      ],
+      "scenarios": [
+        "不会写简历",
+        "应届生第一份简历",
+        "临时投递前快速生成"
+      ],
+      "best_for": [
+        "AI 功能展示",
+        "痛点解决方案",
+        "流程图"
+      ],
+      "not_for": [
+        "旧简历导入",
+        "模板切换",
+        "导出结果"
+      ],
+      "visual_notes": "比普通入口截图更适合说明 AI 生成流程。",
+      "annotation_suggestions": [
+        "高亮步骤区",
+        "标题：不会写就先让 AI 搭初稿"
+      ],
+      "viewport": {
+        "width": 2560,
+        "height": 1730
+      },
+      "source_type": "existing-seo-screenshot",
+      "actual_size": {
+        "width": 2560,
+        "height": 1730
+      }
+    },
+    {
+      "id": "seo-ai-import-text-to-resume",
+      "file": "docs/seo/website-screenshot/AIImport-TextToResume.png",
+      "page": "AI 文本转简历 SEO 截图",
+      "summary": "展示粘贴文本或导入已有内容后，AI 将内容解析成结构化简历的页面。",
+      "visible_elements": [
+        "文本输入区",
+        "AI 解析入口",
+        "导入说明"
+      ],
+      "features": [
+        "AI 文本转简历",
+        "旧简历导入",
+        "结构化解析",
+        "ChatGPT/豆包内容再排版"
+      ],
+      "scenarios": [
+        "旧简历升级",
+        "ChatGPT 生成内容需要排版",
+        "已有文本简历想转在线简历"
+      ],
+      "best_for": [
+        "导入流程",
+        "旧简历优化",
+        "AI 工具用户转化"
+      ],
+      "not_for": [
+        "从零生成简历",
+        "模板中心"
+      ],
+      "visual_notes": "适合承接“AI 生成了一段文字，但还需要排版导出”的内容。",
+      "annotation_suggestions": [
+        "高亮文本输入框",
+        "标题：AI 文本一键变成可编辑简历"
+      ],
+      "viewport": {
+        "width": 2560,
+        "height": 1730
+      },
+      "source_type": "existing-seo-screenshot",
+      "actual_size": {
+        "width": 2560,
+        "height": 1730
+      }
+    },
+    {
+      "id": "seo-dashboard",
+      "file": "docs/seo/website-screenshot/Dashboard.png",
+      "page": "Dashboard 简历管理 SEO 截图",
+      "summary": "展示登录后我的简历管理页，包含 AI 生成、新建、导入和简历卡片管理入口。",
+      "visible_elements": [
+        "我的简历",
+        "AI生成简历",
+        "创建新简历",
+        "导入简历",
+        "简历卡片"
+      ],
+      "features": [
+        "简历管理",
+        "多份简历",
+        "新建简历",
+        "导入简历",
+        "AI 生成入口"
+      ],
+      "scenarios": [
+        "管理多份简历",
+        "不同岗位准备不同版本",
+        "登录后工作台"
+      ],
+      "best_for": [
+        "产品流程图",
+        "资产管理",
+        "多版本简历推广"
+      ],
+      "not_for": [
+        "公开首页",
+        "单条 AI 润色"
+      ],
+      "visual_notes": "适合展示产品闭环，不适合做冷启动封面。",
+      "annotation_suggestions": [
+        "高亮三个快捷入口",
+        "标题：多份简历统一管理"
+      ],
+      "viewport": {
+        "width": 2570,
+        "height": 1728
+      },
+      "source_type": "existing-seo-screenshot",
+      "actual_size": {
+        "width": 2570,
+        "height": 1728
+      }
+    },
+    {
+      "id": "seo-edit-real-time-preview",
+      "file": "docs/seo/website-screenshot/EditPage-RealTimePreview.png",
+      "page": "编辑器实时预览 SEO 截图",
+      "summary": "展示 PC 可视化简历编辑器，体现编辑内容时可以实时看到 A4 简历效果。",
+      "visible_elements": [
+        "简历编辑器",
+        "A4 预览",
+        "工具栏",
+        "设置侧栏"
+      ],
+      "features": [
+        "所见即所得编辑",
+        "实时预览",
+        "在线简历制作",
+        "保存与导出"
+      ],
+      "scenarios": [
+        "Word 排版太麻烦",
+        "想边写边看效果",
+        "需要真实产品界面证明"
+      ],
+      "best_for": [
+        "核心功能图",
+        "效率提升",
+        "产品真实界面"
+      ],
+      "not_for": [
+        "移动端编辑",
+        "模板中心独立介绍"
+      ],
+      "visual_notes": "非常适合作为产品核心功能截图，应优先用于大多数推广笔记。",
+      "annotation_suggestions": [
+        "高亮编辑区和预览区",
+        "标题：边写边看到最终效果"
+      ],
+      "viewport": {
+        "width": 2590,
+        "height": 1725
+      },
+      "source_type": "existing-seo-screenshot",
+      "actual_size": {
+        "width": 2590,
+        "height": 1725
+      }
+    },
+    {
+      "id": "seo-edit-ai-polishing",
+      "file": "docs/seo/website-screenshot/EditPage-AIPolishing.png",
+      "page": "编辑器 AI 润色 SEO 截图",
+      "summary": "展示编辑器内模块级 AI 润色能力，适合表达把流水账经历优化成专业表达。",
+      "visible_elements": [
+        "AI 润色入口",
+        "模块内容",
+        "润色面板/结果"
+      ],
+      "features": [
+        "模块级 AI 润色",
+        "岗位匹配优化",
+        "真实经历合规优化",
+        "内容专业化"
+      ],
+      "scenarios": [
+        "经历写得太平",
+        "不知道怎么写项目经历",
+        "需要根据 JD 优化表达"
+      ],
+      "best_for": [
+        "AI 润色功能",
+        "简历没回应原因分析",
+        "内容优化型笔记"
+      ],
+      "not_for": [
+        "模板中心",
+        "旧简历导入"
+      ],
+      "visual_notes": "适合突出产品区别于普通模板站的核心 AI 能力。",
+      "annotation_suggestions": [
+        "高亮 AI 润色面板",
+        "标题：流水账经历也能改得更专业"
+      ],
+      "viewport": {
+        "width": 2590,
+        "height": 1728
+      },
+      "source_type": "existing-seo-screenshot",
+      "actual_size": {
+        "width": 2590,
+        "height": 1728
+      }
+    },
+    {
+      "id": "seo-edit-drag-drop",
+      "file": "docs/seo/website-screenshot/EditPage-DragDrop.png",
+      "page": "编辑器拖拽排序 SEO 截图",
+      "summary": "展示简历模块拖拽排序能力，适合表达模块顺序和内容结构可以灵活调整。",
+      "visible_elements": [
+        "拖拽手柄",
+        "简历模块",
+        "编辑器画布"
+      ],
+      "features": [
+        "拖拽排序",
+        "模块管理",
+        "可视化编辑"
+      ],
+      "scenarios": [
+        "调整简历结构",
+        "不同岗位突出不同模块",
+        "不想手动改排版"
+      ],
+      "best_for": [
+        "编辑器细节",
+        "流程说明",
+        "结构调整功能"
+      ],
+      "not_for": [
+        "AI 生成首页",
+        "旧简历导入"
+      ],
+      "visual_notes": "适合做功能细节图，通常放在笔记中段。",
+      "annotation_suggestions": [
+        "箭头指向拖拽手柄",
+        "标题：模块顺序直接拖动调整"
+      ],
+      "viewport": {
+        "width": 2590,
+        "height": 1723
+      },
+      "source_type": "existing-seo-screenshot",
+      "actual_size": {
+        "width": 2590,
+        "height": 1723
+      }
+    },
+    {
+      "id": "seo-edit-layout-settings",
+      "file": "docs/seo/website-screenshot/EditPage-LayoutSettings.png",
+      "page": "编辑器布局设置 SEO 截图",
+      "summary": "展示编辑器中的主题、字号、行距、间距等排版设置能力。",
+      "visible_elements": [
+        "布局设置侧栏",
+        "简历预览",
+        "主题/排版控件"
+      ],
+      "features": [
+        "主题定制",
+        "排版设置",
+        "字号调整",
+        "行距间距调整"
+      ],
+      "scenarios": [
+        "简历排版不好看",
+        "想快速调整高级感",
+        "需要适配一页简历"
+      ],
+      "best_for": [
+        "排版优化",
+        "主题定制",
+        "一页简历技巧"
+      ],
+      "not_for": [
+        "AI 生成流程",
+        "Dashboard"
+      ],
+      "visual_notes": "适合展示产品不仅生成内容，还能控制最终视觉效果。",
+      "annotation_suggestions": [
+        "高亮设置侧栏",
+        "标题：字体行距配色都能调"
+      ],
+      "viewport": {
+        "width": 2590,
+        "height": 1724
+      },
+      "source_type": "existing-seo-screenshot",
+      "actual_size": {
+        "width": 2590,
+        "height": 1724
+      }
+    },
+    {
+      "id": "seo-edit-templates",
+      "file": "docs/seo/website-screenshot/EditPage-Templates.png",
+      "page": "编辑器模板切换 SEO 截图",
+      "summary": "展示编辑器内模板切换能力，适合表达同一份内容可以切换不同简历模板。",
+      "visible_elements": [
+        "模板列表",
+        "简历预览",
+        "模板切换入口"
+      ],
+      "features": [
+        "模板切换",
+        "多模板",
+        "岗位模板",
+        "简历预览"
+      ],
+      "scenarios": [
+        "不知道选什么模板",
+        "同一内容换不同风格",
+        "不同岗位准备不同版本"
+      ],
+      "best_for": [
+        "模板卖点",
+        "岗位简历模板",
+        "功能展示"
+      ],
+      "not_for": [
+        "AI 润色",
+        "导入文本"
+      ],
+      "visual_notes": "适合展示模板系统，和模板中心截图互补。",
+      "annotation_suggestions": [
+        "高亮模板列表",
+        "标题：同一份简历一键换模板"
+      ],
+      "viewport": {
+        "width": 2578,
+        "height": 1720
+      },
+      "source_type": "existing-seo-screenshot",
+      "actual_size": {
+        "width": 2578,
+        "height": 1720
+      }
+    },
+    {
+      "id": "landing-use-cases-desktop",
+      "file": "screenshots/raw/desktop/landing-use-cases-desktop.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "actual_size": {
+        "width": 1440,
+        "height": 1000
+      },
+      "page": "首页使用场景区",
+      "summary": "展示产品针对应届生、职场人、AI 工具用户和多岗位投递的场景化解决方案。",
+      "visible_elements": [
+        "使用场景卡片",
+        "不同求职身份",
+        "AI 生成策略",
+        "场景 CTA"
+      ],
+      "features": [
+        "场景化简历生成",
+        "身份定制 AI 引导",
+        "岗位针对性优化"
+      ],
+      "scenarios": [
+        "不知道自己适合哪种简历写法",
+        "需要按求职身份定制内容",
+        "想展示产品覆盖多种人群"
+      ],
+      "best_for": [
+        "痛点场景图",
+        "人群定位图",
+        "解决方案型笔记"
+      ],
+      "not_for": [
+        "编辑器细节",
+        "移动端流程",
+        "导出结果"
+      ],
+      "visual_notes": "四类使用场景信息集中，适合作为第二张痛点/人群覆盖图。",
+      "annotation_suggestions": [
+        "圈出目标人群卡片",
+        "强调按身份生成",
+        "标注不同场景都有解法"
       ]
+    },
+    {
+      "id": "landing-why-free-desktop",
+      "file": "screenshots/raw/desktop/landing-why-free-desktop.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "actual_size": {
+        "width": 1440,
+        "height": 1000
+      },
+      "page": "首页永久免费说明区",
+      "summary": "展示智简简历永久免费、保护隐私、独立开发者维护等信任背书。",
+      "visible_elements": [
+        "永久免费说明",
+        "隐私保护",
+        "独立开发者",
+        "免费生成简历按钮"
+      ],
+      "features": [
+        "永久免费",
+        "无水印导出",
+        "隐私保护",
+        "独立开发者产品"
+      ],
+      "scenarios": [
+        "用户担心导出收费",
+        "需要建立产品信任",
+        "强调无套路免费"
+      ],
+      "best_for": [
+        "信任背书图",
+        "转化总结图",
+        "免费卖点说明"
+      ],
+      "not_for": [
+        "AI 生成流程",
+        "JD 匹配",
+        "模板选择"
+      ],
+      "visual_notes": "文案信任感强，适合作为笔记末尾转化和承诺说明。",
+      "annotation_suggestions": [
+        "突出永久免费",
+        "突出没有付费墙",
+        "弱化大段故事文字"
+      ]
+    },
+    {
+      "id": "about-developer-desktop",
+      "file": "screenshots/raw/desktop/about-developer-desktop.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "actual_size": {
+        "width": 1440,
+        "height": 1000
+      },
+      "page": "关于开发者页面",
+      "summary": "展示独立开发者背景和产品故事，用于强调产品长期维护、有真实开发者负责。",
+      "visible_elements": [
+        "开发者介绍",
+        "产品故事",
+        "免费承诺",
+        "联系方式区域"
+      ],
+      "features": [
+        "独立开发者背书",
+        "产品温度",
+        "长期维护",
+        "用户反馈"
+      ],
+      "scenarios": [
+        "用户担心工具不可靠",
+        "需要讲创始人故事",
+        "强调不是套壳产品"
+      ],
+      "best_for": [
+        "信任背书图",
+        "品牌故事图",
+        "软性种草笔记"
+      ],
+      "not_for": [
+        "核心编辑功能",
+        "模板展示",
+        "AI 生成结果"
+      ],
+      "visual_notes": "适合偏故事型推广，不适合作为纯功能笔记封面。",
+      "annotation_suggestions": [
+        "标注独立开发者作品",
+        "突出产品故事",
+        "少加营销贴纸"
+      ]
+    },
+    {
+      "id": "compare-ai-resume-builders-desktop",
+      "file": "screenshots/raw/desktop/compare-ai-resume-builders-desktop.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "actual_size": {
+        "width": 1440,
+        "height": 1000
+      },
+      "page": "AI 简历工具对比页",
+      "summary": "展示智简简历与其他 AI 简历工具的对比入口，适合“怎么选简历工具”主题。",
+      "visible_elements": [
+        "对比标题",
+        "工具选择建议",
+        "对比内容",
+        "行动按钮"
+      ],
+      "features": [
+        "工具对比",
+        "免费定位",
+        "AI 简历选择建议"
+      ],
+      "scenarios": [
+        "不知道哪个 AI 简历工具好用",
+        "需要写工具测评",
+        "做对比型 SEO/AEO 内容"
+      ],
+      "best_for": [
+        "工具测评笔记",
+        "对比种草图",
+        "SEO 承接图"
+      ],
+      "not_for": [
+        "编辑器操作",
+        "移动端制作",
+        "导出状态"
+      ],
+      "visual_notes": "首屏对比主题明确，适合作为“AI 简历工具怎么选”的封面或正文图。",
+      "annotation_suggestions": [
+        "强调免费可导出",
+        "圈出对比结论",
+        "不要遮挡标题"
+      ]
+    },
+    {
+      "id": "tools-resume-builder-sites-desktop",
+      "file": "screenshots/raw/desktop/tools-resume-builder-sites-desktop.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "actual_size": {
+        "width": 1440,
+        "height": 1000
+      },
+      "page": "简历制作网站推荐页",
+      "summary": "展示简历制作网站推荐和选择建议，适合免费工具合集类内容。",
+      "visible_elements": [
+        "简历网站推荐标题",
+        "选择建议",
+        "工具入口",
+        "行动按钮"
+      ],
+      "features": [
+        "简历网站推荐",
+        "免费简历制作",
+        "工具合集承接"
+      ],
+      "scenarios": [
+        "用户搜索简历制作网站",
+        "想做工具合集推广",
+        "需要自然承接到智简简历"
+      ],
+      "best_for": [
+        "工具合集图",
+        "SEO 承接图",
+        "免费工具推荐"
+      ],
+      "not_for": [
+        "AI 生成细节",
+        "模板编辑状态",
+        "登录后管理"
+      ],
+      "visual_notes": "适合做“我试了几个简历网站”的笔记配图。",
+      "annotation_suggestions": [
+        "突出免费在线制作",
+        "标出推荐理由",
+        "避免文字过密"
+      ]
+    },
+    {
+      "id": "answers-free-ai-resume-builder-desktop",
+      "file": "screenshots/raw/desktop/answers-free-ai-resume-builder-desktop.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "actual_size": {
+        "width": 1440,
+        "height": 1000
+      },
+      "page": "免费 AI 简历制作问答页",
+      "summary": "展示免费 AI 简历制作相关问答内容，用于回答用户对免费、导出、能力范围的疑问。",
+      "visible_elements": [
+        "问答标题",
+        "免费 AI 简历说明",
+        "FAQ 内容",
+        "产品入口"
+      ],
+      "features": [
+        "免费 AI 简历",
+        "问答承接",
+        "疑虑消除"
+      ],
+      "scenarios": [
+        "用户搜索免费 AI 简历制作",
+        "需要解释免费能力",
+        "做 AEO 问答分发"
+      ],
+      "best_for": [
+        "问答型笔记",
+        "疑虑消除图",
+        "免费卖点说明"
+      ],
+      "not_for": [
+        "编辑器具体操作",
+        "模板细节",
+        "移动端步骤"
+      ],
+      "visual_notes": "问答主题明显，适合做“真的免费吗？”类内容。",
+      "annotation_suggestions": [
+        "突出免费 AI 简历",
+        "标出常见问题",
+        "配合截图标题强化疑问"
+      ]
+    },
+    {
+      "id": "answers-best-ai-resume-tool-desktop",
+      "file": "screenshots/raw/desktop/answers-best-ai-resume-tool-desktop.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "actual_size": {
+        "width": 1440,
+        "height": 1000
+      },
+      "page": "最好用 AI 简历工具问答页",
+      "summary": "展示 AI 简历工具选择建议和问答内容，适合做工具推荐/测评主题。",
+      "visible_elements": [
+        "AI 简历工具问答",
+        "选择标准",
+        "产品入口",
+        "推荐说明"
+      ],
+      "features": [
+        "工具选择建议",
+        "AI 简历推荐",
+        "AEO 承接"
+      ],
+      "scenarios": [
+        "用户搜索 AI 简历工具哪个好",
+        "写工具测评笔记",
+        "解释选择标准"
+      ],
+      "best_for": [
+        "测评类笔记",
+        "推荐型配图",
+        "问答承接图"
+      ],
+      "not_for": [
+        "移动端编辑",
+        "导出结果",
+        "会员权益"
+      ],
+      "visual_notes": "适合作为“AI 简历工具怎么选”的正文图。",
+      "annotation_suggestions": [
+        "突出选择标准",
+        "强调免费/导出/模板",
+        "避免遮挡结论"
+      ]
+    },
+    {
+      "id": "articles-list-desktop",
+      "file": "screenshots/raw/desktop/articles-list-desktop.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "actual_size": {
+        "width": 1440,
+        "height": 1000
+      },
+      "page": "求职攻略文章列表",
+      "summary": "展示求职攻略、简历写作文章和内容分类，用于说明产品不仅能做简历，也提供写作指导。",
+      "visible_elements": [
+        "文章列表",
+        "分类筛选",
+        "攻略卡片",
+        "更新时间"
+      ],
+      "features": [
+        "求职攻略",
+        "SEO 内容矩阵",
+        "简历写作指导"
+      ],
+      "scenarios": [
+        "用户想学习简历怎么写",
+        "需要内容矩阵展示",
+        "强调工具和攻略结合"
+      ],
+      "best_for": [
+        "内容生态图",
+        "攻略入口图",
+        "SEO 内容复用"
+      ],
+      "not_for": [
+        "AI 生成结果",
+        "编辑器操作",
+        "导出流程"
+      ],
+      "visual_notes": "适合搭配“不会写简历先看攻略”的主题。",
+      "annotation_suggestions": [
+        "标出攻略分类",
+        "强调模板+攻略联动",
+        "少量箭头即可"
+      ]
+    },
+    {
+      "id": "article-ai-product-manager-desktop",
+      "file": "screenshots/raw/desktop/article-ai-product-manager-desktop.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "actual_size": {
+        "width": 1440,
+        "height": 1000
+      },
+      "page": "AI 产品经理简历攻略文章",
+      "summary": "展示 AI 产品经理简历写作攻略，包含项目经历、技能关键词和模板选择建议。",
+      "visible_elements": [
+        "文章标题",
+        "AI 产品经理简历建议",
+        "目录/正文",
+        "模板链接"
+      ],
+      "features": [
+        "岗位攻略",
+        "AI 新职业内容",
+        "模板内链"
+      ],
+      "scenarios": [
+        "AI 产品经理不知道简历怎么写",
+        "需要岗位内容分发",
+        "SEO 文章转小红书笔记"
+      ],
+      "best_for": [
+        "岗位攻略图",
+        "SEO 文章复用",
+        "新职业求职笔记"
+      ],
+      "not_for": [
+        "编辑器 UI 展示",
+        "导出流程",
+        "移动端操作"
+      ],
+      "visual_notes": "适合做“AI 产品经理简历怎么写”的内容证据图。",
+      "annotation_suggestions": [
+        "突出岗位名",
+        "标出项目经历/关键词",
+        "避免覆盖正文标题"
+      ]
+    },
+    {
+      "id": "examples-list-desktop",
+      "file": "screenshots/raw/desktop/examples-list-desktop.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "actual_size": {
+        "width": 1440,
+        "height": 1000
+      },
+      "page": "简历范文列表",
+      "summary": "展示多个 AI 新职业简历范文入口，用于说明产品提供岗位范文参考。",
+      "visible_elements": [
+        "范文列表",
+        "岗位卡片",
+        "AI 新职业方向",
+        "范文入口"
+      ],
+      "features": [
+        "简历范文",
+        "岗位案例",
+        "新职业内容库"
+      ],
+      "scenarios": [
+        "不知道简历内容怎么参考",
+        "想找岗位范文",
+        "做新职业简历攻略"
+      ],
+      "best_for": [
+        "范文库展示",
+        "岗位内容图",
+        "攻略型笔记"
+      ],
+      "not_for": [
+        "在线编辑操作",
+        "导出结果",
+        "会员权益"
+      ],
+      "visual_notes": "适合做“先看范文再生成简历”的流程图。",
+      "annotation_suggestions": [
+        "圈出范文入口",
+        "强调 AI 新职业覆盖",
+        "避免文字过密"
+      ]
+    },
+    {
+      "id": "example-ai-product-manager-desktop",
+      "file": "screenshots/raw/desktop/example-ai-product-manager-desktop.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "actual_size": {
+        "width": 1440,
+        "height": 1000
+      },
+      "page": "AI 产品经理简历范文详情",
+      "summary": "展示 AI 产品经理简历范文详情页，包括项目经历写法、技能关键词和提醒。",
+      "visible_elements": [
+        "范文标题",
+        "样例简历",
+        "项目经历示例",
+        "写作提醒"
+      ],
+      "features": [
+        "岗位范文",
+        "项目经历表达",
+        "技能关键词参考"
+      ],
+      "scenarios": [
+        "不会写 AI 产品经理项目经历",
+        "需要范文辅助",
+        "做岗位简历教程"
+      ],
+      "best_for": [
+        "范文参考图",
+        "岗位教程图",
+        "内容种草图"
+      ],
+      "not_for": [
+        "产品编辑界面",
+        "移动端流程",
+        "导出页"
+      ],
+      "visual_notes": "内容可信度高，适合正文补充图，不适合作为产品功能封面。",
+      "annotation_suggestions": [
+        "标出范文结构",
+        "强调真实经历要替换",
+        "不要让标注遮挡示例"
+      ]
+    },
+    {
+      "id": "templates-role-ai-product-manager-desktop",
+      "file": "screenshots/raw/desktop/templates-role-ai-product-manager-desktop.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "actual_size": {
+        "width": 1440,
+        "height": 1000
+      },
+      "page": "AI 产品经理岗位模板页",
+      "summary": "展示 AI 产品经理专属简历模板页，包含岗位写作重点、模板推荐和 AI 生成入口。",
+      "visible_elements": [
+        "岗位模板标题",
+        "写作重点",
+        "推荐模板",
+        "AI 生成入口"
+      ],
+      "features": [
+        "岗位模板",
+        "岗位关键词",
+        "模板推荐",
+        "AI 生成入口"
+      ],
+      "scenarios": [
+        "AI 产品经理需要专属模板",
+        "想按岗位选择模板",
+        "做新职业简历推广"
+      ],
+      "best_for": [
+        "岗位模板图",
+        "新职业场景图",
+        "模板选择说明"
+      ],
+      "not_for": [
+        "移动端编辑",
+        "导出结果",
+        "仪表盘管理"
+      ],
+      "visual_notes": "岗位名醒目，适合“AI 产品经理简历模板”主题。",
+      "annotation_suggestions": [
+        "圈出岗位名和生成入口",
+        "标出推荐模板",
+        "强调岗位关键词"
+      ]
+    },
+    {
+      "id": "templates-category-product-desktop",
+      "file": "screenshots/raw/desktop/templates-category-product-desktop.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "actual_size": {
+        "width": 1440,
+        "height": 1000
+      },
+      "page": "产品岗位模板分类页",
+      "summary": "展示产品类岗位模板集合，适合说明产品覆盖多个岗位方向。",
+      "visible_elements": [
+        "产品类模板标题",
+        "岗位列表",
+        "模板入口",
+        "分类说明"
+      ],
+      "features": [
+        "岗位分类模板",
+        "产品岗位覆盖",
+        "模板集合"
+      ],
+      "scenarios": [
+        "用户不确定具体岗位模板",
+        "需要展示模板覆盖范围",
+        "做模板合集推广"
+      ],
+      "best_for": [
+        "模板合集图",
+        "岗位覆盖图",
+        "产品经理人群笔记"
+      ],
+      "not_for": [
+        "单个模板编辑效果",
+        "AI 生成流程",
+        "导出状态"
+      ],
+      "visual_notes": "适合展示模板库规模和岗位覆盖。",
+      "annotation_suggestions": [
+        "突出产品类岗位",
+        "标出多个岗位入口",
+        "不要遮挡卡片标题"
+      ]
+    },
+    {
+      "id": "templates-industry-internet-desktop",
+      "file": "screenshots/raw/desktop/templates-industry-internet-desktop.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "actual_size": {
+        "width": 1440,
+        "height": 1000
+      },
+      "page": "互联网通信行业模板页",
+      "summary": "展示互联网通信行业相关岗位模板集合，覆盖技术、产品、运营等方向。",
+      "visible_elements": [
+        "互联网通信标题",
+        "行业岗位列表",
+        "模板入口",
+        "岗位分类"
+      ],
+      "features": [
+        "行业模板",
+        "互联网岗位覆盖",
+        "模板集合"
+      ],
+      "scenarios": [
+        "互联网求职者选模板",
+        "做行业求职内容",
+        "展示模板库广度"
+      ],
+      "best_for": [
+        "行业模板图",
+        "互联网求职笔记",
+        "模板库覆盖图"
+      ],
+      "not_for": [
+        "单页编辑器",
+        "移动端流程",
+        "导出结果"
+      ],
+      "visual_notes": "适合“互联网岗位简历模板怎么选”主题。",
+      "annotation_suggestions": [
+        "突出互联网通信行业",
+        "圈出技术/产品/运营",
+        "保持清爽"
+      ]
+    },
+    {
+      "id": "ai-resume-wizard-vertical",
+      "file": "screenshots/raw/vertical/ai-resume-wizard-vertical.png",
+      "viewport": {
+        "width": 1080,
+        "height": 1440
+      },
+      "actual_size": {
+        "width": 1080,
+        "height": 1440
+      },
+      "page": "AI 简历生成向导竖版",
+      "summary": "竖版视口展示 AI 简历生成入口，适合小红书封面重设计。",
+      "visible_elements": [
+        "AI 生成标题",
+        "步骤表单",
+        "身份/岗位输入",
+        "生成按钮"
+      ],
+      "features": [
+        "AI 简历生成",
+        "身份引导",
+        "岗位定制"
+      ],
+      "scenarios": [
+        "不会从零写简历",
+        "希望 AI 自动生成初稿",
+        "封面需要展示核心功能"
+      ],
+      "best_for": [
+        "封面图",
+        "功能入口图",
+        "小红书竖版配图"
+      ],
+      "not_for": [
+        "导出结果",
+        "模板中心",
+        "仪表盘管理"
+      ],
+      "visual_notes": "竖版空间适合叠加大标题和卖点标签。",
+      "annotation_suggestions": [
+        "突出 AI 生成入口",
+        "指向关键表单",
+        "避免遮挡按钮"
+      ]
+    },
+    {
+      "id": "import-resume-vertical",
+      "file": "screenshots/raw/vertical/import-resume-vertical.png",
+      "viewport": {
+        "width": 1080,
+        "height": 1440
+      },
+      "actual_size": {
+        "width": 1080,
+        "height": 1440
+      },
+      "page": "AI 文本转简历竖版",
+      "summary": "竖版视口展示粘贴文本导入简历入口，适合“已有内容但排版差”的场景。",
+      "visible_elements": [
+        "导入说明",
+        "文本粘贴区域",
+        "解析入口",
+        "模板排版说明"
+      ],
+      "features": [
+        "AI 文本转简历",
+        "结构化解析",
+        "自动排版"
+      ],
+      "scenarios": [
+        "用 ChatGPT 写了简历但排版不好",
+        "想把文本变成漂亮简历",
+        "已有简历需要快速导入"
+      ],
+      "best_for": [
+        "痛点转解决方案图",
+        "竖版正文图",
+        "导入功能展示"
+      ],
+      "not_for": [
+        "从零生成简历",
+        "岗位模板库",
+        "导出页"
+      ],
+      "visual_notes": "适合重设计成“复制粘贴就能变成简历”的小红书图。",
+      "annotation_suggestions": [
+        "突出粘贴文本",
+        "强调自动解析排版",
+        "标注支持多平台内容"
+      ]
+    },
+    {
+      "id": "tools-jd-match-input-desktop",
+      "file": "screenshots/raw/desktop/tools-jd-match-input-desktop.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "actual_size": {
+        "width": 1440,
+        "height": 1000
+      },
+      "page": "JD 匹配工具输入态",
+      "summary": "展示用户粘贴目标岗位 JD 和简历文本后，准备分析岗位关键词覆盖情况。",
+      "visible_elements": [
+        "目标岗位输入",
+        "岗位 JD 文本框",
+        "简历文本框",
+        "开始分析按钮"
+      ],
+      "features": [
+        "JD 匹配分析",
+        "岗位关键词提取",
+        "简历文本检查"
+      ],
+      "scenarios": [
+        "投递前不知道简历是否匹配 JD",
+        "需要找缺失关键词",
+        "想按岗位优化简历"
+      ],
+      "best_for": [
+        "痛点入口图",
+        "流程步骤图",
+        "JD 匹配功能图"
+      ],
+      "not_for": [
+        "生成结果展示",
+        "模板选择",
+        "移动端编辑"
+      ],
+      "visual_notes": "输入框内容清楚，适合作为“先粘贴 JD 和简历”的步骤图。",
+      "annotation_suggestions": [
+        "标出 JD 和简历两栏",
+        "强调无需上传文件",
+        "指向开始分析按钮"
+      ]
+    },
+    {
+      "id": "tools-jd-match-result-desktop",
+      "file": "screenshots/raw/desktop/tools-jd-match-result-desktop.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "actual_size": {
+        "width": 1440,
+        "height": 1000
+      },
+      "page": "JD 匹配工具结果态",
+      "summary": "展示 JD 匹配分析完成后的匹配分、已覆盖关键词、建议补充关键词和分模块优化建议。",
+      "visible_elements": [
+        "匹配分",
+        "已覆盖关键词",
+        "建议补充关键词",
+        "优先优化建议",
+        "下一步行动"
+      ],
+      "features": [
+        "匹配分分析",
+        "关键词覆盖检查",
+        "缺失关键词建议",
+        "简历优化建议"
+      ],
+      "scenarios": [
+        "投递前检查简历和岗位是否匹配",
+        "想知道简历该补哪些关键词",
+        "需要按 JD 优化项目经历"
+      ],
+      "best_for": [
+        "结果展示图",
+        "核心功能图",
+        "解决方案型笔记"
+      ],
+      "not_for": [
+        "模板选择",
+        "移动端基础信息填写",
+        "关于开发者"
+      ],
+      "visual_notes": "结果信息完整，适合作为 JD 匹配主题笔记的第 3 或第 4 张图。",
+      "annotation_suggestions": [
+        "突出匹配分",
+        "圈出缺失关键词",
+        "标出优先优化建议"
+      ]
+    },
+    {
+      "id": "dashboard-filled-desktop",
+      "file": "screenshots/raw/desktop/dashboard-filled-desktop.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "actual_size": {
+        "width": 1440,
+        "height": 1000
+      },
+      "page": "登录后我的简历仪表盘",
+      "summary": "展示用户登录后管理简历的仪表盘，包含 AI 生成、创建新简历、导入简历和已有简历卡片。",
+      "visible_elements": [
+        "我的简历标题",
+        "AI 生成简历入口",
+        "创建新简历",
+        "导入简历",
+        "简历卡片"
+      ],
+      "features": [
+        "简历管理",
+        "AI 生成入口",
+        "导入入口",
+        "多简历管理"
+      ],
+      "scenarios": [
+        "需要管理多份简历",
+        "想展示产品工作台",
+        "用户已经有简历后继续编辑"
+      ],
+      "best_for": [
+        "产品工作台图",
+        "流程入口图",
+        "多简历管理说明"
+      ],
+      "not_for": [
+        "SEO 攻略",
+        "岗位模板",
+        "移动端表单"
+      ],
+      "visual_notes": "真实登录态页面，适合证明产品不是只有落地页。",
+      "annotation_suggestions": [
+        "圈出三种创建方式",
+        "标出已有简历卡片",
+        "弱化旧版找回提示"
+      ]
+    },
+    {
+      "id": "dashboard-membership-desktop",
+      "file": "screenshots/raw/desktop/dashboard-membership-desktop.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "actual_size": {
+        "width": 1440,
+        "height": 1000
+      },
+      "page": "会员权益页",
+      "summary": "展示会员/权益页面，用于说明高级权益、额度或产品付费边界。",
+      "visible_elements": [
+        "会员权益标题",
+        "权益卡片",
+        "使用额度",
+        "开通/说明按钮"
+      ],
+      "features": [
+        "会员权益",
+        "额度说明",
+        "高级功能边界"
+      ],
+      "scenarios": [
+        "用户关心免费和会员差异",
+        "需要解释权益",
+        "做转化承接图"
+      ],
+      "best_for": [
+        "权益说明图",
+        "转化图",
+        "产品边界说明"
+      ],
+      "not_for": [
+        "免费承诺封面",
+        "编辑器功能",
+        "文章攻略"
+      ],
+      "visual_notes": "如果页面为空或异常，索引仍可标记为低优先级。",
+      "annotation_suggestions": [
+        "突出权益差异",
+        "标注免费可用功能",
+        "避免误导为必须付费"
+      ]
+    },
+    {
+      "id": "dashboard-exports-desktop",
+      "file": "screenshots/raw/desktop/dashboard-exports-desktop.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "actual_size": {
+        "width": 1440,
+        "height": 1000
+      },
+      "page": "导出记录页",
+      "summary": "展示登录后的导出记录入口，用于说明简历导出与历史管理能力。",
+      "visible_elements": [
+        "导出记录标题",
+        "导出列表/空状态",
+        "下载相关说明"
+      ],
+      "features": [
+        "导出记录",
+        "PDF 导出",
+        "文件管理"
+      ],
+      "scenarios": [
+        "用户关心导出后怎么管理",
+        "展示完整闭环",
+        "强调可下载保存"
+      ],
+      "best_for": [
+        "导出闭环图",
+        "工作台补充图",
+        "结果管理说明"
+      ],
+      "not_for": [
+        "从零生成简历",
+        "岗位攻略",
+        "模板中心"
+      ],
+      "visual_notes": "适合放在流程末尾，作为生成后的管理闭环。",
+      "annotation_suggestions": [
+        "突出导出记录",
+        "标注下载/保存能力",
+        "如为空状态可低调使用"
+      ]
+    },
+    {
+      "id": "dashboard-feedback-desktop",
+      "file": "screenshots/raw/desktop/dashboard-feedback-desktop.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "actual_size": {
+        "width": 1440,
+        "height": 1000
+      },
+      "page": "反馈页",
+      "summary": "展示用户反馈入口，用于说明产品可反馈问题、由开发者持续迭代。",
+      "visible_elements": [
+        "反馈标题",
+        "反馈表单/列表",
+        "提交入口"
+      ],
+      "features": [
+        "用户反馈",
+        "产品迭代",
+        "客服/支持"
+      ],
+      "scenarios": [
+        "建立产品信任",
+        "说明开发者会维护",
+        "软性品牌背书"
+      ],
+      "best_for": [
+        "信任背书图",
+        "服务支持说明",
+        "产品迭代图"
+      ],
+      "not_for": [
+        "核心功能封面",
+        "模板展示",
+        "导出结果"
+      ],
+      "visual_notes": "适合较软的品牌信任内容，不建议用于强功能笔记首图。",
+      "annotation_suggestions": [
+        "标注反馈入口",
+        "强调持续维护",
+        "避免过度营销"
+      ]
+    },
+    {
+      "id": "mobile-resumes-list",
+      "file": "screenshots/raw/mobile/mobile-resumes-list.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "actual_size": {
+        "width": 780,
+        "height": 1688
+      },
+      "page": "移动端我的简历列表",
+      "summary": "展示手机端简历列表，可创建、编辑、重命名、复制和删除简历。",
+      "visible_elements": [
+        "移动端标题栏",
+        "简历卡片",
+        "创建按钮",
+        "更多操作"
+      ],
+      "features": [
+        "手机端简历管理",
+        "移动端创建简历",
+        "简历卡片列表"
+      ],
+      "scenarios": [
+        "想在手机上做简历",
+        "需要移动端管理多份简历",
+        "小程序/H5 使用场景"
+      ],
+      "best_for": [
+        "手机端功能图",
+        "移动端流程图",
+        "多端使用说明"
+      ],
+      "not_for": [
+        "PC 编辑器细节",
+        "SEO 文章",
+        "开发者故事"
+      ],
+      "visual_notes": "真实手机比例截图，适合直接作为小红书正文图底图。",
+      "annotation_suggestions": [
+        "突出手机也能管理简历",
+        "圈出创建入口",
+        "保持界面清晰"
+      ]
+    },
+    {
+      "id": "mobile-edit-home",
+      "file": "screenshots/raw/mobile/mobile-edit-home.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "actual_size": {
+        "width": 780,
+        "height": 1688
+      },
+      "page": "移动端编辑首页",
+      "summary": "展示移动端简历编辑首页，包含完成度、基础信息、求职意向、模块列表和预览导出入口。",
+      "visible_elements": [
+        "简历完成度",
+        "个人资料卡",
+        "模块列表",
+        "预览/导出入口"
+      ],
+      "features": [
+        "移动端编辑",
+        "模块化填写",
+        "进度提示",
+        "预览导出"
+      ],
+      "scenarios": [
+        "用手机一步步完善简历",
+        "不知道简历还缺什么",
+        "需要展示移动端主流程"
+      ],
+      "best_for": [
+        "核心移动端图",
+        "流程说明图",
+        "痛点解决图"
+      ],
+      "not_for": [
+        "桌面模板展示",
+        "SEO 攻略",
+        "会员权益"
+      ],
+      "visual_notes": "移动端核心页面，适合作为手机做简历主题的第 2 或第 3 张图。",
+      "annotation_suggestions": [
+        "突出完成度",
+        "圈出模块列表",
+        "标注预览导出入口"
+      ]
+    },
+    {
+      "id": "mobile-edit-work-list",
+      "file": "screenshots/raw/mobile/mobile-edit-work-list.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "actual_size": {
+        "width": 780,
+        "height": 1688
+      },
+      "page": "移动端工作经历列表",
+      "summary": "展示手机端工作经历模块列表，可添加和管理工作经历条目。",
+      "visible_elements": [
+        "工作经历标题",
+        "经历列表",
+        "添加入口",
+        "保存按钮"
+      ],
+      "features": [
+        "工作经历管理",
+        "模块化编辑",
+        "手机端添加经历"
+      ],
+      "scenarios": [
+        "不知道工作经历怎么分段",
+        "需要逐条完善经历",
+        "职场人简历优化"
+      ],
+      "best_for": [
+        "模块编辑图",
+        "职场人场景图",
+        "手机端教程"
+      ],
+      "not_for": [
+        "模板中心",
+        "免费承诺",
+        "SEO 文章"
+      ],
+      "visual_notes": "适合做“按模块填，不用一次写完”的卖点图。",
+      "annotation_suggestions": [
+        "圈出添加经历入口",
+        "强调模块化填写",
+        "必要时标注按时间倒序"
+      ]
+    },
+    {
+      "id": "mobile-edit-skill-form",
+      "file": "screenshots/raw/mobile/mobile-edit-skill-form.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "actual_size": {
+        "width": 780,
+        "height": 1688
+      },
+      "page": "移动端技能特长编辑",
+      "summary": "展示手机端技能模块编辑页，用于整理岗位关键词和能力标签。",
+      "visible_elements": [
+        "技能特长标题",
+        "文本编辑区",
+        "保存按钮",
+        "提示文案"
+      ],
+      "features": [
+        "技能关键词编辑",
+        "模块化填写",
+        "手机端完善简历"
+      ],
+      "scenarios": [
+        "技能栏不会写",
+        "需要补 JD 关键词",
+        "手机端快速完善简历"
+      ],
+      "best_for": [
+        "关键词优化图",
+        "手机端步骤图",
+        "模块编辑图"
+      ],
+      "not_for": [
+        "模板库展示",
+        "导出结果",
+        "关于开发者"
+      ],
+      "visual_notes": "适合和 JD 匹配工具结果搭配使用。",
+      "annotation_suggestions": [
+        "标出技能关键词",
+        "提示对应目标岗位",
+        "少量标签即可"
+      ]
+    },
+    {
+      "id": "mobile-edit-summary-form",
+      "file": "screenshots/raw/mobile/mobile-edit-summary-form.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "actual_size": {
+        "width": 780,
+        "height": 1688
+      },
+      "page": "移动端个人优势编辑",
+      "summary": "展示手机端个人优势/自我评价模块，适合说明简历开头如何快速建立匹配度。",
+      "visible_elements": [
+        "个人优势标题",
+        "富文本编辑区",
+        "保存按钮"
+      ],
+      "features": [
+        "个人优势编辑",
+        "自我评价模块",
+        "移动端优化"
+      ],
+      "scenarios": [
+        "不会写个人优势",
+        "想突出岗位匹配度",
+        "需要修改简历开头"
+      ],
+      "best_for": [
+        "个人优势教程图",
+        "手机端编辑图",
+        "简历优化步骤"
+      ],
+      "not_for": [
+        "导出流程",
+        "模板合集",
+        "会员权益"
+      ],
+      "visual_notes": "适合“简历开头怎么写”的小红书正文图。",
+      "annotation_suggestions": [
+        "突出个人优势模块",
+        "标注先写匹配度",
+        "不要遮挡编辑区"
+      ]
+    },
+    {
+      "id": "mobile-preview-xinghe",
+      "file": "screenshots/raw/mobile/mobile-preview-xinghe.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "actual_size": {
+        "width": 780,
+        "height": 1688
+      },
+      "page": "移动端简历预览",
+      "summary": "展示手机端只读预览页面，可切换模板、调整排版并准备导出。",
+      "visible_elements": [
+        "简历预览",
+        "底部操作栏",
+        "模板设置入口",
+        "导出按钮"
+      ],
+      "features": [
+        "手机端预览",
+        "模板切换",
+        "排版设置",
+        "导出入口"
+      ],
+      "scenarios": [
+        "手机上检查简历效果",
+        "导出前预览排版",
+        "切换模板看成品"
+      ],
+      "best_for": [
+        "结果展示图",
+        "手机端闭环图",
+        "导出前预览"
+      ],
+      "not_for": [
+        "基础信息表单",
+        "SEO 文章",
+        "开发者故事"
+      ],
+      "visual_notes": "手机端成品感强，适合作为移动端流程的结果图。",
+      "annotation_suggestions": [
+        "突出预览成品",
+        "圈出导出入口",
+        "避免遮挡简历正文"
+      ]
+    },
+    {
+      "id": "mobile-export-result",
+      "file": "screenshots/raw/mobile/mobile-export-result.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "actual_size": {
+        "width": 780,
+        "height": 1688
+      },
+      "page": "移动端导出结果页",
+      "summary": "展示手机端 PDF 导出结果页，包含下载文件、复制下载链接和打开文件入口。",
+      "visible_elements": [
+        "导出结果标题",
+        "PDF 已生成",
+        "下载文件按钮",
+        "复制下载链接按钮"
+      ],
+      "features": [
+        "PDF 导出",
+        "移动端下载",
+        "复制链接",
+        "导出闭环"
+      ],
+      "scenarios": [
+        "用户关心能不能保存 PDF",
+        "手机上导出简历",
+        "展示最终结果"
+      ],
+      "best_for": [
+        "结果转化图",
+        "导出闭环图",
+        "手机端功能证明"
+      ],
+      "not_for": [
+        "AI 生成入口",
+        "模板选择",
+        "岗位攻略"
+      ],
+      "visual_notes": "适合作为流程最后一张图，强调简历已经可下载保存。",
+      "annotation_suggestions": [
+        "突出 PDF 已生成",
+        "圈出下载按钮",
+        "避免误导展示真实文件预览"
+      ]
+    },
+    {
+      "id": "mobile-pc-guide",
+      "file": "screenshots/raw/mobile/mobile-pc-guide.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "actual_size": {
+        "width": 780,
+        "height": 1688
+      },
+      "page": "移动端 PC 编辑引导页",
+      "summary": "展示移动端引导用户到 PC 端进行更精细编辑的页面，适合说明多端协作。",
+      "visible_elements": [
+        "PC 编辑提示",
+        "二维码/引导",
+        "继续编辑说明"
+      ],
+      "features": [
+        "多端协作",
+        "PC 精细编辑",
+        "移动端引导"
+      ],
+      "scenarios": [
+        "手机填信息，电脑精修排版",
+        "需要展示跨端能力",
+        "复杂简历建议 PC 编辑"
+      ],
+      "best_for": [
+        "多端协作图",
+        "流程补充图",
+        "编辑体验说明"
+      ],
+      "not_for": [
+        "免费承诺",
+        "岗位攻略",
+        "模板详情"
+      ],
+      "visual_notes": "作为补充图使用，说明产品支持手机和电脑不同使用场景。",
+      "annotation_suggestions": [
+        "标注手机填资料 PC 精修",
+        "少量箭头指向引导区",
+        "不要遮挡二维码/说明"
+      ]
+    },
+    {
+      "id": "mobile-edit-base-form",
+      "file": "screenshots/raw/mobile/mobile-edit-base-form.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "actual_size": {
+        "width": 780,
+        "height": 1688
+      },
+      "page": "移动端基础信息编辑",
+      "summary": "展示手机端基础信息表单，可填写姓名、手机号、邮箱、性别、年龄、城市等。",
+      "visible_elements": [
+        "基础信息标题",
+        "头像入口",
+        "姓名输入",
+        "手机号输入",
+        "邮箱输入",
+        "城市选择"
+      ],
+      "features": [
+        "手机端表单编辑",
+        "基础信息填写",
+        "字段校验"
+      ],
+      "scenarios": [
+        "用手机补简历基础信息",
+        "需要展示填写体验",
+        "从零创建简历流程"
+      ],
+      "best_for": [
+        "步骤说明图",
+        "手机端输入图",
+        "新手教程图"
+      ],
+      "not_for": [
+        "AI 生成卖点",
+        "模板选择",
+        "导出结果"
+      ],
+      "visual_notes": "字段清楚，适合用于“手机也能填完整简历”的步骤图。",
+      "annotation_suggestions": [
+        "突出必填字段",
+        "标注自动校验",
+        "不要遮挡输入框"
+      ]
+    },
+    {
+      "id": "editor-pc-template-panel-desktop",
+      "file": "screenshots/raw/desktop/editor-pc-template-panel-desktop.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "actual_size": {
+        "width": 1440,
+        "height": 1000
+      },
+      "page": "PC 编辑器排版美化面板",
+      "summary": "展示 PC 端在线简历编辑器，左侧为真实简历预览，右侧打开排版美化面板，可切换模板和调整排版。",
+      "visible_elements": [
+        "简历预览",
+        "排版美化面板",
+        "切换模板",
+        "排版设置",
+        "保存按钮",
+        "预览/导出按钮"
+      ],
+      "features": [
+        "所见即所得编辑",
+        "模板切换",
+        "排版设置",
+        "在线保存",
+        "预览导出"
+      ],
+      "scenarios": [
+        "担心简历排版不好看",
+        "想快速切换模板风格",
+        "需要展示 PC 端精细编辑",
+        "强调在线编辑和导出闭环"
+      ],
+      "best_for": [
+        "核心功能图",
+        "模板切换图",
+        "PC 编辑器展示图",
+        "效率提升笔记"
+      ],
+      "not_for": [
+        "移动端填写",
+        "SEO 文章承接",
+        "开发者故事"
+      ],
+      "visual_notes": "产品 UI 信息完整，右侧模板缩略图明显，适合作为展示编辑器真实能力的正文图。",
+      "annotation_suggestions": [
+        "突出右侧模板切换",
+        "圈出预览/导出按钮",
+        "不要遮挡左侧简历正文"
+      ]
+    },
+    {
+      "id": "editor-pc-workbench-overview-desktop",
+      "file": "screenshots/raw/desktop/editor-pc-workbench-overview-desktop.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "actual_size": {
+        "width": 1440,
+        "height": 1000
+      },
+      "page": "PC 编辑器完整工作台",
+      "summary": "展示 PC 端简历编辑器的主工作台，包含顶部撤销保存导出工具栏、模块管理/排版美化/AI 一键优化入口和简历实时预览画布。",
+      "visible_elements": [
+        "顶部工具栏",
+        "模块管理入口",
+        "排版美化入口",
+        "AI一键优化入口",
+        "简历预览画布",
+        "保存和导出按钮"
+      ],
+      "features": [
+        "所见即所得编辑",
+        "实时预览",
+        "保存简历",
+        "PNG/Markdown/PDF 导出入口",
+        "PC 专业编辑工作台"
+      ],
+      "scenarios": [
+        "想在电脑上精细调整简历",
+        "需要展示完整编辑器",
+        "强调边写边看排版效果"
+      ],
+      "best_for": [
+        "编辑场景专项图",
+        "产品功能展示",
+        "小红书正文配图"
+      ],
+      "not_for": [],
+      "visual_notes": "完整工作台信息清楚，适合作为编辑器功能总览图或产品能力总览图。",
+      "annotation_suggestions": [
+        "标出顶部三大编辑入口",
+        "突出右侧保存导出按钮",
+        "不要遮挡简历正文"
+      ]
+    },
+    {
+      "id": "editor-pc-section-manager-desktop",
+      "file": "screenshots/raw/desktop/editor-pc-section-manager-desktop.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "actual_size": {
+        "width": 1440,
+        "height": 1000
+      },
+      "page": "PC 编辑器模块管理面板",
+      "summary": "展示用户可以在右侧模块管理面板中控制照片、求职意向、各经历模块显示，并拖拽调整模块顺序或添加新模块。",
+      "visible_elements": [
+        "模块管理标题",
+        "个人信息照片开关",
+        "求职意向显示开关",
+        "教育经历",
+        "工作经历",
+        "项目经历",
+        "添加模块"
+      ],
+      "features": [
+        "模块显示控制",
+        "模块拖拽排序",
+        "添加自定义模块",
+        "照片显示控制"
+      ],
+      "scenarios": [
+        "简历模块顺序不合理",
+        "想隐藏照片或求职意向",
+        "需要快速增删简历模块"
+      ],
+      "best_for": [
+        "编辑场景专项图",
+        "产品功能展示",
+        "小红书正文配图"
+      ],
+      "not_for": [],
+      "visual_notes": "右侧面板功能集中，适合说明“简历结构可以自由管理”。",
+      "annotation_suggestions": [
+        "圈出模块拖拽列表",
+        "强调添加模块",
+        "标出照片/求职意向开关"
+      ]
+    },
+    {
+      "id": "editor-pc-template-library-desktop",
+      "file": "screenshots/raw/desktop/editor-pc-template-library-desktop.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "actual_size": {
+        "width": 1440,
+        "height": 1000
+      },
+      "page": "PC 编辑器模板切换面板",
+      "summary": "展示编辑器内置的多款简历模板缩略图，用户可以在编辑过程中直接切换模板并即时查看预览效果。",
+      "visible_elements": [
+        "切换模板标签",
+        "模板缩略图网格",
+        "当前模板选中状态",
+        "导入 JSON 简历按钮"
+      ],
+      "features": [
+        "多模板切换",
+        "模板实时预览",
+        "精美原创模板",
+        "导入 JSON 简历"
+      ],
+      "scenarios": [
+        "不知道简历用什么样式",
+        "想快速更换简历风格",
+        "需要展示模板丰富度"
+      ],
+      "best_for": [
+        "编辑场景专项图",
+        "产品功能展示",
+        "小红书正文配图"
+      ],
+      "not_for": [],
+      "visual_notes": "模板缩略图密集，适合做“模板丰富且可直接切换”的功能图。",
+      "annotation_suggestions": [
+        "突出模板网格",
+        "标出当前选中模板",
+        "避免大面积遮挡缩略图"
+      ]
+    },
+    {
+      "id": "editor-pc-template-switched-preview-desktop",
+      "file": "screenshots/raw/desktop/editor-pc-template-switched-preview-desktop.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "actual_size": {
+        "width": 1440,
+        "height": 1000
+      },
+      "page": "PC 编辑器模板切换后预览",
+      "summary": "展示在编辑器内点击模板后，简历画布即时换成另一套视觉风格，说明模板切换不会脱离编辑工作流。",
+      "visible_elements": [
+        "模板缩略图选中态",
+        "更新后的简历预览",
+        "排版美化面板"
+      ],
+      "features": [
+        "一键切换模板",
+        "即时预览模板效果",
+        "不同岗位风格模板"
+      ],
+      "scenarios": [
+        "投递不同岗位想换风格",
+        "需要快速比较模板效果",
+        "强调模板切换很直观"
+      ],
+      "best_for": [
+        "编辑场景专项图",
+        "产品功能展示",
+        "小红书正文配图"
+      ],
+      "not_for": [],
+      "visual_notes": "同时能看到模板面板和新预览，适合说明“点一下就换版式”。",
+      "annotation_suggestions": [
+        "标出被选中的模板",
+        "指向左侧预览变化",
+        "保留简历主体可识别"
+      ]
+    },
+    {
+      "id": "editor-pc-layout-settings-desktop",
+      "file": "screenshots/raw/desktop/editor-pc-layout-settings-desktop.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "actual_size": {
+        "width": 1440,
+        "height": 1000
+      },
+      "page": "PC 编辑器排版设置面板",
+      "summary": "展示全局字号、一页模式、行高、模块间距和页边距等排版控制，适合说明产品可以精细调整简历版式。",
+      "visible_elements": [
+        "文字排版",
+        "全局字号",
+        "一页模式",
+        "行高滑杆",
+        "模块间距滑杆",
+        "页边距设置"
+      ],
+      "features": [
+        "字号调整",
+        "一页模式",
+        "行距调整",
+        "模块间距调整",
+        "页边距调整"
+      ],
+      "scenarios": [
+        "内容太多放不下一页",
+        "简历看起来太挤或太散",
+        "想微调排版细节"
+      ],
+      "best_for": [
+        "编辑场景专项图",
+        "产品功能展示",
+        "小红书正文配图"
+      ],
+      "not_for": [],
+      "visual_notes": "控制项明确，适合做排版能力说明图。",
+      "annotation_suggestions": [
+        "突出一页模式",
+        "标注行距/模块间距滑杆",
+        "不要遮挡右侧控件文字"
+      ]
+    },
+    {
+      "id": "editor-pc-one-page-mode-desktop",
+      "file": "screenshots/raw/desktop/editor-pc-one-page-mode-desktop.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "actual_size": {
+        "width": 1440,
+        "height": 1000
+      },
+      "page": "PC 编辑器一页模式开启状态",
+      "summary": "展示开启一页模式后的排版设置面板，系统会自动压缩字号、行距和间距，帮助信息较多的简历尽量收纳到一页。",
+      "visible_elements": [
+        "一页模式开关",
+        "开启状态",
+        "自动适配提示",
+        "排版滑杆",
+        "简历预览"
+      ],
+      "features": [
+        "一页简历适配",
+        "自动压缩排版参数",
+        "内容容量优化"
+      ],
+      "scenarios": [
+        "简历超过一页",
+        "海投需要一页版简历",
+        "想快速压缩内容但不手动调参数"
+      ],
+      "best_for": [
+        "编辑场景专项图",
+        "产品功能展示",
+        "小红书正文配图"
+      ],
+      "not_for": [],
+      "visual_notes": "适合说明“内容多也能尝试自动压到一页”。",
+      "annotation_suggestions": [
+        "圈出一页模式开启状态",
+        "标出自动适配提示",
+        "保留左侧预览效果"
+      ]
+    },
+    {
+      "id": "editor-pc-theme-color-picker-desktop",
+      "file": "screenshots/raw/desktop/editor-pc-theme-color-picker-desktop.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "actual_size": {
+        "width": 1440,
+        "height": 1000
+      },
+      "page": "PC 编辑器主题色设置",
+      "summary": "展示主题主色选择器和颜色预设，用户可以根据岗位、行业或个人风格调整简历的强调色。",
+      "visible_elements": [
+        "色彩风格",
+        "主题主色",
+        "当前颜色",
+        "颜色预设",
+        "恢复模板默认色"
+      ],
+      "features": [
+        "主题色切换",
+        "自定义颜色",
+        "模板默认色恢复",
+        "视觉风格调整"
+      ],
+      "scenarios": [
+        "想让简历更有设计感",
+        "需要匹配不同行业风格",
+        "模板颜色不符合个人偏好"
+      ],
+      "best_for": [
+        "编辑场景专项图",
+        "产品功能展示",
+        "小红书正文配图"
+      ],
+      "not_for": [],
+      "visual_notes": "颜色面板很适合做“主题可切换”的卖点图。",
+      "annotation_suggestions": [
+        "突出颜色预设",
+        "标出当前颜色",
+        "避免遮挡右侧弹层"
+      ]
+    },
+    {
+      "id": "editor-pc-ai-optimize-input-desktop",
+      "file": "screenshots/raw/desktop/editor-pc-ai-optimize-input-desktop.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "actual_size": {
+        "width": 1440,
+        "height": 1000
+      },
+      "page": "PC 编辑器 AI 一键优化输入面板",
+      "summary": "展示 AI 一键优化简历面板，用户可以选择求职身份、粘贴目标岗位 JD，并看到系统将优化哪些经历模块。",
+      "visible_elements": [
+        "求职身份",
+        "目标岗位 JD",
+        "可优化模块列表",
+        "一键优化简历按钮",
+        "剩余次数"
+      ],
+      "features": [
+        "AI 一键优化简历",
+        "按 JD 优化",
+        "求职身份选择",
+        "模块级优化范围预览"
+      ],
+      "scenarios": [
+        "不知道怎么按岗位改简历",
+        "投递前想匹配 JD",
+        "需要快速优化经历表达"
+      ],
+      "best_for": [
+        "编辑场景专项图",
+        "产品功能展示",
+        "小红书正文配图"
+      ],
+      "not_for": [],
+      "visual_notes": "输入态功能完整，适合作为 AI 优化流程的第一张功能图。",
+      "annotation_suggestions": [
+        "突出 JD 输入框",
+        "标出将优化的模块列表",
+        "指向一键优化按钮"
+      ]
+    },
+    {
+      "id": "editor-pc-ai-optimize-preview-desktop",
+      "file": "screenshots/raw/desktop/editor-pc-ai-optimize-preview-desktop.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "actual_size": {
+        "width": 1440,
+        "height": 1000
+      },
+      "page": "PC 编辑器 AI 优化结果预览",
+      "summary": "展示 AI 优化完成后的模块级差异预览，用户可以逐条查看原文和优化后内容，并选择是否应用到简历。",
+      "visible_elements": [
+        "AI 优化了多个模块",
+        "原文",
+        "优化后",
+        "全部选中",
+        "应用选中的优化",
+        "放弃不做修改"
+      ],
+      "features": [
+        "AI 优化预览",
+        "原文/优化后对比",
+        "逐项选择应用",
+        "可撤销式编辑流程"
+      ],
+      "scenarios": [
+        "担心 AI 直接改坏简历",
+        "想先审核优化结果",
+        "需要展示 AI 不是黑箱改写"
+      ],
+      "best_for": [
+        "编辑场景专项图",
+        "产品功能展示",
+        "小红书正文配图"
+      ],
+      "not_for": [],
+      "visual_notes": "结果预览可信度高，适合做 AI 卖点的核心截图。",
+      "annotation_suggestions": [
+        "圈出原文/优化后对比",
+        "标出应用选中按钮",
+        "强调先预览再应用"
+      ]
+    },
+    {
+      "id": "mobile-edit-home-editing-dashboard",
+      "file": "screenshots/raw/mobile/mobile-edit-home-editing-dashboard.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "actual_size": {
+        "width": 780,
+        "height": 1688
+      },
+      "page": "移动端编辑首页工作台",
+      "summary": "展示手机端编辑首页，包含完整度、基础信息、快捷操作、求职意向、各简历模块和底部模块管理/预览入口。",
+      "visible_elements": [
+        "简历完整度",
+        "基础信息卡片",
+        "AI 生成",
+        "导入简历",
+        "电脑编辑",
+        "求职意向",
+        "模块列表",
+        "模块管理",
+        "预览简历"
+      ],
+      "features": [
+        "移动端简历编辑",
+        "完整度提示",
+        "AI 生成入口",
+        "导入简历入口",
+        "预览简历入口"
+      ],
+      "scenarios": [
+        "想用手机快速修改简历",
+        "需要展示移动端首页",
+        "强调手机端也能完成完整编辑"
+      ],
+      "best_for": [
+        "移动端编辑展示",
+        "编辑场景专项图",
+        "小红书步骤图"
+      ],
+      "not_for": [],
+      "visual_notes": "移动端总览信息丰富，适合作为“手机也能做简历”的正文图。",
+      "annotation_suggestions": [
+        "标出底部预览简历按钮",
+        "圈出快捷操作",
+        "强调完整度提示"
+      ]
+    },
+    {
+      "id": "mobile-edit-module-management-sheet",
+      "file": "screenshots/raw/mobile/mobile-edit-module-management-sheet.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "actual_size": {
+        "width": 780,
+        "height": 1688
+      },
+      "page": "移动端模块管理弹层",
+      "summary": "展示手机端模块管理底部弹层，可以控制证件照、求职意向显示，并调整各模块的展示状态和顺序。",
+      "visible_elements": [
+        "模块管理",
+        "控制基础展示项",
+        "证件照",
+        "求职意向",
+        "展示模块",
+        "教育经历",
+        "工作经历",
+        "项目经历"
+      ],
+      "features": [
+        "移动端模块管理",
+        "显示/隐藏模块",
+        "基础展示项控制",
+        "模块顺序管理"
+      ],
+      "scenarios": [
+        "想在手机上整理简历结构",
+        "需要隐藏或展示某个模块",
+        "强调移动端不是只读预览"
+      ],
+      "best_for": [
+        "移动端编辑展示",
+        "编辑场景专项图",
+        "小红书步骤图"
+      ],
+      "not_for": [],
+      "visual_notes": "弹层形态清晰，适合说明移动端也能做结构调整。",
+      "annotation_suggestions": [
+        "标出证件照/求职意向开关",
+        "圈出展示模块列表",
+        "保留底部弹层边界"
+      ]
+    },
+    {
+      "id": "mobile-edit-intention-form-detailed",
+      "file": "screenshots/raw/mobile/mobile-edit-intention-form-detailed.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "actual_size": {
+        "width": 780,
+        "height": 1688
+      },
+      "page": "移动端求职意向编辑表单",
+      "summary": "展示手机端填写求职岗位、城市、薪资、求职类型、行业和当前状态的表单，用于说明求职目标会参与后续简历优化。",
+      "visible_elements": [
+        "意向岗位",
+        "意向城市",
+        "期望薪资",
+        "求职类型",
+        "期望行业",
+        "当前状态",
+        "保存按钮"
+      ],
+      "features": [
+        "求职意向编辑",
+        "城市自动补全",
+        "薪资选项",
+        "岗位目标结构化"
+      ],
+      "scenarios": [
+        "需要按目标岗位优化简历",
+        "手机上补充求职目标",
+        "做求职信息结构化"
+      ],
+      "best_for": [
+        "移动端编辑展示",
+        "编辑场景专项图",
+        "小红书步骤图"
+      ],
+      "not_for": [],
+      "visual_notes": "表单项完整，适合做“先明确目标岗位”的步骤图。",
+      "annotation_suggestions": [
+        "突出意向岗位",
+        "标出薪资和行业字段",
+        "不要遮挡保存按钮"
+      ]
+    },
+    {
+      "id": "mobile-edit-education-list-reorder",
+      "file": "screenshots/raw/mobile/mobile-edit-education-list-reorder.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "actual_size": {
+        "width": 780,
+        "height": 1688
+      },
+      "page": "移动端教育经历列表",
+      "summary": "展示手机端教育经历列表，支持进入详情、添加新经历，以及对经历进行上移、下移或删除。",
+      "visible_elements": [
+        "教育经历",
+        "学校条目",
+        "专业学历",
+        "上移",
+        "下移",
+        "删除",
+        "添加一条教育经历"
+      ],
+      "features": [
+        "教育经历管理",
+        "经历排序",
+        "添加经历",
+        "删除经历"
+      ],
+      "scenarios": [
+        "需要补充教育背景",
+        "想调整经历顺序",
+        "手机端管理列表型模块"
+      ],
+      "best_for": [
+        "移动端编辑展示",
+        "编辑场景专项图",
+        "小红书步骤图"
+      ],
+      "not_for": [],
+      "visual_notes": "列表操作按钮很明确，适合说明移动端支持模块内排序。",
+      "annotation_suggestions": [
+        "标出上移/下移按钮",
+        "圈出添加一条教育经历",
+        "弱化顶部返回"
+      ]
+    },
+    {
+      "id": "mobile-edit-education-detail-form",
+      "file": "screenshots/raw/mobile/mobile-edit-education-detail-form.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "actual_size": {
+        "width": 780,
+        "height": 1688
+      },
+      "page": "移动端教育经历详情表单",
+      "summary": "展示手机端教育经历详情编辑，包括学校、专业、学历、起止时间和课程/成绩等字段。",
+      "visible_elements": [
+        "学校名称",
+        "专业",
+        "学历",
+        "开始时间",
+        "结束时间",
+        "主修课程或成绩",
+        "保存按钮"
+      ],
+      "features": [
+        "教育经历详情编辑",
+        "时间字段填写",
+        "课程成绩补充",
+        "移动端保存"
+      ],
+      "scenarios": [
+        "应届生补充教育背景",
+        "手机端编辑单条经历",
+        "需要说明字段很完整"
+      ],
+      "best_for": [
+        "移动端编辑展示",
+        "编辑场景专项图",
+        "小红书步骤图"
+      ],
+      "not_for": [],
+      "visual_notes": "适合作为“简历内容可以逐项精修”的步骤图。",
+      "annotation_suggestions": [
+        "突出学校/专业/学历字段",
+        "标出主修课程输入区",
+        "保留保存按钮"
+      ]
+    },
+    {
+      "id": "mobile-edit-work-list-reorder",
+      "file": "screenshots/raw/mobile/mobile-edit-work-list-reorder.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "actual_size": {
+        "width": 780,
+        "height": 1688
+      },
+      "page": "移动端工作经历列表",
+      "summary": "展示手机端工作经历列表，包含公司、岗位、时间、经历摘要，以及上移/下移/删除操作。",
+      "visible_elements": [
+        "工作经历",
+        "公司名称",
+        "岗位和时间",
+        "经历摘要",
+        "上移",
+        "下移",
+        "删除",
+        "添加一条工作经历"
+      ],
+      "features": [
+        "工作经历管理",
+        "经历排序",
+        "经历摘要预览",
+        "添加工作经历"
+      ],
+      "scenarios": [
+        "职场人整理工作经历",
+        "需要调整经历顺序",
+        "展示移动端列表编辑能力"
+      ],
+      "best_for": [
+        "移动端编辑展示",
+        "编辑场景专项图",
+        "小红书步骤图"
+      ],
+      "not_for": [],
+      "visual_notes": "工作经历是简历核心模块，适合大量推广笔记复用。",
+      "annotation_suggestions": [
+        "标出经历摘要",
+        "圈出排序按钮",
+        "强调可继续添加经历"
+      ]
+    },
+    {
+      "id": "mobile-edit-work-detail-rich-form",
+      "file": "screenshots/raw/mobile/mobile-edit-work-detail-rich-form.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "actual_size": {
+        "width": 780,
+        "height": 1688
+      },
+      "page": "移动端工作经历详情表单",
+      "summary": "展示手机端单条工作经历的详细编辑表单，包含公司、岗位、行业、起止时间和富文本职责成果描述。",
+      "visible_elements": [
+        "公司名称",
+        "职位名称",
+        "所属行业",
+        "开始时间",
+        "结束时间",
+        "工作内容",
+        "保存按钮"
+      ],
+      "features": [
+        "工作经历详情编辑",
+        "富文本经历描述",
+        "行业字段",
+        "时间字段"
+      ],
+      "scenarios": [
+        "优化工作经历表达",
+        "补充量化成果",
+        "手机端精细修改核心经历"
+      ],
+      "best_for": [
+        "移动端编辑展示",
+        "编辑场景专项图",
+        "小红书步骤图"
+      ],
+      "not_for": [],
+      "visual_notes": "字段完整且内容丰富，适合说明产品支持精修工作经历。",
+      "annotation_suggestions": [
+        "突出工作内容编辑区",
+        "标出公司/岗位字段",
+        "不要遮挡底部保存状态"
+      ]
+    },
+    {
+      "id": "mobile-edit-project-list-reorder",
+      "file": "screenshots/raw/mobile/mobile-edit-project-list-reorder.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "actual_size": {
+        "width": 780,
+        "height": 1688
+      },
+      "page": "移动端项目经历列表",
+      "summary": "展示手机端项目经历列表，可以查看项目名称、角色、时间和项目摘要，并进行排序和删除。",
+      "visible_elements": [
+        "项目经历",
+        "项目名称",
+        "项目角色",
+        "项目摘要",
+        "上移",
+        "下移",
+        "删除",
+        "添加一个项目经历"
+      ],
+      "features": [
+        "项目经历管理",
+        "项目排序",
+        "项目摘要预览",
+        "添加项目经历"
+      ],
+      "scenarios": [
+        "项目经历很多需要整理",
+        "求职者想突出重点项目",
+        "展示手机端项目模块能力"
+      ],
+      "best_for": [
+        "移动端编辑展示",
+        "编辑场景专项图",
+        "小红书步骤图"
+      ],
+      "not_for": [],
+      "visual_notes": "适合项目/产品/技术岗位笔记，能证明项目经历可单独管理。",
+      "annotation_suggestions": [
+        "标出项目摘要",
+        "圈出添加项目入口",
+        "强调上移下移"
+      ]
+    },
+    {
+      "id": "mobile-edit-project-detail-rich-form",
+      "file": "screenshots/raw/mobile/mobile-edit-project-detail-rich-form.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "actual_size": {
+        "width": 780,
+        "height": 1688
+      },
+      "page": "移动端项目经历详情表单",
+      "summary": "展示手机端单条项目经历编辑，包含项目名称、角色、起止时间和项目描述/成果等富文本内容。",
+      "visible_elements": [
+        "项目名称",
+        "项目角色",
+        "开始时间",
+        "结束时间",
+        "项目内容",
+        "保存按钮"
+      ],
+      "features": [
+        "项目经历详情编辑",
+        "项目角色填写",
+        "成果描述",
+        "富文本编辑"
+      ],
+      "scenarios": [
+        "需要把项目经历写得更专业",
+        "产品/技术岗补充项目成果",
+        "手机端编辑核心项目"
+      ],
+      "best_for": [
+        "移动端编辑展示",
+        "编辑场景专项图",
+        "小红书步骤图"
+      ],
+      "not_for": [],
+      "visual_notes": "适合说明产品能细化项目经历，而不是只填基础信息。",
+      "annotation_suggestions": [
+        "突出项目内容编辑区",
+        "标出项目角色",
+        "保留保存按钮"
+      ]
+    },
+    {
+      "id": "mobile-edit-skill-rich-text-form",
+      "file": "screenshots/raw/mobile/mobile-edit-skill-rich-text-form.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "actual_size": {
+        "width": 780,
+        "height": 1688
+      },
+      "page": "移动端相关技能编辑",
+      "summary": "展示手机端相关技能富文本编辑表单，用于填写产品方法、AI 技术理解、业务指标等结构化技能内容。",
+      "visible_elements": [
+        "相关技能",
+        "富文本编辑区",
+        "技能内容",
+        "保存按钮"
+      ],
+      "features": [
+        "技能特长编辑",
+        "富文本内容编辑",
+        "结构化技能描述"
+      ],
+      "scenarios": [
+        "想补充岗位关键词",
+        "技术/产品能力需要结构化展示",
+        "手机端完善技能模块"
+      ],
+      "best_for": [
+        "移动端编辑展示",
+        "编辑场景专项图",
+        "小红书步骤图"
+      ],
+      "not_for": [],
+      "visual_notes": "技能内容与岗位关键词强相关，适合讲“关键词补齐”。",
+      "annotation_suggestions": [
+        "圈出技能编辑区",
+        "强调岗位关键词",
+        "不要遮挡保存按钮"
+      ]
+    },
+    {
+      "id": "mobile-edit-summary-rich-text-form",
+      "file": "screenshots/raw/mobile/mobile-edit-summary-rich-text-form.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "actual_size": {
+        "width": 780,
+        "height": 1688
+      },
+      "page": "移动端自我评价编辑",
+      "summary": "展示手机端自我评价编辑页，支持用简短段落总结个人优势、岗位匹配度和代表性经验。",
+      "visible_elements": [
+        "自我评价",
+        "富文本编辑区",
+        "个人优势内容",
+        "保存按钮"
+      ],
+      "features": [
+        "自我评价编辑",
+        "个人优势撰写",
+        "富文本段落输入"
+      ],
+      "scenarios": [
+        "不知道个人优势怎么写",
+        "需要补充简历开头总结",
+        "手机端快速改自我介绍"
+      ],
+      "best_for": [
+        "移动端编辑展示",
+        "编辑场景专项图",
+        "小红书步骤图"
+      ],
+      "not_for": [],
+      "visual_notes": "适合作为“30 秒自我介绍也能在手机上改”的步骤图。",
+      "annotation_suggestions": [
+        "突出自我评价文本区",
+        "标出保存按钮",
+        "保持画面干净"
+      ]
+    },
+    {
+      "id": "mobile-edit-qualifications-form-detailed",
+      "file": "screenshots/raw/mobile/mobile-edit-qualifications-form-detailed.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "actual_size": {
+        "width": 780,
+        "height": 1688
+      },
+      "page": "移动端奖项证书编辑",
+      "summary": "展示手机端奖项证书编辑页，适合填写认证、语言成绩、荣誉奖项等补充背书信息。",
+      "visible_elements": [
+        "奖项证书",
+        "富文本编辑区",
+        "证书内容",
+        "保存按钮"
+      ],
+      "features": [
+        "奖项证书编辑",
+        "补充背书信息",
+        "富文本输入"
+      ],
+      "scenarios": [
+        "需要补充证书和奖项",
+        "学生或转行用户增加可信度",
+        "手机端完善补充模块"
+      ],
+      "best_for": [
+        "移动端编辑展示",
+        "编辑场景专项图",
+        "小红书步骤图"
+      ],
+      "not_for": [],
+      "visual_notes": "适合补充模块能力展示，和教育/技能截图形成完整编辑闭环。",
+      "annotation_suggestions": [
+        "标出奖项证书输入区",
+        "强调补充背书",
+        "保留底部保存状态"
+      ]
+    },
+    {
+      "id": "mobile-preview-settings-template-sheet",
+      "file": "screenshots/raw/mobile/mobile-preview-settings-template-sheet.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "actual_size": {
+        "width": 780,
+        "height": 1688
+      },
+      "page": "移动端预览模板设置弹层",
+      "summary": "展示手机端预览页的样式设置弹层，默认模板页签中列出多款简历模板，可直接在手机上切换预览。",
+      "visible_elements": [
+        "简历预览",
+        "调整样式",
+        "模板页签",
+        "模板缩略图",
+        "恢复默认",
+        "完成"
+      ],
+      "features": [
+        "移动端模板切换",
+        "预览中调整样式",
+        "多模板选择"
+      ],
+      "scenarios": [
+        "手机上选择简历模板",
+        "想边预览边换模板",
+        "展示移动端样式设置能力"
+      ],
+      "best_for": [
+        "移动端编辑展示",
+        "编辑场景专项图",
+        "小红书步骤图"
+      ],
+      "not_for": [],
+      "visual_notes": "底部弹层和上方预览同时可见，适合说明“手机上也能换模板”。",
+      "annotation_suggestions": [
+        "圈出模板页签",
+        "标出模板缩略图",
+        "保留上方预览背景"
+      ]
+    },
+    {
+      "id": "mobile-preview-settings-appearance-theme",
+      "file": "screenshots/raw/mobile/mobile-preview-settings-appearance-theme.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "actual_size": {
+        "width": 780,
+        "height": 1688
+      },
+      "page": "移动端预览外观设置",
+      "summary": "展示手机端预览页的外观设置，可调整主题色和字体，让简历视觉风格匹配岗位或个人偏好。",
+      "visible_elements": [
+        "外观页签",
+        "主题色",
+        "颜色圆点",
+        "自定义颜色",
+        "模板默认色",
+        "字体"
+      ],
+      "features": [
+        "移动端主题色切换",
+        "字体切换",
+        "模板默认色查看"
+      ],
+      "scenarios": [
+        "手机上调整简历颜色",
+        "想让简历更适合岗位风格",
+        "展示主题切换能力"
+      ],
+      "best_for": [
+        "移动端编辑展示",
+        "编辑场景专项图",
+        "小红书步骤图"
+      ],
+      "not_for": [],
+      "visual_notes": "颜色选择区域视觉鲜明，适合做主题切换卖点图。",
+      "annotation_suggestions": [
+        "标出主题色圆点",
+        "圈出字体选项",
+        "避免遮挡完成按钮"
+      ]
+    },
+    {
+      "id": "mobile-preview-settings-layout-density",
+      "file": "screenshots/raw/mobile/mobile-preview-settings-layout-density.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "actual_size": {
+        "width": 780,
+        "height": 1688
+      },
+      "page": "移动端预览版式设置",
+      "summary": "展示手机端版式设置，包括紧凑/标准/舒展密度，以及字号、行距、模块间距和页边距滑杆。",
+      "visible_elements": [
+        "版式页签",
+        "内容密度",
+        "紧凑",
+        "标准",
+        "舒展",
+        "字号基准",
+        "行距",
+        "模块间距"
+      ],
+      "features": [
+        "移动端版式调整",
+        "内容密度预设",
+        "字号行距调整",
+        "页边距设置"
+      ],
+      "scenarios": [
+        "手机上微调简历排版",
+        "内容太多需要压缩",
+        "想让版面更舒展"
+      ],
+      "best_for": [
+        "移动端编辑展示",
+        "编辑场景专项图",
+        "小红书步骤图"
+      ],
+      "not_for": [],
+      "visual_notes": "版式设置项密集但清晰，适合说明“排版不是固定死的”。",
+      "annotation_suggestions": [
+        "突出内容密度三档",
+        "标出字号/行距滑杆",
+        "少量文字标注即可"
+      ]
+    },
+    {
+      "id": "mobile-preview-settings-one-page-mode",
+      "file": "screenshots/raw/mobile/mobile-preview-settings-one-page-mode.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "actual_size": {
+        "width": 780,
+        "height": 1688
+      },
+      "page": "移动端预览单页模式设置",
+      "summary": "展示手机端单页模式设置，可开启自动适配一页，并调整标题放大倍率和段落首行缩进。",
+      "visible_elements": [
+        "单页页签",
+        "单页模式",
+        "开关",
+        "标题放大倍率",
+        "段落首行缩进",
+        "完成"
+      ],
+      "features": [
+        "移动端一页模式",
+        "自动适配一页",
+        "标题比例调整",
+        "段落缩进调整"
+      ],
+      "scenarios": [
+        "想把简历压到一页",
+        "手机上调整最终投递版",
+        "需要展示一页简历能力"
+      ],
+      "best_for": [
+        "移动端编辑展示",
+        "编辑场景专项图",
+        "小红书步骤图"
+      ],
+      "not_for": [],
+      "visual_notes": "单页模式信息明确，适合和 PC 一页模式截图互补。",
+      "annotation_suggestions": [
+        "圈出单页模式开关",
+        "标出标题放大倍率",
+        "保留完成按钮"
+      ]
+    },
+    {
+      "id": "mobile-preview-export-menu",
+      "file": "screenshots/raw/mobile/mobile-preview-export-menu.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "actual_size": {
+        "width": 780,
+        "height": 1688
+      },
+      "page": "移动端预览导出菜单",
+      "summary": "展示手机端预览页底部导出菜单，用户可以选择导出 PDF 或导出图片。",
+      "visible_elements": [
+        "简历预览",
+        "样式按钮",
+        "导出按钮",
+        "导出 PDF",
+        "导出图片"
+      ],
+      "features": [
+        "移动端导出",
+        "PDF 导出",
+        "图片导出",
+        "预览后导出"
+      ],
+      "scenarios": [
+        "手机上完成简历后直接导出",
+        "需要保存图片或 PDF",
+        "展示编辑到导出的闭环"
+      ],
+      "best_for": [
+        "移动端编辑展示",
+        "编辑场景专项图",
+        "小红书步骤图"
+      ],
+      "not_for": [],
+      "visual_notes": "导出菜单非常适合作为流程末尾的转化图。",
+      "annotation_suggestions": [
+        "突出导出 PDF/图片两个选项",
+        "标出底部导出按钮",
+        "不要遮挡简历预览主体"
+      ]
+    },
+    {
+      "id": "process-theme-color-before-after",
+      "file": "screenshots/process/process-theme-color-before-after.png",
+      "asset_type": "process-comparison",
+      "page": "主题色切换前后对比图",
+      "summary": "展示同一份简历从默认紫色主题切换到蓝色主题后的视觉变化，适合说明主题切换不是抽象功能，而是能直接改变最终简历风格。",
+      "visible_elements": [
+        "切换前简历",
+        "切换后简历",
+        "主题色变化",
+        "同一份简历内容"
+      ],
+      "features": [
+        "主题色切换",
+        "简历风格调整",
+        "前后对比"
+      ],
+      "scenarios": [
+        "用户想看换主题色后的真实变化",
+        "推广主题切换能力",
+        "说明简历视觉风格可定制"
+      ],
+      "best_for": [
+        "前后对比图",
+        "小红书过程图",
+        "编辑卖点展示"
+      ],
+      "not_for": [
+        "AI 生成流程",
+        "导出菜单"
+      ],
+      "visual_notes": "竖版 1080x1350，对比标签已加，适合作为小红书正文图。",
+      "annotation_suggestions": [
+        "可追加圈出标题颜色变化",
+        "不要覆盖简历主体"
+      ],
+      "source_files": [
+        "screenshots/raw/desktop/editor-process-theme-before-purple-desktop.png",
+        "screenshots/raw/desktop/editor-process-theme-after-blue-desktop.png"
+      ],
+      "actual_size": {
+        "width": 1080,
+        "height": 1350
+      }
+    },
+    {
+      "id": "process-template-switch-before-after",
+      "file": "screenshots/process/process-template-switch-before-after.png",
+      "asset_type": "process-comparison",
+      "page": "模板切换前后对比图",
+      "summary": "展示同一份简历从星河模板切换到蓝折模板后的排版差异，蓝色折纸页眉和立体签条模块能更直观说明“内容不用重写，版式和气质直接换一套”。",
+      "visible_elements": [
+        "星河模板",
+        "蓝折模板",
+        "同一份简历内容",
+        "模板前后变化"
+      ],
+      "features": [
+        "模板切换",
+        "多模板预览",
+        "一键换版式"
+      ],
+      "scenarios": [
+        "投递不同岗位想换模板",
+        "用户想看模板切换效果",
+        "展示精美模板能力"
+      ],
+      "best_for": [
+        "前后对比图",
+        "模板卖点图",
+        "小红书正文图"
+      ],
+      "not_for": [
+        "AI 优化结果",
+        "移动端表单"
+      ],
+      "visual_notes": "两张截图使用同一份内容，适合强调“只换模板，不重填内容”。",
+      "annotation_suggestions": [
+        "标出模板名称",
+        "突出同一内容不同版式"
+      ],
+      "source_files": [
+        "screenshots/raw/desktop/editor-process-template-before-xinghe-desktop.png",
+        "screenshots/raw/desktop/editor-process-template-after-lanzhe-desktop.png"
+      ],
+      "actual_size": {
+        "width": 1080,
+        "height": 1350
+      }
+    },
+    {
+      "id": "process-ai-generate-input-to-formatted-resume",
+      "file": "screenshots/process/process-ai-generate-input-to-formatted-resume.png",
+      "asset_type": "process-comparison",
+      "page": "AI 生成到排版成品流程图",
+      "summary": "展示从 AI 生成输入页到生成排版好简历的结果页，适合解释用户不是只得到一段文字，而是得到可编辑、可导出的简历成品。",
+      "visible_elements": [
+        "AI 输入页",
+        "岗位和经历输入",
+        "排版后简历",
+        "编辑器工作台"
+      ],
+      "features": [
+        "AI 生成简历",
+        "生成后自动排版",
+        "可编辑简历成品"
+      ],
+      "scenarios": [
+        "用户担心 AI 只生成文本",
+        "需要展示从输入到成品",
+        "推广 AI 简历制作流程"
+      ],
+      "best_for": [
+        "流程图",
+        "AI 生成卖点图",
+        "小红书核心功能图"
+      ],
+      "not_for": [
+        "主题色对比",
+        "模块管理"
+      ],
+      "visual_notes": "适合作为 AI 生成主题笔记的第 2 或第 3 张图。",
+      "annotation_suggestions": [
+        "强调输入到成品",
+        "可追加箭头连接两步"
+      ],
+      "source_files": [
+        "screenshots/raw/vertical/ai-resume-wizard-vertical.png",
+        "screenshots/raw/desktop/editor-pc-workbench-overview-desktop.png"
+      ],
+      "actual_size": {
+        "width": 1080,
+        "height": 1350
+      }
+    },
+    {
+      "id": "process-ai-optimize-input-preview-final",
+      "file": "screenshots/process/process-ai-optimize-input-preview-final.png",
+      "asset_type": "process-comparison",
+      "page": "AI 按 JD 优化三步流程图",
+      "summary": "展示 AI 一键优化从粘贴 JD、查看优化预览，到应用后回到排版简历的三步过程，适合说明 AI 不会黑箱改写，用户可以先审核再应用。",
+      "visible_elements": [
+        "JD 输入",
+        "AI 优化预览",
+        "原文和优化后对比",
+        "应用后简历成品"
+      ],
+      "features": [
+        "AI 一键优化",
+        "按 JD 优化",
+        "优化前后预览",
+        "应用到排版简历"
+      ],
+      "scenarios": [
+        "投递前按 JD 改简历",
+        "用户担心 AI 改坏内容",
+        "需要展示 AI 优化完整链路"
+      ],
+      "best_for": [
+        "三步流程图",
+        "AI 优化卖点图",
+        "小红书过程图"
+      ],
+      "not_for": [
+        "模板选择",
+        "移动端填写"
+      ],
+      "visual_notes": "三段式流程完整，适合解释从输入到结果的因果关系。",
+      "annotation_suggestions": [
+        "可强调先预览再应用",
+        "标出 JD 输入和应用按钮"
+      ],
+      "source_files": [
+        "screenshots/raw/desktop/editor-pc-ai-optimize-input-desktop.png",
+        "screenshots/raw/desktop/editor-pc-ai-optimize-preview-desktop.png",
+        "screenshots/raw/desktop/editor-process-ai-optimize-final-applied-desktop.png"
+      ],
+      "actual_size": {
+        "width": 1080,
+        "height": 1350
+      }
+    },
+    {
+      "id": "editor-lanzhe-workbench-overview-desktop",
+      "file": "screenshots/raw/desktop/editor-lanzhe-workbench-overview-desktop.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "template": "lanzhe",
+      "asset_group": "lanzhe-editor-core",
+      "best_for": [
+        "蓝折编辑核心卖点",
+        "编辑场景专项图",
+        "小红书正文配图"
+      ],
+      "not_for": [],
+      "annotation_suggestions": [
+        "标出顶部三大编辑入口",
+        "突出蓝折模板实时预览"
+      ],
+      "page": "蓝折模板 PC 编辑器工作台",
+      "summary": "展示蓝折模板在 PC 编辑器中的完整工作台，左侧是实时简历预览，顶部提供模块管理、排版美化、AI 一键优化、保存和导出入口。",
+      "visible_elements": [
+        "蓝折折纸页眉",
+        "实时简历画布",
+        "模块管理",
+        "排版美化",
+        "AI一键优化",
+        "保存",
+        "预览/导出"
+      ],
+      "features": [
+        "所见即所得编辑",
+        "蓝折模板预览",
+        "编辑到导出闭环",
+        "PC 专业编辑工作台"
+      ],
+      "scenarios": [
+        "想展示核心编辑器",
+        "说明不是表单填完再预览",
+        "强调编辑和排版同步发生"
+      ],
+      "visual_notes": "蓝折页眉视觉强，适合作为编辑器总览或正文第一张功能图。",
+      "actual_size": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    {
+      "id": "editor-lanzhe-name-inline-editing-desktop",
+      "file": "screenshots/raw/desktop/editor-lanzhe-name-inline-editing-desktop.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "template": "lanzhe",
+      "asset_group": "lanzhe-editor-core",
+      "best_for": [
+        "蓝折编辑核心卖点",
+        "编辑场景专项图",
+        "小红书正文配图"
+      ],
+      "not_for": [],
+      "annotation_suggestions": [
+        "圈出姓名输入框",
+        "标注点击姓名直接改"
+      ],
+      "page": "蓝折模板姓名原位编辑",
+      "summary": "展示点击蓝折页眉中的姓名后，姓名直接在原位置变成输入框，适合说明短文本字段可以在简历画布上直接修改。",
+      "visible_elements": [
+        "蓝折页眉",
+        "姓名输入框",
+        "联系方式",
+        "头像"
+      ],
+      "features": [
+        "姓名原位编辑",
+        "点击即改",
+        "短文本字段编辑"
+      ],
+      "scenarios": [
+        "用户想快速改姓名或标题",
+        "展示简历画布可直接编辑",
+        "强调不是静态模板"
+      ],
+      "visual_notes": "这是“点击哪里改哪里”的细节证明图。",
+      "actual_size": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    {
+      "id": "editor-lanzhe-base-info-modal-desktop",
+      "file": "screenshots/raw/desktop/editor-lanzhe-base-info-modal-desktop.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "template": "lanzhe",
+      "asset_group": "lanzhe-editor-core",
+      "best_for": [
+        "蓝折编辑核心卖点",
+        "编辑场景专项图",
+        "小红书正文配图"
+      ],
+      "not_for": [],
+      "annotation_suggestions": [
+        "箭头指向页眉区域",
+        "圈出姓名/岗位输入框"
+      ],
+      "page": "蓝折模板点击页眉编辑个人信息",
+      "summary": "展示在蓝折模板页眉区域点击后弹出个人信息编辑弹窗，姓名、岗位、电话、邮箱、城市和自定义字段可以直接修改。",
+      "visible_elements": [
+        "蓝折页眉",
+        "个人信息弹窗",
+        "姓名字段",
+        "岗位字段",
+        "电话邮箱字段",
+        "保存按钮"
+      ],
+      "features": [
+        "点击页眉编辑",
+        "基础信息弹窗",
+        "自定义字段",
+        "实时简历内容维护"
+      ],
+      "scenarios": [
+        "用户想修改姓名电话邮箱",
+        "说明简历不是静态图片",
+        "展示点击哪里改哪里"
+      ],
+      "visual_notes": "弹窗和蓝折页眉同时出现，适合表达“点简历区域就能编辑”。",
+      "actual_size": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    {
+      "id": "editor-lanzhe-job-intention-modal-desktop",
+      "file": "screenshots/raw/desktop/editor-lanzhe-job-intention-modal-desktop.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "template": "lanzhe",
+      "asset_group": "lanzhe-editor-core",
+      "best_for": [
+        "蓝折编辑核心卖点",
+        "编辑场景专项图",
+        "小红书正文配图"
+      ],
+      "not_for": [],
+      "annotation_suggestions": [
+        "标出意向岗位和薪资字段",
+        "保留蓝折求职意向模块可见"
+      ],
+      "page": "蓝折模板点击求职意向编辑",
+      "summary": "展示点击蓝折模板中的求职意向模块后打开结构化编辑弹窗，可修改目标岗位、城市、薪资、类型、行业和当前状态。",
+      "visible_elements": [
+        "求职意向模块",
+        "编辑求职意向弹窗",
+        "意向岗位",
+        "意向城市",
+        "期望薪资",
+        "保存按钮"
+      ],
+      "features": [
+        "求职目标结构化",
+        "点击模块编辑",
+        "岗位和薪资字段维护"
+      ],
+      "scenarios": [
+        "投递不同岗位前修改目标",
+        "说明简历目标不是写死的",
+        "展示字段化编辑能力"
+      ],
+      "visual_notes": "适合作为“目标岗位可以随时改”的编辑功能图。",
+      "actual_size": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    {
+      "id": "editor-lanzhe-rich-text-before-desktop",
+      "file": "screenshots/raw/desktop/editor-lanzhe-rich-text-before-desktop.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "template": "lanzhe",
+      "asset_group": "lanzhe-editor-core",
+      "best_for": [
+        "蓝折编辑核心卖点",
+        "编辑场景专项图",
+        "小红书正文配图"
+      ],
+      "not_for": [],
+      "annotation_suggestions": [],
+      "page": "蓝折模板富文本正文未编辑状态",
+      "summary": "展示蓝折模板中的工作经历正文未进入编辑时的展示状态，适合作为点击进入富文本编辑前的对比母图。",
+      "visible_elements": [
+        "工作经历",
+        "经历正文项目符号",
+        "蓝折模块签条",
+        "简历正文排版"
+      ],
+      "features": [
+        "富文本正文展示",
+        "项目符号排版",
+        "蓝折模块视觉"
+      ],
+      "scenarios": [
+        "说明正文原始展示效果",
+        "做点击编辑前后对比",
+        "展示工作经历排版"
+      ],
+      "visual_notes": "可和富文本编辑激活图组合成过程图。",
+      "actual_size": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    {
+      "id": "editor-lanzhe-rich-text-active-desktop",
+      "file": "screenshots/raw/desktop/editor-lanzhe-rich-text-active-desktop.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "template": "lanzhe",
+      "asset_group": "lanzhe-editor-core",
+      "best_for": [
+        "蓝折编辑核心卖点",
+        "编辑场景专项图",
+        "小红书正文配图"
+      ],
+      "not_for": [],
+      "annotation_suggestions": [
+        "圈出富文本工具条",
+        "标出正文可编辑区域"
+      ],
+      "page": "蓝折模板点击正文进入富文本编辑",
+      "summary": "展示点击工作经历正文后，正文直接进入富文本编辑状态，并出现加粗、斜体、下划线、列表、缩进、撤销和重做工具条。",
+      "visible_elements": [
+        "可编辑正文",
+        "富文本工具条",
+        "加粗按钮",
+        "列表按钮",
+        "缩进按钮",
+        "撤销重做"
+      ],
+      "features": [
+        "点击即编辑",
+        "富文本编辑",
+        "列表格式",
+        "撤销重做",
+        "正文原位编辑"
+      ],
+      "scenarios": [
+        "用户想直接改经历描述",
+        "需要证明支持富文本",
+        "强调不用跳转表单也能改正文"
+      ],
+      "visual_notes": "这是编辑核心卖点图之一，适合配“点正文就能改”的标注。",
+      "actual_size": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    {
+      "id": "editor-lanzhe-inline-field-editing-desktop",
+      "file": "screenshots/raw/desktop/editor-lanzhe-inline-field-editing-desktop.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "template": "lanzhe",
+      "asset_group": "lanzhe-editor-core",
+      "best_for": [
+        "蓝折编辑核心卖点",
+        "编辑场景专项图",
+        "小红书正文配图"
+      ],
+      "not_for": [],
+      "annotation_suggestions": [
+        "圈出蓝色输入框",
+        "标注“公司名直接改”"
+      ],
+      "page": "蓝折模板单行字段原位编辑",
+      "summary": "展示点击公司名称后，字段在简历原位置变成输入框，适合说明公司名、职位、项目名等短字段可以直接原位修改。",
+      "visible_elements": [
+        "工作经历",
+        "公司名称输入框",
+        "职位字段",
+        "日期字段",
+        "蓝折模块布局"
+      ],
+      "features": [
+        "单行字段原位编辑",
+        "点击即改",
+        "短字段快速修改"
+      ],
+      "scenarios": [
+        "想快速改公司名或岗位",
+        "强调不是复杂表单",
+        "展示简历内容可直接编辑"
+      ],
+      "visual_notes": "适合和富文本编辑图一起说明“长文本短字段都能点改”。",
+      "actual_size": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    {
+      "id": "editor-lanzhe-date-picker-desktop",
+      "file": "screenshots/raw/desktop/editor-lanzhe-date-picker-desktop.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "template": "lanzhe",
+      "asset_group": "lanzhe-editor-core",
+      "best_for": [
+        "蓝折编辑核心卖点",
+        "编辑场景专项图",
+        "小红书正文配图"
+      ],
+      "not_for": [],
+      "annotation_suggestions": [
+        "标出年月选择器",
+        "箭头指向日期字段"
+      ],
+      "page": "蓝折模板日期字段选择器",
+      "summary": "展示点击经历日期后打开年月选择器，用户可以在简历原位置调整工作、教育或项目经历的起止时间。",
+      "visible_elements": [
+        "经历日期",
+        "年月选择器",
+        "工作经历",
+        "蓝折模块布局"
+      ],
+      "features": [
+        "日期字段编辑",
+        "年月选择器",
+        "经历时间维护"
+      ],
+      "scenarios": [
+        "需要修改经历时间",
+        "说明日期不是普通文本",
+        "展示字段化编辑细节"
+      ],
+      "visual_notes": "适合说明产品有细节级编辑能力。",
+      "actual_size": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    {
+      "id": "editor-lanzhe-block-actions-hover-desktop",
+      "file": "screenshots/raw/desktop/editor-lanzhe-block-actions-hover-desktop.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "template": "lanzhe",
+      "asset_group": "lanzhe-editor-core",
+      "best_for": [
+        "蓝折编辑核心卖点",
+        "编辑场景专项图",
+        "小红书正文配图"
+      ],
+      "not_for": [],
+      "annotation_suggestions": [
+        "圈出悬浮操作条",
+        "标出 AI 润色和 AI 帮我写"
+      ],
+      "page": "蓝折模板经历块悬浮操作条",
+      "summary": "展示鼠标悬浮在工作经历块上后出现的操作条，包括添加经历、AI 润色、AI 帮我写、删除、上移和下移。",
+      "visible_elements": [
+        "工作经历块",
+        "添加工作经历",
+        "AI润色",
+        "AI帮我写",
+        "删除",
+        "上移下移"
+      ],
+      "features": [
+        "块级操作条",
+        "添加经历",
+        "AI 润色入口",
+        "AI 帮写入口",
+        "经历排序",
+        "删除经历"
+      ],
+      "scenarios": [
+        "用户想快速管理单条经历",
+        "展示 AI 和编辑结合",
+        "说明编辑动作就在内容旁边"
+      ],
+      "visual_notes": "非常适合作为“编辑器不是单纯表单”的核心卖点图。",
+      "actual_size": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    {
+      "id": "editor-lanzhe-section-actions-hover-desktop",
+      "file": "screenshots/raw/desktop/editor-lanzhe-section-actions-hover-desktop.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "template": "lanzhe",
+      "asset_group": "lanzhe-editor-core",
+      "best_for": [
+        "蓝折编辑核心卖点",
+        "编辑场景专项图",
+        "小红书正文配图"
+      ],
+      "not_for": [],
+      "annotation_suggestions": [
+        "圈出右上角模块按钮",
+        "箭头指向工作经历标题"
+      ],
+      "page": "蓝折模板模块级悬浮操作",
+      "summary": "展示鼠标悬浮到工作经历模块后，模块右上角出现拖动、添加和删除按钮，说明整块模块也能直接在简历上管理。",
+      "visible_elements": [
+        "工作经历模块",
+        "拖动按钮",
+        "添加按钮",
+        "删除按钮",
+        "蓝折签条标题"
+      ],
+      "features": [
+        "模块级拖动",
+        "模块内添加",
+        "模块删除",
+        "可视化结构管理"
+      ],
+      "scenarios": [
+        "想调整模块顺序",
+        "想快速添加同类内容",
+        "展示简历结构可视化编辑"
+      ],
+      "visual_notes": "适合说明“模块不是固定顺序”。",
+      "actual_size": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    {
+      "id": "editor-lanzhe-section-manager-before-drag-desktop",
+      "file": "screenshots/raw/desktop/editor-lanzhe-section-manager-before-drag-desktop.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "template": "lanzhe",
+      "asset_group": "lanzhe-editor-core",
+      "best_for": [
+        "蓝折编辑核心卖点",
+        "编辑场景专项图",
+        "小红书正文配图"
+      ],
+      "not_for": [],
+      "annotation_suggestions": [
+        "标出工作经历模块",
+        "圈出添加模块区域"
+      ],
+      "page": "蓝折模板模块管理拖动前",
+      "summary": "展示模块管理面板拖动前的模块顺序，包含个人信息、求职意向、教育经历、工作经历、项目经历等模块。",
+      "visible_elements": [
+        "模块管理",
+        "照片开关",
+        "求职意向显示",
+        "教育经历",
+        "工作经历",
+        "项目经历",
+        "添加模块"
+      ],
+      "features": [
+        "模块管理",
+        "模块显示控制",
+        "模块拖拽排序",
+        "添加模块"
+      ],
+      "scenarios": [
+        "用户想整理简历结构",
+        "做模块拖动前后对比",
+        "展示结构管理入口"
+      ],
+      "visual_notes": "作为拖动前母图，适合和拖动后组合。",
+      "actual_size": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    {
+      "id": "editor-lanzhe-section-manager-dragging-desktop",
+      "file": "screenshots/raw/desktop/editor-lanzhe-section-manager-dragging-desktop.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "template": "lanzhe",
+      "asset_group": "lanzhe-editor-core",
+      "best_for": [
+        "蓝折编辑核心卖点",
+        "编辑场景专项图",
+        "小红书正文配图"
+      ],
+      "not_for": [],
+      "annotation_suggestions": [
+        "标出被拖动模块",
+        "箭头表现上移方向"
+      ],
+      "page": "蓝折模板模块管理拖动中",
+      "summary": "展示在模块管理面板中拖动工作经历模块时的状态，强调模块顺序可以通过拖拽直接调整。",
+      "visible_elements": [
+        "模块管理",
+        "工作经历拖动中",
+        "教育经历",
+        "项目经历",
+        "添加模块"
+      ],
+      "features": [
+        "模块拖拽排序",
+        "可视化顺序调整",
+        "结构化编辑"
+      ],
+      "scenarios": [
+        "用户想把重点经历前置",
+        "展示拖拽操作过程",
+        "说明模块顺序不是固定的"
+      ],
+      "visual_notes": "适合做拖拽功能过程图的中间状态。",
+      "actual_size": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    {
+      "id": "editor-lanzhe-section-manager-after-drag-desktop",
+      "file": "screenshots/raw/desktop/editor-lanzhe-section-manager-after-drag-desktop.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "template": "lanzhe",
+      "asset_group": "lanzhe-editor-core",
+      "best_for": [
+        "蓝折编辑核心卖点",
+        "编辑场景专项图",
+        "小红书正文配图"
+      ],
+      "not_for": [],
+      "annotation_suggestions": [
+        "标出工作经历新位置",
+        "强调拖拽后即时变化"
+      ],
+      "page": "蓝折模板模块管理拖动后",
+      "summary": "展示模块拖动释放后的模块管理面板，工作经历被调整到更靠前的位置，用于说明拖拽排序会立即生效。",
+      "visible_elements": [
+        "模块管理",
+        "工作经历",
+        "教育经历",
+        "项目经历",
+        "更新后的模块顺序"
+      ],
+      "features": [
+        "模块顺序调整",
+        "拖拽后即时生效",
+        "简历结构重排"
+      ],
+      "scenarios": [
+        "想把核心经历放前面",
+        "展示模块排序结果",
+        "做拖动前后对比"
+      ],
+      "visual_notes": "如果搭配拖动前图，能清楚表达模块重排能力。",
+      "actual_size": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    {
+      "id": "editor-lanzhe-template-selected-panel-desktop",
+      "file": "screenshots/raw/desktop/editor-lanzhe-template-selected-panel-desktop.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "template": "lanzhe",
+      "asset_group": "lanzhe-editor-core",
+      "best_for": [
+        "蓝折编辑核心卖点",
+        "编辑场景专项图",
+        "小红书正文配图"
+      ],
+      "not_for": [],
+      "annotation_suggestions": [
+        "圈出蓝折模板选中态",
+        "保留左侧简历预览"
+      ],
+      "page": "蓝折模板选中态模板面板",
+      "summary": "展示排版美化面板中蓝折模板被选中的状态，用户可以在编辑器内查看多款模板缩略图并即时切换。",
+      "visible_elements": [
+        "切换模板标签",
+        "蓝折模板选中态",
+        "模板缩略图网格",
+        "左侧蓝折预览"
+      ],
+      "features": [
+        "模板切换",
+        "蓝折模板",
+        "模板实时预览",
+        "多模板选择"
+      ],
+      "scenarios": [
+        "强调精美模板能力",
+        "说明选模板不用离开编辑器",
+        "展示当前示例模板来源"
+      ],
+      "visual_notes": "适合作为模板功能的蓝折专项补充图。",
+      "actual_size": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    {
+      "id": "editor-lanzhe-layout-settings-desktop",
+      "file": "screenshots/raw/desktop/editor-lanzhe-layout-settings-desktop.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "template": "lanzhe",
+      "asset_group": "lanzhe-editor-core",
+      "best_for": [
+        "蓝折编辑核心卖点",
+        "编辑场景专项图",
+        "小红书正文配图"
+      ],
+      "not_for": [],
+      "annotation_suggestions": [
+        "标出一页模式和滑杆",
+        "保留左侧预览变化"
+      ],
+      "page": "蓝折模板排版设置面板",
+      "summary": "展示蓝折模板下的排版设置，包括全局字号、一页模式、行高、模块间距和页边距滑杆。",
+      "visible_elements": [
+        "文字排版",
+        "全局字号",
+        "一页模式",
+        "行高",
+        "模块间距",
+        "页边距",
+        "蓝折简历预览"
+      ],
+      "features": [
+        "字号调整",
+        "一页模式",
+        "行距调整",
+        "模块间距调整",
+        "页边距调整"
+      ],
+      "scenarios": [
+        "内容太多想压缩",
+        "简历太挤想放松",
+        "展示版式精细调节能力"
+      ],
+      "visual_notes": "控制项和蓝折预览同屏，适合说明“模板还能继续微调”。",
+      "actual_size": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    {
+      "id": "editor-lanzhe-one-page-mode-desktop",
+      "file": "screenshots/raw/desktop/editor-lanzhe-one-page-mode-desktop.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "template": "lanzhe",
+      "asset_group": "lanzhe-editor-core",
+      "best_for": [
+        "蓝折编辑核心卖点",
+        "编辑场景专项图",
+        "小红书正文配图"
+      ],
+      "not_for": [],
+      "annotation_suggestions": [
+        "圈出开启状态",
+        "标注自动适配一页"
+      ],
+      "page": "蓝折模板一页模式开启",
+      "summary": "展示蓝折模板开启一页模式后的状态，系统会尝试自动压缩字号、行距和间距，让信息量较多的简历尽量收纳到一页内。",
+      "visible_elements": [
+        "一页模式开启",
+        "已开启状态",
+        "自动适配提示",
+        "排版滑杆",
+        "蓝折预览"
+      ],
+      "features": [
+        "一页简历适配",
+        "自动压缩排版",
+        "内容容量优化"
+      ],
+      "scenarios": [
+        "海投需要一页版简历",
+        "简历内容太多超页",
+        "用户不想手动调参数"
+      ],
+      "visual_notes": "适合一页模式卖点图。",
+      "actual_size": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    {
+      "id": "editor-lanzhe-theme-default-desktop",
+      "file": "screenshots/raw/desktop/editor-lanzhe-theme-default-desktop.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "template": "lanzhe",
+      "asset_group": "lanzhe-editor-core",
+      "best_for": [
+        "蓝折编辑核心卖点",
+        "编辑场景专项图",
+        "小红书正文配图"
+      ],
+      "not_for": [],
+      "annotation_suggestions": [],
+      "page": "蓝折模板默认主题色",
+      "summary": "展示蓝折模板默认蓝色主题状态，作为主题色切换前的母版截图。",
+      "visible_elements": [
+        "蓝折默认蓝色页眉",
+        "色彩风格设置",
+        "当前颜色",
+        "恢复模板默认色"
+      ],
+      "features": [
+        "模板默认色",
+        "主题色设置",
+        "蓝折视觉风格"
+      ],
+      "scenarios": [
+        "做主题色切换前后对比",
+        "展示蓝折默认设计质感",
+        "说明模板有默认推荐配色"
+      ],
+      "visual_notes": "可和绿色主题应用图组合成前后对比图。",
+      "actual_size": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    {
+      "id": "editor-lanzhe-theme-color-picker-desktop",
+      "file": "screenshots/raw/desktop/editor-lanzhe-theme-color-picker-desktop.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "template": "lanzhe",
+      "asset_group": "lanzhe-editor-core",
+      "best_for": [
+        "蓝折编辑核心卖点",
+        "编辑场景专项图",
+        "小红书正文配图"
+      ],
+      "not_for": [],
+      "annotation_suggestions": [
+        "圈出颜色预设",
+        "标出当前颜色"
+      ],
+      "page": "蓝折模板主题色选择器",
+      "summary": "展示蓝折模板的主题色选择器，包含颜色预设、自定义颜色入口和模板默认色恢复按钮。",
+      "visible_elements": [
+        "主题主色",
+        "颜色预设",
+        "自定义颜色",
+        "恢复模板默认色",
+        "蓝折预览"
+      ],
+      "features": [
+        "主题色切换",
+        "颜色预设",
+        "自定义颜色",
+        "恢复默认色"
+      ],
+      "scenarios": [
+        "想根据岗位调整简历气质",
+        "品牌色或行业色匹配",
+        "展示视觉可定制"
+      ],
+      "visual_notes": "颜色选择器视觉明显，适合作为主题切换卖点图。",
+      "actual_size": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    {
+      "id": "editor-lanzhe-theme-green-applied-desktop",
+      "file": "screenshots/raw/desktop/editor-lanzhe-theme-green-applied-desktop.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "template": "lanzhe",
+      "asset_group": "lanzhe-editor-core",
+      "best_for": [
+        "蓝折编辑核心卖点",
+        "编辑场景专项图",
+        "小红书正文配图"
+      ],
+      "not_for": [],
+      "annotation_suggestions": [
+        "标出页眉和模块标题的颜色变化"
+      ],
+      "page": "蓝折模板切换绿色主题后",
+      "summary": "展示蓝折模板从默认蓝色切换为青绿色主题后的效果，页眉和模块签条主色同步变化。",
+      "visible_elements": [
+        "青绿色页眉",
+        "青绿色模块签条",
+        "主题色设置",
+        "蓝折简历预览"
+      ],
+      "features": [
+        "主题色应用",
+        "模板视觉同步变化",
+        "个性化风格"
+      ],
+      "scenarios": [
+        "用户想看切换主题后的真实效果",
+        "说明颜色不是只改按钮",
+        "做主题色前后对比"
+      ],
+      "visual_notes": "和默认蓝色图差异明显，适合做小红书过程图。",
+      "actual_size": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    {
+      "id": "process-lanzhe-rich-text-click-to-edit",
+      "file": "screenshots/process/process-lanzhe-rich-text-click-to-edit.png",
+      "asset_type": "process-comparison",
+      "template": "lanzhe",
+      "asset_group": "lanzhe-editor-core",
+      "best_for": [
+        "蓝折编辑过程图",
+        "小红书封面或正文图",
+        "编辑卖点说明"
+      ],
+      "not_for": [],
+      "annotation_suggestions": [
+        "可加箭头从正文指向工具条",
+        "少量强调“点击即改”"
+      ],
+      "actual_size": {
+        "width": 1080,
+        "height": 1350
+      },
+      "page": "蓝折模板点击正文进入富文本编辑过程图",
+      "summary": "展示工作经历正文从普通展示到点击进入富文本编辑的前后变化，适合表达“点击正文就能改，支持加粗、列表、缩进和撤销重做”。",
+      "visible_elements": [
+        "点击前工作经历",
+        "点击后富文本编辑器",
+        "富文本工具条",
+        "蓝折模板"
+      ],
+      "features": [
+        "点击即编辑",
+        "富文本工具条",
+        "原位编辑",
+        "工作经历编辑"
+      ],
+      "scenarios": [
+        "用户不知道怎么改经历正文",
+        "推广可视化编辑核心卖点",
+        "强调不是 Word 模板下载"
+      ],
+      "source_files": [
+        "screenshots/raw/desktop/editor-lanzhe-rich-text-before-desktop.png",
+        "screenshots/raw/desktop/editor-lanzhe-rich-text-active-desktop.png"
+      ],
+      "visual_notes": "两段式过程清楚，适合作为编辑卖点笔记的正文图。"
+    },
+    {
+      "id": "process-lanzhe-module-drag-reorder",
+      "file": "screenshots/process/process-lanzhe-module-drag-reorder.png",
+      "asset_type": "process-comparison",
+      "template": "lanzhe",
+      "asset_group": "lanzhe-editor-core",
+      "best_for": [
+        "蓝折编辑过程图",
+        "小红书封面或正文图",
+        "编辑卖点说明"
+      ],
+      "not_for": [],
+      "annotation_suggestions": [
+        "可追加上移箭头",
+        "圈出工作经历模块"
+      ],
+      "actual_size": {
+        "width": 1080,
+        "height": 1350
+      },
+      "page": "蓝折模板模块拖拽排序过程图",
+      "summary": "展示模块管理中从拖动前、拖动中到拖动后的三步变化，说明用户可以把重点模块前置，简历结构不用复制粘贴手动重排。",
+      "visible_elements": [
+        "模块管理面板",
+        "工作经历模块",
+        "拖动中状态",
+        "拖动后顺序"
+      ],
+      "features": [
+        "模块拖拽排序",
+        "结构化编辑",
+        "重点模块前置",
+        "可视化模块管理"
+      ],
+      "scenarios": [
+        "想把工作经历放在教育经历前",
+        "简历模块顺序不合适",
+        "展示编辑核心卖点"
+      ],
+      "source_files": [
+        "screenshots/raw/desktop/editor-lanzhe-section-manager-before-drag-desktop.png",
+        "screenshots/raw/desktop/editor-lanzhe-section-manager-dragging-desktop.png",
+        "screenshots/raw/desktop/editor-lanzhe-section-manager-after-drag-desktop.png"
+      ],
+      "visual_notes": "三步过程适合小红书解释“拖拽排序”的因果关系。"
+    },
+    {
+      "id": "process-lanzhe-theme-color-before-after",
+      "file": "screenshots/process/process-lanzhe-theme-color-before-after.png",
+      "asset_type": "process-comparison",
+      "template": "lanzhe",
+      "asset_group": "lanzhe-editor-core",
+      "best_for": [
+        "蓝折编辑过程图",
+        "小红书封面或正文图",
+        "编辑卖点说明"
+      ],
+      "not_for": [],
+      "annotation_suggestions": [
+        "标出页眉和模块签条颜色变化",
+        "避免覆盖右侧设置面板"
+      ],
+      "actual_size": {
+        "width": 1080,
+        "height": 1350
+      },
+      "page": "蓝折模板主题色切换前后过程图",
+      "summary": "展示蓝折模板从默认蓝色切换到青绿色主题后的前后变化，说明主题色会影响页眉、模块签条和整体简历气质。",
+      "visible_elements": [
+        "蓝折默认主题",
+        "青绿色主题",
+        "主题色设置",
+        "同一份简历内容"
+      ],
+      "features": [
+        "主题色切换",
+        "模板视觉定制",
+        "前后对比",
+        "恢复默认色"
+      ],
+      "scenarios": [
+        "用户想看换色后的真实效果",
+        "需要匹配不同行业风格",
+        "推广主题切换能力"
+      ],
+      "source_files": [
+        "screenshots/raw/desktop/editor-lanzhe-theme-default-desktop.png",
+        "screenshots/raw/desktop/editor-lanzhe-theme-green-applied-desktop.png"
+      ],
+      "visual_notes": "前后对比明显，适合作为主题切换卖点图。"
     }
   ],
-  "capture_notes": "Captured from local Next dev server with product feedback widget and Next dev overlay hidden."
+  "capture_notes": {
+    "0": "C",
+    "1": "a",
+    "2": "p",
+    "3": "t",
+    "4": "u",
+    "5": "r",
+    "6": "e",
+    "7": "d",
+    "8": " ",
+    "9": "f",
+    "10": "r",
+    "11": "o",
+    "12": "m",
+    "13": " ",
+    "14": "l",
+    "15": "o",
+    "16": "c",
+    "17": "a",
+    "18": "l",
+    "19": " ",
+    "20": "N",
+    "21": "e",
+    "22": "x",
+    "23": "t",
+    "24": " ",
+    "25": "d",
+    "26": "e",
+    "27": "v",
+    "28": " ",
+    "29": "s",
+    "30": "e",
+    "31": "r",
+    "32": "v",
+    "33": "e",
+    "34": "r",
+    "35": " ",
+    "36": "w",
+    "37": "i",
+    "38": "t",
+    "39": "h",
+    "40": " ",
+    "41": "p",
+    "42": "r",
+    "43": "o",
+    "44": "d",
+    "45": "u",
+    "46": "c",
+    "47": "t",
+    "48": " ",
+    "49": "f",
+    "50": "e",
+    "51": "e",
+    "52": "d",
+    "53": "b",
+    "54": "a",
+    "55": "c",
+    "56": "k",
+    "57": " ",
+    "58": "w",
+    "59": "i",
+    "60": "d",
+    "61": "g",
+    "62": "e",
+    "63": "t",
+    "64": " ",
+    "65": "a",
+    "66": "n",
+    "67": "d",
+    "68": " ",
+    "69": "N",
+    "70": "e",
+    "71": "x",
+    "72": "t",
+    "73": " ",
+    "74": "d",
+    "75": "e",
+    "76": "v",
+    "77": " ",
+    "78": "o",
+    "79": "v",
+    "80": "e",
+    "81": "r",
+    "82": "l",
+    "83": "a",
+    "84": "y",
+    "85": " ",
+    "86": "h",
+    "87": "i",
+    "88": "d",
+    "89": "d",
+    "90": "e",
+    "91": "n",
+    "92": ".",
+    "93": " ",
+    "94": "E",
+    "95": "x",
+    "96": "i",
+    "97": "s",
+    "98": "t",
+    "99": "i",
+    "100": "n",
+    "101": "g",
+    "102": " ",
+    "103": "S",
+    "104": "E",
+    "105": "O",
+    "106": " ",
+    "107": "s",
+    "108": "c",
+    "109": "r",
+    "110": "e",
+    "111": "e",
+    "112": "n",
+    "113": "s",
+    "114": "h",
+    "115": "o",
+    "116": "t",
+    "117": "s",
+    "118": " ",
+    "119": "i",
+    "120": "n",
+    "121": "d",
+    "122": "e",
+    "123": "x",
+    "124": "e",
+    "125": "d",
+    "126": " ",
+    "127": "f",
+    "128": "o",
+    "129": "r",
+    "130": " ",
+    "131": "r",
+    "132": "e",
+    "133": "u",
+    "134": "s",
+    "135": "e",
+    "136": ".",
+    "last_supplemental_capture": {
+      "captured_at": "2026-06-21T09:26:54.130Z",
+      "added_or_updated": 30,
+      "viewport_presets": {
+        "desktop": "1440x1000",
+        "vertical": "1080x1440",
+        "mobile": "390x844@2x"
+      },
+      "rule": "Raw screenshots are unannotated master assets; Xiaohongshu redesign should use the screenshot index descriptions."
+    },
+    "targeted_mobile_fix": {
+      "captured_at": "2026-06-21T09:31:09.083Z",
+      "ids": [
+        "dashboard-membership-desktop",
+        "mobile-edit-home",
+        "mobile-edit-base-form"
+      ]
+    },
+    "editor_panel_capture": {
+      "captured_at": "2026-06-21T09:33:25.398Z",
+      "id": "editor-pc-template-panel-desktop"
+    },
+    "last_editor_scenario_capture": {
+      "captured_at": "2026-06-21T10:56:34.393Z",
+      "added_or_updated": 14,
+      "viewport_presets": {
+        "desktop": "1440x1000",
+        "mobile": "390x844@2x"
+      },
+      "rule": "Editor scenario screenshots are raw master assets with detailed index descriptions; Xiaohongshu redesign should preserve the real UI."
+    },
+    "last_process_comparison_capture": {
+      "captured_at": "2026-06-21T12:13:36.840Z",
+      "added_or_updated": 4,
+      "rule": "Process assets are derived Xiaohongshu-ready comparison cards. They reference raw product screenshots and may include labels."
+    },
+    "last_lanzhe_editor_core_capture": {
+      "captured_at": "2026-06-21T12:29:54.671Z",
+      "added_or_updated": 22,
+      "viewport": "1440x1000",
+      "rule": "Lanzhe editor core screenshots focus on visual editing, rich text, module drag, theme, layout, and template controls."
+    }
+  }
 }

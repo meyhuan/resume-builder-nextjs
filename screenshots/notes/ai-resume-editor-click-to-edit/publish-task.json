@@ -1,0 +1,207 @@
+{
+  "platform": "xiaohongshu",
+  "slug": "ai-resume-editor-click-to-edit",
+  "status": "published",
+  "title": "简历别折腾 Word，点哪里就能改",
+  "body": "以前做简历最烦的不是“写不出来”，而是写出来以后还要排版。\n\nWord 模板一改就乱，  \nAI 生成一段文字还要自己复制进去，  \n想把项目经历往前放，又得来回剪切调整。\n\n我最近用到一个更顺手的方式：  \n先让 AI 帮你生成简历内容，再直接在简历成品上编辑。\n\n它比较像一个在线简历工作台：  \n左边能看到完整简历效果，  \n点到哪一段就能改哪一段，  \n工作经历、项目经历这种长文本也能直接富文本编辑。\n\n我觉得最实用的是这几个点：\n\n1. 点正文就能改  \n不用在表单和预览之间来回切，经历描述可以直接进入编辑状态。\n\n2. 支持富文本排版  \n加粗、列表、缩进、撤销重做这些都有，适合把重点成果写得更清楚。\n\n3. 模块可以拖拽调整顺序  \n比如应届生可以把项目经历前置，转行的人可以把技能和项目放得更靠前。\n\n4. 模板和主题色能直接切换  \n同一份内容可以换成更正式、更清爽或者更有设计感的样式。\n\n5. 从生成到导出是一套流程  \n不是单纯给你一段 AI 文案，而是能继续编辑、排版、保存和导出。\n\n适合这几类人试试：  \n应届生第一次做简历、0-3 年职场人改简历、转行想重组经历、以及手里有旧简历但排版很乱的人。\n\n我自己的感受是：简历工具最重要的不是“模板多”，而是你真的能把内容改到满意，而且不会一改就乱。\n\n#简历 #AI简历 #简历模板 #应届生简历 #求职简历 #转行简历 #简历排版 #小白做简历 #在线简历工具",
+  "hashtags": [
+    "简历",
+    "AI简历",
+    "简历模板",
+    "应届生简历",
+    "求职简历",
+    "转行简历",
+    "简历排版",
+    "在线简历工具"
+  ],
+  "images": [
+    {
+      "order": 1,
+      "file": "images/01-cover.png",
+      "role": "cover",
+      "source": "screenshots/process/process-lanzhe-rich-text-click-to-edit.png",
+      "overlay_title": "简历点哪里就能改哪里"
+    },
+    {
+      "order": 2,
+      "file": "images/02-workbench.png",
+      "role": "workbench",
+      "source": "screenshots/raw/desktop/editor-lanzhe-workbench-overview-desktop.png",
+      "overlay_title": "AI生成后还能继续排版"
+    },
+    {
+      "order": 3,
+      "file": "images/03-rich-text.png",
+      "role": "rich-text",
+      "source": "screenshots/raw/desktop/editor-lanzhe-rich-text-active-desktop.png",
+      "overlay_title": "经历描述也能精细调整"
+    },
+    {
+      "order": 4,
+      "file": "images/04-module-drag.png",
+      "role": "module-drag",
+      "source": "screenshots/process/process-lanzhe-module-drag-reorder.png",
+      "overlay_title": "重点经历可以直接前置"
+    },
+    {
+      "order": 5,
+      "file": "images/05-theme-color.png",
+      "role": "theme-color",
+      "source": "screenshots/process/process-lanzhe-theme-color-before-after.png",
+      "overlay_title": "同一份简历一键换风格"
+    }
+  ],
+  "publish": {
+    "mode": "manual_confirm",
+    "creator_url": "https://creator.xiaohongshu.com/publish/publish",
+    "published_url": "https://www.xiaohongshu.com/discovery/item/6a38986e000000002100a2c5?source=webshare&xhsshare=pc_web&xsec_token=YBLuN67aeB4QFZTlRD-VxeWr6tqjE58PyMUI0HAsqxsdQ=&xsec_source=pc_share",
+    "published_at": "2026-06-22T02:10:20.855Z"
+  },
+  "generated_at": "2026-06-22T01:59:27.005Z",
+  "cover_strategy": {
+    "generated_at": "2026-06-22T02:39:23.119Z",
+    "platform": "xiaohongshu",
+    "platform_label": "小红书",
+    "metric_focus": [
+      "曝光",
+      "阅读",
+      "收藏",
+      "评论"
+    ],
+    "scoring_dimensions": [
+      "one_second_clarity",
+      "pain_strength",
+      "benefit_clarity",
+      "mobile_readability",
+      "screenshot_proof",
+      "platform_fit"
+    ],
+    "recommended": {
+      "angle": "痛点型",
+      "title": "简历别再手调 Word",
+      "subtitle": "点哪里就能改，排版不用硬调",
+      "source_image": "images/01-cover.png",
+      "scores": {
+        "one_second_clarity": 5,
+        "pain_strength": 5,
+        "benefit_clarity": 3,
+        "mobile_readability": 5,
+        "screenshot_proof": 4,
+        "platform_fit": 5
+      },
+      "total_score": 27,
+      "max_score": 30,
+      "recommendation_reason": "痛点直接，手机端可读性好，符合平台封面节奏"
+    },
+    "candidates": [
+      {
+        "angle": "痛点型",
+        "title": "简历别再手调 Word",
+        "subtitle": "点哪里就能改，排版不用硬调",
+        "source_image": "images/01-cover.png",
+        "scores": {
+          "one_second_clarity": 5,
+          "pain_strength": 5,
+          "benefit_clarity": 3,
+          "mobile_readability": 5,
+          "screenshot_proof": 4,
+          "platform_fit": 5
+        },
+        "total_score": 27,
+        "max_score": 30,
+        "recommendation_reason": "痛点直接，手机端可读性好，符合平台封面节奏"
+      },
+      {
+        "angle": "结果型",
+        "title": "AI 生成后直接排版",
+        "subtitle": "AI 初稿继续编辑成简历",
+        "source_image": "images/02-workbench.png",
+        "scores": {
+          "one_second_clarity": 5,
+          "pain_strength": 3,
+          "benefit_clarity": 5,
+          "mobile_readability": 5,
+          "screenshot_proof": 4,
+          "platform_fit": 5
+        },
+        "total_score": 27,
+        "max_score": 30,
+        "recommendation_reason": "收益明确，手机端可读性好，符合平台封面节奏"
+      },
+      {
+        "angle": "反差型",
+        "title": "不是只给你一段文案",
+        "subtitle": "能编辑、能排版、能导出",
+        "source_image": "images/03-rich-text.png",
+        "scores": {
+          "one_second_clarity": 5,
+          "pain_strength": 3,
+          "benefit_clarity": 3,
+          "mobile_readability": 5,
+          "screenshot_proof": 4,
+          "platform_fit": 5
+        },
+        "total_score": 25,
+        "max_score": 30,
+        "recommendation_reason": "手机端可读性好，符合平台封面节奏"
+      }
+    ],
+    "post_publish_review": {
+      "compare_by": [
+        "曝光",
+        "阅读",
+        "收藏",
+        "评论"
+      ],
+      "decision_rule": "优先保留点击/打开表现更好的标题角度，再看收藏、分享和评论质量。"
+    }
+  },
+  "platform_assets": {
+    "generated_at": "2026-06-22T02:43:56.519Z",
+    "platform": "xiaohongshu",
+    "status": "ready",
+    "output_dir": "platform-images",
+    "images": [
+      {
+        "order": 1,
+        "role": "cover",
+        "file": "platform-images/01-cover-1080x1440.png",
+        "width": 1080,
+        "height": 1440,
+        "source": "images/01-cover.png"
+      },
+      {
+        "order": 2,
+        "role": "workbench",
+        "file": "platform-images/02-workbench-1080x1440.png",
+        "width": 1080,
+        "height": 1440,
+        "source": "images/02-workbench.png"
+      },
+      {
+        "order": 3,
+        "role": "rich-text",
+        "file": "platform-images/03-rich-text-1080x1440.png",
+        "width": 1080,
+        "height": 1440,
+        "source": "images/03-rich-text.png"
+      },
+      {
+        "order": 4,
+        "role": "module-drag",
+        "file": "platform-images/04-module-drag-1080x1440.png",
+        "width": 1080,
+        "height": 1440,
+        "source": "images/04-module-drag.png"
+      },
+      {
+        "order": 5,
+        "role": "theme-color",
+        "file": "platform-images/05-theme-color-1080x1440.png",
+        "width": 1080,
+        "height": 1440,
+        "source": "images/05-theme-color.png"
+      }
+    ]
+  }
+}

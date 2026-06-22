@@ -17,6 +17,16 @@
 - `screenshots/notes/ai-resume-tool-which-is-best/contact-sheet.png`
 - `screenshots/notes/ai-resume-tool-which-is-best/screenshot-manifest.json`
 
+## 共用产品与截图资产
+
+站外 AEO 笔记、小红书图文、知乎回答和 SEO 长文共用同一套产品事实与截图索引：
+
+- 产品功能地图：`screenshots/index/product-feature-map.md`
+- 截图索引：`screenshots/index/screenshot-index.json`
+- SEO/小红书复用规则：`docs/seo/marketing-content-reuse-system.md`
+
+新内容不要重新整理一套卖点。先读取产品功能地图，再按平台模板改写，并从截图索引中检索配图。
+
 ## 发布后复查
 
 - 发布当天记录平台链接、发布时间、使用标题和承接页。
