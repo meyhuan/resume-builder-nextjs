@@ -9,7 +9,7 @@
  *   1. HMAC-MD5 签名（wxId + timestamp + sign）— 小程序
  *   2. Cookie（auth_uid）— H5 移动端
  *
- * 配额：mode=preview 不消耗；mode=final 消耗
+ * 配额：mode=preview 不消耗；mode=final 消耗；Markdown 作为免费导出例外
  * 特点：puppeteer page.goto(/print/[resumeId]?token=...) 访问 SSR 打印页渲染，
  *       结果存入 export-temp-store。
  *
@@ -29,11 +29,15 @@ import { uploadExportAsset } from '@/lib/upload-export-asset'
 import { peekQuotaForUser, checkQuotaForUser } from '@/lib/quota/quota-checker'
 import { renderViaPrintPage, getInternalBaseUrl, type RenderResult } from '@/lib/render-via-print-page'
 import { sanitizeExportFileName } from '@/lib/export-file-name'
+import { extractEditorMeta } from '@/entities/editor/editor-meta'
+import { normalizeResumeContent } from '@/entities/resume/normalize-resume-content'
+import type { ResumeData } from '@/entities/resume/resume-data'
+import { exportResumeToMarkdown } from '@/io/export-markdown'
 
 /**
  * POST /next-api/exports/mini
  *
- * Creates an export asset (PDF or image) for a resume.
+ * Creates an export asset (PDF, image, or Markdown) for a resume.
  *
  * Dual auth:
  *   1. HMAC sign (mini-program): wxId + timestamp + sign fields in body
@@ -44,8 +48,8 @@ import { sanitizeExportFileName } from '@/lib/export-file-name'
  *     wxId?, timestamp?, sign?,           // auth option 1 (HMAC-MD5)
  *     resumeId,
  *     templateId?,                        // override resume.template
- *     type: 'pdf' | 'image',
- *     mode: 'preview' | 'final',          // preview = no quota, final = consume
+ *     type: 'pdf' | 'image' | 'markdown',
+ *     mode: 'preview' | 'final',          // preview = no quota; final consumes except Markdown
  *     fileName?
  *   }
  *
@@ -55,6 +59,7 @@ import { sanitizeExportFileName } from '@/lib/export-file-name'
  * Quota:
  *   - mode=preview: skip both peek and consume; asset confirmed=false.
  *   - mode=final: peek before render, consume after save; asset confirmed=true.
+ *   - type=markdown: generate confirmed UTF-8 Markdown, skip quota entirely.
  */
 
 interface CreateMiniExportRequest {
@@ -69,6 +74,7 @@ interface CreateMiniExportRequest {
 }
 
 type ExportMode = 'preview' | 'final'
+type MiniExportType = 'pdf' | 'image' | 'markdown'
 
 export async function POST(req: Request): Promise<NextResponse> {
   let body: CreateMiniExportRequest
@@ -102,7 +108,13 @@ export async function POST(req: Request): Promise<NextResponse> {
   }
 
   const resumeId: string = String(body.resumeId ?? '')
-  const type = body.type === 'pdf' ? 'pdf' : body.type === 'image' ? 'image' : null
+  const type: MiniExportType | null = body.type === 'pdf'
+    ? 'pdf'
+    : body.type === 'image'
+      ? 'image'
+      : body.type === 'markdown'
+        ? 'markdown'
+        : null
   const mode: ExportMode = body.mode === 'preview' ? 'preview' : 'final'
   const explicitTemplateId: string | undefined = typeof body.templateId === 'string' && body.templateId
     ? body.templateId
@@ -119,11 +131,98 @@ export async function POST(req: Request): Promise<NextResponse> {
   // Verify resume ownership
   const resume = await prisma.resume.findFirst({
     where: { id: resumeId, user: { wxId } },
-    select: { id: true, title: true, template: true, userId: true },
+    select: { id: true, title: true, template: true, userId: true, content: true },
   })
   if (!resume) {
     console.warn('[exports/mini] resume not found or not owned', { wxId, resumeId })
     return NextResponse.json({ error: 'Resume not found' }, { status: 404 })
+  }
+
+  const fileName: string = requestedFileName || sanitizeExportFileName(resume.title)
+
+  if (type === 'markdown') {
+    const rawContent = resume.content && typeof resume.content === 'object' && !Array.isArray(resume.content)
+      ? resume.content as Record<string, unknown>
+      : {}
+    const { content } = extractEditorMeta(rawContent)
+    const normalizedResume: ResumeData = normalizeResumeContent(content as Partial<ResumeData>, { fallbackId: resume.id })
+    const markdown = exportResumeToMarkdown(normalizedResume)
+    const buffer = Buffer.from(markdown, 'utf8')
+    const contentType = 'text/markdown; charset=utf-8'
+    const extension = 'md'
+
+    const saved = await saveExportTemp({
+      buffer,
+      fileName,
+      contentType,
+      extension,
+      type,
+      confirmed: true,
+      wxId,
+      userId: resume.userId,
+      resumeId: resume.id,
+      resumeTitle: resume.title,
+      templateId: explicitTemplateId || resume.template || undefined,
+    })
+
+    const ossAsset = await uploadExportAsset({
+      token: saved.token,
+      buffer,
+      contentType,
+      extension,
+    })
+
+    await prisma.exportRecord.upsert({
+      where: { token: saved.token },
+      update: {
+        userId: resume.userId,
+        wxId,
+        resumeId: resume.id,
+        resumeTitle: resume.title || fileName,
+        templateId: explicitTemplateId || resume.template || null,
+        type,
+        fileName,
+        ossKey: ossAsset.key,
+        ossUrl: ossAsset.url,
+        expiresAt: new Date(saved.expiresAt),
+        status: 'available',
+        confirmedAt: new Date(),
+      },
+      create: {
+        userId: resume.userId,
+        wxId,
+        resumeId: resume.id,
+        resumeTitle: resume.title || fileName,
+        templateId: explicitTemplateId || resume.template || null,
+        type,
+        fileName,
+        token: saved.token,
+        ossKey: ossAsset.key,
+        ossUrl: ossAsset.url,
+        expiresAt: new Date(saved.expiresAt),
+        status: 'available',
+      },
+    })
+
+    const downloadUrl = `/next-api/export-file/${saved.token}`
+    console.log('[exports/mini] markdown create completed', {
+      wxId,
+      resumeId,
+      token: saved.token,
+      downloadUrl,
+    })
+
+    return NextResponse.json({
+      id: saved.token,
+      type,
+      fileName,
+      downloadUrl,
+      expiresAt: new Date(saved.expiresAt).toISOString(),
+      confirmed: true,
+      remaining: 'unlimited',
+      isVip: false,
+      previewImages: [],
+    })
   }
 
   const quotaPeek = await peekQuotaForUser(wxId, 'pdf:export')
@@ -160,7 +259,6 @@ export async function POST(req: Request): Promise<NextResponse> {
   }
 
   const { buffer, pageScreenshots } = renderResult
-  const fileName: string = requestedFileName || sanitizeExportFileName(resume.title)
   const isPdf: boolean = type === 'pdf'
   const contentType: string = isPdf ? 'application/pdf' : 'image/png'
   const extension: string = isPdf ? 'pdf' : 'png'

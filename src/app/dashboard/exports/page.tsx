@@ -27,6 +27,7 @@ function formatDate(date: Date): string {
 function getTypeLabel(type: string): string {
   if (type === 'pdf') return 'PDF';
   if (type === 'image') return '图片';
+  if (type === 'markdown') return 'Markdown';
   return type.toUpperCase();
 }
 

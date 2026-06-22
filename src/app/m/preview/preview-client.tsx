@@ -32,7 +32,7 @@ import {
 const MOBILE_PAGE_MAX_WIDTH_PX = 390
 const A4_RATIO = 297 / 210
 
-type ExportType = 'pdf' | 'image'
+type ExportType = 'pdf' | 'image' | 'markdown'
 
 interface ExportJobResponse {
   readonly id: string
@@ -361,7 +361,7 @@ export default function MobilePreviewClient(): ReactElement {
    * Both mini-program and H5 use this same endpoint (dual-auth on server).
    */
   const createExportJob = useCallback(async (
-    payload: { readonly resumeId: string; readonly templateId: string; readonly type: 'pdf' | 'image'; readonly fileName: string },
+    payload: { readonly resumeId: string; readonly templateId: string; readonly type: ExportType; readonly fileName: string },
   ): Promise<ExportJobResponse> => {
     const response = await fetch('/next-api/exports/mini', {
       method: 'POST',
@@ -517,7 +517,7 @@ export default function MobilePreviewClient(): ReactElement {
   }, [draftResumeId, searchParams, syncPreviewState, setDraftTemplateId, templateId])
 
   /**
-   * Unified export handler for both PDF and image.
+   * Unified export handler for PDF, image, and Markdown.
    * Both mini-program and H5 use the same flow:
    *   1. syncPreviewState (save theme/one-page to DB)
    *   2. call /next-api/exports/mini with mode='final'
@@ -557,7 +557,13 @@ export default function MobilePreviewClient(): ReactElement {
       const job = await createExportJob({ resumeId: targetResumeId, templateId, type, fileName })
       openExportResult(job)
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : (type === 'pdf' ? 'PDF 导出失败' : '图片导出失败')
+      const msg = err instanceof Error
+        ? err.message
+        : type === 'pdf'
+          ? 'PDF 导出失败'
+          : type === 'image'
+            ? '图片导出失败'
+            : 'Markdown 导出失败'
       track('export_failed', {
         resumeId: targetResumeIdForTrack,
         templateId,
@@ -577,6 +583,10 @@ export default function MobilePreviewClient(): ReactElement {
 
   const handleExportImage = useCallback(async (): Promise<void> => {
     await handleExport('image')
+  }, [handleExport])
+
+  const handleExportMarkdown = useCallback(async (): Promise<void> => {
+    await handleExport('markdown')
   }, [handleExport])
 
   const scopedStyleId = `m-preview-scope-${templateId}`
@@ -666,6 +676,7 @@ export default function MobilePreviewClient(): ReactElement {
           onOpenSettings={(): void => setSheetOpen(true)}
           onExportPdf={handleExportPdf}
           onExportImage={handleExportImage}
+          onExportMarkdown={handleExportMarkdown}
           isExporting={isExporting}
         />
 

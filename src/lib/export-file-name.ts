@@ -1,7 +1,7 @@
 export const MAX_EXPORT_FILE_NAME_LENGTH = 45
 
 const INVALID_FILE_NAME_CHARS = /[\\/:*?"<>|]/g
-const EXPORT_EXTENSION_SUFFIX = /\.(pdf|png|jpe?g)$/i
+const EXPORT_EXTENSION_SUFFIX = /\.(pdf|png|jpe?g|md|markdown)$/i
 
 function cleanFileNameText(value: string | null | undefined): string {
   return (value ?? '')
@@ -44,4 +44,10 @@ export function buildExportContentDisposition(
   const fullName = `${safeBaseName}.${safeExtension}`
   const asciiName = fullName.replace(/[^\x20-\x7e]/g, '_').replace(/"/g, '_')
   return `${disposition}; filename="${asciiName}"; filename*=UTF-8''${encodeURIComponent(fullName)}`
+}
+
+export function getExportFileExtension(type: string | null | undefined): string {
+  if (type === 'image') return 'png'
+  if (type === 'markdown') return 'md'
+  return 'pdf'
 }

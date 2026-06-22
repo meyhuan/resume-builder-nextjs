@@ -6,11 +6,11 @@ import { ArrowLeft, Copy, ExternalLink, Download } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { createLogger } from '@/lib/logger'
-import { sanitizeExportFileName } from '@/lib/export-file-name'
+import { getExportFileExtension, sanitizeExportFileName } from '@/lib/export-file-name'
 
 const log = createLogger('m/export-result')
 
-type ExportType = 'pdf' | 'image'
+type ExportType = 'pdf' | 'image' | 'markdown'
 
 interface ExportResultState {
   readonly id: string
@@ -27,6 +27,12 @@ function getAbsoluteUrl(path: string): string {
   return `${window.location.origin}${path}`
 }
 
+function getResultTitle(type: ExportType): string {
+  if (type === 'pdf') return 'PDF 简历已生成'
+  if (type === 'image') return '图片简历已生成'
+  return 'Markdown 简历已生成'
+}
+
 export default function ExportResultClient(): ReactElement {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -34,7 +40,7 @@ export default function ExportResultClient(): ReactElement {
   const state = useMemo<ExportResultState | null>(() => {
     const type = searchParams.get('type')
     const downloadUrl = searchParams.get('url')
-    if ((type !== 'pdf' && type !== 'image') || !downloadUrl) return null
+    if ((type !== 'pdf' && type !== 'image' && type !== 'markdown') || !downloadUrl) return null
     let previewImages: string[] = []
     try {
       const raw = searchParams.get('previewImages')
@@ -58,7 +64,7 @@ export default function ExportResultClient(): ReactElement {
     log.info('browser download clicked', { type: state.type, id: state.id, url: absoluteUrl })
     const a = document.createElement('a')
     a.href = absoluteUrl
-    a.download = `${sanitizeExportFileName(state.fileName)}.${state.type === 'pdf' ? 'pdf' : 'png'}`
+    a.download = `${sanitizeExportFileName(state.fileName)}.${getExportFileExtension(state.type)}`
     a.click()
   }
 
@@ -98,7 +104,7 @@ export default function ExportResultClient(): ReactElement {
       <main className="flex-1 px-4 py-4 pb-40">
         <div className="rounded-3xl bg-white shadow-sm border border-slate-200 overflow-hidden">
           <div className="px-4 py-3 border-b border-slate-100">
-            <div className="text-sm font-semibold text-slate-900">{state.type === 'pdf' ? 'PDF 简历已生成' : '图片简历已生成'}</div>
+            <div className="text-sm font-semibold text-slate-900">{getResultTitle(state.type)}</div>
             <div className="text-xs text-slate-500 mt-1">链接预计 {expiresText} 失效，请尽快保存</div>
           </div>
           <div className="bg-slate-50 p-3 space-y-3">
@@ -117,8 +123,15 @@ export default function ExportResultClient(): ReactElement {
                   预览不可用，请直接下载文件
                 </div>
               )
-            ) : (
+            ) : state.type === 'image' ? (
               <img src={absoluteUrl} alt="导出图片预览" className="w-full rounded-2xl bg-white border border-slate-200" />
+            ) : (
+              <div className="flex h-[42vh] flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white px-6 text-center">
+                <div className="text-base font-semibold text-slate-900">Markdown 文件已准备好</div>
+                <div className="mt-2 text-sm leading-6 text-slate-500">
+                  可直接下载 .md 文件，或复制链接到浏览器保存。
+                </div>
+              </div>
             )}
           </div>
         </div>

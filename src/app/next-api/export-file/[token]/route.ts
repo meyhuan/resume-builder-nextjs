@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { readExportTemp } from '@/lib/export-temp-store'
-import { buildExportContentDisposition } from '@/lib/export-file-name'
+import { buildExportContentDisposition, getExportFileExtension } from '@/lib/export-file-name'
 
 export async function GET(
   req: Request,
@@ -34,7 +34,7 @@ export async function GET(
           'Content-Disposition': buildExportContentDisposition(
             'attachment',
             record.fileName,
-            record.type === 'image' ? 'png' : 'pdf',
+            getExportFileExtension(record.type),
           ),
           'Cache-Control': 'no-store',
         },

@@ -9,7 +9,6 @@ import puppeteerCore from 'puppeteer-core'
 import chromium from '@sparticuz/chromium'
 import { mintPrintToken } from '@/lib/print-token'
 import { rasterizePdfToPngs } from '@/lib/pdf-to-png'
-import type { ExportAssetType } from '@/lib/export-temp-store'
 
 export interface RenderResult {
   readonly buffer: Buffer
@@ -21,7 +20,7 @@ export interface RenderViaPrintPageOpts {
   readonly baseUrl: string
   readonly resumeId: string
   readonly templateId?: string
-  readonly type: ExportAssetType
+  readonly type: 'pdf' | 'image'
   /** Print token TTL in ms. Defaults to 5 minutes. */
   readonly tokenTtlMs?: number
 }

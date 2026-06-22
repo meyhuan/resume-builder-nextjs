@@ -7,7 +7,7 @@ import { sanitizeExportFileName } from '@/lib/export-file-name'
 export const EXPORT_TEMP_TTL_MS = 24 * 60 * 60 * 1000
 const STORE_DIR = join(tmpdir(), 'aijianli-export-temp')
 
-export type ExportAssetType = 'pdf' | 'image'
+export type ExportAssetType = 'pdf' | 'image' | 'markdown'
 
 export interface ExportTempEntry {
   readonly buffer: Buffer
