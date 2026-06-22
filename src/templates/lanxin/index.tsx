@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from 'react'
-import type { ReactElement, ReactNode } from 'react'
+import type { CSSProperties, ReactElement, ReactNode } from 'react'
 import { GripVertical, Plus, Trash2 } from 'lucide-react'
 import type { ResumeBlock } from '@/entities/blocks/resume-block'
 import type { Section } from '@/entities/resume/section'
@@ -33,6 +33,8 @@ const INK = '#1f242b'
 const MUTED = '#4c5660'
 const SANS = '"Inter", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif'
 
+type CssVars = CSSProperties & Record<`--${string}`, string | number>
+
 function getBlockTypeLabel(type: string): string {
   if (type === 'experience') return '工作经历'
   if (type === 'project') return '项目经历'
@@ -59,23 +61,34 @@ export default function LanxinTemplate(props: TemplateProps): ReactElement {
   const nodeTop = 1
   const nodeHeight = 19
   const timelineLeft = pagePaddingHorizontal - 27
+  const rootStyle: CssVars = {
+    minHeight: '297mm',
+    backgroundColor: '#ffffff',
+    color: INK,
+    fontFamily: theme.fontFamily || SANS,
+    '--lanxin-print-page-padding-v': `${theme.pagePaddingVertical}mm`,
+  }
 
   return (
     <ResumeFrame
       resume={resume}
       theme={theme}
-      bleed
-      style={{
-        minHeight: '297mm',
-        backgroundColor: '#ffffff',
-        color: INK,
-        fontFamily: theme.fontFamily || SANS,
-      }}
+      className="lanxin-resume-root"
+      style={rootStyle}
     >
       <style>{`
         .lanxin-rich-text p { margin: 0; }
         .lanxin-rich-text ul, .lanxin-rich-text ol { margin: 0; padding-left: 1.2em; }
         .lanxin-rich-text li { margin: 0; }
+        @media print {
+          .lanxin-resume-root {
+            min-height: calc(297mm - var(--lanxin-print-page-padding-v) - 2px) !important;
+            overflow: visible !important;
+          }
+          .lanxin-page-content {
+            padding-bottom: 0 !important;
+          }
+        }
       `}</style>
       <LanxinHero
         header={header}
@@ -88,6 +101,8 @@ export default function LanxinTemplate(props: TemplateProps): ReactElement {
       />
 
       <div
+        data-template-padding-probe="true"
+        className="lanxin-page-content"
         style={{
           position: 'relative',
           padding: `${contentPaddingTop}px ${pagePaddingHorizontal}px ${contentPaddingBottom}px ${pagePaddingHorizontal}px`,
@@ -693,6 +708,7 @@ function StructuredContent(props: {
 function TextContent({ children, lineHeight }: { readonly children: ReactNode; readonly lineHeight: number }): ReactElement {
   return (
     <div
+      data-template-body-text="true"
       style={{
         fontSize: '0.98em',
         lineHeight,

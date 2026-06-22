@@ -66,7 +66,6 @@ export const TEMPLATE_REGISTRY: Record<string, TemplateConfig> = {
     preview: '/thumbnails/template_elegant.webp',
     tags: ['正式', '庄重', '典雅', '金色'],
     component: lazy(() => import('@/templates/elegant')),
-    exportLayout: 'bleed',
   },
   warm: {
     id: 'warm',
@@ -92,7 +91,6 @@ export const TEMPLATE_REGISTRY: Record<string, TemplateConfig> = {
     preview: '/thumbnails/template_lanxin.webp',
     tags: ['通用', '时间轴', '浅蓝', '专业'],
     component: lazy(() => import('@/templates/lanxin')),
-    exportLayout: 'bleed',
     recommendedPrimaryColor: '#3a8ec7',
   },
   tablegrid: {
@@ -120,7 +118,6 @@ export const TEMPLATE_REGISTRY: Record<string, TemplateConfig> = {
     preview: '/thumbnails/template_lifeng.webp',
     tags: ['原创', '紧凑', '双栏', '技术'],
     component: lazy(() => import('@/templates/lifeng')),
-    exportLayout: 'bleed',
     recommendedPrimaryColor: '#7c3aed',
   },
   qingsui: {
@@ -130,7 +127,6 @@ export const TEMPLATE_REGISTRY: Record<string, TemplateConfig> = {
     preview: '/thumbnails/template_qingsui.webp',
     tags: ['原创', '校招', '应届生', '清爽'],
     component: lazy(() => import('@/templates/qingsui')),
-    exportLayout: 'bleed',
     recommendedPrimaryColor: '#0891b2',
   },
   yuanshan: {
@@ -167,7 +163,6 @@ export const TEMPLATE_REGISTRY: Record<string, TemplateConfig> = {
     preview: '/thumbnails/template_lanzhe.webp',
     tags: ['原创', '校招', '折角', '紧凑'],
     component: lazy(() => import('@/templates/lanzhe')),
-    exportLayout: 'bleed',
     recommendedPrimaryColor: '#4f719f',
   },
   dense: {
@@ -186,7 +181,6 @@ export const TEMPLATE_REGISTRY: Record<string, TemplateConfig> = {
     preview: '/thumbnails/template_ziji.webp',
     tags: ['原创', '双栏', '紫色', '个人履历'],
     component: lazy(() => import('@/templates/ziji')),
-    exportLayout: 'bleed',
     recommendedPrimaryColor: '#7c3aed',
   },
   // ——— Flagship headless templates (each owns a deliberate brand palette) —
@@ -197,8 +191,6 @@ export const TEMPLATE_REGISTRY: Record<string, TemplateConfig> = {
     preview: '/thumbnails/template_qingyun.webp',
     tags: ['旗舰', '校招', '应届生', '天青蓝', 'Headless'],
     component: lazy(() => import('@/templates/qingyun')),
-    exportLayout: 'bleed',
-    locksPrimaryColor: true,
     recommendedPrimaryColor: '#0891b2',
   },
   mashang: {
@@ -208,8 +200,6 @@ export const TEMPLATE_REGISTRY: Record<string, TemplateConfig> = {
     preview: '/thumbnails/template_mashang.webp',
     tags: ['旗舰', '开发', '算法', '技术', '终端', 'Headless'],
     component: lazy(() => import('@/templates/mashang')),
-    exportLayout: 'bleed',
-    locksPrimaryColor: true,
     recommendedPrimaryColor: '#10b981',
   },
   zhumo: {

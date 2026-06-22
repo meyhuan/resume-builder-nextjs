@@ -239,11 +239,12 @@ export default function ZijiTemplate(props: TemplateProps): ReactElement {
     '--ziji-purple': primaryColor,
     '--ziji-panel-pad-x': `${panelPadX}px`,
     '--ziji-panel-pad-top': `${panelPadTop}px`,
+    '--ziji-print-page-padding-v': `${theme.pagePaddingVertical}mm`,
     '--ziji-rail-width': `${railColumnWidth}px`,
   }
 
   return (
-    <ResumeFrame resume={resume} theme={theme} bleed disableDnd style={rootStyle}>
+    <ResumeFrame resume={resume} theme={theme} className="ziji-resume-root" disableDnd style={rootStyle}>
       <style>{`
         .ziji-root p { margin: 0; }
         .ziji-root ul, .ziji-root ol { margin: 0; padding-left: 1.2em; }
@@ -252,6 +253,16 @@ export default function ZijiTemplate(props: TemplateProps): ReactElement {
         .ziji-body-text p,
         .ziji-body-text li { line-height: inherit !important; }
         @media print {
+          .ziji-resume-root,
+          .ziji-root {
+            min-height: calc(297mm - var(--ziji-print-page-padding-v) - 2px) !important;
+            overflow: visible !important;
+          }
+          [data-ziji-panel="true"] {
+            min-height: auto !important;
+            padding-bottom: 0 !important;
+            overflow: visible !important;
+          }
           .ziji-root { box-shadow: none !important; }
         }
       `}</style>

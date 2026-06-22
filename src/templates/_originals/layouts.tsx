@@ -90,6 +90,8 @@ export function SingleColumn(props: {
 
   return (
     <div
+      className="original-page-content"
+      data-template-padding-probe="true"
       style={{
         padding: `${padV}px ${padH}px`,
         background: config.id === 'xinghe'
@@ -194,7 +196,7 @@ export function CampusLayout(props: {
   const highlightItems = campusMetricItems(config, header)
 
   return (
-    <div style={{ padding: `${padV}px ${padH}px 46px`, backgroundColor: '#ffffff' }}>
+    <div className="original-page-content" data-template-padding-probe="true" style={{ padding: `${padV}px ${padH}px 46px`, backgroundColor: '#ffffff' }}>
       <header
         className="group relative"
         onClick={header.openEditModal}
@@ -277,7 +279,7 @@ export function TwoColumnDark(props: {
   const mainSections = resume.sections.filter((s) => !sidebarIds.has(s.id))
   const showAvatar = header.baseInfo?.showAvatar !== false
   return (
-    <div className="grid" style={{ gridTemplateColumns: '238px 1fr', minHeight: '297mm', padding: `${padV}px ${padH}px`, backgroundColor: '#fff' }}>
+    <div className="grid original-page-content" data-template-padding-probe="true" style={{ gridTemplateColumns: '238px 1fr', minHeight: '297mm', padding: `${padV}px ${padH}px`, backgroundColor: '#fff' }}>
       <aside style={{ padding: '40px 26px', backgroundColor: '#111827', color: '#f8fafc' }}>
         <div className="group relative" onClick={header.openEditModal} style={{ cursor: 'pointer' }}>
           <div
@@ -331,7 +333,7 @@ export function TwoColumnSoft(props: {
   const sidebarIds = new Set(sidebarSections.map((s) => s.id))
   const mainSections = resume.sections.filter((s) => !sidebarIds.has(s.id))
   return (
-    <div className="grid" style={{ gridTemplateColumns: '286px 1fr', minHeight: '297mm', padding: `${padV}px ${padH}px`, backgroundColor: '#fff' }}>
+    <div className="grid original-page-content" data-template-padding-probe="true" style={{ gridTemplateColumns: '286px 1fr', minHeight: '297mm', padding: `${padV}px ${padH}px`, backgroundColor: '#fff' }}>
       <aside style={{ padding: '42px 28px', background: `linear-gradient(160deg, ${hexToRgba(config.secondary, 0.12)}, ${hexToRgba(config.accent, 0.08)}), #f8fafc` }}>
         <EditableText as="h1" value={header.name} onCommit={header.onCommitName} style={{ margin: 0, fontSize: '2em', lineHeight: 1.15, fontWeight: 800, color: config.ink }} />
         <div style={{ marginTop: 8, color: config.muted, fontSize: '0.94em' }}>{header.baseInfo?.title || props.resume.jobIntention?.position || ''}</div>
@@ -361,7 +363,7 @@ export function PortfolioLayout(props: {
   const [profileSections, mainSections] = splitSections(remainingSections, /技能|证书|资格|自我|评价|优势/i)
   const metrics = config.metrics && config.metrics !== 'none' ? metricItems(config, header) : []
   return (
-    <div style={{ minHeight: '297mm', padding: `${padV}px ${padH}px 44px`, background: `linear-gradient(135deg, ${hexToRgba(config.secondary, 0.1)}, transparent 300px), #fff` }}>
+    <div className="original-page-content" data-template-padding-probe="true" style={{ minHeight: '297mm', padding: `${padV}px ${padH}px 44px`, background: `linear-gradient(135deg, ${hexToRgba(config.secondary, 0.1)}, transparent 300px), #fff` }}>
       <header
         className="group relative"
         onClick={header.openEditModal}
@@ -426,7 +428,7 @@ export function EducationTimelineLayout(props: {
   const fallbackIds = new Set(timelineSections.map((section) => section.id))
   const rest = prioritySections.length > 0 ? otherSections : resume.sections.filter((section) => !fallbackIds.has(section.id))
   return (
-    <div style={{ minHeight: '297mm', padding: `${padV}px ${padH}px 44px`, background: `linear-gradient(180deg, ${lightenHex(config.accent, 0.88)}, #fff 210px)` }}>
+    <div className="original-page-content" data-template-padding-probe="true" style={{ minHeight: '297mm', padding: `${padV}px ${padH}px 44px`, background: `linear-gradient(180deg, ${lightenHex(config.accent, 0.88)}, #fff 210px)` }}>
       <header className="group relative" onClick={header.openEditModal} style={{ display: 'grid', gridTemplateColumns: '1fr 104px', gap: 22, alignItems: 'start', cursor: 'pointer' }}>
         <div>
           <div style={{ display: 'inline-flex', marginBottom: 10, padding: '4px 10px', borderRadius: 999, backgroundColor: '#fff', color: config.accent, fontSize: '0.78em', fontWeight: 800 }}>校招成长线</div>
@@ -468,7 +470,7 @@ export function TechMinimalLayout(props: {
   const [techSections, restAfterTech] = splitSections(resume.sections, /技能|技术|栈|证书|资格/i)
   const [projectSections, otherSections] = splitSections(restAfterTech, /项目|研发|工程|系统|平台|算法/i)
   return (
-    <div style={{ minHeight: '297mm', padding: `${padV}px ${padH}px`, backgroundColor: '#fff' }}>
+    <div className="original-page-content" data-template-padding-probe="true" style={{ minHeight: '297mm', padding: `${padV}px ${padH}px`, backgroundColor: '#fff' }}>
       <header className="group relative" onClick={header.openEditModal} style={{ cursor: 'pointer', borderBottom: '3px solid #111827', paddingBottom: 16 }}>
         <div className="flex items-end justify-between gap-6">
           <div className="min-w-0">
@@ -518,7 +520,7 @@ export function StackProjectsLayout(props: {
   const [stackSections, restAfterStack] = splitSections(resume.sections, /技能|技术|栈|工具|证书/i)
   const [projectSections, otherSections] = splitSections(restAfterStack, /项目|系统|平台|研发|工程|算法/i)
   return (
-    <div className="grid" style={{ gridTemplateColumns: '248px 1fr', minHeight: '297mm', padding: `${padV}px ${padH}px`, backgroundColor: '#fff' }}>
+    <div className="grid original-page-content" data-template-padding-probe="true" style={{ gridTemplateColumns: '248px 1fr', minHeight: '297mm', padding: `${padV}px ${padH}px`, backgroundColor: '#fff' }}>
       <aside style={{ padding: '34px 24px', backgroundColor: '#052e2b', color: '#ecfdf5' }}>
         <EditableText as="h1" value={header.name} onCommit={header.onCommitName} style={{ margin: 0, fontSize: '1.72em', lineHeight: 1.15, fontWeight: 850, color: '#fff' }} />
         <div style={{ marginTop: 8, color: '#a7f3d0', fontSize: '0.88em' }}>{header.baseInfo?.title || resume.jobIntention?.position || '技术栈 / 项目交付'}</div>
@@ -558,7 +560,7 @@ export function OfficialBriefLayout(props: {
   const { resume, theme, header, jobIntention, showJob, config, padV, padH } = props
   const title = header.baseInfo?.title || resume.jobIntention?.position || '求职简历'
   return (
-    <div style={{ minHeight: '297mm', padding: `${padV}px ${padH}px`, backgroundColor: '#fff', color: config.ink }}>
+    <div className="original-page-content" data-template-padding-probe="true" style={{ minHeight: '297mm', padding: `${padV}px ${padH}px`, backgroundColor: '#fff', color: config.ink }}>
       <div style={{ border: `2px solid ${config.accent}`, padding: '24px 28px 30px' }}>
         <header className="group relative" onClick={header.openEditModal} style={{ cursor: 'pointer', textAlign: 'center', borderBottom: `4px double ${config.accent}`, paddingBottom: 18 }}>
           <div style={{ marginBottom: 8, color: config.accent, fontSize: '0.82em', fontWeight: 800 }}>个人履历简表</div>

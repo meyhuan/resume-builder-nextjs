@@ -64,10 +64,12 @@ export default function LanzheTemplate(props: TemplateProps): ReactElement {
   const titleScale = Math.min(1.18, Math.max(0.88, theme.titleScale ?? 1))
   const contentLineHeight = Math.max(1.25, theme.lineHeight)
   const spacingScale = Math.max(0.78, theme.spacingScale)
-  const paperLeft = Math.max(36, Math.min(52, mmToPx(theme.pagePaddingHorizontal) * 0.72))
-  const rightPad = Math.max(42, Math.min(62, mmToPx(theme.pagePaddingHorizontal) * 0.86))
-  const topPad = Math.max(42, Math.min(72, mmToPx(theme.pagePaddingVertical) * 0.66))
-  const bottomPad = Math.max(34, Math.min(60, mmToPx(theme.pagePaddingVertical) * 0.52))
+  const pagePaddingHorizontal = Math.max(34, mmToPx(theme.pagePaddingHorizontal))
+  const pagePaddingVertical = Math.max(36, mmToPx(theme.pagePaddingVertical))
+  const paperLeft = pagePaddingHorizontal
+  const rightPad = pagePaddingHorizontal
+  const topPad = pagePaddingVertical
+  const bottomPad = pagePaddingVertical
   const heroHeight = Math.max(118, Math.min(140, theme.fontSize * 8.5))
   const railLeft = Math.max(16, paperLeft - 18)
 
@@ -83,12 +85,13 @@ export default function LanzheTemplate(props: TemplateProps): ReactElement {
     '--lanzhe-blue-fold': foldColor,
     '--lanzhe-blue-pale': paleColor,
     '--lanzhe-paper-left': `${paperLeft}px`,
+    '--lanzhe-print-page-padding-v': `${theme.pagePaddingVertical}mm`,
     '--lanzhe-fold-width': '22px',
     '--lanzhe-fold-height': '13px',
   }
 
   return (
-    <ResumeFrame resume={resume} theme={theme} bleed style={rootStyle}>
+    <ResumeFrame resume={resume} theme={theme} className="lanzhe-resume-root" style={rootStyle}>
       <style>{`
         .lanzhe-rich p { margin: 0; }
         .lanzhe-rich ul, .lanzhe-rich ol { margin: 0; padding-left: 1.25em; }
@@ -133,6 +136,13 @@ export default function LanzheTemplate(props: TemplateProps): ReactElement {
           z-index: 1;
         }
         @media print {
+          .lanzhe-resume-root {
+            min-height: calc(297mm - var(--lanzhe-print-page-padding-v) - 2px) !important;
+            overflow: visible !important;
+          }
+          .lanzhe-page-content {
+            padding-bottom: 0 !important;
+          }
           .lanzhe-root-shadow { box-shadow: none !important; }
         }
       `}</style>
@@ -163,6 +173,8 @@ export default function LanzheTemplate(props: TemplateProps): ReactElement {
       />
 
       <div
+        data-template-padding-probe="true"
+        className="lanzhe-page-content"
         style={{
           position: 'relative',
           zIndex: 2,
@@ -780,6 +792,7 @@ function TextContent(props: {
 }): ReactElement {
   return (
     <div
+      data-template-body-text="true"
       style={{
         color: TEXT,
         fontSize: '0.95em',

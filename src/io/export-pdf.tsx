@@ -16,16 +16,14 @@ export function useExportPdf<T extends HTMLElement>(contentRef: RefObject<T | nu
   const paddingV: number = options?.pagePaddingVertical ?? 0
   const isBleed: boolean = options?.isBleed ?? false
   const pageMargin: string = (isBleed || paddingV <= 0) ? '0' : `${paddingV}mm 0`
-  const paddingOverride: string = isBleed
-    ? ''
-    : ' .resume-container, .resume-body-content { padding-top: 0 !important; padding-bottom: 0 !important; }'
+  const firstPageMargin: string = (isBleed || paddingV <= 0) ? '' : ' @page:first { margin-top: 0; }'
   const squareCornersOverride: string =
     ' .page { border-radius: 0 !important; box-shadow: none !important; }'
   const handlePrint = useReactToPrint({
     // react-to-print types expect HTMLElement; cast safely via unknown without using any
     contentRef: (contentRef as unknown) as RefObject<HTMLElement>,
     documentTitle: options?.documentTitle ?? 'resume',
-    pageStyle: `@page { size: A4; margin: ${pageMargin}; }${paddingOverride}${squareCornersOverride}`,
+    pageStyle: `@page { size: A4; margin: ${pageMargin}; }${firstPageMargin}${squareCornersOverride}`,
   })
   return handlePrint
 }

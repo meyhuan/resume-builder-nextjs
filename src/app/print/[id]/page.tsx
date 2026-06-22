@@ -63,7 +63,13 @@ export default async function PrintPage(props: PrintPageProps): Promise<ReactEle
   const isBleedTemplate: boolean = TEMPLATE_REGISTRY[templateId]?.exportLayout === 'bleed'
   const pagePaddingV = savedTheme?.pagePaddingVertical ?? 22
   const pageMarginCss = isOnePage || isBleedTemplate ? 'margin: 0;' : `margin: ${pagePaddingV}mm 0;`
-  const bleedFirstPageCss = ''
+  const printPageMinHeightCss = isOnePage || isBleedTemplate ? '297mm' : `calc(297mm - ${pagePaddingV}mm - 2px)`
+  const firstPageMarginCss = isOnePage || isBleedTemplate
+    ? ''
+    : `
+        @page:first {
+          margin-top: 0;
+        }`
   const onePageCss = isOnePage
     ? `
         .page[data-one-page="true"] {
@@ -84,14 +90,6 @@ export default async function PrintPage(props: PrintPageProps): Promise<ReactEle
           min-height: calc(297mm - 1px) !important;
         }`
     : ''
-  const perPageMarginCss = isOnePage || isBleedTemplate
-    ? ''
-    : `
-        .resume-container,
-        .resume-body-content {
-          padding-top: 0 !important;
-          padding-bottom: 0 !important;
-        }`
 
   console.log('[print/page] rendering', { id, templateId, title: record.title, hasSavedTheme: !!savedTheme, primaryColor: savedTheme?.primaryColor, isOnePage, isBleedTemplate })
 
@@ -103,15 +101,13 @@ export default async function PrintPage(props: PrintPageProps): Promise<ReactEle
       <style>{`
         html, body { margin: 0; padding: 0; background: #ffffff; }
         .print-stage { width: 210mm; margin: 0 auto; background: #ffffff; }
-        .print-stage .page { width: 210mm; min-height: 297mm; background: #ffffff; box-shadow: none; border-radius: 0; }
+        .print-stage .page { width: 210mm; min-height: ${printPageMinHeightCss}; background: #ffffff; box-shadow: none; border-radius: 0; }
         .print-stage * { box-shadow: none !important; filter: none !important; }
-        /* @page margin provides top/bottom whitespace on every page (including page 2+).
-           Remove the template container's own vertical padding so it doesn't double up on page 1. */
+        /* Keep the first-page top owned by the template; @page handles later page margins. */
         @page { size: A4; ${pageMarginCss} }
-        ${bleedFirstPageCss}
+        ${firstPageMarginCss}
         ${onePageCss}
         ${bleedPageCss}
-        ${perPageMarginCss}
       `}</style>
       <div className="page" id="print-root" data-one-page={isOnePage ? 'true' : 'false'}>
         <PrintRenderer resume={resumeData} templateId={templateId} savedTheme={savedTheme} />

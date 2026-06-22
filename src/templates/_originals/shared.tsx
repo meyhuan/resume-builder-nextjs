@@ -17,6 +17,8 @@ import {
 import type { OriginalTemplateProps, VariantConfig } from './types'
 import { SANS, SERIF } from './types'
 
+type CssVars = CSSProperties & Record<`--${string}`, string | number>
+
 // Editable primitives used by the split implementation live below this entry:
 // AvatarSlot, FieldChip, SortableSection, BlockList, DeleteSectionDialog.
 export function OriginalTemplate({ resume, theme, variant }: OriginalTemplateProps): ReactElement {
@@ -28,19 +30,31 @@ export function OriginalTemplate({ resume, theme, variant }: OriginalTemplatePro
   const fontFamily = config.serif ? SERIF : (theme.fontFamily || SANS)
   const padV = Math.max(30, mmToPx(theme.pagePaddingVertical))
   const padH = Math.max(38, mmToPx(theme.pagePaddingHorizontal))
-  const rootStyle: CSSProperties = {
+  const rootStyle: CssVars = {
     minHeight: '297mm',
     backgroundColor: variant === 'yuanshan' ? '#fbfaf8' : '#ffffff',
     color: config.ink,
     fontFamily,
+    '--original-print-page-padding-v': `${theme.pagePaddingVertical}mm`,
   }
 
   return (
-    <ResumeFrame resume={resume} theme={theme} bleed={config.bleed} style={rootStyle}>
+    <ResumeFrame resume={resume} theme={theme} bleed={config.bleed} className="original-template-root" style={rootStyle}>
       <style>{`
         .original-rich p { margin: 0; }
         .original-rich ul, .original-rich ol { margin: 0; padding-left: 1.2em; }
         .original-rich li { margin: 0.08em 0; }
+        .original-page-content { box-sizing: border-box; }
+        @media print {
+          .original-template-root,
+          .original-page-content {
+            min-height: calc(297mm - var(--original-print-page-padding-v) - 2px) !important;
+            overflow: visible !important;
+          }
+          .original-page-content {
+            padding-bottom: 0 !important;
+          }
+        }
       `}</style>
       {config.layout === 'dark-sidebar' ? (
         <TwoColumnDark resume={resume} theme={theme} header={header} jobIntention={jobIntention} showJob={isJobIntentionVisible} config={config} />

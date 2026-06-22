@@ -3,7 +3,7 @@ import { useState, useRef, useCallback, cloneElement } from 'react'
 import type { ReactElement, ReactNode, ChangeEvent } from 'react'
 import { useDroppable } from '@dnd-kit/core'
 import { SortableContext, rectSortingStrategy } from '@dnd-kit/sortable'
-import { Pencil, XCircle } from 'lucide-react'
+import { GripVertical, Pencil, XCircle } from 'lucide-react'
 import type { ResumeData } from '@/entities/resume/resume-data'
 import type { ThemeTokens } from '@/entities/theme/theme-tokens'
 import type { ResumeBlock } from '@/entities/blocks/resume-block'
@@ -320,9 +320,8 @@ export default function ElegantTemplate(props: ElegantTemplateProps): ReactEleme
 
   return (
     <div
-      className="resume-container bg-white text-black mx-auto rounded overflow-hidden"
+      className="resume-container elegant-resume-root bg-white text-black mx-auto rounded overflow-hidden print:overflow-visible"
       data-page-padding-vertical={theme.pagePaddingVertical}
-      data-bleed="true"
       style={{
         color: theme.textColor,
         fontFamily: theme.fontFamily,
@@ -338,23 +337,14 @@ export default function ElegantTemplate(props: ElegantTemplateProps): ReactEleme
       />
 
       {/* Body content */}
-      <div 
-        className="resume-body-content" 
+      <div
+        className="resume-body-content elegant-body-content flex flex-col print:!pb-0"
+        data-template-padding-probe="true"
         style={{ 
           padding: bodyPadding,
           paddingTop: `calc(${theme.pagePaddingVertical}mm * ${theme.spacingScale})` 
         }}
       >
-        {isJobIntentionVisible ? (
-          <div style={{ marginBottom: `${24 * theme.spacingScale}px` }}>
-            <JobIntentionSection
-              jobIntention={resume.jobIntention ?? null}
-              themeColor={accentColor}
-              styles={ELEGANT_TEMPLATE_STYLES.jobIntention}
-            />
-          </div>
-        ) : null}
-
         <DragDropProvider
           resume={resume}
           theme={theme}
@@ -387,7 +377,7 @@ export default function ElegantTemplate(props: ElegantTemplateProps): ReactEleme
             )
           }}
         >
-          <main className="flex flex-col relative" style={{ gap: `${24 * theme.spacingScale}px` }}>
+          <main className="order-2 flex flex-col relative" style={{ gap: `${24 * theme.spacingScale}px` }}>
             {resume.sections.map((section) => (
               <SortableSectionWrapper key={section.id} sectionId={section.id}>
                 {(sectionDragProps) => (
@@ -415,6 +405,24 @@ export default function ElegantTemplate(props: ElegantTemplateProps): ReactEleme
             ))}
           </main>
         </DragDropProvider>
+
+        {isJobIntentionVisible ? (
+          <div className="order-1" style={{ marginBottom: `${24 * theme.spacingScale}px` }}>
+            <JobIntentionSection
+              jobIntention={resume.jobIntention ?? null}
+              themeColor={accentColor}
+              styles={ELEGANT_TEMPLATE_STYLES.jobIntention}
+              slots={{
+                field: (label, value) => (
+                  <span className="block min-w-0 break-words text-gray-800">
+                    <span className="text-gray-500">{label}: </span>
+                    {value}
+                  </span>
+                ),
+              }}
+            />
+          </div>
+        ) : null}
       </div>
     </div>
   )
@@ -445,7 +453,7 @@ function ElegantSectionView(props: ElegantSectionViewProps): ReactElement {
     <SectionContainer themeColor={themeColor}>
       {/* Section header with gold underline */}
       <div
-        className="pb-2 mb-3"
+        className="relative pb-2 mb-3"
         style={{ borderBottom: `2px solid ${themeColor}` }}
       >
         <SectionHeader
@@ -461,6 +469,20 @@ function ElegantSectionView(props: ElegantSectionViewProps): ReactElement {
           dragHandleListeners={dragHandleListeners}
           dragHandleRef={dragHandleRef}
         />
+        {dragHandleRef ? (
+          <button
+            type="button"
+            ref={dragHandleRef}
+            {...(dragHandleAttributes as Record<string, unknown> | undefined)}
+            {...(dragHandleListeners as Record<string, unknown> | undefined)}
+            className="absolute top-1 right-[172px] h-6 w-6 cursor-grab active:cursor-grabbing items-center justify-center rounded border border-slate-200 bg-white text-slate-600 opacity-0 shadow-sm transition-opacity group-hover:opacity-100 hover:text-slate-900 print:hidden"
+            style={{ display: 'flex' }}
+            title="拖动"
+            aria-label="拖动"
+          >
+            <GripVertical className="h-3.5 w-3.5" />
+          </button>
+        ) : null}
       </div>
       <SortableContext items={blockIds} strategy={rectSortingStrategy}>
         {columns === 2 ? (

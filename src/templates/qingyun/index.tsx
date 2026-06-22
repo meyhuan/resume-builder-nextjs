@@ -125,9 +125,15 @@ export default function QingyunTemplate(props: TemplateProps): ReactElement {
     <ResumeFrame
       resume={resume}
       theme={theme}
-      bleed
+      className="qingyun-resume-root"
       style={{ backgroundColor: palette.paper, color: palette.ink, fontFamily: SANS }}
     >
+      <style>{`
+        @media print {
+          .qingyun-resume-root { overflow: visible !important; }
+          .qingyun-page-content { padding-bottom: 0 !important; }
+        }
+      `}</style>
       {/* ——— HERO ———————————————————————————————————————————— */}
       <QingyunHero
         header={header}
@@ -160,7 +166,7 @@ export default function QingyunTemplate(props: TemplateProps): ReactElement {
         )}
 
         {/* ——— MAIN SECTIONS ————————————————————————— */}
-        <main style={{ ...pagePad, paddingTop: jobIntentionVisible ? 12 * theme.spacingScale : pagePad.paddingTop, display: 'flex', flexDirection: 'column', gap: 26 * theme.spacingScale }}>
+        <main data-template-padding-probe="true" className="qingyun-page-content" style={{ ...pagePad, paddingTop: jobIntentionVisible ? 12 * theme.spacingScale : pagePad.paddingTop, display: 'flex', flexDirection: 'column', gap: 26 * theme.spacingScale }}>
           {resume.sections.map((section: Section) => (
             <SortableSection key={section.id} sectionId={section.id}>
               {(dragProps) => (
@@ -355,7 +361,7 @@ function ObjectiveSection(props: ObjectiveProps): ReactElement {
         >
           OBJECTIVE
         </span>
-        <span style={{ fontSize: '1em', fontWeight: 600, color: palette.ink }}>求职意向</span>
+        <h2 style={{ margin: 0, fontSize: '1em', fontWeight: 600, lineHeight: 1.2, color: palette.ink }}>求职意向</h2>
         <span style={{ flex: 1, height: 1, backgroundColor: palette.rule }} />
       </div>
 
@@ -495,12 +501,14 @@ function QingyunSection(props: SectionProps): ReactElement {
           {englishTitle}
         </span>
         <EditableText
-          as="span"
+          as="h2"
           value={title}
           onCommit={canEditTitle ? onCommitTitle : undefined}
           className="font-semibold"
           style={{
+            margin: 0,
             fontSize: '1em',
+            lineHeight: 1.2,
             color: palette.ink,
           }}
         />

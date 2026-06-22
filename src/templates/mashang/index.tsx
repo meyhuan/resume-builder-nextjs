@@ -105,9 +105,15 @@ export default function MashangTemplate(props: TemplateProps): ReactElement {
       <ResumeFrame
         resume={resume}
         theme={theme}
-        bleed
+        className="mashang-resume-root"
         style={{ backgroundColor: palette.paper, color: palette.ink, fontFamily: SANS }}
       >
+        <style>{`
+          @media print {
+            .mashang-resume-root { overflow: visible !important; }
+            .mashang-page-content { padding-bottom: 0 !important; }
+          }
+        `}</style>
         {/* ——— HERO —————————————————————————————————————— */}
         <MashangHero header={header} horizontalPadding={pagePad.paddingLeft as number} />
 
@@ -122,6 +128,8 @@ export default function MashangTemplate(props: TemplateProps): ReactElement {
 
         {/* ——— MAIN SECTIONS ————————————————————————— */}
         <main
+          data-template-padding-probe="true"
+          className="mashang-page-content"
           style={{
             ...pagePad,
             paddingTop: jobIntentionVisible ? 10 * theme.spacingScale : pagePad.paddingTop,
@@ -329,9 +337,9 @@ function ObjectiveSection(props: ObjectiveProps): ReactElement {
         >
           00/
         </span>
-        <span style={{ fontSize: '1.1em', fontWeight: 600, color: palette.codeDeep }}>
+        <h2 style={{ margin: 0, fontSize: '1.1em', fontWeight: 600, lineHeight: 1.2, color: palette.codeDeep }}>
           求职意向
-        </span>
+        </h2>
         <span
           style={{
             fontFamily: MONO,
@@ -480,11 +488,11 @@ function MashangSection(props: SectionProps): ReactElement {
           {idx}/
         </span>
         <EditableText
-          as="span"
+          as="h2"
           value={title}
           onCommit={canEditTitle ? onCommitTitle : undefined}
           className="font-semibold"
-          style={{ fontSize: '1.1em', color: palette.codeDeep }}
+          style={{ margin: 0, fontSize: '1.1em', lineHeight: 1.2, color: palette.codeDeep }}
         />
         <span
           style={{
