@@ -12,11 +12,10 @@ interface MiniProgramCapabilities {
 const MINI_MARKDOWN_EXPORT_MIN_VERSION = '2.0.0'
 
 export function useMiniProgramCapabilities(): MiniProgramCapabilities {
-  const [miniVersion, setMiniVersion] = useState<string>(() => miniProgramRuntime.readMiniVersion())
+  const [miniVersion] = useState<string>(() => miniProgramRuntime.readMiniVersion())
 
   useEffect((): void => {
     miniProgramRuntime.rememberCurrentUrl()
-    setMiniVersion(miniProgramRuntime.readMiniVersion())
   }, [])
 
   return useMemo((): MiniProgramCapabilities => ({
