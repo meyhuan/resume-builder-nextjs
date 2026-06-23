@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/dialog';
 import { useAuthStore } from '@/store/use-auth-store';
 import { useVipStore } from '@/store/use-vip-store';
+import { track } from '@/lib/analytics';
 
 const H5_PAY_BASE_URL = 'https://aijianli.cn/static/pay/dist/index.html';
 const POLL_INTERVAL_MS = 3000;
@@ -27,14 +28,30 @@ interface ComparisonFeature {
  * Source of truth: src/lib/quota/membership-benefits.ts
  */
 const COMPARISON_FEATURES: ComparisonFeature[] = [
-  { feature: 'AI 生成简历', nonVip: '3', vip: 'infinity' },
-  { feature: 'AI 导入优化', nonVip: '3', vip: 'infinity' },
-  { feature: 'AI 续写内容', nonVip: '5', vip: 'infinity' },
-  { feature: 'AI 润色文本', nonVip: '5', vip: 'infinity' },
   { feature: 'PDF 高清导出', nonVip: '1', vip: 'infinity' },
+  { feature: 'Markdown 导出', nonVip: 'cross', vip: 'check' },
+  { feature: '图片导出', nonVip: 'cross', vip: 'check' },
+  { feature: 'AI 优化简历', nonVip: 'limited', vip: 'infinity' },
   { feature: '精品模板', nonVip: 'cross', vip: 'check' },
   { feature: '无水印导出', nonVip: 'cross', vip: 'check' },
+  { feature: '一对一简历指导', nonVip: 'cross', vip: 'check' },
+  { feature: '求职增值功能优先体验', nonVip: 'cross', vip: 'check' },
 ];
+
+const CONTEXT_COPY = {
+  'pdf-export': {
+    title: '你的简历已完成',
+    description: '开通后可导出高清 PDF、Markdown 和图片，长期修改下载',
+  },
+  ai: {
+    title: 'AI 优化额度已用完',
+    description: '开通后可继续使用 AI 生成、润色和优化，让简历更贴合岗位',
+  },
+  generic: {
+    title: '升级会员',
+    description: '解锁高清导出、AI 优化、无水印、一对一简历指导和后续求职增值能力',
+  },
+};
 
 interface VipPlan {
   id: number;
@@ -177,12 +194,19 @@ export default function VipUpgradeDialog({ open, onOpenChange, hidePlanOptions =
           isVip: true,
         });
       }
+      track('pay_page_view', {
+        entry: 'vip_upgrade_dialog',
+        upgradeContext,
+        source: 'web',
+        planCount: sortedPlans.length,
+        recommendedVipType: sortedPlans[0]?.vipType,
+      });
       setStep('qrcode');
     } catch (err: unknown) {
       setErrorMsg(err instanceof Error ? err.message : 'Unknown error');
       setStep('error');
     }
-  }, [updateVipStatus]);
+  }, [updateVipStatus, upgradeContext]);
 
   const startPolling = useCallback((): void => {
     stopPolling();
@@ -289,6 +313,19 @@ export default function VipUpgradeDialog({ open, onOpenChange, hidePlanOptions =
   const payUrl = userId
     ? `${H5_PAY_BASE_URL}?userId=${userId}&source=web&vipType=${selectedVipType ?? ''}&autoPay=1`
     : '';
+  const dialogCopy = CONTEXT_COPY[upgradeContext] || CONTEXT_COPY.generic;
+  const handleSelectVipType = (plan: VipPlan): void => {
+    setSelectedVipType(plan.vipType);
+    track('pay_plan_click', {
+      entry: 'vip_upgrade_dialog',
+      upgradeContext,
+      source: 'web',
+      planId: plan.id,
+      vipType: plan.vipType,
+      amount: plan.price,
+      payChannel: 'wechat',
+    });
+  };
   const canShowInviteOption = !hidePlanOptions
     && upgradeContext === 'pdf-export'
     && !quota.pdfExport.isVip
@@ -312,10 +349,10 @@ export default function VipUpgradeDialog({ open, onOpenChange, hidePlanOptions =
           <DialogHeader>
             <DialogTitle className="text-white flex items-center gap-2 text-lg font-semibold">
               <Crown className="w-5 h-5 text-white" />
-              升级会员
+              {dialogCopy.title}
             </DialogTitle>
             <DialogDescription className="mt-1 text-sm text-white/85">
-              解锁全部模板、AI 功能与无限导出
+              {dialogCopy.description}
             </DialogDescription>
           </DialogHeader>
         </div>
@@ -443,6 +480,8 @@ export default function VipUpgradeDialog({ open, onOpenChange, hidePlanOptions =
                             </div>
                           ) : item.nonVip === 'infinity' ? (
                             <InfinityIcon className="w-5 h-5 text-slate-300" />
+                          ) : item.nonVip === 'limited' ? (
+                            <span className="text-xs text-slate-500 font-medium">每日限次</span>
                           ) : (
                             <span className="text-xs text-slate-500 font-medium">{item.nonVip}次</span>
                           )}
@@ -468,6 +507,9 @@ export default function VipUpgradeDialog({ open, onOpenChange, hidePlanOptions =
                       </div>
                     ))}
                   </div>
+                  <p className="border-t border-slate-100 bg-violet-50/30 px-4 py-3 text-[11px] leading-5 text-slate-500">
+                    会员增值能力持续更新中：自我介绍生成、HR 打招呼话术、面试题生成、简历翻译、多岗位简历版本、模拟面试等能力将陆续探索，会员优先体验。
+                  </p>
                 </div>
               </div>
 
@@ -476,7 +518,7 @@ export default function VipUpgradeDialog({ open, onOpenChange, hidePlanOptions =
                 {!hidePlanOptions && plans.length > 0 && (
                   <div className="grid w-full grid-cols-3 gap-2">
                     {plans.map((plan, index) => {
-                      const isRecommended = index === 0;
+                      const isRecommended = plan.vipType === 3 || index === 0;
                       const dailyPrice = plan.duration >= 30000
                         ? '<0.01'
                         : (plan.price / plan.duration).toFixed(2);
@@ -484,13 +526,13 @@ export default function VipUpgradeDialog({ open, onOpenChange, hidePlanOptions =
                       return (
                         <div
                           key={plan.id}
-                          onClick={(): void => setSelectedVipType(plan.vipType)}
+                          onClick={(): void => handleSelectVipType(plan)}
                           className={selectedVipType === plan.vipType
                             ? 'relative overflow-hidden cursor-pointer rounded-xl border border-violet-500 bg-violet-50/50 px-1 py-3 text-center shadow-sm shadow-violet-100 transition-all flex flex-col justify-center'
                             : 'relative overflow-hidden cursor-pointer rounded-xl border border-slate-200 bg-white px-1 py-3 text-center transition-all hover:border-violet-200 hover:bg-violet-50/20 flex flex-col justify-center'}
                         >
                           {isRecommended && (
-                            <div className="absolute top-0 left-0 bg-violet-600 text-white text-[9px] font-medium px-2 py-0.5 rounded-br-lg z-10">限时特惠</div>
+                            <div className="absolute top-0 left-0 bg-violet-600 text-white text-[9px] font-medium px-2 py-0.5 rounded-br-lg z-10">推荐</div>
                           )}
                           {plan.duration >= 30000 && (
                             <div className="absolute top-0 right-0 bg-fuchsia-500 text-white text-[9px] font-medium px-1.5 py-0.5 rounded-bl-lg z-10">终身</div>
@@ -504,7 +546,7 @@ export default function VipUpgradeDialog({ open, onOpenChange, hidePlanOptions =
                           </div>
                           <div className={selectedVipType === plan.vipType ? 'mt-0.5 flex flex-col items-center gap-0.5 text-[9px] font-medium text-violet-600' : 'mt-0.5 flex flex-col items-center gap-0.5 text-[9px] text-slate-400'}>
                             <span className={selectedVipType === plan.vipType ? 'rounded-full bg-violet-100 px-1.5 py-0.5 mt-0.5 scale-95' : 'rounded-full bg-slate-100 px-1.5 py-0.5 mt-0.5 scale-95'}>
-                              约 {dailyPrice}元/天
+                              {plan.duration >= 30000 ? '一次开通' : `约 ${dailyPrice}元/天`}
                             </span>
                           </div>
                         </div>
@@ -559,7 +601,7 @@ export default function VipUpgradeDialog({ open, onOpenChange, hidePlanOptions =
               </div>
               <div className="text-center">
                 <h3 className="text-lg font-semibold text-slate-800">会员已生效</h3>
-                <p className="text-sm text-slate-500 mt-1">尽享全部高级功能</p>
+                <p className="text-sm text-slate-500 mt-1">可继续导出 PDF、Markdown 和图片</p>
               </div>
               <button
                 onClick={() => onOpenChange(false)}

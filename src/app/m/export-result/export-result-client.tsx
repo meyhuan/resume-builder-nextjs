@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { ArrowLeft, Copy, ExternalLink, Download } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
+import JobSprintOffer from '@/components/vip/job-sprint-offer'
 import { createLogger } from '@/lib/logger'
 import { getExportFileExtension, sanitizeExportFileName } from '@/lib/export-file-name'
 
@@ -134,6 +135,10 @@ export default function ExportResultClient(): ReactElement {
               </div>
             )}
           </div>
+        </div>
+
+        <div className="mt-4">
+          <JobSprintOffer entry="export-result" compact />
         </div>
       </main>
 

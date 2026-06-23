@@ -3,10 +3,11 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Crown, ArrowLeft, LogOut, Copy, Check, X, Sparkles, Shield, FileText, Zap, Trash2, AlertTriangle } from 'lucide-react';
+import { Crown, ArrowLeft, LogOut, Copy, Check, X, Sparkles, FileText, Zap, Trash2, AlertTriangle } from 'lucide-react';
 import { useAuthStore } from '@/store/use-auth-store';
 import { useVipCheck } from '@/hooks/use-vip-check';
 import VipUpgradeDialog from '@/components/vip/vip-upgrade-dialog';
+import JobSprintOffer from '@/components/vip/job-sprint-offer';
 
 interface VipInfo {
   isVip: boolean;
@@ -37,9 +38,12 @@ const COMPARE_ROWS: Array<{ label: string; free: string | false; vip: string | t
   { label: 'AI 生成简历', free: '每日 3 次', vip: '无限次' },
   { label: 'AI 续写 & 润色', free: '每日 5 次', vip: '无限次' },
   { label: 'PDF 导出', free: '免费限 1 次', vip: '无水印 · 高清 · 无限' },
+  { label: 'Markdown 导出', free: false, vip: true },
+  { label: '图片导出', free: false, vip: true },
   { label: '精品模板', free: '部分可用', vip: '全部解锁' },
   { label: 'AI 导入解析', free: '每日 3 次', vip: '无限次' },
-  { label: '简历私密保存', free: false, vip: true },
+  { label: '一对一简历指导', free: false, vip: '修改建议' },
+  { label: '求职增值功能', free: false, vip: '优先体验' },
 ];
 
 export default function MembershipPage(): React.ReactElement {
@@ -209,8 +213,8 @@ export default function MembershipPage(): React.ReactElement {
                     {[
                       { icon: Zap, label: 'AI 功能无限次' },
                       { icon: FileText, label: 'PDF 无水印导出' },
+                      { icon: FileText, label: 'Markdown / 图片导出' },
                       { icon: Sparkles, label: '全站模板解锁' },
-                      { icon: Shield, label: '简历私密保存' },
                     ].map(({ icon: Icon, label }) => (
                       <div key={label} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/8 border border-white/10">
                         <Icon className="w-3 h-3 text-amber-400" />
@@ -343,6 +347,11 @@ export default function MembershipPage(): React.ReactElement {
                   </div>
                 </div>
               ))}
+              <div className="px-6 py-4 border-t border-violet-100/60 bg-violet-50/30">
+                <p className="text-xs leading-5 text-slate-500">
+                  会员增值能力持续更新中：自我介绍生成、HR 打招呼话术、面试题生成、简历翻译、多岗位简历版本、模拟面试等能力将陆续探索，会员优先体验。
+                </p>
+              </div>
               {!isVip && (
                 <div className="px-6 py-5 bg-violet-50/40 border-t border-violet-100/60">
                   <button
@@ -355,6 +364,8 @@ export default function MembershipPage(): React.ReactElement {
                 </div>
               )}
             </div>
+
+            <JobSprintOffer entry="membership" />
 
             {/* ══ FOOTER ══ */}
             <div className="flex items-center gap-5 px-1 py-3">

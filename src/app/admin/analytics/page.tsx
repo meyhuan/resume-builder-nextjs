@@ -64,12 +64,53 @@ interface ErrorData {
   errors: ErrorGroup[];
 }
 
+interface RevenuePlan {
+  vipType: number;
+  vipName: string;
+  orders: number;
+  users: number;
+  amount: number;
+  avgOrderAmount: number;
+  orderShare: number;
+  amountShare: number;
+}
+
+interface RevenueChannel {
+  source: string;
+  payChannel: string;
+  orders: number;
+  amount: number;
+  amountShare: number;
+}
+
+interface RevenueConversion {
+  vipType: number;
+  vipName: string;
+  createdOrders: number;
+  paidOrders: number;
+  payRate: number;
+  paidAmount: number;
+}
+
+interface RevenueData {
+  start: string;
+  end: string;
+  paidOrders: number;
+  paidUsers: number;
+  totalAmount: number;
+  avgOrderAmount: number;
+  plans: RevenuePlan[];
+  channels: RevenueChannel[];
+  conversion: RevenueConversion[];
+}
+
 type AnalyticsState = {
   overview: OverviewData | null;
   pay: FunnelData | null;
   export: FunnelData | null;
   create: FunnelData | null;
   errors: ErrorData | null;
+  revenue: RevenueData | null;
 };
 
 type PlatformFilter = 'all' | 'web' | 'mini_program' | 'h5_pay' | 'backend';
@@ -127,6 +168,11 @@ function formatPercent(value: number | undefined): string {
   return `${Math.round(value * 10000) / 100}%`;
 }
 
+function formatCurrency(value: number | undefined): string {
+  if (typeof value !== 'number') return '-';
+  return `¥${value.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
 function labelEvent(eventName: string): string {
   return EVENT_LABELS[eventName] || eventName;
 }
@@ -159,6 +205,7 @@ export default function AnalyticsAdminPage(): React.ReactElement {
     export: null,
     create: null,
     errors: null,
+    revenue: null,
   });
 
   const totalEvents = useMemo(() => {
@@ -183,16 +230,17 @@ export default function AnalyticsAdminPage(): React.ReactElement {
     setLoading(true);
     setError(null);
     try {
-      const [overview, pay, exportFunnel, create, errors] = await Promise.all([
+      const [overview, pay, exportFunnel, create, errors, revenue] = await Promise.all([
         fetchAnalytics('overview', days, platform, passwordToUse) as Promise<OverviewData>,
         fetchAnalytics('pay', days, platform, passwordToUse) as Promise<FunnelData>,
         fetchAnalytics('export', days, platform, passwordToUse) as Promise<FunnelData>,
         fetchAnalytics('create', days, platform, passwordToUse) as Promise<FunnelData>,
         fetchAnalytics('errors', days, platform, passwordToUse) as Promise<ErrorData>,
+        fetchAnalytics('revenue', days, platform, passwordToUse) as Promise<RevenueData>,
       ]);
       setStoredAdminPassword(passwordToUse);
       setHasStoredPassword(true);
-      setData({ overview, pay, export: exportFunnel, create, errors });
+      setData({ overview, pay, export: exportFunnel, create, errors, revenue });
       setLoaded(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : '加载失败');
@@ -266,7 +314,7 @@ export default function AnalyticsAdminPage(): React.ReactElement {
                   setHasStoredPassword(false);
                   setAdminPassword('');
                   setLoaded(false);
-                  setData({ overview: null, pay: null, export: null, create: null, errors: null });
+                  setData({ overview: null, pay: null, export: null, create: null, errors: null, revenue: null });
                 }}
                 className="h-10 rounded-lg border border-slate-200 px-3 text-sm text-slate-600 hover:bg-slate-50"
               >
@@ -290,11 +338,14 @@ export default function AnalyticsAdminPage(): React.ReactElement {
         </div>
       ) : (
         <>
-          <section className="grid gap-4 md:grid-cols-3">
+          <section className="grid gap-4 md:grid-cols-4">
             <MetricCard icon={<Activity />} label="今日 DAU" value={formatNumber(data.overview?.todayDau)} />
             <MetricCard icon={<Gauge />} label={`${days} 天事件数 · ${PLATFORM_LABELS[platform]}`} value={formatNumber(totalEvents)} />
-            <MetricCard icon={<TrendingUp />} label="支付成功数" value={formatNumber(getStep(data.pay, 'pay_success')?.count)} />
+            <MetricCard icon={<TrendingUp />} label="支付成功数" value={formatNumber(data.revenue?.paidOrders)} />
+            <MetricCard icon={<Sparkles />} label="支付收入" value={formatCurrency(data.revenue?.totalAmount)} />
           </section>
+
+          <RevenueCard data={data.revenue} />
 
           <section className="grid gap-5 xl:grid-cols-3">
             <FunnelCard title="支付漏斗" icon={<Sparkles />} data={data.pay} />
@@ -373,10 +424,6 @@ export default function AnalyticsAdminPage(): React.ReactElement {
   );
 }
 
-function getStep(data: FunnelData | null, eventName: string): FunnelStep | undefined {
-  return data?.steps.find((step) => step.eventName === eventName);
-}
-
 function MetricCard(props: { icon: React.ReactNode; label: string; value: string }): React.ReactElement {
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-5">
@@ -388,6 +435,88 @@ function MetricCard(props: { icon: React.ReactNode; label: string; value: string
       </div>
       <div className="mt-3 text-2xl font-bold text-slate-900">{props.value}</div>
     </div>
+  );
+}
+
+function RevenueCard(props: { data: RevenueData | null }): React.ReactElement {
+  const plans = props.data?.plans ?? [];
+  const channels = props.data?.channels ?? [];
+  const conversion = props.data?.conversion ?? [];
+
+  return (
+    <section className="grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
+      <div className="rounded-xl border border-slate-200 bg-white p-5">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-semibold text-slate-900">会员收入结构</h2>
+            <p className="mt-1 text-xs text-slate-400">来自真实已支付订单，按套餐聚合</p>
+          </div>
+          <div className="text-right">
+            <div className="text-lg font-bold text-slate-900">{formatCurrency(props.data?.totalAmount)}</div>
+            <div className="text-xs text-slate-400">客单价 {formatCurrency(props.data?.avgOrderAmount)}</div>
+          </div>
+        </div>
+        <div className="mt-4 space-y-3">
+          {plans.length === 0 ? (
+            <div className="rounded-lg border border-dashed border-slate-200 p-6 text-center text-sm text-slate-500">
+              当前范围内没有支付订单。
+            </div>
+          ) : plans.map((item) => (
+            <div key={item.vipType} className="rounded-lg border border-slate-100 p-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <div className="text-sm font-medium text-slate-800">{item.vipName}</div>
+                  <div className="mt-1 text-xs text-slate-400">
+                    {formatNumber(item.orders)} 单 · {formatNumber(item.users)} 人 · 收入占比 {formatPercent(item.amountShare)}
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="font-semibold text-slate-900">{formatCurrency(item.amount)}</div>
+                  <div className="text-xs text-slate-400">客单价 {formatCurrency(item.avgOrderAmount)}</div>
+                </div>
+              </div>
+              <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100">
+                <div className="h-full rounded-full bg-violet-500" style={{ width: `${Math.round(item.amountShare * 100)}%` }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="space-y-5">
+        <div className="rounded-xl border border-slate-200 bg-white p-5">
+          <h2 className="text-sm font-semibold text-slate-900">支付创建转化</h2>
+          <div className="mt-4 space-y-3">
+            {conversion.map((item) => (
+              <div key={item.vipType} className="rounded-lg bg-slate-50 px-3 py-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="font-medium text-slate-700">{item.vipName}</span>
+                  <span className="font-semibold text-slate-900">{formatPercent(item.payRate)}</span>
+                </div>
+                <div className="mt-1 text-xs text-slate-400">
+                  {formatNumber(item.createdOrders)} 创建 · {formatNumber(item.paidOrders)} 支付成功
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-slate-200 bg-white p-5">
+          <h2 className="text-sm font-semibold text-slate-900">渠道收入</h2>
+          <div className="mt-4 space-y-3">
+            {channels.map((item) => (
+              <div key={`${item.source}-${item.payChannel}`} className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2">
+                <div>
+                  <div className="text-sm font-medium text-slate-800">{item.source || 'legacy'} / {item.payChannel}</div>
+                  <div className="text-xs text-slate-400">{formatNumber(item.orders)} 单 · {formatPercent(item.amountShare)}</div>
+                </div>
+                <div className="font-semibold text-slate-900">{formatCurrency(item.amount)}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }
 
