@@ -12,7 +12,7 @@ import DocmindApi, {
 } from '@alicloud/docmind-api20220711'
 import { Readable } from 'stream'
 import OpenAI from 'openai'
-import { getDefaultModel, resolveApiKey } from '@/lib/ai/ai-config'
+import { getDefaultModel, resolveApiKey } from '@/lib/ai/ai-runtime-config'
 import { buildImportSystemPrompt, buildImportUserPrompt } from '@/lib/ai/import-prompt-builder'
 import { createDefaultResume } from '@/lib/default-resume'
 import { buildImportResumeTitle } from '@/lib/import-resume-title'

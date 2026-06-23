@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useImportGeneration } from '@/lib/ai/use-import-generation';
-import { getAvailableModels } from '@/lib/ai/ai-config';
 import { mapExternalResume } from '@/io/external-resume-importer';
 import type { ResumeData } from '@/entities/resume/resume-data';
 import { buildImportResumeTitle } from '@/lib/import-resume-title';
@@ -31,7 +30,6 @@ import { useVipCheck } from '@/hooks/use-vip-check';
 import { WxLoginDialog } from '@/components/auth/WxLoginDialog';
 import VipUpgradeDialog from '@/components/vip/vip-upgrade-dialog';
 
-const AI_MODELS = getAvailableModels();
 const MIN_TEXT_LENGTH = 10;
 const IMPORT_CACHE_KEY = 'import_pending_resume';
 const ALLOWED_FILE_TYPES = '.doc,.docx,.pdf,.jpg,.jpeg,.png,.bmp,.gif';
@@ -89,7 +87,6 @@ export default function ImportResumePage(): React.ReactElement {
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const selectedModel: string = AI_MODELS[0].name;
   const [showGenPage, setShowGenPage] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const {
@@ -149,13 +146,13 @@ export default function ImportResumePage(): React.ReactElement {
     if (isLimitReached) return;
     if (rawText.trim().length < MIN_TEXT_LENGTH) return;
     setShowGenPage(true);
-    const importResult = await generate(rawText, selectedModel);
+    const importResult = await generate(rawText);
     await refreshQuota();
     if (importResult) {
       const resumeData = mapExternalResume(importResult);
       openEditorWithData(resumeData);
     }
-  }, [rawText, selectedModel, generate, openEditorWithData, isLimitReached, refreshQuota]);
+  }, [rawText, generate, openEditorWithData, isLimitReached, refreshQuota]);
 
   const handleFileSelect = useCallback((file: File): void => {
     setFileError(null);

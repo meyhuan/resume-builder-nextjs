@@ -8,7 +8,7 @@ import DocmindApi, {
 import OpenAI from 'openai';
 import { checkQuota } from '@/lib/quota/quota-checker';
 import { applyRateLimit } from '@/lib/ai/with-rate-limit';
-import { getDefaultModel, resolveApiKey } from '@/lib/ai/ai-config';
+import { getDefaultModel, resolveApiKey } from '@/lib/ai/ai-runtime-config';
 import { buildImportSystemPrompt, buildImportUserPrompt } from '@/lib/ai/import-prompt-builder';
 
 const POLL_INTERVAL_MS = 3000;

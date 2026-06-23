@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
-import { getModelByName, resolveApiKey } from '@/lib/ai/ai-config';
+import { getModelByName, resolveApiKey } from '@/lib/ai/ai-runtime-config';
 import { withQuotaCheck } from '@/lib/quota/quota-guard';
 import {
   buildOptimizeSystemPrompt,

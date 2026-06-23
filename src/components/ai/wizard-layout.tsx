@@ -7,7 +7,6 @@ import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useWizardStore, getWizardInput } from '@/state/wizard-store';
 import { useAiGeneration } from '@/lib/ai/use-ai-generation';
-import { getAvailableModels } from '@/lib/ai/ai-config';
 import { mapExternalResume } from '@/io/external-resume-importer';
 import type { ResumeData } from '@/entities/resume/resume-data';
 import { parseStreamSections } from '@/lib/ai/json-to-markdown';
@@ -84,8 +83,8 @@ function openMiniProgramEditor(resumeId: string): boolean {
   return false
 }
 
-const AI_MODELS = getAvailableModels();
 const WIZARD_CACHE_KEY = 'wizard_pending_resume';
+const SERVER_DEFAULT_MODEL = 'server-default';
 
 export const WizardLayout = ({ children }: { children: React.ReactNode }) => {
   const router = useRouter();
@@ -96,7 +95,6 @@ export const WizardLayout = ({ children }: { children: React.ReactNode }) => {
   const setDraftFromServer = useDraftStore((s) => s.setFromServer);
   const wizardState = useWizardStore();
   const { isGenerating, streamedText, error, generate, abort, reset } = useAiGeneration();
-  const selectedModel: string = AI_MODELS[0].name;
   const [showGenPage, setShowGenPage] = useState<boolean>(false);
   const { isLoginOpen, handleLoginSuccess, handleLoginClose, isLoggedIn } = useRequireAuth();
   const { showUpgrade, setShowUpgrade, quota, refreshQuota } = useVipCheck();
@@ -198,17 +196,17 @@ export const WizardLayout = ({ children }: { children: React.ReactNode }) => {
     if (!input) return;
     track('ai_generate_start', {
       aiFeature: 'generate_resume',
-      model: selectedModel,
+      model: SERVER_DEFAULT_MODEL,
       identity: wizardState.identity,
       targetRole: wizardState.targetRole,
     });
     setShowGenPage(true);
-    const result = await generate(input, selectedModel);
+    const result = await generate(input);
     await refreshQuota();
     if (result) {
       track('ai_generate_success', {
         aiFeature: 'generate_resume',
-        model: selectedModel,
+        model: SERVER_DEFAULT_MODEL,
         identity: wizardState.identity,
         targetRole: wizardState.targetRole,
       });
@@ -217,7 +215,7 @@ export const WizardLayout = ({ children }: { children: React.ReactNode }) => {
     } else {
       track('ai_generate_failed', {
         aiFeature: 'generate_resume',
-        model: selectedModel,
+        model: SERVER_DEFAULT_MODEL,
         failureReason: error || 'generation_empty',
       });
     }
