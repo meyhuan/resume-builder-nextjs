@@ -42,7 +42,7 @@ const COMPARE_ROWS: Array<{ label: string; free: string | false; vip: string | t
   { label: '图片导出', free: false, vip: true },
   { label: '精品模板', free: '部分可用', vip: '全部解锁' },
   { label: 'AI 导入解析', free: '每日 3 次', vip: '无限次' },
-  { label: '简历答疑支持', free: false, vip: '会员专属' },
+  { label: '一对一简历指导', free: false, vip: '修改建议' },
 ];
 
 export default function MembershipPage(): React.ReactElement {
