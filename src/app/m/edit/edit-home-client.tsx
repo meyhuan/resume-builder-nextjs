@@ -34,6 +34,7 @@ export interface InitialResume {
 
 interface MobileEditHomeClientProps {
   readonly initial: InitialResume | null
+  readonly initialInMiniProgram?: boolean
 }
 
 const log = createLogger('m/edit')
@@ -83,11 +84,11 @@ function scrollAnchorIntoContainer(scroller: HTMLElement, anchorEl: HTMLElement)
  * client-side until the user hits Save.
  */
 export default function MobileEditHomeClient(
-  { initial }: MobileEditHomeClientProps,
+  { initial, initialInMiniProgram = false }: MobileEditHomeClientProps,
 ): ReactElement {
   log.info('mount', { hasInitial: !!initial, initialId: initial?.id })
   const router = useRouter()
-  const inMiniProgram = useInMiniProgram()
+  const inMiniProgram = useInMiniProgram(initialInMiniProgram)
   const setFromServer = useDraftStore((s): typeof s.setFromServer => s.setFromServer)
   const draft = useDraftStore((s): ResumeData | null => s.draft)
   const resumeId = useDraftStore((s): string | null => s.resumeId)
@@ -431,7 +432,7 @@ export default function MobileEditHomeClient(
       ref={rootRef}
       className="min-h-screen pt-2 relative"
       style={{
-        paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 112px)',
+        paddingBottom: 'calc(max(env(safe-area-inset-bottom, 0px), 12px) + 112px)',
       }}
       onPointerDownCapture={saveCurrentScroll}
       onTouchStartCapture={saveCurrentScroll}

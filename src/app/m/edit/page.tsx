@@ -18,7 +18,17 @@ export const metadata: Metadata = {
 }
 
 interface EditHomePageProps {
-  readonly searchParams: Promise<{ id?: string; javaId?: string }>
+  readonly searchParams: Promise<EditHomeSearchParams>
+}
+
+interface EditHomeSearchParams {
+  readonly id?: string
+  readonly javaId?: string
+  readonly source?: string
+  readonly mini?: string
+  readonly debug?: string
+  readonly miniVersion?: string
+  readonly mpVersion?: string
 }
 
 function hasEditableContent(content: unknown): boolean {
@@ -26,6 +36,27 @@ function hasEditableContent(content: unknown): boolean {
   const resume = content as Partial<ResumeData>
   if (resume.name || resume.baseInfo || resume.jobIntention) return true
   return Array.isArray(resume.sections) && resume.sections.length > 0
+}
+
+function buildCanonicalEditRedirect(id: string, params: EditHomeSearchParams): string {
+  const next = new URLSearchParams({ id })
+  const preservedKeys: ReadonlyArray<keyof EditHomeSearchParams> = [
+    'source',
+    'mini',
+    'debug',
+    'miniVersion',
+    'mpVersion',
+  ]
+  for (const key of preservedKeys) {
+    const value = params[key]
+    if (value) next.set(key, value)
+  }
+  return `/m/edit?${next.toString()}`
+}
+
+function hasMiniProgramContext(params: EditHomeSearchParams): boolean {
+  if (params.source === 'web' || params.source === 'standalone' || params.mini === '0') return false
+  return true
 }
 
 /**
@@ -46,6 +77,7 @@ export default async function MobileEditHomePage(
   const params = await searchParams
   log.info('enter', params)
   const store = await cookies()
+  const initialInMiniProgram = hasMiniProgramContext(params)
   const wxId: string | undefined = store.get('auth_uid')?.value
   if (!wxId) {
     log.warn('no auth cookie, redirecting to login')
@@ -67,7 +99,7 @@ export default async function MobileEditHomePage(
       },
       select: { id: true },
     })
-    if (match) redirect(`/m/edit?id=${match.id}`)
+    if (match) redirect(buildCanonicalEditRedirect(match.id, params))
   }
 
   const resume = params.id
@@ -109,5 +141,5 @@ export default async function MobileEditHomePage(
     : null
   log.info('resolved', { id: initial?.id, hasSections: Array.isArray((initial?.content as unknown as Record<string, unknown>)?.sections) })
 
-  return <MobileEditHomeClient initial={initial} />
+  return <MobileEditHomeClient initial={initial} initialInMiniProgram={initialInMiniProgram} />
 }

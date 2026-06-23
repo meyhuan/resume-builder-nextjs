@@ -17,22 +17,27 @@ function getMiniProgram(): WxMiniProgram | null {
 
 /**
  * Returns true when running inside a WeChat mini-program web-view.
- * Always returns false during SSR to avoid hydration mismatch.
+ * /m is mini-program-first: only an explicit standalone/web URL hint opts out.
  */
-export function useInMiniProgram(): boolean {
-  const [inMiniProgram, setInMiniProgram] = useState<boolean>(() => miniProgramRuntime.hasMiniProgramHint())
+export function useInMiniProgram(initialHint = true): boolean {
+  const [inMiniProgram, setInMiniProgram] = useState<boolean>(() => (
+    miniProgramRuntime.hasStandaloneHint() ? false : initialHint || miniProgramRuntime.hasMiniProgramHint()
+  ))
 
   useEffect((): (() => void) | void => {
     if (typeof window === 'undefined') return
 
     const check = (): void => {
       miniProgramRuntime.rememberCurrentUrl()
+      if (miniProgramRuntime.hasStandaloneHint()) {
+        setInMiniProgram(false)
+        return
+      }
       const isEnv = (window as unknown as { __wxjs_environment?: string }).__wxjs_environment === 'miniprogram'
       const hasMiniProgram = Boolean(getMiniProgram())
-      const next = miniProgramRuntime.hasMiniProgramHint() || isEnv || hasMiniProgram
-      if (next) miniProgramRuntime.rememberMiniProgram()
-      console.log('[useInMiniProgram] environment check:', next, 'wx.miniProgram:', hasMiniProgram)
-      setInMiniProgram(next)
+      miniProgramRuntime.rememberMiniProgram()
+      console.log('[useInMiniProgram] environment check:', true, 'wx.miniProgram:', hasMiniProgram, 'isEnv:', isEnv)
+      setInMiniProgram(true)
     }
 
     check()

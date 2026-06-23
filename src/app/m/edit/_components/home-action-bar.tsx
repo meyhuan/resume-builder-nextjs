@@ -40,7 +40,7 @@ export function HomeActionBar(props: HomeActionBarProps): ReactElement {
     <>
       <div
         className="fixed bottom-0 left-0 right-0 z-30 border-t border-slate-200 bg-white/95 shadow-[0_-4px_16px_rgba(15,23,42,0.05)] backdrop-blur"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+        style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 12px)' }}
       >
         <div className="grid grid-cols-[60px_88px_minmax(0,1fr)] items-center gap-2 px-3 py-2">
           <button

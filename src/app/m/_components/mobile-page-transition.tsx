@@ -48,7 +48,13 @@ export default function MobilePageTransition({ children }: MobilePageTransitionP
   }
 
   return (
-    <div className="fixed inset-0 overflow-hidden bg-slate-100">
+    <div
+      className="fixed inset-0 overflow-hidden bg-slate-100"
+      style={{
+        touchAction: 'manipulation',
+        WebkitTapHighlightColor: 'transparent',
+      }}
+    >
       <AnimatePresence initial={false} custom={direction}>
         <motion.div
           key={routeKey}

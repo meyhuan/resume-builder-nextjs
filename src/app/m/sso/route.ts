@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { cookies } from 'next/headers'
 import { prisma } from '@/lib/prisma'
 import { fetchJavaWithLog, parseJsonWithLog } from '@/lib/api/fetch-with-log'
-import { MINI_PROGRAM_VERSION_COOKIE } from '@/lib/mini-program-version-cookie'
+import { MINI_PROGRAM_CONTEXT_COOKIE, MINI_PROGRAM_VERSION_COOKIE } from '@/lib/mini-program-version-cookie'
 
 const AUTH_COOKIE_NAME = 'auth_uid'
 const AUTH_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 30
@@ -56,6 +56,13 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   cookieStore.set(AUTH_COOKIE_NAME, uid, {
     path: '/',
     maxAge: AUTH_COOKIE_MAX_AGE_SECONDS,
+    sameSite: 'lax',
+    secure: isProd,
+    httpOnly: false,
+  })
+  cookieStore.set(MINI_PROGRAM_CONTEXT_COOKIE, '1', {
+    path: '/m',
+    maxAge: MINI_VERSION_COOKIE_MAX_AGE_SECONDS,
     sameSite: 'lax',
     secure: isProd,
     httpOnly: false,
@@ -142,7 +149,7 @@ function renderErrorPage(message: string, status: number): NextResponse {
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover" />
   <title>登录失败</title>
   <style>
     body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;

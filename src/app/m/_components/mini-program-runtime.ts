@@ -1,7 +1,8 @@
-import { MINI_PROGRAM_VERSION_COOKIE } from '@/lib/mini-program-version-cookie'
+import { MINI_PROGRAM_CONTEXT_COOKIE, MINI_PROGRAM_VERSION_COOKIE } from '@/lib/mini-program-version-cookie'
 
 interface MiniProgramRuntime {
   readonly hasMiniProgramHint: () => boolean
+  readonly hasStandaloneHint: () => boolean
   readonly rememberMiniProgram: () => void
   readonly rememberCurrentUrl: () => void
   readonly readMiniVersion: () => string
@@ -42,6 +43,11 @@ function writeStoredValue(key: string, value: string): void {
   }
 }
 
+function writeCookieValue(name: string, value: string): void {
+  if (typeof document === 'undefined' || !value) return
+  document.cookie = `${encodeURIComponent(name)}=${encodeURIComponent(value)}; path=/m; max-age=2592000; SameSite=Lax`
+}
+
 function readCookieValue(name: string): string {
   if (typeof document === 'undefined') return ''
   const prefix = `${encodeURIComponent(name)}=`
@@ -59,16 +65,36 @@ function readCookieValue(name: string): string {
 
 function currentUrlHasMiniProgramHint(params: URLSearchParams | null): boolean {
   if (!params) return false
-  return params.get('source') === 'mini' || params.get('mini') === '1'
+  return params.get('source') === 'mini'
+    || params.get('mini') === '1'
+    || params.has('miniVersion')
+    || params.has('mpVersion')
+}
+
+function currentUrlHasStandaloneHint(params: URLSearchParams | null): boolean {
+  if (!params) return false
+  const source = params.get('source')
+  return source === 'web'
+    || source === 'standalone'
+    || params.get('mini') === '0'
+    || params.get('standalone') === '1'
+    || params.get('web') === '1'
 }
 
 function hasMiniProgramHint(): boolean {
   const params = getSearchParams()
-  return currentUrlHasMiniProgramHint(params) || readStoredValue(MINI_PROGRAM_SESSION_KEY) === '1'
+  return currentUrlHasMiniProgramHint(params)
+    || readStoredValue(MINI_PROGRAM_SESSION_KEY) === '1'
+    || readCookieValue(MINI_PROGRAM_CONTEXT_COOKIE) === '1'
+}
+
+function hasStandaloneHint(): boolean {
+  return currentUrlHasStandaloneHint(getSearchParams())
 }
 
 function rememberMiniProgram(): void {
   writeStoredValue(MINI_PROGRAM_SESSION_KEY, '1')
+  writeCookieValue(MINI_PROGRAM_CONTEXT_COOKIE, '1')
 }
 
 function rememberCurrentUrl(): void {
@@ -93,6 +119,7 @@ function readMiniVersion(): string {
 
 export const miniProgramRuntime: MiniProgramRuntime = {
   hasMiniProgramHint,
+  hasStandaloneHint,
   rememberMiniProgram,
   rememberCurrentUrl,
   readMiniVersion,
