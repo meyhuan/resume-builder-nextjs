@@ -35,6 +35,7 @@ const COMPARISON_FEATURES: ComparisonFeature[] = [
   { feature: '精品模板', nonVip: 'cross', vip: 'check' },
   { feature: '无水印导出', nonVip: 'cross', vip: 'check' },
   { feature: '一对一简历指导', nonVip: 'cross', vip: 'check' },
+  { feature: '求职增值功能优先体验', nonVip: 'cross', vip: 'check' },
 ];
 
 const CONTEXT_COPY = {
@@ -48,7 +49,7 @@ const CONTEXT_COPY = {
   },
   generic: {
     title: '升级会员',
-    description: '解锁高清导出、AI 优化、无水印、精品模板和一对一简历指导',
+    description: '解锁高清导出、AI 优化、无水印、一对一简历指导和后续求职增值能力',
   },
 };
 
@@ -506,6 +507,9 @@ export default function VipUpgradeDialog({ open, onOpenChange, hidePlanOptions =
                       </div>
                     ))}
                   </div>
+                  <p className="border-t border-slate-100 bg-violet-50/30 px-4 py-3 text-[11px] leading-5 text-slate-500">
+                    会员增值能力持续更新中：自我介绍生成、HR 打招呼话术、面试题生成、简历翻译、多岗位简历版本、模拟面试等能力将陆续探索，会员优先体验。
+                  </p>
                 </div>
               </div>
 

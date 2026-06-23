@@ -43,6 +43,7 @@ const COMPARE_ROWS: Array<{ label: string; free: string | false; vip: string | t
   { label: '精品模板', free: '部分可用', vip: '全部解锁' },
   { label: 'AI 导入解析', free: '每日 3 次', vip: '无限次' },
   { label: '一对一简历指导', free: false, vip: '修改建议' },
+  { label: '求职增值功能', free: false, vip: '优先体验' },
 ];
 
 export default function MembershipPage(): React.ReactElement {
@@ -346,6 +347,11 @@ export default function MembershipPage(): React.ReactElement {
                   </div>
                 </div>
               ))}
+              <div className="px-6 py-4 border-t border-violet-100/60 bg-violet-50/30">
+                <p className="text-xs leading-5 text-slate-500">
+                  会员增值能力持续更新中：自我介绍生成、HR 打招呼话术、面试题生成、简历翻译、多岗位简历版本、模拟面试等能力将陆续探索，会员优先体验。
+                </p>
+              </div>
               {!isVip && (
                 <div className="px-6 py-5 bg-violet-50/40 border-t border-violet-100/60">
                   <button
