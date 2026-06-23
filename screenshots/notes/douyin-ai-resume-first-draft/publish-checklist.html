@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>不会写简历，先让 AI 搭初稿 - 抖音图文发布清单</title>
+  <style>
+    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 32px; line-height: 1.7; color: #171717; background: #fafafa; }
+    main { max-width: 920px; margin: 0 auto; background: #fff; padding: 28px; border: 1px solid #e5e5e5; border-radius: 8px; }
+    textarea, input { width: 100%; box-sizing: border-box; border: 1px solid #d4d4d4; border-radius: 6px; padding: 12px; font: inherit; background: #fff; }
+    textarea { min-height: 280px; white-space: pre-wrap; }
+    button { border: 0; border-radius: 6px; padding: 9px 14px; background: #111827; color: white; cursor: pointer; }
+    section { margin-top: 24px; }
+    code { background: #f4f4f5; padding: 2px 5px; border-radius: 4px; }
+    ol { padding-left: 0; list-style: none; }
+    li { display: grid; grid-template-columns: 120px 1fr; gap: 14px; align-items: center; margin-bottom: 16px; }
+    img { width: 120px; height: 160px; object-fit: cover; border: 1px solid #e5e5e5; border-radius: 6px; background: #f4f4f5; }
+    a { color: #155dfc; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>抖音图文发布清单</h1>
+  <p>状态：<code>ready_for_review</code></p>
+  <section>
+    <h2>封面检查</h2>
+    <p><strong>封面图：</strong><a href="images/01-cover.png" target="_blank" rel="noreferrer">images/01-cover.png</a></p>
+    <p><strong>封面标题：</strong>AI先搭初稿</p>
+    <ul><li>首图标题要更短、更大，适合信息流快速扫过。</li><li>封面只讲一个核心收益，不堆功能点。</li><li>主体内容放在中间安全区，避免被界面元素遮挡。</li></ul>
+    <p>尚未生成封面点击率候选。可运行 <code>pnpm marketing:cover-strategy -- publish-task.json</code>。</p>
+  </section>
+  <section>
+    <h2>标题</h2>
+    <input id="title" value="不会写简历，先让 AI 搭初稿">
+    <p><button type="button" onclick="copyValue('title')">复制标题</button></p>
+  </section>
+  <section>
+    <h2>正文</h2>
+    <textarea id="body">做简历第一步最难：
+
+不知道写什么，  
+不知道怎么排结构，  
+项目经历一写就像流水账。
+
+可以先让 AI 搭一版初稿。
+
+不是只生成一段文字，  
+而是生成后继续进入简历编辑器。
+
+你可以继续：
+
+1. 改真实经历  
+2. 调整模块顺序  
+3. 换模板和主题  
+4. 导出可投递简历
+
+适合应届生、转行、0-3 年职场人。
+
+提醒：AI 只帮你搭结构和表达，经历不要编，最后一定要自己改。
+
+#AI简历 #简历制作 #应届生简历 #求职 #简历初稿</textarea>
+    <p><button type="button" onclick="copyValue('body')">复制正文</button></p>
+  </section>
+  <section>
+    <h2>话题</h2>
+    <p>#AI简历 #简历制作 #应届生简历 #求职 #简历初稿</p>
+  </section>
+  <section>
+    <h2>图片顺序</h2>
+    <p><a href="images/" target="_blank" rel="noreferrer">打开图片目录</a></p>
+    <ol><li>
+          <a href="images/01-cover.png" target="_blank" rel="noreferrer">
+            <img src="images/01-cover.png" alt="图 1: AI先搭初稿">
+          </a>
+          <div>
+            <strong>图 1</strong>：AI先搭初稿<br>
+            <a href="images/01-cover.png" target="_blank" rel="noreferrer">images/01-cover.png</a>
+          </div>
+        </li>
+<li>
+          <a href="images/02-ai-wizard.png" target="_blank" rel="noreferrer">
+            <img src="images/02-ai-wizard.png" alt="图 2: 不会写也能开始">
+          </a>
+          <div>
+            <strong>图 2</strong>：不会写也能开始<br>
+            <a href="images/02-ai-wizard.png" target="_blank" rel="noreferrer">images/02-ai-wizard.png</a>
+          </div>
+        </li>
+<li>
+          <a href="images/03-dashboard.png" target="_blank" rel="noreferrer">
+            <img src="images/03-dashboard.png" alt="图 3: 工作台一键生成">
+          </a>
+          <div>
+            <strong>图 3</strong>：工作台一键生成<br>
+            <a href="images/03-dashboard.png" target="_blank" rel="noreferrer">images/03-dashboard.png</a>
+          </div>
+        </li>
+<li>
+          <a href="images/04-editor.png" target="_blank" rel="noreferrer">
+            <img src="images/04-editor.png" alt="图 4: 生成后继续编辑">
+          </a>
+          <div>
+            <strong>图 4</strong>：生成后继续编辑<br>
+            <a href="images/04-editor.png" target="_blank" rel="noreferrer">images/04-editor.png</a>
+          </div>
+        </li>
+<li>
+          <a href="images/05-template.png" target="_blank" rel="noreferrer">
+            <img src="images/05-template.png" alt="图 5: 换模板再导出">
+          </a>
+          <div>
+            <strong>图 5</strong>：换模板再导出<br>
+            <a href="images/05-template.png" target="_blank" rel="noreferrer">images/05-template.png</a>
+          </div>
+        </li></ol>
+  </section><section data-music-strategy="douyin">
+    <h2>配乐建议</h2>
+    <p><strong>方向：</strong>轻快、干净、有开始行动的感觉</p>
+    <p><strong>节奏：</strong>中速或偏轻快，不要太燃，适合用户慢慢看 5 张图</p>
+    <p><strong>搜索词：</strong><code>轻快</code> <code>治愈</code> <code>学习</code> <code>效率</code> <code>清爽</code></p>
+    <p><strong>候选音乐名：</strong><code>Spring - Ikson</code> <code>A Little Story</code> <code>Komorebi</code> <code>Daylight</code> <code>Windy Hill</code> <code>和煦的糖果风</code></p>
+    <p><strong>音量：</strong>建议 20%-35%，不要压过用户看图节奏</p>
+    <p><strong>理由：</strong>这篇主题是从不会写到先有初稿，配乐要给人轻松开始、降低压力的感觉。</p>
+    <p><strong>避免：</strong></p>
+    <ul><li>强节奏舞曲</li><li>伤感情歌</li><li>歌词信息太密的热门歌</li><li>和求职场景无关的搞笑音乐</li></ul>
+  </section>
+  
+<section>
+    <h2>发布提醒</h2>
+    <ul><li>先上传图文图片，再粘贴标题、正文和话题。</li><li>确认首图封面、滑动顺序、话题和位置权限后再发布或定时。</li></ul>
+  </section>
+  <section>
+    <h2>发布后回填</h2>
+    <p>发布成功后，把抖音图文链接粘贴到这里，复制命令后在项目终端执行。</p>
+    <input id="publishedUrl" placeholder="https://www.xiaohongshu.com/explore/...">
+    <textarea id="publishCommand" readonly style="min-height: 88px; margin-top: 12px;"></textarea>
+    <p><button type="button" onclick="copyPublishCommand()">复制回填命令</button></p>
+  </section>
+</main>
+<script>
+async function copyValue(id) {
+  const value = document.getElementById(id).value;
+  await navigator.clipboard.writeText(value);
+}
+function updatePublishCommand() {
+  const url = document.getElementById('publishedUrl').value.trim();
+  const escapedUrl = url.replaceAll('"', '\"');
+  document.getElementById('publishCommand').value = url
+    ? 'pnpm xhs:mark-published -- screenshots/notes/douyin-ai-resume-first-draft/publish-task.json --url "' + escapedUrl + '"'
+    : '粘贴发布后的笔记链接，会自动生成回填命令';
+}
+async function copyPublishCommand() {
+  updatePublishCommand();
+  await navigator.clipboard.writeText(document.getElementById('publishCommand').value);
+}
+document.getElementById('publishedUrl').addEventListener('input', updatePublishCommand);
+updatePublishCommand();
+</script>
+</body>
+</html>

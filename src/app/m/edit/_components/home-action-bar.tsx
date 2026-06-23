@@ -4,6 +4,7 @@ import { useState, type ReactElement } from 'react'
 import { useRouter } from 'next/navigation'
 import { Loader2, Monitor } from 'lucide-react'
 import { useDraftStore } from '@/features/edit/draft/draft-store'
+import { miniProgramRuntime } from '../../_components/mini-program-runtime'
 import { ModuleManageSheet } from './module-manage-sheet'
 import { usePcGuideEntry } from './use-pc-guide-entry'
 
@@ -30,7 +31,9 @@ export function HomeActionBar(props: HomeActionBarProps): ReactElement {
   const handlePreview = (): void => {
     const currentTemplate = draftTemplateId || template
     const tpl = currentTemplate ? `&tpl=${encodeURIComponent(currentTemplate)}` : ''
-    router.push(`/m/preview?id=${resumeId ?? ''}${tpl}`)
+    const miniVersion = miniProgramRuntime.readMiniVersion()
+    const miniVersionParam = miniVersion ? `&miniVersion=${encodeURIComponent(miniVersion)}` : ''
+    router.push(`/m/preview?id=${resumeId ?? ''}${tpl}${miniVersionParam}`)
   }
 
   return (

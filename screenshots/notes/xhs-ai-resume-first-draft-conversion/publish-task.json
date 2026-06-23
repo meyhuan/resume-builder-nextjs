@@ -1,0 +1,207 @@
+{
+  "platform": "xiaohongshu",
+  "slug": "xhs-ai-resume-first-draft-conversion",
+  "status": "ready_for_review",
+  "title": "不会写简历？用智简简历先搭初稿",
+  "body": "很多人做简历卡住，不是因为没有经历。\n\n而是第一步就很难：\n\n- 不知道简历结构怎么排\n- 实习/项目经历写得像流水账\n- 用 AI 生成了一段话，还要自己复制排版\n- Word 模板一改就乱，越调越烦\n\n我现在更建议先走这个流程：\n\n看见问题以后，先不要从空白 Word 开始。\n\n可以用 **智简简历** 先让 AI 搭一版初稿，再进入在线编辑器继续改。\n\n它不是只给你一段 AI 文案，而是会把内容放进简历结构里，后面还能继续：\n\n1. 改真实经历和项目细节\n2. 调整模块顺序\n3. 切换模板和主题色\n4. 做排版美化\n5. 导出可投递简历\n\n适合这些情况：\n\n- 应届生第一次做简历\n- 转行不知道怎么组织经历\n- 0-3 年职场人旧简历太乱\n- 今晚要投递，想先有一版能改的框架\n\n使用入口也很简单：\n\n浏览器搜：`aijianli.cn`\n\n或者直接搜：智简简历\n\n进入后选 **AI 生成简历**，按提示填写身份、目标岗位和经历，再进入编辑器修改、换模板、导出。\n\n提醒一句：AI 只适合帮你搭结构和优化表达，经历不要编。最后一定要按真实情况改。\n\n#AI简历 #智简简历 #简历制作 #应届生简历 #求职简历 #简历初稿 #在线简历工具 #简历排版",
+  "hashtags": [
+    "AI简历",
+    "智简简历",
+    "简历制作",
+    "应届生简历",
+    "求职简历",
+    "简历初稿",
+    "在线简历工具",
+    "简历排版"
+  ],
+  "images": [
+    {
+      "order": 1,
+      "file": "images/01-cover.png",
+      "role": "cover",
+      "source": "screenshots/process/process-ai-generate-input-to-formatted-resume.png",
+      "overlay_title": "不会写简历？智简简历先搭初稿"
+    },
+    {
+      "order": 2,
+      "file": "images/02-entry.png",
+      "role": "entry",
+      "source": "docs/seo/website-screenshot/AIGenerationPage.png",
+      "overlay_title": "打开 aijianli.cn 选 AI 生成简历"
+    },
+    {
+      "order": 3,
+      "file": "images/03-workbench.png",
+      "role": "workbench",
+      "source": "screenshots/raw/desktop/dashboard-filled-desktop.png",
+      "overlay_title": "搜智简简历，从工作台开始"
+    },
+    {
+      "order": 4,
+      "file": "images/04-editor.png",
+      "role": "editor",
+      "source": "screenshots/raw/desktop/editor-lanzhe-workbench-overview-desktop.png",
+      "overlay_title": "生成后继续编辑和排版"
+    },
+    {
+      "order": 5,
+      "file": "images/05-cta.png",
+      "role": "cta",
+      "source": "screenshots/raw/desktop/editor-lanzhe-template-selected-panel-desktop.png",
+      "overlay_title": "工具：智简简历｜搜 aijianli.cn"
+    }
+  ],
+  "publish": {
+    "mode": "manual_confirm",
+    "creator_url": "https://creator.xiaohongshu.com/publish/publish",
+    "published_url": "",
+    "published_at": ""
+  },
+  "generated_at": "2026-06-23T05:43:07.761Z",
+  "cover_strategy": {
+    "generated_at": "2026-06-23T05:43:29.483Z",
+    "platform": "xiaohongshu",
+    "platform_label": "小红书",
+    "metric_focus": [
+      "曝光",
+      "阅读",
+      "收藏",
+      "评论"
+    ],
+    "scoring_dimensions": [
+      "one_second_clarity",
+      "pain_strength",
+      "benefit_clarity",
+      "mobile_readability",
+      "screenshot_proof",
+      "platform_fit"
+    ],
+    "recommended": {
+      "angle": "痛点型",
+      "title": "不会写简历？AI先搭初稿",
+      "subtitle": "先有结构，再慢慢改",
+      "source_image": "images/01-cover.png",
+      "scores": {
+        "one_second_clarity": 5,
+        "pain_strength": 5,
+        "benefit_clarity": 5,
+        "mobile_readability": 5,
+        "screenshot_proof": 4,
+        "platform_fit": 5
+      },
+      "total_score": 29,
+      "max_score": 30,
+      "recommendation_reason": "痛点直接，收益明确，手机端可读性好，符合平台封面节奏"
+    },
+    "candidates": [
+      {
+        "angle": "痛点型",
+        "title": "不会写简历？AI先搭初稿",
+        "subtitle": "先有结构，再慢慢改",
+        "source_image": "images/01-cover.png",
+        "scores": {
+          "one_second_clarity": 5,
+          "pain_strength": 5,
+          "benefit_clarity": 5,
+          "mobile_readability": 5,
+          "screenshot_proof": 4,
+          "platform_fit": 5
+        },
+        "total_score": 29,
+        "max_score": 30,
+        "recommendation_reason": "痛点直接，收益明确，手机端可读性好，符合平台封面节奏"
+      },
+      {
+        "angle": "结果型",
+        "title": "从空白到简历初稿",
+        "subtitle": "生成后还能继续编辑排版",
+        "source_image": "images/03-workbench.png",
+        "scores": {
+          "one_second_clarity": 5,
+          "pain_strength": 3,
+          "benefit_clarity": 5,
+          "mobile_readability": 5,
+          "screenshot_proof": 4,
+          "platform_fit": 5
+        },
+        "total_score": 27,
+        "max_score": 30,
+        "recommendation_reason": "收益明确，手机端可读性好，符合平台封面节奏"
+      },
+      {
+        "angle": "反差型",
+        "title": "别从空白文档开始",
+        "subtitle": "AI 帮你先搭 60 分框架",
+        "source_image": "images/01-cover.png",
+        "scores": {
+          "one_second_clarity": 5,
+          "pain_strength": 3,
+          "benefit_clarity": 3,
+          "mobile_readability": 5,
+          "screenshot_proof": 4,
+          "platform_fit": 5
+        },
+        "total_score": 25,
+        "max_score": 30,
+        "recommendation_reason": "手机端可读性好，符合平台封面节奏"
+      }
+    ],
+    "post_publish_review": {
+      "compare_by": [
+        "曝光",
+        "阅读",
+        "收藏",
+        "评论"
+      ],
+      "decision_rule": "优先保留点击/打开表现更好的标题角度，再看收藏、分享和评论质量。"
+    }
+  },
+  "platform_assets": {
+    "generated_at": "2026-06-23T05:50:53.394Z",
+    "platform": "xiaohongshu",
+    "status": "ready",
+    "output_dir": "platform-images",
+    "images": [
+      {
+        "order": 1,
+        "role": "cover",
+        "file": "platform-images/01-cover-1080x1440.png",
+        "width": 1080,
+        "height": 1440,
+        "source": "images/01-cover.png"
+      },
+      {
+        "order": 2,
+        "role": "entry",
+        "file": "platform-images/02-entry-1080x1440.png",
+        "width": 1080,
+        "height": 1440,
+        "source": "images/02-entry.png"
+      },
+      {
+        "order": 3,
+        "role": "workbench",
+        "file": "platform-images/03-workbench-1080x1440.png",
+        "width": 1080,
+        "height": 1440,
+        "source": "images/03-workbench.png"
+      },
+      {
+        "order": 4,
+        "role": "editor",
+        "file": "platform-images/04-editor-1080x1440.png",
+        "width": 1080,
+        "height": 1440,
+        "source": "images/04-editor.png"
+      },
+      {
+        "order": 5,
+        "role": "cta",
+        "file": "platform-images/05-cta-1080x1440.png",
+        "width": 1080,
+        "height": 1440,
+        "source": "images/05-cta.png"
+      }
+    ]
+  }
+}

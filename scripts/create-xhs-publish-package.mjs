@@ -25,7 +25,7 @@ const PLATFORM_CONFIG = {
     label: '抖音图文',
     creatorUrl: 'https://creator.douyin.com/',
     coverChecklist: ['首图标题要更短、更大，适合信息流快速扫过。', '封面只讲一个核心收益，不堆功能点。', '主体内容放在中间安全区，避免被界面元素遮挡。'],
-    reminder: ['先上传图文图片，再粘贴标题、正文和话题。', '确认首图封面、滑动顺序、话题和位置权限后再发布或定时。'],
+    reminder: ['先上传图文图片，再选择配乐。', '粘贴标题、正文和话题。', '确认首图封面、滑动顺序、音乐音量和位置权限后再发布或定时。'],
   },
 };
 
@@ -167,6 +167,7 @@ function writeChecklist(packageDir, task) {
   const platform = PLATFORM_CONFIG[task.platform] || PLATFORM_CONFIG.xiaohongshu;
   const coverImage = task.images.find((image) => image.role === 'cover') || task.images[0];
   const coverStrategy = renderCoverStrategy(task);
+  const musicStrategy = renderMusicStrategy(task);
   const imageItems = task.images
     .map(
       (image) => {
@@ -240,6 +241,7 @@ function writeChecklist(packageDir, task) {
     <p><a href="${imageDirHref}" target="_blank" rel="noreferrer">打开图片目录</a></p>
     <ol>${imageItems}</ol>
   </section>
+  ${musicStrategy}
   <section>
     <h2>发布提醒</h2>
     <ul>${platform.reminder.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul>
@@ -297,6 +299,51 @@ function renderCoverStrategy(task) {
   return `<h3>封面点击率候选</h3><ol>${candidates}</ol>`;
 }
 
+function renderMusicStrategy(task) {
+  if (task.platform !== 'douyin') return '';
+  const strategy = task.music_strategy || getDouyinMusicStrategy(task);
+  const avoidItems = strategy.avoid
+    .map((item) => `<li>${escapeHtml(item)}</li>`)
+    .join('');
+  const keywordItems = strategy.search_keywords
+    .map((item) => `<code>${escapeHtml(item)}</code>`)
+    .join(' ');
+  return `<section>
+    <h2>配乐建议</h2>
+    <p><strong>方向：</strong>${escapeHtml(strategy.mood)}</p>
+    <p><strong>节奏：</strong>${escapeHtml(strategy.tempo)}</p>
+    <p><strong>搜索词：</strong>${keywordItems}</p>
+    <p><strong>音量：</strong>${escapeHtml(strategy.volume)}</p>
+    <p><strong>理由：</strong>${escapeHtml(strategy.reason)}</p>
+    <p><strong>避免：</strong></p>
+    <ul>${avoidItems}</ul>
+  </section>`;
+}
+
+function getDouyinMusicStrategy(task) {
+  const text = `${task.slug || ''} ${task.title || ''} ${task.body || ''}`;
+  if (/初稿|不会写|AI/.test(text)) {
+    return {
+      mood: '轻快、干净、有开始行动的感觉',
+      tempo: '中速或偏轻快，不要太燃，适合用户慢慢看 5 张图',
+      search_keywords: ['轻快', '治愈', '学习', '效率', '清爽'],
+      song_candidates: ['Spring - Ikson', 'A Little Story', 'Komorebi', 'Daylight', 'Windy Hill', '和煦的糖果风'],
+      volume: '建议 20%-35%，不要压过用户看图节奏',
+      reason: '这篇主题是从不会写到先有初稿，配乐要给人轻松开始、降低压力的感觉。',
+      avoid: ['强节奏舞曲', '伤感情歌', '歌词信息太密的热门歌', '和求职场景无关的搞笑音乐'],
+    };
+  }
+  return {
+    mood: '清爽、效率感、轻产品感',
+    tempo: '中速，适合配合图文滑动',
+    search_keywords: ['轻快', '效率', '办公', '治愈', '清爽'],
+    song_candidates: ['Spring - Ikson', 'A Little Story', 'Komorebi', 'Daylight', 'Windy Hill'],
+    volume: '建议 20%-35%',
+    reason: '图文重点是产品功能说明，音乐只负责提高停留舒适度，不抢信息。',
+    avoid: ['强节奏舞曲', '歌词太抢的歌', '情绪过重的音乐'],
+  };
+}
+
 function escapeJs(value) {
   return String(value).replaceAll('\\', '\\\\').replaceAll("'", "\\'");
 }
@@ -335,6 +382,7 @@ function main() {
     body,
     hashtags: args.hashtags,
     images,
+    music_strategy: args.platform === 'douyin' ? getDouyinMusicStrategy({ platform: args.platform, slug: args.slug, title: args.title, body }) : undefined,
     publish: {
       mode: 'manual_confirm',
       creator_url: PLATFORM_CONFIG[args.platform].creatorUrl,

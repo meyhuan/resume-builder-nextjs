@@ -5,6 +5,7 @@ import { spawn } from 'node:child_process';
 const OUTPUT_FILE = path.join('docs', 'seo', 'marketing-workbench.html');
 const SCREENSHOT_INDEX = path.join('screenshots', 'index', 'screenshot-index.json');
 const PUBLISH_LOG = path.join('docs', 'seo', 'marketing-publish-log.json');
+const CONTENT_CALENDAR = path.join('docs', 'seo', 'marketing-content-calendar.json');
 const NOTES_DIR = path.join('docs', 'seo', 'offsite-aeo-notes');
 const PACKAGES_DIR = path.join('screenshots', 'notes');
 
@@ -120,6 +121,7 @@ function statusLabel(status) {
   const labels = {
     draft: '草稿',
     ready_for_review: '待审核发布',
+    planned: '已规划',
     scheduled: '已定时',
     published: '已发布',
     needs_fix: '需修正',
@@ -155,6 +157,7 @@ function renderWorkbench() {
   const packages = getPublishPackages();
   const drafts = getContentDrafts();
   const log = readJson(PUBLISH_LOG, { records: [] });
+  const calendar = readJson(CONTENT_CALENDAR, { items: [] });
   const publishedCount = packages.filter((item) => item.status === 'published').length;
   const readyCount = packages.filter((item) => item.status === 'ready_for_review').length;
   const nextActions = getNextActions(packages, drafts, log);
@@ -199,6 +202,7 @@ function renderWorkbench() {
   <p>更新时间：${escapeHtml(new Date().toLocaleString('zh-CN', { hour12: false }))}</p>
   <div class="links">
     <a href="${fileHref(PUBLISH_LOG)}">发布记录总表</a>
+    <a href="${fileHref(CONTENT_CALENDAR)}">内容排期计划</a>
     <a href="${fileHref(SCREENSHOT_INDEX)}">截图索引</a>
     <a href="${fileHref(path.join('screenshots', 'index', 'product-feature-map.md'))}">产品功能地图</a>
     <a href="${fileHref(path.join('docs', 'seo', 'xiaohongshu-publishing-automation.md'))}">发布自动化说明</a>
@@ -225,6 +229,11 @@ function renderWorkbench() {
   </section>
 
   <section class="panel" style="margin-top:16px;">
+    <h2>发布计划</h2>
+    ${renderCalendarTable(calendar.items || [])}
+  </section>
+
+  <section class="panel" style="margin-top:16px;">
     <h2>平台发布包</h2>
     ${renderPackagesTable(packages)}
   </section>
@@ -241,6 +250,36 @@ function renderWorkbench() {
 </main>
 </body>
 </html>`;
+}
+
+function renderCalendarTable(items) {
+  if (!items.length) return '<p class="muted">暂无发布计划</p>';
+  const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Shanghai' });
+  return `<table>
+    <thead><tr><th>日期</th><th>主题</th><th>目标</th><th>状态</th><th>平台/清单</th><th>下一步</th></tr></thead>
+    <tbody>${items
+      .map((item) => {
+        const platformLinks = (item.platforms || [])
+          .map((platform) => {
+            const taskFile = platform.task_file || '';
+            const checklist = taskFile ? taskFile.replace(/publish-task\.json$/, 'publish-checklist.html') : '';
+            return checklist
+              ? `<a href="${fileHref(checklist)}">${escapeHtml(platformLabel(platform.platform))}</a>`
+              : escapeHtml(platformLabel(platform.platform));
+          })
+          .join(' · ');
+        const status = item.date === today && item.status !== 'published' ? `今天 / ${statusLabel(item.status)}` : statusLabel(item.status);
+        return `<tr>
+          <td>${escapeHtml(item.date || '')}<br><span class="muted">Day ${escapeHtml(item.day || '')}</span></td>
+          <td><strong>${escapeHtml(item.theme || '')}</strong><br><span class="muted">${escapeHtml(item.primary_feature || '')}</span></td>
+          <td>${escapeHtml(item.conversion_goal || '')}<br><span class="muted">${escapeHtml(item.target_user || '')}</span></td>
+          <td><span class="pill">${escapeHtml(status)}</span></td>
+          <td>${platformLinks || '<span class="muted">待生成</span>'}</td>
+          <td>${escapeHtml(item.next_action || '')}</td>
+        </tr>`;
+      })
+      .join('')}</tbody>
+  </table>`;
 }
 
 function renderStat(label, value, detail) {

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { miniProgramRuntime } from './mini-program-runtime'
 
 interface WxMiniProgram {
   postMessage?: (p: { data: unknown }) => void
@@ -8,32 +9,10 @@ interface WxMiniProgram {
   navigateBack?: (o?: { delta?: number }) => void
 }
 
-const MINI_PROGRAM_SESSION_KEY = 'aijianli_in_mini_program'
-
 function getMiniProgram(): WxMiniProgram | null {
   if (typeof window === 'undefined') return null
   const wx = (window as unknown as { wx?: { miniProgram?: WxMiniProgram } }).wx
   return wx?.miniProgram ?? null
-}
-
-function hasMiniProgramHint(): boolean {
-  if (typeof window === 'undefined') return false
-  const params = new URLSearchParams(window.location.search)
-  if (params.get('source') === 'mini' || params.get('mini') === '1') return true
-  try {
-    return window.sessionStorage.getItem(MINI_PROGRAM_SESSION_KEY) === '1'
-  } catch {
-    return false
-  }
-}
-
-function rememberMiniProgram(): void {
-  if (typeof window === 'undefined') return
-  try {
-    window.sessionStorage.setItem(MINI_PROGRAM_SESSION_KEY, '1')
-  } catch {
-    // ignore storage failures
-  }
 }
 
 /**
@@ -41,16 +20,17 @@ function rememberMiniProgram(): void {
  * Always returns false during SSR to avoid hydration mismatch.
  */
 export function useInMiniProgram(): boolean {
-  const [inMiniProgram, setInMiniProgram] = useState<boolean>(() => hasMiniProgramHint())
+  const [inMiniProgram, setInMiniProgram] = useState<boolean>(() => miniProgramRuntime.hasMiniProgramHint())
 
   useEffect((): (() => void) | void => {
     if (typeof window === 'undefined') return
 
     const check = (): void => {
+      miniProgramRuntime.rememberCurrentUrl()
       const isEnv = (window as unknown as { __wxjs_environment?: string }).__wxjs_environment === 'miniprogram'
       const hasMiniProgram = Boolean(getMiniProgram())
-      const next = hasMiniProgramHint() || isEnv || hasMiniProgram
-      if (next) rememberMiniProgram()
+      const next = miniProgramRuntime.hasMiniProgramHint() || isEnv || hasMiniProgram
+      if (next) miniProgramRuntime.rememberMiniProgram()
       console.log('[useInMiniProgram] environment check:', next, 'wx.miniProgram:', hasMiniProgram)
       setInMiniProgram(next)
     }

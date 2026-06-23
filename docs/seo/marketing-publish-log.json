@@ -1,7 +1,126 @@
 {
   "generated_at": "2026-06-22T02:31:24.432Z",
-  "updated_at": "2026-06-22T03:29:04.477Z",
+  "updated_at": "2026-06-23T02:49:38.820Z",
   "records": [
+    {
+      "slug": "douyin-ai-resume-first-draft",
+      "platform": "douyin",
+      "status": "published",
+      "title": "不会写简历，先让 AI 搭初稿",
+      "published_url": "https://v.douyin.com/fgrSuC2LDq0/",
+      "published_at": "2026-06-23T02:49:38.734Z",
+      "note_file": "screenshots/notes/douyin-ai-resume-first-draft/note.md",
+      "task_file": "screenshots/notes/douyin-ai-resume-first-draft/publish-task.json",
+      "image_count": 5,
+      "image_roles": [
+        "cover",
+        "ai-wizard",
+        "dashboard",
+        "editor",
+        "template"
+      ],
+      "hashtags": [
+        "AI简历",
+        "简历制作",
+        "应届生简历",
+        "求职",
+        "简历初稿"
+      ],
+      "review_due": {
+        "after_24h": "2026-06-24T02:49:38.734Z",
+        "after_72h": "2026-06-26T02:49:38.734Z",
+        "after_7d": "2026-06-30T02:49:38.734Z"
+      },
+      "metrics": {
+        "views": null,
+        "likes": null,
+        "collects": null,
+        "comments": null,
+        "shares": null,
+        "updated_at": ""
+      },
+      "updated_at": "2026-06-23T02:49:38.813Z"
+    },
+    {
+      "slug": "wechat-image-ai-resume-first-draft",
+      "platform": "wechat_image",
+      "status": "published",
+      "title": "不会写简历，先让 AI 搭初稿",
+      "published_url": "https://mp.weixin.qq.com/s/sOF25ZFuhVv_onOtUuBsdg",
+      "published_at": "2026-06-23T02:49:38.070Z",
+      "note_file": "screenshots/notes/wechat-image-ai-resume-first-draft/note.md",
+      "task_file": "screenshots/notes/wechat-image-ai-resume-first-draft/publish-task.json",
+      "image_count": 5,
+      "image_roles": [
+        "cover",
+        "ai-wizard",
+        "dashboard",
+        "editor",
+        "template"
+      ],
+      "hashtags": [
+        "AI简历",
+        "简历制作",
+        "应届生简历",
+        "求职工具",
+        "简历初稿"
+      ],
+      "review_due": {
+        "after_24h": "2026-06-24T02:49:38.070Z",
+        "after_72h": "2026-06-26T02:49:38.070Z",
+        "after_7d": "2026-06-30T02:49:38.070Z"
+      },
+      "metrics": {
+        "views": null,
+        "likes": null,
+        "collects": null,
+        "comments": null,
+        "shares": null,
+        "updated_at": ""
+      },
+      "updated_at": "2026-06-23T02:49:38.145Z"
+    },
+    {
+      "slug": "xhs-ai-resume-first-draft",
+      "platform": "xiaohongshu",
+      "status": "published",
+      "title": "不会写简历，先让 AI 搭初稿",
+      "published_url": "https://www.xiaohongshu.com/discovery/item/6a39f3720000000006023e40?source=webshare&xhsshare=pc_web&xsec_token=YBgNz3FYXQMgHF4PROguF4YobtNXw_DAuw0pSrXuDUVfU=&xsec_source=pc_share",
+      "published_at": "2026-06-23T02:49:37.431Z",
+      "note_file": "screenshots/notes/xhs-ai-resume-first-draft/note.md",
+      "task_file": "screenshots/notes/xhs-ai-resume-first-draft/publish-task.json",
+      "image_count": 5,
+      "image_roles": [
+        "cover",
+        "ai-wizard",
+        "dashboard",
+        "editor",
+        "template"
+      ],
+      "hashtags": [
+        "AI简历",
+        "简历制作",
+        "应届生简历",
+        "求职简历",
+        "转行简历",
+        "简历模板",
+        "在线简历工具"
+      ],
+      "review_due": {
+        "after_24h": "2026-06-24T02:49:37.431Z",
+        "after_72h": "2026-06-26T02:49:37.431Z",
+        "after_7d": "2026-06-30T02:49:37.431Z"
+      },
+      "metrics": {
+        "views": null,
+        "likes": null,
+        "collects": null,
+        "comments": null,
+        "shares": null,
+        "updated_at": ""
+      },
+      "updated_at": "2026-06-23T02:49:37.509Z"
+    },
     {
       "slug": "douyin-resume-click-to-edit",
       "platform": "douyin",

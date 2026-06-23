@@ -1,0 +1,209 @@
+{
+  "generated_at": "2026-06-23T00:00:00.000+08:00",
+  "timezone": "Asia/Shanghai",
+  "cadence": {
+    "daily_default": "每天 1 个主题，优先同步发布到小红书、公众号贴图、抖音图文。",
+    "publish_window": "建议 19:30-22:30 发布；如果当天只能发一个平台，优先小红书。",
+    "review_window": "发布后记录 24h、72h、7d 数据，再决定是否复用标题或重做封面。"
+  },
+  "rules": [
+    "每个主题必须让用户完成：看见痛点 -> 记住工具 -> 知道入口 -> 愿意试用。",
+    "图片优先使用 platform-images/ 成品图，不上传 images/ 原始图。",
+    "正文和最后一张图必须出现工具名或入口：智简简历 / aijianli.cn。",
+    "AI 简历相关内容必须提醒用户按真实经历修改，不鼓励编造经历。",
+    "抖音图文发布时必须选择轻快、清爽、适合慢看图片的音乐。"
+  ],
+  "items": [
+    {
+      "date": "2026-06-22",
+      "day": 1,
+      "status": "published",
+      "theme": "简历别再手调 Word，点哪里就能改",
+      "conversion_goal": "让用户知道智简简历是一个可视化编辑器，不只是模板站。",
+      "primary_feature": "PC 可视化简历编辑器",
+      "target_user": "正在被 Word 排版折磨的求职者",
+      "platforms": [
+        {
+          "platform": "xiaohongshu",
+          "task_file": "screenshots/notes/ai-resume-editor-click-to-edit/publish-task.json"
+        },
+        {
+          "platform": "wechat_image",
+          "task_file": "screenshots/notes/wechat-image-resume-click-to-edit/publish-task.json"
+        },
+        {
+          "platform": "douyin",
+          "task_file": "screenshots/notes/douyin-resume-click-to-edit/publish-task.json"
+        }
+      ],
+      "next_action": "等待 72h/7d 数据复盘。"
+    },
+    {
+      "date": "2026-06-23",
+      "day": 2,
+      "status": "published",
+      "theme": "不会写简历，先让 AI 搭初稿",
+      "conversion_goal": "让用户知道智简简历可以从 AI 初稿进入可编辑简历。",
+      "primary_feature": "AI 一键生成简历",
+      "target_user": "应届生、转行、0-3 年职场人",
+      "platforms": [
+        {
+          "platform": "xiaohongshu",
+          "task_file": "screenshots/notes/xhs-ai-resume-first-draft/publish-task.json"
+        },
+        {
+          "platform": "wechat_image",
+          "task_file": "screenshots/notes/wechat-image-ai-resume-first-draft/publish-task.json"
+        },
+        {
+          "platform": "douyin",
+          "task_file": "screenshots/notes/douyin-ai-resume-first-draft/publish-task.json"
+        }
+      ],
+      "next_action": "已发现入口表达不足，使用 conversion 版本作为复投/修正版。"
+    },
+    {
+      "date": "2026-06-24",
+      "day": 3,
+      "status": "ready_for_review",
+      "theme": "不会写简历？用智简简历先搭初稿",
+      "conversion_goal": "强化工具名、入口和使用步骤：搜 aijianli.cn / 智简简历。",
+      "primary_feature": "AI 一键生成简历 + 编辑器闭环",
+      "target_user": "看过 AI 简历但不知道工具入口的人",
+      "platforms": [
+        {
+          "platform": "xiaohongshu",
+          "task_file": "screenshots/notes/xhs-ai-resume-first-draft-conversion/publish-task.json"
+        },
+        {
+          "platform": "wechat_image",
+          "task_file": "screenshots/notes/wechat-image-ai-resume-first-draft-conversion/publish-task.json"
+        },
+        {
+          "platform": "douyin",
+          "task_file": "screenshots/notes/douyin-ai-resume-first-draft-conversion/publish-task.json"
+        }
+      ],
+      "next_action": "发布 conversion 版本；发布时上传 platform-images/ 成品图。"
+    },
+    {
+      "date": "2026-06-25",
+      "day": 4,
+      "status": "planned",
+      "theme": "ChatGPT 写完简历后，怎么排版导出？",
+      "conversion_goal": "承接通用 AI 文案用户，把他们导向智简简历的导入/排版能力。",
+      "primary_feature": "AI 文本/文件转简历",
+      "target_user": "已经用 ChatGPT、豆包、DeepSeek 写了简历内容的人",
+      "recommended_images": [
+        "AI 文本导入入口",
+        "导入后结构化简历",
+        "编辑器排版结果",
+        "模板切换",
+        "工具入口 CTA"
+      ],
+      "next_action": "生成三平台发布包。"
+    },
+    {
+      "date": "2026-06-26",
+      "day": 5,
+      "status": "planned",
+      "theme": "简历经历写得像流水账，怎么改得专业一点？",
+      "conversion_goal": "突出 AI 模块级润色，但强调不编造经历。",
+      "primary_feature": "AI 模块级生成与润色",
+      "target_user": "项目/实习经历表达普通的应届生和初入职场人",
+      "recommended_images": [
+        "AI 润色入口",
+        "润色前后对比",
+        "工作经历编辑",
+        "项目经历编辑",
+        "工具入口 CTA"
+      ],
+      "next_action": "生成三平台发布包。"
+    },
+    {
+      "date": "2026-06-27",
+      "day": 6,
+      "status": "planned",
+      "theme": "投了很多简历没回应，先检查 JD 关键词",
+      "conversion_goal": "把用户从泛泛改简历引导到 JD 匹配工具。",
+      "primary_feature": "JD 匹配与整份简历优化",
+      "target_user": "简历投递无回应、想按岗位优化的人",
+      "recommended_images": [
+        "JD 匹配工具入口",
+        "JD 输入",
+        "匹配分析结果",
+        "优化建议",
+        "工具入口 CTA"
+      ],
+      "next_action": "确认 JD 匹配截图是否齐全；缺图先补截图。"
+    },
+    {
+      "date": "2026-06-28",
+      "day": 7,
+      "status": "planned",
+      "theme": "同一份简历，换模板不用重写内容",
+      "conversion_goal": "突出模板系统和蓝折模板的视觉差异。",
+      "primary_feature": "模板中心与模板切换",
+      "target_user": "想快速换风格、适配不同岗位的人",
+      "recommended_images": [
+        "蓝折模板工作台",
+        "模板切换面板",
+        "模板前后对比",
+        "主题色切换",
+        "工具入口 CTA"
+      ],
+      "next_action": "生成三平台发布包。"
+    },
+    {
+      "date": "2026-06-29",
+      "day": 8,
+      "status": "planned",
+      "theme": "简历内容太多，怎么压到一页？",
+      "conversion_goal": "突出排版美化、一页适配、内容密度调节。",
+      "primary_feature": "主题/排版设置",
+      "target_user": "简历超过一页、海投需要紧凑版的人",
+      "recommended_images": [
+        "排版美化面板",
+        "内容密度设置",
+        "字号/行距/间距",
+        "一页适配结果",
+        "工具入口 CTA"
+      ],
+      "next_action": "生成三平台发布包。"
+    },
+    {
+      "date": "2026-06-30",
+      "day": 9,
+      "status": "planned",
+      "theme": "第一次做简历，模板应该怎么选？",
+      "conversion_goal": "承接模板选择搜索意图，导向免费模板和编辑器。",
+      "primary_feature": "模板中心与岗位模板",
+      "target_user": "应届生、实习生、转行用户",
+      "recommended_images": [
+        "模板中心",
+        "岗位模板列表",
+        "蓝折/简约/双栏模板对比",
+        "进入编辑器",
+        "工具入口 CTA"
+      ],
+      "next_action": "生成三平台发布包。"
+    },
+    {
+      "date": "2026-07-01",
+      "day": 10,
+      "status": "planned",
+      "theme": "免费简历工具，最怕最后导出才收费",
+      "conversion_goal": "建立免费、无水印、无套路的信任感。",
+      "primary_feature": "免费导出与产品信任",
+      "target_user": "被模板站付费墙劝退的人",
+      "recommended_images": [
+        "首页免费主张",
+        "编辑器导出入口",
+        "PDF/PNG/Markdown 导出",
+        "信任背书",
+        "工具入口 CTA"
+      ],
+      "next_action": "生成三平台发布包。"
+    }
+  ]
+}

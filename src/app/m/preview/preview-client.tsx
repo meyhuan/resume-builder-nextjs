@@ -360,6 +360,15 @@ export default function MobilePreviewClient(): ReactElement {
   const miniMarkdownExportSupported = miniProgramCapabilities.markdownExportSupported
   const showMarkdownExport = !inMiniProgram || miniMarkdownExportSupported
 
+  useEffect(() => {
+    console.log('[m/preview] mini capabilities', {
+      inMiniProgram,
+      miniVersion: miniProgramCapabilities.miniVersion,
+      markdownExportSupported: miniMarkdownExportSupported,
+      showMarkdownExport,
+    })
+  }, [inMiniProgram, miniProgramCapabilities.miniVersion, miniMarkdownExportSupported, showMarkdownExport])
+
   /**
    * Call /next-api/exports/mini to render and save the export asset.
    * Both mini-program and H5 use this same endpoint (dual-auth on server).

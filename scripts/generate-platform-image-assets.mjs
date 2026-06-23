@@ -78,10 +78,10 @@ async function createVerticalCard({ source, target, title, subtitle, width, heig
     <rect width="100%" height="100%" fill="#f7fbfa"/>
     <rect x="0" y="0" width="${width}" height="${headerHeight + 34}" fill="#e9f5f1"/>
     ${textBlock(title, margin, 86, width - margin * 2, 64, '#10201b', 2, 1.08, 32)}
-    ${textBlock(subtitle || platform, margin, 202, width - margin * 2, 30, '#47645b', 1, 1.2, 20)}
+    ${textBlock(subtitle || platform, margin, 194, width - margin * 2, 30, '#47645b', 2, 1.18, 30)}
     <rect x="${imageLeft - 14}" y="${imageTop - 14}" width="${resizedMeta.width + 28}" height="${resizedMeta.height + 28}" rx="28" fill="#ffffff"/>
     <rect x="${imageLeft - 14}" y="${imageTop - 14}" width="${resizedMeta.width + 28}" height="${resizedMeta.height + 28}" rx="28" fill="none" stroke="#d7e4df" stroke-width="2"/>
-    <text x="${margin}" y="${height - 58}" font-size="28" fill="#47645b" font-family="Noto Sans SC, Microsoft YaHei, Arial">智简简历｜AI 生成 + 可视化编辑 + 导出</text>
+    <text x="${margin}" y="${height - 58}" font-size="28" fill="#47645b" font-family="Noto Sans SC, Microsoft YaHei, Arial">智简简历｜搜 aijianli.cn 开始 AI 生成简历</text>
   `);
 
   await sharp(headerSvg)
@@ -258,8 +258,45 @@ async function generateAssets(taskFile) {
   };
   fs.writeFileSync(taskFile, `${JSON.stringify(task, null, 2)}\n`);
   writeAssetSheet(packageDir, task);
+  refreshPublishChecklistImageSection(packageDir, task);
   console.log(`Generated platform image assets: ${outputDir}`);
   console.log(`Images: ${generated.length}`);
+}
+
+function refreshPublishChecklistImageSection(packageDir, task) {
+  const checklistFile = path.join(packageDir, 'publish-checklist.html');
+  if (!fs.existsSync(checklistFile) || !task.platform_assets?.images?.length) return;
+
+  const html = fs.readFileSync(checklistFile, 'utf8');
+  const outputDir = task.platform_assets.output_dir || 'platform-images';
+  const imageItems = task.platform_assets.images
+    .map((image) => {
+      const fileHref = encodeURI(image.file);
+      const label = image.order ? `图 ${image.order}` : image.role;
+      return `<li>
+          <a href="${fileHref}" target="_blank" rel="noreferrer">
+            <img src="${fileHref}" alt="${escapeXml(label)}: ${escapeXml(image.role)}">
+          </a>
+          <div>
+            <strong>${escapeXml(label)}</strong>：${escapeXml(image.role)} / ${escapeXml(`${image.width}x${image.height}`)}<br>
+            <a href="${fileHref}" target="_blank" rel="noreferrer">${escapeXml(image.file)}</a>
+          </div>
+        </li>`;
+    })
+    .join('\n');
+
+  const replacement = `<section>
+    <h2>图片顺序</h2>
+    <p>这里是<strong>上传平台用的成品图</strong>，不是原始截图。</p>
+    <p>
+      <a href="${encodeURI(`${outputDir}/`)}" target="_blank" rel="noreferrer">打开成品图片目录</a>
+      · <a href="${encodeURI('platform-images.html')}" target="_blank" rel="noreferrer">查看成品图规格表</a>
+    </p>
+    <ol>${imageItems}</ol>
+  </section>`;
+
+  const updated = html.replace(/<section>\s*<h2>图片顺序<\/h2>[\s\S]*?<\/section>/, replacement);
+  fs.writeFileSync(checklistFile, updated);
 }
 
 function writeAssetSheet(packageDir, task) {

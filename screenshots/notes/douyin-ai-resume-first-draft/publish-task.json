@@ -1,0 +1,232 @@
+{
+  "platform": "douyin",
+  "slug": "douyin-ai-resume-first-draft",
+  "status": "published",
+  "title": "不会写简历，先让 AI 搭初稿",
+  "body": "做简历第一步最难：\n\n不知道写什么，  \n不知道怎么排结构，  \n项目经历一写就像流水账。\n\n可以先让 AI 搭一版初稿。\n\n不是只生成一段文字，  \n而是生成后继续进入简历编辑器。\n\n你可以继续：\n\n1. 改真实经历  \n2. 调整模块顺序  \n3. 换模板和主题  \n4. 导出可投递简历\n\n适合应届生、转行、0-3 年职场人。\n\n提醒：AI 只帮你搭结构和表达，经历不要编，最后一定要自己改。\n\n工具叫：智简简历  \n想试可以搜：aijianli.cn\n\n#AI简历 #简历制作 #应届生简历 #求职 #简历初稿",
+  "hashtags": [
+    "AI简历",
+    "简历制作",
+    "应届生简历",
+    "求职",
+    "简历初稿"
+  ],
+  "images": [
+    {
+      "order": 1,
+      "file": "images/01-cover.png",
+      "role": "cover",
+      "source": "screenshots/process/process-ai-generate-input-to-formatted-resume.png",
+      "overlay_title": "AI先搭初稿"
+    },
+    {
+      "order": 2,
+      "file": "images/02-ai-wizard.png",
+      "role": "ai-wizard",
+      "source": "docs/seo/website-screenshot/AIGenerationPage.png",
+      "overlay_title": "不会写也能开始"
+    },
+    {
+      "order": 3,
+      "file": "images/03-dashboard.png",
+      "role": "dashboard",
+      "source": "screenshots/raw/desktop/dashboard-filled-desktop.png",
+      "overlay_title": "工作台一键生成"
+    },
+    {
+      "order": 4,
+      "file": "images/04-editor.png",
+      "role": "editor",
+      "source": "screenshots/raw/desktop/editor-lanzhe-workbench-overview-desktop.png",
+      "overlay_title": "生成后继续编辑"
+    },
+    {
+      "order": 5,
+      "file": "images/05-template.png",
+      "role": "template",
+      "source": "screenshots/raw/desktop/editor-lanzhe-template-selected-panel-desktop.png",
+      "overlay_title": "换模板再导出"
+    }
+  ],
+  "publish": {
+    "mode": "manual_confirm",
+    "creator_url": "https://creator.douyin.com/",
+    "published_url": "https://v.douyin.com/fgrSuC2LDq0/",
+    "published_at": "2026-06-23T02:49:38.734Z"
+  },
+  "generated_at": "2026-06-23T02:19:54.971Z",
+  "cover_strategy": {
+    "generated_at": "2026-06-23T02:20:39.087Z",
+    "platform": "douyin",
+    "platform_label": "抖音图文",
+    "metric_focus": [
+      "曝光",
+      "点击",
+      "滑完率",
+      "互动"
+    ],
+    "scoring_dimensions": [
+      "one_second_clarity",
+      "pain_strength",
+      "benefit_clarity",
+      "mobile_readability",
+      "screenshot_proof",
+      "platform_fit"
+    ],
+    "recommended": {
+      "angle": "痛点型",
+      "title": "不会写？AI先搭初稿",
+      "subtitle": "先有框架，再改细节",
+      "source_image": "images/01-cover.png",
+      "scores": {
+        "one_second_clarity": 5,
+        "pain_strength": 5,
+        "benefit_clarity": 5,
+        "mobile_readability": 5,
+        "screenshot_proof": 4,
+        "platform_fit": 5
+      },
+      "total_score": 29,
+      "max_score": 30,
+      "recommendation_reason": "痛点直接，收益明确，手机端可读性好，符合平台封面节奏"
+    },
+    "candidates": [
+      {
+        "angle": "痛点型",
+        "title": "不会写？AI先搭初稿",
+        "subtitle": "先有框架，再改细节",
+        "source_image": "images/01-cover.png",
+        "scores": {
+          "one_second_clarity": 5,
+          "pain_strength": 5,
+          "benefit_clarity": 5,
+          "mobile_readability": 5,
+          "screenshot_proof": 4,
+          "platform_fit": 5
+        },
+        "total_score": 29,
+        "max_score": 30,
+        "recommendation_reason": "痛点直接，收益明确，手机端可读性好，符合平台封面节奏"
+      },
+      {
+        "angle": "动作型",
+        "title": "先生成，再编辑",
+        "subtitle": "不是只给你一段文案",
+        "source_image": "images/01-cover.png",
+        "scores": {
+          "one_second_clarity": 5,
+          "pain_strength": 3,
+          "benefit_clarity": 5,
+          "mobile_readability": 5,
+          "screenshot_proof": 4,
+          "platform_fit": 5
+        },
+        "total_score": 27,
+        "max_score": 30,
+        "recommendation_reason": "收益明确，手机端可读性好，符合平台封面节奏"
+      },
+      {
+        "angle": "结果型",
+        "title": "从空白到简历初稿",
+        "subtitle": "今晚要投也能先开始",
+        "source_image": "images/01-cover.png",
+        "scores": {
+          "one_second_clarity": 5,
+          "pain_strength": 3,
+          "benefit_clarity": 5,
+          "mobile_readability": 5,
+          "screenshot_proof": 4,
+          "platform_fit": 4
+        },
+        "total_score": 26,
+        "max_score": 30,
+        "recommendation_reason": "收益明确，手机端可读性好"
+      }
+    ],
+    "post_publish_review": {
+      "compare_by": [
+        "曝光",
+        "点击",
+        "滑完率",
+        "互动"
+      ],
+      "decision_rule": "优先保留点击/打开表现更好的标题角度，再看收藏、分享和评论质量。"
+    }
+  },
+  "platform_assets": {
+    "generated_at": "2026-06-23T02:20:40.297Z",
+    "platform": "douyin",
+    "status": "ready",
+    "output_dir": "platform-images",
+    "images": [
+      {
+        "order": 1,
+        "role": "cover",
+        "file": "platform-images/01-cover-1080x1440.png",
+        "width": 1080,
+        "height": 1440,
+        "source": "images/01-cover.png"
+      },
+      {
+        "order": 2,
+        "role": "ai-wizard",
+        "file": "platform-images/02-ai-wizard-1080x1440.png",
+        "width": 1080,
+        "height": 1440,
+        "source": "images/02-ai-wizard.png"
+      },
+      {
+        "order": 3,
+        "role": "dashboard",
+        "file": "platform-images/03-dashboard-1080x1440.png",
+        "width": 1080,
+        "height": 1440,
+        "source": "images/03-dashboard.png"
+      },
+      {
+        "order": 4,
+        "role": "editor",
+        "file": "platform-images/04-editor-1080x1440.png",
+        "width": 1080,
+        "height": 1440,
+        "source": "images/04-editor.png"
+      },
+      {
+        "order": 5,
+        "role": "template",
+        "file": "platform-images/05-template-1080x1440.png",
+        "width": 1080,
+        "height": 1440,
+        "source": "images/05-template.png"
+      }
+    ]
+  },
+  "music_strategy": {
+    "mood": "轻快、干净、有开始行动的感觉",
+    "tempo": "中速或偏轻快，不要太燃，适合用户慢慢看 5 张图",
+    "search_keywords": [
+      "轻快",
+      "治愈",
+      "学习",
+      "效率",
+      "清爽"
+    ],
+    "volume": "建议 20%-35%，不要压过用户看图节奏",
+    "reason": "这篇主题是从不会写到先有初稿，配乐要给人轻松开始、降低压力的感觉。",
+    "avoid": [
+      "强节奏舞曲",
+      "伤感情歌",
+      "歌词信息太密的热门歌",
+      "和求职场景无关的搞笑音乐"
+    ],
+    "song_candidates": [
+      "Spring - Ikson",
+      "A Little Story",
+      "Komorebi",
+      "Daylight",
+      "Windy Hill",
+      "和煦的糖果风"
+    ]
+  },
+  "updated_at": "2026-06-23T03:46:11.978Z"
+}

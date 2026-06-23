@@ -89,7 +89,7 @@ node scripts/generate-cover-strategy.mjs screenshots/notes/<slug>/publish-task.j
 function scoreCandidate(candidate, task, profile) {
   const titleLength = [...candidate.title].length;
   const hasPain = /Word|乱|手调|崩|不会|费/.test(candidate.title);
-  const hasResult = /导出|排版|生成|改|流程|一套/.test(candidate.title);
+  const hasResult = /导出|排版|生成|改|流程|一套|初稿|结构/.test(candidate.title);
   const hasAction = /点|拖|换|一键|直接/.test(candidate.title);
   const usesProofImage = Boolean(candidate.source_image);
 
@@ -125,6 +125,28 @@ function buildCandidates(task, count) {
   const coverImage = task.images?.find((image) => image.role === 'cover') || task.images?.[0];
   const workbenchImage = task.images?.find((image) => ['workbench', 'process'].includes(image.role)) || coverImage;
   const detailImage = task.images?.find((image) => ['rich-text', 'module-drag', 'theme-color'].includes(image.role)) || coverImage;
+  const topicText = `${task.slug || ''} ${task.title || ''} ${task.body || ''}`;
+
+  if (/first-draft|初稿|不会写简历|AI\s*搭/.test(topicText)) {
+    const firstDraftCandidates = {
+      xiaohongshu: [
+        { angle: '痛点型', title: '不会写简历？AI先搭初稿', subtitle: '先有结构，再慢慢改', source_image: coverImage?.file },
+        { angle: '结果型', title: '从空白到简历初稿', subtitle: '生成后还能继续编辑排版', source_image: workbenchImage?.file },
+        { angle: '反差型', title: '别从空白文档开始', subtitle: 'AI 帮你先搭 60 分框架', source_image: detailImage?.file },
+      ],
+      wechat_image: [
+        { angle: '痛点型', title: '不会写？AI先搭初稿', subtitle: '简历先有结构，再改细节', source_image: coverImage?.file },
+        { angle: '动作型', title: '先生成，再编辑', subtitle: '从初稿到排版一起做', source_image: workbenchImage?.file },
+        { angle: '结果型', title: '从空白到简历初稿', subtitle: '适合第一次做简历', source_image: detailImage?.file },
+      ],
+      douyin: [
+        { angle: '痛点型', title: '不会写？AI先搭初稿', subtitle: '先有框架，再改细节', source_image: coverImage?.file },
+        { angle: '动作型', title: '先生成，再编辑', subtitle: '不是只给你一段文案', source_image: workbenchImage?.file },
+        { angle: '结果型', title: '从空白到简历初稿', subtitle: '今晚要投也能先开始', source_image: detailImage?.file },
+      ],
+    };
+    return (firstDraftCandidates[task.platform] || firstDraftCandidates.xiaohongshu).slice(0, count);
+  }
 
   const byPlatform = {
     xiaohongshu: [

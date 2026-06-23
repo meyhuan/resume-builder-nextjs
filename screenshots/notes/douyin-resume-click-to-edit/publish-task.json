@@ -201,5 +201,32 @@
         "source": "images/05-theme-color.png"
       }
     ]
+  },
+  "music_strategy": {
+    "mood": "轻快、干净、有开始行动的感觉",
+    "tempo": "中速或偏轻快，不要太燃，适合用户慢慢看 5 张图",
+    "search_keywords": [
+      "轻快",
+      "治愈",
+      "学习",
+      "效率",
+      "清爽"
+    ],
+    "volume": "建议 20%-35%，不要压过用户看图节奏",
+    "reason": "这篇主题是从不会写到先有初稿，配乐要给人轻松开始、降低压力的感觉。",
+    "avoid": [
+      "强节奏舞曲",
+      "伤感情歌",
+      "歌词信息太密的热门歌",
+      "和求职场景无关的搞笑音乐"
+    ],
+    "song_candidates": [
+      "Spring - Ikson",
+      "A Little Story",
+      "Komorebi",
+      "Daylight",
+      "Windy Hill",
+      "和煦的糖果风"
+    ]
   }
 }

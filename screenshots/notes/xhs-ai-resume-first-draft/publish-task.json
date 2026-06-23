@@ -1,0 +1,207 @@
+{
+  "platform": "xiaohongshu",
+  "slug": "xhs-ai-resume-first-draft",
+  "status": "published",
+  "title": "不会写简历，先让 AI 搭初稿",
+  "body": "很多人做简历卡住，不是因为完全没有经历。\n\n而是不知道怎么把经历放进简历结构里。\n\n尤其是应届生、转行、0-3 年职场人，经常会遇到这些问题：\n\n- 不知道简历先写什么后写什么\n- 项目/实习经历写得像流水账\n- 用 AI 生成了一段文字，但还要自己排版\n- Word 模板一改就乱，最后又回到手调格式\n\n我更推荐的方式是：\n\n先让 AI 帮你搭一版简历初稿，再进入编辑器慢慢改。\n\n这样不是从空白文档开始，也不是只得到一段文案，而是直接进入一份已经排好版、可以继续编辑的简历。\n\n比较实用的地方：\n\n1. 先按身份和目标岗位生成结构  \n应届生、在校生、职场人需要突出的内容不一样，先把结构搭起来会省很多时间。\n\n2. 生成后可以继续编辑  \nAI 只负责初稿，后面还是要根据真实经历修改，不建议直接照搬。\n\n3. 内容会进入简历排版  \n不是复制到 Word 里再手动调格式，而是可以继续换模板、改模块、导出。\n\n4. 适合临时要投递的人  \n今晚要投简历、旧简历太乱、完全不知道从哪开始，都可以先出一版框架。\n\n我的建议是：  \n先用 AI 搭 60 分初稿，再自己补真实细节，把项目结果、职责范围、使用工具和关键词写清楚。\n\n简历不用一开始就完美，先有结构，后面才好修改。\n\n工具是：智简简历。  \n想试的话，可以在浏览器搜 `aijianli.cn`，或者搜“智简简历”，进入后选 AI 生成简历，再按提示填写身份、岗位和经历。\n\n#AI简历 #简历制作 #应届生简历 #求职简历 #简历模板 #转行简历 #简历排版 #在线简历工具",
+  "hashtags": [
+    "AI简历",
+    "简历制作",
+    "应届生简历",
+    "求职简历",
+    "转行简历",
+    "简历模板",
+    "在线简历工具"
+  ],
+  "images": [
+    {
+      "order": 1,
+      "file": "images/01-cover.png",
+      "role": "cover",
+      "source": "screenshots/process/process-ai-generate-input-to-formatted-resume.png",
+      "overlay_title": "AI先搭一版简历初稿"
+    },
+    {
+      "order": 2,
+      "file": "images/02-ai-wizard.png",
+      "role": "ai-wizard",
+      "source": "docs/seo/website-screenshot/AIGenerationPage.png",
+      "overlay_title": "按身份引导生成"
+    },
+    {
+      "order": 3,
+      "file": "images/03-dashboard.png",
+      "role": "dashboard",
+      "source": "screenshots/raw/desktop/dashboard-filled-desktop.png",
+      "overlay_title": "从工作台开始生成"
+    },
+    {
+      "order": 4,
+      "file": "images/04-editor.png",
+      "role": "editor",
+      "source": "screenshots/raw/desktop/editor-lanzhe-workbench-overview-desktop.png",
+      "overlay_title": "生成后继续编辑"
+    },
+    {
+      "order": 5,
+      "file": "images/05-template.png",
+      "role": "template",
+      "source": "screenshots/raw/desktop/editor-lanzhe-template-selected-panel-desktop.png",
+      "overlay_title": "换模板后再导出"
+    }
+  ],
+  "publish": {
+    "mode": "manual_confirm",
+    "creator_url": "https://creator.xiaohongshu.com/publish/publish",
+    "published_url": "https://www.xiaohongshu.com/discovery/item/6a39f3720000000006023e40?source=webshare&xhsshare=pc_web&xsec_token=YBgNz3FYXQMgHF4PROguF4YobtNXw_DAuw0pSrXuDUVfU=&xsec_source=pc_share",
+    "published_at": "2026-06-23T02:49:37.431Z"
+  },
+  "generated_at": "2026-06-23T02:19:53.891Z",
+  "cover_strategy": {
+    "generated_at": "2026-06-23T02:20:35.545Z",
+    "platform": "xiaohongshu",
+    "platform_label": "小红书",
+    "metric_focus": [
+      "曝光",
+      "阅读",
+      "收藏",
+      "评论"
+    ],
+    "scoring_dimensions": [
+      "one_second_clarity",
+      "pain_strength",
+      "benefit_clarity",
+      "mobile_readability",
+      "screenshot_proof",
+      "platform_fit"
+    ],
+    "recommended": {
+      "angle": "痛点型",
+      "title": "不会写简历？AI先搭初稿",
+      "subtitle": "先有结构，再慢慢改",
+      "source_image": "images/01-cover.png",
+      "scores": {
+        "one_second_clarity": 5,
+        "pain_strength": 5,
+        "benefit_clarity": 5,
+        "mobile_readability": 5,
+        "screenshot_proof": 4,
+        "platform_fit": 5
+      },
+      "total_score": 29,
+      "max_score": 30,
+      "recommendation_reason": "痛点直接，收益明确，手机端可读性好，符合平台封面节奏"
+    },
+    "candidates": [
+      {
+        "angle": "痛点型",
+        "title": "不会写简历？AI先搭初稿",
+        "subtitle": "先有结构，再慢慢改",
+        "source_image": "images/01-cover.png",
+        "scores": {
+          "one_second_clarity": 5,
+          "pain_strength": 5,
+          "benefit_clarity": 5,
+          "mobile_readability": 5,
+          "screenshot_proof": 4,
+          "platform_fit": 5
+        },
+        "total_score": 29,
+        "max_score": 30,
+        "recommendation_reason": "痛点直接，收益明确，手机端可读性好，符合平台封面节奏"
+      },
+      {
+        "angle": "结果型",
+        "title": "从空白到简历初稿",
+        "subtitle": "生成后还能继续编辑排版",
+        "source_image": "images/01-cover.png",
+        "scores": {
+          "one_second_clarity": 5,
+          "pain_strength": 3,
+          "benefit_clarity": 5,
+          "mobile_readability": 5,
+          "screenshot_proof": 4,
+          "platform_fit": 5
+        },
+        "total_score": 27,
+        "max_score": 30,
+        "recommendation_reason": "收益明确，手机端可读性好，符合平台封面节奏"
+      },
+      {
+        "angle": "反差型",
+        "title": "别从空白文档开始",
+        "subtitle": "AI 帮你先搭 60 分框架",
+        "source_image": "images/01-cover.png",
+        "scores": {
+          "one_second_clarity": 5,
+          "pain_strength": 3,
+          "benefit_clarity": 3,
+          "mobile_readability": 5,
+          "screenshot_proof": 4,
+          "platform_fit": 5
+        },
+        "total_score": 25,
+        "max_score": 30,
+        "recommendation_reason": "手机端可读性好，符合平台封面节奏"
+      }
+    ],
+    "post_publish_review": {
+      "compare_by": [
+        "曝光",
+        "阅读",
+        "收藏",
+        "评论"
+      ],
+      "decision_rule": "优先保留点击/打开表现更好的标题角度，再看收藏、分享和评论质量。"
+    }
+  },
+  "platform_assets": {
+    "generated_at": "2026-06-23T02:20:36.388Z",
+    "platform": "xiaohongshu",
+    "status": "ready",
+    "output_dir": "platform-images",
+    "images": [
+      {
+        "order": 1,
+        "role": "cover",
+        "file": "platform-images/01-cover-1080x1440.png",
+        "width": 1080,
+        "height": 1440,
+        "source": "images/01-cover.png"
+      },
+      {
+        "order": 2,
+        "role": "ai-wizard",
+        "file": "platform-images/02-ai-wizard-1080x1440.png",
+        "width": 1080,
+        "height": 1440,
+        "source": "images/02-ai-wizard.png"
+      },
+      {
+        "order": 3,
+        "role": "dashboard",
+        "file": "platform-images/03-dashboard-1080x1440.png",
+        "width": 1080,
+        "height": 1440,
+        "source": "images/03-dashboard.png"
+      },
+      {
+        "order": 4,
+        "role": "editor",
+        "file": "platform-images/04-editor-1080x1440.png",
+        "width": 1080,
+        "height": 1440,
+        "source": "images/04-editor.png"
+      },
+      {
+        "order": 5,
+        "role": "template",
+        "file": "platform-images/05-template-1080x1440.png",
+        "width": 1080,
+        "height": 1440,
+        "source": "images/05-template.png"
+      }
+    ]
+  },
+  "updated_at": "2026-06-23T03:46:11.973Z"
+}

@@ -1,0 +1,205 @@
+{
+  "platform": "wechat_image",
+  "slug": "wechat-image-ai-resume-first-draft-conversion",
+  "status": "ready_for_review",
+  "title": "不会写简历？先用智简简历搭初稿",
+  "body": "做简历最难的不是最后导出，而是第一步不知道怎么开始。\n\n很多应届生、转行和 0-3 年职场人都会卡在：\n\n- 不知道写什么\n- 不知道结构怎么排\n- 项目经历像流水账\n- AI 生成文字后还要自己排版\n\n可以先用 **智简简历** 走一遍完整流程：\n\n1. 打开 `aijianli.cn`\n2. 选择 AI 生成简历\n3. 填写身份、目标岗位和经历\n4. 生成初稿后进入编辑器\n5. 修改真实经历、换模板、调主题、导出\n\n重点不是让 AI 替你编经历，而是先帮你把结构搭起来，让你从一份能编辑的简历开始。\n\n工具：智简简历\n\n入口：浏览器打开 `aijianli.cn`，或搜索“智简简历”。\n\n提醒：AI 初稿只是起点，最终内容一定要按真实经历修改。\n\n#AI简历 #智简简历 #简历制作 #应届生简历 #求职工具 #简历初稿",
+  "hashtags": [
+    "AI简历",
+    "智简简历",
+    "简历制作",
+    "应届生简历",
+    "求职工具",
+    "简历初稿"
+  ],
+  "images": [
+    {
+      "order": 1,
+      "file": "images/01-cover.png",
+      "role": "cover",
+      "source": "screenshots/process/process-ai-generate-input-to-formatted-resume.png",
+      "overlay_title": "不会写简历？智简简历先搭初稿"
+    },
+    {
+      "order": 2,
+      "file": "images/02-entry.png",
+      "role": "entry",
+      "source": "docs/seo/website-screenshot/AIGenerationPage.png",
+      "overlay_title": "打开 aijianli.cn 选 AI 生成简历"
+    },
+    {
+      "order": 3,
+      "file": "images/03-workbench.png",
+      "role": "workbench",
+      "source": "screenshots/raw/desktop/dashboard-filled-desktop.png",
+      "overlay_title": "搜智简简历，从工作台开始"
+    },
+    {
+      "order": 4,
+      "file": "images/04-editor.png",
+      "role": "editor",
+      "source": "screenshots/raw/desktop/editor-lanzhe-workbench-overview-desktop.png",
+      "overlay_title": "生成后继续编辑和排版"
+    },
+    {
+      "order": 5,
+      "file": "images/05-cta.png",
+      "role": "cta",
+      "source": "screenshots/raw/desktop/editor-lanzhe-template-selected-panel-desktop.png",
+      "overlay_title": "工具：智简简历｜搜 aijianli.cn"
+    }
+  ],
+  "publish": {
+    "mode": "manual_confirm",
+    "creator_url": "https://mp.weixin.qq.com/",
+    "published_url": "",
+    "published_at": ""
+  },
+  "generated_at": "2026-06-23T05:43:17.120Z",
+  "cover_strategy": {
+    "generated_at": "2026-06-23T05:43:29.581Z",
+    "platform": "wechat_image",
+    "platform_label": "公众号贴图",
+    "metric_focus": [
+      "打开率",
+      "分享",
+      "在看",
+      "收藏"
+    ],
+    "scoring_dimensions": [
+      "one_second_clarity",
+      "pain_strength",
+      "benefit_clarity",
+      "mobile_readability",
+      "screenshot_proof",
+      "platform_fit"
+    ],
+    "recommended": {
+      "angle": "痛点型",
+      "title": "不会写？AI先搭初稿",
+      "subtitle": "简历先有结构，再改细节",
+      "source_image": "images/01-cover.png",
+      "scores": {
+        "one_second_clarity": 5,
+        "pain_strength": 5,
+        "benefit_clarity": 5,
+        "mobile_readability": 5,
+        "screenshot_proof": 4,
+        "platform_fit": 5
+      },
+      "total_score": 29,
+      "max_score": 30,
+      "recommendation_reason": "痛点直接，收益明确，手机端可读性好，符合平台封面节奏"
+    },
+    "candidates": [
+      {
+        "angle": "痛点型",
+        "title": "不会写？AI先搭初稿",
+        "subtitle": "简历先有结构，再改细节",
+        "source_image": "images/01-cover.png",
+        "scores": {
+          "one_second_clarity": 5,
+          "pain_strength": 5,
+          "benefit_clarity": 5,
+          "mobile_readability": 5,
+          "screenshot_proof": 4,
+          "platform_fit": 5
+        },
+        "total_score": 29,
+        "max_score": 30,
+        "recommendation_reason": "痛点直接，收益明确，手机端可读性好，符合平台封面节奏"
+      },
+      {
+        "angle": "动作型",
+        "title": "先生成，再编辑",
+        "subtitle": "从初稿到排版一起做",
+        "source_image": "images/03-workbench.png",
+        "scores": {
+          "one_second_clarity": 5,
+          "pain_strength": 3,
+          "benefit_clarity": 5,
+          "mobile_readability": 5,
+          "screenshot_proof": 4,
+          "platform_fit": 5
+        },
+        "total_score": 27,
+        "max_score": 30,
+        "recommendation_reason": "收益明确，手机端可读性好，符合平台封面节奏"
+      },
+      {
+        "angle": "结果型",
+        "title": "从空白到简历初稿",
+        "subtitle": "适合第一次做简历",
+        "source_image": "images/01-cover.png",
+        "scores": {
+          "one_second_clarity": 5,
+          "pain_strength": 3,
+          "benefit_clarity": 5,
+          "mobile_readability": 5,
+          "screenshot_proof": 4,
+          "platform_fit": 5
+        },
+        "total_score": 27,
+        "max_score": 30,
+        "recommendation_reason": "收益明确，手机端可读性好，符合平台封面节奏"
+      }
+    ],
+    "post_publish_review": {
+      "compare_by": [
+        "打开率",
+        "分享",
+        "在看",
+        "收藏"
+      ],
+      "decision_rule": "优先保留点击/打开表现更好的标题角度，再看收藏、分享和评论质量。"
+    }
+  },
+  "platform_assets": {
+    "generated_at": "2026-06-23T05:50:53.405Z",
+    "platform": "wechat_image",
+    "status": "ready",
+    "output_dir": "platform-images",
+    "images": [
+      {
+        "order": 1,
+        "role": "cover",
+        "file": "platform-images/01-cover-1080x1440.png",
+        "width": 1080,
+        "height": 1440,
+        "source": "images/01-cover.png"
+      },
+      {
+        "order": 2,
+        "role": "entry",
+        "file": "platform-images/02-entry-1080x1440.png",
+        "width": 1080,
+        "height": 1440,
+        "source": "images/02-entry.png"
+      },
+      {
+        "order": 3,
+        "role": "workbench",
+        "file": "platform-images/03-workbench-1080x1440.png",
+        "width": 1080,
+        "height": 1440,
+        "source": "images/03-workbench.png"
+      },
+      {
+        "order": 4,
+        "role": "editor",
+        "file": "platform-images/04-editor-1080x1440.png",
+        "width": 1080,
+        "height": 1440,
+        "source": "images/04-editor.png"
+      },
+      {
+        "order": 5,
+        "role": "cta",
+        "file": "platform-images/05-cta-1080x1440.png",
+        "width": 1080,
+        "height": 1440,
+        "source": "images/05-cta.png"
+      }
+    ]
+  }
+}

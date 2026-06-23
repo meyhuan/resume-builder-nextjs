@@ -2,9 +2,11 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { cookies } from 'next/headers'
 import { prisma } from '@/lib/prisma'
 import { fetchJavaWithLog, parseJsonWithLog } from '@/lib/api/fetch-with-log'
+import { MINI_PROGRAM_VERSION_COOKIE } from '@/lib/mini-program-version-cookie'
 
 const AUTH_COOKIE_NAME = 'auth_uid'
 const AUTH_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 30
+const MINI_VERSION_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 30
 
 interface SsoVerifyResult {
   readonly status: number
@@ -25,12 +27,14 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   const token: string | null = searchParams.get('token')
   const redirectParam: string = searchParams.get('r') || '/m'
   const safeRedirect: string = sanitizeRedirect(redirectParam)
+  const miniVersion: string = extractMiniVersion(safeRedirect)
   const ua: string = request.headers.get('user-agent') || ''
   console.log('[m/sso] GET in', {
     href: reqUrl.href,
     hasToken: Boolean(token),
     r: redirectParam,
     safeRedirect,
+    miniVersion,
     ua: ua.slice(0, 80),
   })
   if (!token) {
@@ -56,6 +60,15 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     secure: isProd,
     httpOnly: false,
   })
+  if (miniVersion) {
+    cookieStore.set(MINI_PROGRAM_VERSION_COOKIE, miniVersion, {
+      path: '/',
+      maxAge: MINI_VERSION_COOKIE_MAX_AGE_SECONDS,
+      sameSite: 'lax',
+      secure: isProd,
+      httpOnly: false,
+    })
+  }
   const host = request.headers.get('x-forwarded-host') || request.headers.get('host') || 'aijianli.cn'
   const protocol = request.headers.get('x-forwarded-proto') || (host.includes('localhost') ? 'http' : 'https')
   const baseUrl = `${protocol}://${host}`
@@ -76,6 +89,21 @@ function sanitizeRedirect(target: string): string {
     return '/m'
   }
   return target
+}
+
+function extractMiniVersion(target: string): string {
+  try {
+    const url = new URL(target, 'https://aijianli.cn')
+    const value = url.searchParams.get('miniVersion') ?? url.searchParams.get('mpVersion') ?? ''
+    return sanitizeMiniVersion(value)
+  } catch {
+    return ''
+  }
+}
+
+function sanitizeMiniVersion(value: string): string {
+  const normalized = value.trim()
+  return /^[0-9A-Za-z._-]{1,32}$/.test(normalized) ? normalized : ''
 }
 
 async function verifyTokenWithJava(token: string): Promise<string> {

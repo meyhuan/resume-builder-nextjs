@@ -16,6 +16,8 @@
     "xhs:sync-log": "node scripts/sync-xhs-publish-log.mjs",
     "marketing:cover-strategy": "node scripts/generate-cover-strategy.mjs",
     "marketing:platform-images": "node scripts/generate-platform-image-assets.mjs",
+    "marketing:refresh-douyin-music": "node scripts/refresh-douyin-music-checklist.mjs",
+    "marketing:audit": "node scripts/audit-marketing-publish-package.mjs",
     "marketing:update-metrics": "node scripts/update-marketing-metrics.mjs",
     "marketing:workbench": "node scripts/generate-marketing-workbench.mjs",
     "template:qa": "node scripts/verify-template.mjs",
