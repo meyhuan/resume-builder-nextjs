@@ -45,6 +45,11 @@ interface ExportJobResponse {
   readonly previewImages?: readonly string[]
 }
 
+interface SyncPreviewStateFlight {
+  readonly key: string
+  readonly promise: Promise<void>
+}
+
 const log = createLogger('m/preview')
 
 function buildDefaultExportFileName(resume: ResumeData): string {
@@ -123,6 +128,9 @@ export default function MobilePreviewClient(): ReactElement {
   const innerRef = useRef<HTMLDivElement>(null)
   const pinchStateRef = useRef<{ startDist: number; startZoom: number } | null>(null)
   const lastTapRef = useRef<number>(0)
+  const settingsSavingRef = useRef<boolean>(false)
+  const exportInFlightRef = useRef<boolean>(false)
+  const syncPreviewStateFlightRef = useRef<SyncPreviewStateFlight | null>(null)
 
   useEffect(() => {
     track('resume_preview', {
@@ -462,57 +470,77 @@ export default function MobilePreviewClient(): ReactElement {
    * Used by both the mini-program and H5 export flows.
    */
   const syncPreviewState = useCallback(async (targetId: string): Promise<void> => {
-    const sourceResume: ResumeData = draft ?? resume
-    const latestStore = useAppStore.getState()
-    const latestTheme: ThemeTokens = latestStore.getThemeForTemplate(templateId)
-    const latestThemesMap: Record<string, ThemeTokens> = latestStore.themes
-    // Merge the current theme into the full themes map so other templates'
-    // saved themes are preserved in the DB (not overwritten with an empty map).
-    const mergedThemes = { ...latestThemesMap, [templateId]: latestTheme }
-    log.info('syncPreviewState', {
-      templateId,
-      primaryColor: latestTheme.primaryColor,
-      themesMapKeys: Object.keys(latestThemesMap),
-    })
-
-    const editorMeta = {
-      themes: mergedThemes,
-      onePageMode: onePageFit,
-      onePageSnapshot,
+    const syncKey = `${targetId}:${templateId}`
+    const existingSync = syncPreviewStateFlightRef.current
+    if (existingSync?.key === syncKey) {
+      log.info('reuse in-flight syncPreviewState', { targetId, templateId })
+      return existingSync.promise
     }
 
-    // Strip any stale __editorMeta that may be embedded in the resume object
-    // (e.g. when resume was loaded from the server GET response which includes
-    // the raw content blob). embedEditorMeta will write the fresh meta.
-    const { content: cleanContent } = extractEditorMeta(
-      sourceResume as unknown as Record<string, unknown>
-    )
-    const contentWithMeta = embedEditorMeta(cleanContent, editorMeta)
+    const syncPromise = (async (): Promise<void> => {
+      const sourceResume: ResumeData = draft ?? resume
+      const latestStore = useAppStore.getState()
+      const latestTheme: ThemeTokens = latestStore.getThemeForTemplate(templateId)
+      const latestThemesMap: Record<string, ThemeTokens> = latestStore.themes
+      // Merge the current theme into the full themes map so other templates'
+      // saved themes are preserved in the DB (not overwritten with an empty map).
+      const mergedThemes = { ...latestThemesMap, [templateId]: latestTheme }
+      log.info('syncPreviewState', {
+        templateId,
+        primaryColor: latestTheme.primaryColor,
+        themesMapKeys: Object.keys(latestThemesMap),
+      })
 
-    const response = await fetchWithNetworkRetry(`/next-api/resumes/${targetId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        title: sourceResume.name || resume.name || 'Untitled Resume',
-        content: contentWithMeta,
-        template: templateId,
-      }),
-    })
+      const editorMeta = {
+        themes: mergedThemes,
+        onePageMode: onePageFit,
+        onePageSnapshot,
+      }
 
-    if (!response.ok) {
-      const text = await response.text().catch(() => '')
-      const message = text || `HTTP ${response.status}`
-      log.warn('failed to sync preview state before export', { status: response.status, message })
-      throw new Error('保存最新简历内容失败，请重试后再导出')
+      // Strip any stale __editorMeta that may be embedded in the resume object
+      // (e.g. when resume was loaded from the server GET response which includes
+      // the raw content blob). embedEditorMeta will write the fresh meta.
+      const { content: cleanContent } = extractEditorMeta(
+        sourceResume as unknown as Record<string, unknown>
+      )
+      const contentWithMeta = embedEditorMeta(cleanContent, editorMeta)
+
+      const response = await fetchWithNetworkRetry(`/next-api/resumes/${targetId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: sourceResume.name || resume.name || 'Untitled Resume',
+          content: contentWithMeta,
+          template: templateId,
+        }),
+      }, 3)
+
+      if (!response.ok) {
+        const text = await response.text().catch(() => '')
+        const message = text || `HTTP ${response.status}`
+        log.warn('failed to sync preview state before export', { status: response.status, message })
+        throw new Error('保存最新简历内容失败，请重试后再导出')
+      }
+    })()
+
+    syncPreviewStateFlightRef.current = { key: syncKey, promise: syncPromise }
+    try {
+      await syncPromise
+    } finally {
+      if (syncPreviewStateFlightRef.current?.promise === syncPromise) {
+        syncPreviewStateFlightRef.current = null
+      }
     }
   }, [draft, resume, templateId, onePageFit, onePageSnapshot])
 
   const handleConfirmSettings = useCallback(async (): Promise<void> => {
+    if (settingsSavingRef.current) return
     const targetId: string | null = draftResumeId || searchParams.get('id')
     if (!targetId) {
       toast.error('无法获取简历 ID，请返回重试')
       return
     }
+    settingsSavingRef.current = true
     setSettingsSaving(true)
     try {
       await syncPreviewState(targetId)
@@ -526,6 +554,7 @@ export default function MobilePreviewClient(): ReactElement {
       })
       toast.error(err instanceof Error ? err.message : '样式保存失败，请稍后重试')
     } finally {
+      settingsSavingRef.current = false
       setSettingsSaving(false)
     }
   }, [draftResumeId, searchParams, syncPreviewState, setDraftTemplateId, templateId])
@@ -543,6 +572,8 @@ export default function MobilePreviewClient(): ReactElement {
       toast.info('当前小程序版本暂不支持 Markdown 导出，请更新后再试')
       return
     }
+    if (exportInFlightRef.current) return
+    exportInFlightRef.current = true
     setIsExporting(true)
     const fileName: string = buildDefaultExportFileName(resume)
     const targetResumeIdForTrack: string | null = draftResumeId || searchParams.get('id')
@@ -592,6 +623,7 @@ export default function MobilePreviewClient(): ReactElement {
       })
       toast.error(msg)
     } finally {
+      exportInFlightRef.current = false
       setIsExporting(false)
     }
   }, [resume, createExportJob, openExportResult, draftResumeId, searchParams, templateId, syncPreviewState, inMiniProgram, miniMarkdownExportSupported])
