@@ -107,11 +107,11 @@ export default function MembershipPage(): React.ReactElement {
   const isExpired = daysRemaining !== null && daysRemaining <= 0;
 
   const quotaItems = [
-    { label: 'AI 生成简历', remaining: quota.aiGenerateResume?.remaining, limit: 3 },
-    { label: 'AI 导入解析', remaining: quota.aiImportSection?.remaining, limit: 3 },
-    { label: 'AI 续写内容', remaining: quota.aiGenerateSection?.remaining, limit: 5 },
-    { label: 'AI 润色文本', remaining: quota.aiPolishSection?.remaining, limit: 5 },
-    { label: 'PDF 导出', remaining: quota.pdfExport?.remaining, limit: 1 },
+    { label: 'AI 生成简历', remaining: quota.aiGenerateResume?.remaining, limit: 3, cycle: 'daily' },
+    { label: 'AI 导入解析', remaining: quota.aiImportSection?.remaining, limit: 3, cycle: 'daily' },
+    { label: 'AI 续写内容', remaining: quota.aiGenerateSection?.remaining, limit: 5, cycle: 'daily' },
+    { label: 'AI 润色文本', remaining: quota.aiPolishSection?.remaining, limit: 5, cycle: 'daily' },
+    { label: 'PDF 导出', remaining: quota.pdfExport?.remaining, limit: 1, cycle: 'lifetime' },
   ];
 
   const anyDepleted = quotaItems.some((q) => {
@@ -290,18 +290,24 @@ export default function MembershipPage(): React.ReactElement {
             {/* ══ FREE: QUOTA BARS ══ */}
             {!isVip && (
               <div className="bg-white rounded-3xl px-7 py-6 border border-violet-100/60">
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-4">剩余额度</p>
+                <div className="mb-4">
+                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest">剩余次数</p>
+                  <p className="text-[11px] text-slate-400 mt-1">数字表示还可以使用多少次</p>
+                </div>
                 <div className="space-y-3.5">
                   {quotaItems.map((item) => {
                     const remaining = typeof item.remaining === 'number' ? item.remaining : item.limit;
                     const pct = Math.max(0, Math.min(100, (remaining / item.limit) * 100));
                     const depleted = remaining === 0;
+                    const cycleText = item.cycle === 'daily' ? `每日免费 ${item.limit} 次` : `免费 ${item.limit} 次`;
+                    const remainingText = item.cycle === 'daily' ? `今日剩余 ${remaining} 次` : `免费剩余 ${remaining} 次`;
+                    const depletedText = item.cycle === 'daily' ? '今日已用完' : '免费额度已用完';
                     return (
                       <div key={item.label}>
                         <div className="flex items-center justify-between mb-1.5">
                           <span className="text-sm text-slate-600">{item.label}</span>
-                          <span className={`text-xs font-semibold tabular-nums ${depleted ? 'text-rose-500' : 'text-violet-600'}`}>
-                            {depleted ? '已用尽' : `${remaining} / ${item.limit}`}
+                          <span className={`text-xs font-semibold ${depleted ? 'text-rose-500' : 'text-violet-600'}`}>
+                            {depleted ? depletedText : remainingText}
                           </span>
                         </div>
                         <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
@@ -310,6 +316,7 @@ export default function MembershipPage(): React.ReactElement {
                             style={{ width: `${pct}%` }}
                           />
                         </div>
+                        <p className="mt-1 text-right text-[11px] text-slate-400">{cycleText}</p>
                       </div>
                     );
                   })}
