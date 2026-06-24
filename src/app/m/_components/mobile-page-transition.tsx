@@ -1,6 +1,6 @@
 'use client'
 
-import { type ReactElement, type ReactNode, useLayoutEffect, useMemo } from 'react'
+import { type ReactElement, type ReactNode, useEffect, useLayoutEffect, useMemo } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { usePathname } from 'next/navigation'
 
@@ -38,6 +38,10 @@ export default function MobilePageTransition({ children }: MobilePageTransitionP
   const direction: Direction = previous && previous.key !== currentRoute.key && currentRoute.depth < previous.depth
     ? 'back'
     : 'forward'
+
+  useEffect(() => {
+    window.dispatchEvent(new Event('aijianli:react-hydrated'))
+  }, [])
 
   useLayoutEffect(() => {
     previousMobileRoute = currentRoute
