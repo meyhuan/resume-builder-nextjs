@@ -570,7 +570,7 @@ export default function VipUpgradeDialog({ open, onOpenChange, hidePlanOptions =
                         <Sparkles className="w-4 h-4 text-violet-500" />
                         微信扫码，立即开通
                       </p>
-                      <p className="text-xs text-slate-500">已锁定优惠，支付后自动生效</p>
+                      <p className="text-xs text-slate-500">单次付费，不自动续费；支付后自动生效</p>
                       <div className="mt-2 inline-flex items-center gap-2 rounded-full bg-violet-50 px-4 py-1.5 text-xs font-medium text-violet-600 border border-violet-100">
                         <span className="relative flex h-2 w-2">
                           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75" />
