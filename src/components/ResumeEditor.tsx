@@ -1039,14 +1039,6 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
               onePage={onePageMode}
               onePageStatus={onePageStatus}
               onOnePageChange={setOnePageMode}
-              onImportJson={(json): void => {
-                try {
-                  const parsed = JSON.parse(json)
-                  useAppStore.getState().importExternalResume(parsed)
-                } catch (e) {
-                  alert(`解析失败: ${e}`)
-                }
-              }}
             />
           </aside>
         )}

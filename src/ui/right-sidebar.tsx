@@ -15,7 +15,7 @@ import { useAppStore } from '@/state/store'
 import { RESUME_SCENARIOS } from '@/dev/resume-scenarios'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
-import { Layout, Upload, Database, X } from 'lucide-react'
+import { Layout, Database, X } from 'lucide-react'
 import SectionManager from '@/ui/section-manager'
 import AiOptimizePanel from '@/ui/ai-optimize-panel'
 import Image from 'next/image'
@@ -31,7 +31,6 @@ export interface RightSidebarProps {
   readonly onePage?: boolean
   readonly onePageStatus?: OnePageStatus
   readonly onOnePageChange?: (v: boolean) => void
-  readonly onImportJson?: (json: string) => void
 }
 
 /** Map panel IDs to display titles. */
@@ -78,7 +77,6 @@ export default function RightSidebar(props: RightSidebarProps): ReactElement {
           onePage={props.onePage}
           onePageStatus={props.onePageStatus}
           onOnePageChange={props.onOnePageChange}
-          onImportJson={props.onImportJson}
         />
       )}
       {activePanel === 'ai' && <AiOptimizePanel />}
@@ -100,7 +98,6 @@ interface LayoutPanelProps {
   readonly onePage?: boolean
   readonly onePageStatus?: OnePageStatus
   readonly onOnePageChange?: (v: boolean) => void
-  readonly onImportJson?: (json: string) => void
 }
 
 function LayoutPanel(props: LayoutPanelProps): ReactElement {
@@ -110,17 +107,6 @@ function LayoutPanel(props: LayoutPanelProps): ReactElement {
   const [scenarioId, setScenarioId] = useState(RESUME_SCENARIOS[0]?.id ?? '')
   const selectedScenario = RESUME_SCENARIOS.find((scenario) => scenario.id === scenarioId) ?? RESUME_SCENARIOS[0]
   const defaultTheme = getDefaultThemeForTemplate(tpl)
-
-  function handleImportClick(): void {
-    const json = prompt('粘贴 JSON 简历数据：')
-    if (json) {
-      try {
-        props.onImportJson?.(json)
-      } catch (e) {
-        alert(`导入失败: ${e}`)
-      }
-    }
-  }
 
   function handleLoadScenario(): void {
     if (!selectedScenario) return
@@ -207,17 +193,6 @@ function LayoutPanel(props: LayoutPanelProps): ReactElement {
               </button>
             ))}
           </div>
-        </div>
-        <div className="p-4 border-t border-slate-200 bg-white shrink-0">
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full gap-2 text-sm font-semibold h-11 bg-slate-50 rounded-xl border-slate-200 shadow-none text-slate-700 hover:border-slate-300 hover:text-slate-900 hover:bg-white transition-all"
-            onClick={handleImportClick}
-          >
-            <Upload className="h-4 w-4" />
-            导入 JSON 简历
-          </Button>
         </div>
       </TabsContent>
 
