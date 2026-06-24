@@ -364,10 +364,23 @@ const MOBILE_DIAGNOSTICS_SCRIPT = `
   }
 
   function copyDiagnostics() {
-    var latestSnapshot = collectSnapshot('copy');
-    var payload = JSON.stringify({
+    var payload = JSON.stringify(buildDiagnosticsPayload('copy'));
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(payload).then(function () {
+        record('diag-copy-ok', { bytes: payload.length });
+      }).catch(function () {
+        window.prompt('Copy diagnostics', payload);
+      });
+    } else {
+      window.prompt('Copy diagnostics', payload);
+    }
+  }
+
+  function buildDiagnosticsPayload(label) {
+    var latestSnapshot = collectSnapshot(label);
+    return {
       schema: 'aijianli-mobile-diagnostics-lite-v1',
-      copiedAt: new Date().toISOString(),
+      collectedAt: new Date().toISOString(),
       userAgent: navigator.userAgent,
       platform: navigator.platform,
       url: window.location.href,
@@ -378,16 +391,53 @@ const MOBILE_DIAGNOSTICS_SCRIPT = `
       previousSnapshots: state.snapshots.slice(-3).map(compactSnapshot),
       recentEvents: state.events.slice(-8).map(compactEvent),
       errors: state.errors.slice(-5).map(compactEvent)
-    });
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(payload).then(function () {
-        record('diag-copy-ok', { bytes: payload.length });
-      }).catch(function () {
-        window.prompt('Copy diagnostics', payload);
+    };
+  }
+
+  function shareDiagnostics() {
+    var data = buildDiagnosticsPayload('share');
+    var fileName = 'aijianli-diagnostics-' + Date.now() + '.json';
+    record('diag-upload-start', {});
+    fetch('/next-api/mobile-diagnostics', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        fileName: fileName,
+        diagnostics: data
+      })
+    }).then(function (response) {
+      return response.json().then(function (json) {
+        if (!response.ok) {
+          throw new Error(json && json.error || 'upload failed');
+        }
+        return json;
       });
-    } else {
-      window.prompt('Copy diagnostics', payload);
-    }
+    }).then(function (json) {
+      var downloadUrl = new URL(json.downloadUrl, window.location.origin).href;
+      var miniPage = '/pages/diagnosticShare/diagnosticShare?url='
+        + encodeURIComponent(downloadUrl)
+        + '&fileName=' + encodeURIComponent(json.fileName || fileName);
+      var mini = window.wx && window.wx.miniProgram;
+      record('diag-upload-ok', {
+        token: json.token,
+        fileName: json.fileName,
+        downloadUrl: downloadUrl
+      });
+      if (mini && typeof mini.navigateTo === 'function') {
+        mini.navigateTo({
+          url: miniPage,
+          fail: function (error) {
+            record('diag-share-navigate-failed', { message: safeText(error && error.errMsg || error) });
+            window.prompt('Copy diagnostics file URL', downloadUrl);
+          }
+        });
+      } else {
+        window.prompt('Copy diagnostics file URL', downloadUrl);
+      }
+    }).catch(function (error) {
+      record('diag-upload-failed', { message: safeText(error && error.message || error) });
+      window.alert('诊断日志上传失败，请改用 copy。');
+    });
   }
 
   function createPanel() {
@@ -408,7 +458,7 @@ const MOBILE_DIAGNOSTICS_SCRIPT = `
       'box-shadow:0 8px 24px rgba(0,0,0,.25)',
       'white-space:pre-wrap'
     ].join(';');
-    panel.innerHTML = '<div data-diag-body>diag loading...</div><div style="display:flex;gap:6px;margin-top:6px"><button data-native-test style="flex:1;height:30px;border:0;border-radius:7px;background:#7c3aed;color:white">native tap</button><button data-copy style="flex:1;height:30px;border:0;border-radius:7px;background:#334155;color:white">copy</button></div>';
+    panel.innerHTML = '<div data-diag-body>diag loading...</div><div style="display:flex;gap:6px;margin-top:6px"><button data-native-test style="flex:1;height:30px;border:0;border-radius:7px;background:#7c3aed;color:white">native tap</button><button data-copy style="flex:1;height:30px;border:0;border-radius:7px;background:#334155;color:white">copy</button><button data-share style="flex:1;height:30px;border:0;border-radius:7px;background:#0f766e;color:white">转发</button></div>';
     document.body.appendChild(panel);
     panel.querySelector('[data-native-test]').onclick = function (event) {
       event.stopPropagation();
@@ -424,6 +474,10 @@ const MOBILE_DIAGNOSTICS_SCRIPT = `
     panel.querySelector('[data-copy]').onclick = function (event) {
       event.stopPropagation();
       copyDiagnostics();
+    };
+    panel.querySelector('[data-share]').onclick = function (event) {
+      event.stopPropagation();
+      shareDiagnostics();
     };
     updatePanel();
     collectSnapshot('panel-created');
