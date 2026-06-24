@@ -72,6 +72,24 @@ interface InitialBaselineTarget {
   readonly sidebarSectionIds?: readonly string[]
 }
 
+interface EditorDraftBackup {
+  readonly version: 1
+  readonly reason: string
+  readonly createdAt: number
+  readonly url: string
+  readonly resumeId?: string
+  readonly resume: ResumeData
+  readonly tpl: string
+  readonly theme: ThemeTokens
+  readonly onePageMode: boolean
+  readonly onePageSnapshot: AdjustableTokens | null
+  readonly sidebarSectionIds?: readonly string[]
+  readonly savedSnapshot: string
+}
+
+const EDITOR_DRAFT_BACKUP_KEY = 'resume_editor_draft_backup_v1'
+const EDITOR_DRAFT_BACKUP_TTL_MS = 24 * 60 * 60 * 1000
+
 function areStringArraysEqual(
   left: readonly string[] | undefined,
   right: readonly string[] | undefined,
@@ -90,6 +108,34 @@ function wait(ms: number): Promise<void> {
   return new Promise((resolve) => {
     setTimeout(resolve, ms)
   })
+}
+
+function currentEditorUrl(): string {
+  return `${window.location.pathname}${window.location.search}`
+}
+
+function readEditorDraftBackup(): EditorDraftBackup | null {
+  try {
+    const raw = window.localStorage.getItem(EDITOR_DRAFT_BACKUP_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as Partial<EditorDraftBackup>
+    if (parsed.version !== 1 || !parsed.resume || !parsed.tpl || !parsed.theme || !parsed.createdAt) return null
+    if (Date.now() - parsed.createdAt > EDITOR_DRAFT_BACKUP_TTL_MS) {
+      window.localStorage.removeItem(EDITOR_DRAFT_BACKUP_KEY)
+      return null
+    }
+    return parsed as EditorDraftBackup
+  } catch {
+    return null
+  }
+}
+
+function clearEditorDraftBackup(): void {
+  try {
+    window.localStorage.removeItem(EDITOR_DRAFT_BACKUP_KEY)
+  } catch {
+    // Best-effort local backup only.
+  }
 }
 
 async function fetchWithNetworkRetry(input: RequestInfo | URL, init?: RequestInit, attempts = 2): Promise<Response> {
@@ -151,6 +197,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
   const [pdfBlob, setPdfBlob] = useState<Blob | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
   const [isConfirmingExport, setIsConfirmingExport] = useState(false)
+  const draftBackupRestored = useRef(false)
 
   // Initialize from DB data if provided
   const initApplied = useRef(false)
@@ -273,6 +320,29 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
     return currentFingerprint !== savedSnapshot
   }, [currentFingerprint, savedSnapshot])
 
+  const backupEditorDraft = useCallback((reason: string): void => {
+    if (typeof window === 'undefined') return
+    try {
+      const backup: EditorDraftBackup = {
+        version: 1,
+        reason,
+        createdAt: Date.now(),
+        url: currentEditorUrl(),
+        ...(resumeId ? { resumeId } : {}),
+        resume,
+        tpl,
+        theme,
+        onePageMode,
+        onePageSnapshot,
+        ...(sidebarSectionIds ? { sidebarSectionIds } : {}),
+        savedSnapshot,
+      }
+      window.localStorage.setItem(EDITOR_DRAFT_BACKUP_KEY, JSON.stringify(backup))
+    } catch {
+      // If local storage is unavailable, the normal in-memory editor state still remains.
+    }
+  }, [onePageMode, onePageSnapshot, resume, resumeId, savedSnapshot, sidebarSectionIds, theme, tpl])
+
   useEffect(() => {
     const pending = pendingInitialBaselineRef.current
     if (!pending) return
@@ -291,6 +361,49 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
   useEffect(() => {
     hasUnsavedRef.current = hasUnsavedChanges
   }, [hasUnsavedChanges])
+
+  useEffect(() => {
+    if (!isHydrated || draftBackupRestored.current) return
+    const backup = readEditorDraftBackup()
+    if (!backup) return
+
+    const matchesCurrentResume = backup.resumeId
+      ? backup.resumeId === initialResumeId
+      : !initialData && backup.url === currentEditorUrl()
+    if (!matchesCurrentResume) return
+
+    const serverUpdatedAtRaw = initialData?.updatedAt
+    const serverUpdatedAt = serverUpdatedAtRaw instanceof Date
+      ? serverUpdatedAtRaw.getTime()
+      : typeof serverUpdatedAtRaw === 'string'
+        ? Date.parse(serverUpdatedAtRaw)
+        : 0
+    if (serverUpdatedAt && backup.createdAt <= serverUpdatedAt) {
+      clearEditorDraftBackup()
+      return
+    }
+
+    draftBackupRestored.current = true
+    pendingInitialBaselineRef.current = null
+    setResume(() => normalizeResumeContent(backup.resume, { fallbackId: backup.resumeId || 'resume-draft' }))
+    setTpl(backup.tpl)
+    setThemeForTemplate(backup.tpl, (draft) => { Object.assign(draft, backup.theme) })
+    setOnePageMode(backup.onePageMode)
+    setOnePageSnapshot(backup.onePageSnapshot)
+    setSidebarSectionIds(backup.sidebarSectionIds)
+    setSavedSnapshot(backup.savedSnapshot)
+    toast.success('已恢复未保存的简历内容')
+  }, [initialData, initialResumeId, isHydrated, setResume, setThemeForTemplate])
+
+  useEffect(() => {
+    if (!isHydrated || !savedSnapshot || !hasUnsavedChanges) return
+    const timer = window.setTimeout(() => {
+      backupEditorDraft('auto-unsaved-change')
+    }, 800)
+    return () => {
+      window.clearTimeout(timer)
+    }
+  }, [backupEditorDraft, currentFingerprint, hasUnsavedChanges, isHydrated, savedSnapshot])
 
   /**
    * Persist resume to DB. In guest mode (no resumeId), creates a new
@@ -387,6 +500,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
       if (!res.ok) throw new Error('Failed to save')
       setLastSaved(new Date())
       setSavedSnapshot(JSON.stringify({ resume, theme, tpl, onePageMode, onePageSnapshot, sidebarSectionIds }))
+      clearEditorDraftBackup()
       await revalidateDashboard()
       toast.success('保存成功')
       return currentId
@@ -409,8 +523,9 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
 
   /** Auth-gated save — prompts login if user is not authenticated. */
   const handleSave = useCallback(() => {
+    if (hasUnsavedRef.current) backupEditorDraft('before-save-auth-check')
     requireAuth(() => { doSave() })
-  }, [requireAuth, doSave])
+  }, [backupEditorDraft, requireAuth, doSave])
 
   // Auto-save: debounced save after changes (only when resumeId exists — i.e. already persisted)
   useEffect(() => {
@@ -579,6 +694,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
   /** Confirm export: consume quota and download PDF. */
   async function handleConfirmExport(): Promise<void> {
     if (!pdfBlob || isConfirmingExport) return
+    if (hasUnsavedRef.current) backupEditorDraft('before-export-auth-check')
     requireAuth(() => { void confirmExportWithAuth() })
   }
 
@@ -646,6 +762,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
       if (!exportRes.ok) {
         const errorData = await exportRes.json()
         if (exportRes.status === 401) {
+          backupEditorDraft('stale-auth-before-login')
           logout()
           toast.error('登录已失效，请重新登录后导出')
           requireAuth(() => { void confirmExportWithAuth() })
