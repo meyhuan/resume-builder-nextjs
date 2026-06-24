@@ -545,8 +545,8 @@ export default function VipUpgradeDialog({ open, onOpenChange, hidePlanOptions =
                             <span className="text-sm font-medium mr-0.5">¥</span>{plan.price}
                           </div>
                           <div className={selectedVipType === plan.vipType ? 'mt-0.5 flex flex-col items-center gap-0.5 text-[9px] font-medium text-violet-600' : 'mt-0.5 flex flex-col items-center gap-0.5 text-[9px] text-slate-400'}>
-                            <span className={selectedVipType === plan.vipType ? 'rounded-full bg-violet-100 px-1.5 py-0.5 mt-0.5 scale-95' : 'rounded-full bg-slate-100 px-1.5 py-0.5 mt-0.5 scale-95'}>
-                              {plan.duration >= 30000 ? '一次开通' : `约 ${dailyPrice}元/天`}
+                            <span className={selectedVipType === plan.vipType ? 'whitespace-nowrap rounded-full bg-violet-100 px-1.5 py-0.5 mt-0.5 scale-95' : 'whitespace-nowrap rounded-full bg-slate-100 px-1.5 py-0.5 mt-0.5 scale-95'}>
+                              {plan.duration >= 30000 ? '一次开通，长期可用' : `约 ${dailyPrice}元/天`}
                             </span>
                           </div>
                         </div>
