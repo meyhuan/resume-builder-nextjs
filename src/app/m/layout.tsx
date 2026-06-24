@@ -288,23 +288,100 @@ const MOBILE_DIAGNOSTICS_SCRIPT = `
     });
   });
 
+  function compactResources(resources) {
+    var list = resources || [];
+    return {
+      count: list.length,
+      failed: list.filter(function (item) {
+        return item.responseStatus >= 400 || item.transferSize === 0 && item.encodedBodySize === 0;
+      }).slice(0, 5),
+      slow: list.slice().sort(function (a, b) {
+        return (b.duration || 0) - (a.duration || 0);
+      }).slice(0, 5)
+    };
+  }
+
+  function compactSnapshot(snapshot) {
+    if (!snapshot) return null;
+    return {
+      label: snapshot.label,
+      t: snapshot.t,
+      readyState: snapshot.readyState,
+      visibilityState: snapshot.visibilityState,
+      hidden: snapshot.hidden,
+      online: snapshot.online,
+      language: snapshot.language,
+      cookieEnabled: snapshot.cookieEnabled,
+      url: snapshot.url,
+      referrer: snapshot.referrer,
+      viewport: snapshot.viewport,
+      scroll: snapshot.scroll,
+      wxEnvironment: snapshot.wxEnvironment,
+      hasWxMiniProgram: snapshot.hasWxMiniProgram,
+      metaViewport: snapshot.metaViewport,
+      htmlStyle: snapshot.htmlStyle,
+      bodyStyle: snapshot.bodyStyle,
+      connection: snapshot.connection,
+      storageFlags: snapshot.storageFlags,
+      scriptCount: (snapshot.scripts || []).length,
+      resources: compactResources(snapshot.resources)
+    };
+  }
+
+  function compactEvent(event) {
+    if (!event) return null;
+    return {
+      type: event.type,
+      t: event.t,
+      path: event.path,
+      hydrated: event.hydrated,
+      viewport: event.viewport,
+      visualViewport: event.visualViewport,
+      scrollY: event.scrollY,
+      readyState: event.readyState,
+      x: event.x,
+      y: event.y,
+      cancelable: event.cancelable,
+      defaultPrevented: event.defaultPrevented,
+      isTrusted: event.isTrusted,
+      eventPhase: event.eventPhase,
+      target: event.target,
+      hit: event.hit,
+      closest: event.closest,
+      targetStyle: event.targetStyle,
+      hitStyle: event.hitStyle,
+      targetRect: event.targetRect,
+      hitRect: event.hitRect,
+      closestRect: event.closestRect,
+      activeElement: event.activeElement,
+      location: event.location,
+      message: event.message,
+      source: event.source,
+      line: event.line,
+      column: event.column,
+      elementStack: (event.elementStack || []).slice(0, 4)
+    };
+  }
+
   function copyDiagnostics() {
     var latestSnapshot = collectSnapshot('copy');
     var payload = JSON.stringify({
+      schema: 'aijianli-mobile-diagnostics-lite-v1',
+      copiedAt: new Date().toISOString(),
       userAgent: navigator.userAgent,
       platform: navigator.platform,
       url: window.location.href,
       reactHydrated: state.reactHydrated,
       wxEnvironment: window.__wxjs_environment || '',
       hasWxMiniProgram: Boolean(window.wx && window.wx.miniProgram),
-      snapshot: latestSnapshot,
-      snapshots: state.snapshots,
-      events: state.events,
-      errors: state.errors
-    }, null, 2);
+      snapshot: compactSnapshot(latestSnapshot),
+      previousSnapshots: state.snapshots.slice(-3).map(compactSnapshot),
+      recentEvents: state.events.slice(-8).map(compactEvent),
+      errors: state.errors.slice(-5).map(compactEvent)
+    });
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(payload).then(function () {
-        record('diag-copy-ok', {});
+        record('diag-copy-ok', { bytes: payload.length });
       }).catch(function () {
         window.prompt('Copy diagnostics', payload);
       });

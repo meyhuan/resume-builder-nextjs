@@ -2,14 +2,17 @@
 
 import { useEffect, useState, type ReactElement } from 'react'
 
-interface VConsoleWindow extends Window {
-  readonly vConsole?: unknown
-  readonly VConsole?: new () => unknown
+type VConsoleInstance = {
+  show(): void
+  showSwitch(): void
+  setSwitchPosition(x: number, y: number): void
 }
 
-// jsdelivr is reliably accessible in mainland China; unpkg as fallback.
-const VCONSOLE_SRC: string =
-  'https://cdn.jsdelivr.net/npm/vconsole@latest/dist/vconsole.min.js'
+interface VConsoleWindow extends Window {
+  vConsole?: VConsoleInstance
+}
+
+type DebugStatus = 'inactive' | 'loading' | 'ready' | 'failed'
 
 /**
  * Decides whether the debug panel should be active.
@@ -40,32 +43,48 @@ function shouldActivate(): boolean {
  * inside the WeChat mini-program web-view where no native devtools exist).
  */
 export default function MobileDebugTools(): ReactElement | null {
-  const [loadFailed, setLoadFailed] = useState<boolean>(false)
+  const [status, setStatus] = useState<DebugStatus>('inactive')
 
   useEffect((): (() => void) | void => {
-    if (!shouldActivate()) return
+    if (!shouldActivate()) {
+      setStatus('inactive')
+      return
+    }
     const w: VConsoleWindow = window as VConsoleWindow
-    if (w.vConsole) return
-    const existing: HTMLScriptElement | null =
-      document.querySelector(`script[src="${VCONSOLE_SRC}"]`)
-    if (existing) return
-    const script: HTMLScriptElement = document.createElement('script')
-    script.src = VCONSOLE_SRC
-    script.async = true
-    script.onload = (): void => {
-      const updated: VConsoleWindow = window as VConsoleWindow
-      if (!updated.vConsole && updated.VConsole) {
-        Object.assign(updated, { vConsole: new updated.VConsole() })
-      }
+    if (w.vConsole) {
+      openVConsole(w.vConsole)
+      setStatus('ready')
+      return
     }
-    script.onerror = (): void => {
-      setLoadFailed(true)
-      console.error('[mobile-debug] failed to load vConsole script:', VCONSOLE_SRC)
+
+    let cancelled = false
+    setStatus('loading')
+
+    import('vconsole')
+      .then(({ default: VConsole }) => {
+        if (cancelled) return
+        const instance: VConsoleInstance = new VConsole({
+          theme: 'light',
+          onReady: (): void => {
+            console.info('[mobile-debug] vConsole ready')
+          },
+        })
+        w.vConsole = instance
+        openVConsole(instance)
+        setStatus('ready')
+      })
+      .catch((error: unknown) => {
+        if (cancelled) return
+        setStatus('failed')
+        console.error('[mobile-debug] failed to load bundled vConsole:', error)
+      })
+
+    return (): void => {
+      cancelled = true
     }
-    document.head.appendChild(script)
   }, [])
 
-  if (!loadFailed) return null
+  if (status !== 'loading' && status !== 'failed') return null
 
   return (
     <div
@@ -76,15 +95,21 @@ export default function MobileDebugTools(): ReactElement | null {
         zIndex: 2147483647,
         maxWidth: 260,
         borderRadius: 8,
-        background: '#fee2e2',
-        color: '#991b1b',
+        background: status === 'failed' ? '#fee2e2' : 'rgba(15,23,42,0.88)',
+        color: status === 'failed' ? '#991b1b' : '#ffffff',
         fontSize: 12,
         lineHeight: 1.5,
         padding: '8px 10px',
         boxShadow: '0 10px 24px rgba(15,23,42,0.18)',
       }}
     >
-      H5 调试面板加载失败，请检查 webview 是否能访问 jsdelivr。
+      {status === 'failed' ? 'H5 调试面板加载失败，请查看控制台错误。' : 'H5 调试面板加载中...'}
     </div>
   )
+}
+
+function openVConsole(instance: VConsoleInstance): void {
+  instance.showSwitch()
+  instance.setSwitchPosition(12, Math.max(12, window.innerHeight - 128))
+  instance.show()
 }
