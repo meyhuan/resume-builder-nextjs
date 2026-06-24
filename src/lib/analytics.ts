@@ -35,9 +35,12 @@ const ANONYMOUS_ID_KEY = 'analytics_anonymous_id'
 const SESSION_ID_KEY = 'analytics_session_id'
 const CHUNK_LOAD_RELOAD_KEY = 'analytics_chunk_load_reloaded_at'
 const DEDUPE_WINDOW_MS = 1500
+const FETCH_ERROR_DEDUPE_WINDOW_MS = 30 * 1000
+const MAX_RECENT_FETCH_ERROR_KEYS = 100
 const CHUNK_LOAD_RELOAD_COOLDOWN_MS = 60 * 1000
 
 const recentEvents = new Map<string, number>()
+const recentFetchErrors = new Map<string, number>()
 let errorTrackingInstalled = false
 let originalFetch: typeof window.fetch | null = null
 
@@ -82,6 +85,13 @@ function getPlatform(url: URL): 'web' | 'mini_program' {
 function stringProperty(properties: AnalyticsProperties, key: string): string {
   const value = properties[key]
   return typeof value === 'string' ? value : ''
+}
+
+function scalarProperty(properties: AnalyticsProperties, key: string): string {
+  const value = properties[key]
+  if (typeof value === 'string') return value
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value)
+  return ''
 }
 
 function isInternalRenderContext(properties: AnalyticsProperties): boolean {
@@ -132,6 +142,37 @@ function recoverFromChunkLoadFailure(): void {
   } catch {
     window.location.reload()
   }
+}
+
+function shouldSuppressRepeatedFetchError(properties: AnalyticsProperties): boolean {
+  const source = stringProperty(properties, 'source')
+  if (source !== 'fetch_error' && source !== 'fetch_response') return false
+
+  const requestPath = stringProperty(properties, 'requestPath')
+  const method = stringProperty(properties, 'method')
+  if (!requestPath || !method) return false
+
+  const key = [
+    source,
+    method,
+    requestPath,
+    scalarProperty(properties, 'statusCode'),
+    stringProperty(properties, 'errorType'),
+    stringProperty(properties, 'errorMessage'),
+  ].join(':')
+  const now = Date.now()
+  const lastTrackedAt = recentFetchErrors.get(key)
+  if (lastTrackedAt && now - lastTrackedAt < FETCH_ERROR_DEDUPE_WINDOW_MS) return true
+
+  recentFetchErrors.set(key, now)
+  if (recentFetchErrors.size > MAX_RECENT_FETCH_ERROR_KEYS) {
+    for (const [existingKey, trackedAt] of recentFetchErrors) {
+      if (now - trackedAt > FETCH_ERROR_DEDUPE_WINDOW_MS) {
+        recentFetchErrors.delete(existingKey)
+      }
+    }
+  }
+  return false
 }
 
 export function track(eventName: AnalyticsEventName, properties: AnalyticsProperties = {}): void {
@@ -229,6 +270,7 @@ export function trackError(error: unknown, properties: AnalyticsProperties = {})
   }
   const shouldReloadForChunk = isChunkLoadFailure(nextProperties)
   if (!shouldReloadForChunk && shouldSuppressAppError(nextProperties)) return
+  if (!shouldReloadForChunk && shouldSuppressRepeatedFetchError(nextProperties)) return
   track('app_error', {
     ...nextProperties,
     ...(shouldReloadForChunk ? { recoveryAction: 'reload_page_once' } : {}),
