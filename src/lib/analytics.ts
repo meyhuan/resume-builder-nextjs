@@ -109,8 +109,14 @@ function isInternalRenderContext(properties: AnalyticsProperties): boolean {
 function shouldSuppressAppError(properties: AnalyticsProperties): boolean {
   const errorType = stringProperty(properties, 'errorType')
   const errorMessage = stringProperty(properties, 'errorMessage')
+  const source = stringProperty(properties, 'source')
   if (errorType === 'AbortError'
     || /signal is aborted|fetch is aborted|user aborted a request|request aborted/i.test(errorMessage)) {
+    return true
+  }
+  if (source === 'window_error'
+    && errorType === 'ReferenceError'
+    && errorMessage === 'LIDNotifyId is not defined') {
     return true
   }
 

@@ -111,7 +111,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
   // Mutable resumeId — starts undefined in guest mode, set after first save
   const [resumeId, setResumeId] = useState<string | undefined>(initialResumeId)
   const { isLoginOpen, requireAuth, handleLoginSuccess, handleLoginClose } = useRequireAuth()
-  const { token } = useAuthStore()
+  const { token, logout } = useAuthStore()
   const { isVip, quota, refreshQuota, requirePdf, requireAi, showUpgrade, setShowUpgrade } = useVipCheck()
   
   // Hydration check to prevent SSR mismatch for auth state
@@ -579,6 +579,11 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
   /** Confirm export: consume quota and download PDF. */
   async function handleConfirmExport(): Promise<void> {
     if (!pdfBlob || isConfirmingExport) return
+    requireAuth(() => { void confirmExportWithAuth() })
+  }
+
+  async function confirmExportWithAuth(): Promise<void> {
+    if (!pdfBlob || isConfirmingExport) return
     setIsConfirmingExport(true)
     track('export_click', {
       resumeId,
@@ -640,6 +645,12 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
       })
       if (!exportRes.ok) {
         const errorData = await exportRes.json()
+        if (exportRes.status === 401) {
+          logout()
+          toast.error('登录已失效，请重新登录后导出')
+          requireAuth(() => { void confirmExportWithAuth() })
+          return
+        }
         track('export_failed', {
           resumeId: exportResumeId,
           templateId: tpl,
