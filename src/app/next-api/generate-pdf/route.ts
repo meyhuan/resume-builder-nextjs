@@ -13,16 +13,43 @@
  */
 import { NextResponse } from 'next/server';
 import puppeteerCore from 'puppeteer-core';
+import type { Page } from 'puppeteer-core';
 import chromium from '@sparticuz/chromium';
 import { paginateHtml, getClientPaginationScript } from '@/utils/paginate-html';
 import { checkQuota } from '@/lib/quota/quota-checker';
 import { savePdfTemp } from '@/lib/pdf-temp-store';
 import { buildExportContentDisposition, sanitizeExportFileName } from '@/lib/export-file-name';
 
+const PDF_RENDER_TIMEOUT_MS = 45_000;
+const ASSET_READY_TIMEOUT_MS = 8_000;
+
+async function waitForDocumentAssets(page: Page): Promise<void> {
+  await page.evaluate(async (timeoutMs: number) => {
+    const wait = (ms: number): Promise<void> => new Promise((resolve) => {
+      window.setTimeout(resolve, ms);
+    });
+    const fontsReady = document.fonts?.ready?.catch(() => undefined) ?? Promise.resolve();
+    const imagesReady = Promise.all(Array.from(document.images).map((image): Promise<void> => {
+      if (image.complete) return Promise.resolve();
+      return new Promise((resolve) => {
+        image.addEventListener('load', () => resolve(), { once: true });
+        image.addEventListener('error', () => resolve(), { once: true });
+      });
+    }));
+    await Promise.race([Promise.all([fontsReady, imagesReady]), wait(timeoutMs)]);
+  }, ASSET_READY_TIMEOUT_MS);
+}
+
 export async function POST(req: Request) {
+  const startedAt = Date.now();
   try {
     const { html, preview = false, returnUrl = false, fileName = 'resume' } = await req.json();
     const safeFileName = sanitizeExportFileName(typeof fileName === 'string' ? fileName : 'resume');
+    console.log('[generate-pdf] start', {
+      preview: Boolean(preview),
+      returnUrl: Boolean(returnUrl),
+      htmlBytes: typeof html === 'string' ? Buffer.byteLength(html, 'utf8') : 0,
+    });
 
     // Check PDF quota (preview = unlimited, export = limited)
     if (!preview) {
@@ -66,14 +93,17 @@ export async function POST(req: Request) {
       });
 
       const page = await browser.newPage();
+      page.setDefaultNavigationTimeout(PDF_RENDER_TIMEOUT_MS);
+      page.setDefaultTimeout(PDF_RENDER_TIMEOUT_MS);
       
-      // Set content and wait for network idle to ensure fonts/images load
+      // Wait for DOM/load first, then tolerate slow fonts/images with a bounded
+      // readiness wait. `networkidle0` is too strict for exported HTML and often
+      // times out even after the resume is renderable.
       await page.setContent(paginatedHtml, { 
-        waitUntil: ['networkidle0', 'domcontentloaded', 'load'],
+        waitUntil: ['domcontentloaded', 'load'],
+        timeout: PDF_RENDER_TIMEOUT_MS,
       });
-      
-      // Ensure all fonts are loaded
-      await page.evaluateHandle('document.fonts.ready');
+      await waitForDocumentAssets(page);
       
       // Run client-side pagination script to measure and adjust elements (skip for one-page mode)
       if (!isOnePage && !isBleed) {
@@ -90,10 +120,11 @@ export async function POST(req: Request) {
       if (returnUrl) {
         const token = await savePdfTemp(Buffer.from(pdf), safeFileName)
         const url = `/next-api/pdf-file/${token}`
-        console.log('[generate-pdf] return PDF temp URL', { token, url, fileName: safeFileName })
+        console.log('[generate-pdf] return PDF temp URL', { token, url, elapsedMs: Date.now() - startedAt })
         return NextResponse.json({ url })
       }
 
+      console.log('[generate-pdf] done', { bytes: pdf.length, elapsedMs: Date.now() - startedAt });
       return new NextResponse(pdf as unknown as BodyInit, {
         headers: {
           'Content-Type': 'application/pdf',
@@ -106,7 +137,7 @@ export async function POST(req: Request) {
       }
     }
   } catch (error) {
-    console.error('PDF generation error:', error);
+    console.error('PDF generation error:', { error, elapsedMs: Date.now() - startedAt });
     return NextResponse.json({ 
       error: 'Failed to generate PDF',
       details: error instanceof Error ? error.message : String(error)

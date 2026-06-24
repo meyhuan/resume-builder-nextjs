@@ -6,6 +6,7 @@
  * and mini-program export flows (dual-auth: cookie or HMAC sign).
  */
 import puppeteerCore from 'puppeteer-core'
+import type { Page } from 'puppeteer-core'
 import chromium from '@sparticuz/chromium'
 import { mintPrintToken } from '@/lib/print-token'
 import { rasterizePdfToPngs } from '@/lib/pdf-to-png'
@@ -23,6 +24,26 @@ export interface RenderViaPrintPageOpts {
   readonly type: 'pdf' | 'image'
   /** Print token TTL in ms. Defaults to 5 minutes. */
   readonly tokenTtlMs?: number
+}
+
+const PRINT_PAGE_NAVIGATION_TIMEOUT_MS = 45_000
+const PRINT_PAGE_ASSET_READY_TIMEOUT_MS = 8_000
+
+async function waitForDocumentAssets(page: Page): Promise<void> {
+  await page.evaluate(async (timeoutMs: number) => {
+    const wait = (ms: number): Promise<void> => new Promise((resolve) => {
+      window.setTimeout(resolve, ms)
+    })
+    const fontsReady = document.fonts?.ready?.catch(() => undefined) ?? Promise.resolve()
+    const imagesReady = Promise.all(Array.from(document.images).map((image): Promise<void> => {
+      if (image.complete) return Promise.resolve()
+      return new Promise((resolve) => {
+        image.addEventListener('load', () => resolve(), { once: true })
+        image.addEventListener('error', () => resolve(), { once: true })
+      })
+    }))
+    await Promise.race([Promise.all([fontsReady, imagesReady]), wait(timeoutMs)])
+  }, PRINT_PAGE_ASSET_READY_TIMEOUT_MS)
 }
 
 /**
@@ -58,9 +79,11 @@ export async function renderViaPrintPage(opts: RenderViaPrintPageOpts): Promise<
       headless: true,
     })
     const page = await browser.newPage()
+    page.setDefaultNavigationTimeout(PRINT_PAGE_NAVIGATION_TIMEOUT_MS)
+    page.setDefaultTimeout(PRINT_PAGE_NAVIGATION_TIMEOUT_MS)
     await page.setViewport({ width: 794, height: 1123, deviceScaleFactor: 2 })
-    await page.goto(printUrl, { waitUntil: ['networkidle0', 'domcontentloaded', 'load'], timeout: 60_000 })
-    await page.evaluateHandle('document.fonts.ready')
+    await page.goto(printUrl, { waitUntil: ['domcontentloaded', 'load'], timeout: PRINT_PAGE_NAVIGATION_TIMEOUT_MS })
+    await waitForDocumentAssets(page)
 
     // Wait for the client renderer to flag readiness, but tolerate timeouts.
     await page.waitForSelector('[data-print-ready="1"]', { timeout: 15_000 }).catch(() => {
