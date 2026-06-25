@@ -46,7 +46,8 @@ export function ModuleManageSheet({ open, onClose }: ModuleManageSheetProps): Re
 
   const sections = useMemo(() => draft?.sections ?? [], [draft?.sections])
   const showAvatar: boolean = draft?.baseInfo?.showAvatar !== false
-  const showJobIntention: boolean = draft?.jobIntentionVisible ?? Boolean(draft?.jobIntention)
+  const showJobIntention: boolean = draft?.jobIntentionVisible !== false
+  const showHeaderJobIntention: boolean = showJobIntention && draft?.headerJobIntentionVisible !== false
 
   const [pendingRemove, setPendingRemove] = useState<Section | null>(null)
 
@@ -94,6 +95,15 @@ export function ModuleManageSheet({ open, onClose }: ModuleManageSheetProps): Re
     toast.success(nextVisible ? '已显示求职意向' : '已隐藏求职意向')
   }, [showJobIntention, updateDraft])
 
+  const handleToggleHeaderJobIntention = useCallback((): void => {
+    if (!showJobIntention) return
+    const nextVisible = !showHeaderJobIntention
+    updateDraft('headerJobIntentionVisible', (resume) => {
+      resume.headerJobIntentionVisible = nextVisible
+    })
+    toast.success(nextVisible ? '已显示头部求职意向' : '已隐藏头部求职意向')
+  }, [showHeaderJobIntention, showJobIntention, updateDraft])
+
   const items = sections.map((s) => s.id)
 
   const pendingLabel =
@@ -128,6 +138,14 @@ export function ModuleManageSheet({ open, onClose }: ModuleManageSheetProps): Re
             description="控制求职意向模块是否显示"
             visible={showJobIntention}
             onToggle={handleToggleJobIntention}
+          />
+          <VisibilityControlRow
+            icon={<Target size={17} />}
+            label="头部求职意向"
+            description="只控制简历头部的岗位文字"
+            visible={showHeaderJobIntention}
+            disabled={!showJobIntention}
+            onToggle={handleToggleHeaderJobIntention}
           />
         </div>
 
@@ -171,11 +189,15 @@ function VisibilityControlRow(props: {
   readonly label: string
   readonly description: string
   readonly visible: boolean
+  readonly disabled?: boolean
   readonly onToggle: () => void
 }): ReactElement {
-  const { icon, label, description, visible, onToggle } = props
+  const { icon, label, description, visible, disabled = false, onToggle } = props
   return (
-    <div className="flex items-center gap-3 rounded-[14px] border border-[#edf0f5] bg-white px-3 py-3 shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
+    <div className={cn(
+      'flex items-center gap-3 rounded-[14px] border border-[#edf0f5] bg-white px-3 py-3 shadow-[0_2px_8px_rgba(15,23,42,0.04)]',
+      disabled ? 'opacity-60' : '',
+    )}>
       <div className={cn(
         'flex h-8 w-8 shrink-0 items-center justify-center rounded-xl',
         visible ? 'bg-violet-50 text-violet-600' : 'bg-slate-100 text-slate-400',
@@ -199,8 +221,9 @@ function VisibilityControlRow(props: {
       <button
         type="button"
         onClick={onToggle}
+        disabled={disabled}
         aria-label={`${visible ? '隐藏' : '显示'}${label}`}
-        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-slate-400 transition-colors hover:bg-slate-100 active:bg-slate-200"
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-slate-400 transition-colors hover:bg-slate-100 active:bg-slate-200 disabled:cursor-not-allowed disabled:hover:bg-transparent"
       >
         {visible ? <Eye size={16} /> : <EyeOff size={16} />}
       </button>

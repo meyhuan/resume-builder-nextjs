@@ -16,6 +16,7 @@
  */
 import { createContext, useContext } from 'react'
 import type { ReactElement, ReactNode } from 'react'
+import { getHeaderJobIntentionText } from '@/entities/resume/header-job-intention'
 import type { Section } from '@/entities/resume/section'
 import {
   ResumeFrame, SortableSection, BlockList, DeleteSectionDialog,
@@ -137,6 +138,7 @@ export default function QingyunTemplate(props: TemplateProps): ReactElement {
       {/* ——— HERO ———————————————————————————————————————————— */}
       <QingyunHero
         header={header}
+        title={getHeaderJobIntentionText(resume)}
         horizontalPadding={pagePad.paddingLeft as number}
         freshGradLabel={freshGradLabel}
       />
@@ -196,14 +198,14 @@ export default function QingyunTemplate(props: TemplateProps): ReactElement {
 // ---------------------------------------------------------------------------
 interface HeroProps {
   readonly header: ReturnType<typeof useEditableHeader>
+  readonly title: string
   readonly horizontalPadding: number
   readonly freshGradLabel: string | null
 }
 
-function QingyunHero({ header, horizontalPadding, freshGradLabel }: HeroProps): ReactElement {
+function QingyunHero({ header, title, horizontalPadding, freshGradLabel }: HeroProps): ReactElement {
   const palette = usePalette()
-  const { name, onCommitName, fields, openEditModal, baseInfo } = header
-  const title: string = baseInfo?.title ?? ''
+  const { name, onCommitName, fields, openEditModal } = header
 
   return (
     <header

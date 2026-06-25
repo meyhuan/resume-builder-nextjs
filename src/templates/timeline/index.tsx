@@ -4,6 +4,7 @@ import type { ReactElement, ReactNode } from 'react'
 import { useDroppable } from '@dnd-kit/core'
 import { SortableContext, rectSortingStrategy } from '@dnd-kit/sortable'
 import type { ResumeData } from '@/entities/resume/resume-data'
+import { getHeaderJobIntentionText } from '@/entities/resume/header-job-intention'
 import type { ThemeTokens } from '@/entities/theme/theme-tokens'
 import type { ResumeBlock } from '@/entities/blocks/resume-block'
 import type { Section } from '@/entities/resume/section'
@@ -301,6 +302,7 @@ interface TimelineTemplateProps {
 export default function TimelineTemplate(props: TimelineTemplateProps): ReactElement {
   const { resume, theme } = props
   const isJobIntentionVisible: boolean = resume.jobIntentionVisible ?? Boolean(resume.jobIntention)
+  const headerTitle = getHeaderJobIntentionText(resume)
   const pagePadding: string = `${theme.pagePaddingVertical}mm ${theme.pagePaddingHorizontal}mm`
   return (
     <div
@@ -318,6 +320,7 @@ export default function TimelineTemplate(props: TimelineTemplateProps): ReactEle
         <BaseInfoSection
           name={resume.name}
           baseInfo={resume.baseInfo ?? null}
+          headerTitle={headerTitle}
           themeColor={theme.primaryColor}
           styles={TIMELINE_TEMPLATE_STYLES.baseInfo}
         />

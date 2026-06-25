@@ -15,5 +15,7 @@ export interface ResumeData {
   /** Optional job intention. */
   jobIntention?: JobIntention;
   jobIntentionVisible?: boolean;
+  /** Controls only the job-intention text rendered in template headers. */
+  headerJobIntentionVisible?: boolean;
   sections: Section[];
 }

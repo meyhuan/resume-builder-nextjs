@@ -4,6 +4,7 @@ import type { ReactElement, ReactNode } from 'react'
 import { useDroppable } from '@dnd-kit/core'
 import { SortableContext, rectSortingStrategy } from '@dnd-kit/sortable'
 import type { ResumeData } from '@/entities/resume/resume-data'
+import { getHeaderJobIntentionText } from '@/entities/resume/header-job-intention'
 import type { ThemeTokens } from '@/entities/theme/theme-tokens'
 import type { ResumeBlock } from '@/entities/blocks/resume-block'
 import type { Section } from '@/entities/resume/section'
@@ -104,9 +105,7 @@ function BlockRendererWrapper(props: {
 export default function SimpleTemplate(props: SimpleTemplateProps): ReactElement {
   const { resume, theme } = props
   const isJobIntentionVisible: boolean = resume.jobIntentionVisible ?? Boolean(resume.jobIntention)
-  const headerBaseInfo = resume.jobIntention?.position
-    ? { ...(resume.baseInfo ?? {}), title: resume.jobIntention.position }
-    : (resume.baseInfo ?? null)
+  const headerTitle = getHeaderJobIntentionText(resume)
   const pagePadding: string = `${theme.pagePaddingVertical}mm ${theme.pagePaddingHorizontal}mm`
   const baseInfoStyles = SIMPLE_TEMPLATE_STYLES.baseInfo ?? {}
   const jobIntentionStyles = SIMPLE_TEMPLATE_STYLES.jobIntention ?? {}
@@ -156,7 +155,8 @@ export default function SimpleTemplate(props: SimpleTemplateProps): ReactElement
       <div style={{ marginBottom: `${18 * theme.spacingScale}px` }}>
         <BaseInfoSection
           name={resume.name}
-          baseInfo={headerBaseInfo}
+          baseInfo={resume.baseInfo ?? null}
+          headerTitle={headerTitle}
           themeColor={theme.primaryColor}
           styles={styles.baseInfo}
         />

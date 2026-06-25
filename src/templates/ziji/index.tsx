@@ -5,6 +5,7 @@ import type { CSSProperties, KeyboardEvent, ReactElement, ReactNode } from 'reac
 import { GripVertical, Plus, Trash2, XCircle } from 'lucide-react'
 import { SortableContext, rectSortingStrategy } from '@dnd-kit/sortable'
 import type { ResumeBlock } from '@/entities/blocks/resume-block'
+import { getHeaderJobIntentionText } from '@/entities/resume/header-job-intention'
 import type { Section } from '@/entities/resume/section'
 import BlockWrapper from '@/components/blocks/block-wrapper'
 import EditableBlockWrapper from '@/editor/editable-block-wrapper'
@@ -176,6 +177,7 @@ export default function ZijiTemplate(props: TemplateProps): ReactElement {
   const moveBlockInSection = useAppStore((state) => state.moveBlockInSection)
   const moveBlockToSection = useAppStore((state) => state.moveBlockToSection)
   const isJobIntentionVisible = resume.jobIntentionVisible ?? jobIntention.fields.length > 0
+  const headerTitle = getHeaderJobIntentionText(resume)
   const palette = useMemo(() => buildZijiPalette(theme.primaryColor), [theme.primaryColor])
   const primaryColor = palette.primary
   const titleScale = Math.min(1.2, Math.max(0.86, theme.titleScale ?? 1))
@@ -308,7 +310,7 @@ export default function ZijiTemplate(props: TemplateProps): ReactElement {
 
           <ZijiHero
             header={header}
-            title={header.baseInfo?.title || resume.jobIntention?.position || ''}
+            title={headerTitle}
             heroGradient={palette.heroGradient}
           />
 

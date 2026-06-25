@@ -33,6 +33,7 @@ interface FieldDef {
 export interface BaseInfoSectionProps {
   readonly name: string
   readonly baseInfo: BaseInfo | null
+  readonly headerTitle?: string
   readonly themeColor: string
   readonly styles?: BaseInfoSectionStyles
   readonly renderCustom?: (props: BaseInfoRenderProps) => ReactElement
@@ -43,7 +44,7 @@ export interface BaseInfoSectionProps {
  * V2 基础信息组件 - 样式配置驱动
  */
 export default function BaseInfoSection(props: BaseInfoSectionProps): ReactElement {
-  const { name, baseInfo, themeColor, styles = {}, renderCustom, slots } = props
+  const { name, baseInfo, headerTitle, themeColor, styles = {}, renderCustom, slots } = props
   const readOnly = useAppStore((s) => s.readOnly)
   const [showModalRaw, setShowModalRaw] = useState(false)
   const showModal = !readOnly && showModalRaw
@@ -97,6 +98,7 @@ export default function BaseInfoSection(props: BaseInfoSectionProps): ReactEleme
   }
 
   const fields: FieldDef[] = buildFieldDefs(baseInfo)
+  const displayTitle = headerTitle ?? baseInfo?.title ?? ''
 
   return (
     <>
@@ -163,9 +165,9 @@ export default function BaseInfoSection(props: BaseInfoSectionProps): ReactEleme
                 {name}
               </h1>
             )}
-            {baseInfo?.title && (
+            {displayTitle && (
               <span className={styles.title?.className || "text-gray-500"} style={{ fontSize: styles.title?.fontSize || '0.9em' }}>
-                意向岗位: {baseInfo.title}
+                意向岗位: {displayTitle}
               </span>
             )}
           </div>

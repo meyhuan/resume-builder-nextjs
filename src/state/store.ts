@@ -395,5 +395,15 @@ export const useAppStore = create<AppState>()(
         }),
       }), false, 'resume/setJobIntentionVisibility')
     },
+    setHeaderJobIntentionVisibility: (visible) => {
+      const state = get()
+      set(() => ({
+        pastStates: pushHistory(state.resume, state.pastStates),
+        futureStates: [],
+        resume: produce(state.resume, (draft) => {
+          draft.headerJobIntentionVisible = visible
+        }),
+      }), false, 'resume/setHeaderJobIntentionVisibility')
+    },
   }))
 )

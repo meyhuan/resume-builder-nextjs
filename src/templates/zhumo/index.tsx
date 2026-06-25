@@ -16,6 +16,7 @@
  */
 import { createContext, useContext } from 'react'
 import type { ReactElement, ReactNode } from 'react'
+import { getHeaderJobIntentionText } from '@/entities/resume/header-job-intention'
 import type { Section } from '@/entities/resume/section'
 import {
   ResumeFrame, SortableSection, BlockList, DeleteSectionDialog,
@@ -133,7 +134,7 @@ export default function ZhumoTemplate(props: TemplateProps): ReactElement {
         /> */}
 
         {/* ——— HERO ——————————————————————————————————— */}
-        <ZhumoHero header={header} horizontalPadding={pagePad.paddingLeft as number} />
+        <ZhumoHero header={header} title={getHeaderJobIntentionText(resume)} horizontalPadding={pagePad.paddingLeft as number} />
 
         {/* ——— OBJECTIVE ————————————————————————————— */}
         {jobIntentionVisible && objective.jobIntention && (
@@ -183,13 +184,13 @@ export default function ZhumoTemplate(props: TemplateProps): ReactElement {
 // ---------------------------------------------------------------------------
 interface HeroProps {
   readonly header: ReturnType<typeof useEditableHeader>
+  readonly title: string
   readonly horizontalPadding: number
 }
 
-function ZhumoHero({ header, horizontalPadding }: HeroProps): ReactElement {
+function ZhumoHero({ header, title, horizontalPadding }: HeroProps): ReactElement {
   const palette = usePalette()
-  const { name, onCommitName, fields, openEditModal, baseInfo } = header
-  const title: string = baseInfo?.title ?? ''
+  const { name, onCommitName, fields, openEditModal } = header
 
   return (
     <header

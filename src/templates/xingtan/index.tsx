@@ -18,6 +18,7 @@
  */
 import { createContext, useContext } from 'react'
 import type { ReactElement, ReactNode } from 'react'
+import { getHeaderJobIntentionText } from '@/entities/resume/header-job-intention'
 import type { Section } from '@/entities/resume/section'
 import {
   ResumeFrame, SortableSection, BlockList, DeleteSectionDialog,
@@ -124,7 +125,7 @@ export default function XingtanTemplate(props: TemplateProps): ReactElement {
         style={{ backgroundColor: palette.paper, color: palette.ink, fontFamily: SERIF }}
       >
         {/* ——— HERO (古籍卷首) ——————————————————————— */}
-        <XingtanHero header={header} horizontalPadding={pagePad.paddingLeft as number} />
+        <XingtanHero header={header} title={getHeaderJobIntentionText(resume)} horizontalPadding={pagePad.paddingLeft as number} />
 
         {/* ——— OBJECTIVE ————————————————————————————— */}
         {jobIntentionVisible && objective.jobIntention && (
@@ -174,13 +175,13 @@ export default function XingtanTemplate(props: TemplateProps): ReactElement {
 // ---------------------------------------------------------------------------
 interface HeroProps {
   readonly header: ReturnType<typeof useEditableHeader>
+  readonly title: string
   readonly horizontalPadding: number
 }
 
-function XingtanHero({ header, horizontalPadding }: HeroProps): ReactElement {
+function XingtanHero({ header, title, horizontalPadding }: HeroProps): ReactElement {
   const palette = usePalette()
-  const { name, onCommitName, fields, openEditModal, baseInfo } = header
-  const title: string = baseInfo?.title ?? ''
+  const { name, onCommitName, fields, openEditModal } = header
 
   return (
     <header

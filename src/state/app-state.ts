@@ -61,6 +61,8 @@ export interface AppState {
   setAvatarVisibility: (visible: boolean) => void
   /** Toggle whether the job intention section is rendered. */
   setJobIntentionVisibility: (visible: boolean) => void
+  /** Toggle whether the job intention text is rendered in template headers. */
+  setHeaderJobIntentionVisibility: (visible: boolean) => void
   /** Reset resume content and history to a blank new-resume state. */
   resetResume: () => void
   /** Load test data into the editor. */

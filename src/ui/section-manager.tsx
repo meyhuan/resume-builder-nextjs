@@ -66,8 +66,10 @@ export default function SectionManager(props: SectionManagerProps): ReactElement
   const addSection = useAppStore((s) => s.addSection)
   const setAvatarVisibility = useAppStore((s) => s.setAvatarVisibility)
   const setJobIntentionVisibility = useAppStore((s) => s.setJobIntentionVisibility)
+  const setHeaderJobIntentionVisibility = useAppStore((s) => s.setHeaderJobIntentionVisibility)
   const showPhotoAvatar: boolean = resume.baseInfo?.showAvatar !== false
   const isJobIntentionVisible: boolean = resume.jobIntentionVisible !== false
+  const isHeaderJobIntentionVisible: boolean = isJobIntentionVisible && resume.headerJobIntentionVisible !== false
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 4 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 5 } })
@@ -130,15 +132,27 @@ export default function SectionManager(props: SectionManagerProps): ReactElement
 
         {/* Pinned: 求职意向 */}
         <SectionRow label="求职意向 / 岗位">
-          <label className="flex items-center gap-1.5 text-xs font-medium text-slate-500 cursor-pointer select-none">
-            <input
-              type="checkbox"
-              className="accent-[#8B5CF6] w-3.5 h-3.5 rounded-sm border-slate-300"
-              checked={isJobIntentionVisible}
-              onChange={(e) => setJobIntentionVisibility(e.target.checked)}
-            />
-            显示
-          </label>
+          <div className="flex items-center gap-3">
+            <label className="flex items-center gap-1.5 text-xs font-medium text-slate-500 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                className="accent-[#8B5CF6] w-3.5 h-3.5 rounded-sm border-slate-300"
+                checked={isJobIntentionVisible}
+                onChange={(e) => setJobIntentionVisibility(e.target.checked)}
+              />
+              模块
+            </label>
+            <label className={`flex items-center gap-1.5 text-xs font-medium select-none ${isJobIntentionVisible ? 'cursor-pointer text-slate-500' : 'cursor-not-allowed text-slate-300'}`}>
+              <input
+                type="checkbox"
+                className="accent-[#8B5CF6] w-3.5 h-3.5 rounded-sm border-slate-300 disabled:opacity-50"
+                checked={isHeaderJobIntentionVisible}
+                disabled={!isJobIntentionVisible}
+                onChange={(e) => setHeaderJobIntentionVisibility(e.target.checked)}
+              />
+              头部
+            </label>
+          </div>
         </SectionRow>
 
         {/* Draggable sections */}

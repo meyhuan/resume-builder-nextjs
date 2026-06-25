@@ -16,6 +16,7 @@
  */
 import { createContext, useContext } from 'react'
 import type { ReactElement, ReactNode } from 'react'
+import { getHeaderJobIntentionText } from '@/entities/resume/header-job-intention'
 import type { Section } from '@/entities/resume/section'
 import {
   ResumeFrame, SortableSection, BlockList, DeleteSectionDialog,
@@ -115,7 +116,7 @@ export default function MashangTemplate(props: TemplateProps): ReactElement {
           }
         `}</style>
         {/* ——— HERO —————————————————————————————————————— */}
-        <MashangHero header={header} horizontalPadding={pagePad.paddingLeft as number} />
+        <MashangHero header={header} title={getHeaderJobIntentionText(resume)} horizontalPadding={pagePad.paddingLeft as number} />
 
         {/* ——— OBJECTIVE ——————————————————————————————— */}
         {jobIntentionVisible && objective.jobIntention && (
@@ -167,13 +168,13 @@ export default function MashangTemplate(props: TemplateProps): ReactElement {
 // ---------------------------------------------------------------------------
 interface HeroProps {
   readonly header: ReturnType<typeof useEditableHeader>
+  readonly title: string
   readonly horizontalPadding: number
 }
 
-function MashangHero({ header, horizontalPadding }: HeroProps): ReactElement {
+function MashangHero({ header, title, horizontalPadding }: HeroProps): ReactElement {
   const palette = usePalette()
-  const { name, onCommitName, fields, openEditModal, baseInfo } = header
-  const title: string = baseInfo?.title ?? ''
+  const { name, onCommitName, fields, openEditModal } = header
   const filename: string = name ? `${name.toLowerCase().replace(/\s+/g, '-')}.md` : 'resume.md'
 
   return (

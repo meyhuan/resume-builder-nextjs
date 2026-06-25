@@ -5,6 +5,7 @@ import { Mail, Phone, PlusCircle, Trash2, GripVertical, Upload } from 'lucide-re
 import { useDroppable } from '@dnd-kit/core'
 import { SortableContext, rectSortingStrategy } from '@dnd-kit/sortable'
 import type { ResumeData } from '@/entities/resume/resume-data'
+import { getHeaderJobIntentionText, isHeaderJobIntentionVisible } from '@/entities/resume/header-job-intention'
 import type { ThemeTokens } from '@/entities/theme/theme-tokens'
 import type { ResumeBlock } from '@/entities/blocks/resume-block'
 import type { Section } from '@/entities/resume/section'
@@ -133,6 +134,7 @@ function DenseHeader(props: { readonly resume: ResumeData; readonly accent: stri
   const baseInfo = resume.baseInfo ?? null
   const jobIntention = resume.jobIntention ?? null
   const isJobIntentionVisible = resume.jobIntentionVisible ?? Boolean(jobIntention)
+  const showHeaderJobIntention = isHeaderJobIntentionVisible(resume)
   const [showModal, setShowModal] = useState(false)
   const [showJobModal, setShowJobModal] = useState(false)
   const [avatarHovered, setAvatarHovered] = useState(false)
@@ -157,8 +159,12 @@ function DenseHeader(props: { readonly resume: ResumeData; readonly accent: stri
 
   const customFields = baseInfo?.customFields ?? []
   const workYears = customFields.find((field) => field.label.includes('工作') || field.label.includes('经验'))?.value
-  const expectedSalary = jobIntention?.salary || customFields.find((field) => field.label.includes('薪'))?.value
-  const intention = jobIntention?.position || customFields.find((field) => field.label.includes('意向') || field.label.includes('岗位'))?.value || baseInfo?.title
+  const expectedSalary = showHeaderJobIntention
+    ? jobIntention?.salary || customFields.find((field) => field.label.includes('薪'))?.value
+    : undefined
+  const intention = showHeaderJobIntention
+    ? getHeaderJobIntentionText(resume) || customFields.find((field) => field.label.includes('意向') || field.label.includes('岗位'))?.value
+    : undefined
   const jobFields = [
     jobIntention?.position ? { label: '意向岗位', value: jobIntention.position } : null,
     jobIntention?.salary ? { label: '期望薪资', value: jobIntention.salary } : null,

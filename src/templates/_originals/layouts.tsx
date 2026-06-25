@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import type { ReactElement } from 'react'
 import type { ResumeData } from '@/entities/resume/resume-data'
+import { getHeaderJobIntentionText } from '@/entities/resume/header-job-intention'
 import type { Section } from '@/entities/resume/section'
 import type { ThemeTokens } from '@/entities/theme/theme-tokens'
 import { useAppStore } from '@/state/store'
@@ -83,7 +84,7 @@ export function SingleColumn(props: {
   const { resume, theme, header, jobIntention, showJob, config, padV, padH } = props
   const updateBaseInfo = useAppStore((state) => state.updateBaseInfo)
   const [showMetricEditor, setShowMetricEditor] = useState(false)
-  const title = header.baseInfo?.title || resume.jobIntention?.position || ''
+  const title = getHeaderJobIntentionText(resume)
   const summary = resume.sections.find((s) => /自我|评价|优势|summary/i.test(s.title))
   const showAvatar = config.density !== 'ultra' || header.baseInfo?.showAvatar !== false
   const metrics = config.metrics && config.metrics !== 'none' ? metricItems(config, header) : []
@@ -192,7 +193,7 @@ export function CampusLayout(props: {
   const updateBaseInfo = useAppStore((state) => state.updateBaseInfo)
   const [showHighlightEditor, setShowHighlightEditor] = useState(false)
   const padV = Math.max(30, mmToPx(theme.pagePaddingVertical))
-  const title = header.baseInfo?.title || resume.jobIntention?.position || '求职意向'
+  const title = getHeaderJobIntentionText(resume)
   const highlightItems = campusMetricItems(config, header)
 
   return (
@@ -278,6 +279,7 @@ export function TwoColumnDark(props: {
   const sidebarIds = new Set(sidebarSections.map((s) => s.id))
   const mainSections = resume.sections.filter((s) => !sidebarIds.has(s.id))
   const showAvatar = header.baseInfo?.showAvatar !== false
+  const title = getHeaderJobIntentionText(resume)
   return (
     <div className="grid original-page-content" data-template-padding-probe="true" style={{ gridTemplateColumns: '238px 1fr', minHeight: '297mm', padding: `${padV}px ${padH}px`, backgroundColor: '#fff' }}>
       <aside style={{ padding: '40px 26px', backgroundColor: '#111827', color: '#f8fafc' }}>
@@ -302,9 +304,11 @@ export function TwoColumnDark(props: {
               value={header.name}
               style={{ width: '100%', margin: 0, fontSize: '1.8em', lineHeight: 1.15, fontWeight: 800, color: '#fff', textAlign: showAvatar ? 'center' : 'left' }}
             />
-            <div style={{ width: '100%', marginTop: 8, color: '#cbd5e1', fontSize: '0.92em', textAlign: showAvatar ? 'center' : 'left' }}>
-              {header.baseInfo?.title || props.resume.jobIntention?.position || ''}
-            </div>
+            {title ? (
+              <div style={{ width: '100%', marginTop: 8, color: '#cbd5e1', fontSize: '0.92em', textAlign: showAvatar ? 'center' : 'left' }}>
+                {title}
+              </div>
+            ) : null}
           </div>
           <HeaderFields header={header} color="#cbd5e1" accent={config.accent} vertical light />
         </div>
@@ -336,7 +340,9 @@ export function TwoColumnSoft(props: {
     <div className="grid original-page-content" data-template-padding-probe="true" style={{ gridTemplateColumns: '286px 1fr', minHeight: '297mm', padding: `${padV}px ${padH}px`, backgroundColor: '#fff' }}>
       <aside style={{ padding: '42px 28px', background: `linear-gradient(160deg, ${hexToRgba(config.secondary, 0.12)}, ${hexToRgba(config.accent, 0.08)}), #f8fafc` }}>
         <EditableText as="h1" value={header.name} onCommit={header.onCommitName} style={{ margin: 0, fontSize: '2em', lineHeight: 1.15, fontWeight: 800, color: config.ink }} />
-        <div style={{ marginTop: 8, color: config.muted, fontSize: '0.94em' }}>{header.baseInfo?.title || props.resume.jobIntention?.position || ''}</div>
+        {getHeaderJobIntentionText(props.resume) ? (
+          <div style={{ marginTop: 8, color: config.muted, fontSize: '0.94em' }}>{getHeaderJobIntentionText(props.resume)}</div>
+        ) : null}
         <HeaderFields header={header} color={config.muted} accent={config.accent} vertical />
         {showJob && jobIntention.fields.length > 0 ? <SidebarJob jobIntention={jobIntention} accent={config.accent} /> : null}
         <SidebarSections sections={sidebarSections} theme={theme} config={config} />
@@ -371,7 +377,9 @@ export function PortfolioLayout(props: {
       >
         <div style={{ padding: '28px 30px', borderRadius: 8, background: `linear-gradient(135deg, ${config.accent}, ${config.secondary})`, color: '#fff' }}>
           <EditableText as="h1" value={header.name} onCommit={header.onCommitName} style={{ margin: 0, fontSize: '2.08em', lineHeight: 1.12, fontWeight: 850, color: '#fff' }} />
-          <div style={{ marginTop: 8, color: '#f5f3ff', fontSize: '1em' }}>{header.baseInfo?.title || resume.jobIntention?.position || '创意作品集简历'}</div>
+          {getHeaderJobIntentionText(resume) ? (
+            <div style={{ marginTop: 8, color: '#f5f3ff', fontSize: '1em' }}>{getHeaderJobIntentionText(resume)}</div>
+          ) : null}
           <HeaderFields header={header} color="#ede9fe" accent="#ffffff" light />
         </div>
         <div style={{ display: 'grid', gap: 10 }}>
@@ -433,7 +441,9 @@ export function EducationTimelineLayout(props: {
         <div>
           <div style={{ display: 'inline-flex', marginBottom: 10, padding: '4px 10px', borderRadius: 999, backgroundColor: '#fff', color: config.accent, fontSize: '0.78em', fontWeight: 800 }}>校招成长线</div>
           <EditableText as="h1" value={header.name} onCommit={header.onCommitName} style={{ margin: 0, fontSize: '2em', lineHeight: 1.14, fontWeight: 850, color: config.ink }} />
-          <div style={{ marginTop: 8, color: config.muted, fontSize: '0.96em' }}>{header.baseInfo?.title || resume.jobIntention?.position || '应届生 / 实习投递'}</div>
+          {getHeaderJobIntentionText(resume) ? (
+            <div style={{ marginTop: 8, color: config.muted, fontSize: '0.96em' }}>{getHeaderJobIntentionText(resume)}</div>
+          ) : null}
           <HeaderFields header={header} color={config.muted} accent={config.accent} compact />
         </div>
         <AvatarBox header={header} accent={config.accent} radius={18} compact />
@@ -469,15 +479,18 @@ export function TechMinimalLayout(props: {
   const { resume, theme, header, jobIntention, showJob, config, padV, padH } = props
   const [techSections, restAfterTech] = splitSections(resume.sections, /技能|技术|栈|证书|资格/i)
   const [projectSections, otherSections] = splitSections(restAfterTech, /项目|研发|工程|系统|平台|算法/i)
+  const title = getHeaderJobIntentionText(resume)
   return (
     <div className="original-page-content" data-template-padding-probe="true" style={{ minHeight: '297mm', padding: `${padV}px ${padH}px`, backgroundColor: '#fff' }}>
       <header className="group relative" onClick={header.openEditModal} style={{ cursor: 'pointer', borderBottom: '3px solid #111827', paddingBottom: 16 }}>
         <div className="flex items-end justify-between gap-6">
           <div className="min-w-0">
             <EditableText as="h1" value={header.name} onCommit={header.onCommitName} style={{ margin: 0, fontSize: '2.02em', lineHeight: 1.12, fontWeight: 900, color: '#111827' }} />
-            <div style={{ marginTop: 6, fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace', color: config.muted, fontSize: '0.86em' }}>
-              {header.baseInfo?.title || resume.jobIntention?.position || 'Software Engineer'} / project-driven resume
-            </div>
+            {title ? (
+              <div style={{ marginTop: 6, fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace', color: config.muted, fontSize: '0.86em' }}>
+                {title} / project-driven resume
+              </div>
+            ) : null}
           </div>
           <HeaderFields header={header} color={config.muted} accent={config.accent} compact />
         </div>
@@ -523,7 +536,9 @@ export function StackProjectsLayout(props: {
     <div className="grid original-page-content" data-template-padding-probe="true" style={{ gridTemplateColumns: '248px 1fr', minHeight: '297mm', padding: `${padV}px ${padH}px`, backgroundColor: '#fff' }}>
       <aside style={{ padding: '34px 24px', backgroundColor: '#052e2b', color: '#ecfdf5' }}>
         <EditableText as="h1" value={header.name} onCommit={header.onCommitName} style={{ margin: 0, fontSize: '1.72em', lineHeight: 1.15, fontWeight: 850, color: '#fff' }} />
-        <div style={{ marginTop: 8, color: '#a7f3d0', fontSize: '0.88em' }}>{header.baseInfo?.title || resume.jobIntention?.position || '技术栈 / 项目交付'}</div>
+        {getHeaderJobIntentionText(resume) ? (
+          <div style={{ marginTop: 8, color: '#a7f3d0', fontSize: '0.88em' }}>{getHeaderJobIntentionText(resume)}</div>
+        ) : null}
         <HeaderFields header={header} color="#d1fae5" accent={config.accent} vertical light compact />
         {showJob && jobIntention.fields.length > 0 ? <SidebarJob jobIntention={jobIntention} accent="#86efac" /> : null}
         <div style={{ marginTop: 22 }}>
@@ -558,14 +573,14 @@ export function OfficialBriefLayout(props: {
   readonly padH: number
 }): ReactElement {
   const { resume, theme, header, jobIntention, showJob, config, padV, padH } = props
-  const title = header.baseInfo?.title || resume.jobIntention?.position || '求职简历'
+  const title = getHeaderJobIntentionText(resume)
   return (
     <div className="original-page-content" data-template-padding-probe="true" style={{ minHeight: '297mm', padding: `${padV}px ${padH}px`, backgroundColor: '#fff', color: config.ink }}>
       <div style={{ border: `2px solid ${config.accent}`, padding: '24px 28px 30px' }}>
         <header className="group relative" onClick={header.openEditModal} style={{ cursor: 'pointer', textAlign: 'center', borderBottom: `4px double ${config.accent}`, paddingBottom: 18 }}>
           <div style={{ marginBottom: 8, color: config.accent, fontSize: '0.82em', fontWeight: 800 }}>个人履历简表</div>
           <EditableText as="h1" value={header.name} onCommit={header.onCommitName} style={{ margin: 0, fontSize: '2.04em', lineHeight: 1.18, fontWeight: 800, color: config.ink }} />
-          <div style={{ marginTop: 8, color: config.muted, fontSize: '0.95em' }}>{title}</div>
+          {title ? <div style={{ marginTop: 8, color: config.muted, fontSize: '0.95em' }}>{title}</div> : null}
           <div style={{ display: 'flex', justifyContent: 'center' }}>
             <HeaderFields header={header} color={config.muted} accent={config.accent} compact />
           </div>

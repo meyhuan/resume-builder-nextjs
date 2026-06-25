@@ -4,6 +4,7 @@ import { useState } from 'react'
 import type { CSSProperties, ReactElement, ReactNode } from 'react'
 import { GripVertical, Plus, Trash2 } from 'lucide-react'
 import type { ResumeBlock } from '@/entities/blocks/resume-block'
+import { getHeaderJobIntentionText } from '@/entities/resume/header-job-intention'
 import type { Section } from '@/entities/resume/section'
 import BlockWrapper from '@/components/blocks/block-wrapper'
 import EditableBlockWrapper from '@/editor/editable-block-wrapper'
@@ -48,6 +49,7 @@ export default function LanxinTemplate(props: TemplateProps): ReactElement {
   const header = useEditableHeader(resume.name, resume.baseInfo ?? null)
   const jobIntention = useEditableJobIntention(resume.jobIntention ?? null)
   const isJobIntentionVisible = resume.jobIntentionVisible ?? jobIntention.fields.length > 0
+  const headerTitle = getHeaderJobIntentionText(resume)
   const contentLineHeight = Math.max(1.2, theme.lineHeight)
   const titleScale = Math.min(1.18, Math.max(0.88, theme.titleScale ?? 1))
   const primaryColor = theme.primaryColor || BLUE
@@ -92,7 +94,7 @@ export default function LanxinTemplate(props: TemplateProps): ReactElement {
       `}</style>
       <LanxinHero
         header={header}
-        position={resume.jobIntention?.position ?? ''}
+        title={headerTitle}
         primaryColor={primaryColor}
         headerBg={headerBg}
         paddingTop={pagePaddingVertical}
@@ -153,15 +155,14 @@ export default function LanxinTemplate(props: TemplateProps): ReactElement {
 
 function LanxinHero(props: {
   readonly header: ReturnType<typeof useEditableHeader>
-  readonly position: string
+  readonly title: string
   readonly primaryColor: string
   readonly headerBg: string
   readonly paddingTop: number
   readonly paddingHorizontal: number
   readonly height: number
 }): ReactElement {
-  const { header, position, primaryColor, headerBg, paddingTop, paddingHorizontal, height } = props
-  const title = header.baseInfo?.title || position
+  const { header, title, primaryColor, headerBg, paddingTop, paddingHorizontal, height } = props
   const visibleFields = header.fields
 
   return (

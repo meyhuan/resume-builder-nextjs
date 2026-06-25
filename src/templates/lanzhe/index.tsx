@@ -4,6 +4,7 @@ import { useState } from 'react'
 import type { CSSProperties, ReactElement, ReactNode } from 'react'
 import { GripVertical, Plus, Trash2 } from 'lucide-react'
 import type { ResumeBlock } from '@/entities/blocks/resume-block'
+import { getHeaderJobIntentionText } from '@/entities/resume/header-job-intention'
 import type { Section } from '@/entities/resume/section'
 import BlockWrapper from '@/components/blocks/block-wrapper'
 import EditableBlockWrapper from '@/editor/editable-block-wrapper'
@@ -57,6 +58,7 @@ export default function LanzheTemplate(props: TemplateProps): ReactElement {
   const header = useEditableHeader(resume.name, resume.baseInfo ?? null)
   const jobIntention = useEditableJobIntention(resume.jobIntention ?? null)
   const isJobIntentionVisible = resume.jobIntentionVisible ?? jobIntention.fields.length > 0
+  const headerTitle = getHeaderJobIntentionText(resume)
   const primaryColor = isValidHexColor(theme.primaryColor) ? theme.primaryColor : DEFAULT_BLUE
   const foldColor = darkenHex(primaryColor, 0.52)
   const deepColor = darkenHex(primaryColor, 0.72)
@@ -183,7 +185,7 @@ export default function LanzheTemplate(props: TemplateProps): ReactElement {
       >
         <LanzheHero
           header={header}
-          title={header.baseInfo?.title || resume.jobIntention?.position || ''}
+          title={headerTitle}
           heroHeight={heroHeight}
         />
 

@@ -6,5 +6,6 @@ export function createDefaultResume(): ResumeData {
   return {
     ...mapExternalResume(BLANK_RESUME_JSON),
     jobIntentionVisible: true,
+    headerJobIntentionVisible: true,
   }
 }
