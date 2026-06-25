@@ -9,6 +9,7 @@ import { Menu, X, User, LogOut, ChevronDown, FileText, Wand2, FileUp } from 'luc
 import { WxLoginDialog } from '../auth/WxLoginDialog';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
+import { track } from '@/lib/analytics';
 
 interface LandingHeaderProps {
   forceSolid?: boolean;
@@ -21,6 +22,23 @@ export const LandingHeader = ({ forceSolid = false }: LandingHeaderProps = {}) =
 
   const { isLoggedIn, userInfo, logout } = useAuth();
   const router = useRouter();
+
+  const openLoginDialog = (entry: string): void => {
+    track('login_prompt_view', {
+      entry,
+      source: 'landing_header',
+    });
+    setIsLoginOpen(true);
+  };
+
+  const trackLandingCta = (cta: string, target: string, entry: string): void => {
+    track('landing_cta_click', {
+      cta,
+      target,
+      entry,
+      source: 'landing_header',
+    });
+  };
 
   useEffect(() => {
     if (forceSolid) return;
@@ -80,6 +98,7 @@ export const LandingHeader = ({ forceSolid = false }: LandingHeaderProps = {}) =
                             key={child.id} 
                             href={child.href}
                             className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50 transition-colors group/child"
+                            onClick={() => trackLandingCta(child.id, child.href, 'desktop_nav_create')}
                           >
                             <div className="mt-0.5 w-8 h-8 rounded-lg bg-slate-100 group-hover/child:bg-white shadow-sm flex items-center justify-center shrink-0 transition-colors">
                               {child.icon}
@@ -152,8 +171,8 @@ export const LandingHeader = ({ forceSolid = false }: LandingHeaderProps = {}) =
               </div>
             ) : (
               <>
-                <LandingButton variant="ghost" size="sm" onClick={() => setIsLoginOpen(true)} className="rounded-full hover:bg-white/50">登录</LandingButton>
-                <Link href="/ai">
+                <LandingButton variant="ghost" size="sm" onClick={() => openLoginDialog('desktop_header_login')} className="rounded-full hover:bg-white/50">登录</LandingButton>
+                <Link href="/ai" onClick={() => trackLandingCta('free_create', '/ai', 'desktop_header')}>
                   <LandingButton size="sm" className="rounded-full shadow-lg shadow-violet-500/25">免费制作</LandingButton>
                 </Link>
               </>
@@ -180,7 +199,10 @@ export const LandingHeader = ({ forceSolid = false }: LandingHeaderProps = {}) =
                           key={child.id} 
                           href={child.href} 
                           className="flex items-center gap-2 text-slate-700 font-semibold py-1" 
-                          onClick={() => setMobileMenuOpen(false)}
+                          onClick={() => {
+                            trackLandingCta(child.id, child.href, 'mobile_nav_create');
+                            setMobileMenuOpen(false);
+                          }}
                         >
                           <div className="w-5 h-5 flex items-center justify-center">
                             {child.icon}
@@ -214,8 +236,15 @@ export const LandingHeader = ({ forceSolid = false }: LandingHeaderProps = {}) =
                 </Link>
               ) : (
                 <>
-                  <LandingButton variant="outline" size="md" className="w-full rounded-xl" onClick={() => setIsLoginOpen(true)}>注册/登录</LandingButton>
-                  <Link href="/ai" className="w-full" onClick={() => setMobileMenuOpen(false)}>
+                  <LandingButton variant="outline" size="md" className="w-full rounded-xl" onClick={() => openLoginDialog('mobile_header_login')}>注册/登录</LandingButton>
+                  <Link
+                    href="/ai"
+                    className="w-full"
+                    onClick={() => {
+                      trackLandingCta('free_create', '/ai', 'mobile_header');
+                      setMobileMenuOpen(false);
+                    }}
+                  >
                     <LandingButton size="md" className="w-full rounded-xl">免费制作</LandingButton>
                   </Link>
                 </>

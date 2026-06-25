@@ -9,6 +9,7 @@ const ENDPOINTS: Record<string, string> = {
   pay: '/analytics/admin/funnel/pay',
   export: '/analytics/admin/funnel/export',
   create: '/analytics/admin/funnel/create',
+  lifecycle: '/analytics/admin/funnel/lifecycle',
   errors: '/analytics/admin/errors',
   revenue: '/analytics/admin/revenue',
 };
@@ -19,6 +20,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const type = typeof body.type === 'string' ? body.type : 'overview';
   const days = typeof body.days === 'number' || typeof body.days === 'string' ? String(body.days) : '7';
   const platform = typeof body.platform === 'string' ? body.platform : 'all';
+  const clientType = typeof body.clientType === 'string' ? body.clientType : 'all';
 
   if (!ADMIN_PASSWORD || adminPassword !== ADMIN_PASSWORD) {
     return NextResponse.json({ error: 'Invalid admin password' }, { status: 403 });
@@ -34,6 +36,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   url.searchParams.set('days', days);
   if (platform && platform !== 'all') {
     url.searchParams.set('platform', platform);
+  }
+  if (type === 'lifecycle' && clientType && clientType !== 'all') {
+    url.searchParams.set('clientType', clientType);
   }
 
   const response = await fetch(url.toString(), {

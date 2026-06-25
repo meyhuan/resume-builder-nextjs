@@ -5,6 +5,7 @@ import { LandingButton } from './LandingButton';
 import { Wand2, FileText } from 'lucide-react';
 import { EditorShowcase } from './EditorShowcase';
 import Link from 'next/link';
+import { track } from '@/lib/analytics';
 
 const TRUST_STATS = [
   { label: '求职者使用', value: '10,000+' },
@@ -13,6 +14,15 @@ const TRUST_STATS = [
 ];
 
 export const LandingHero = () => {
+  const trackHeroCta = (cta: string, target: string): void => {
+    track('landing_cta_click', {
+      cta,
+      target,
+      entry: 'landing_hero',
+      source: 'landing_hero',
+    });
+  };
+
   return (
     <section id="hero" className="relative pt-20 pb-16 overflow-hidden bg-white selection:bg-fuchsia-200">
       {/* Dynamic Background Elements */}
@@ -52,13 +62,13 @@ export const LandingHero = () => {
 
           {/* CTA Buttons */}
           <div className="flex flex-wrap items-center justify-center gap-4 mt-2">
-            <Link href="/ai">
+            <Link href="/ai" onClick={() => trackHeroCta('ai_generate_resume', '/ai')}>
               <LandingButton size="lg" className="rounded-full shadow-[0_8px_20px_rgba(139,92,246,0.25)] hover:shadow-[0_10px_25px_rgba(139,92,246,0.35)] text-base px-8 h-12">
                 <Wand2 className="w-5 h-5 mr-2" />
                 免费生成简历
               </LandingButton>
             </Link>
-            <Link href="/editor/new">
+            <Link href="/editor/new" onClick={() => trackHeroCta('blank_resume', '/editor/new')}>
               <LandingButton variant="outline" size="lg" className="rounded-full text-slate-700 hover:text-violet-700 bg-white border border-slate-200 shadow-sm hover:shadow-md hover:border-violet-200 h-12 px-8 transition-all duration-300">
                 <span className="flex items-center gap-2 font-medium">
                   <FileText className="w-4 h-4" /> 创建空白简历

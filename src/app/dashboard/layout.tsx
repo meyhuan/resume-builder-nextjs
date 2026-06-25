@@ -7,6 +7,8 @@ import VipUpgradeDialog from '@/components/vip/vip-upgrade-dialog';
 import { WxLoginDialog } from '@/components/auth/WxLoginDialog';
 import { useVipCheck } from '@/hooks/use-vip-check';
 import { toast } from 'sonner';
+import { usePathname } from 'next/navigation';
+import { track } from '@/lib/analytics';
 
 interface DashboardLayoutProps {
   readonly children: ReactNode;
@@ -19,6 +21,7 @@ interface DashboardLayoutProps {
 export default function DashboardLayout({ children }: DashboardLayoutProps): ReactElement {
   const { showUpgrade, setShowUpgrade } = useVipCheck();
   const [showReLogin, setShowReLogin] = useState(false);
+  const pathname = usePathname();
 
   useEffect(() => {
     const handler = (e: Event): void => {
@@ -35,6 +38,13 @@ export default function DashboardLayout({ children }: DashboardLayoutProps): Rea
     window.addEventListener('re-login-required', handler);
     return () => window.removeEventListener('re-login-required', handler);
   }, []);
+
+  useEffect(() => {
+    track('dashboard_view', {
+      entry: 'dashboard_layout',
+      pageName: pathname,
+    });
+  }, [pathname]);
 
   return (
     <div className="flex min-h-screen">

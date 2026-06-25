@@ -11,6 +11,7 @@ import { useAuthStore } from '@/store/use-auth-store';
 import { syncNextUserAction } from '@/app/actions';
 import { logger } from '@/utils/logger';
 import { LegalDialog } from '@/components/legal/LegalDialog';
+import { track } from '@/lib/analytics';
 
 type WxStatus = 'pending' | 'scanned' | 'confirming' | 'expired';
 type LegalTab = 'privacy' | 'terms';
@@ -68,6 +69,11 @@ function LoginForm(): React.ReactElement {
     setToken(uid);
     setCookie('auth_uid', uid, { maxAge: 60 * 60 * 24 * 30 });
     setUserInfo({ id: userId || uid, name: userId ? `用户_${userId}` : '用户' });
+    track('login_success', {
+      entry: 'login_page',
+      loginMethod: 'wechat_qrcode',
+      javaUserId: userId ? Number(userId) : undefined,
+    });
     stopPolling();
     stopExpireCountdown();
     router.push(redirectPath);

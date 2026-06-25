@@ -201,6 +201,15 @@ export default function VipUpgradeDialog({ open, onOpenChange, hidePlanOptions =
         planCount: sortedPlans.length,
         recommendedVipType: sortedPlans[0]?.vipType,
       });
+      if (upgradeContext === 'pdf-export') {
+        track('export_paywall_view', {
+          entry: 'vip_upgrade_dialog',
+          upgradeContext,
+          source: 'web',
+          planCount: sortedPlans.length,
+          recommendedVipType: sortedPlans[0]?.vipType,
+        });
+      }
       setStep('qrcode');
     } catch (err: unknown) {
       setErrorMsg(err instanceof Error ? err.message : 'Unknown error');
@@ -262,6 +271,12 @@ export default function VipUpgradeDialog({ open, onOpenChange, hidePlanOptions =
   }, [pollInviteStatus, stopInvitePolling]);
 
   const loadInviteCode = useCallback(async (): Promise<void> => {
+    track('paywall_cta_click', {
+      entry: 'vip_upgrade_dialog',
+      upgradeContext,
+      source: 'web',
+      action: 'invite_instead_of_pay',
+    });
     setMode('invite');
     stopPolling();
     setInviteLoading(true);
@@ -281,7 +296,7 @@ export default function VipUpgradeDialog({ open, onOpenChange, hidePlanOptions =
     } finally {
       setInviteLoading(false);
     }
-  }, [startInvitePolling, stopPolling]);
+  }, [startInvitePolling, stopPolling, upgradeContext]);
 
   useEffect(() => {
     if (open) {
@@ -316,6 +331,16 @@ export default function VipUpgradeDialog({ open, onOpenChange, hidePlanOptions =
   const dialogCopy = CONTEXT_COPY[upgradeContext] || CONTEXT_COPY.generic;
   const handleSelectVipType = (plan: VipPlan): void => {
     setSelectedVipType(plan.vipType);
+    track('paywall_cta_click', {
+      entry: 'vip_upgrade_dialog',
+      upgradeContext,
+      source: 'web',
+      action: 'select_plan',
+      planId: plan.id,
+      vipType: plan.vipType,
+      amount: plan.price,
+      payChannel: 'wechat',
+    });
     track('pay_plan_click', {
       entry: 'vip_upgrade_dialog',
       upgradeContext,
@@ -326,6 +351,18 @@ export default function VipUpgradeDialog({ open, onOpenChange, hidePlanOptions =
       payChannel: 'wechat',
     });
   };
+  const handleDialogOpenChange = useCallback((nextOpen: boolean): void => {
+    if (!nextOpen && open) {
+      track('paywall_close', {
+        entry: 'vip_upgrade_dialog',
+        upgradeContext,
+        source: 'web',
+        mode,
+        step,
+      });
+    }
+    onOpenChange(nextOpen);
+  }, [mode, onOpenChange, open, step, upgradeContext]);
   const canShowInviteOption = !hidePlanOptions
     && upgradeContext === 'pdf-export'
     && !quota.pdfExport.isVip
@@ -340,7 +377,7 @@ export default function VipUpgradeDialog({ open, onOpenChange, hidePlanOptions =
     : '已获得全部邀请奖励';
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleDialogOpenChange}>
       <DialogContent
         overlayClassName={overlayClassName}
         className="max-w-[880px] w-[90vw] gap-0 overflow-hidden rounded-2xl border border-violet-200 bg-white p-0 shadow-lg"
@@ -397,6 +434,12 @@ export default function VipUpgradeDialog({ open, onOpenChange, hidePlanOptions =
                 <button
                   type="button"
                   onClick={(): void => {
+                    track('paywall_cta_click', {
+                      entry: 'vip_upgrade_dialog',
+                      upgradeContext,
+                      source: 'web',
+                      action: 'back_to_pay',
+                    });
                     setMode('pay');
                     stopInvitePolling();
                   }}
@@ -604,7 +647,7 @@ export default function VipUpgradeDialog({ open, onOpenChange, hidePlanOptions =
                 <p className="text-sm text-slate-500 mt-1">可继续导出 PDF、Markdown 和图片</p>
               </div>
               <button
-                onClick={() => onOpenChange(false)}
+                onClick={() => handleDialogOpenChange(false)}
                 className="mt-2 rounded-full bg-gradient-to-r from-violet-600 to-fuchsia-600 px-6 py-2 text-sm font-medium text-white transition-all hover:shadow-lg"
               >
                 开始使用

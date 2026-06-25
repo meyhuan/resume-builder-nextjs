@@ -29,6 +29,26 @@ interface FunnelData {
   steps: FunnelStep[];
 }
 
+interface LifecycleStep {
+  key: string;
+  label: string;
+  description: string;
+  eventNames: string[];
+  independentUsers: number;
+  orderedUsers: number;
+  conversionFromFirst: number;
+  conversionFromPrevious: number;
+}
+
+interface LifecycleData {
+  start: string;
+  end: string;
+  platform: string;
+  clientType: string;
+  steps: LifecycleStep[];
+  notes: string[];
+}
+
 interface EventCount {
   eventName: string;
   count: number;
@@ -106,6 +126,7 @@ interface RevenueData {
 
 type AnalyticsState = {
   overview: OverviewData | null;
+  lifecycle: LifecycleData | null;
   pay: FunnelData | null;
   export: FunnelData | null;
   create: FunnelData | null;
@@ -114,22 +135,33 @@ type AnalyticsState = {
 };
 
 type PlatformFilter = 'all' | 'web' | 'mini_program' | 'h5_pay' | 'backend';
+type ClientTypeFilter = 'all' | 'pc_web' | 'mobile_web' | 'mini_program_webview' | 'mini_program_native';
 
 const EVENT_LABELS: Record<string, string> = {
   page_view: '页面访问',
   login_success: '登录成功',
+  login_prompt_view: '登录弹窗曝光',
+  landing_cta_click: '首页 CTA 点击',
+  dashboard_view: '访问个人中心',
   resume_create_start: '开始创建简历',
   resume_create_success: '创建简历成功',
   resume_create_failed: '创建简历失败',
+  resume_save_success: '保存简历成功',
+  resume_save_failed: '保存简历失败',
   resume_import_start: '开始导入简历',
   resume_import_success: '导入简历成功',
   resume_import_failed: '导入简历失败',
   ai_generate_start: '开始 AI 生成',
   ai_generate_success: 'AI 生成成功',
   ai_generate_failed: 'AI 生成失败',
+  ai_result_apply: '采用 AI 结果',
   template_select: '选择模板',
   resume_preview: '预览简历',
+  editor_open: '打开编辑器',
+  editor_first_edit: '首次编辑',
   export_click: '点击导出',
+  export_blocked_by_paywall: '导出被付费墙拦截',
+  export_paywall_view: '查看导出付费墙',
   export_success: '导出成功',
   export_failed: '导出失败',
   pay_page_view: '访问支付页',
@@ -137,6 +169,8 @@ const EVENT_LABELS: Record<string, string> = {
   pay_submit_click: '点击支付按钮',
   pay_order_create: '创建订单',
   pay_invoke_wechat: '拉起微信支付',
+  paywall_cta_click: '付费墙 CTA 点击',
+  paywall_close: '关闭付费墙',
   pay_success: '支付成功',
   pay_cancel: '取消支付',
   pay_failed: '支付失败',
@@ -153,10 +187,18 @@ const PLATFORM_LABELS: Record<string, string> = {
 
 const PLATFORM_OPTIONS: Array<{ value: PlatformFilter; label: string }> = [
   { value: 'all', label: '全部端' },
-  { value: 'web', label: 'Web / PC' },
+  { value: 'web', label: 'Web（含 PC/移动）' },
   { value: 'mini_program', label: '小程序' },
   { value: 'h5_pay', label: 'H5 支付页' },
   { value: 'backend', label: '后端' },
+];
+
+const CLIENT_TYPE_OPTIONS: Array<{ value: ClientTypeFilter; label: string }> = [
+  { value: 'all', label: '生命周期：全部类型' },
+  { value: 'pc_web', label: '生命周期：PC Web' },
+  { value: 'mobile_web', label: '生命周期：手机 Web' },
+  { value: 'mini_program_webview', label: '生命周期：小程序 WebView' },
+  { value: 'mini_program_native', label: '生命周期：小程序原生' },
 ];
 
 function formatNumber(value: number | undefined): string {
@@ -177,11 +219,17 @@ function labelEvent(eventName: string): string {
   return EVENT_LABELS[eventName] || eventName;
 }
 
-async function fetchAnalytics(type: keyof AnalyticsState, days: number, platform: PlatformFilter, adminPassword: string): Promise<unknown> {
+async function fetchAnalytics(
+  type: keyof AnalyticsState,
+  days: number,
+  platform: PlatformFilter,
+  adminPassword: string,
+  clientType?: ClientTypeFilter,
+): Promise<unknown> {
   const response = await fetch('/next-api/admin/analytics', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ type, days, platform, adminPassword }),
+    body: JSON.stringify({ type, days, platform, adminPassword, clientType }),
     cache: 'no-store',
   });
   const json = await response.json();
@@ -196,11 +244,13 @@ export default function AnalyticsAdminPage(): React.ReactElement {
   const [hasStoredPassword, setHasStoredPassword] = useState(false);
   const [days, setDays] = useState(7);
   const [platform, setPlatform] = useState<PlatformFilter>('all');
+  const [clientType, setClientType] = useState<ClientTypeFilter>('all');
   const [loading, setLoading] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<AnalyticsState>({
     overview: null,
+    lifecycle: null,
     pay: null,
     export: null,
     create: null,
@@ -230,8 +280,9 @@ export default function AnalyticsAdminPage(): React.ReactElement {
     setLoading(true);
     setError(null);
     try {
-      const [overview, pay, exportFunnel, create, errors, revenue] = await Promise.all([
+      const [overview, lifecycle, pay, exportFunnel, create, errors, revenue] = await Promise.all([
         fetchAnalytics('overview', days, platform, passwordToUse) as Promise<OverviewData>,
+        fetchAnalytics('lifecycle', days, platform, passwordToUse, clientType) as Promise<LifecycleData>,
         fetchAnalytics('pay', days, platform, passwordToUse) as Promise<FunnelData>,
         fetchAnalytics('export', days, platform, passwordToUse) as Promise<FunnelData>,
         fetchAnalytics('create', days, platform, passwordToUse) as Promise<FunnelData>,
@@ -240,7 +291,7 @@ export default function AnalyticsAdminPage(): React.ReactElement {
       ]);
       setStoredAdminPassword(passwordToUse);
       setHasStoredPassword(true);
-      setData({ overview, pay, export: exportFunnel, create, errors, revenue });
+      setData({ overview, lifecycle, pay, export: exportFunnel, create, errors, revenue });
       setLoaded(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : '加载失败');
@@ -297,6 +348,15 @@ export default function AnalyticsAdminPage(): React.ReactElement {
                 <option key={item.value} value={item.value}>{item.label}</option>
               ))}
             </select>
+            <select
+              value={clientType}
+              onChange={(e) => setClientType(e.target.value as ClientTypeFilter)}
+              className="h-10 rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
+            >
+              {CLIENT_TYPE_OPTIONS.map((item) => (
+                <option key={item.value} value={item.value}>{item.label}</option>
+              ))}
+            </select>
             <button
               type="button"
               onClick={() => void loadAll()}
@@ -314,7 +374,7 @@ export default function AnalyticsAdminPage(): React.ReactElement {
                   setHasStoredPassword(false);
                   setAdminPassword('');
                   setLoaded(false);
-                  setData({ overview: null, pay: null, export: null, create: null, errors: null, revenue: null });
+                  setData({ overview: null, lifecycle: null, pay: null, export: null, create: null, errors: null, revenue: null });
                 }}
                 className="h-10 rounded-lg border border-slate-200 px-3 text-sm text-slate-600 hover:bg-slate-50"
               >
@@ -344,6 +404,8 @@ export default function AnalyticsAdminPage(): React.ReactElement {
             <MetricCard icon={<TrendingUp />} label="支付成功数" value={formatNumber(data.revenue?.paidOrders)} />
             <MetricCard icon={<Sparkles />} label="支付收入" value={formatCurrency(data.revenue?.totalAmount)} />
           </section>
+
+          <LifecycleFunnelCard data={data.lifecycle} />
 
           <RevenueCard data={data.revenue} />
 
@@ -421,6 +483,79 @@ export default function AnalyticsAdminPage(): React.ReactElement {
         </>
       )}
     </div>
+  );
+}
+
+function LifecycleFunnelCard(props: { data: LifecycleData | null }): React.ReactElement {
+  const steps = props.data?.steps ?? [];
+  const max = Math.max(...steps.map((step) => step.orderedUsers), 1);
+
+  return (
+    <section className="rounded-xl border border-slate-200 bg-white p-5">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+            <Activity className="h-4 w-4 text-violet-600" />
+            生命周期漏斗
+          </div>
+          <p className="mt-1 text-xs text-slate-400">
+            严格时序口径：同一用户按 访问 → 登录 → 新建 → 首次导出 → 二次导出 → 付费墙 → 支付 成功推进。
+          </p>
+        </div>
+        <div className="text-xs text-slate-400 lg:text-right">
+          <div>{props.data?.platform ?? 'all'} / {props.data?.clientType ?? 'all'}</div>
+          <div>{props.data?.start ? new Date(props.data.start).toLocaleDateString('zh-CN') : '-'} - {props.data?.end ? new Date(props.data.end).toLocaleDateString('zh-CN') : '-'}</div>
+        </div>
+      </div>
+
+      <div className="mt-5 grid gap-3 xl:grid-cols-3">
+        {steps.map((step, index) => {
+          const width = Math.max(4, Math.round((step.orderedUsers / max) * 100));
+          return (
+            <div key={step.key} className="rounded-lg border border-slate-100 p-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="text-sm font-semibold text-slate-900">{index + 1}. {step.label}</div>
+                  <div className="mt-1 text-xs text-slate-400">{step.description}</div>
+                </div>
+                <div className="shrink-0 text-right">
+                  <div className="text-lg font-bold text-slate-900">{formatNumber(step.orderedUsers)}</div>
+                  <div className="text-xs text-slate-400">严格 UV</div>
+                </div>
+              </div>
+              <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100">
+                <div className="h-full rounded-full bg-violet-500" style={{ width: `${width}%` }} />
+              </div>
+              <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
+                <div className="rounded bg-slate-50 px-2 py-1">
+                  <div className="text-slate-400">独立 UV</div>
+                  <div className="font-semibold text-slate-800">{formatNumber(step.independentUsers)}</div>
+                </div>
+                <div className="rounded bg-slate-50 px-2 py-1">
+                  <div className="text-slate-400">较上步</div>
+                  <div className="font-semibold text-slate-800">{index === 0 ? '-' : formatPercent(step.conversionFromPrevious)}</div>
+                </div>
+                <div className="rounded bg-slate-50 px-2 py-1">
+                  <div className="text-slate-400">较访问</div>
+                  <div className="font-semibold text-slate-800">{formatPercent(step.conversionFromFirst)}</div>
+                </div>
+              </div>
+              <div className="mt-2 truncate text-[11px] text-slate-400">
+                {step.eventNames.map(labelEvent).join(' / ')}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {(props.data?.notes ?? []).length > 0 && (
+        <div className="mt-4 space-y-1 rounded-lg bg-violet-50 px-3 py-2 text-xs text-violet-800">
+          {(props.data?.notes ?? []).map((note) => (
+            <div key={note}>{note}</div>
+          ))}
+        </div>
+      )}
+    </section>
   );
 }
 

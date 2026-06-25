@@ -5,18 +5,28 @@ import { getPublicJavaApiBaseUrl } from '@/lib/java-api-base'
 export type AnalyticsEventName =
   | 'page_view'
   | 'login_success'
+  | 'login_prompt_view'
+  | 'landing_cta_click'
+  | 'dashboard_view'
   | 'resume_create_start'
   | 'resume_create_success'
   | 'resume_create_failed'
+  | 'resume_save_success'
+  | 'resume_save_failed'
   | 'resume_import_start'
   | 'resume_import_success'
   | 'resume_import_failed'
   | 'ai_generate_start'
   | 'ai_generate_success'
   | 'ai_generate_failed'
+  | 'ai_result_apply'
   | 'template_select'
   | 'resume_preview'
+  | 'editor_open'
+  | 'editor_first_edit'
   | 'export_click'
+  | 'export_blocked_by_paywall'
+  | 'export_paywall_view'
   | 'export_success'
   | 'export_failed'
   | 'pay_page_view'
@@ -24,6 +34,8 @@ export type AnalyticsEventName =
   | 'pay_submit_click'
   | 'pay_order_create'
   | 'pay_invoke_wechat'
+  | 'paywall_cta_click'
+  | 'paywall_close'
   | 'pay_success'
   | 'pay_cancel'
   | 'pay_failed'
@@ -80,6 +92,13 @@ function isMiniProgramWebView(url: URL): boolean {
 
 function getPlatform(url: URL): 'web' | 'mini_program' {
   return isMiniProgramWebView(url) ? 'mini_program' : 'web'
+}
+
+function getClientType(url: URL): 'pc_web' | 'mobile_web' | 'mini_program_webview' {
+  if (isMiniProgramWebView(url)) return 'mini_program_webview'
+  if (url.pathname.startsWith('/m/')) return 'mobile_web'
+  if (/Android|iPhone|iPad|iPod|Mobile/i.test(window.navigator.userAgent || '')) return 'mobile_web'
+  return 'pc_web'
 }
 
 function stringProperty(properties: AnalyticsProperties, key: string): string {
@@ -193,6 +212,11 @@ export function track(eventName: AnalyticsEventName, properties: AnalyticsProper
   const anonymousId = getStorageValue(ANONYMOUS_ID_KEY, 'anon')
   const sessionId = getStorageValue(SESSION_ID_KEY, 'sess')
   const url = new URL(window.location.href)
+  const clientType = getClientType(url)
+  const enrichedProperties: AnalyticsProperties = {
+    clientType,
+    ...properties,
+  }
 
   const payload = {
     eventName,
@@ -203,8 +227,8 @@ export function track(eventName: AnalyticsEventName, properties: AnalyticsProper
     page: url.pathname,
     source: url.searchParams.get('source') || document.referrer || undefined,
     channel: url.searchParams.get('channel') || undefined,
-    entry: typeof properties.entry === 'string' ? properties.entry : undefined,
-    properties,
+    entry: typeof enrichedProperties.entry === 'string' ? enrichedProperties.entry : undefined,
+    properties: enrichedProperties,
   }
   const dedupeKey = `${eventName}:${JSON.stringify(payload.properties)}:${payload.page}`
   const now = Date.now()
