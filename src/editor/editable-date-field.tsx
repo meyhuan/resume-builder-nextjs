@@ -6,6 +6,7 @@ import { useAppStore } from '@/state/store'
 import type { ResumeBlock } from '@/entities/blocks/resume-block'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { hasMeaningfulText } from '@/lib/resume-placeholders'
 
 const MonthPicker = lazy(async () => {
   const module = await import('@/components/ui/monthpicker')
@@ -23,6 +24,7 @@ export interface EditableDateFieldProps {
   readonly className?: string
   readonly presentLabel?: string
   readonly showIcon?: boolean
+  readonly emptyMode?: 'placeholder' | 'hover' | 'hidden'
   readonly onOpenChange?: (isOpen: boolean) => void
 }
 
@@ -45,22 +47,25 @@ function formatDate(date: Date): string {
   return `${year}.${month}`
 }
 
-function formatDisplay(val: string | undefined, presentLabel: string): string {
-  if (!val) return '选择'
+function formatDisplay(val: string | undefined, presentLabel: string, emptyLabel = '选择'): string {
+  if (!val) return emptyLabel
   if (val === 'PRESENT') return presentLabel
   return val
 }
 
 export default function EditableDateField(props: EditableDateFieldProps): ReactElement {
-  const { blockId, fieldName, value, className, presentLabel = '至今', showIcon = false, onOpenChange } = props
+  const { blockId, fieldName, value, className, presentLabel = '至今', showIcon = false, emptyMode = 'placeholder', onOpenChange } = props
   const setResume = useAppStore((s) => s.setResume)
   const readOnly = useAppStore((s) => s.readOnly)
   const [open, setOpen] = useState(false)
 
   const selectedDate: Date | undefined = parseDate(value)
-  const displayText: string = formatDisplay(value, presentLabel)
+  const hasValue = hasMeaningfulText(value)
+  const emptyLabel = fieldName === 'startDate' ? '开始时间' : '结束时间'
+  const displayText: string = hasValue ? formatDisplay(value, presentLabel) : emptyLabel
 
   if (readOnly) {
+    if (!hasValue && emptyMode !== 'placeholder') return <></>
     return (
       <span className={cn('inline-flex items-center gap-1 px-1', className)}>
         {showIcon ? <CalendarIcon className="h-3 w-3" /> : null}
@@ -105,6 +110,8 @@ export default function EditableDateField(props: EditableDateFieldProps): ReactE
     setPopoverOpen(false)
   }
 
+  if (!hasValue && emptyMode === 'hidden') return <></>
+
   return (
     <Popover.Root
       open={open}
@@ -115,8 +122,14 @@ export default function EditableDateField(props: EditableDateFieldProps): ReactE
       <Popover.Trigger asChild>
         <button
           type="button"
+          title={emptyLabel}
           className={cn(
             'inline-flex items-center gap-1 px-1 rounded hover:bg-gray-100 hover:!text-slate-900 transition-colors',
+            !hasValue && emptyMode === 'hover'
+              ? open
+                ? 'inline-flex border border-dashed border-slate-300 text-slate-400 print:hidden'
+                : 'hidden border border-dashed border-slate-300 text-slate-400 group-hover/block:inline-flex group-hover/section:inline-flex group-hover/section-edit:inline-flex print:hidden'
+              : '',
             className
           )}
         >

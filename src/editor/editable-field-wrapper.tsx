@@ -5,6 +5,7 @@
 import { useState, useRef, useEffect, type ReactElement, type KeyboardEvent } from 'react'
 import { useAppStore } from '@/state/store'
 import type { ResumeBlock } from '@/entities/blocks/resume-block'
+import { hasMeaningfulText } from '@/lib/resume-placeholders'
 
 /**
  * Default placeholders derived from the `fieldName` of common resume block fields.
@@ -35,6 +36,7 @@ interface EditableFieldWrapperProps {
   readonly value: string | undefined
   readonly className?: string
   readonly placeholder?: string
+  readonly emptyMode?: 'placeholder' | 'hover' | 'hidden'
   readonly title?: string
   readonly onUpdate: (value: string) => void
   readonly onEditingChange?: (isEditing: boolean) => void
@@ -118,11 +120,15 @@ export default function EditableFieldWrapper(props: EditableFieldWrapperProps): 
   }
 
   const placeholder: string = resolveFieldPlaceholder(props.fieldName, props.placeholder)
+  const emptyMode = props.emptyMode ?? 'placeholder'
+  const hasValue = hasMeaningfulText(props.value)
+  const displayValue = hasValue ? props.value : ''
 
   if (readOnly) {
+    if (!hasValue && emptyMode !== 'placeholder') return <></>
     return (
       <span className={props.className} style={{ whiteSpace: 'pre-wrap' }}>
-        {props.value || ''}
+        {displayValue || ''}
       </span>
     )
   }
@@ -142,13 +148,27 @@ export default function EditableFieldWrapper(props: EditableFieldWrapperProps): 
     )
   }
 
+  if (!hasValue && emptyMode === 'hidden') return <></>
+
+  if (!hasValue && emptyMode === 'hover') {
+    return (
+      <span
+        onClick={startEditing}
+        className={`${props.className || ''} hidden cursor-text rounded border border-dashed border-slate-300 px-1 leading-tight text-slate-400 transition-colors hover:bg-gray-100 hover:!text-slate-900 group-hover/block:inline-flex group-hover/section:inline-flex group-hover/section-edit:inline-flex print:hidden`}
+        title={props.title || `点击编辑${placeholder}`}
+      >
+        {placeholder}
+      </span>
+    )
+  }
+
   return (
     <span
       onClick={startEditing}
       className={`${props.className || ''} cursor-text hover:bg-gray-100 hover:!text-slate-900 rounded px-1 leading-tight transition-colors border border-transparent`}
       title={props.title || `点击编辑${placeholder}`}
     >
-      {props.value || placeholder}
+      {displayValue || placeholder}
     </span>
   )
 }

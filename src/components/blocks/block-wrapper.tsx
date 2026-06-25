@@ -29,7 +29,7 @@ const HOVER_POLL_MS = 500;
 export default function BlockWrapper(props: BlockWrapperProps): ReactElement {
   const readOnly = useAppStore((s) => s.readOnly);
   if (readOnly) {
-    return <div className="relative rounded mb-4 last:mb-0 pb-1">{props.children}</div>;
+    return <div className="group/block relative rounded mb-4 last:mb-0 pb-1">{props.children}</div>;
   }
   return <EditableBlockHoverWrapper {...props} />;
 }
@@ -75,7 +75,7 @@ function EditableBlockHoverWrapper(props: BlockWrapperProps): ReactElement {
   return (
     <div
       ref={containerRef}
-      className="relative rounded mb-4 last:mb-0 pb-1"
+      className="group/block relative rounded mb-4 last:mb-0 pb-1"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >

@@ -22,7 +22,7 @@ export default function SectionContainer(props: SectionContainerProps): ReactEle
     'mb-1',
     'p-1',
     'rounded-lg',
-    'transition-all duration-200 group',
+    'transition-all duration-200 group group/section-edit',
     isHovered ? 'shadow-sm' : '',
   ].filter(Boolean).join(' ')
 

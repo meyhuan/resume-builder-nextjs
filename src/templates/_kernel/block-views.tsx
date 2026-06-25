@@ -9,6 +9,7 @@ import EditableDateField from '@/editor/editable-date-field'
 import EditableFieldWrapper from '@/editor/editable-field-wrapper'
 import { BlockRenderer } from '@/templates/components/v2'
 import type { BlockRendererStyles } from '@/templates/components/v2'
+import { hasMeaningfulText } from '@/lib/resume-placeholders'
 import type { BlockSpec } from './types'
 import { getBlockTypeLabel } from './shared'
 
@@ -93,6 +94,10 @@ function TimelineLeftDateRow(
   const dateWidth = blockSpec.dateWidth ?? 140
   const dotColor = blockSpec.dotColor ?? themeColor
   const axisColor = blockSpec.axisColor ?? `${themeColor}30`
+  const hasStartDate = 'startDate' in block && hasMeaningfulText(block.startDate)
+  const hasEndDate = 'endDate' in block && hasMeaningfulText(block.endDate)
+  const hasAnyDate = hasStartDate || hasEndDate
+  const [datePopoverOpen, setDatePopoverOpen] = useState(false)
 
   function updateBlockField(fieldName: string, value: string): void {
     setResume((draft) => {
@@ -113,10 +118,22 @@ function TimelineLeftDateRow(
     <div className="flex gap-0">
       <div className="shrink-0 pt-[2px] pr-5 text-right" style={{ width: dateWidth }}>
         {'startDate' in block && (
-          <div className="text-[0.95em] font-semibold text-gray-700 leading-snug whitespace-nowrap flex justify-end items-center gap-x-1">
-            <EditableDateField blockId={block.id} fieldName="startDate" value={block.startDate as string} />
-            <span>-</span>
-            <EditableDateField blockId={block.id} fieldName="endDate" value={block.endDate as string} />
+          <div className={`text-[0.95em] font-semibold text-gray-700 leading-snug whitespace-nowrap justify-end items-center gap-x-1 ${hasAnyDate || datePopoverOpen ? 'flex' : 'hidden group-hover/block:flex group-hover/section:flex group-hover/section-edit:flex print:hidden'}`}>
+            <EditableDateField
+              blockId={block.id}
+              fieldName="startDate"
+              value={block.startDate as string}
+              emptyMode={hasAnyDate ? 'hidden' : 'placeholder'}
+              onOpenChange={setDatePopoverOpen}
+            />
+            {hasAnyDate ? (hasStartDate && hasEndDate ? <span>-</span> : null) : <span>-</span>}
+            <EditableDateField
+              blockId={block.id}
+              fieldName="endDate"
+              value={block.endDate as string}
+              emptyMode={hasAnyDate ? 'hidden' : 'placeholder'}
+              onOpenChange={setDatePopoverOpen}
+            />
           </div>
         )}
         <div className="text-[0.85em] text-gray-500 mt-1 w-full text-right break-words leading-relaxed">
@@ -139,13 +156,14 @@ function TimelineLeftDateRow(
             />
           )}
           {block.type === 'education' && (
-            <>
+            <span className={`${hasMeaningfulText(block.major) || hasMeaningfulText(block.degree) ? '' : 'hidden group-hover/block:inline-flex group-hover/section:inline-flex group-hover/section-edit:inline-flex print:hidden'}`}>
               <EditableFieldWrapper
                 blockId={block.id}
                 fieldName="major"
                 value={block.major}
                 onUpdate={(val) => updateBlockField('major', val)}
                 placeholder="专业"
+                emptyMode={hasMeaningfulText(block.major) || hasMeaningfulText(block.degree) ? 'hidden' : 'placeholder'}
               />
               <span className="mx-1">/</span>
               <EditableFieldWrapper
@@ -154,8 +172,9 @@ function TimelineLeftDateRow(
                 value={block.degree}
                 onUpdate={(val) => updateBlockField('degree', val)}
                 placeholder="学历"
+                emptyMode={hasMeaningfulText(block.major) || hasMeaningfulText(block.degree) ? 'hidden' : 'placeholder'}
               />
-            </>
+            </span>
           )}
           {block.type === 'campus' && (
             <EditableFieldWrapper
