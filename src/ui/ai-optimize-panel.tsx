@@ -17,6 +17,7 @@ import { SECTION_IDENTITY_OPTIONS } from '@/lib/ai/section-types';
 import type { OptimizeResumeBlock } from '@/lib/ai/optimize-resume-prompt-builder';
 import { MIN_OPTIMIZE_CONTENT_LENGTH, MAX_OPTIMIZE_JD_LENGTH } from '@/lib/ai/optimize-resume-prompt-builder';
 import type { ResumeBlock } from '@/entities/blocks/resume-block';
+import { track } from '@/lib/analytics';
 
 type Phase = 'input' | 'loading' | 'preview' | 'done';
 
@@ -241,6 +242,14 @@ export default function AiOptimizePanel(): ReactElement {
       setPhase('input');
       return;
     }
+    track('ai_result_apply', {
+      entry: 'ai_optimize_panel',
+      aiAction: 'optimize_resume',
+      acceptedCount: toApply.length,
+      resultCount: Object.keys(resultMap).length,
+      identity,
+      hasJobDescription: jd.trim().length > 0,
+    });
     setResume((draft) => {
       for (const section of draft.sections) {
         for (const block of section.blocks) {
@@ -259,7 +268,7 @@ export default function AiOptimizePanel(): ReactElement {
       reset();
       setPhase('input');
     }, 3500);
-  }, [resultMap, acceptedIds, setResume, reset]);
+  }, [resultMap, acceptedIds, identity, jd, setResume, reset]);
 
   const handleDiscard = useCallback((): void => {
     reset();

@@ -10,6 +10,7 @@ import { X, Loader2, RefreshCw, AlertCircle } from 'lucide-react';
 import Image from 'next/image';
 import { setCookie } from 'cookies-next';
 import { LegalDialog } from '@/components/legal/LegalDialog';
+import { track } from '@/lib/analytics';
 
 type LegalTab = 'privacy' | 'terms';
 
@@ -174,6 +175,13 @@ export const WxLoginDialog: React.FC<WxLoginDialogProps> = ({ isOpen, onClose, o
           setUserInfo({
             id: String(javaUserId),
             name: `用户_${javaUserId}`,
+          });
+          track('login_success', {
+            entry: 'wx_login_dialog',
+            loginMethod: 'wechat_qrcode',
+            javaUserId: Number(javaUserId),
+            hasUnionid: Boolean(payload.unionid),
+            hasOpenid: Boolean(payload.openid),
           });
 
           stopPolling();

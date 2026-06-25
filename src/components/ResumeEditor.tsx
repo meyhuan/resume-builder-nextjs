@@ -181,6 +181,27 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
   // Initialize template state from URL query param or 'simple' default
   const defaultTemplate = searchParams.get('template') || 'simple'
   const [tpl, setTpl] = useState<string>(defaultTemplate)
+  const trackExportPaywallBlock = useCallback((details: {
+    exportType: 'pdf' | 'image' | 'markdown'
+    entry: string
+    stage: string
+    exportResumeId?: string | null
+    failureReason?: string
+    statusCode?: number
+  }): void => {
+    track('export_blocked_by_paywall', {
+      resumeId: details.exportResumeId ?? resumeId,
+      templateId: tpl,
+      exportType: details.exportType,
+      entry: details.entry,
+      stage: details.stage,
+      statusCode: details.statusCode,
+      failureReason: details.failureReason || 'quota_exceeded',
+      remainingQuota: quota.pdfExport.remaining,
+      quotaAllowed: quota.pdfExport.allowed,
+      isVip,
+    })
+  }, [isVip, quota.pdfExport.allowed, quota.pdfExport.remaining, resumeId, tpl])
   const [isSaving, setIsSaving] = useState(false)
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
   const [savedSnapshot, setSavedSnapshot] = useState<string>('')
@@ -198,6 +219,8 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
   const [isGenerating, setIsGenerating] = useState(false)
   const [isConfirmingExport, setIsConfirmingExport] = useState(false)
   const draftBackupRestored = useRef(false)
+  const editorOpenTracked = useRef(false)
+  const firstEditTracked = useRef(false)
 
   // Initialize from DB data if provided
   const initApplied = useRef(false)
@@ -320,6 +343,32 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
     return currentFingerprint !== savedSnapshot
   }, [currentFingerprint, savedSnapshot])
 
+  useEffect(() => {
+    if (!isHydrated || editorOpenTracked.current) return
+    const expectedInitialTemplate = initialData ? initialData.template || 'simple' : null
+    if (expectedInitialTemplate && tpl !== expectedInitialTemplate) return
+    editorOpenTracked.current = true
+    track('editor_open', {
+      resumeId,
+      templateId: tpl,
+      entry: initialData ? 'existing_resume' : 'new_resume',
+      source: searchParams.get('source') || undefined,
+      hasPersistedResume: Boolean(resumeId),
+    })
+  }, [initialData, isHydrated, resumeId, searchParams, tpl])
+
+  useEffect(() => {
+    if (!isHydrated || firstEditTracked.current || !hasUnsavedChanges) return
+    firstEditTracked.current = true
+    track('editor_first_edit', {
+      resumeId,
+      templateId: tpl,
+      entry: 'pc_editor',
+      source: searchParams.get('source') || undefined,
+      hasPersistedResume: Boolean(resumeId),
+    })
+  }, [hasUnsavedChanges, isHydrated, resumeId, searchParams, tpl])
+
   const backupEditorDraft = useCallback((reason: string): void => {
     if (typeof window === 'undefined') return
     try {
@@ -411,11 +460,11 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
    */
   const doSave = useCallback(async (): Promise<string | undefined> => {
     setIsSaving(true)
+    let currentId = resumeId
     let createStarted = false
     let createCompleted = false
     let createFailureTracked = false
     try {
-      let currentId = resumeId
       // 1. If no resumeId yet, create the resume first
       if (!currentId) {
         createStarted = true
@@ -498,6 +547,13 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
         body: JSON.stringify(savePayload),
       })
       if (!res.ok) throw new Error('Failed to save')
+      track('resume_save_success', {
+        resumeId: currentId,
+        templateId: tpl,
+        entry: createCompleted ? 'pc_editor_create' : 'pc_editor_update',
+        createdDuringSave: createCompleted,
+        onePageMode,
+      })
       setLastSaved(new Date())
       setSavedSnapshot(JSON.stringify({ resume, theme, tpl, onePageMode, onePageSnapshot, sidebarSectionIds }))
       clearEditorDraftBackup()
@@ -514,6 +570,13 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
           failureReason: e instanceof Error ? e.message : String(e),
         })
       }
+      track('resume_save_failed', {
+        resumeId: currentId,
+        templateId: tpl,
+        entry: createStarted && !createCompleted ? 'pc_editor_create' : 'pc_editor_update',
+        createdDuringSave: createCompleted,
+        failureReason: e instanceof Error ? e.message : String(e),
+      })
       toast.error('保存失败，请重试')
       return undefined
     } finally {
@@ -614,7 +677,14 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
   })
 
   const handleExportMarkdown = useCallback(() => {
-    if (!requirePdf()) return
+    if (!requirePdf()) {
+      trackExportPaywallBlock({
+        exportType: 'markdown',
+        entry: 'pc_editor_toolbar',
+        stage: 'preflight_quota_check',
+      })
+      return
+    }
     requireAuth(() => {
       try {
         const markdownContent = exportResumeToMarkdown(resume)
@@ -631,10 +701,17 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
         toast.error('Markdown导出失败，请重试')
       }
     })
-  }, [resume, requireAuth, requirePdf])
+  }, [resume, requireAuth, requirePdf, trackExportPaywallBlock])
 
   async function handleExportPng(): Promise<void> {
-    if (!requirePdf()) return
+    if (!requirePdf()) {
+      trackExportPaywallBlock({
+        exportType: 'image',
+        entry: 'pc_editor_toolbar',
+        stage: 'preflight_quota_check',
+      })
+      return
+    }
     track('export_click', {
       resumeId,
       templateId: tpl,
@@ -778,6 +855,13 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
           failureReason: errorData.error || (errorData.quotaExceeded ? 'quota_exceeded' : 'export_http_error'),
         })
         if (errorData.quotaExceeded) {
+          trackExportPaywallBlock({
+            exportType: 'pdf',
+            entry: 'pc_export_preview',
+            stage: 'create_export_record',
+            exportResumeId,
+            statusCode: exportRes.status,
+          })
           setShowUpgrade(true, 'pdf-export')
         } else {
           toast.error(errorData.error || '导出次数已用完，开通会员可继续导出 PDF')
@@ -1068,7 +1152,14 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
         onOpenChange={(next: boolean) => { if (!next) handleClosePreview() }}
         pdfUrl={pdfBlobUrl}
         onConfirmExport={handleConfirmExport}
-        onUpgradeClick={() => setShowUpgrade(true, 'pdf-export')}
+        onUpgradeClick={() => {
+          trackExportPaywallBlock({
+            exportType: 'pdf',
+            entry: 'pc_export_preview',
+            stage: 'preview_quota_depleted',
+          })
+          setShowUpgrade(true, 'pdf-export')
+        }}
         remainingQuota={quota.pdfExport.remaining}
         isVip={isVip}
         isConfirming={isConfirmingExport}

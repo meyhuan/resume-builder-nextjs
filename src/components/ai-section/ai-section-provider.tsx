@@ -8,6 +8,7 @@ import type { SectionIdentity, SectionModuleType } from '@/lib/ai/section-types'
 import { useAppStore } from '@/state/store';
 import type { ResumeBlock } from '@/entities/blocks/resume-block';
 import { extractBlockPrefill } from '@/components/ai-section/block-module-utils';
+import { track } from '@/lib/analytics';
 
 // ---------------------------------------------------------------------------
 // Context types
@@ -90,6 +91,13 @@ export default function AiSectionProvider(props: AiSectionProviderProps): ReactE
 
   const handlePolishInsert = useCallback(
     (html: string): void => {
+      track('ai_result_apply', {
+        entry: 'ai_section_polish',
+        aiAction: 'polish',
+        blockId: polishBlockId,
+        moduleType: polishModule,
+        resultLength: html.length,
+      });
       setResume((draft) => {
         for (const section of draft.sections) {
           for (let i = 0; i < section.blocks.length; i++) {
@@ -108,11 +116,18 @@ export default function AiSectionProvider(props: AiSectionProviderProps): ReactE
         }
       });
     },
-    [polishBlockId, setResume],
+    [polishBlockId, polishModule, setResume],
   );
 
   const handleGenerateInsert = useCallback(
     (html: string): void => {
+      track('ai_result_apply', {
+        entry: 'ai_section_generate',
+        aiAction: 'generate',
+        blockId: generateBlockId,
+        moduleType: generateModule,
+        resultLength: html.length,
+      });
       setResume((draft) => {
         for (const section of draft.sections) {
           for (let i = 0; i < section.blocks.length; i++) {
@@ -131,7 +146,7 @@ export default function AiSectionProvider(props: AiSectionProviderProps): ReactE
         }
       });
     },
-    [generateBlockId, setResume],
+    [generateBlockId, generateModule, setResume],
   );
 
   const contextValue: AiSectionContextValue = { openPolish, openGenerate };
