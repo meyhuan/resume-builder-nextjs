@@ -17,6 +17,13 @@ import { buildImportSystemPrompt, buildImportUserPrompt } from '@/lib/ai/import-
 import { createDefaultResume } from '@/lib/default-resume'
 import { buildImportResumeTitle } from '@/lib/import-resume-title'
 import { normalizeResumeContent } from '@/entities/resume/normalize-resume-content'
+import {
+  assertCanCreateResumeForUserId,
+  isResumeLimitExceededError,
+  MAX_RESUME_COUNT,
+  RESUME_LIMIT_EXCEEDED_CODE,
+  RESUME_LIMIT_EXCEEDED_MESSAGE,
+} from '@/lib/resume-limits'
 
 /**
  * POST /next-api/resumes/mini
@@ -48,6 +55,26 @@ interface RequestBody {
   template?: string
   fileName?: string
   fileBase64?: string
+}
+
+async function getResumeLimitResponse(userId: string): Promise<NextResponse | null> {
+  try {
+    await assertCanCreateResumeForUserId(userId)
+    return null
+  } catch (error) {
+    if (isResumeLimitExceededError(error)) {
+      return NextResponse.json(
+        {
+          error: RESUME_LIMIT_EXCEEDED_MESSAGE,
+          code: RESUME_LIMIT_EXCEEDED_CODE,
+          limit: MAX_RESUME_COUNT,
+          count: error.count,
+        },
+        { status: 409 },
+      )
+    }
+    throw error
+  }
 }
 
 export async function POST(req: Request): Promise<NextResponse> {
@@ -90,6 +117,9 @@ export async function POST(req: Request): Promise<NextResponse> {
   }
 
   if (action === 'create') {
+    const limitResponse = await getResumeLimitResponse(user.id)
+    if (limitResponse) return limitResponse
+
     const title: string = body.title || '新简历'
     const template: string = body.template || 'simple'
     const resume = await prisma.resume.create({
@@ -111,6 +141,10 @@ export async function POST(req: Request): Promise<NextResponse> {
       where: { id: resumeId, userId: user.id },
     })
     if (!source) return NextResponse.json({ error: 'Resume not found' }, { status: 404 })
+
+    const limitResponse = await getResumeLimitResponse(user.id)
+    if (limitResponse) return limitResponse
+
     const copy = await prisma.resume.create({
       data: {
         userId: user.id,
@@ -158,6 +192,9 @@ export async function POST(req: Request): Promise<NextResponse> {
     if (!ALLOWED.has(ext)) {
       return NextResponse.json({ error: '不支持的文件格式' }, { status: 400 })
     }
+
+    const limitResponse = await getResumeLimitResponse(user.id)
+    if (limitResponse) return limitResponse
 
     let extractedText: string
     if (ext === 'txt') {

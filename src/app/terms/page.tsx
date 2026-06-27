@@ -67,7 +67,7 @@ export default function TermsPage(): React.ReactElement {
                   <li>AI简历生成（每日限额）</li>
                   <li>基础模板使用</li>
                   <li>导出PDF（带水印）</li>
-                  <li>数据存储（最多3份简历）</li>
+                  <li>数据存储（最多50份简历）</li>
                 </ul>
               </div>
             </section>

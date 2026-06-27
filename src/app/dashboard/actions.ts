@@ -6,11 +6,14 @@ import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 import type { ResumeData } from '@/entities/resume/resume-data';
 import { normalizeResumeContent } from '@/entities/resume/normalize-resume-content';
+import { assertCanCreateResumeForWxId } from '@/lib/resume-limits';
 
 export async function createResume() {
   const cookieStore = await cookies();
   const userId = cookieStore.get("auth_uid")?.value;
   if (!userId) throw new Error("Unauthorized");
+
+  await assertCanCreateResumeForWxId(userId);
   
   const resume = await prisma.resume.create({
     data: {
@@ -52,6 +55,8 @@ export async function duplicateResume(id: string) {
   });
   
   if (!existingResume) throw new Error("Resume not found");
+
+  await assertCanCreateResumeForWxId(userId);
   
   const newResume = await prisma.resume.create({
     data: {

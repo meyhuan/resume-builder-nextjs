@@ -4,6 +4,13 @@ import { prisma } from '@/lib/prisma'
 import { verifyMiniSign } from '@/lib/verify-mini-sign'
 import type { ResumeData } from '@/entities/resume/resume-data'
 import { normalizeResumeContent } from '@/entities/resume/normalize-resume-content'
+import {
+  assertCanCreateResumeForUserId,
+  isResumeLimitExceededError,
+  MAX_RESUME_COUNT,
+  RESUME_LIMIT_EXCEEDED_CODE,
+  RESUME_LIMIT_EXCEEDED_MESSAGE,
+} from '@/lib/resume-limits'
 
 interface ImportJavaBody {
   readonly wxId: unknown
@@ -66,6 +73,23 @@ export async function POST(req: Request): Promise<NextResponse> {
 
   if (existing) {
     return NextResponse.json({ created: false, reason: 'already_exists' })
+  }
+
+  try {
+    await assertCanCreateResumeForUserId(user.id)
+  } catch (error) {
+    if (isResumeLimitExceededError(error)) {
+      return NextResponse.json(
+        {
+          error: RESUME_LIMIT_EXCEEDED_MESSAGE,
+          code: RESUME_LIMIT_EXCEEDED_CODE,
+          limit: MAX_RESUME_COUNT,
+          count: error.count,
+        },
+        { status: 409 },
+      )
+    }
+    throw error
   }
 
   const normalizedContent = normalizeResumeContent(

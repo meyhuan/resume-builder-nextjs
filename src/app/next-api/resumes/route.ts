@@ -7,6 +7,13 @@ import { toExternalResume } from '@/features/migration/java-resume-converter'
 import { mapExternalResume } from '@/io/external-resume-importer'
 import type { ResumeData } from '@/entities/resume/resume-data'
 import { normalizeResumeContent } from '@/entities/resume/normalize-resume-content'
+import {
+  assertCanCreateResumeForWxId,
+  isResumeLimitExceededError,
+  MAX_RESUME_COUNT,
+  RESUME_LIMIT_EXCEEDED_CODE,
+  RESUME_LIMIT_EXCEEDED_MESSAGE,
+} from '@/lib/resume-limits'
 
 /**
  * Detect and convert Java/ExternalResume format to ResumeData if needed.
@@ -57,11 +64,6 @@ export async function POST(req: Request) {
   try {
     const body = await req.json()
     const { title, content, template } = body
-    const normalizedContent: ResumeData = normalizeContent(content)
-    const persistedAssets = await persistResumeAssets({
-      content: normalizedContent as unknown as Record<string, unknown>,
-      thumbnail: null,
-    })
     
     const cookieStore = await cookies();
     const wxId = cookieStore.get("auth_uid")?.value;
@@ -69,6 +71,14 @@ export async function POST(req: Request) {
     if (!wxId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    await assertCanCreateResumeForWxId(wxId)
+
+    const normalizedContent: ResumeData = normalizeContent(content)
+    const persistedAssets = await persistResumeAssets({
+      content: normalizedContent as unknown as Record<string, unknown>,
+      thumbnail: null,
+    })
 
     // Creating resume
     const resume = await prisma.resume.create({
@@ -87,6 +97,17 @@ export async function POST(req: Request) {
     
     return NextResponse.json(resume)
   } catch (error) {
+    if (isResumeLimitExceededError(error)) {
+      return NextResponse.json(
+        {
+          error: RESUME_LIMIT_EXCEEDED_MESSAGE,
+          code: RESUME_LIMIT_EXCEEDED_CODE,
+          limit: MAX_RESUME_COUNT,
+          count: error.count,
+        },
+        { status: 409 },
+      )
+    }
     console.error(error)
     return NextResponse.json({ error: 'Failed to create resume' }, { status: 500 })
   }

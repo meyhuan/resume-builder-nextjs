@@ -5,6 +5,13 @@ import { cookies } from 'next/headers';
 import { getServerJavaApiBaseUrl } from '@/lib/java-api-base';
 import type { ResumeData } from '@/entities/resume/resume-data';
 import { normalizeResumeContent } from '@/entities/resume/normalize-resume-content';
+import {
+  assertCanCreateResumeForUserId,
+  isResumeLimitExceededError,
+  MAX_RESUME_COUNT,
+  RESUME_LIMIT_EXCEEDED_CODE,
+  RESUME_LIMIT_EXCEEDED_MESSAGE,
+} from '@/lib/resume-limits';
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '';
 
@@ -176,6 +183,23 @@ export async function POST(req: Request): Promise<NextResponse> {
 
   if (!sourceResume) {
     return NextResponse.json({ error: 'Source resume not found or does not belong to the selected source user' }, { status: 404 });
+  }
+
+  try {
+    await assertCanCreateResumeForUserId(targetUser.id);
+  } catch (error) {
+    if (isResumeLimitExceededError(error)) {
+      return NextResponse.json(
+        {
+          error: RESUME_LIMIT_EXCEEDED_MESSAGE,
+          code: RESUME_LIMIT_EXCEEDED_CODE,
+          limit: MAX_RESUME_COUNT,
+          count: error.count,
+        },
+        { status: 409 },
+      );
+    }
+    throw error;
   }
 
   const copied = await prisma.resume.create({
