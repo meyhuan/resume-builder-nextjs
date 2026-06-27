@@ -15,6 +15,25 @@ export interface RenderResult {
   readonly buffer: Buffer
   /** Per-page PNG screenshots (PDF only, empty for image exports). */
   readonly pageScreenshots: readonly Buffer[]
+  readonly diagnostics: RenderDiagnostics
+}
+
+export interface RenderDiagnostics {
+  readonly traceId?: string
+  readonly renderDurationMs: number
+  readonly printableContent?: PrintableContentSnapshot
+  readonly pdfBytes?: number
+  readonly previewPageCount?: number
+}
+
+export interface PrintableContentSnapshot {
+  readonly hasRoot: boolean
+  readonly hasLoading: boolean
+  readonly hasContainer: boolean
+  readonly width: number
+  readonly height: number
+  readonly textLength: number
+  readonly mediaCount: number
 }
 
 export interface RenderViaPrintPageOpts {
@@ -24,10 +43,30 @@ export interface RenderViaPrintPageOpts {
   readonly type: 'pdf' | 'image'
   /** Print token TTL in ms. Defaults to 5 minutes. */
   readonly tokenTtlMs?: number
+  readonly traceId?: string
 }
 
 const PRINT_PAGE_NAVIGATION_TIMEOUT_MS = 45_000
 const PRINT_PAGE_ASSET_READY_TIMEOUT_MS = 8_000
+const PRINT_PAGE_CONTENT_READY_TIMEOUT_MS = 20_000
+
+export type ExportRenderErrorCode = 'PRINT_NOT_READY' | 'RASTERIZE_FAILED'
+
+export class ExportRenderError extends Error {
+  readonly code: ExportRenderErrorCode
+  readonly details: Record<string, unknown>
+
+  constructor(code: ExportRenderErrorCode, message: string, details: Record<string, unknown> = {}) {
+    super(message)
+    this.name = 'ExportRenderError'
+    this.code = code
+    this.details = details
+  }
+}
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error)
+}
 
 async function waitForDocumentAssets(page: Page): Promise<void> {
   await page.evaluate(async (timeoutMs: number) => {
@@ -46,6 +85,57 @@ async function waitForDocumentAssets(page: Page): Promise<void> {
   }, PRINT_PAGE_ASSET_READY_TIMEOUT_MS)
 }
 
+async function readPrintableContentSnapshot(page: Page): Promise<PrintableContentSnapshot> {
+  return page.evaluate(() => {
+    const root = document.querySelector('#print-root')
+    const loading = root?.querySelector('[data-print-loading="1"]')
+    const container = root?.querySelector('.resume-container') as HTMLElement | null
+    const rect = container?.getBoundingClientRect()
+    return {
+      hasRoot: Boolean(root),
+      hasLoading: Boolean(loading),
+      hasContainer: Boolean(container),
+      width: rect?.width ?? 0,
+      height: rect?.height ?? 0,
+      textLength: container?.textContent?.trim().length ?? 0,
+      mediaCount: container?.querySelectorAll('img, svg, canvas').length ?? 0,
+    }
+  })
+}
+
+async function waitForPrintableContent(page: Page, traceId?: string): Promise<PrintableContentSnapshot> {
+  try {
+    await page.waitForFunction(() => {
+      const root = document.querySelector('#print-root')
+      const loading = root?.querySelector('[data-print-loading="1"]')
+      const container = root?.querySelector('.resume-container') as HTMLElement | null
+      if (!root || loading || !container) return false
+
+      const rect = container.getBoundingClientRect()
+      const hasSize = rect.width > 0 && rect.height > 20
+      const hasVisibleContent =
+        Boolean(container.textContent?.trim()) ||
+        container.querySelector('img, svg, canvas') !== null
+
+      return hasSize && hasVisibleContent
+    }, { timeout: PRINT_PAGE_CONTENT_READY_TIMEOUT_MS })
+    return await readPrintableContentSnapshot(page)
+  } catch (error) {
+    let snapshot: PrintableContentSnapshot | undefined
+    try {
+      snapshot = await readPrintableContentSnapshot(page)
+    } catch {
+      snapshot = undefined
+    }
+    throw new ExportRenderError('PRINT_NOT_READY', 'Print page did not become printable', {
+      traceId,
+      timeoutMs: PRINT_PAGE_CONTENT_READY_TIMEOUT_MS,
+      snapshot,
+      causeMessage: errorMessage(error),
+    })
+  }
+}
+
 /**
  * Derive the internal base URL from either env vars or the incoming request.
  */
@@ -59,6 +149,7 @@ export function getInternalBaseUrl(req: Request): string {
 }
 
 export async function renderViaPrintPage(opts: RenderViaPrintPageOpts): Promise<RenderResult> {
+  const startedAt = Date.now()
   const isLocal: boolean = process.env.NODE_ENV === 'development'
   const executablePath: string = isLocal
     ? 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
@@ -69,9 +160,10 @@ export async function renderViaPrintPage(opts: RenderViaPrintPageOpts): Promise<
   if (opts.templateId) params.set('tpl', opts.templateId)
   const printUrl: string = `${opts.baseUrl}/print/${encodeURIComponent(opts.resumeId)}?${params.toString()}`
 
-  console.log('[render-via-print-page] puppeteer goto', { printUrl, type: opts.type })
+  console.log('[render-via-print-page] puppeteer goto', { traceId: opts.traceId, printUrl, type: opts.type })
 
   let browser
+  let printableContent: PrintableContentSnapshot | undefined
   try {
     browser = await puppeteerCore.launch({
       args: isLocal ? [] : chromium.args,
@@ -87,32 +179,58 @@ export async function renderViaPrintPage(opts: RenderViaPrintPageOpts): Promise<
 
     // Wait for the client renderer to flag readiness, but tolerate timeouts.
     await page.waitForSelector('[data-print-ready="1"]', { timeout: 15_000 }).catch(() => {
-      console.warn('[render-via-print-page] print-ready timed out, continuing')
+      console.warn('[render-via-print-page] print-ready timed out, continuing', { traceId: opts.traceId })
     })
+    printableContent = await waitForPrintableContent(page, opts.traceId)
+    await waitForDocumentAssets(page)
 
     if (opts.type !== 'pdf') {
       const target = await page.$('#print-root')
       if (!target) throw new Error('print-root selector missing')
       const png = await target.screenshot({ type: 'png', omitBackground: false })
-      console.log('[render-via-print-page] image bytes', { size: png.length })
-      return { buffer: Buffer.from(png), pageScreenshots: [] }
+      console.log('[render-via-print-page] image bytes', { traceId: opts.traceId, size: png.length })
+      return {
+        buffer: Buffer.from(png),
+        pageScreenshots: [],
+        diagnostics: {
+          traceId: opts.traceId,
+          renderDurationMs: Date.now() - startedAt,
+          printableContent,
+        },
+      }
     }
 
     // Generate the PDF
     const pdfBuffer = Buffer.from(
       await page.pdf({ printBackground: true, displayHeaderFooter: false, preferCSSPageSize: true })
     )
-    console.log('[render-via-print-page] pdf bytes', { size: pdfBuffer.length })
+    console.log('[render-via-print-page] pdf bytes', { traceId: opts.traceId, size: pdfBuffer.length })
 
     // Rasterize PDF pages into PNG previews using the browser's Canvas API
     let pageScreenshots: Buffer[] = []
     try {
       pageScreenshots = await rasterizePdfToPngs(page, pdfBuffer)
     } catch (err) {
-      console.error('[render-via-print-page] pdf rasterization failed:', err)
+      console.error('[render-via-print-page] pdf rasterization failed:', { traceId: opts.traceId, error: err })
+      throw new ExportRenderError('RASTERIZE_FAILED', 'PDF rasterization failed', {
+        traceId: opts.traceId,
+        pdfBytes: pdfBuffer.length,
+        renderDurationMs: Date.now() - startedAt,
+        causeMessage: errorMessage(err),
+      })
     }
 
-    return { buffer: pdfBuffer, pageScreenshots }
+    return {
+      buffer: pdfBuffer,
+      pageScreenshots,
+      diagnostics: {
+        traceId: opts.traceId,
+        renderDurationMs: Date.now() - startedAt,
+        printableContent,
+        pdfBytes: pdfBuffer.length,
+        previewPageCount: pageScreenshots.length,
+      },
+    }
   } finally {
     if (browser) await browser.close()
   }
