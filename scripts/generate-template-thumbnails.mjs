@@ -54,7 +54,7 @@ async function generateThumbnail(browser, id) {
   try {
     const avatar = resolveAvatarForTemplate(id)
     const url = `${baseUrl}/dev/scenario-loader?tpl=${encodeURIComponent(id)}&scenario=${encodeURIComponent(scenario)}${avatar ? `&avatar=${encodeURIComponent(avatar)}` : ''}`
-    await page.goto(url, { waitUntil: 'networkidle0', timeout: 60000 })
+    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 })
     if (scenario === 'cover') {
       await page.waitForFunction(() => {
         const preview = document.querySelector('[data-scenario-preview="true"]')
@@ -67,9 +67,11 @@ async function generateThumbnail(browser, id) {
         return avatarImage?.getAttribute('src') === expectedAvatar
       }, { timeout: 15000 }, avatar)
     }
+    const element = await page.waitForSelector('[data-scenario-preview="true"]', { timeout: 30000 })
     await page.evaluate(async () => {
       if (document.fonts) await document.fonts.ready
-      await Promise.all(Array.from(document.images).map((img) => {
+      const preview = document.querySelector('[data-scenario-preview="true"]')
+      await Promise.all(Array.from(preview?.querySelectorAll('img') || []).map((img) => {
         if (img.complete) return Promise.resolve()
         return new Promise((resolve) => {
           img.addEventListener('load', resolve, { once: true })
@@ -77,7 +79,6 @@ async function generateThumbnail(browser, id) {
         })
       }))
     })
-    const element = await page.waitForSelector('[data-scenario-preview="true"]', { timeout: 30000 })
     const png = await element.screenshot({ type: 'png' })
     const outputPath = path.join(outputDir, `template_${id}.webp`)
     const normalized = await normalizeToThumbnailRatio(png, width, height)

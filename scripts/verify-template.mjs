@@ -890,12 +890,21 @@ async function checkGeneralVisualLayout(page, options) {
 async function checkThemeControls(browser, baseUrl, id, registry, artifactDir) {
   const baseMetrics = await readThemeMetrics(browser, labUrl(baseUrl, id, 'full', 'base', 'pc'))
   const relaxedMetrics = await readThemeMetrics(browser, labUrl(baseUrl, id, 'full', 'relaxed', 'pc'))
+  const compactMetrics = await readThemeMetrics(browser, labUrl(baseUrl, id, 'full', 'compact', 'pc'))
+  const zeroXMetrics = await readThemeMetrics(browser, labUrl(baseUrl, id, 'full', 'zero-x', 'pc'))
 
-  if (!baseMetrics || !relaxedMetrics) {
+  if (!baseMetrics || !relaxedMetrics || !compactMetrics || !zeroXMetrics) {
     fail(`Theme settings (${id})`, 'Unable to read theme metrics from template lab.')
     return
   }
 
+  const jobGapChanges = baseMetrics.jobToFirstSectionGap === null
+    ? true
+    : relaxedMetrics.jobToFirstSectionGap > compactMetrics.jobToFirstSectionGap + 1
+  const jobGapMatchesSectionGap = baseMetrics.jobToFirstSectionGap === null || baseMetrics.firstSectionGap === null
+    ? true
+    : Math.abs(baseMetrics.jobToFirstSectionGap - baseMetrics.firstSectionGap) <= 2
+  const zeroXIsSmall = zeroXMetrics.pageProbePaddingLeft <= 12
   const changed = [
     relaxedMetrics.fontSize > baseMetrics.fontSize,
     relaxedMetrics.lineHeight > baseMetrics.lineHeight,
@@ -904,12 +913,15 @@ async function checkThemeControls(browser, baseUrl, id, registry, artifactDir) {
     relaxedMetrics.paddingLeft > baseMetrics.paddingLeft,
     relaxedMetrics.headingFontSize > baseMetrics.headingFontSize,
     relaxedMetrics.paragraphIndent > baseMetrics.paragraphIndent,
+    jobGapChanges,
+    jobGapMatchesSectionGap,
+    zeroXIsSmall,
   ]
 
   if (changed.every(Boolean)) {
-    pass(`Theme settings (${id})`, 'Font size, container/body line height, padding, title scale, and paragraph indent respond to theme changes.')
+    pass(`Theme settings (${id})`, 'Font size, container/body line height, padding, title scale, paragraph indent, module spacing, job-to-section gap, and zero horizontal padding respond to theme changes.')
   } else {
-    fail(`Theme settings (${id})`, `Theme metrics did not all change as expected: ${JSON.stringify({ baseMetrics, relaxedMetrics })}`)
+    fail(`Theme settings (${id})`, `Theme metrics did not all change as expected: ${JSON.stringify({ baseMetrics, compactMetrics, relaxedMetrics, zeroXMetrics })}`)
   }
 
   const colorMetrics = await readThemeMetrics(browser, labUrl(baseUrl, id, 'full', 'color', 'pc'), path.join(artifactDir, 'local-color.png'))
@@ -929,6 +941,14 @@ async function checkThemeControls(browser, baseUrl, id, registry, artifactDir) {
     pass(`Primary color (${id})`, 'Configurable template rendered the lab primary color.')
   } else {
     fail(`Primary color (${id})`, 'Configurable template did not expose the lab primary color in text, border, or background styles.')
+  }
+
+  if (baseMetrics.baseInfoFieldColors.length === 0 || colorMetrics.baseInfoFieldColors.length === 0) {
+    fail(`Base info field color (${id})`, 'Unable to find marked base-info field text colors.')
+  } else if (JSON.stringify(colorMetrics.baseInfoFieldColors) === JSON.stringify(baseMetrics.baseInfoFieldColors)) {
+    pass(`Base info field color (${id})`, 'Base-info field text colors stay stable when primary color changes.')
+  } else {
+    fail(`Base info field color (${id})`, `Base-info field text colors changed with primary color: ${JSON.stringify({ base: baseMetrics.baseInfoFieldColors, color: colorMetrics.baseInfoFieldColors })}`)
   }
 }
 
@@ -1789,8 +1809,45 @@ async function readThemeMetrics(browser, url, screenshot) {
         ...Array.from(container.children),
         ...Array.from(root.querySelectorAll('[data-template-padding-probe="true"]')),
       ]
+      const pageProbe = root.querySelector('[data-template-padding-probe="true"]') || container
       const paddingTop = Math.max(...paddingTargets.map((node) => parseFloat(getComputedStyle(node).paddingTop) || 0))
       const paddingLeft = Math.max(...paddingTargets.map((node) => parseFloat(getComputedStyle(node).paddingLeft) || 0))
+      const pageProbePaddingLeft = parseFloat(getComputedStyle(pageProbe).paddingLeft) || 0
+      const job = root.querySelector('[data-template-job-intention-trigger="true"]')
+      const visibleSections = Array.from(root.querySelectorAll('[data-template-section="true"]'))
+        .filter((node) => {
+          const rect = node.getBoundingClientRect()
+          const style = getComputedStyle(node)
+          return rect.width > 1 && rect.height > 1 && style.display !== 'none' && style.visibility !== 'hidden'
+        })
+      const firstSectionAfterJob = job
+        ? visibleSections.find((node) => Boolean(job.compareDocumentPosition(node) & Node.DOCUMENT_POSITION_FOLLOWING))
+        : null
+      const jobToFirstSectionGap = job && firstSectionAfterJob
+        ? Math.max(0, firstSectionAfterJob.getBoundingClientRect().top - job.getBoundingClientRect().bottom)
+        : null
+      const sectionGapPair = visibleSections.find((node, index) => {
+        const next = visibleSections[index + 1]
+        if (!next) return false
+        return next.getBoundingClientRect().top > node.getBoundingClientRect().bottom
+      })
+      const sectionGapPairIndex = sectionGapPair ? visibleSections.indexOf(sectionGapPair) : -1
+      const firstSectionGap = sectionGapPairIndex >= 0
+        ? Math.max(0, visibleSections[sectionGapPairIndex + 1].getBoundingClientRect().top - visibleSections[sectionGapPairIndex].getBoundingClientRect().bottom)
+        : null
+      const baseInfoFieldColors = Array.from(new Set(
+        Array.from(root.querySelectorAll('[data-template-base-info-field="true"], [data-template-base-info-field="true"] *'))
+          .filter((node) => {
+            if (node.closest('button, svg, [aria-hidden="true"]')) return false
+            const text = (node.textContent || '').replace(/\s+/g, ' ').trim()
+            if (!text) return false
+            const rect = node.getBoundingClientRect()
+            if (rect.width <= 1 || rect.height <= 1) return false
+            const style = getComputedStyle(node)
+            return style.display !== 'none' && style.visibility !== 'hidden' && Number(style.opacity) !== 0
+          })
+          .map((node) => getComputedStyle(node).color)
+      )).sort()
       const labPrimary = 'rgb(219, 39, 119)'
       const hasLabPrimaryColor = Array.from(root.querySelectorAll('*')).some((node) => {
         const style = getComputedStyle(node)
@@ -1802,6 +1859,10 @@ async function readThemeMetrics(browser, url, screenshot) {
         bodyTextLineHeight: parseFloat(bodyTextStyle.lineHeight),
         paddingTop,
         paddingLeft,
+        pageProbePaddingLeft,
+        jobToFirstSectionGap,
+        firstSectionGap,
+        baseInfoFieldColors,
         headingFontSize: headingStyle ? parseFloat(headingStyle.fontSize) : 0,
         paragraphIndent: paragraphStyle ? parseFloat(paragraphStyle.textIndent) : 0,
         hasLabPrimaryColor,

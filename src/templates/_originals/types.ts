@@ -8,11 +8,21 @@ export type VariantId =
   | 'yuanshan'
   | 'hengjian'
   | 'yiyetong'
+  | 'lanfa'
+  | 'lanying'
+  | 'qiance'
+  | 'heijiao'
+  | 'shanglan'
+  | 'jinhang'
+  | 'jijian'
+  | 'lanzix'
 
 export interface OriginalTemplateProps {
   readonly resume: ResumeData
   readonly theme: ThemeTokens
   readonly variant: VariantId
+  readonly sidebarSectionIds?: readonly string[]
+  readonly onSidebarSectionIdsChange?: (ids: readonly string[]) => void
 }
 
 export interface VariantConfig {
@@ -22,7 +32,7 @@ export interface VariantConfig {
   readonly ink: string
   readonly muted: string
   readonly bleed: boolean
-  readonly layout?: 'single' | 'campus' | 'dark-sidebar' | 'soft-sidebar' | 'portfolio' | 'education-timeline' | 'tech-minimal' | 'stack-projects' | 'official-brief'
+  readonly layout?: 'single' | 'campus' | 'dark-sidebar' | 'soft-sidebar' | 'portfolio' | 'education-timeline' | 'tech-minimal' | 'stack-projects' | 'official-brief' | 'marketing-banner' | 'planner-profile' | 'fresh-sidebar' | 'purple-corner' | 'legal-blue' | 'teacher-black' | 'bank-gold' | 'minimal-black'
   readonly density?: 'normal' | 'compact' | 'ultra'
   readonly sectionStyle?: 'line' | 'pill' | 'numbered' | 'formal' | 'minimal'
   readonly metrics?: 'growth' | 'executive' | 'campus' | 'media' | 'none'

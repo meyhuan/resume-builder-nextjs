@@ -2,7 +2,7 @@ import type { ResumeData } from '@/entities/resume/resume-data'
 import type { ThemeTokens } from '@/entities/theme/theme-tokens'
 
 export type TemplateFixtureId = 'full' | 'sparse' | 'long' | 'rich'
-export type TemplateLabThemeId = 'base' | 'color' | 'compact' | 'relaxed' | 'one-page'
+export type TemplateLabThemeId = 'base' | 'color' | 'compact' | 'relaxed' | 'one-page' | 'zero-x'
 
 export const TEMPLATE_FIXTURE_IDS: readonly TemplateFixtureId[] = ['full', 'sparse', 'long', 'rich']
 
@@ -63,6 +63,12 @@ export function getTemplateLabTheme(id: string | null | undefined): ThemeTokens 
       onePageFit: true,
     }
   }
+  if (themeId === 'zero-x') {
+    return {
+      ...TEMPLATE_LAB_BASE_THEME,
+      pagePaddingHorizontal: 0,
+    }
+  }
   return TEMPLATE_LAB_BASE_THEME
 }
 
@@ -71,7 +77,7 @@ export function normalizeFixtureId(id: string | null | undefined): TemplateFixtu
 }
 
 export function normalizeThemeId(id: string | null | undefined): TemplateLabThemeId {
-  if (id === 'color' || id === 'compact' || id === 'relaxed' || id === 'one-page') return id
+  if (id === 'color' || id === 'compact' || id === 'relaxed' || id === 'one-page' || id === 'zero-x') return id
   return 'base'
 }
 

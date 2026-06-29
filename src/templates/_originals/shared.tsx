@@ -1,16 +1,24 @@
 "use client"
 
 import type { CSSProperties, ReactElement } from 'react'
-import { ResumeFrame, mmToPx, useEditableHeader, useEditableJobIntention } from '@/templates/_core'
+import { ResumeFrame, lightenHex, mmToPx, useEditableHeader, useEditableJobIntention } from '@/templates/_core'
 import { CONFIG } from './configs'
 import {
   CampusLayout,
   EducationTimelineLayout,
+  BankGoldLayout,
+  LegalBlueLayout,
+  MinimalBlackLayout,
   OfficialBriefLayout,
+  MarketingBannerLayout,
+  PlannerProfileLayout,
   PortfolioLayout,
+  FreshSidebarLayout,
+  PurpleCornerLayout,
   SingleColumn,
   StackProjectsLayout,
   TechMinimalLayout,
+  TeacherBlackLayout,
   TwoColumnDark,
   TwoColumnSoft,
 } from './layouts'
@@ -21,15 +29,15 @@ type CssVars = CSSProperties & Record<`--${string}`, string | number>
 
 // Editable primitives used by the split implementation live below this entry:
 // AvatarSlot, FieldChip, SortableSection, BlockList, DeleteSectionDialog.
-export function OriginalTemplate({ resume, theme, variant }: OriginalTemplateProps): ReactElement {
+export function OriginalTemplate({ resume, theme, variant, sidebarSectionIds, onSidebarSectionIdsChange }: OriginalTemplateProps): ReactElement {
   const baseConfig = CONFIG[variant]
-  const config: VariantConfig = { ...baseConfig, accent: theme.primaryColor || baseConfig.accent }
+  const config = buildThemeAwareConfig(baseConfig, theme.primaryColor)
   const header = useEditableHeader(resume.name, resume.baseInfo ?? null)
   const jobIntention = useEditableJobIntention(resume.jobIntention ?? null)
   const isJobIntentionVisible = resume.jobIntentionVisible ?? jobIntention.fields.length > 0
   const fontFamily = config.serif ? SERIF : (theme.fontFamily || SANS)
   const padV = Math.max(30, mmToPx(theme.pagePaddingVertical))
-  const padH = Math.max(38, mmToPx(theme.pagePaddingHorizontal))
+  const padH = Math.max(6, mmToPx(theme.pagePaddingHorizontal))
   const rootStyle: CssVars = {
     minHeight: '297mm',
     backgroundColor: variant === 'yuanshan' ? '#fbfaf8' : '#ffffff',
@@ -39,7 +47,7 @@ export function OriginalTemplate({ resume, theme, variant }: OriginalTemplatePro
   }
 
   return (
-    <ResumeFrame resume={resume} theme={theme} bleed={config.bleed} className="original-template-root" style={rootStyle}>
+    <ResumeFrame resume={resume} theme={theme} bleed={config.bleed} className="original-template-root" style={rootStyle} disableDnd={config.layout === 'fresh-sidebar' || config.layout === 'dark-sidebar' || config.layout === 'soft-sidebar'}>
       <style>{`
         .original-rich p { margin: 0; }
         .original-rich ul, .original-rich ol { margin: 0; padding-left: 1.2em; }
@@ -57,9 +65,9 @@ export function OriginalTemplate({ resume, theme, variant }: OriginalTemplatePro
         }
       `}</style>
       {config.layout === 'dark-sidebar' ? (
-        <TwoColumnDark resume={resume} theme={theme} header={header} jobIntention={jobIntention} showJob={isJobIntentionVisible} config={config} />
+        <TwoColumnDark resume={resume} theme={theme} header={header} jobIntention={jobIntention} showJob={isJobIntentionVisible} config={config} sidebarSectionIds={sidebarSectionIds} onSidebarSectionIdsChange={onSidebarSectionIdsChange} />
       ) : config.layout === 'soft-sidebar' ? (
-        <TwoColumnSoft resume={resume} theme={theme} header={header} jobIntention={jobIntention} showJob={isJobIntentionVisible} config={config} />
+        <TwoColumnSoft resume={resume} theme={theme} header={header} jobIntention={jobIntention} showJob={isJobIntentionVisible} config={config} sidebarSectionIds={sidebarSectionIds} onSidebarSectionIdsChange={onSidebarSectionIdsChange} />
       ) : config.layout === 'portfolio' ? (
         <PortfolioLayout resume={resume} theme={theme} header={header} jobIntention={jobIntention} showJob={isJobIntentionVisible} config={config} />
       ) : config.layout === 'campus' ? (
@@ -72,6 +80,22 @@ export function OriginalTemplate({ resume, theme, variant }: OriginalTemplatePro
         <StackProjectsLayout resume={resume} theme={theme} header={header} jobIntention={jobIntention} showJob={isJobIntentionVisible} config={config} />
       ) : config.layout === 'official-brief' ? (
         <OfficialBriefLayout resume={resume} theme={theme} header={header} jobIntention={jobIntention} showJob={isJobIntentionVisible} config={config} padV={padV} padH={padH} />
+      ) : config.layout === 'marketing-banner' ? (
+        <MarketingBannerLayout resume={resume} theme={theme} header={header} jobIntention={jobIntention} showJob={isJobIntentionVisible} config={config} padV={padV} padH={padH} />
+      ) : config.layout === 'planner-profile' ? (
+        <PlannerProfileLayout resume={resume} theme={theme} header={header} jobIntention={jobIntention} showJob={isJobIntentionVisible} config={config} padV={padV} padH={padH} />
+      ) : config.layout === 'fresh-sidebar' ? (
+        <FreshSidebarLayout resume={resume} theme={theme} header={header} jobIntention={jobIntention} showJob={isJobIntentionVisible} config={config} padV={padV} padH={padH} sidebarSectionIds={sidebarSectionIds} onSidebarSectionIdsChange={onSidebarSectionIdsChange} />
+      ) : config.layout === 'purple-corner' ? (
+        <PurpleCornerLayout resume={resume} theme={theme} header={header} jobIntention={jobIntention} showJob={isJobIntentionVisible} config={config} padV={padV} padH={padH} />
+      ) : config.layout === 'legal-blue' ? (
+        <LegalBlueLayout resume={resume} theme={theme} header={header} jobIntention={jobIntention} showJob={isJobIntentionVisible} config={config} padV={padV} padH={padH} />
+      ) : config.layout === 'teacher-black' ? (
+        <TeacherBlackLayout resume={resume} theme={theme} header={header} jobIntention={jobIntention} showJob={isJobIntentionVisible} config={config} padV={padV} padH={padH} />
+      ) : config.layout === 'bank-gold' ? (
+        <BankGoldLayout resume={resume} theme={theme} header={header} jobIntention={jobIntention} showJob={isJobIntentionVisible} config={config} padV={padV} padH={padH} />
+      ) : config.layout === 'minimal-black' ? (
+        <MinimalBlackLayout resume={resume} theme={theme} header={header} jobIntention={jobIntention} showJob={isJobIntentionVisible} config={config} padV={padV} padH={padH} />
       ) : (
         <SingleColumn resume={resume} theme={theme} header={header} jobIntention={jobIntention} showJob={isJobIntentionVisible} config={config} padV={padV} padH={padH} />
       )}
@@ -79,4 +103,29 @@ export function OriginalTemplate({ resume, theme, variant }: OriginalTemplatePro
       {jobIntention.modals}
     </ResumeFrame>
   )
+}
+
+function buildThemeAwareConfig(baseConfig: VariantConfig, primaryColor: string | undefined): VariantConfig {
+  const accent = normalizeHexColor(primaryColor) ?? baseConfig.accent
+  const isTemplateDefault = accent.toLowerCase() === baseConfig.accent.toLowerCase()
+  return {
+    ...baseConfig,
+    accent,
+    secondary: isTemplateDefault ? baseConfig.secondary : deriveSecondaryAccent(accent),
+  }
+}
+
+function normalizeHexColor(color: string | undefined): string | null {
+  if (!color) return null
+  const value = color.trim()
+  if (/^#[0-9a-f]{6}$/i.test(value)) return value.toLowerCase()
+  if (/^#[0-9a-f]{3}$/i.test(value)) {
+    const [, r, g, b] = value
+    return `#${r}${r}${g}${g}${b}${b}`.toLowerCase()
+  }
+  return null
+}
+
+function deriveSecondaryAccent(accent: string): string {
+  return lightenHex(accent, 0.62)
 }
