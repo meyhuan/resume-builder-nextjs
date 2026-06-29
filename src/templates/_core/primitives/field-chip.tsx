@@ -27,6 +27,8 @@ export function FieldChip(props: FieldChipProps): ReactElement {
   const isHovered: boolean = hoveredField === field.key
   return (
     <span
+      data-template-base-info-field="true"
+      data-template-base-info-key={field.key}
       className={`relative inline-flex items-center ${className ?? ''}`}
       style={style}
       onMouseEnter={() => setHoveredField(field.key)}

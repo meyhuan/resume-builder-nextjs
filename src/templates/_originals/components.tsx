@@ -31,6 +31,18 @@ import { CONFIG } from './configs'
 import type { VariantConfig } from './types'
 import { SERIF } from './types'
 
+export function scaledSpacing(base: number, theme?: Pick<ThemeTokens, 'spacingScale'>): number {
+  const scale = Math.max(0.2, theme?.spacingScale ?? 1)
+  return Math.round(base * scale * 10) / 10
+}
+
+export function sectionStackGap(config: Pick<VariantConfig, 'density' | 'formal'>): number {
+  if (config.density === 'ultra') return 12
+  if (config.density === 'compact') return 16
+  if (config.formal) return 18
+  return 22
+}
+
 export function HeaderFields(props: {
   readonly header: EditableHeader
   readonly color: string
@@ -45,7 +57,7 @@ export function HeaderFields(props: {
   return (
     <div
       className={vertical ? 'grid' : 'flex flex-wrap'}
-      style={{ gap: vertical ? (compact ? 5 : 8) : compact ? '5px 12px' : '8px 16px', marginTop: compact ? 10 : 14, color, fontSize: compact ? '0.76em' : '0.82em', lineHeight: compact ? 1.42 : 1.55 }}
+      style={{ gap: vertical ? (compact ? 4 : 8) : compact ? '4px 10px' : '8px 16px', marginTop: compact ? 6 : 14, color, fontSize: compact ? '0.74em' : '0.82em', lineHeight: compact ? 1.34 : 1.55 }}
     >
       {visibleHeaderFields(header).map((field) => (
         <FieldChip
@@ -309,11 +321,22 @@ export function CampusHighlightsDialog(props: {
   )
 }
 
-export function JobIntentionBlock({ jobIntention, config }: { readonly jobIntention: EditableJobIntention; readonly config: VariantConfig }): ReactElement {
+export function JobIntentionBlock(props: {
+  readonly jobIntention: EditableJobIntention
+  readonly config: VariantConfig
+  readonly theme?: ThemeTokens
+  readonly topMargin?: number
+}): ReactElement {
+  const { jobIntention, config, theme, topMargin = 12 } = props
   return (
-    <section className="group/job relative" onClick={jobIntention.openEditModal} style={{ marginTop: 20, cursor: 'pointer' }}>
+    <section
+      className="group/job relative"
+      data-template-job-intention-trigger="true"
+      onClick={jobIntention.openEditModal}
+      style={{ marginTop: scaledSpacing(topMargin, theme), cursor: 'pointer' }}
+    >
       <SectionTitle title="求职意向" config={config} />
-      <div className="flex flex-wrap" style={{ gap: '8px 18px', color: config.muted, fontSize: '0.86em' }}>
+      <div className="flex flex-wrap" style={{ gap: '5px 12px', color: config.muted, fontSize: '0.95em', lineHeight: 1.36 }}>
         {jobIntention.fields.map((field) => <JobField key={field.key} field={field} jobIntention={jobIntention} config={config} />)}
       </div>
       <button type="button" className="absolute right-0 top-0 rounded-md border border-slate-200 bg-white px-2 py-1 text-xs text-slate-500 opacity-0 shadow-sm transition-opacity hover:bg-slate-50 group-hover/job:opacity-100 print:hidden" onClick={(e) => { e.stopPropagation(); jobIntention.openEditModal() }}>编辑</button>
@@ -323,7 +346,15 @@ export function JobIntentionBlock({ jobIntention, config }: { readonly jobIntent
 
 export function SidebarJob({ jobIntention, accent }: { readonly jobIntention: EditableJobIntention; readonly accent: string }): ReactElement {
   return (
-    <div className="group/job relative" onClick={jobIntention.openEditModal} style={{ marginTop: 26, cursor: 'pointer' }}>
+    <div
+      className="group/job relative"
+      data-template-job-intention-trigger="true"
+      onClick={(event) => {
+        event.stopPropagation()
+        jobIntention.openEditModal()
+      }}
+      style={{ marginTop: 26, cursor: 'pointer' }}
+    >
       <h3 style={{ margin: '0 0 10px', color: accent, fontSize: '0.95em', fontWeight: 800 }}>求职意向</h3>
       <div className="grid" style={{ gap: 5, fontSize: '0.82em', color: 'currentColor', opacity: 0.86 }}>
         {jobIntention.fields.map((field) => <JobField key={field.key} field={field} jobIntention={jobIntention} config={CONFIG.lifeng} />)}
@@ -339,6 +370,7 @@ function JobField(props: {
 }): ReactElement {
   const { field, jobIntention, config } = props
   const hovered = jobIntention.hoveredField === field.key
+  const isPlanner = config.id === 'qiance'
   return (
     <span
       className="relative inline-flex min-w-0 max-w-full flex-wrap items-baseline"
@@ -347,7 +379,7 @@ function JobField(props: {
       onMouseLeave={() => jobIntention.setHoveredField(null)}
     >
       <span style={{ flex: '0 0 auto' }}>{field.label}：</span>
-      <strong style={{ minWidth: 0, color: config.id === 'lifeng' ? 'inherit' : config.ink, fontWeight: 600, overflowWrap: 'anywhere', wordBreak: 'break-word' }}>
+      <strong style={{ minWidth: 0, color: config.id === 'lifeng' ? 'inherit' : isPlanner ? config.muted : config.ink, fontWeight: isPlanner ? 500 : 600, overflowWrap: 'anywhere', wordBreak: 'break-word' }}>
         {field.value}
       </strong>
       <button type="button" className="absolute -right-3 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-white text-[12px] leading-none text-red-500 shadow-sm print:hidden" style={{ opacity: hovered ? 1 : 0 }} onClick={(e) => { e.stopPropagation(); jobIntention.deleteField(field.key) }}>×</button>
@@ -356,10 +388,10 @@ function JobField(props: {
 }
 
 export function SectionStack({ sections, theme, config, topMargin }: { readonly sections: readonly Section[]; readonly theme: ThemeTokens; readonly config: VariantConfig; readonly topMargin?: number }): ReactElement {
-  const gap = config.density === 'ultra' ? 12 : config.density === 'compact' ? 16 : config.formal ? 18 : 22
+  const gap = sectionStackGap(config)
   const marginTop = topMargin ?? (config.density === 'ultra' ? 12 : config.formal ? 18 : 22)
   return (
-    <main className="flex flex-col" style={{ gap: `${gap * theme.spacingScale}px`, marginTop }}>
+    <main className="flex flex-col" style={{ gap: `${scaledSpacing(gap, theme)}px`, marginTop: scaledSpacing(marginTop, theme) }}>
       {sections.map((section, index) => (
         <SortableSection key={section.id} sectionId={section.id}>
           {(dragProps) => <ConceptSection section={section} dragProps={dragProps} theme={theme} config={config} index={index} />}
@@ -371,7 +403,7 @@ export function SectionStack({ sections, theme, config, topMargin }: { readonly 
 
 export function SidebarSections({ sections, theme, config, dark }: { readonly sections: readonly Section[]; readonly theme: ThemeTokens; readonly config: VariantConfig; readonly dark?: boolean }): ReactElement {
   return (
-    <div className="grid" style={{ gap: 18, marginTop: 24 }}>
+    <div className="grid" style={{ gap: scaledSpacing(18, theme), marginTop: scaledSpacing(24, theme), textAlign: 'left' }}>
       {sections.map((section) => (
         <SortableSection key={section.id} sectionId={section.id}>
           {(dragProps) => <ConceptSection section={section} dragProps={dragProps} theme={theme} config={config} compact dark={dark} />}
@@ -393,17 +425,73 @@ export function ConceptSection(props: {
   const { section, dragProps, theme, config, index, compact, dark } = props
   const editable = useEditableSection(section)
   const titleScale = Math.min(1.18, Math.max(0.88, theme.titleScale ?? 1))
-  const rendererStyles: BlockRendererStyles = {
-    title: { className: dark ? 'font-semibold text-slate-50' : 'font-semibold' },
-    subtitle: { className: dark ? 'text-slate-300' : 'text-gray-600' },
-    dateRange: { className: dark ? 'text-slate-300 ml-4 shrink-0' : 'text-gray-500 ml-4 shrink-0' },
-    content: `original-rich mt-2 ${dark ? 'text-slate-200' : ''}`,
+  let rendererStyles: BlockRendererStyles = {
+    title: { className: dark ? 'font-bold text-slate-50' : 'font-bold', fontSize: '1.03em', fontWeight: '700' },
+    subtitle: { className: dark ? 'text-slate-300' : 'text-gray-600', fontSize: '0.97em', fontWeight: '700' },
+    dateRange: { className: dark ? 'text-slate-300 ml-4 shrink-0' : 'text-gray-500 ml-4 shrink-0', fontSize: '0.97em', fontWeight: '700' },
+    content: `original-rich mt-1 text-[0.98em] ${dark ? 'text-slate-200' : ''}`,
     contentColor: dark ? '#e2e8f0' : undefined,
     contentEditingColor: dark ? '#0f172a' : undefined,
   }
+  if (config.id === 'lanfa') {
+    rendererStyles = {
+      ...rendererStyles,
+      header: 'grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4 mb-2',
+      title: { className: 'font-bold', color: config.accent, fontSize: '1.03em', fontWeight: '700' },
+      subtitle: { className: 'text-slate-700', fontSize: '0.97em', fontWeight: '700' },
+      dateRange: { className: 'ml-4 shrink-0 whitespace-nowrap', color: config.accent, fontSize: '0.97em', fontWeight: '700' },
+      content: 'original-rich mt-1 text-[0.98em]',
+    }
+  } else if (config.id === 'qiance') {
+    rendererStyles = {
+      ...rendererStyles,
+      header: 'grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4 mb-1',
+      title: { className: 'font-medium', color: '#4b5563', fontSize: '1.02em', fontWeight: '500' },
+      subtitle: { className: 'text-slate-500', fontSize: '0.96em', fontWeight: '500' },
+      dateRange: { className: 'ml-4 shrink-0 whitespace-nowrap', color: '#6b7280', fontSize: '0.96em', fontWeight: '500' },
+      content: 'original-rich mt-1 text-[0.98em]',
+      contentColor: '#374151',
+    }
+  } else if (config.id === 'heijiao') {
+    rendererStyles = {
+      ...rendererStyles,
+      header: 'grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4 mb-1',
+      title: { className: 'font-extrabold', color: config.accent, fontSize: '1.03em', fontWeight: '700' },
+      subtitle: { className: 'text-zinc-700', fontSize: '0.97em', fontWeight: '700' },
+      dateRange: { className: 'ml-4 shrink-0 whitespace-nowrap', color: config.accent, fontSize: '0.97em', fontWeight: '700' },
+      content: 'original-rich mt-1 text-[0.98em]',
+      contentColor: '#222',
+    }
+  } else if (config.id === 'jinhang') {
+    rendererStyles = {
+      ...rendererStyles,
+      header: 'grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4 mb-2',
+      title: { className: 'font-bold', color: config.accent, fontSize: '1.03em', fontWeight: '700' },
+      subtitle: { className: 'text-stone-700', fontSize: '0.97em', fontWeight: '700' },
+      dateRange: { className: 'ml-4 shrink-0 whitespace-nowrap', color: config.accent, fontSize: '0.97em', fontWeight: '700' },
+      content: 'original-rich mt-1 text-[0.98em]',
+      contentColor: '#333',
+    }
+  } else if (config.id === 'jijian') {
+    rendererStyles = {
+      ...rendererStyles,
+      header: 'grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4 mb-2',
+      title: { className: 'font-extrabold', color: config.accent, fontSize: '1.03em', fontWeight: '700' },
+      subtitle: { className: 'text-zinc-700', fontSize: '0.97em', fontWeight: '700' },
+      dateRange: { className: 'ml-4 shrink-0 whitespace-nowrap', color: config.accent, fontSize: '0.97em', fontWeight: '700' },
+      content: 'original-rich mt-1 text-[0.98em]',
+      contentColor: '#111',
+    }
+  }
 
   return (
-    <section className="group/section relative" onMouseEnter={() => editable.setHovered(true)} onMouseLeave={() => editable.setHovered(false)}>
+    <section
+      className="group/section relative"
+      data-template-section="true"
+      data-template-section-title={section.title}
+      onMouseEnter={() => editable.setHovered(true)}
+      onMouseLeave={() => editable.setHovered(false)}
+    >
       <div className="relative">
         <div style={{ display: config.sectionStyle === 'numbered' ? 'flex' : 'block', alignItems: 'center', gap: 10, marginBottom: config.sectionStyle === 'numbered' ? 10 : 0 }}>
           {config.sectionStyle === 'numbered' ? (
@@ -411,11 +499,14 @@ export function ConceptSection(props: {
               {String((index ?? 0) + 1).padStart(2, '0')}
             </span>
           ) : null}
-          <EditableText
-            as="h2"
-            value={editable.title}
-            onCommit={editable.canEditTitle ? editable.onCommitTitle : undefined}
-            style={sectionTitleStyle(config, titleScale, compact, dark)}
+          <EditableSectionTitle
+            title={editable.title}
+            canEditTitle={editable.canEditTitle}
+            onCommitTitle={editable.onCommitTitle}
+            config={config}
+            titleScale={titleScale}
+            compact={compact}
+            dark={dark}
           />
         </div>
         <SectionActions visible={editable.isHovered} isTextOnly={editable.isTextOnly} onAdd={editable.onAddBlock} onDelete={editable.onRequestDelete} dragProps={dragProps} />
@@ -432,8 +523,232 @@ export function ConceptSection(props: {
   )
 }
 
+function EditableSectionTitle(props: {
+  readonly title: string
+  readonly canEditTitle: boolean
+  readonly onCommitTitle: (value: string) => void
+  readonly config: VariantConfig
+  readonly titleScale: number
+  readonly compact?: boolean
+  readonly dark?: boolean
+}): ReactElement {
+  const { title, canEditTitle, onCommitTitle, config, titleScale, compact, dark } = props
+  if (config.id === 'lanying') {
+    return (
+      <div style={marketingTitleWrapStyle(config)}>
+        <EditableText as="h2" value={title} onCommit={canEditTitle ? onCommitTitle : undefined} style={marketingTitleLabelStyle(config, titleScale)} />
+        <span style={marketingTitleEnglishStyle()}>{sectionEnglishTitle(title)}</span>
+      </div>
+    )
+  }
+  if (config.id === 'qiance') {
+    return (
+      <div style={plannerTitleWrapStyle(config)}>
+        <span aria-hidden style={plannerTitleDotStyle(config)} />
+        <EditableText as="h2" value={title} onCommit={canEditTitle ? onCommitTitle : undefined} style={plannerTitleLabelStyle(config, titleScale)} />
+        <span style={plannerTitleEnglishStyle(config)}>{sectionEnglishTitle(title)}</span>
+      </div>
+    )
+  }
+  if (config.id === 'jinhang') {
+    return (
+      <div style={bankTitleWrapStyle(config)}>
+        <span aria-hidden style={bankTitleLineStyle(config)} />
+        <EditableText as="h2" value={title} onCommit={canEditTitle ? onCommitTitle : undefined} style={bankTitleLabelStyle(config, titleScale)} />
+        <span style={bankTitleEnglishStyle(config)}>{sectionEnglishTitle(title)}</span>
+        <span aria-hidden style={bankTitleLineStyle(config)} />
+      </div>
+    )
+  }
+  if (config.id === 'jijian') {
+    return (
+      <div className="minimal-info-title">
+        <EditableText as="h2" value={title} onCommit={canEditTitle ? onCommitTitle : undefined} className="minimal-title-label" />
+        <span>{sectionEnglishTitle(title)}</span>
+      </div>
+    )
+  }
+  if (config.id === 'shanglan') {
+    return (
+      <div style={shanglanTitleWrapStyle(config, dark)}>
+        <EditableText as="h2" value={title} onCommit={canEditTitle ? onCommitTitle : undefined} style={shanglanTitleLabelStyle(config, titleScale, dark)} />
+        <span style={shanglanTitleEnglishStyle(dark)}>{sectionEnglishTitle(title)}</span>
+      </div>
+    )
+  }
+  if (config.id === 'lanzix') {
+    return (
+      <div style={purpleTitleWrapStyle(config)}>
+        <PurpleDoubleChevron color={config.accent} />
+        <EditableText as="h2" value={title} onCommit={canEditTitle ? onCommitTitle : undefined} style={purpleTitleLabelStyle(config, titleScale)} />
+        <span aria-hidden style={purpleTitleLineStyle(config)} />
+      </div>
+    )
+  }
+  return (
+    <EditableText
+      as="h2"
+      value={title}
+      onCommit={canEditTitle ? onCommitTitle : undefined}
+      className={sectionTitleClassName(config)}
+      style={sectionTitleStyle(config, titleScale, compact, dark)}
+    />
+  )
+}
+
 function SectionTitle({ title, config }: { readonly title: string; readonly config: VariantConfig }): ReactElement {
-  return <h2 style={sectionTitleStyle(config, 1, false, false)}>{title}</h2>
+  if (config.id === 'lanying') {
+    return (
+      <div style={marketingTitleWrapStyle(config)}>
+        <h2 style={marketingTitleLabelStyle(config, 1)}>{title}</h2>
+        <span style={marketingTitleEnglishStyle()}>{sectionEnglishTitle(title)}</span>
+      </div>
+    )
+  }
+  if (config.id === 'qiance') {
+    return (
+      <div style={plannerTitleWrapStyle(config)}>
+        <span aria-hidden style={plannerTitleDotStyle(config)} />
+        <h2 style={plannerTitleLabelStyle(config, 1)}>{title}</h2>
+        <span style={plannerTitleEnglishStyle(config)}>{sectionEnglishTitle(title)}</span>
+      </div>
+    )
+  }
+  if (config.id === 'jinhang') {
+    return (
+      <div style={bankTitleWrapStyle(config)}>
+        <span aria-hidden style={bankTitleLineStyle(config)} />
+        <h2 style={bankTitleLabelStyle(config, 1)}>{title}</h2>
+        <span style={bankTitleEnglishStyle(config)}>{sectionEnglishTitle(title)}</span>
+        <span aria-hidden style={bankTitleLineStyle(config)} />
+      </div>
+    )
+  }
+  if (config.id === 'jijian') {
+    return <div className="minimal-info-title"><h2 className="minimal-title-label">{title}</h2><span>{sectionEnglishTitle(title)}</span></div>
+  }
+  if (config.id === 'shanglan') {
+    return (
+      <div style={shanglanTitleWrapStyle(config, false)}>
+        <h2 style={shanglanTitleLabelStyle(config, 1, false)}>{title}</h2>
+        <span style={shanglanTitleEnglishStyle(false)}>{sectionEnglishTitle(title)}</span>
+      </div>
+    )
+  }
+  if (config.id === 'lanzix') {
+    return (
+      <div style={purpleTitleWrapStyle(config)}>
+        <PurpleDoubleChevron color={config.accent} />
+        <h2 style={purpleTitleLabelStyle(config, 1)}>{title}</h2>
+        <span aria-hidden style={purpleTitleLineStyle(config)} />
+      </div>
+    )
+  }
+  return <h2 className={sectionTitleClassName(config)} style={sectionTitleStyle(config, 1, false, false)}>{title}</h2>
+}
+
+function sectionTitleClassName(config: VariantConfig): string | undefined {
+  if (config.id === 'lanfa') return 'original-legal-title'
+  if (config.id === 'jinhang') return 'original-bank-title'
+  if (config.id === 'heijiao') return 'original-teacher-title'
+  if (config.id === 'jijian') return 'original-minimal-title'
+  if (config.id === 'lanzix') return 'original-purple-title'
+  return undefined
+}
+
+function sectionEnglishTitle(title: string): string {
+  if (/求职|意向/.test(title)) return 'Job objective'
+  if (/教育|学校|学历|毕业/.test(title)) return 'Education'
+  if (/工作/.test(title)) return 'Work experience'
+  if (/实习/.test(title)) return 'Internship'
+  if (/项目/.test(title)) return 'Project experience'
+  if (/校园|社团|学生/.test(title)) return 'Campus experience'
+  if (/获奖|荣誉|奖项/.test(title)) return 'Awards'
+  if (/证书|资格/.test(title)) return 'Certificates'
+  if (/技能/.test(title)) return 'Skills'
+  if (/评价|优势|自我/.test(title)) return 'Profile'
+  return 'Resume section'
+}
+
+function marketingTitleWrapStyle(config: VariantConfig): CSSProperties {
+  return { display: 'flex', alignItems: 'flex-end', height: 35, marginBottom: 12, borderBottom: `2px solid ${lightenHex(config.accent, 0.1)}` }
+}
+
+function marketingTitleLabelStyle(config: VariantConfig, titleScale: number): CSSProperties {
+  return { minWidth: 119, margin: 0, padding: '4px 17px', textAlign: 'center', backgroundColor: config.accent, color: '#fff', fontSize: `${1.15 * titleScale}em`, lineHeight: 1.25, fontWeight: 800 }
+}
+
+function marketingTitleEnglishStyle(): CSSProperties {
+  return { marginLeft: 12, color: '#111', fontSize: '0.94em', fontWeight: 700, letterSpacing: 0 }
+}
+
+function plannerTitleWrapStyle(config: VariantConfig): CSSProperties {
+  return { position: 'relative', display: 'flex', alignItems: 'baseline', gap: 10, margin: '0 0 12px', padding: '0 0 6px 16px', borderBottom: `1px dotted ${lightenHex(config.accent, 0.34)}` }
+}
+
+function plannerTitleDotStyle(config: VariantConfig): CSSProperties {
+  return { position: 'absolute', left: 0, bottom: -4, width: 8, height: 8, borderRadius: 999, backgroundColor: config.accent }
+}
+
+function plannerTitleLabelStyle(config: VariantConfig, titleScale: number): CSSProperties {
+  return { margin: 0, color: '#333', fontSize: `${1.12 * titleScale}em`, lineHeight: 1.25, fontWeight: 700, letterSpacing: '0.08em' }
+}
+
+function plannerTitleEnglishStyle(config: VariantConfig): CSSProperties {
+  return { color: lightenHex(config.ink, 0.34), fontSize: '0.74em', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase' }
+}
+
+function bankTitleWrapStyle(config: VariantConfig): CSSProperties {
+  return { display: 'flex', alignItems: 'center', gap: 12, margin: '0 0 14px', color: config.secondary }
+}
+
+function bankTitleLineStyle(config: VariantConfig): CSSProperties {
+  return { flex: 1, height: 1, backgroundColor: config.accent }
+}
+
+function bankTitleLabelStyle(config: VariantConfig, titleScale: number): CSSProperties {
+  return { margin: 0, color: config.accent, fontSize: `${1.08 * titleScale}em`, lineHeight: 1.3, fontWeight: 800, letterSpacing: '0.12em', fontFamily: SERIF, whiteSpace: 'nowrap' }
+}
+
+function bankTitleEnglishStyle(config: VariantConfig): CSSProperties {
+  return { color: lightenHex(config.secondary, 0.22), fontSize: '0.68em', fontFamily: SERIF, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', whiteSpace: 'nowrap' }
+}
+
+function purpleTitleWrapStyle(config: VariantConfig): CSSProperties {
+  return { display: 'flex', alignItems: 'center', margin: '0 0 12px', color: config.accent }
+}
+
+export function PurpleDoubleChevron({ color, height = '1.4em' }: { readonly color: string; readonly height?: string | number }): ReactElement {
+  return (
+    <svg height={height} viewBox="40.75 208.82 23.07 16.41" fill={color} aria-hidden style={{ flex: '0 0 auto', marginRight: 8 }}>
+      <path d="M 41.914062 225.230469 C 41.640625 225.230469 41.371094 225.128906 41.167969 224.921875 C 40.753906 224.511719 40.753906 223.84375 41.164062 223.429688 L 47.515625 217.066406 L 41.167969 210.734375 C 40.753906 210.320312 40.753906 209.652344 41.164062 209.238281 C 41.578125 208.824219 42.246094 208.824219 42.660156 209.238281 L 49.753906 216.316406 C 49.953125 216.511719 50.0625 216.78125 50.0625 217.0625 C 50.066406 217.339844 49.953125 217.609375 49.757812 217.808594 L 42.660156 224.921875 C 42.453125 225.128906 42.183594 225.230469 41.914062 225.230469" />
+      <path d="M 55.664062 225.230469 L 47.351562 225.230469 C 46.925781 225.230469 46.539062 224.976562 46.378906 224.582031 C 46.214844 224.1875 46.304688 223.730469 46.605469 223.429688 L 52.953125 217.066406 L 46.605469 210.734375 C 46.304688 210.429688 46.214844 209.976562 46.375 209.582031 C 46.539062 209.1875 46.925781 208.929688 47.351562 208.929688 L 55.664062 208.929688 C 55.941406 208.929688 56.210938 209.039062 56.410156 209.238281 L 63.503906 216.316406 C 63.703125 216.511719 63.816406 216.78125 63.816406 217.0625 C 63.816406 217.339844 63.703125 217.609375 63.507812 217.808594 L 56.410156 224.921875 C 56.214844 225.121094 55.945312 225.230469 55.664062 225.230469" />
+    </svg>
+  )
+}
+
+function purpleTitleLabelStyle(config: VariantConfig, titleScale: number): CSSProperties {
+  return { margin: 0, color: config.accent, fontSize: `${1.28 * titleScale}em`, lineHeight: 1.25, fontWeight: 900 }
+}
+
+function purpleTitleLineStyle(config: VariantConfig): CSSProperties {
+  return { flex: 1, marginLeft: 8, borderTop: `2px dotted ${lightenHex(config.accent, 0.2)}` }
+}
+
+function shanglanTitleColor(config: VariantConfig, dark?: boolean): string {
+  return dark ? '#fff' : config.accent
+}
+
+function shanglanTitleWrapStyle(config: VariantConfig, dark?: boolean): CSSProperties {
+  return { display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, minWidth: 0, margin: '0 0 18px', paddingBottom: 8, color: shanglanTitleColor(config, dark), borderBottom: `1px solid ${dark ? 'rgba(255,255,255,0.55)' : '#777'}` }
+}
+
+function shanglanTitleLabelStyle(config: VariantConfig, titleScale: number, dark?: boolean): CSSProperties {
+  return { margin: 0, color: shanglanTitleColor(config, dark), fontSize: `${(dark ? 1.02 : 1.18) * titleScale}em`, lineHeight: 1.22, fontWeight: 900, whiteSpace: 'nowrap' }
+}
+
+function shanglanTitleEnglishStyle(dark?: boolean): CSSProperties {
+  return { minWidth: 0, color: dark ? 'rgba(255,255,255,0.72)' : '#777', fontSize: '0.78em', lineHeight: 1.2, fontWeight: 400, textAlign: 'right', whiteSpace: 'nowrap' }
 }
 
 function sectionTitleStyle(config: VariantConfig, titleScale: number, compact?: boolean, dark?: boolean): CSSProperties {
@@ -444,7 +759,15 @@ function sectionTitleStyle(config: VariantConfig, titleScale: number, compact?: 
     fontWeight: 800,
     color: dark ? '#a78bfa' : config.accent,
   }
+  if (config.id === 'lanfa') return { ...base, position: 'relative', display: 'flex', alignItems: 'center', minHeight: 39, margin: '0 0 13px', padding: '0 0 0 52px', color: config.accent, borderBottom: 'none', fontSize: `${1.05 * titleScale}em`, letterSpacing: '0.24em', backgroundImage: 'linear-gradient(#f1f1f1, #f1f1f1)', backgroundRepeat: 'no-repeat', backgroundSize: 'calc(100% - 160px) 6px', backgroundPosition: '160px center' }
+  if (config.id === 'heijiao') return { ...base, position: 'relative', display: 'flex', alignItems: 'center', height: 24, margin: '0 0 7px', padding: '0 0 0 13px', backgroundColor: 'transparent', backgroundImage: `linear-gradient(${config.accent}, ${config.accent}), linear-gradient(${config.accent}, ${config.accent})`, backgroundRepeat: 'no-repeat', backgroundSize: '110px 24px, calc(100% - 110px) 1px', backgroundPosition: '0 0, 110px bottom', color: '#fff', borderBottom: 'none', fontSize: `${0.96 * titleScale}em`, letterSpacing: 0 }
+  if (config.id === 'jinhang') return { ...base, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, margin: '0 0 14px', padding: '0 116px', color: config.secondary, borderBottom: 'none', fontSize: `${1.08 * titleScale}em`, letterSpacing: '0.12em', fontFamily: SERIF, textAlign: 'center' }
+  if (config.id === 'jijian') return { ...base, position: 'relative', display: 'flex', alignItems: 'center', width: '100%', minHeight: 30, margin: '0 0 13px', padding: '0 0 0 24px', backgroundColor: 'transparent', backgroundImage: 'linear-gradient(#111, #111), linear-gradient(#111, #111)', backgroundRepeat: 'no-repeat', backgroundSize: '150px 30px, calc(100% - 150px) 2px', backgroundPosition: '0 0, 150px bottom', color: '#fff', borderBottom: 'none', fontSize: `${1.02 * titleScale}em`, letterSpacing: 0 }
   if (config.formal) return { ...base, padding: '5px 10px', borderLeft: `5px solid ${config.accent}`, backgroundColor: '#f1f5f9', color: config.ink }
+  if (config.id === 'lanying') return { ...base, display: 'flex', alignItems: 'flex-end', height: 35, margin: '0 0 12px', color: '#111', borderBottom: `2px solid ${lightenHex(config.accent, 0.1)}`, fontSize: `${1.08 * titleScale}em`, letterSpacing: 0 }
+  if (config.id === 'qiance') return { ...base, position: 'relative', display: 'flex', alignItems: 'baseline', marginBottom: 12, color: '#333', fontSize: `${1.18 * titleScale}em`, fontWeight: 600, letterSpacing: 2, borderBottom: `1px dotted ${lightenHex(config.accent, 0.34)}`, padding: '0 0 5px 14px', textTransform: 'uppercase' }
+  if (config.id === 'shanglan') return { ...base, color: shanglanTitleColor(config, dark), fontSize: `${(dark ? 1.02 : 1.18) * titleScale}em`, borderBottom: `1px solid ${dark ? 'rgba(255,255,255,0.55)' : '#777'}`, paddingBottom: 8 }
+  if (config.id === 'lanzix') return { ...base, position: 'relative', display: 'flex', alignItems: 'center', gap: 8, margin: '0 0 12px', padding: '0 0 6px 28px', color: config.accent, fontSize: `${1.28 * titleScale}em`, borderBottom: `2px dotted ${lightenHex(config.accent, 0.25)}` }
   if (config.sectionStyle === 'numbered') return { ...base, margin: 0, color: config.ink, borderBottom: `1px solid ${lightenHex(config.accent, 0.68)}`, paddingBottom: 5, flex: 1 }
   if (config.sectionStyle === 'pill') return { ...base, display: 'inline-flex', alignItems: 'center', padding: '5px 12px', borderRadius: 999, backgroundColor: lightenHex(config.accent, 0.88), color: config.accent, borderBottom: 'none' }
   if (config.sectionStyle === 'minimal') return { ...base, color: dark ? config.accent : config.ink, borderBottom: `1px solid ${lightenHex(config.accent, 0.72)}`, paddingBottom: 5 }
