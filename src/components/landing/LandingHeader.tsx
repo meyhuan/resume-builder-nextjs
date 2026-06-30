@@ -15,6 +15,30 @@ interface LandingHeaderProps {
   forceSolid?: boolean;
 }
 
+type LandingNavChild = {
+  id: string;
+  label: string;
+  href: string;
+  icon: React.ReactNode;
+  desc: string;
+};
+
+type LandingNavItem =
+  | {
+      id: string;
+      label: string;
+      href: string;
+      external?: boolean;
+      children?: never;
+    }
+  | {
+      id: string;
+      label: string;
+      children: LandingNavChild[];
+      href?: never;
+      external?: never;
+    };
+
 export const LandingHeader = ({ forceSolid = false }: LandingHeaderProps = {}) => {
   const [isScrolled, setIsScrolled] = useState(forceSolid);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -49,7 +73,7 @@ export const LandingHeader = ({ forceSolid = false }: LandingHeaderProps = {}) =
     return () => window.removeEventListener('scroll', handleScroll);
   }, [forceSolid]);
 
-  const navItems = [
+  const navItems: LandingNavItem[] = [
     {
       id: 'create',
       label: '制作简历',
@@ -62,7 +86,6 @@ export const LandingHeader = ({ forceSolid = false }: LandingHeaderProps = {}) =
     { id: 'templates', label: '简历模板', href: '/#templates' },
     { id: 'articles', label: '求职攻略', href: '/articles' },
     { id: 'about', label: '关于开发者', href: '/about' },
-    { id: 'legacy', label: '找回旧版', href: 'https://w2025.aijianli.cn', external: true },
   ];
 
   return (

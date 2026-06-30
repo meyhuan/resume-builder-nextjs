@@ -36,19 +36,9 @@ export default async function DashboardPage() {
           <div className="absolute bottom-[-10%] left-[-10%] w-[600px] h-[600px] bg-blue-500/5 rounded-full blur-[120px]" />
         </div>
 
-        {/* Page Title & Old Version Notice */}
+        {/* Page Title */}
         <div className="relative z-10 pt-8 pb-2 px-6 sm:px-10 lg:px-12 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <h1 className="text-2xl font-bold text-slate-800">我的简历</h1>
-          
-          <a 
-            href="https://w2025.aijianli.cn" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-amber-50 border border-amber-200 text-amber-700 rounded-lg text-sm hover:bg-amber-100 transition-colors shadow-sm w-fit"
-          >
-            <Clock className="w-4 h-4" />
-            <span>找不到之前的简历？点击找回旧版 (w2025版)</span>
-          </a>
         </div>
 
         {/* Main Content */}
