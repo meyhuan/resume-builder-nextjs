@@ -6,6 +6,7 @@ import { GripVertical, Plus, Trash2 } from 'lucide-react'
 import type { ResumeBlock } from '@/entities/blocks/resume-block'
 import { getHeaderJobIntentionText } from '@/entities/resume/header-job-intention'
 import type { Section } from '@/entities/resume/section'
+import { RESUME_FONT_STACKS } from '@/entities/theme/font-stacks'
 import BlockWrapper from '@/components/blocks/block-wrapper'
 import EditableBlockWrapper from '@/editor/editable-block-wrapper'
 import EditableDateField from '@/editor/editable-date-field'
@@ -36,7 +37,7 @@ const DEFAULT_BLUE = '#4f719f'
 const INK = '#111827'
 const TEXT = '#25384f'
 const MUTED = '#5d6877'
-const SANS = '"Inter", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif'
+const SANS = RESUME_FONT_STACKS.sans
 
 type CssVars = CSSProperties & Record<`--${string}`, string | number>
 
@@ -279,7 +280,7 @@ function LanzheHero(props: {
           margin: 0,
           fontSize: '2.35em',
           lineHeight: 1,
-          fontWeight: 900,
+          fontWeight: 700,
           color: '#ffffff',
         }}
       />
@@ -347,7 +348,7 @@ function FoldTitle(props: { readonly children: ReactNode; readonly titleScale?: 
         color: '#ffffff',
         fontSize: `${1.07 * titleScale}em`,
         lineHeight: '32px',
-        fontWeight: 900,
+        fontWeight: 700,
         boxShadow: '2px 4px 0 rgba(41, 74, 111, 0.12)',
       }}
     >
@@ -395,7 +396,7 @@ function LanzheJobIntentionSection(props: {
               onMouseLeave={() => jobIntention.setHoveredField(null)}
             >
               <span style={{ color: MUTED }}>{field.label}：</span>
-              <span style={{ color: INK, fontWeight: 800 }}>{field.value}</span>
+              <span style={{ color: INK, fontWeight: 700 }}>{field.value}</span>
               <button
                 type="button"
                 className="absolute -right-3 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-white text-[12px] leading-none text-red-500 shadow-sm print:hidden"
@@ -441,7 +442,7 @@ function LanzheSection(props: LanzheSectionProps): ReactElement {
             as="span"
             value={editable.title}
             onCommit={editable.canEditTitle ? editable.onCommitTitle : undefined}
-            style={{ color: '#ffffff', fontWeight: 900 }}
+            style={{ color: '#ffffff', fontWeight: 700 }}
           />
         </FoldTitle>
         <SectionActions
@@ -694,7 +695,7 @@ function MetaGrid(props: {
         color: INK,
         fontSize: `${0.88 * props.titleScale}em`,
         lineHeight: 1.35,
-        fontWeight: 800,
+        fontWeight: 700,
       }}
     >
       {props.children}
@@ -711,7 +712,7 @@ function MetaCell(props: {
 }): ReactElement {
   const { blockId, fieldName, value, strong, onEditingChange } = props
   return (
-    <div className="min-w-0 pr-1" style={{ fontWeight: strong ? 900 : 700, color: strong ? INK : TEXT }}>
+    <div className="min-w-0 pr-1" style={{ fontWeight: 700, color: strong ? INK : TEXT }}>
       <EditableFieldWrapper
         blockId={blockId}
         fieldName={fieldName}
@@ -731,7 +732,7 @@ function DateCell(props: {
   return (
     <div
       className="justify-self-end whitespace-nowrap"
-      style={{ color: INK, fontSize: '0.95em', fontWeight: 800 }}
+      style={{ color: INK, fontSize: '0.95em', fontWeight: 700 }}
     >
       {usePlainField ? (
         <>

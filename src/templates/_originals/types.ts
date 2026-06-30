@@ -1,5 +1,6 @@
 import type { ResumeData } from '@/entities/resume/resume-data'
 import type { ThemeTokens } from '@/entities/theme/theme-tokens'
+import { RESUME_FONT_STACKS } from '@/entities/theme/font-stacks'
 
 export type VariantId =
   | 'xinghe'
@@ -41,5 +42,5 @@ export interface VariantConfig {
   readonly serif?: boolean
 }
 
-export const SANS = '"Inter", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif'
-export const SERIF = 'Georgia, "Noto Serif SC", "Noto Sans SC", "Microsoft YaHei", serif'
+export const SANS = RESUME_FONT_STACKS.sans
+export const SERIF = RESUME_FONT_STACKS.serif

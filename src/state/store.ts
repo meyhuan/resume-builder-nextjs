@@ -18,24 +18,38 @@ import { createDefaultBlock } from '@/entities/blocks/block-factory'
 import { normalizeResumeContent } from '@/entities/resume/normalize-resume-content'
 import { TEMPLATE_REGISTRY } from '@/templates/template-loader'
 import {
+  getResumeFontFamily,
+  normalizeResumeFontTheme,
+  type ResumeFontFamilyId,
+} from '@/entities/theme/font-stacks'
+import {
   syncJobPositionFromBaseInfo,
   syncJobPositionFromJobIntention,
   withNormalizedJobPosition,
 } from '@/entities/resume/sync-job-position'
 
 const DEFAULT_FONT_SIZE: number = 15
-const defaultTheme: ThemeTokens = {
-  primaryColor: '#111827',
-  textColor: '#111827',
-  fontFamily: 'Inter, Noto Sans SC, system-ui, sans-serif',
-  fontSize: DEFAULT_FONT_SIZE,
-  lineHeight: 1.5,
-  spacingScale: 1,
-  pagePaddingVertical: 19,
-  pagePaddingHorizontal: 15,
-  titleScale: 1,
-  paragraphIndent: 0,
-  onePageFit: false,
+
+function createDefaultTheme(fontFamilyId: ResumeFontFamilyId = 'sans'): ThemeTokens {
+  return {
+    primaryColor: '#111827',
+    textColor: '#111827',
+    fontFamilyId,
+    fontFamily: getResumeFontFamily(fontFamilyId),
+    fontSize: DEFAULT_FONT_SIZE,
+    lineHeight: 1.5,
+    spacingScale: 1,
+    pagePaddingVertical: 19,
+    pagePaddingHorizontal: 15,
+    titleScale: 1,
+    paragraphIndent: 0,
+    onePageFit: false,
+  }
+}
+
+function normalizeThemeForTemplate(theme: ThemeTokens, templateId: string): ThemeTokens {
+  const fallbackFont = TEMPLATE_REGISTRY[templateId]?.recommendedFontFamilyId ?? 'sans'
+  return normalizeResumeFontTheme(theme, fallbackFont)
 }
 
 /**
@@ -47,8 +61,10 @@ const defaultTheme: ThemeTokens = {
  */
 function resolveInitialTheme(templateId: string): ThemeTokens {
   const recommended: string | undefined = TEMPLATE_REGISTRY[templateId]?.recommendedPrimaryColor
-  if (!recommended) return defaultTheme
-  return { ...defaultTheme, primaryColor: recommended }
+  const fontFamilyId = TEMPLATE_REGISTRY[templateId]?.recommendedFontFamilyId ?? 'sans'
+  const theme = createDefaultTheme(fontFamilyId)
+  if (!recommended) return theme
+  return { ...theme, primaryColor: recommended }
 }
 
 export const defaultResume: ResumeData = createDefaultResume()
@@ -158,16 +174,17 @@ export const useAppStore = create<AppState>()(
     },
     getThemeForTemplate: (templateId) => {
       const state = get()
-      return state.themes[templateId] || resolveInitialTheme(templateId)
+      return normalizeThemeForTemplate(state.themes[templateId] || resolveInitialTheme(templateId), templateId)
     },
     getDefaultThemeForTemplate: (templateId) => resolveInitialTheme(templateId),
     setThemeForTemplate: (templateId, updater) =>
       set((state) => {
-        const currentTheme = state.themes[templateId] || resolveInitialTheme(templateId)
+        const currentTheme = normalizeThemeForTemplate(state.themes[templateId] || resolveInitialTheme(templateId), templateId)
+        const nextTheme = produce(currentTheme, updater)
         return {
           themes: {
             ...state.themes,
-            [templateId]: produce(currentTheme, updater),
+            [templateId]: normalizeThemeForTemplate(nextTheme, templateId),
           },
         }
       }, false, `theme/set/${templateId}`),
@@ -180,7 +197,15 @@ export const useAppStore = create<AppState>()(
       }), false, `theme/reset/${templateId}`),
     loadThemes: (themes) =>
       set((state) => ({
-        themes: { ...state.themes, ...themes },
+        themes: {
+          ...state.themes,
+          ...Object.fromEntries(
+            Object.entries(themes).map(([templateId, theme]) => [
+              templateId,
+              normalizeThemeForTemplate(theme, templateId),
+            ])
+          ),
+        },
       }), false, 'theme/load'),
     moveBlockInSection: (sectionId, activeId, overId) => {
       const state = get()

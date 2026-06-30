@@ -5,6 +5,11 @@ import { Check, RotateCcw, X } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Slider } from '@/components/ui/slider'
 import type { ThemeTokens } from '@/entities/theme/theme-tokens'
+import {
+  getResumeFontFamily,
+  RESUME_FONT_OPTIONS,
+  resolveResumeFontFamilyId,
+} from '@/entities/theme/font-stacks'
 import { TEMPLATE_REGISTRY, getAllTemplates } from '@/templates/template-loader'
 import type { OnePageStatus } from '@/hooks/use-one-page-mode'
 import { cn } from '@/lib/utils'
@@ -18,7 +23,8 @@ export interface ThemePatcher {
 export const DEFAULT_PREVIEW_THEME: ThemeTokens = {
   primaryColor: '#111827',
   textColor: '#111827',
-  fontFamily: 'Inter, Noto Sans SC, system-ui, sans-serif',
+  fontFamilyId: 'sans',
+  fontFamily: getResumeFontFamily('sans'),
   fontSize: 15,
   lineHeight: 1.5,
   spacingScale: 1,
@@ -35,12 +41,6 @@ export const ONE_PAGE_BADGE_STYLES: Record<OnePageStatus, { bg: string; label: s
   fit: { bg: 'bg-emerald-600/90', label: '单页适配完成' },
   overflow: { bg: 'bg-rose-600/90', label: '内容过多，建议精简' },
 }
-
-const FONT_FAMILIES: ReadonlyArray<{ id: string; label: string; stack: string }> = [
-  { id: 'sans', label: '无衬线', stack: 'Inter, "Noto Sans SC", system-ui, sans-serif' },
-  { id: 'serif', label: '衬线', stack: '"Noto Serif SC", "Songti SC", Georgia, serif' },
-  { id: 'mono', label: '等宽', stack: 'ui-monospace, SFMono-Regular, Menlo, monospace' },
-]
 
 const PRESET_COLORS: ReadonlyArray<string> = [
   '#111827', '#2563eb', '#0891b2', '#10b981', '#b45309',
@@ -246,7 +246,7 @@ function AppearancePanel({
   readonly locked: boolean
   readonly onUpdate: ThemePatcher
 }): ReactElement {
-  const activeFamily = FONT_FAMILIES.find((f) => theme.fontFamily.includes(f.stack.split(',')[0])) ?? FONT_FAMILIES[0]
+  const activeFamilyId = resolveResumeFontFamilyId(theme.fontFamilyId, theme.fontFamily)
 
   return (
     <div className="space-y-6">
@@ -308,21 +308,22 @@ function AppearancePanel({
       </Row>
 
       <Row label="字体">
-        <div className="grid grid-cols-3 gap-2">
-          {FONT_FAMILIES.map((f) => {
-            const selected = f.id === activeFamily.id
+        <div className="grid grid-cols-2 gap-2">
+          {RESUME_FONT_OPTIONS.map((f) => {
+            const selected = f.id === activeFamilyId
             return (
               <button
                 key={f.id}
                 type="button"
-                onClick={(): void => onUpdate({ fontFamily: f.stack })}
+                onClick={(): void => onUpdate({ fontFamilyId: f.id, fontFamily: f.stack })}
                 className={cn(
-                  'h-11 rounded-xl border text-sm font-medium transition-colors',
+                  'rounded-xl border px-3 py-2 text-left transition-colors',
                   selected ? 'border-violet-500 bg-violet-50 text-violet-700' : 'border-slate-200 text-slate-700',
                 )}
                 style={{ fontFamily: f.stack }}
               >
-                {f.label}
+                <span className="block text-sm font-semibold">{f.label}</span>
+                <span className="mt-0.5 block text-[11px] text-slate-500">{f.description}</span>
               </button>
             )
           })}

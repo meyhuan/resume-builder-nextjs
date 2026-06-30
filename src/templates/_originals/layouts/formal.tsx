@@ -77,7 +77,7 @@ export function LegalBlueLayout(props: {
       <div aria-hidden style={{ position: 'relative', height: refPx(108), marginBottom: refPx(10) }}>
         <div style={{ position: 'absolute', left: legalBandLeft, right: refPx(20), top: refPx(43), height: refPx(38), transform: 'skewX(-10deg)', background: `linear-gradient(90deg, ${config.accent}, ${lightenHex(config.accent, 0.14)})` }} />
         <div style={{ position: 'absolute', left: legalTitleLeft, top: refPx(28), width: refPx(211), height: refPx(77), transform: 'skewX(-8deg)', border: `1.6px solid ${config.accent}`, backgroundColor: '#f7f7f7', display: 'grid', placeItems: 'center' }}>
-          <div style={{ transform: 'skewX(8deg)', textAlign: 'center', color: config.accent, fontWeight: 900, letterSpacing: '0.07em' }}>
+          <div style={{ transform: 'skewX(8deg)', textAlign: 'center', color: config.accent, fontWeight: 700, letterSpacing: '0.07em' }}>
             <div style={{ fontSize: '1.86em', lineHeight: 1.05 }}>个人简历</div>
             <div style={{ marginTop: refPx(3), fontSize: '0.74em', lineHeight: 1.1, letterSpacing: '0.18em', whiteSpace: 'nowrap' }}>PERSONAL RESUME</div>
           </div>
@@ -168,7 +168,7 @@ export function TeacherBlackLayout(props: {
         style={{ display: 'grid', gridTemplateColumns: `minmax(0, 1fr) ${refPx(112)}px`, gap: refPx(16), alignItems: 'start', paddingBottom: refPx(4), cursor: 'pointer' }}
       >
         <div>
-          <EditableText as="h1" value={header.name} onCommit={header.onCommitName} style={{ margin: 0, color: '#111', fontSize: '1.48em', lineHeight: 1.08, fontWeight: 900 }} />
+          <EditableText as="h1" value={header.name} onCommit={header.onCommitName} style={{ margin: 0, color: '#111', fontSize: '1.48em', lineHeight: 1.08, fontWeight: 700 }} />
           <HeaderFieldGrid header={header} accent={config.accent} labelColor="#111" valueColor="#222" columns="repeat(2, minmax(0, 1fr))" gap={`${refPx(7)}px ${refPx(20)}px`} fontSize="0.9em" />
         </div>
         <div style={{ justifySelf: 'end' }}>
@@ -206,7 +206,7 @@ function MinimalBlackCss({ accent }: { readonly accent: string }): ReactElement 
         color: #fff;
         font-size: 1.08em;
         line-height: 1;
-        font-weight: 900;
+        font-weight: 700;
       }
       .original-minimal-black .minimal-info-title strong::after,
       .original-minimal-black .minimal-info-title .minimal-title-label::after {
@@ -274,7 +274,7 @@ export function BankGoldLayout(props: {
         style={{ position: 'relative', minHeight: refPx(144), cursor: 'pointer' }}
       >
         <div style={{ paddingRight: refPx(152) }}>
-          <EditableText as="h1" value={header.name} onCommit={header.onCommitName} style={{ margin: `0 0 ${refPx(10)}px`, color: '#222', fontSize: '1.98em', lineHeight: 1.08, fontWeight: 900 }} />
+          <EditableText as="h1" value={header.name} onCommit={header.onCommitName} style={{ margin: `0 0 ${refPx(10)}px`, color: '#222', fontSize: '1.98em', lineHeight: 1.08, fontWeight: 700 }} />
           <HeaderFieldGrid header={header} accent={config.accent} labelColor="#8a5a20" valueColor="#4b4035" columns={`${refPx(180)}px ${refPx(230)}px`} gap={`${refPx(5)}px ${refPx(18)}px`} fontSize="0.82em" compact />
         </div>
         <div style={{ position: 'absolute', right: refPx(16), top: 0 }}>
@@ -319,7 +319,7 @@ export function MinimalBlackLayout(props: {
         style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '2px 0 12px', borderBottom: `5px solid ${config.accent}`, cursor: 'pointer' }}
       >
         <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: 18 }}>
-          <span style={{ color: '#111', fontSize: '1.88em', lineHeight: 1.04, fontWeight: 950, letterSpacing: '0.08em' }}>个人简历</span>
+          <span style={{ color: '#111', fontSize: '1.88em', lineHeight: 1.04, fontWeight: 700, letterSpacing: '0.08em' }}>个人简历</span>
         </div>
         <div aria-hidden style={{ display: 'flex', gap: 0, paddingRight: 18 }}>
           {[0, 1, 2].map((item) => <span key={item} style={{ width: 24, height: 24, marginLeft: -4, borderRadius: 999, border: `1.5px solid ${config.accent}` }} />)}
@@ -331,8 +331,8 @@ export function MinimalBlackLayout(props: {
           <div>
             <div className="grid" style={{ gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '5px 18px', fontSize: '0.86em', lineHeight: 1.36 }}>
               <span className="inline-flex min-w-0 flex-wrap items-baseline" data-template-base-info-field="true" data-template-base-info-key="name">
-                <span style={{ fontWeight: 800 }}>姓名：</span>
-                <EditableText as="span" value={header.name} onCommit={header.onCommitName} style={{ minWidth: 0, color: '#111', fontWeight: 800 }} />
+                <span style={{ fontWeight: 700 }}>姓名：</span>
+                <EditableText as="span" value={header.name} onCommit={header.onCommitName} style={{ minWidth: 0, color: '#111', fontWeight: 700 }} />
               </span>
             </div>
             <HeaderFieldGrid header={header} accent={config.accent} labelColor="#111" valueColor="#222" columns="repeat(2, minmax(0, 1fr))" gap="5px 18px" fontSize="0.86em" compact />

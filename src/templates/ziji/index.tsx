@@ -7,6 +7,7 @@ import { SortableContext, rectSortingStrategy } from '@dnd-kit/sortable'
 import type { ResumeBlock } from '@/entities/blocks/resume-block'
 import { getHeaderJobIntentionText } from '@/entities/resume/header-job-intention'
 import type { Section } from '@/entities/resume/section'
+import { RESUME_FONT_STACKS } from '@/entities/theme/font-stacks'
 import BlockWrapper from '@/components/blocks/block-wrapper'
 import EditableBlockWrapper from '@/editor/editable-block-wrapper'
 import EditableDateField from '@/editor/editable-date-field'
@@ -38,7 +39,7 @@ const DEFAULT_PURPLE = '#7c3aed'
 const SIGNATURE_FUCHSIA = '#d946ef'
 const BODY = '#222222'
 const MUTED = '#8c8f96'
-const SANS = '"Inter", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif'
+const SANS = RESUME_FONT_STACKS.sans
 
 type CssVars = CSSProperties & Record<`--${string}`, string | number>
 
@@ -429,7 +430,7 @@ function ZijiHero(props: {
     >
       <div
         aria-hidden
-        className="absolute right-5 top-4 text-right font-black uppercase tracking-[2px] text-white/20"
+        className="absolute right-5 top-4 text-right font-bold uppercase tracking-[2px] text-white/20"
         style={{ fontSize: 36, lineHeight: 0.92 }}
       >
         CAREER<br />NOTES
@@ -471,14 +472,14 @@ function ZijiHero(props: {
       />
 
       <div className="absolute text-white" style={{ left: 252, right: 42, top: 88 }}>
-        <div className="font-extrabold tracking-normal" style={{ fontSize: '2.25em', lineHeight: 1 }}>
+        <div className="font-bold tracking-normal" style={{ fontSize: '2.25em', lineHeight: 1 }}>
           Hello,I'm
         </div>
         <EditableText
           as="h1"
           value={header.name}
           onCommit={header.onCommitName}
-          className="m-0 mt-2 font-extrabold text-white"
+          className="m-0 mt-2 font-bold text-white"
           style={{ fontSize: '2.18em', lineHeight: 1 }}
           placeholder="姓名"
         />
@@ -512,7 +513,7 @@ function ZijiHero(props: {
 function SideTitle(props: { readonly children: ReactNode }): ReactElement {
   return (
     <h3
-      className="relative m-0 font-black text-black"
+      className="relative m-0 font-bold text-black"
       style={{ fontSize: '1.32em', lineHeight: 1.05, marginBottom: 18 }}
     >
       <span
@@ -580,7 +581,7 @@ function SideJobField(props: {
   if (strong) {
     return (
       <span
-        className="relative mb-4 block font-black text-black"
+        className="relative mb-4 block font-bold text-black"
         style={{ fontSize: '1.02em', lineHeight, overflowWrap: 'anywhere' }}
         onMouseEnter={() => jobIntention.setHoveredField(field.key)}
         onMouseLeave={() => jobIntention.setHoveredField(null)}
@@ -673,7 +674,7 @@ function ZijiSideSection(props: {
           as="h3"
           value={displayTitle}
           onCommit={canEditTitle ? onCommitTitle : undefined}
-          className="m-0 font-black text-black"
+          className="m-0 font-bold text-black"
           style={{ fontSize: `${1.32 * titleScale}em`, lineHeight: 1.05 }}
         />
         <div className="absolute right-0 top-0 z-10">
@@ -748,7 +749,7 @@ function ZijiSideBlockBody(props: { readonly block: ResumeBlock; readonly lineHe
   if (block.type === 'experience') {
     return (
       <article style={{ lineHeight }}>
-        <h4 className="m-0 mb-2 font-black text-black" style={titleStyle}>
+        <h4 className="m-0 mb-2 font-bold text-black" style={titleStyle}>
           <EditableFieldWrapper blockId={block.id} fieldName="company" value={block.company ?? ''} onUpdate={() => {}} className="!px-0 !leading-[inherit]" />
         </h4>
         <div className="mb-1" style={mutedTextStyle}>
@@ -765,7 +766,7 @@ function ZijiSideBlockBody(props: { readonly block: ResumeBlock; readonly lineHe
   if (block.type === 'project') {
     return (
       <article style={{ lineHeight }}>
-        <h4 className="m-0 mb-2 font-black text-black" style={titleStyle}>
+        <h4 className="m-0 mb-2 font-bold text-black" style={titleStyle}>
           <EditableFieldWrapper blockId={block.id} fieldName="name" value={block.name ?? ''} onUpdate={() => {}} className="!px-0 !leading-[inherit]" />
         </h4>
         <div className="mb-1" style={mutedTextStyle}>
@@ -782,7 +783,7 @@ function ZijiSideBlockBody(props: { readonly block: ResumeBlock; readonly lineHe
   if (block.type === 'campus') {
     return (
       <article style={{ lineHeight }}>
-        <h4 className="m-0 mb-2 font-black text-black" style={titleStyle}>
+        <h4 className="m-0 mb-2 font-bold text-black" style={titleStyle}>
           <EditableFieldWrapper blockId={block.id} fieldName="organization" value={block.organization ?? ''} onUpdate={() => {}} className="!px-0 !leading-[inherit]" />
         </h4>
         <div className="mb-1" style={mutedTextStyle}>
@@ -827,7 +828,7 @@ function ZijiSectionOverlay(props: { readonly section: Section; readonly primary
         fontFamily: SANS,
       }}
     >
-      <h3 className="m-0 font-black text-black" style={{ fontSize: 20, lineHeight: 1.18 }}>
+      <h3 className="m-0 font-bold text-black" style={{ fontSize: 20, lineHeight: 1.18 }}>
         {getSideDisplaySectionTitle(section)}
       </h3>
       {summary ? (
@@ -850,7 +851,7 @@ function SideEducationBlock(props: {
   return (
     <ZijiBlockShell block={block} sectionId={sectionId} index={index} total={total} compact>
       <div style={{ lineHeight }}>
-        <h4 className="m-0 mb-2 font-black text-black" style={{ fontSize: '1.02em', lineHeight: 1.2 }}>
+        <h4 className="m-0 mb-2 font-bold text-black" style={{ fontSize: '1.02em', lineHeight: 1.2 }}>
           <EditableFieldWrapper blockId={block.id} fieldName="school" value={block.school ?? ''} onUpdate={() => {}} className="!px-0 !leading-[inherit]" />
         </h4>
         <div className="mb-1" style={{ color: MUTED, fontSize: '0.88em', lineHeight }}>
@@ -929,7 +930,7 @@ function ZijiMainSection(props: {
           as="h2"
           value={displayTitle}
           onCommit={canEditTitle ? onCommitTitle : undefined}
-          className="m-0 font-black text-black"
+          className="m-0 font-bold text-black"
           style={{ fontSize: `${1.34 * titleScale}em`, lineHeight: 1.05 }}
         />
         <div className="absolute right-0 top-0 z-10">
@@ -1162,7 +1163,7 @@ function ZijiStructuredHead(props: {
         marginBottom: 11,
       }}
     >
-      <h4 className="m-0 font-black text-black" style={{ gridColumn: '1 / 3', fontSize: '1.06em', lineHeight: 1.15, marginBottom: 12 }}>
+      <h4 className="m-0 font-bold text-black" style={{ gridColumn: '1 / 3', fontSize: '1.06em', lineHeight: 1.15, marginBottom: 12 }}>
         {props.title}
       </h4>
       <div style={{ color: MUTED, fontSize: '0.94em', lineHeight: props.lineHeight }}>

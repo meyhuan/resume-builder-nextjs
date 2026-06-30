@@ -18,6 +18,7 @@ import { createContext, useContext } from 'react'
 import type { ReactElement, ReactNode } from 'react'
 import { getHeaderJobIntentionText } from '@/entities/resume/header-job-intention'
 import type { Section } from '@/entities/resume/section'
+import { RESUME_FONT_STACKS } from '@/entities/theme/font-stacks'
 import {
   ResumeFrame, SortableSection, BlockList, DeleteSectionDialog,
   AvatarSlot, FieldChip, EditableText,
@@ -71,7 +72,7 @@ const DEFAULT_PALETTE: QingyunPalette = buildPalette(QINGYUN_DEFAULT_SKY)
 const PaletteCtx = createContext<QingyunPalette>(DEFAULT_PALETTE)
 const usePalette = (): QingyunPalette => useContext(PaletteCtx)
 
-const SANS = '"Inter", "Noto Sans SC", "PingFang SC", "Helvetica Neue", sans-serif'
+const SANS = RESUME_FONT_STACKS.sans
 
 // ---------------------------------------------------------------------------
 // Section title heuristics: map common Chinese keywords to English
@@ -127,7 +128,7 @@ export default function QingyunTemplate(props: TemplateProps): ReactElement {
       resume={resume}
       theme={theme}
       className="qingyun-resume-root"
-      style={{ backgroundColor: palette.paper, color: palette.ink, fontFamily: SANS }}
+      style={{ backgroundColor: palette.paper, color: palette.ink, fontFamily: theme.fontFamily || SANS }}
     >
       <style>{`
         @media print {
@@ -268,7 +269,7 @@ function QingyunHero({ header, title, horizontalPadding, freshGradLabel }: HeroP
             onCommit={onCommitName}
             style={{
               fontSize: '2.5em',
-              fontWeight: 800,
+              fontWeight: 700,
               color: '#ffffff',
               letterSpacing: '0.02em',
               lineHeight: 1.1,

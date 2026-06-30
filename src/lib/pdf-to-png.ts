@@ -3,9 +3,8 @@ import fs from 'fs'
 import path from 'path'
 
 // Read the PDF.js scripts once at module load time and cache them in memory.
-// This avoids a network round-trip on every export request — each Puppeteer
-// browser instance is ephemeral (launch → close per request), so the browser's
-// own HTTP cache is discarded after every call.
+// This avoids a network round-trip on every export request and keeps PDF.js
+// independent from Chromium's profile cache.
 function readPdfjsScript(filename: string): string {
   const filePath = path.join(process.cwd(), 'public', 'libs', 'pdfjs', filename)
   return fs.readFileSync(filePath, 'utf-8')

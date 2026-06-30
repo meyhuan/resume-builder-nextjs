@@ -18,6 +18,7 @@ import { createContext, useContext } from 'react'
 import type { ReactElement, ReactNode } from 'react'
 import { getHeaderJobIntentionText } from '@/entities/resume/header-job-intention'
 import type { Section } from '@/entities/resume/section'
+import { RESUME_FONT_STACKS } from '@/entities/theme/font-stacks'
 import {
   ResumeFrame, SortableSection, BlockList, DeleteSectionDialog,
   AvatarSlot, FieldChip, EditableText,
@@ -72,7 +73,7 @@ const PaletteCtx = createContext<MashangPalette>(DEFAULT_PALETTE)
 const usePalette = (): MashangPalette => useContext(PaletteCtx)
 
 const MONO = '"JetBrains Mono", "Fira Code", "SF Mono", Menlo, Consolas, monospace'
-const SANS = '"Inter", "Noto Sans SC", "PingFang SC", "Helvetica Neue", sans-serif'
+const SANS = RESUME_FONT_STACKS.sans
 
 // ---------------------------------------------------------------------------
 // Section tag heuristic
@@ -107,7 +108,7 @@ export default function MashangTemplate(props: TemplateProps): ReactElement {
         resume={resume}
         theme={theme}
         className="mashang-resume-root"
-        style={{ backgroundColor: palette.paper, color: palette.ink, fontFamily: SANS }}
+        style={{ backgroundColor: palette.paper, color: palette.ink, fontFamily: theme.fontFamily || SANS }}
       >
         <style>{`
           @media print {
@@ -223,7 +224,7 @@ function MashangHero({ header, title, horizontalPadding }: HeroProps): ReactElem
             onCommit={onCommitName}
             style={{
               fontSize: '2.3em',
-              fontWeight: 800,
+              fontWeight: 700,
               color: palette.ink,
               letterSpacing: '0.005em',
               lineHeight: 1.1,

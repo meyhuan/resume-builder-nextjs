@@ -12,13 +12,12 @@
  *   - /next-api/exports/mini     H5 移动端 + 小程序统一导出，page.goto(SSR页)，双重认证
  */
 import { NextResponse } from 'next/server';
-import puppeteerCore from 'puppeteer-core';
 import type { Page } from 'puppeteer-core';
-import chromium from '@sparticuz/chromium';
 import { paginateHtml, getClientPaginationScript } from '@/utils/paginate-html';
 import { checkQuota } from '@/lib/quota/quota-checker';
 import { savePdfTemp } from '@/lib/pdf-temp-store';
 import { buildExportContentDisposition, sanitizeExportFileName } from '@/lib/export-file-name';
+import { closeSharedPuppeteerPage, newSharedPuppeteerPage } from '@/lib/puppeteer-browser';
 
 const PDF_RENDER_TIMEOUT_MS = 45_000;
 const ASSET_READY_TIMEOUT_MS = 8_000;
@@ -77,22 +76,9 @@ export async function POST(req: Request) {
     // Pre-process HTML with pagination hints (skip for one-page mode)
     const paginatedHtml = isOnePage || isBleed ? html : paginateHtml(html);
 
-    const isLocal = process.env.NODE_ENV === 'development';
-    
-    // For local development, we might need a different path for the executable
-    const executablePath = isLocal 
-      ? 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe' // Default Windows path
-      : await chromium.executablePath();
-
-    let browser;
+    let page: Page | undefined;
     try {
-      browser = await puppeteerCore.launch({
-        args: isLocal ? [] : chromium.args,
-        executablePath: executablePath,
-        headless: true,
-      });
-
-      const page = await browser.newPage();
+      page = await newSharedPuppeteerPage();
       page.setDefaultNavigationTimeout(PDF_RENDER_TIMEOUT_MS);
       page.setDefaultTimeout(PDF_RENDER_TIMEOUT_MS);
       
@@ -132,9 +118,7 @@ export async function POST(req: Request) {
         },
       });
     } finally {
-      if (browser) {
-        await browser.close();
-      }
+      await closeSharedPuppeteerPage(page);
     }
   } catch (error) {
     console.error('PDF generation error:', { error, elapsedMs: Date.now() - startedAt });

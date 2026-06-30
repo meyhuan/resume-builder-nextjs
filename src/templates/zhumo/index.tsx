@@ -6,7 +6,7 @@
  * 面向编辑、文案、新媒体、品牌内容岗的旗舰模板。
  *
  * 设计语言：
- *  - 衬线字（Noto Serif SC / Lora）传达文字工作者的气质
+ *  - 衬线字（托管的 Noto Serif SC）传达文字工作者的气质
  *  - 章节编号使用中文数字「壹 / 贰 / 叁」—— 与「01/02/」的工程感拉开距离
  *  - 朱红色左侧竖条作为页面主视觉锚点，延展到每个 section
  *  - 姓名旁一枚朱红方印（「印」/「简」字），作为签名元素
@@ -18,6 +18,7 @@ import { createContext, useContext } from 'react'
 import type { ReactElement, ReactNode } from 'react'
 import { getHeaderJobIntentionText } from '@/entities/resume/header-job-intention'
 import type { Section } from '@/entities/resume/section'
+import { RESUME_FONT_FAMILY_NAMES, RESUME_FONT_STACKS } from '@/entities/theme/font-stacks'
 import {
   ResumeFrame, SortableSection, BlockList, DeleteSectionDialog,
   AvatarSlot, FieldChip, EditableText,
@@ -67,8 +68,8 @@ const DEFAULT_PALETTE: ZhumoPalette = buildPalette(ZHUMO_DEFAULT_RED)
 const PaletteCtx = createContext<ZhumoPalette>(DEFAULT_PALETTE)
 const usePalette = (): ZhumoPalette => useContext(PaletteCtx)
 
-const SERIF = '"Noto Serif SC", "Source Han Serif SC", "Songti SC", "SimSun", "Lora", Georgia, serif'
-const SERIF_LATIN = '"Lora", "Noto Serif SC", Georgia, serif'
+const SERIF = RESUME_FONT_STACKS.serif
+const SERIF_LATIN = `"${RESUME_FONT_FAMILY_NAMES.serif}", Georgia, serif`
 
 // ---------------------------------------------------------------------------
 // Chinese numeral for section index (1..20)
@@ -118,7 +119,7 @@ export default function ZhumoTemplate(props: TemplateProps): ReactElement {
         resume={resume}
         theme={theme}
         bleed
-        style={{ backgroundColor: palette.paper, color: palette.ink, fontFamily: SERIF }}
+        style={{ backgroundColor: palette.paper, color: palette.ink, fontFamily: theme.fontFamily || SERIF }}
       >
         {/* 整页左侧竖条（朱红） */}
         {/* <div

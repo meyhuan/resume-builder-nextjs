@@ -5,11 +5,10 @@
  * Used by `/next-api/exports/mini` which serves both the H5 mobile
  * and mini-program export flows (dual-auth: cookie or HMAC sign).
  */
-import puppeteerCore from 'puppeteer-core'
 import type { Page } from 'puppeteer-core'
-import chromium from '@sparticuz/chromium'
 import { mintPrintToken } from '@/lib/print-token'
 import { rasterizePdfToPngs } from '@/lib/pdf-to-png'
+import { closeSharedPuppeteerPage, newSharedPuppeteerPage } from '@/lib/puppeteer-browser'
 
 export interface RenderResult {
   readonly buffer: Buffer
@@ -150,11 +149,6 @@ export function getInternalBaseUrl(req: Request): string {
 
 export async function renderViaPrintPage(opts: RenderViaPrintPageOpts): Promise<RenderResult> {
   const startedAt = Date.now()
-  const isLocal: boolean = process.env.NODE_ENV === 'development'
-  const executablePath: string = isLocal
-    ? 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
-    : await chromium.executablePath()
-
   const printToken: string = mintPrintToken(opts.resumeId, opts.tokenTtlMs ?? 5 * 60 * 1000)
   const params = new URLSearchParams({ token: printToken })
   if (opts.templateId) params.set('tpl', opts.templateId)
@@ -162,15 +156,10 @@ export async function renderViaPrintPage(opts: RenderViaPrintPageOpts): Promise<
 
   console.log('[render-via-print-page] puppeteer goto', { traceId: opts.traceId, printUrl, type: opts.type })
 
-  let browser
+  let page: Page | undefined
   let printableContent: PrintableContentSnapshot | undefined
   try {
-    browser = await puppeteerCore.launch({
-      args: isLocal ? [] : chromium.args,
-      executablePath,
-      headless: true,
-    })
-    const page = await browser.newPage()
+    page = await newSharedPuppeteerPage()
     page.setDefaultNavigationTimeout(PRINT_PAGE_NAVIGATION_TIMEOUT_MS)
     page.setDefaultTimeout(PRINT_PAGE_NAVIGATION_TIMEOUT_MS)
     await page.setViewport({ width: 794, height: 1123, deviceScaleFactor: 2 })
@@ -232,6 +221,6 @@ export async function renderViaPrintPage(opts: RenderViaPrintPageOpts): Promise<
       },
     }
   } finally {
-    if (browser) await browser.close()
+    await closeSharedPuppeteerPage(page)
   }
 }

@@ -1,6 +1,7 @@
 /**
  * Utilities for exporting the rendered resume as standalone HTML.
  */
+import { buildResumeFontFaceCss } from '@/entities/theme/font-stacks'
 
 const DOCUMENT_DOCTYPE: string = '<!DOCTYPE html>'
 const DEFAULT_TITLE: string = 'Resume'
@@ -15,7 +16,7 @@ export interface ResumeHtmlOptions {
 export function buildResumeHtml(element: HTMLElement, options?: ResumeHtmlOptions): string {
   const title: string = options?.title ?? DEFAULT_TITLE
   const fonts: string = collectFontLinks()
-  const styles: string = collectStyleContent()
+  const styles: string = `${buildResumeFontFaceCss()}\n${collectStyleContent()}`
   const markup: string = element.outerHTML
   const isOnePage: boolean = markup.includes('data-one-page="true"')
   const isBleed: boolean = markup.includes('data-bleed="true"')
@@ -35,7 +36,7 @@ export function buildResumeHtml(element: HTMLElement, options?: ResumeHtmlOption
     ? `\n    .page {\n      min-height: 0 !important;\n      height: auto !important;\n    }\n    .resume-container[data-bleed="true"] {\n      min-height: calc(297mm - 1px) !important;\n    }`
     : ''
   const squareCornersCss: string = `\n    .page {\n      border-radius: 0 !important;\n      box-shadow: none !important;\n    }`
-  return `${DOCUMENT_DOCTYPE}\n<html lang="en">\n<head>\n  <meta charset="UTF-8">\n  <meta http-equiv="X-UA-Compatible" content="IE=edge">\n  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n  <title>${title}</title>\n  ${fonts}\n  <style>\n  ${styles}${squareCornersCss}\n  @media print {\n    @page {\n      size: A4;\n      ${pageMarginCss}\n    }${firstPageMarginCss}\n    body {\n      margin: 0;\n      padding: 0;\n    }${onePageCss}${bleedPageCss}\n  }\n  * {\n    -webkit-print-color-adjust: exact;\n    print-color-adjust: exact;\n  }\n  </style>\n</head>\n<body>\n${markup}\n</body>\n</html>`
+  return `${DOCUMENT_DOCTYPE}\n<html lang="zh-CN">\n<head>\n  <meta charset="UTF-8">\n  <meta http-equiv="X-UA-Compatible" content="IE=edge">\n  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n  <title>${title}</title>\n  ${fonts}\n  <style>\n  ${styles}${squareCornersCss}\n  @media print {\n    @page {\n      size: A4;\n      ${pageMarginCss}\n    }${firstPageMarginCss}\n    body {\n      margin: 0;\n      padding: 0;\n    }${onePageCss}${bleedPageCss}\n  }\n  * {\n    -webkit-print-color-adjust: exact;\n    print-color-adjust: exact;\n  }\n  .resume-container, .resume-container * {\n    box-shadow: none !important;\n    filter: none !important;\n    font-synthesis: none;\n    text-shadow: none !important;\n  }\n  </style>\n</head>\n<body>\n${markup}\n</body>\n</html>`
 }
 
 /**

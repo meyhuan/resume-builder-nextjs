@@ -355,7 +355,7 @@ export function SidebarJob({ jobIntention, accent }: { readonly jobIntention: Ed
       }}
       style={{ marginTop: 26, cursor: 'pointer' }}
     >
-      <h3 style={{ margin: '0 0 10px', color: accent, fontSize: '0.95em', fontWeight: 800 }}>求职意向</h3>
+      <h3 style={{ margin: '0 0 10px', color: accent, fontSize: '0.95em', fontWeight: 700 }}>求职意向</h3>
       <div className="grid" style={{ gap: 5, fontSize: '0.82em', color: 'currentColor', opacity: 0.86 }}>
         {jobIntention.fields.map((field) => <JobField key={field.key} field={field} jobIntention={jobIntention} config={CONFIG.lifeng} />)}
       </div>
@@ -456,7 +456,7 @@ export function ConceptSection(props: {
     rendererStyles = {
       ...rendererStyles,
       header: 'grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4 mb-1',
-      title: { className: 'font-extrabold', color: config.accent, fontSize: '1.03em', fontWeight: '700' },
+      title: { className: 'font-bold', color: config.accent, fontSize: '1.03em', fontWeight: '700' },
       subtitle: { className: 'text-zinc-700', fontSize: '0.97em', fontWeight: '700' },
       dateRange: { className: 'ml-4 shrink-0 whitespace-nowrap', color: config.accent, fontSize: '0.97em', fontWeight: '700' },
       content: 'original-rich mt-1 text-[0.98em]',
@@ -476,7 +476,7 @@ export function ConceptSection(props: {
     rendererStyles = {
       ...rendererStyles,
       header: 'grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4 mb-2',
-      title: { className: 'font-extrabold', color: config.accent, fontSize: '1.03em', fontWeight: '700' },
+      title: { className: 'font-bold', color: config.accent, fontSize: '1.03em', fontWeight: '700' },
       subtitle: { className: 'text-zinc-700', fontSize: '0.97em', fontWeight: '700' },
       dateRange: { className: 'ml-4 shrink-0 whitespace-nowrap', color: config.accent, fontSize: '0.97em', fontWeight: '700' },
       content: 'original-rich mt-1 text-[0.98em]',
@@ -495,7 +495,7 @@ export function ConceptSection(props: {
       <div className="relative">
         <div style={{ display: config.sectionStyle === 'numbered' ? 'flex' : 'block', alignItems: 'center', gap: 10, marginBottom: config.sectionStyle === 'numbered' ? 10 : 0 }}>
           {config.sectionStyle === 'numbered' ? (
-            <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 26, height: 26, borderRadius: 999, backgroundColor: config.accent, color: '#fff', fontSize: '0.78em', fontWeight: 800 }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 26, height: 26, borderRadius: 999, backgroundColor: config.accent, color: '#fff', fontSize: '0.78em', fontWeight: 700 }}>
               {String((index ?? 0) + 1).padStart(2, '0')}
             </span>
           ) : null}
@@ -675,7 +675,7 @@ function marketingTitleWrapStyle(config: VariantConfig): CSSProperties {
 }
 
 function marketingTitleLabelStyle(config: VariantConfig, titleScale: number): CSSProperties {
-  return { minWidth: 119, margin: 0, padding: '4px 17px', textAlign: 'center', backgroundColor: config.accent, color: '#fff', fontSize: `${1.15 * titleScale}em`, lineHeight: 1.25, fontWeight: 800 }
+  return { minWidth: 119, margin: 0, padding: '4px 17px', textAlign: 'center', backgroundColor: config.accent, color: '#fff', fontSize: `${1.15 * titleScale}em`, lineHeight: 1.25, fontWeight: 700 }
 }
 
 function marketingTitleEnglishStyle(): CSSProperties {
@@ -707,7 +707,7 @@ function bankTitleLineStyle(config: VariantConfig): CSSProperties {
 }
 
 function bankTitleLabelStyle(config: VariantConfig, titleScale: number): CSSProperties {
-  return { margin: 0, color: config.accent, fontSize: `${1.08 * titleScale}em`, lineHeight: 1.3, fontWeight: 800, letterSpacing: '0.12em', fontFamily: SERIF, whiteSpace: 'nowrap' }
+  return { margin: 0, color: config.accent, fontSize: `${1.08 * titleScale}em`, lineHeight: 1.3, fontWeight: 700, letterSpacing: '0.12em', fontFamily: SERIF, whiteSpace: 'nowrap' }
 }
 
 function bankTitleEnglishStyle(config: VariantConfig): CSSProperties {
@@ -728,7 +728,7 @@ export function PurpleDoubleChevron({ color, height = '1.4em' }: { readonly colo
 }
 
 function purpleTitleLabelStyle(config: VariantConfig, titleScale: number): CSSProperties {
-  return { margin: 0, color: config.accent, fontSize: `${1.28 * titleScale}em`, lineHeight: 1.25, fontWeight: 900 }
+  return { margin: 0, color: config.accent, fontSize: `${1.28 * titleScale}em`, lineHeight: 1.25, fontWeight: 700 }
 }
 
 function purpleTitleLineStyle(config: VariantConfig): CSSProperties {
@@ -744,7 +744,7 @@ function shanglanTitleWrapStyle(config: VariantConfig, dark?: boolean): CSSPrope
 }
 
 function shanglanTitleLabelStyle(config: VariantConfig, titleScale: number, dark?: boolean): CSSProperties {
-  return { margin: 0, color: shanglanTitleColor(config, dark), fontSize: `${(dark ? 1.02 : 1.18) * titleScale}em`, lineHeight: 1.22, fontWeight: 900, whiteSpace: 'nowrap' }
+  return { margin: 0, color: shanglanTitleColor(config, dark), fontSize: `${(dark ? 1.02 : 1.18) * titleScale}em`, lineHeight: 1.22, fontWeight: 700, whiteSpace: 'nowrap' }
 }
 
 function shanglanTitleEnglishStyle(dark?: boolean): CSSProperties {
@@ -756,7 +756,7 @@ function sectionTitleStyle(config: VariantConfig, titleScale: number, compact?: 
     margin: '0 0 10px',
     fontSize: `${(compact ? 0.95 : config.formal ? 1.04 : 1.12) * titleScale}em`,
     lineHeight: 1.35,
-    fontWeight: 800,
+    fontWeight: 700,
     color: dark ? '#a78bfa' : config.accent,
   }
   if (config.id === 'lanfa') return { ...base, position: 'relative', display: 'flex', alignItems: 'center', minHeight: 39, margin: '0 0 13px', padding: '0 0 0 52px', color: config.accent, borderBottom: 'none', fontSize: `${1.05 * titleScale}em`, letterSpacing: '0.24em', backgroundImage: 'linear-gradient(#f1f1f1, #f1f1f1)', backgroundRepeat: 'no-repeat', backgroundSize: 'calc(100% - 160px) 6px', backgroundPosition: '160px center' }

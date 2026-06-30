@@ -31,7 +31,7 @@ function MarketingSectionTitle(props: { readonly title: string; readonly en: str
   const { title, en, config } = props
   return (
     <div style={{ display: 'flex', alignItems: 'flex-end', height: 35, marginBottom: 12, borderBottom: `2px solid ${lightenHex(config.accent, 0.1)}` }}>
-      <span style={{ minWidth: 119, padding: '4px 17px', textAlign: 'center', backgroundColor: config.accent, color: '#fff', fontSize: '1.25em', fontWeight: 800 }}>{title}</span>
+      <span style={{ minWidth: 119, padding: '4px 17px', textAlign: 'center', backgroundColor: config.accent, color: '#fff', fontSize: '1.25em', fontWeight: 700 }}>{title}</span>
       <span style={{ marginLeft: 12, color: '#111', fontSize: '1.08em' }}>{en}</span>
     </div>
   )
@@ -50,7 +50,7 @@ export function MarketingBannerLayout(props: {
   const { resume, theme, header, jobIntention, showJob, config, padV, padH } = props
   return (
     <div className="original-page-content" data-template-padding-probe="true" style={{ minHeight: '297mm', padding: `${padV}px ${padH}px 44px`, backgroundColor: '#fff' }}>
-      <div aria-hidden style={{ margin: `-${padV}px -${padH}px 16px`, height: 56, background: `linear-gradient(90deg, ${config.secondary}, ${config.accent})`, color: '#c6c6c6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.56em', fontWeight: 800 }}>
+      <div aria-hidden style={{ margin: `-${padV}px -${padH}px 16px`, height: 56, background: `linear-gradient(90deg, ${config.secondary}, ${config.accent})`, color: '#c6c6c6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.56em', fontWeight: 700 }}>
         个人简历 <span style={{ marginLeft: 10, fontFamily: 'Georgia, serif', fontSize: '0.55em', fontWeight: 400 }}>Personal Resume</span>
       </div>
       <header
@@ -66,8 +66,8 @@ export function MarketingBannerLayout(props: {
         <MarketingSectionTitle title="基本信息" en="Basic information" config={config} />
         <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '5px 24px', marginTop: 8, paddingRight: 8, fontSize: '0.9em', lineHeight: 1.38 }}>
           <span className="inline-flex min-w-0 flex-wrap items-baseline" data-template-base-info-field="true" data-template-base-info-key="name">
-              <span style={{ flex: '0 0 auto', fontWeight: 800, color: '#000' }}>姓名：</span>
-            <EditableText as="span" value={header.name} onCommit={header.onCommitName} style={{ minWidth: 0, color: '#000', fontWeight: 800 }} />
+              <span style={{ flex: '0 0 auto', fontWeight: 700, color: '#000' }}>姓名：</span>
+            <EditableText as="span" value={header.name} onCommit={header.onCommitName} style={{ minWidth: 0, color: '#000', fontWeight: 700 }} />
           </span>
         </div>
         <HeaderFieldGrid header={header} accent={config.accent} labelColor="#000" valueColor="#000" columns="repeat(2, minmax(0, 1fr))" gap="5px 24px" fontSize="0.86em" compact />
@@ -185,7 +185,7 @@ function PurpleCornerCss({ accent }: { readonly accent: string }): ReactElement 
         justify-content: center;
         background: ${accent};
         color: #fff;
-        font-weight: 900;
+        font-weight: 700;
         line-height: 1;
       }
       .original-purple-corner .original-purple-resume-tag::before,
@@ -235,7 +235,7 @@ function PurpleHeaderFieldGrid(props: {
           className="min-w-0 max-w-full flex-wrap items-baseline"
           style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}
         >
-          <span style={{ display: 'inline-flex', alignItems: 'center', flex: '0 0 auto', color: infoIconColor, fontWeight: 800 }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', flex: '0 0 auto', color: infoIconColor, fontWeight: 700 }}>
             <PurpleHeaderFieldIcon label={field.label} color={infoIconColor} />
             <span style={{ color: '#555' }}>{field.label}：</span>
           </span>
@@ -306,7 +306,7 @@ export function PurpleCornerLayout(props: {
             borderTop: `3px dotted ${config.accent}`,
           }}
         />
-        <span style={{ position: 'absolute', right: refPx(56), top: refPx(32), color: config.secondary, fontSize: '1.28em', lineHeight: 1, fontWeight: 900, letterSpacing: `${refPx(12)}px`, whiteSpace: 'nowrap' }}>
+        <span style={{ position: 'absolute', right: refPx(56), top: refPx(32), color: config.secondary, fontSize: '1.28em', lineHeight: 1, fontWeight: 700, letterSpacing: `${refPx(12)}px`, whiteSpace: 'nowrap' }}>
           个人简历
         </span>
       </div>
@@ -336,11 +336,11 @@ export function PurpleCornerLayout(props: {
         />
         <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', minWidth: 0, paddingTop: refPx(5), whiteSpace: 'nowrap' }}>
           <PurpleDoubleChevron color={config.accent} height="1.2em" />
-          <EditableText as="h1" value={header.name} onCommit={header.onCommitName} style={{ display: 'inline-block', margin: 0, color: '#333', fontSize: '1.78em', lineHeight: 1.08, fontWeight: 900, letterSpacing: '0.24em' }} />
+          <EditableText as="h1" value={header.name} onCommit={header.onCommitName} style={{ display: 'inline-block', margin: 0, color: '#333', fontSize: '1.78em', lineHeight: 1.08, fontWeight: 700, letterSpacing: '0.24em' }} />
           {headerJob ? (
             <>
               <span aria-hidden style={{ width: refPx(2), height: refPx(38), margin: `0 ${refPx(12)}px`, transform: 'skewX(-14deg)', backgroundColor: config.accent }} />
-              <span style={{ display: 'inline-flex', alignItems: 'center', minHeight: refPx(35), padding: `${refPx(5)}px ${refPx(18)}px ${refPx(6)}px ${refPx(14)}px`, clipPath: 'polygon(0 0, calc(100% - 12px) 0, 100% 100%, 0 100%)', backgroundColor: config.accent, color: '#fff', fontSize: '0.9em', fontWeight: 900 }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', minHeight: refPx(35), padding: `${refPx(5)}px ${refPx(18)}px ${refPx(6)}px ${refPx(14)}px`, clipPath: 'polygon(0 0, calc(100% - 12px) 0, 100% 100%, 0 100%)', backgroundColor: config.accent, color: '#fff', fontSize: '0.9em', fontWeight: 700 }}>
                 求职意向：{headerJob}
               </span>
             </>

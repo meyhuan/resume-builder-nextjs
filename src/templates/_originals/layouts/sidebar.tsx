@@ -32,7 +32,7 @@ export function StackProjectsLayout(props: {
   return (
     <div className="grid original-page-content" data-template-padding-probe="true" style={{ gridTemplateColumns: '248px 1fr', minHeight: '297mm', padding: `${padV}px ${padH}px`, backgroundColor: '#fff' }}>
       <aside style={{ padding: '34px 24px', backgroundColor: '#052e2b', color: '#ecfdf5' }}>
-        <EditableText as="h1" value={header.name} onCommit={header.onCommitName} style={{ margin: 0, fontSize: '1.72em', lineHeight: 1.15, fontWeight: 850, color: '#fff' }} />
+        <EditableText as="h1" value={header.name} onCommit={header.onCommitName} style={{ margin: 0, fontSize: '1.72em', lineHeight: 1.15, fontWeight: 700, color: '#fff' }} />
         {getHeaderJobIntentionText(resume) ? (
           <div style={{ marginTop: 8, color: '#a7f3d0', fontSize: '0.88em' }}>{getHeaderJobIntentionText(resume)}</div>
         ) : null}
@@ -43,7 +43,7 @@ export function StackProjectsLayout(props: {
         </div>
       </aside>
       <main style={{ padding: '34px 34px 38px' }}>
-        <div style={{ marginBottom: 18, padding: '12px 14px', borderRadius: 8, backgroundColor: '#ecfdf5', color: '#065f46', fontSize: '0.82em', fontWeight: 800 }}>PROJECT DELIVERY BOARD</div>
+        <div style={{ marginBottom: 18, padding: '12px 14px', borderRadius: 8, backgroundColor: '#ecfdf5', color: '#065f46', fontSize: '0.82em', fontWeight: 700 }}>PROJECT DELIVERY BOARD</div>
         <div className="grid gap-4" style={{ gridTemplateColumns: projectSections.length > 1 ? 'repeat(2, minmax(0, 1fr))' : '1fr' }}>
           {projectSections.map((section, index) => (
             <div key={section.id} style={{ minHeight: 150, padding: 14, borderRadius: 8, border: `1px solid ${lightenHex(config.accent, 0.62)}`, backgroundColor: '#fff' }}>

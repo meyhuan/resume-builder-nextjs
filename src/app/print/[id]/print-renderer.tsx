@@ -4,6 +4,7 @@ import { Suspense, useEffect, useLayoutEffect, useMemo, useState, type ReactElem
 import type { ResumeData } from '@/entities/resume/resume-data'
 import { getRenderableResume } from '@/entities/resume/renderable-resume'
 import type { ThemeTokens } from '@/entities/theme/theme-tokens'
+import { getResumeFontFamily, normalizeResumeFontTheme } from '@/entities/theme/font-stacks'
 import { TEMPLATE_REGISTRY } from '@/templates/template-loader'
 import { useAppStore } from '@/state/store'
 
@@ -16,7 +17,8 @@ interface PrintRendererProps {
 const DEFAULT_THEME: ThemeTokens = {
   primaryColor: '#111827',
   textColor: '#111827',
-  fontFamily: 'Inter, "Noto Sans SC", system-ui, sans-serif',
+  fontFamilyId: 'sans',
+  fontFamily: getResumeFontFamily('sans'),
   fontSize: 15,
   lineHeight: 1.5,
   spacingScale: 1,
@@ -26,8 +28,10 @@ const DEFAULT_THEME: ThemeTokens = {
 
 function resolveTheme(templateId: string): ThemeTokens {
   const recommended: string | undefined = TEMPLATE_REGISTRY[templateId]?.recommendedPrimaryColor
-  if (!recommended) return DEFAULT_THEME
-  return { ...DEFAULT_THEME, primaryColor: recommended }
+  const fontFamilyId = TEMPLATE_REGISTRY[templateId]?.recommendedFontFamilyId ?? 'sans'
+  const theme = { ...DEFAULT_THEME, fontFamilyId, fontFamily: getResumeFontFamily(fontFamilyId) }
+  if (!recommended) return theme
+  return { ...theme, primaryColor: recommended }
 }
 
 /**
@@ -42,7 +46,10 @@ export default function PrintRenderer({ resume, templateId, savedTheme }: PrintR
   const setResume = useAppStore((s) => s.setResume)
   
   // Use the saved theme from the database if available, otherwise fallback to the default theme
-  const theme: ThemeTokens = savedTheme ?? defaultTheme
+  const theme: ThemeTokens = normalizeResumeFontTheme(
+    savedTheme ?? defaultTheme,
+    config.recommendedFontFamilyId ?? 'sans',
+  )
 
   const [ready, setReady] = useState<boolean>(false)
 

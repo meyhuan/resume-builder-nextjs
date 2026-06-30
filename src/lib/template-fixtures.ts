@@ -1,5 +1,6 @@
 import type { ResumeData } from '@/entities/resume/resume-data'
 import type { ThemeTokens } from '@/entities/theme/theme-tokens'
+import { getResumeFontFamily } from '@/entities/theme/font-stacks'
 
 export type TemplateFixtureId = 'full' | 'sparse' | 'long' | 'rich'
 export type TemplateLabThemeId = 'base' | 'color' | 'compact' | 'relaxed' | 'one-page' | 'zero-x'
@@ -9,7 +10,8 @@ export const TEMPLATE_FIXTURE_IDS: readonly TemplateFixtureId[] = ['full', 'spar
 export const TEMPLATE_LAB_BASE_THEME: ThemeTokens = {
   primaryColor: '#2563eb',
   textColor: '#111827',
-  fontFamily: 'Inter, "Noto Sans SC", system-ui, sans-serif',
+  fontFamilyId: 'sans',
+  fontFamily: getResumeFontFamily('sans'),
   fontSize: 15,
   lineHeight: 1.5,
   spacingScale: 1,

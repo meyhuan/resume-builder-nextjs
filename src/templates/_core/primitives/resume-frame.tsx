@@ -43,6 +43,7 @@ export function ResumeFrame(props: ResumeFrameProps): ReactElement {
       style={{
         color: theme.textColor,
         fontFamily: theme.fontFamily,
+        fontSynthesis: 'none',
         fontSize: `${theme.fontSize}px`,
         lineHeight: theme.lineHeight,
         ...style,

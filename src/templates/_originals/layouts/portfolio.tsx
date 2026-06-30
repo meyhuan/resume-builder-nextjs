@@ -42,7 +42,7 @@ export function PortfolioLayout(props: {
         style={{ display: 'grid', gridTemplateColumns: '1fr 152px', gap: 26, alignItems: 'stretch', cursor: 'pointer' }}
       >
         <div style={{ padding: '28px 30px', borderRadius: 8, background: `linear-gradient(135deg, ${config.accent}, ${config.secondary})`, color: '#fff' }}>
-          <EditableText as="h1" value={header.name} onCommit={header.onCommitName} style={{ margin: 0, fontSize: '2.08em', lineHeight: 1.12, fontWeight: 850, color: '#fff' }} />
+          <EditableText as="h1" value={header.name} onCommit={header.onCommitName} style={{ margin: 0, fontSize: '2.08em', lineHeight: 1.12, fontWeight: 700, color: '#fff' }} />
           {getHeaderJobIntentionText(resume) ? (
             <div style={{ marginTop: 8, color: '#f5f3ff', fontSize: '1em' }}>{getHeaderJobIntentionText(resume)}</div>
           ) : null}
@@ -61,7 +61,7 @@ export function PortfolioLayout(props: {
 
       {portfolioSections.length > 0 ? (
         <section style={{ marginTop: 24 }}>
-          <div style={{ marginBottom: 12, fontSize: '0.82em', fontWeight: 800, letterSpacing: 0, color: config.accent }}>FEATURED WORK</div>
+          <div style={{ marginBottom: 12, fontSize: '0.82em', fontWeight: 700, letterSpacing: 0, color: config.accent }}>FEATURED WORK</div>
           <div className="grid grid-cols-2 gap-4">
             {portfolioSections.map((section, index) => (
               <div key={section.id} style={{ padding: 16, border: `1px solid ${lightenHex(config.accent, 0.72)}`, borderRadius: 8, backgroundColor: '#fff', boxShadow: '0 10px 24px rgba(88, 28, 135, 0.08)' }}>
@@ -105,8 +105,8 @@ export function EducationTimelineLayout(props: {
     <div className="original-page-content" data-template-padding-probe="true" style={{ minHeight: '297mm', padding: `${padV}px ${padH}px 44px`, background: `linear-gradient(180deg, ${lightenHex(config.accent, 0.88)}, #fff 210px)` }}>
       <header className="group relative" onClick={header.openEditModal} style={{ display: 'grid', gridTemplateColumns: '1fr 104px', gap: 22, alignItems: 'start', cursor: 'pointer' }}>
         <div>
-          <div style={{ display: 'inline-flex', marginBottom: 10, padding: '4px 10px', borderRadius: 999, backgroundColor: '#fff', color: config.accent, fontSize: '0.78em', fontWeight: 800 }}>校招成长线</div>
-          <EditableText as="h1" value={header.name} onCommit={header.onCommitName} style={{ margin: 0, fontSize: '2em', lineHeight: 1.14, fontWeight: 850, color: config.ink }} />
+          <div style={{ display: 'inline-flex', marginBottom: 10, padding: '4px 10px', borderRadius: 999, backgroundColor: '#fff', color: config.accent, fontSize: '0.78em', fontWeight: 700 }}>校招成长线</div>
+          <EditableText as="h1" value={header.name} onCommit={header.onCommitName} style={{ margin: 0, fontSize: '2em', lineHeight: 1.14, fontWeight: 700, color: config.ink }} />
           {getHeaderJobIntentionText(resume) ? (
             <div style={{ marginTop: 8, color: config.muted, fontSize: '0.96em' }}>{getHeaderJobIntentionText(resume)}</div>
           ) : null}
@@ -118,7 +118,7 @@ export function EducationTimelineLayout(props: {
       <div style={{ marginTop: 24, paddingLeft: 26, borderLeft: `3px solid ${lightenHex(config.accent, 0.55)}` }}>
         {timelineSections.map((section, index) => (
           <div key={section.id} style={{ position: 'relative', marginBottom: 20, padding: '14px 16px', borderRadius: 8, border: '1px solid #e2e8f0', backgroundColor: '#fff' }}>
-            <span aria-hidden style={{ position: 'absolute', left: -36, top: 18, display: 'grid', placeItems: 'center', width: 20, height: 20, borderRadius: 999, backgroundColor: config.accent, color: '#fff', fontSize: 10, fontWeight: 800 }}>{index + 1}</span>
+            <span aria-hidden style={{ position: 'absolute', left: -36, top: 18, display: 'grid', placeItems: 'center', width: 20, height: 20, borderRadius: 999, backgroundColor: config.accent, color: '#fff', fontSize: 10, fontWeight: 700 }}>{index + 1}</span>
             <TemplateSection section={section} theme={theme} config={{ ...config, sectionStyle: 'numbered' }} index={index} />
           </div>
         ))}
@@ -151,7 +151,7 @@ export function TechMinimalLayout(props: {
       <header className="group relative" onClick={header.openEditModal} style={{ cursor: 'pointer', borderBottom: '3px solid #111827', paddingBottom: 16 }}>
         <div className="flex items-end justify-between gap-6">
           <div className="min-w-0">
-            <EditableText as="h1" value={header.name} onCommit={header.onCommitName} style={{ margin: 0, fontSize: '2.02em', lineHeight: 1.12, fontWeight: 900, color: '#111827' }} />
+            <EditableText as="h1" value={header.name} onCommit={header.onCommitName} style={{ margin: 0, fontSize: '2.02em', lineHeight: 1.12, fontWeight: 700, color: '#111827' }} />
             {title ? (
               <div style={{ marginTop: 6, fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace', color: config.muted, fontSize: '0.86em' }}>
                 {title} / project-driven resume
@@ -201,8 +201,8 @@ export function OfficialBriefLayout(props: {
     <div className="original-page-content" data-template-padding-probe="true" style={{ minHeight: '297mm', padding: `${padV}px ${padH}px`, backgroundColor: '#fff', color: config.ink }}>
       <div style={{ border: `2px solid ${config.accent}`, padding: '24px 28px 30px' }}>
         <header className="group relative" onClick={header.openEditModal} style={{ cursor: 'pointer', textAlign: 'center', borderBottom: `4px double ${config.accent}`, paddingBottom: 18 }}>
-          <div style={{ marginBottom: 8, color: config.accent, fontSize: '0.82em', fontWeight: 800 }}>个人履历简表</div>
-          <EditableText as="h1" value={header.name} onCommit={header.onCommitName} style={{ margin: 0, fontSize: '2.04em', lineHeight: 1.18, fontWeight: 800, color: config.ink }} />
+          <div style={{ marginBottom: 8, color: config.accent, fontSize: '0.82em', fontWeight: 700 }}>个人履历简表</div>
+          <EditableText as="h1" value={header.name} onCommit={header.onCommitName} style={{ margin: 0, fontSize: '2.04em', lineHeight: 1.18, fontWeight: 700, color: config.ink }} />
           {title ? <div style={{ marginTop: 8, color: config.muted, fontSize: '0.95em' }}>{title}</div> : null}
           <div style={{ display: 'flex', justifyContent: 'center' }}>
             <HeaderFields header={header} color={config.muted} accent={config.accent} compact />
@@ -216,7 +216,7 @@ export function OfficialBriefLayout(props: {
         <main className="grid" style={{ gridTemplateColumns: '32px 1fr', columnGap: 14, rowGap: 16, marginTop: 22 }}>
           {resume.sections.map((section, index) => (
             <div key={section.id} style={{ display: 'contents' }}>
-              <div style={{ display: 'grid', placeItems: 'start center', paddingTop: 2, color: config.accent, fontSize: '0.76em', fontWeight: 800 }}>
+              <div style={{ display: 'grid', placeItems: 'start center', paddingTop: 2, color: config.accent, fontSize: '0.76em', fontWeight: 700 }}>
                 {String(index + 1).padStart(2, '0')}
               </div>
               <div style={{ paddingBottom: 14, borderBottom: '1px solid #cbd5e1' }}>

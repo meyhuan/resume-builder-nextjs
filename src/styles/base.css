@@ -3,3 +3,7 @@ html, body, #root {
   /* Default background, can be overridden by page specific styles */
   background-color: var(--color-background);
 }
+
+.resume-container {
+  font-synthesis: none;
+}

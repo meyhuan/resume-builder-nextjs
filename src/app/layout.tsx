@@ -9,6 +9,7 @@ import { AnalyticsErrorTracking } from '@/components/analytics/AnalyticsErrorTra
 import { AnalyticsPageViewTracking } from '@/components/analytics/AnalyticsPageViewTracking';
 import { FeedbackWidget } from '@/features/feedback/feedback-widget';
 import { InstallRequestLogger } from '@/features/feedback/install-request-logger';
+import { buildResumeFontFaceCss } from '@/entities/theme/font-stacks';
 
 const SITE_URL = 'https://aijianli.cn';
 const SITE_NAME = '智简简历';
@@ -102,6 +103,7 @@ export default function RootLayout({
   return (
     <html lang="zh-CN">
       <body className="antialiased text-slate-900 bg-white font-sans">
+        <style dangerouslySetInnerHTML={{ __html: buildResumeFontFaceCss() }} />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

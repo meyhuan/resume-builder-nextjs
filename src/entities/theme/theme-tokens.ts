@@ -1,9 +1,12 @@
+import type { ResumeFontFamilyId } from '@/entities/theme/font-stacks'
+
 /**
  * Theme tokens controlling visual style.
  */
 export interface ThemeTokens {
   readonly primaryColor: string;
   readonly textColor: string;
+  readonly fontFamilyId?: ResumeFontFamilyId;
   readonly fontFamily: string;
   readonly fontSize: number; // px
   readonly lineHeight: number; // unitless

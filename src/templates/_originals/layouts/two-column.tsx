@@ -78,7 +78,7 @@ export function TwoColumnDark(props: {
                 <EditableText
                   as="h1"
                   value={header.name}
-                  style={{ width: '100%', margin: 0, fontSize: '1.8em', lineHeight: 1.15, fontWeight: 800, color: '#fff', textAlign: showAvatar ? 'center' : 'left' }}
+                  style={{ width: '100%', margin: 0, fontSize: '1.8em', lineHeight: 1.15, fontWeight: 700, color: '#fff', textAlign: showAvatar ? 'center' : 'left' }}
                 />
                 {title ? (
                   <div style={{ width: '100%', marginTop: 8, color: '#cbd5e1', fontSize: '0.92em', textAlign: showAvatar ? 'center' : 'left' }}>
@@ -134,7 +134,7 @@ export function TwoColumnSoft(props: {
       <div className="grid original-page-content" data-template-padding-probe="true" style={{ gridTemplateColumns: '286px 1fr', minHeight: '297mm', padding: `${padV}px ${padH}px`, backgroundColor: '#fff' }}>
         <ColumnDroppable id={COLUMN_LEFT_ID}>
           <aside style={{ padding: '42px 28px', background: `linear-gradient(160deg, ${hexToRgba(config.secondary, 0.12)}, ${hexToRgba(config.accent, 0.08)}), #f8fafc` }}>
-            <EditableText as="h1" value={header.name} onCommit={header.onCommitName} style={{ margin: 0, fontSize: '2em', lineHeight: 1.15, fontWeight: 800, color: config.ink }} />
+            <EditableText as="h1" value={header.name} onCommit={header.onCommitName} style={{ margin: 0, fontSize: '2em', lineHeight: 1.15, fontWeight: 700, color: config.ink }} />
             {getHeaderJobIntentionText(resume) ? (
               <div style={{ marginTop: 8, color: config.muted, fontSize: '0.94em' }}>{getHeaderJobIntentionText(resume)}</div>
             ) : null}
@@ -246,7 +246,7 @@ export function FreshSidebarLayout(props: {
               onClick={header.openEditModal}
               style={{ padding: '20px 38px 22px', cursor: 'pointer' }}
             >
-              <EditableText as="h1" value={header.name} onCommit={header.onCommitName} style={{ margin: 0, fontSize: '2.12em', lineHeight: 1.08, fontWeight: 900, color: '#fff' }} />
+              <EditableText as="h1" value={header.name} onCommit={header.onCommitName} style={{ margin: 0, fontSize: '2.12em', lineHeight: 1.08, fontWeight: 700, color: '#fff' }} />
               {getHeaderJobIntentionText(resume) ? (
                 <div style={{ marginTop: 10, color: '#fff', fontSize: '0.9em', lineHeight: 1.45 }}>
                   {getHeaderJobIntentionText(resume)}

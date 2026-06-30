@@ -5,6 +5,7 @@ import type { ReactElement, ReactNode } from 'react'
 import { GripVertical, Plus, Trash2 } from 'lucide-react'
 import type { ResumeBlock } from '@/entities/blocks/resume-block'
 import type { Section } from '@/entities/resume/section'
+import { RESUME_FONT_STACKS } from '@/entities/theme/font-stacks'
 import BlockWrapper from '@/components/blocks/block-wrapper'
 import EditableBlockWrapper from '@/editor/editable-block-wrapper'
 import EditableDateField from '@/editor/editable-date-field'
@@ -30,7 +31,7 @@ import type { DragHandleProps, TemplateProps } from '@/templates/_core'
 const DEFAULT_PRIMARY = '#3d4b58'
 const INK = '#20242c'
 const MUTED = '#59636e'
-const SANS = '"Inter", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif'
+const SANS = RESUME_FONT_STACKS.sans
 
 interface TablePalette {
   readonly primary: string
@@ -353,7 +354,7 @@ function HeaderLabel({
         backgroundColor: palette.labelBg,
         color: palette.primary,
         fontSize: `${titleScale}em`,
-        fontWeight: 800,
+        fontWeight: 700,
         lineHeight: 1,
         letterSpacing: compact ? '0.75em' : 0,
         paddingLeft: compact ? '0.75em' : 0,
@@ -385,7 +386,7 @@ function HeaderValue({
         paddingLeft: 16,
         fontSize: '1.04em',
         lineHeight: 1.2,
-        fontWeight: strong ? 800 : 500,
+        fontWeight: strong ? 700 : 500,
         color: palette.ink,
       }}
     >
@@ -551,7 +552,7 @@ function RowLabel({
         backgroundColor: palette.labelBg,
         color: palette.primary,
         fontSize: `${titleScale}em`,
-        fontWeight: 800,
+        fontWeight: 700,
         lineHeight: 1.15,
         padding: '0 10px',
       }}

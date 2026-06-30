@@ -7,6 +7,7 @@ import { extractEditorMeta } from '@/entities/editor/editor-meta'
 import { normalizeResumeContent } from '@/entities/resume/normalize-resume-content'
 import { prepareResumeForExport } from '@/lib/resume-export-visibility'
 import { TEMPLATE_REGISTRY } from '@/templates/template-loader'
+import { buildResumeFontFaceCss } from '@/entities/theme/font-stacks'
 import PrintRenderer from './print-renderer'
 
 interface PrintPageProps {
@@ -95,14 +96,12 @@ export default async function PrintPage(props: PrintPageProps): Promise<ReactEle
 
   return (
     <div className="print-stage">
-      <link rel="preconnect" href="https://fonts.googleapis.com" />
-      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-      <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700;900&family=Noto+Serif+SC:wght@400;500;600;700;900&display=swap" rel="stylesheet" />
       <style>{`
+        ${buildResumeFontFaceCss()}
         html, body { margin: 0; padding: 0; background: #ffffff; }
         .print-stage { width: 210mm; margin: 0 auto; background: #ffffff; }
         .print-stage .page { width: 210mm; min-height: ${printPageMinHeightCss}; background: #ffffff; box-shadow: none; border-radius: 0; }
-        .print-stage * { box-shadow: none !important; filter: none !important; }
+        .print-stage * { box-shadow: none !important; filter: none !important; text-shadow: none !important; font-synthesis: none; }
         /* Keep the first-page top owned by the template; @page handles later page margins. */
         @page { size: A4; ${pageMarginCss} }
         ${firstPageMarginCss}

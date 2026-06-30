@@ -199,7 +199,7 @@ function DenseHeader(props: { readonly resume: ResumeData; readonly accent: stri
           className="block text-left print:cursor-default"
           onClick={() => setShowModal(true)}
         >
-          <h1 className="mb-2 text-[2em] font-extrabold leading-none tracking-normal" style={{ color: INK }}>
+          <h1 className="mb-2 text-[2em] font-bold leading-none tracking-normal" style={{ color: INK }}>
             {resume.name}
           </h1>
           <div className="grid gap-1 text-[0.88em]" style={{ color: INK, lineHeight }}>

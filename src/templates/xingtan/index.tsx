@@ -10,7 +10,7 @@
  * 设计语言：
  *  - 古籍卷首双实线 banner 包裹 Hero，呼应线装书版式
  *  - 章节标题用「第壹章 / 第贰章」章回体，替代工程感的 `01/ 02/`
- *  - 姓名使用书法风显示字体（ZCOOL XiaoWei），正文 Noto Serif SC
+ *  - 姓名与正文使用托管的 Noto Serif SC，保证编辑预览和 PDF 字形一致
  *  - 杏黄色作为品牌色，松烟墨（近黑）作为固定正文色
  *  - 每个 section 标题旁有一枚小小的「章」字杏黄圆印
  *
@@ -18,6 +18,7 @@
  */
 import { createContext, useContext } from 'react'
 import type { ReactElement, ReactNode } from 'react'
+import { RESUME_FONT_FAMILY_NAMES, RESUME_FONT_STACKS } from '@/entities/theme/font-stacks'
 import { getHeaderJobIntentionText } from '@/entities/resume/header-job-intention'
 import type { Section } from '@/entities/resume/section'
 import {
@@ -69,9 +70,9 @@ const DEFAULT_PALETTE: XingtanPalette = buildPalette(XINGTAN_DEFAULT_AMBER)
 const PaletteCtx = createContext<XingtanPalette>(DEFAULT_PALETTE)
 const usePalette = (): XingtanPalette => useContext(PaletteCtx)
 
-const SERIF = '"Noto Serif SC", "Source Han Serif SC", "Songti SC", "SimSun", "Lora", Georgia, serif'
-const CALLIGRAPHY = '"ZCOOL XiaoWei", "Ma Shan Zheng", "Noto Serif SC", "Songti SC", serif'
-const SERIF_LATIN = '"Lora", "Noto Serif SC", Georgia, serif'
+const SERIF = RESUME_FONT_STACKS.serif
+const CALLIGRAPHY = `"${RESUME_FONT_FAMILY_NAMES.serif}", "Songti SC", serif`
+const SERIF_LATIN = `"${RESUME_FONT_FAMILY_NAMES.serif}", Georgia, serif`
 
 // ---------------------------------------------------------------------------
 // Chinese numeral (1..20)
@@ -122,7 +123,7 @@ export default function XingtanTemplate(props: TemplateProps): ReactElement {
         resume={resume}
         theme={theme}
         bleed
-        style={{ backgroundColor: palette.paper, color: palette.ink, fontFamily: SERIF }}
+        style={{ backgroundColor: palette.paper, color: palette.ink, fontFamily: theme.fontFamily || SERIF }}
       >
         {/* ——— HERO (古籍卷首) ——————————————————————— */}
         <XingtanHero header={header} title={getHeaderJobIntentionText(resume)} horizontalPadding={pagePad.paddingLeft as number} />

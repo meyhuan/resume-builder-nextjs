@@ -6,6 +6,7 @@ import { GripVertical, Plus, Trash2 } from 'lucide-react'
 import type { ResumeBlock } from '@/entities/blocks/resume-block'
 import { getHeaderJobIntentionText } from '@/entities/resume/header-job-intention'
 import type { Section } from '@/entities/resume/section'
+import { RESUME_FONT_STACKS } from '@/entities/theme/font-stacks'
 import BlockWrapper from '@/components/blocks/block-wrapper'
 import EditableBlockWrapper from '@/editor/editable-block-wrapper'
 import EditableDateField from '@/editor/editable-date-field'
@@ -32,7 +33,7 @@ import type { DragHandleProps, TemplateProps } from '@/templates/_core'
 const BLUE = '#3a8ec7'
 const INK = '#1f242b'
 const MUTED = '#4c5660'
-const SANS = '"Inter", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif'
+const SANS = RESUME_FONT_STACKS.sans
 
 type CssVars = CSSProperties & Record<`--${string}`, string | number>
 
@@ -200,7 +201,7 @@ function LanxinHero(props: {
               margin: 0,
               fontSize: '1.77em',
               lineHeight: 1,
-              fontWeight: 800,
+              fontWeight: 700,
               color: INK,
             }}
           />
@@ -302,7 +303,7 @@ function LanxinJobIntentionSection(props: {
             margin: '0 0 15px',
             fontSize: '1.18em',
             lineHeight: 1.2,
-            fontWeight: 800,
+            fontWeight: 700,
             color: INK,
           }}
         >
@@ -390,7 +391,7 @@ function LanxinSection({ section, dragProps, spacingScale, contentLineHeight, pr
             margin: '0 0 15px',
             fontSize: `${1.18 * titleScale}em`,
             lineHeight: 1.2,
-            fontWeight: 800,
+            fontWeight: 700,
             color: INK,
           }}
         />

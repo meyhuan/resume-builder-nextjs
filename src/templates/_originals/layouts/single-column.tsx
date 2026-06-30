@@ -83,7 +83,7 @@ export function SingleColumn(props: {
               margin: 0,
               fontSize: config.density === 'ultra' ? '1.72em' : config.id === 'yuanshan' ? '2.2em' : config.density === 'compact' ? '1.9em' : '2.08em',
               lineHeight: 1.15,
-              fontWeight: 800,
+              fontWeight: 700,
               color: config.ink,
               fontFamily: config.serif ? SERIF : undefined,
             }}
@@ -109,7 +109,7 @@ export function SingleColumn(props: {
               color: config.accent,
               fontFamily: config.serif ? SERIF : undefined,
               fontSize: '1.12em',
-              fontWeight: 800,
+              fontWeight: 700,
               lineHeight: 1.35,
             }}
           >
@@ -167,7 +167,7 @@ export function CampusLayout(props: {
       >
         <div className="flex items-start justify-between gap-8">
           <div className="min-w-0 flex-1">
-            <EditableText as="h1" value={header.name} onCommit={header.onCommitName} style={{ margin: 0, fontSize: '2.05em', lineHeight: 1.15, fontWeight: 800, color: config.heroTone === 'soft' ? config.ink : '#fff' }} />
+            <EditableText as="h1" value={header.name} onCommit={header.onCommitName} style={{ margin: 0, fontSize: '2.05em', lineHeight: 1.15, fontWeight: 700, color: config.heroTone === 'soft' ? config.ink : '#fff' }} />
             <div style={{ marginTop: 8, color: config.heroTone === 'soft' ? config.muted : '#e0f2fe', fontSize: '0.98em' }}>{title}</div>
             <HeaderFields header={header} color={config.heroTone === 'soft' ? config.muted : '#e0f2fe'} accent={config.heroTone === 'soft' ? config.accent : '#ffffff'} light={config.heroTone !== 'soft'} />
           </div>

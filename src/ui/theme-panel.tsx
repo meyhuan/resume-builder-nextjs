@@ -14,6 +14,10 @@ import {
 } from '@/components/ui/select'
 import * as Popover from '@radix-ui/react-popover'
 import { Palette, ChevronDown, FileText } from 'lucide-react'
+import {
+  RESUME_FONT_OPTIONS,
+  resolveResumeFontFamilyId,
+} from '@/entities/theme/font-stacks'
 
 /**
  * ThemePanel renders controls to customize ThemeTokens.
@@ -35,12 +39,6 @@ export default function ThemePanel(props: {
   readonly activeTemplateName?: string
 }): ReactElement {
   const theme = props.theme
-  // const fonts: readonly { label: string; value: string }[] = [
-  //   { label: 'Inter + Noto Sans SC', value: 'Inter, Noto Sans SC, system-ui, sans-serif' },
-  //   { label: 'Noto Sans SC', value: 'Noto Sans SC, system-ui, sans-serif' },
-  //   { label: 'System Sans', value: 'system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif' },
-  //   { label: 'Georgia (serif)', value: 'Georgia, serif' },
-  // ]
   const fontSizes: readonly { value: number; label: string }[] = [
     { value: 12, label: '极小' },
     { value: 13, label: '偏小' },
@@ -72,10 +70,6 @@ export default function ThemePanel(props: {
   function handlePagePaddingHorizontal(value: number[]): void {
     props.onUpdate({ pagePaddingHorizontal: value[0] })
   }
-
-  // function handleFont(value: string): void {
-  //   props.onUpdate({ fontFamily: value })
-  // }
 
   function handleFontSizeSelect(value: string): void {
     const parsed = Number(value)
@@ -118,6 +112,7 @@ export default function ThemePanel(props: {
   const controlWrapperClass: string = 'space-y-2'
   const sliderLabelClass: string = 'flex items-center justify-between text-xs font-semibold text-slate-600'
   const selectedColor: string = theme.primaryColor.toUpperCase()
+  const activeFontFamilyId = resolveResumeFontFamilyId(theme.fontFamilyId, theme.fontFamily)
 
   return (
     <div className="print:hidden w-full space-y-5 text-sm">
@@ -145,6 +140,32 @@ export default function ThemePanel(props: {
               </SelectContent>
             </Select>
             <p className="text-[11px] text-slate-500">推荐 14-16，兼顾信息密度和可读性。</p>
+          </div>
+          <div className={controlWrapperClass}>
+            <Label className={labelClass}>字体风格</Label>
+            <div className="grid grid-cols-2 gap-2">
+              {RESUME_FONT_OPTIONS.map((font) => {
+                const selected = font.id === activeFontFamilyId
+                return (
+                  <button
+                    key={font.id}
+                    type="button"
+                    onClick={(): void => props.onUpdate({ fontFamilyId: font.id, fontFamily: font.stack })}
+                    className={`rounded-xl border px-3 py-2.5 text-left transition-colors ${
+                      selected
+                        ? 'border-violet-500 bg-violet-50 text-violet-800'
+                        : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-white'
+                    }`}
+                    style={{ fontFamily: font.stack }}
+                    aria-pressed={selected}
+                  >
+                    <span className="block text-sm font-semibold">{font.label}</span>
+                    <span className="mt-0.5 block text-[11px] leading-4 text-slate-500">{font.description}</span>
+                  </button>
+                )
+              })}
+            </div>
+            <p className="text-[11px] text-slate-500">编辑预览和 PDF 导出会使用同一套字体。</p>
           </div>
         </div>
       </section>

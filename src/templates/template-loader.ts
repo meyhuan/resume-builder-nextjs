@@ -5,6 +5,7 @@
 import { lazy, type ComponentType } from 'react'
 import type { ResumeData } from '@/entities/resume/resume-data'
 import type { ThemeTokens } from '@/entities/theme/theme-tokens'
+import type { ResumeFontFamilyId } from '@/entities/theme/font-stacks'
 
 export interface TemplateProps {
   readonly resume: ResumeData
@@ -41,6 +42,8 @@ export interface TemplateConfig {
    * seed `theme.primaryColor` with this value instead of the global default.
    */
   readonly recommendedPrimaryColor?: string
+  /** Template-level default font style. Defaults to `sans`. */
+  readonly recommendedFontFamilyId?: ResumeFontFamilyId
 }
 
 const HIDDEN_TEMPLATE_IDS: ReadonlySet<string> = new Set(['lanxin'])
@@ -137,6 +140,7 @@ export const TEMPLATE_REGISTRY: Record<string, TemplateConfig> = {
     tags: ['原创', '资深', '管理', '稳重'],
     component: lazy(() => import('@/templates/yuanshan')),
     recommendedPrimaryColor: '#9a6b38',
+    recommendedFontFamilyId: 'serif',
   },
   hengjian: {
     id: 'hengjian',
@@ -284,6 +288,7 @@ export const TEMPLATE_REGISTRY: Record<string, TemplateConfig> = {
     exportLayout: 'bleed',
     locksPrimaryColor: true,
     recommendedPrimaryColor: '#b91c1c',
+    recommendedFontFamilyId: 'serif',
   },
   xingtan: {
     id: 'xingtan',
@@ -295,6 +300,7 @@ export const TEMPLATE_REGISTRY: Record<string, TemplateConfig> = {
     exportLayout: 'bleed',
     locksPrimaryColor: true,
     recommendedPrimaryColor: '#a16207',
+    recommendedFontFamilyId: 'serif',
   },
 }
 
