@@ -12,14 +12,9 @@ import {
   HeaderFields,
   JobIntentionBlock,
   Metrics,
-  SectionStack,
-  SidebarJob,
   metricItems,
-  scaledSpacing,
 } from '../components'
 import {
-  refPx,
-  moduleGap,
   splitSections,
   educationTimelineRank,
   TemplateSection,

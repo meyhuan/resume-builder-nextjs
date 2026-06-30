@@ -9,14 +9,9 @@ import type { EditableHeader, EditableJobIntention } from '@/templates/_core'
 import type { VariantConfig } from '../types'
 import {
   HeaderFields,
-  JobIntentionBlock,
-  SectionStack,
   SidebarJob,
-  scaledSpacing,
 } from '../components'
 import {
-  refPx,
-  moduleGap,
   splitSections,
   TemplateSection,
 } from './shared-utils'
