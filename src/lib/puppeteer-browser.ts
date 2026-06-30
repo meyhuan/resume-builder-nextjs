@@ -19,13 +19,14 @@ function getIdleCloseMs(): number {
 }
 
 function getCacheRoot(): string {
-  return process.env.PUPPETEER_USER_DATA_DIR ||
-    process.env.PUPPETEER_CACHE_DIR ||
+  return process.env.PUPPETEER_CACHE_DIR ||
+    process.env.PUPPETEER_USER_DATA_DIR ||
     path.join(os.tmpdir(), 'aijianli-puppeteer')
 }
 
 function getUserDataDir(): string {
-  return path.join(getCacheRoot(), 'profile')
+  const workerId = process.env.PM2_INSTANCE_ID || process.env.NODE_APP_INSTANCE || 'local'
+  return path.join(getCacheRoot(), `profile-${workerId}-${process.pid}`)
 }
 
 function getDiskCacheDir(): string {
