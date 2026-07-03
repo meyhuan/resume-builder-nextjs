@@ -11,6 +11,7 @@ export type AnalyticsEventName =
   | 'resume_create_start'
   | 'resume_create_success'
   | 'resume_create_failed'
+  | 'resume_create_blocked_by_limit'
   | 'resume_save_success'
   | 'resume_save_failed'
   | 'resume_import_start'
@@ -50,6 +51,7 @@ const DEDUPE_WINDOW_MS = 1500
 const FETCH_ERROR_DEDUPE_WINDOW_MS = 30 * 1000
 const MAX_RECENT_FETCH_ERROR_KEYS = 100
 const CHUNK_LOAD_RELOAD_COOLDOWN_MS = 60 * 1000
+const SUPPRESS_FETCH_ERROR_HEADER = 'x-suppress-analytics-error'
 
 const recentEvents = new Map<string, number>()
 const recentFetchErrors = new Map<string, number>()
@@ -271,6 +273,11 @@ function getRequestInfo(input: RequestInfo | URL, init?: RequestInit): { url: st
   return { url: url.pathname, method: method.toUpperCase() }
 }
 
+function shouldSuppressFetchTracking(input: RequestInfo | URL, init?: RequestInit): boolean {
+  const headers = new Headers(init?.headers || (typeof input === 'string' || input instanceof URL ? undefined : input.headers))
+  return headers.has(SUPPRESS_FETCH_ERROR_HEADER)
+}
+
 function getNetworkContext(startedAt: number): AnalyticsProperties {
   const connection = navigator as Navigator & {
     connection?: {
@@ -330,10 +337,11 @@ export function installAnalyticsErrorTracking(): void {
   originalFetch = window.fetch.bind(window)
   window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
     const info = getRequestInfo(input, init)
+    const suppressFetchTracking = shouldSuppressFetchTracking(input, init)
     const startedAt = Date.now()
     try {
       const response = await originalFetch!(input, init)
-      if (response.status >= 500 && !info.url.includes('/analytics/events')) {
+      if (response.status >= 500 && !suppressFetchTracking && !info.url.includes('/analytics/events')) {
         trackError(`HTTP ${response.status}`, {
           source: 'fetch_response',
           statusCode: response.status,
@@ -344,7 +352,7 @@ export function installAnalyticsErrorTracking(): void {
       }
       return response
     } catch (error) {
-      if (!info.url.includes('/analytics/events')) {
+      if (!suppressFetchTracking && !info.url.includes('/analytics/events')) {
         trackError(error, {
           source: 'fetch_error',
           requestPath: info.url,

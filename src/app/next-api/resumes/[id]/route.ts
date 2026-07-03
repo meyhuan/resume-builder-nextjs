@@ -58,6 +58,7 @@ export async function PUT(req: Request, { params }: RouteParams) {
     updateStep = 'parse-body'
     const body = await req.json()
     const { title, content, template, thumbnail } = body
+    const hasThumbnailField = Object.prototype.hasOwnProperty.call(body, 'thumbnail')
     const normalizedContent = normalizeResumeContent(
       content as Partial<ResumeData> & Record<string, unknown>,
       { fallbackId: resumeId },
@@ -65,7 +66,7 @@ export async function PUT(req: Request, { params }: RouteParams) {
     updateStep = 'persist-assets'
     const persistedAssets = await persistResumeAssets({
       content: normalizedContent as unknown as Record<string, unknown>,
-      thumbnail,
+      thumbnail: hasThumbnailField ? thumbnail : undefined,
       customPrefix: resumeId,
     })
     
@@ -73,7 +74,9 @@ export async function PUT(req: Request, { params }: RouteParams) {
     const data: Prisma.ResumeUpdateInput = {
       content: persistedAssets.content as Prisma.InputJsonValue,
       template,
-      thumbnail: persistedAssets.thumbnail,
+    }
+    if (hasThumbnailField) {
+      data.thumbnail = persistedAssets.thumbnail
     }
     if (typeof title === 'string' && title.trim()) {
       data.title = title.trim()

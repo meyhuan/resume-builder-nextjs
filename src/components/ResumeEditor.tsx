@@ -150,6 +150,21 @@ async function fetchWithNetworkRetry(input: RequestInfo | URL, init?: RequestIni
   return fetch(input, init)
 }
 
+function describeUnknownError(error: unknown): string {
+  if (error instanceof Error) return error.message || error.name || 'Error'
+  if (typeof error === 'string') return error
+  if (typeof Event !== 'undefined' && error instanceof Event) {
+    return `Event:${error.type || 'unknown'}`
+  }
+  try {
+    const serialized = JSON.stringify(error)
+    if (serialized && serialized !== '{}') return serialized.slice(0, 300)
+  } catch {
+    // Fall through to generic object description.
+  }
+  return Object.prototype.toString.call(error)
+}
+
 export default function ResumeEditor({ resumeId: initialResumeId, initialData }: ResumeEditorProps): ReactElement {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -517,13 +532,27 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
         // Update browser URL without full navigation
         window.history.replaceState(null, '', `/editor/${currentId}`)
       }
-      // 2. Generate thumbnail (Base64)
-      const thumbnail: string = await exportImage(printRef, {
-        pixelRatio: 1,
-        returnBase64: true,
-        backgroundColor: '#ffffff',
-        clipFirstPage: true,
-      }) as string
+      // 2. Generate thumbnail (Base64). Thumbnail failure must not block content save/export.
+      let thumbnail: string | undefined
+      let thumbnailFailureReason: string | undefined
+      try {
+        const thumbnailResult = await exportImage(printRef, {
+          pixelRatio: 1,
+          returnBase64: true,
+          backgroundColor: '#ffffff',
+          clipFirstPage: true,
+        })
+        if (typeof thumbnailResult === 'string' && thumbnailResult) {
+          thumbnail = thumbnailResult
+        }
+      } catch (error) {
+        thumbnailFailureReason = describeUnknownError(error)
+        console.warn('[ResumeEditor] thumbnail generation failed; continuing save', {
+          resumeId: currentId,
+          templateId: tpl,
+          error: thumbnailFailureReason,
+        })
+      }
       // 3. Build content with editor metadata
       const editorMeta = {
         themes: { [tpl]: theme },
@@ -538,7 +567,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
       const savePayload: ResumeSavePayload = {
         content: contentWithMeta,
         template: tpl,
-        thumbnail,
+        ...(thumbnail ? { thumbnail } : {}),
       }
       // 4. Save to DB
       const res = await fetchWithNetworkRetry(`/next-api/resumes/${currentId}`, {
@@ -553,6 +582,8 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
         entry: createCompleted ? 'pc_editor_create' : 'pc_editor_update',
         createdDuringSave: createCompleted,
         onePageMode,
+        thumbnailGenerated: Boolean(thumbnail),
+        thumbnailFailureReason,
       })
       setLastSaved(new Date())
       setSavedSnapshot(JSON.stringify({ resume, theme, tpl, onePageMode, onePageSnapshot, sidebarSectionIds }))
@@ -567,7 +598,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
           createMethod: 'manual',
           templateId: tpl,
           entry: 'pc_editor_save',
-          failureReason: e instanceof Error ? e.message : String(e),
+          failureReason: describeUnknownError(e),
         })
       }
       track('resume_save_failed', {
@@ -575,7 +606,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
         templateId: tpl,
         entry: createStarted && !createCompleted ? 'pc_editor_create' : 'pc_editor_update',
         createdDuringSave: createCompleted,
-        failureReason: e instanceof Error ? e.message : String(e),
+        failureReason: describeUnknownError(e),
       })
       toast.error('保存失败，请重试')
       return undefined

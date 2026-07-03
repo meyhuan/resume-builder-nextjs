@@ -146,6 +146,7 @@ const EVENT_LABELS: Record<string, string> = {
   resume_create_start: '开始创建简历',
   resume_create_success: '创建简历成功',
   resume_create_failed: '创建简历失败',
+  resume_create_blocked_by_limit: '创建简历达到上限',
   resume_save_success: '保存简历成功',
   resume_save_failed: '保存简历失败',
   resume_import_start: '开始导入简历',

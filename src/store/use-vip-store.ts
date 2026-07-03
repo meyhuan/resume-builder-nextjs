@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { DEFAULT_QUOTA_LIMITS } from '@/lib/quota/quota-config';
 import type { VipPollData, VipQuotaStatus, VipFeatureQuota } from '@/lib/quota/vip-types';
 import { useAuthStore } from '@/store/use-auth-store';
+import { trackError } from '@/lib/analytics';
 
 export type UpgradeContext = 'generic' | 'pdf-export' | 'ai';
 
@@ -29,6 +30,11 @@ const EMPTY_QUOTA: VipQuotaStatus = {
   aiOptimizeResume: { allowed: false, remaining: 0, isVip: false, limit: DEFAULT_QUOTA_LIMITS.aiOptimizeResume },
   pdfExport: { allowed: false, remaining: 0, isVip: false, limit: DEFAULT_QUOTA_LIMITS.pdfExport },
 };
+const QUOTA_CACHE_KEY_PREFIX = 'vip_quota_snapshot_v1';
+const QUOTA_CACHE_TTL_MS = 30 * 60 * 1000;
+const QUOTA_FETCH_TIMEOUT_MS = 8_000;
+const QUOTA_FAILURE_TRACK_COOLDOWN_MS = 60_000;
+let lastQuotaFailureTrackedAt = 0;
 
 function applyVipStatus(data: VipPollData | null): void {
   if (!data) return;
@@ -46,25 +52,119 @@ function wait(ms: number): Promise<void> {
   });
 }
 
+function normalizeQuotaSnapshot(data: Record<string, VipFeatureQuota | undefined>): VipQuotaStatus {
+  return {
+    aiGenerateResume: data.aiGenerateResume || EMPTY_QUOTA.aiGenerateResume,
+    aiImportSection: data.aiImportSection || EMPTY_QUOTA.aiImportSection,
+    aiGenerateSection: data.aiGenerateSection || EMPTY_QUOTA.aiGenerateSection,
+    aiPolishSection: data.aiPolishSection || EMPTY_QUOTA.aiPolishSection,
+    aiOptimizeResume: data.aiOptimizeResume || EMPTY_QUOTA.aiOptimizeResume,
+    pdfExport: data.pdfExport || EMPTY_QUOTA.pdfExport,
+  };
+}
+
+function getQuotaCacheKey(): string | null {
+  const userId = useAuthStore.getState().userInfo?.id;
+  return userId ? `${QUOTA_CACHE_KEY_PREFIX}:${userId}` : null;
+}
+
+function readCachedQuotaSnapshot(): VipQuotaStatus | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const cacheKey = getQuotaCacheKey();
+    if (!cacheKey) return null;
+    const raw = window.localStorage.getItem(cacheKey);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { savedAt?: number; quota?: Record<string, VipFeatureQuota | undefined> };
+    if (!parsed.savedAt || Date.now() - parsed.savedAt > QUOTA_CACHE_TTL_MS || !parsed.quota) return null;
+    return normalizeQuotaSnapshot(parsed.quota);
+  } catch {
+    return null;
+  }
+}
+
+function writeCachedQuotaSnapshot(quota: VipQuotaStatus): void {
+  if (typeof window === 'undefined') return;
+  try {
+    const cacheKey = getQuotaCacheKey();
+    if (!cacheKey) return;
+    window.localStorage.setItem(cacheKey, JSON.stringify({ savedAt: Date.now(), quota }));
+  } catch {
+    // Cache is an availability optimization only.
+  }
+}
+
+function shouldTrackQuotaFailure(): boolean {
+  const now = Date.now();
+  if (now - lastQuotaFailureTrackedAt < QUOTA_FAILURE_TRACK_COOLDOWN_MS) return false;
+  lastQuotaFailureTrackedAt = now;
+  return true;
+}
+
+function describeQuotaFetchError(error: unknown): string {
+  if (error instanceof Error) return error.message || error.name || 'Error';
+  if (typeof error === 'string') return error;
+  try {
+    return JSON.stringify(error).slice(0, 300);
+  } catch {
+    return String(error);
+  }
+}
+
+async function fetchQuotaOnce(): Promise<Response> {
+  const controller = new AbortController();
+  const timer = window.setTimeout(() => {
+    controller.abort();
+  }, QUOTA_FETCH_TIMEOUT_MS);
+  try {
+    return await fetch('/next-api/quota', {
+      headers: { 'x-suppress-analytics-error': 'quota-refresh' },
+      signal: controller.signal,
+    });
+  } finally {
+    window.clearTimeout(timer);
+  }
+}
+
 async function fetchQuotaSnapshot(): Promise<VipQuotaStatus | null> {
-  const maxAttempts = 2;
+  const maxAttempts = 3;
+  let lastFailureReason = 'unknown';
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     try {
-      const response: Response = await fetch('/next-api/quota');
-      if (!response.ok) return null;
+      const response: Response = await fetchQuotaOnce();
+      if (!response.ok) {
+        lastFailureReason = `HTTP ${response.status}`;
+        if (response.status === 401 || response.status === 403) return null;
+        if (attempt < maxAttempts) {
+          await wait(250 * attempt + 200);
+          continue;
+        }
+        break;
+      }
       const data: Record<string, VipFeatureQuota | undefined> = await response.json();
-      return {
-        aiGenerateResume: data.aiGenerateResume || EMPTY_QUOTA.aiGenerateResume,
-        aiImportSection: data.aiImportSection || EMPTY_QUOTA.aiImportSection,
-        aiGenerateSection: data.aiGenerateSection || EMPTY_QUOTA.aiGenerateSection,
-        aiPolishSection: data.aiPolishSection || EMPTY_QUOTA.aiPolishSection,
-        aiOptimizeResume: data.aiOptimizeResume || EMPTY_QUOTA.aiOptimizeResume,
-        pdfExport: data.pdfExport || EMPTY_QUOTA.pdfExport,
-      };
+      const quota = normalizeQuotaSnapshot(data);
+      writeCachedQuotaSnapshot(quota);
+      return quota;
     } catch (error) {
-      if (attempt === maxAttempts) throw error;
-      await wait(350);
+      lastFailureReason = describeQuotaFetchError(error);
+      if (attempt < maxAttempts) {
+        await wait(250 * attempt + 200);
+      }
     }
+  }
+
+  const cachedQuota = readCachedQuotaSnapshot();
+  if (cachedQuota) return cachedQuota;
+
+  if (shouldTrackQuotaFailure()) {
+    trackError(new Error('quota_refresh_failed'), {
+      source: 'quota_refresh_failed',
+      requestPath: '/next-api/quota',
+      method: 'GET',
+      attempts: maxAttempts,
+      timeoutMs: QUOTA_FETCH_TIMEOUT_MS,
+      failureReason: lastFailureReason,
+    });
   }
   return null;
 }
