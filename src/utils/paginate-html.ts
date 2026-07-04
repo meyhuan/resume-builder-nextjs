@@ -56,11 +56,6 @@ export function paginateHtml(html: string): string {
         break-after: avoid; 
         page-break-after: avoid; 
       }
-      @media print {
-        .page {
-          overflow: visible !important;
-        }
-      }
     </style>
   `;
 
@@ -147,51 +142,17 @@ export function getClientPaginationScript(): string {
       // Blocks up to 1/3 of a page keep together; taller ones may split.
       const SHORT_BLOCK_MAX = USABLE_HEIGHT / 3;
 
-      const BLOCK_SELECTOR = [
-        '[data-resume-block-wrapper]',
-        '[data-resume-block]',
-        '.resume-item',
-        '.experience-item',
-        '.education-item',
-        '.project-item',
-        '.pdf-keep-together',
-      ].join(',');
-
-      function findLegacyBlockWrapper(el) {
-        let current = el.parentElement;
-        let depth = 0;
-        while (current && depth < 4) {
-          if (
-            current.hasAttribute('data-resume-block-wrapper') ||
-            current.classList.contains('group/block')
-          ) {
-            return current;
-          }
-          current = current.parentElement;
-          depth += 1;
-        }
-        return null;
-      }
-
-      function setBreakInside(el, value) {
-        el.style.setProperty('break-inside', value, 'important');
-        el.style.setProperty('page-break-inside', value, 'important');
-        el.setAttribute('data-pdf-break-inside', value);
-      }
-
-      const targets = new Set();
-      document.querySelectorAll(BLOCK_SELECTOR).forEach((el) => {
-        targets.add(el);
-        const wrapper = el.closest('[data-resume-block-wrapper]') || findLegacyBlockWrapper(el);
-        if (wrapper) targets.add(wrapper);
-      });
-
-      targets.forEach((el) => {
+      const blocks = document.querySelectorAll(
+        '[data-resume-block], .resume-item, .experience-item, .education-item, .project-item'
+      );
+      blocks.forEach((el) => {
         const height = el.getBoundingClientRect().height;
         if (height > 0 && height <= SHORT_BLOCK_MAX) {
-          setBreakInside(el, 'avoid');
+          el.style.breakInside = 'avoid';
+          el.style.pageBreakInside = 'avoid';
         } else {
-          setBreakInside(el, 'auto');
+          el.style.breakInside = 'auto';
+          el.style.pageBreakInside = 'auto';
         }
       });
     })();

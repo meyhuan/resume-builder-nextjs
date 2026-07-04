@@ -22,7 +22,6 @@
     "marketing:workbench": "node scripts/generate-marketing-workbench.mjs",
     "template:qa": "node scripts/verify-template.mjs",
     "template:qa:all": "node scripts/verify-template.mjs --all --local",
-    "pdf:pagination": "node scripts/verify-pdf-pagination.mjs",
     "template:thumbs": "node scripts/generate-template-thumbnails.mjs",
     "template:convert": "node scripts/convert-html-template.mjs",
     "seo:submit": "node scripts/seo-submit.mjs",
