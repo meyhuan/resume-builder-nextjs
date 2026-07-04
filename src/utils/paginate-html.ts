@@ -179,52 +179,11 @@ export function getClientPaginationScript(): string {
         el.setAttribute('data-pdf-break-inside', value);
       }
 
-      function preserveColumnGapAsMargins(el, computed) {
-        const rowGap = parseFloat(computed.rowGap || computed.gap || '0');
-        if (!Number.isFinite(rowGap) || rowGap <= 0) return;
-        const children = Array.from(el.children);
-        children.forEach((child, index) => {
-          if (index >= children.length - 1) return;
-          const childStyle = window.getComputedStyle(child);
-          const existingMargin = parseFloat(childStyle.marginBottom || '0');
-          if (!Number.isFinite(existingMargin) || existingMargin < rowGap) {
-            child.style.setProperty('margin-bottom', rowGap + 'px', 'important');
-          }
-        });
-      }
-
-      function normalizeColumnFlexForPrint(el) {
-        const computed = window.getComputedStyle(el);
-        if (!computed.display.includes('flex') || computed.flexDirection !== 'column') return;
-        preserveColumnGapAsMargins(el, computed);
-        el.style.setProperty('display', 'block', 'important');
-        el.style.setProperty('gap', '0', 'important');
-        el.setAttribute('data-pdf-flow-normalized', 'column-flex');
-      }
-
-      function normalizeAncestorsForPrint(el) {
-        let current = el.parentElement;
-        let depth = 0;
-        while (current && depth < 8) {
-          if (current.classList.contains('resume-container')) break;
-          normalizeColumnFlexForPrint(current);
-          current = current.parentElement;
-          depth += 1;
-        }
-      }
-
       const targets = new Set();
       document.querySelectorAll(BLOCK_SELECTOR).forEach((el) => {
         targets.add(el);
         const wrapper = el.closest('[data-resume-block-wrapper]') || findLegacyBlockWrapper(el);
         if (wrapper) targets.add(wrapper);
-      });
-
-      document.querySelectorAll('.resume-container main, .resume-container section').forEach((el) => {
-        normalizeColumnFlexForPrint(el);
-      });
-      targets.forEach((el) => {
-        normalizeAncestorsForPrint(el);
       });
 
       targets.forEach((el) => {
