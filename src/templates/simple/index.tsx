@@ -204,30 +204,32 @@ export default function SimpleTemplate(props: SimpleTemplateProps): ReactElement
           )
         }}
       >
-        <main className="flex flex-col relative" style={{ gap: `${18 * theme.spacingScale}px` }}>
-          {resume.sections.map((section) => (
+        <main className="relative">
+          {resume.sections.map((section, sectionIndex) => (
             <SortableSectionWrapper key={section.id} sectionId={section.id}>
               {(sectionDragProps) => (
-                <SectionView
-                  section={section}
-                  themeColor={theme.primaryColor}
-                  dragHandleAttributes={sectionDragProps.attributes}
-                  dragHandleListeners={sectionDragProps.listeners}
-                  dragHandleRef={sectionDragProps.ref}
-                  sectionHeaderStyles={styles.sectionHeader}
-                >
-                  {section.blocks.map((block, index) => (
-                    <BlockRendererWrapper 
-                      key={block.id}
-                      block={block} 
-                      sectionId={section.id}
-                      blockIndex={index}
-                      totalBlocks={section.blocks.length}
-                      themeColor={theme.primaryColor}
-                      spacingScale={theme.spacingScale}
-                    />
-                  ))}
-                </SectionView>
+                <div style={{ marginBottom: sectionIndex < resume.sections.length - 1 ? `${18 * theme.spacingScale}px` : '0' }}>
+                  <SectionView
+                    section={section}
+                    themeColor={theme.primaryColor}
+                    dragHandleAttributes={sectionDragProps.attributes}
+                    dragHandleListeners={sectionDragProps.listeners}
+                    dragHandleRef={sectionDragProps.ref}
+                    sectionHeaderStyles={styles.sectionHeader}
+                  >
+                    {section.blocks.map((block, index) => (
+                      <BlockRendererWrapper
+                        key={block.id}
+                        block={block}
+                        sectionId={section.id}
+                        blockIndex={index}
+                        totalBlocks={section.blocks.length}
+                        themeColor={theme.primaryColor}
+                        spacingScale={theme.spacingScale}
+                      />
+                    ))}
+                  </SectionView>
+                </div>
               )}
             </SortableSectionWrapper>
           ))}
@@ -287,7 +289,7 @@ function SectionView(props: SectionViewProps): ReactElement {
         {columns === 2 ? (
           <div ref={setNodeRef} className="grid grid-cols-2 gap-4">{children}</div>
         ) : (
-          <div ref={setNodeRef} className="flex flex-col">{children}</div>
+          <div ref={setNodeRef} className="block">{children}</div>
         )}
       </SortableContext>
       
