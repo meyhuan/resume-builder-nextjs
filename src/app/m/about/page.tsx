@@ -2,7 +2,8 @@
 
 import { type ReactElement } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Heart, MessageCircle, Mail, Code2 } from 'lucide-react'
+import Link from 'next/link'
+import { ArrowLeft, BadgeCheck, ChevronRight, Heart, MessageCircle, Mail, Code2 } from 'lucide-react'
 import Image from 'next/image'
 import { useInMiniProgram } from '../_components/use-mini-program'
 
@@ -122,6 +123,22 @@ export default function MobileAboutPage(): ReactElement {
               ))}
             </div>
           </div>
+
+          <Link
+            href="/m/version"
+            className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-5"
+          >
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-emerald-50 flex items-center justify-center">
+                <BadgeCheck size={18} className="text-emerald-600" />
+              </div>
+              <div>
+                <div className="text-base font-bold text-slate-900">版本信息</div>
+                <div className="mt-1 text-xs text-slate-400">查看当前 NextJS 线上发布版本</div>
+              </div>
+            </div>
+            <ChevronRight size={18} className="text-slate-300" />
+          </Link>
         </div>
       </div>
     </div>
