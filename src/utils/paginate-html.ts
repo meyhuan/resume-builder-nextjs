@@ -115,14 +115,22 @@ export function paginateHtml(html: string): string {
 }
 
 /**
- * Enhanced pagination that uses Puppeteer to measure actual element heights
- * and inject precise page breaks. This runs in the browser context.
- * 
+ * Smart pagination that measures actual block heights in the browser and
+ * applies per-block break rules:
+ *   - Short blocks (< 1/3 of usable page height) keep together
+ *     (break-inside: avoid) — splitting a 3-line entry across pages looks
+ *     broken, and pushing it down only costs a small gap.
+ *   - Tall blocks (multi-paragraph experiences) are left splittable so a
+ *     whole block is never pushed to the next page leaving a large blank.
+ * Skips one-page and bleed layouts, which manage overflow themselves.
+ *
  * @returns JavaScript code to execute in the browser
  */
 export function getClientPaginationScript(): string {
   return `
     (function() {
+      if (document.querySelector('[data-one-page="true"], [data-bleed="true"]')) return;
+
       const PAGE_HEIGHT = 1123; // A4 at 96 DPI
       const MM_TO_PX = 3.7795; // 1mm ≈ 3.7795px at 96 DPI
       const container = document.querySelector('.resume-container');
@@ -131,46 +139,21 @@ export function getClientPaginationScript(): string {
       // USABLE_HEIGHT is consistent for all pages and templates because
       // native @page margins handle the visual spacing natively.
       const USABLE_HEIGHT = PAGE_HEIGHT - (2 * marginPx);
-      const HEADER_SAFETY = 100; // Don't put headers in last 100px
-      
-      let currentY = 0;
-      
-      function pushToNextPage(el) {
-        el.style.breakBefore = 'page';
-        el.style.pageBreakBefore = 'always';
-        currentY = Math.ceil(currentY / USABLE_HEIGHT) * USABLE_HEIGHT;
-      }
-      
-      // Get all major sections and items
-      const sections = document.querySelectorAll('.resume-section, section');
-      
-      sections.forEach(section => {
-        const header = section.querySelector('h2, h3, .section-title, .resume-section-header');
-        const items = section.querySelectorAll('.resume-item, .experience-item, .education-item, .project-item');
-        
-        if (header) {
-          const headerRect = header.getBoundingClientRect();
-          const remaining = USABLE_HEIGHT - (currentY % USABLE_HEIGHT);
-          
-          // If header would be near bottom of page, force it to next page
-          if (remaining < HEADER_SAFETY + headerRect.height + 50) {
-            pushToNextPage(header);
-          }
-          
-          currentY += headerRect.height;
+      // Blocks up to 1/3 of a page keep together; taller ones may split.
+      const SHORT_BLOCK_MAX = USABLE_HEIGHT / 3;
+
+      const blocks = document.querySelectorAll(
+        '[data-resume-block], .resume-item, .experience-item, .education-item, .project-item'
+      );
+      blocks.forEach((el) => {
+        const height = el.getBoundingClientRect().height;
+        if (height > 0 && height <= SHORT_BLOCK_MAX) {
+          el.style.breakInside = 'avoid';
+          el.style.pageBreakInside = 'avoid';
+        } else {
+          el.style.breakInside = 'auto';
+          el.style.pageBreakInside = 'auto';
         }
-        
-        items.forEach(item => {
-          const itemRect = item.getBoundingClientRect();
-          const remaining = USABLE_HEIGHT - (currentY % USABLE_HEIGHT);
-          
-          // If item doesn't fit on current page and isn't too tall, move to next page
-          if (itemRect.height < USABLE_HEIGHT && itemRect.height > remaining) {
-            pushToNextPage(item);
-          }
-          
-          currentY += itemRect.height;
-        });
       });
     })();
   `;

@@ -72,6 +72,7 @@ async function resolveCurrentUser(wxId: string): Promise<User> {
  * GET /next-api/admin/copy-resume?userId=...
  * Lists resumes owned by any user for admin copy workflows.
  * userId accepts: Java tb_user.id (javaUserId), Prisma wxId, or Prisma id.
+ * Also supports ?resumeName=... to search resumes by content.name / baseInfo name.
  */
 export async function GET(req: Request): Promise<NextResponse> {
   const cookieStore = await cookies();
@@ -89,8 +90,60 @@ export async function GET(req: Request): Promise<NextResponse> {
   const url = new URL(req.url);
   const userId = url.searchParams.get('userId')?.trim();
   const wxIdParam = url.searchParams.get('wxId')?.trim();
-  if (!userId && !wxIdParam) {
-    return NextResponse.json({ error: 'userId or wxId is required' }, { status: 400 });
+  const resumeName = url.searchParams.get('resumeName')?.trim();
+  if (!userId && !wxIdParam && !resumeName) {
+    return NextResponse.json({ error: 'userId, wxId or resumeName is required' }, { status: 400 });
+  }
+
+  if (resumeName) {
+    const resumes = await prisma.resume.findMany({
+      where: {
+        OR: [
+          { content: { path: ['name'], string_contains: resumeName } },
+          { content: { path: ['baseInfo', 'name'], string_contains: resumeName } },
+          { content: { path: ['baseInfo', 'fullName'], string_contains: resumeName } },
+        ],
+      },
+      orderBy: { updatedAt: 'desc' },
+      take: 20,
+      select: {
+        id: true,
+        title: true,
+        template: true,
+        thumbnail: true,
+        updatedAt: true,
+        content: true,
+        user: {
+          select: {
+            id: true,
+            wxId: true,
+            javaUserId: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    return NextResponse.json({
+      query: resumeName,
+      resumes: resumes.map((resume) => {
+        const content = resume.content as Partial<ResumeData> & {
+          baseInfo?: { name?: unknown; fullName?: unknown };
+        };
+        const contentName = typeof content.name === 'string' ? content.name : '';
+        const baseInfoName = typeof content.baseInfo?.name === 'string' ? content.baseInfo.name : '';
+        const baseInfoFullName = typeof content.baseInfo?.fullName === 'string' ? content.baseInfo.fullName : '';
+        return {
+          id: resume.id,
+          title: resume.title,
+          template: resume.template,
+          thumbnail: resume.thumbnail,
+          updatedAt: resume.updatedAt,
+          resumeName: contentName || baseInfoName || baseInfoFullName || null,
+          user: resume.user,
+        };
+      }),
+    });
   }
 
   const user = await resolveUserByIdentifiers([userId, wxIdParam]);

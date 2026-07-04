@@ -23,6 +23,8 @@ interface ResumeItem {
   title: string;
   template: string;
   updatedAt: string;
+  resumeName?: string | null;
+  user?: CopySourceUser;
 }
 
 interface CopySourceUser {
@@ -39,6 +41,7 @@ interface VipFormData {
 }
 
 type CopyMode = 'to-user' | 'to-current';
+type SourceLookupMode = 'user' | 'resume-name';
 
 const VIP_TYPES = ['', '月卡', '年卡', '终身'] as const;
 
@@ -64,7 +67,9 @@ export default function AdminPage(): React.ReactElement {
   const [copyMode, setCopyMode] = useState<CopyMode>('to-user');
   const [myResumes, setMyResumes] = useState<ResumeItem[]>([]);
   const [sourceUserResumes, setSourceUserResumes] = useState<ResumeItem[]>([]);
+  const [sourceLookupMode, setSourceLookupMode] = useState<SourceLookupMode>('user');
   const [sourceUserQuery, setSourceUserQuery] = useState('');
+  const [resumeNameQuery, setResumeNameQuery] = useState('');
   const [copySourceUser, setCopySourceUser] = useState<CopySourceUser | null>(null);
   const [selectedResumeId, setSelectedResumeId] = useState('');
   const [targetUserId, setTargetUserId] = useState('');
@@ -193,6 +198,14 @@ export default function AdminPage(): React.ReactElement {
     }
   }
 
+  function handleSourceLookupModeChange(mode: SourceLookupMode): void {
+    setSourceLookupMode(mode);
+    setCopyMessage(null);
+    setSelectedResumeId('');
+    setCopySourceUser(null);
+    setSourceUserResumes([]);
+  }
+
   async function fetchMyResumes(): Promise<void> {
     try {
       const res = await fetch('/next-api/resumes');
@@ -208,6 +221,13 @@ export default function AdminPage(): React.ReactElement {
 
   function handleSourceUserQueryChange(value: string): void {
     setSourceUserQuery(value);
+    setCopySourceUser(null);
+    setSourceUserResumes([]);
+    if (copyMode === 'to-current') setSelectedResumeId('');
+  }
+
+  function handleResumeNameQueryChange(value: string): void {
+    setResumeNameQuery(value);
     setCopySourceUser(null);
     setSourceUserResumes([]);
     if (copyMode === 'to-current') setSelectedResumeId('');
@@ -246,6 +266,39 @@ export default function AdminPage(): React.ReactElement {
     }
   }
 
+  async function fetchSourceResumesByName(): Promise<void> {
+    const query = resumeNameQuery.trim();
+    if (!query) {
+      setCopyMessage({ type: 'error', text: '请输入简历基本信息里的姓名' });
+      return;
+    }
+    try {
+      const params = new URLSearchParams({ resumeName: query });
+      const res = await fetch(`/next-api/admin/copy-resume?${params.toString()}`, {
+        headers: { 'X-Admin-Password': password },
+      });
+      const json = await res.json();
+      if (!res.ok || json.error) {
+        setCopySourceUser(null);
+        setSourceUserResumes([]);
+        setSelectedResumeId('');
+        setCopyMessage({ type: 'error', text: json.error || '按姓名搜索简历失败' });
+        return;
+      }
+      const resumes: ResumeItem[] = Array.isArray(json.resumes) ? json.resumes : [];
+      setCopySourceUser(null);
+      setSourceUserResumes(resumes);
+      setSelectedResumeId(resumes[0]?.id ?? '');
+      if (resumes.length === 0) {
+        setCopyMessage({ type: 'error', text: '没有找到匹配该姓名的简历' });
+      } else {
+        setCopyMessage({ type: 'success', text: `找到 ${resumes.length} 份匹配简历，请选择后复制到我的账号` });
+      }
+    } catch (err) {
+      setCopyMessage({ type: 'error', text: '按姓名搜索简历失败: ' + (err instanceof Error ? err.message : '未知错误') });
+    }
+  }
+
   async function copyResume(): Promise<void> {
     if (!selectedResumeId) {
       setCopyMessage({ type: 'error', text: '请选择要复制的简历' });
@@ -255,8 +308,15 @@ export default function AdminPage(): React.ReactElement {
       setCopyMessage({ type: 'error', text: '请填写目标用户 ID' });
       return;
     }
-    if (copyMode === 'to-current' && !sourceUserQuery.trim()) {
-      setCopyMessage({ type: 'error', text: '请填写来源用户 ID 并搜索简历' });
+    const selectedSourceResume = sourceUserResumes.find((resume) => resume.id === selectedResumeId) ?? null;
+    const sourceIdentifier = sourceLookupMode === 'resume-name'
+      ? selectedSourceResume?.user?.id ?? ''
+      : sourceUserQuery.trim();
+    if (copyMode === 'to-current' && !sourceIdentifier) {
+      setCopyMessage({
+        type: 'error',
+        text: sourceLookupMode === 'resume-name' ? '请先按姓名搜索并选择要复制的简历' : '请填写来源用户 ID 并搜索简历',
+      });
       return;
     }
     setCopyLoading(true);
@@ -266,7 +326,7 @@ export default function AdminPage(): React.ReactElement {
         ? {
             adminPassword: password,
             resumeId: selectedResumeId,
-            sourceUserId: sourceUserQuery.trim(),
+            sourceUserId: sourceIdentifier,
             direction: 'to-current' as const,
           }
         : {
@@ -328,10 +388,14 @@ export default function AdminPage(): React.ReactElement {
   }
 
   const activeCopyResumes: ResumeItem[] = copyMode === 'to-user' ? myResumes : sourceUserResumes;
+  const selectedSourceResume: ResumeItem | null = copyMode === 'to-current'
+    ? activeCopyResumes.find((resume) => resume.id === selectedResumeId) ?? null
+    : null;
   const copyButtonDisabled: boolean = copyLoading
     || !selectedResumeId
     || (copyMode === 'to-user' && !targetUserId.trim())
-    || (copyMode === 'to-current' && !sourceUserQuery.trim());
+    || (copyMode === 'to-current' && sourceLookupMode === 'user' && !sourceUserQuery.trim())
+    || (copyMode === 'to-current' && sourceLookupMode === 'resume-name' && !selectedSourceResume?.user?.id);
 
   if (!authed) {
     return (
@@ -586,33 +650,85 @@ export default function AdminPage(): React.ReactElement {
 
               {copyMode === 'to-current' && (
                 <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-                  <label className="block text-xs text-slate-500 mb-1.5">来源用户 ID（Java User ID、wxId 或数据库 ID）</label>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={sourceUserQuery}
-                      onChange={(e) => handleSourceUserQueryChange(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') void fetchSourceUserResumes();
-                      }}
-                      placeholder="输入要复制来源的用户 ID / wxId / 数据库 ID"
-                      className="min-w-0 flex-1 px-3 py-2.5 border border-slate-200 rounded-xl bg-white text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => void fetchSourceUserResumes()}
-                      disabled={copyLoading || !sourceUserQuery.trim()}
-                      className="shrink-0 px-4 py-2.5 rounded-xl bg-violet-600 text-white text-sm font-medium hover:bg-violet-700 disabled:opacity-50"
-                    >
-                      搜索简历
-                    </button>
+                  <div className="mb-3 grid grid-cols-2 gap-1 rounded-lg bg-white p-1">
+                    {([
+                      ['user', '按来源用户搜索'],
+                      ['resume-name', '按简历姓名搜索'],
+                    ] as [SourceLookupMode, string][]).map(([mode, label]) => (
+                      <button
+                        key={mode}
+                        type="button"
+                        onClick={() => handleSourceLookupModeChange(mode)}
+                        className={cn(
+                          'rounded-md px-2 py-1.5 text-xs font-medium transition-all',
+                          sourceLookupMode === mode
+                            ? 'bg-violet-600 text-white shadow-sm'
+                            : 'text-slate-500 hover:text-slate-700',
+                        )}
+                      >
+                        {label}
+                      </button>
+                    ))}
                   </div>
-                  {copySourceUser && (
-                    <div className="mt-2 text-xs leading-relaxed text-slate-500">
-                      已加载来源账号：{copySourceUser.name || '未命名用户'}，
-                      数据库 ID：<span className="font-mono">{copySourceUser.id}</span>
-                      {copySourceUser.javaUserId ? <>，Java ID：<span className="font-mono">{copySourceUser.javaUserId}</span></> : null}
-                    </div>
+
+                  {sourceLookupMode === 'user' ? (
+                    <>
+                      <label className="block text-xs text-slate-500 mb-1.5">来源用户 ID（Java User ID、wxId 或数据库 ID）</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={sourceUserQuery}
+                          onChange={(e) => handleSourceUserQueryChange(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') void fetchSourceUserResumes();
+                          }}
+                          placeholder="输入要复制来源的用户 ID / wxId / 数据库 ID"
+                          className="min-w-0 flex-1 px-3 py-2.5 border border-slate-200 rounded-xl bg-white text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => void fetchSourceUserResumes()}
+                          disabled={copyLoading || !sourceUserQuery.trim()}
+                          className="shrink-0 px-4 py-2.5 rounded-xl bg-violet-600 text-white text-sm font-medium hover:bg-violet-700 disabled:opacity-50"
+                        >
+                          搜索简历
+                        </button>
+                      </div>
+                      {copySourceUser && (
+                        <div className="mt-2 text-xs leading-relaxed text-slate-500">
+                          已加载来源账号：{copySourceUser.name || '未命名用户'}，
+                          数据库 ID：<span className="font-mono">{copySourceUser.id}</span>
+                          {copySourceUser.javaUserId ? <>，Java ID：<span className="font-mono">{copySourceUser.javaUserId}</span></> : null}
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <label className="block text-xs text-slate-500 mb-1.5">简历基本信息姓名</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={resumeNameQuery}
+                          onChange={(e) => handleResumeNameQueryChange(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') void fetchSourceResumesByName();
+                          }}
+                          placeholder="例如：张三 / 李小满 / 夸小克"
+                          className="min-w-0 flex-1 px-3 py-2.5 border border-slate-200 rounded-xl bg-white text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => void fetchSourceResumesByName()}
+                          disabled={copyLoading || !resumeNameQuery.trim()}
+                          className="shrink-0 px-4 py-2.5 rounded-xl bg-violet-600 text-white text-sm font-medium hover:bg-violet-700 disabled:opacity-50"
+                        >
+                          搜索简历
+                        </button>
+                      </div>
+                      <p className="mt-2 text-xs leading-relaxed text-slate-500">
+                        会搜索简历内容里的姓名字段，结果中会显示简历 ID 和来源账号，选择后可直接复制到当前登录账号。
+                      </p>
+                    </>
                   )}
                 </div>
               )}
@@ -620,9 +736,13 @@ export default function AdminPage(): React.ReactElement {
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="block text-xs text-slate-500">
-                    {copyMode === 'to-user' ? '选择要复制的简历（当前账号）' : '选择要复制的简历（来源账号）'}
+                    {copyMode === 'to-user'
+                      ? '选择要复制的简历（当前账号）'
+                      : sourceLookupMode === 'resume-name'
+                        ? '选择匹配姓名的简历'
+                        : '选择要复制的简历（来源账号）'}
                   </label>
-                  {copyMode === 'to-current' && copySourceUser && (
+                  {copyMode === 'to-current' && sourceLookupMode === 'user' && copySourceUser && (
                     <button
                       type="button"
                       onClick={() => void fetchSourceUserResumes()}
@@ -632,10 +752,18 @@ export default function AdminPage(): React.ReactElement {
                     </button>
                   )}
                 </div>
-                {copyMode === 'to-current' && !copySourceUser ? (
+                {copyMode === 'to-current' && sourceLookupMode === 'user' && !copySourceUser ? (
                   <p className="text-sm text-slate-400 py-2">请输入来源用户 ID，并点击“搜索简历”</p>
+                ) : copyMode === 'to-current' && sourceLookupMode === 'resume-name' && !resumeNameQuery.trim() ? (
+                  <p className="text-sm text-slate-400 py-2">请输入简历基本信息姓名，并点击“搜索简历”</p>
                 ) : activeCopyResumes.length === 0 ? (
-                  <p className="text-sm text-slate-400 py-2">{copyMode === 'to-user' ? '当前账号暂无简历' : '该用户暂无简历'}</p>
+                  <p className="text-sm text-slate-400 py-2">
+                    {copyMode === 'to-user'
+                      ? '当前账号暂无简历'
+                      : sourceLookupMode === 'resume-name'
+                        ? '没有找到匹配姓名的简历'
+                        : '该用户暂无简历'}
+                  </p>
                 ) : (
                   <div className="space-y-2 max-h-48 overflow-y-auto">
                     {activeCopyResumes.map((r) => (
@@ -658,8 +786,19 @@ export default function AdminPage(): React.ReactElement {
                         />
                         <FileText className="w-4 h-4 text-slate-400 shrink-0" />
                         <div className="min-w-0">
-                          <p className="font-medium text-slate-700 text-sm truncate">{r.title}</p>
-                          <p className="text-xs text-slate-400">{r.template} · {new Date(r.updatedAt).toLocaleString('zh-CN')}</p>
+                          <p className="font-medium text-slate-700 text-sm truncate">
+                            {r.title}
+                            {r.resumeName ? <span className="ml-1 text-slate-400 font-normal">（{r.resumeName}）</span> : null}
+                          </p>
+                          <p className="text-xs text-slate-400 break-all">
+                            ID: {r.id} · {r.template} · {new Date(r.updatedAt).toLocaleString('zh-CN')}
+                          </p>
+                          {copyMode === 'to-current' && sourceLookupMode === 'resume-name' && r.user ? (
+                            <p className="text-xs text-slate-400 break-all">
+                              来源账号：{r.user.name || '未命名用户'} · DB: {r.user.id}
+                              {r.user.javaUserId ? ` · Java: ${r.user.javaUserId}` : ''}
+                            </p>
+                          ) : null}
                         </div>
                       </label>
                     ))}
@@ -680,7 +819,13 @@ export default function AdminPage(): React.ReactElement {
                 </div>
               ) : (
                 <div className="rounded-xl border border-violet-100 bg-violet-50 px-3 py-2.5 text-xs leading-relaxed text-violet-700">
-                  来源账号：{copySourceUser ? `${copySourceUser.name || '未命名用户'}（ID: ${copySourceUser.id}）` : '未加载'}。
+                  来源账号：{sourceLookupMode === 'resume-name'
+                    ? selectedSourceResume?.user
+                      ? `${selectedSourceResume.user.name || '未命名用户'}（ID: ${selectedSourceResume.user.id}）`
+                      : '未选择'
+                    : copySourceUser
+                      ? `${copySourceUser.name || '未命名用户'}（ID: ${copySourceUser.id}）`
+                      : '未加载'}。
                   复制后会生成一份新的简历到当前登录的管理账号，不会移动或删除对方原简历。
                 </div>
               )}

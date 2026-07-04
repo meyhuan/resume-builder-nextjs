@@ -36,7 +36,7 @@ export default function BlockRenderer(props: BlockRendererProps): ReactElement {
   const spacingClassName = styles.spacing || ''
 
   return (
-    <div className={`${containerClassName} ${spacingClassName}`.trim()}>
+    <div data-resume-block="" className={`${containerClassName} ${spacingClassName}`.trim()}>
       {slots?.header ? slots.header(block, themeColor) : renderBlockHeader(block, styles, onEditingChange)}
       {slots?.content ? slots.content(block) : renderBlockContent(block, styles, onEditingChange)}
       {slots?.footer && slots.footer(block)}

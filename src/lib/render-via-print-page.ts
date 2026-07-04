@@ -6,6 +6,7 @@
  * and mini-program export flows (dual-auth: cookie or HMAC sign).
  */
 import type { Page } from 'puppeteer-core'
+import { getClientPaginationScript } from '@/utils/paginate-html'
 import { mintPrintToken } from '@/lib/print-token'
 import { rasterizePdfToPngs } from '@/lib/pdf-to-png'
 import { closeSharedPuppeteerPage, newSharedPuppeteerPage } from '@/lib/puppeteer-browser'
@@ -188,6 +189,10 @@ export async function renderViaPrintPage(opts: RenderViaPrintPageOpts): Promise<
         },
       }
     }
+
+    // Apply smart per-block pagination (skips one-page/bleed layouts internally):
+    // short blocks keep together, tall blocks stay splittable to avoid large blanks.
+    await page.evaluate(getClientPaginationScript())
 
     // Generate the PDF
     const pdfBuffer = Buffer.from(
