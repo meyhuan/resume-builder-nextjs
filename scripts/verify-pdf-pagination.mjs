@@ -74,6 +74,8 @@ try {
       .page { width: 210mm; overflow: hidden; }
       .page { overflow: visible !important; }
       .resume-container { padding: 22mm 16mm; font: 15px/1.6 Arial, sans-serif; }
+      main { display: flex; flex-direction: column; gap: 24px; }
+      section { display: flex; flex-direction: column; }
       .short { height: 80px; }
       .long p { margin: 0 0 8px; }
     </style>
@@ -81,12 +83,18 @@ try {
   <body>
     <div class="page">
       <div class="resume-container" data-page-padding-vertical="22">
-        <div id="shortWrap" data-resume-block-wrapper class="group/block">
-          <div id="short" data-resume-block class="short">Short block</div>
-        </div>
-        <div id="longWrap" data-resume-block-wrapper class="group/block">
-          <div id="long" data-resume-block class="long">${longParagraphs}</div>
-        </div>
+        <main id="mainFlow">
+          <section id="shortSection">
+            <div id="shortWrap" data-resume-block-wrapper class="group/block">
+              <div id="short" data-resume-block class="short">Short block</div>
+            </div>
+          </section>
+          <section id="longSection">
+            <div id="longWrap" data-resume-block-wrapper class="group/block">
+              <div id="long" data-resume-block class="long">${longParagraphs}</div>
+            </div>
+          </section>
+        </main>
       </div>
     </div>
   </body>
@@ -106,6 +114,15 @@ try {
     }
     return {
       pageOverflow: getComputedStyle(document.querySelector('.page')).overflow,
+      mainFlow: {
+        display: getComputedStyle(document.getElementById('mainFlow')).display,
+        normalized: document.getElementById('mainFlow').getAttribute('data-pdf-flow-normalized'),
+        firstChildMarginBottom: getComputedStyle(document.getElementById('shortSection')).marginBottom,
+      },
+      longSection: {
+        display: getComputedStyle(document.getElementById('longSection')).display,
+        normalized: document.getElementById('longSection').getAttribute('data-pdf-flow-normalized'),
+      },
       shortWrap: read('shortWrap'),
       short: read('short'),
       longWrap: read('longWrap'),
@@ -115,6 +132,10 @@ try {
 
   const failures = []
   if (result.pageOverflow !== 'visible') failures.push(`page overflow expected visible, got ${result.pageOverflow}`)
+  if (result.mainFlow?.display !== 'block') failures.push(`column flex main expected block for PDF, got ${result.mainFlow?.display}`)
+  if (result.mainFlow?.normalized !== 'column-flex') failures.push(`column flex main was not marked normalized`)
+  if (parseFloat(result.mainFlow?.firstChildMarginBottom || '0') <= 0) failures.push(`column flex gap was not preserved as child margin`)
+  if (result.longSection?.display !== 'block') failures.push(`column flex section expected block for PDF, got ${result.longSection?.display}`)
   if (result.shortWrap?.breakInside !== 'avoid') failures.push(`short wrapper expected avoid, got ${result.shortWrap?.breakInside}`)
   if (result.short?.breakInside !== 'avoid') failures.push(`short inner expected avoid, got ${result.short?.breakInside}`)
   if (result.longWrap?.breakInside !== 'auto') failures.push(`long wrapper expected auto, got ${result.longWrap?.breakInside}`)
