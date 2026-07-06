@@ -144,6 +144,7 @@ What these checks must cover:
 - Template registration, lazy import, thumbnail asset, and theme contract.
 - Generated `.webp` cover exists, has A4 thumbnail dimensions, and is referenced by both template registries when applicable.
 - Local PC rendering, mobile rendering, sparse data, long content, and rich text.
+- PDF pagination/fragmentation with long content: the first page must not leave a large blank only because a long module was pushed wholesale to the next page. Print-flow containers that wrap multiple sections should use normal block flow and margins instead of column flex layouts such as `flex flex-col`, because Chromium PDF pagination treats column flex items conservatively.
 - Theme controls: font size, line height, spacing, title scale, page padding, and primary color when not intentionally locked.
   - Theme-control checks must inspect final visible content nodes, not only the `.resume-container` root. For example, line-height must be verified on real body text such as paragraph/list/rich-text nodes, because template-level `leading-*` classes can override inherited theme values.
   - Font-size checks must include representative body text in addition to template root font size when the template applies internal `em` multipliers.
@@ -159,6 +160,7 @@ Critical user-flow coverage for every new template:
 - Clicking base information, job intention, and a representative experience field must open the expected editing UI and persist changes back into the preview.
 - Hovering/clicking module areas must expose section actions such as drag, add, and delete where the template supports editable sections.
 - Loading the long-content scenario must render long names, company/project text, salary, and custom fields without overlap or horizontal overflow.
+- For templates with long experience blocks, inspect the PDF/print preview page boundary: long text should be able to split across pages when needed, and the previous page should not retain obvious unused space caused by an unbreakable section wrapper.
 
 Still run these checks manually or in a staging environment before release when the change touches the related behavior:
 
@@ -239,6 +241,7 @@ Report rules:
 
 - Reference HTML px values are usually too large for the editor A4 width. Scale them.
 - Do not hardcode body line-height or spacing if the right-side layout controls should affect them.
+- Do not put the printable main section flow in `flex flex-col`. Use block layout plus `margin-bottom`/template spacing instead, otherwise Chromium PDF may refuse to split long sections and create large blank areas before page breaks.
 - Do not hide job intention permanently unless the user explicitly asks for that.
 - Do not put interactive action buttons in printed output; use `print:hidden`.
 - Avoid decorative elements that only align in one sample resume; inspect actual editor data.

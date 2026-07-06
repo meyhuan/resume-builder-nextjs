@@ -99,7 +99,7 @@ export default function MashangTemplate(props: TemplateProps): ReactElement {
   const header = useEditableHeader(resume.name, resume.baseInfo ?? null)
   const objective = useEditableJobIntention(resume.jobIntention ?? null)
   const jobIntentionVisible: boolean = resume.jobIntentionVisible ?? Boolean(resume.jobIntention)
-  const pagePad = usePagePadding(theme, 26, 38)
+  const pagePad = usePagePadding(theme, 26, 6)
   const palette: MashangPalette = buildPalette(theme.primaryColor)
 
   return (
@@ -135,25 +135,24 @@ export default function MashangTemplate(props: TemplateProps): ReactElement {
           style={{
             ...pagePad,
             paddingTop: jobIntentionVisible ? 10 * theme.spacingScale : pagePad.paddingTop,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 28 * theme.spacingScale,
           }}
         >
           {resume.sections.map((section: Section, i: number) => (
-            <SortableSection key={section.id} sectionId={section.id}>
-              {(dragProps) => (
-                <MashangSection
-                  section={section}
-                  index={i + 1}
-                  dragRef={dragProps.ref}
-                  dragAttrs={dragProps.attributes}
-                  dragListeners={dragProps.listeners}
-                  themeColor={theme.primaryColor}
-                  spacingScale={theme.spacingScale}
-                />
-              )}
-            </SortableSection>
+            <div key={section.id} style={{ marginBottom: i < resume.sections.length - 1 ? 28 * theme.spacingScale : 0 }}>
+              <SortableSection sectionId={section.id}>
+                {(dragProps) => (
+                  <MashangSection
+                    section={section}
+                    index={i + 1}
+                    dragRef={dragProps.ref}
+                    dragAttrs={dragProps.attributes}
+                    dragListeners={dragProps.listeners}
+                    themeColor={theme.primaryColor}
+                    spacingScale={theme.spacingScale}
+                  />
+                )}
+              </SortableSection>
+            </div>
           ))}
         </main>
 
@@ -268,7 +267,7 @@ function MashangHero({ header, title, horizontalPadding }: HeroProps): ReactElem
                     style={{
                       fontFamily: MONO,
                       fontSize: '0.92em',
-                      color: palette.code,
+                      color: palette.mute,
                     }}
                   >
                     {f.label}

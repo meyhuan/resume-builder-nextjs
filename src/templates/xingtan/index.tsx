@@ -142,25 +142,24 @@ export default function XingtanTemplate(props: TemplateProps): ReactElement {
           style={{
             ...pagePad,
             paddingTop: jobIntentionVisible ? 10 * theme.spacingScale : pagePad.paddingTop,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 32 * theme.spacingScale,
           }}
         >
           {resume.sections.map((section: Section, i: number) => (
-            <SortableSection key={section.id} sectionId={section.id}>
-              {(dragProps) => (
-                <XingtanSection
-                  section={section}
-                  index={i + 1}
-                  dragRef={dragProps.ref}
-                  dragAttrs={dragProps.attributes}
-                  dragListeners={dragProps.listeners}
-                  themeColor={theme.primaryColor}
-                  spacingScale={theme.spacingScale}
-                />
-              )}
-            </SortableSection>
+            <div key={section.id} style={{ marginBottom: i < resume.sections.length - 1 ? 32 * theme.spacingScale : 0 }}>
+              <SortableSection sectionId={section.id}>
+                {(dragProps) => (
+                  <XingtanSection
+                    section={section}
+                    index={i + 1}
+                    dragRef={dragProps.ref}
+                    dragAttrs={dragProps.attributes}
+                    dragListeners={dragProps.listeners}
+                    themeColor={theme.primaryColor}
+                    spacingScale={theme.spacingScale}
+                  />
+                )}
+              </SortableSection>
+            </div>
           ))}
         </main>
 

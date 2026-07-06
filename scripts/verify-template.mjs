@@ -155,6 +155,20 @@ function runStaticChecks(id) {
     if (/\btheme\b/.test(implementationSource)) pass('Theme usage', 'Template implementation references theme tokens.')
     else warn('Theme usage', 'No "theme" reference found in template implementation.')
 
+    const printFlowFlexPatterns = [
+      ['main', /<main[\s\S]{0,220}\bclassName\s*=\s*["'`][^"'`]*\bflex\b[^"'`]*\bflex-col\b/],
+      ['main inline style', /<main[\s\S]{0,420}\bstyle\s*=\s*\{\{[\s\S]{0,420}(?:\bdisplay:\s*["'`]flex["'`][\s\S]{0,180}\bflexDirection:\s*["'`]column["'`]|\bflexDirection:\s*["'`]column["'`][\s\S]{0,180}\bdisplay:\s*["'`]flex["'`])/],
+      ['resume-body-content', /resume-body-content[^"'`\n]*\bflex\b[^"'`\n]*\bflex-col\b/],
+    ]
+    const riskyPrintFlowFlex = printFlowFlexPatterns
+      .filter(([, pattern]) => pattern.test(implementationSource))
+      .map(([label]) => label)
+    if (riskyPrintFlowFlex.length > 0) {
+      warn('PDF pagination flow', `Potential column flex on printable section flow (${riskyPrintFlowFlex.join(', ')}). Verify long-content PDF pagination; prefer block flow plus margins for containers that wrap multiple sections.`)
+    } else {
+      pass('PDF pagination flow', 'No obvious column flex on printable main section flow.')
+    }
+
     if (exportLayout === 'bleed') {
       const hasBleedMarker = /data-bleed\s*=\s*["'{]true|<ResumeFrame[\s\S]{0,260}\bbleed\b|bleed=\{config\.bleed\}/.test(implementationSource)
       if (hasBleedMarker) {
@@ -2201,6 +2215,7 @@ function writeReport(templateIds) {
     '- 模板注册、懒加载、缩略图、主题契约、导出布局契约。',
     '- 本地 PC、移动端、稀疏数据、长内容、富文本渲染。',
     '- 字号、行高、模块间距、标题比例、页边距、主题主色。',
+    '- PDF 分页风险检查：长内容场景、打印预览入口，以及主内容流 column flex 的静态预警。',
     '- 本地交互 QA：模板切换、主题改色与恢复默认、基础信息弹窗、头像上传入口、求职意向弹窗、经历字段编辑、模块操作入口、富文本编辑态、深色背景 hover 对比。',
     '- 一键加载真实简历场景数据，以及预览中的基础信息、求职意向、长公司名、项目名、薪资、自定义字段和长内容布局。',
     '- 模板专项布局断言会在脚本中按模板 id 执行，例如表格模板的邮箱单元格和头像单元格检查。',

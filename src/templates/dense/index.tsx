@@ -404,7 +404,7 @@ function DenseSection(props: DenseSectionProps): ReactElement {
       </div>
 
       <SortableContext items={blockIds} strategy={rectSortingStrategy}>
-        <div ref={setNodeRef} className="flex flex-col">
+        <div ref={setNodeRef} className="block">
           {section.blocks.map((block, index) => (
             <DenseBlock
               key={block.id}

@@ -338,7 +338,7 @@ export default function ElegantTemplate(props: ElegantTemplateProps): ReactEleme
 
       {/* Body content */}
       <div
-        className="resume-body-content elegant-body-content flex flex-col print:!pb-0"
+        className="resume-body-content elegant-body-content print:!pb-0"
         data-template-padding-probe="true"
         style={{ 
           padding: bodyPadding,
@@ -377,31 +377,33 @@ export default function ElegantTemplate(props: ElegantTemplateProps): ReactEleme
             )
           }}
         >
-          <main className="order-2 flex flex-col relative" style={{ gap: `${24 * theme.spacingScale}px` }}>
-            {resume.sections.map((section) => (
-              <SortableSectionWrapper key={section.id} sectionId={section.id}>
-                {(sectionDragProps) => (
-                  <ElegantSectionView
-                    section={section}
-                    themeColor={accentColor}
-                    dragHandleAttributes={sectionDragProps.attributes}
-                    dragHandleListeners={sectionDragProps.listeners}
-                    dragHandleRef={sectionDragProps.ref}
-                  >
-                    {section.blocks.map((block, index) => (
-                      <BlockRendererWrapper
-                        key={block.id}
-                        block={block}
-                        sectionId={section.id}
-                        blockIndex={index}
-                        totalBlocks={section.blocks.length}
-                        themeColor={accentColor}
-                        spacingScale={theme.spacingScale}
-                      />
-                    ))}
-                  </ElegantSectionView>
-                )}
-              </SortableSectionWrapper>
+          <main className="order-2 relative">
+            {resume.sections.map((section, sectionIndex) => (
+              <div key={section.id} style={{ marginBottom: sectionIndex < resume.sections.length - 1 ? `${24 * theme.spacingScale}px` : '0' }}>
+                <SortableSectionWrapper sectionId={section.id}>
+                  {(sectionDragProps) => (
+                    <ElegantSectionView
+                      section={section}
+                      themeColor={accentColor}
+                      dragHandleAttributes={sectionDragProps.attributes}
+                      dragHandleListeners={sectionDragProps.listeners}
+                      dragHandleRef={sectionDragProps.ref}
+                    >
+                      {section.blocks.map((block, index) => (
+                        <BlockRendererWrapper
+                          key={block.id}
+                          block={block}
+                          sectionId={section.id}
+                          blockIndex={index}
+                          totalBlocks={section.blocks.length}
+                          themeColor={accentColor}
+                          spacingScale={theme.spacingScale}
+                        />
+                      ))}
+                    </ElegantSectionView>
+                  )}
+                </SortableSectionWrapper>
+              </div>
             ))}
           </main>
         </DragDropProvider>
@@ -488,7 +490,7 @@ function ElegantSectionView(props: ElegantSectionViewProps): ReactElement {
         {columns === 2 ? (
           <div ref={setNodeRef} className="grid grid-cols-2 gap-4">{children}</div>
         ) : (
-          <div ref={setNodeRef} className="flex flex-col">{children}</div>
+          <div ref={setNodeRef} className="block">{children}</div>
         )}
       </SortableContext>
 

@@ -361,7 +361,7 @@ function WarmSectionView(props: {
         {columns === 2 ? (
           <div ref={setNodeRef} className="grid grid-cols-2 gap-4">{children}</div>
         ) : (
-          <div ref={setNodeRef} className="flex flex-col">{children}</div>
+          <div ref={setNodeRef} className="block">{children}</div>
         )}
       </SortableContext>
 
@@ -546,30 +546,32 @@ export default function WarmTemplate(props: WarmTemplateProps): ReactElement {
           {/* Right main content */}
           <ColumnDroppable id={COLUMN_RIGHT_ID} className="w-[68%] transition-shadow">
             <div style={{ minHeight: '100%', padding: '50px 40px', backgroundColor: '#ffffff' }}>
-              <main className="flex flex-col relative" style={{ gap: `${24 * theme.spacingScale}px` }}>
-                {rightSections.map((section) => (
-                  <SortableSectionWrapper key={section.id} sectionId={section.id}>
-                    {(sectionDragProps) => (
-                      <WarmSectionView
-                        section={section}
-                        themeColor={accentColor}
-                        dragHandleAttributes={sectionDragProps.attributes}
-                        dragHandleListeners={sectionDragProps.listeners}
-                        dragHandleRef={sectionDragProps.ref}
-                      >
-                        {section.blocks.map((block, index) => (
-                          <BlockRendererWrapper
-                            key={block.id}
-                            block={block}
-                            sectionId={section.id}
-                            blockIndex={index}
-                            totalBlocks={section.blocks.length}
-                            themeColor={accentColor}
-                          />
-                        ))}
-                      </WarmSectionView>
-                    )}
-                  </SortableSectionWrapper>
+              <main className="relative">
+                {rightSections.map((section, sectionIndex) => (
+                  <div key={section.id} style={{ marginBottom: sectionIndex < rightSections.length - 1 ? `${24 * theme.spacingScale}px` : '0' }}>
+                    <SortableSectionWrapper sectionId={section.id}>
+                      {(sectionDragProps) => (
+                        <WarmSectionView
+                          section={section}
+                          themeColor={accentColor}
+                          dragHandleAttributes={sectionDragProps.attributes}
+                          dragHandleListeners={sectionDragProps.listeners}
+                          dragHandleRef={sectionDragProps.ref}
+                        >
+                          {section.blocks.map((block, index) => (
+                            <BlockRendererWrapper
+                              key={block.id}
+                              block={block}
+                              sectionId={section.id}
+                              blockIndex={index}
+                              totalBlocks={section.blocks.length}
+                              themeColor={accentColor}
+                            />
+                          ))}
+                        </WarmSectionView>
+                      )}
+                    </SortableSectionWrapper>
+                  </div>
                 ))}
                 <CrossColumnPlaceholder columnId={COLUMN_RIGHT_ID} />
               </main>

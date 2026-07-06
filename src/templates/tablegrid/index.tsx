@@ -509,7 +509,7 @@ function TableSectionRow(props: TableSectionRowProps): ReactElement {
           section={editable}
           themeColor={palette.primary}
           spacingScale={spacingScale}
-          className="flex flex-col"
+          className="block"
           renderBlock={({ block, index, total }) => (
             <TableBlock
               block={block}

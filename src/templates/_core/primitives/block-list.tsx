@@ -49,7 +49,7 @@ export function BlockList(props: BlockListProps): ReactElement {
     <SortableContext items={blockIds} strategy={rectSortingStrategy}>
       <div
         ref={dropRef}
-        className={className ?? (columns === 2 ? 'grid grid-cols-2 gap-4' : 'flex flex-col')}
+        className={className ?? (columns === 2 ? 'grid grid-cols-2 gap-4' : 'block')}
       >
         {blocks.map((block, index) => (
           renderBlock

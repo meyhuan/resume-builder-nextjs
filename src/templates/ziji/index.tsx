@@ -347,19 +347,21 @@ export default function ZijiTemplate(props: TemplateProps): ReactElement {
                     />
                   ) : null}
 
-                  <div className="flex flex-col" style={{ gap: 36 * spacingScale }}>
-                    {leftSections.map((section) => (
-                      <SortableSection key={section.id} sectionId={section.id}>
-                        {(dragProps) => (
-                          <ZijiSideSection
-                            section={section}
-                            dragProps={dragProps as DragHandleProps}
-                            titleScale={titleScale}
-                            spacingScale={spacingScale}
-                            lineHeight={contentLineHeight}
-                          />
-                        )}
-                      </SortableSection>
+                  <div>
+                    {leftSections.map((section, index) => (
+                      <div key={section.id} style={{ marginBottom: index < leftSections.length - 1 ? 36 * spacingScale : 0 }}>
+                        <SortableSection sectionId={section.id}>
+                          {(dragProps) => (
+                            <ZijiSideSection
+                              section={section}
+                              dragProps={dragProps as DragHandleProps}
+                              titleScale={titleScale}
+                              spacingScale={spacingScale}
+                              lineHeight={contentLineHeight}
+                            />
+                          )}
+                        </SortableSection>
+                      </div>
                     ))}
                     <CrossColumnPlaceholder columnId={COLUMN_LEFT_ID} />
                   </div>
@@ -689,16 +691,17 @@ function ZijiSideSection(props: {
       </div>
 
       <SortableContext items={blockIds} strategy={rectSortingStrategy}>
-        <div ref={dropRef} className="flex flex-col" style={{ gap: 22 * spacingScale }}>
+        <div ref={dropRef} className="block">
           {section.blocks.map((block, index) => (
-            <ZijiSideBlock
-              key={block.id}
-              block={block}
-              sectionId={section.id}
-              index={index}
-              total={section.blocks.length}
-              lineHeight={lineHeight}
-            />
+            <div key={block.id} style={{ marginBottom: index < section.blocks.length - 1 ? 22 * spacingScale : 0 }}>
+              <ZijiSideBlock
+                block={block}
+                sectionId={section.id}
+                index={index}
+                total={section.blocks.length}
+                lineHeight={lineHeight}
+              />
+            </div>
           ))}
         </div>
       </SortableContext>

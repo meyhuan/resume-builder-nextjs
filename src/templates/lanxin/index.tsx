@@ -57,13 +57,13 @@ export default function LanxinTemplate(props: TemplateProps): ReactElement {
   const headerBg = lightenHex(primaryColor, 0.9)
   const ruleColor = lightenHex(primaryColor, 0.55)
   const pagePaddingVertical = Math.max(24, mmToPx(theme.pagePaddingVertical))
-  const pagePaddingHorizontal = Math.max(32, mmToPx(theme.pagePaddingHorizontal))
+  const pagePaddingHorizontal = Math.max(6, mmToPx(theme.pagePaddingHorizontal))
   const heroHeight = pagePaddingVertical + 172
   const contentPaddingTop = 37 * theme.spacingScale
   const contentPaddingBottom = pagePaddingVertical
   const nodeTop = 1
   const nodeHeight = 19
-  const timelineLeft = pagePaddingHorizontal - 27
+  const timelineLeft = Math.max(4, pagePaddingHorizontal - 27)
   const rootStyle: CssVars = {
     minHeight: '297mm',
     backgroundColor: '#ffffff',
@@ -127,23 +127,27 @@ export default function LanxinTemplate(props: TemplateProps): ReactElement {
           }}
         />
 
-        <main className="flex flex-col" style={{ gap: `${36 * theme.spacingScale}px` }}>
+        <main>
           {isJobIntentionVisible && jobIntention.fields.length > 0 ? (
-            <LanxinJobIntentionSection jobIntention={jobIntention} primaryColor={primaryColor} />
+            <div style={{ marginBottom: resume.sections.length > 0 ? `${36 * theme.spacingScale}px` : '0' }}>
+              <LanxinJobIntentionSection jobIntention={jobIntention} primaryColor={primaryColor} />
+            </div>
           ) : null}
-          {resume.sections.map((section) => (
-            <SortableSection key={section.id} sectionId={section.id}>
-              {(dragProps) => (
-                <LanxinSection
-                  section={section}
-                  dragProps={dragProps}
-                  spacingScale={theme.spacingScale}
-                  contentLineHeight={contentLineHeight}
-                  primaryColor={primaryColor}
-                  titleScale={titleScale}
-                />
-              )}
-            </SortableSection>
+          {resume.sections.map((section, index) => (
+            <div key={section.id} style={{ marginBottom: index < resume.sections.length - 1 ? `${36 * theme.spacingScale}px` : '0' }}>
+              <SortableSection sectionId={section.id}>
+                {(dragProps) => (
+                  <LanxinSection
+                    section={section}
+                    dragProps={dragProps}
+                    spacingScale={theme.spacingScale}
+                    contentLineHeight={contentLineHeight}
+                    primaryColor={primaryColor}
+                    titleScale={titleScale}
+                  />
+                )}
+              </SortableSection>
+            </div>
           ))}
         </main>
       </div>
@@ -409,7 +413,7 @@ function LanxinSection({ section, dragProps, spacingScale, contentLineHeight, pr
         section={editable}
         themeColor={primaryColor}
         spacingScale={spacingScale}
-        className={section.columns === 2 ? 'grid grid-cols-2 gap-4' : 'flex flex-col'}
+        className={section.columns === 2 ? 'grid grid-cols-2 gap-4' : 'block'}
         renderBlock={({ block, index, total }) => (
           <LanxinBlock
             block={block}

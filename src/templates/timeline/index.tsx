@@ -249,7 +249,7 @@ function SectionView(props: SectionViewProps): ReactElement {
         dragHandleRef={dragHandleRef}
       />
       <SortableContext items={blockIds} strategy={rectSortingStrategy}>
-        <div ref={setNodeRef} className="flex flex-col">
+        <div ref={setNodeRef} className="block">
           {isTextOnly ? (
             /* Text-only sections render without timeline axis */
             blocks.map((block, index) => (
@@ -371,20 +371,22 @@ export default function TimelineTemplate(props: TimelineTemplateProps): ReactEle
           )
         }}
       >
-        <main className="flex flex-col relative" style={{ gap: `${24 * theme.spacingScale}px` }}>
-          {resume.sections.map((section) => (
-            <SortableSectionWrapper key={section.id} sectionId={section.id}>
-              {(sectionDragProps) => (
-                <SectionView
-                  section={section}
-                  themeColor={theme.primaryColor}
-                  spacingScale={theme.spacingScale}
-                  dragHandleAttributes={sectionDragProps.attributes}
-                  dragHandleListeners={sectionDragProps.listeners}
-                  dragHandleRef={sectionDragProps.ref}
-                />
-              )}
-            </SortableSectionWrapper>
+        <main className="relative">
+          {resume.sections.map((section, index) => (
+            <div key={section.id} style={{ marginBottom: index < resume.sections.length - 1 ? `${24 * theme.spacingScale}px` : '0' }}>
+              <SortableSectionWrapper sectionId={section.id}>
+                {(sectionDragProps) => (
+                  <SectionView
+                    section={section}
+                    themeColor={theme.primaryColor}
+                    spacingScale={theme.spacingScale}
+                    dragHandleAttributes={sectionDragProps.attributes}
+                    dragHandleListeners={sectionDragProps.listeners}
+                    dragHandleRef={sectionDragProps.ref}
+                  />
+                )}
+              </SortableSectionWrapper>
+            </div>
           ))}
         </main>
       </DragDropProvider>

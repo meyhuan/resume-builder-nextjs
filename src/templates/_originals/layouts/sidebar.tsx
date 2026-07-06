@@ -51,8 +51,12 @@ export function StackProjectsLayout(props: {
             </div>
           ))}
         </div>
-        <div className="flex flex-col" style={{ gap: 18, marginTop: 20 }}>
-          {(projectSections.length > 0 ? otherSections : restAfterStack).map((section, index) => <TemplateSection key={section.id} section={section} theme={theme} config={config} index={index} />)}
+        <div style={{ marginTop: 20 }}>
+          {(projectSections.length > 0 ? otherSections : restAfterStack).map((section, index, list) => (
+            <div key={section.id} style={{ marginBottom: index < list.length - 1 ? 18 : 0 }}>
+              <TemplateSection section={section} theme={theme} config={config} index={index} />
+            </div>
+          ))}
         </div>
       </main>
     </div>

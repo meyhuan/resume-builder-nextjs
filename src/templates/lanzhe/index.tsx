@@ -192,29 +192,30 @@ export default function LanzheTemplate(props: TemplateProps): ReactElement {
 
         <main
           style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: `${18 * spacingScale}px`,
             marginTop: `${42 * spacingScale}px`,
           }}
         >
           {isJobIntentionVisible && jobIntention.fields.length > 0 ? (
-            <LanzheJobIntentionSection jobIntention={jobIntention} titleScale={titleScale} />
+            <div style={{ marginBottom: resume.sections.length > 0 ? `${18 * spacingScale}px` : '0' }}>
+              <LanzheJobIntentionSection jobIntention={jobIntention} titleScale={titleScale} />
+            </div>
           ) : null}
 
-          {resume.sections.map((section) => (
-            <SortableSection key={section.id} sectionId={section.id}>
-              {(dragProps) => (
-                <LanzheSection
-                  section={section}
-                  dragProps={dragProps}
-                  primaryColor={primaryColor}
-                  spacingScale={spacingScale}
-                  contentLineHeight={contentLineHeight}
-                  titleScale={titleScale}
-                />
-              )}
-            </SortableSection>
+          {resume.sections.map((section, index) => (
+            <div key={section.id} style={{ marginBottom: index < resume.sections.length - 1 ? `${18 * spacingScale}px` : '0' }}>
+              <SortableSection sectionId={section.id}>
+                {(dragProps) => (
+                  <LanzheSection
+                    section={section}
+                    dragProps={dragProps}
+                    primaryColor={primaryColor}
+                    spacingScale={spacingScale}
+                    contentLineHeight={contentLineHeight}
+                    titleScale={titleScale}
+                  />
+                )}
+              </SortableSection>
+            </div>
           ))}
         </main>
       </div>
@@ -458,7 +459,7 @@ function LanzheSection(props: LanzheSectionProps): ReactElement {
         section={editable}
         themeColor={primaryColor}
         spacingScale={spacingScale}
-        className={section.columns === 2 ? 'grid grid-cols-2 gap-4' : 'flex flex-col'}
+        className={section.columns === 2 ? 'grid grid-cols-2 gap-4' : 'block'}
         renderBlock={({ block, index, total }) => (
           <LanzheBlock
             block={block}

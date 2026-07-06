@@ -76,8 +76,12 @@ export function PortfolioLayout(props: {
         <aside style={{ paddingTop: 4 }}>
           {profileSections.map((section) => <TemplateSection key={section.id} section={section} theme={theme} config={config} compact />)}
         </aside>
-        <main className="flex flex-col" style={{ gap: 20 }}>
-          {mainSections.map((section, index) => <TemplateSection key={section.id} section={section} theme={theme} config={config} index={index} />)}
+        <main>
+          {mainSections.map((section, index) => (
+            <div key={section.id} style={{ marginBottom: index < mainSections.length - 1 ? 20 : 0 }}>
+              <TemplateSection section={section} theme={theme} config={config} index={index} />
+            </div>
+          ))}
         </main>
       </div>
     </div>
@@ -168,9 +172,9 @@ export function TechMinimalLayout(props: {
       ) : null}
       {showJob && jobIntention.fields.length > 0 ? <JobIntentionBlock jobIntention={jobIntention} config={config} theme={theme} /> : null}
       <main className="grid" style={{ gridTemplateColumns: projectSections.length > 0 ? '1fr 220px' : '1fr', gap: 24, marginTop: 22 }}>
-        <div className="flex flex-col" style={{ gap: 18 }}>
+        <div>
           {(projectSections.length > 0 ? projectSections : otherSections).map((section, index) => (
-            <div key={section.id} style={{ borderTop: '1px solid #111827', paddingTop: 12 }}>
+            <div key={section.id} style={{ borderTop: '1px solid #111827', paddingTop: 12, marginBottom: index < (projectSections.length > 0 ? projectSections : otherSections).length - 1 ? 18 : 0 }}>
               <TemplateSection section={section} theme={theme} config={{ ...config, sectionStyle: 'minimal' }} index={index} />
             </div>
           ))}

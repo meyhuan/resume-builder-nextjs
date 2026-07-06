@@ -169,20 +169,22 @@ export default function QingyunTemplate(props: TemplateProps): ReactElement {
         )}
 
         {/* ——— MAIN SECTIONS ————————————————————————— */}
-        <main data-template-padding-probe="true" className="qingyun-page-content" style={{ ...pagePad, paddingTop: jobIntentionVisible ? 12 * theme.spacingScale : pagePad.paddingTop, display: 'flex', flexDirection: 'column', gap: 26 * theme.spacingScale }}>
-          {resume.sections.map((section: Section) => (
-            <SortableSection key={section.id} sectionId={section.id}>
-              {(dragProps) => (
-                <QingyunSection
-                  section={section}
-                  dragRef={dragProps.ref}
-                  dragAttrs={dragProps.attributes}
-                  dragListeners={dragProps.listeners}
-                  themeColor={theme.primaryColor}
-                  spacingScale={theme.spacingScale}
-                />
-              )}
-            </SortableSection>
+        <main data-template-padding-probe="true" className="qingyun-page-content" style={{ ...pagePad, paddingTop: jobIntentionVisible ? 12 * theme.spacingScale : pagePad.paddingTop }}>
+          {resume.sections.map((section: Section, index: number) => (
+            <div key={section.id} style={{ marginBottom: index < resume.sections.length - 1 ? 26 * theme.spacingScale : 0 }}>
+              <SortableSection sectionId={section.id}>
+                {(dragProps) => (
+                  <QingyunSection
+                    section={section}
+                    dragRef={dragProps.ref}
+                    dragAttrs={dragProps.attributes}
+                    dragListeners={dragProps.listeners}
+                    themeColor={theme.primaryColor}
+                    spacingScale={theme.spacingScale}
+                  />
+                )}
+              </SortableSection>
+            </div>
           ))}
         </main>
       </div>

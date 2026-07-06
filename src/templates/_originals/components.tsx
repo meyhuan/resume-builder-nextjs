@@ -390,12 +390,15 @@ function JobField(props: {
 export function SectionStack({ sections, theme, config, topMargin }: { readonly sections: readonly Section[]; readonly theme: ThemeTokens; readonly config: VariantConfig; readonly topMargin?: number }): ReactElement {
   const gap = sectionStackGap(config)
   const marginTop = topMargin ?? (config.density === 'ultra' ? 12 : config.formal ? 18 : 22)
+  const sectionGap = scaledSpacing(gap, theme)
   return (
-    <main className="flex flex-col" style={{ gap: `${scaledSpacing(gap, theme)}px`, marginTop: scaledSpacing(marginTop, theme) }}>
+    <main style={{ marginTop: scaledSpacing(marginTop, theme) }}>
       {sections.map((section, index) => (
-        <SortableSection key={section.id} sectionId={section.id}>
-          {(dragProps) => <ConceptSection section={section} dragProps={dragProps} theme={theme} config={config} index={index} />}
-        </SortableSection>
+        <div key={section.id} style={{ marginBottom: index < sections.length - 1 ? sectionGap : 0 }}>
+          <SortableSection sectionId={section.id}>
+            {(dragProps) => <ConceptSection section={section} dragProps={dragProps} theme={theme} config={config} index={index} />}
+          </SortableSection>
+        </div>
       ))}
     </main>
   )
@@ -515,7 +518,7 @@ export function ConceptSection(props: {
         section={editable}
         themeColor={config.accent}
         spacingScale={(config.density === 'ultra' ? 0.62 : config.density === 'compact' ? 0.78 : 1) * theme.spacingScale}
-        className={section.columns === 2 && !compact ? 'grid grid-cols-2 gap-4' : 'flex flex-col'}
+        className={section.columns === 2 && !compact ? 'grid grid-cols-2 gap-4' : 'block'}
         rendererStyles={rendererStyles}
       />
       <DeleteSectionDialog open={editable.isDeleteDialogOpen} sectionTitle={editable.title} onOpenChange={editable.setDeleteDialogOpen} onConfirm={editable.confirmDelete} />
