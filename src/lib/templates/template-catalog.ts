@@ -108,6 +108,20 @@ export const templateCatalog: readonly TemplateCatalogItem[] = [
     tags: ['原创', '紧凑', '时间轴', '一页'],
   },
   {
+    id: 'lanjiao',
+    name: '蓝角',
+    description: '蓝色几何页眉 + 左侧日期轴，适合产品、运营、市场与综合岗位',
+    preview: '/thumbnails/template_lanjiao.webp',
+    tags: ['原创', '蓝色', '时间轴', '清爽'],
+  },
+  {
+    id: 'lanmu',
+    name: '蓝幕',
+    description: '蓝色渐变页眉 + 左侧信息栏，适合产品、运营、市场与综合岗位',
+    preview: '/thumbnails/template_lanmu.webp',
+    tags: ['原创', '双栏', '蓝色', '清爽'],
+  },
+  {
     id: 'ziji',
     name: '紫记',
     description: '紫色渐变头图 + 双栏履历笔记，适合个人主页感、运营、产品与创意岗位',
