@@ -20,11 +20,11 @@ export const DEFAULT_QUOTA_LIMITS = {
   aiPolishSection: 5,
   /** AI: One-click optimize entire resume (per day) */
   aiOptimizeResume: 2,
-  /** PDF export limit (lifetime total, never resets). Base limit is 0, users need freeExportCount or VIP to export. */
+  /** PDF export base limit. Non-VIP PDF exports are governed by Java freeExportCount as remaining balance. */
   pdfExport: 0,
 } as const;
 
-/** Features with lifetime quota (never reset) */
+/** Features whose mirrored local usage counter never resets. */
 export const LIFETIME_QUOTA_FEATURES: readonly string[] = ['pdf:export'];
 
 /** Type for quota limit keys */

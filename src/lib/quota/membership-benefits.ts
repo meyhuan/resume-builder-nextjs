@@ -53,11 +53,11 @@ export const AI_FEATURE_QUOTAS: Record<string, FeatureQuota> = {
 
 /** Export-related quotas */
 export const EXPORT_QUOTAS = {
-  /** PDF export quota for non-VIP users (lifetime total, never resets) */
+  /** PDF export base quota. Java freeExportCount is the non-VIP remaining balance. */
   'pdf:export': {
     nonVipLimit: DEFAULT_QUOTA_LIMITS.pdfExport,
     displayName: 'PDF 导出',
-    description: '导出高清 PDF 简历文件（免费限 1 次）',
+    description: '导出高清 PDF 简历文件',
   },
 } as const;
 
@@ -170,7 +170,7 @@ function generateBenefitsSummary(): {
     vip[camelKey] = { limit: 'unlimited', unit: '' };
   }
 
-  // Add export quotas (pdf:export is lifetime, not daily)
+  // Add export quotas (pdf:export usage is mirrored as lifetime, while balance lives in Java)
   for (const [key, config] of Object.entries(EXPORT_QUOTAS)) {
     const camelKey = toCamelCase(key);
     const isLifetime = key === 'pdf:export';

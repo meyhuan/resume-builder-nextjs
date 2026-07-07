@@ -25,8 +25,33 @@ export type FetchVipResult =
 export interface VipStatusResult {
   isVip: boolean;
   userId?: string;
+  /** The identity used by Java's unionid/openid lookup. */
+  unionid?: string;
   /** Additional free export count from Java backend (for non-VIP users). */
   freeExportCount?: number;
+}
+
+interface ConsumeFreeExportData {
+  userId?: number;
+  isVip?: boolean;
+  freeExportCount?: number;
+  remaining?: number;
+  consumed?: boolean;
+}
+
+interface JavaConsumeFreeExportResponse {
+  status?: number;
+  result?: string;
+  data?: ConsumeFreeExportData;
+}
+
+export interface ConsumeFreeExportResult {
+  ok: boolean;
+  isVip?: boolean;
+  consumed?: boolean;
+  freeExportCount: number;
+  message?: string;
+  httpStatus?: number;
 }
 
 /**
@@ -99,6 +124,7 @@ export async function checkVipStatus(): Promise<VipStatusResult> {
     return {
       isVip: !!result.data?.data?.isVip,
       userId: String(result.data?.data?.userId ?? ''),
+      unionid,
       freeExportCount: result.data?.data?.freeExportCount ?? 0,
     };
   } catch {
@@ -113,13 +139,71 @@ export async function checkVipStatus(): Promise<VipStatusResult> {
 export async function checkVipStatusForWxId(wxId: string): Promise<VipStatusResult> {
   try {
     const result = await fetchVipFromJava(wxId, '[quota:wxid]');
-    if (!result.ok) return { isVip: false, userId: wxId };
+    if (!result.ok) return { isVip: false, userId: wxId, unionid: wxId };
     return {
       isVip: !!result.data?.data?.isVip,
       userId: String(result.data?.data?.userId ?? wxId),
+      unionid: wxId,
       freeExportCount: result.data?.data?.freeExportCount ?? 0,
     };
   } catch {
-    return { isVip: false, userId: wxId };
+    return { isVip: false, userId: wxId, unionid: wxId };
+  }
+}
+
+/**
+ * Consume one Java-side single-export balance. Java owns freeExportCount as a
+ * remaining balance; Next.js only mirrors usage for display/analytics.
+ */
+export async function consumeFreeExportFromJava(
+  unionid: string,
+  logPrefix: string,
+): Promise<ConsumeFreeExportResult> {
+  if (!unionid) {
+    return { ok: false, freeExportCount: 0, message: 'Missing unionid' };
+  }
+
+  try {
+    const response = await fetchJavaWithLog('/user/consume-free-export', {
+      logPrefix,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ unionid }),
+      cache: 'no-store',
+    });
+
+    if (!response.ok) {
+      return {
+        ok: false,
+        freeExportCount: 0,
+        message: `Java API error: ${response.status}`,
+        httpStatus: response.status,
+      };
+    }
+
+    const data = await parseJsonWithLog<JavaConsumeFreeExportResponse>(response, logPrefix);
+    const freeExportCount = data.data?.freeExportCount ?? data.data?.remaining ?? 0;
+    if (data.status === 100) {
+      return {
+        ok: true,
+        isVip: !!data.data?.isVip,
+        consumed: !!data.data?.consumed,
+        freeExportCount,
+      };
+    }
+
+    return {
+      ok: false,
+      isVip: !!data.data?.isVip,
+      consumed: !!data.data?.consumed,
+      freeExportCount,
+      message: data.result || '免费导出次数不足',
+    };
+  } catch (error: unknown) {
+    return {
+      ok: false,
+      freeExportCount: 0,
+      message: error instanceof Error ? error.message : String(error),
+    };
   }
 }

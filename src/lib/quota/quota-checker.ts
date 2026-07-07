@@ -9,7 +9,7 @@
 
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
-import { checkVipStatus, checkVipStatusForWxId } from '@/lib/api/vip-api';
+import { checkVipStatus, checkVipStatusForWxId, consumeFreeExportFromJava } from '@/lib/api/vip-api';
 import {
   getQuotaLimit,
   getFeatureDisplayName,
@@ -51,11 +51,11 @@ export interface QuotaCheckResult {
   readonly message: string;
   /** Feature key that was checked. */
   readonly feature: QuotaFeatureKey;
-  /** Additional free export count from Java backend (for pdf:export). */
+  /** Remaining single-export balance from Java backend (for pdf:export). */
   readonly freeExportCount?: number;
 }
 
-/** Helper to build QuotaCheckResult with automatic freeExportCount for pdf:export */
+/** Helper to build QuotaCheckResult with automatic Java balance for pdf:export */
 function createResult(
   params: Omit<QuotaCheckResult, 'freeExportCount'> & { freeExportCount?: number },
 ): QuotaCheckResult {
@@ -65,9 +65,8 @@ function createResult(
   };
 }
 
-function getEffectiveLimit(feature: QuotaFeatureKey, freeExportCount: number): number {
-  const baseLimit = getQuotaLimit(feature);
-  return feature === 'pdf:export' ? baseLimit + freeExportCount : baseLimit;
+function getEffectiveLimit(feature: QuotaFeatureKey): number {
+  return getQuotaLimit(feature);
 }
 
 /**
@@ -82,8 +81,8 @@ export async function checkQuota(
 ): Promise<QuotaCheckResult> {
   const logPrefix = '[quota:check]';
   console.log(`${logPrefix} start`, { feature, skipConsume });
-  const { isVip, userId, freeExportCount = 0 } = await checkVipStatus();
-  console.log(`${logPrefix} vipStatus`, { isVip, userId, freeExportCount });
+  const { isVip, userId, unionid, freeExportCount = 0 } = await checkVipStatus();
+  console.log(`${logPrefix} vipStatus`, { isVip, userId, unionid, freeExportCount });
   if (isVip) {
     console.log(`${logPrefix} vipGranted`, { feature, userId });
     return createResult({
@@ -96,7 +95,7 @@ export async function checkQuota(
       feature,
     });
   }
-  const limit = getEffectiveLimit(feature, freeExportCount);
+  const limit = getEffectiveLimit(feature);
   const featureName = getFeatureDisplayName(feature);
   if (!userId) {
     console.log(`${logPrefix} noUserId`, { feature });
@@ -111,7 +110,9 @@ export async function checkQuota(
     });
   }
   console.log(`${logPrefix} proceedToCore`, { userId, feature });
-  return checkQuotaCore(userId, freeExportCount, feature, skipConsume, limit, featureName);
+  return checkQuotaCore(userId, freeExportCount, feature, skipConsume, limit, featureName, {
+    consumeIdentity: unionid || userId,
+  });
 }
 
 /**
@@ -146,8 +147,8 @@ export async function checkQuotaForUser(
       feature,
     });
   }
-  const { isVip, freeExportCount = 0 } = await checkVipStatusForWxId(wxId);
-  console.log(`${logPrefix} vipStatus`, { wxId, isVip, freeExportCount });
+  const { isVip, unionid, freeExportCount = 0 } = await checkVipStatusForWxId(wxId);
+  console.log(`${logPrefix} vipStatus`, { wxId, unionid, isVip, freeExportCount });
   if (isVip) {
     console.log(`${logPrefix} vipGranted`, { wxId, feature });
     return createResult({
@@ -160,12 +161,13 @@ export async function checkQuotaForUser(
       feature,
     });
   }
-  const limit = getEffectiveLimit(feature, freeExportCount);
+  const limit = getEffectiveLimit(feature);
   const featureName = getFeatureDisplayName(feature);
   console.log(`${logPrefix} proceedToCore`, { wxId, limit, featureName });
   return checkQuotaCore(wxId, freeExportCount, feature, skipConsume, limit, featureName, {
     userName: `用户_${wxId}`,
     logPrefix: '[quota:wxid]',
+    consumeIdentity: unionid || wxId,
   });
 }
 
@@ -205,7 +207,7 @@ async function checkQuotaCore(
   skipConsume: boolean,
   limit: number,
   featureName: string,
-  opts?: { userName?: string; logPrefix?: string },
+  opts?: { userName?: string; logPrefix?: string; consumeIdentity?: string },
 ): Promise<QuotaCheckResult> {
   const logPrefix = opts?.logPrefix ?? '[quota:core]';
   console.log(`${logPrefix} start`, { wxId, feature, limit, skipConsume });
@@ -264,6 +266,88 @@ async function checkQuotaCore(
     ? (featureQuota?.used ?? 0)
     : (featureQuota?.date === todayKey ? featureQuota.used : 0);
   console.log(`${logPrefix} quotaState`, { userId: user.id, feature, used, isLifetimeQuota, featureDate: featureQuota?.date, todayKey });
+
+  if (feature === 'pdf:export') {
+    const javaBalance = Math.max(0, freeExportCount);
+    if (javaBalance <= 0) {
+      console.log(`${logPrefix} pdfBalanceEmpty`, { userId: user.id, feature, used, freeExportCount });
+      return createResult({
+        allowed: false,
+        isVip: false,
+        used,
+        limit: used,
+        remaining: 0,
+        message: `${featureName}次数已用完，购买单次导出或升级VIP可继续使用`,
+        feature,
+        freeExportCount: javaBalance,
+      });
+    }
+
+    let newUsed = used;
+    let remaining = javaBalance;
+    if (!skipConsume) {
+      const consumeIdentity = opts?.consumeIdentity ?? wxId;
+      console.log(`${logPrefix} consumingJavaBalance`, { userId: user.id, feature, consumeIdentity });
+      const consumed = await consumeFreeExportFromJava(consumeIdentity, `${logPrefix}:java`);
+      if (!consumed.ok) {
+        const currentBalance = Math.max(0, consumed.freeExportCount);
+        console.log(`${logPrefix} javaBalanceConsumeFailed`, {
+          userId: user.id,
+          feature,
+          used,
+          currentBalance,
+          message: consumed.message,
+        });
+        return createResult({
+          allowed: false,
+          isVip: false,
+          used,
+          limit: used + currentBalance,
+          remaining: currentBalance,
+          message: consumed.message || `${featureName}次数已用完，购买单次导出或升级VIP可继续使用`,
+          feature,
+          freeExportCount: currentBalance,
+        });
+      }
+
+      newUsed = used + 1;
+      remaining = Math.max(0, consumed.freeExportCount);
+      quotas[feature] = { used: newUsed, date: 'lifetime' };
+      try {
+        await prisma.userQuota.update({
+          where: { userId: user.id },
+          data: { quotas: quotas as unknown as Prisma.InputJsonValue, updatedAt: new Date() },
+        });
+      } catch (error) {
+        console.error(`${logPrefix} pdfUsageMirrorFailed`, { userId: user.id, feature, error });
+      }
+    }
+
+    const displayLimit = newUsed + remaining;
+    const message = `剩余${remaining}次${featureName}（单次导出余额）`;
+    if (opts?.logPrefix) {
+      console.log(`${opts.logPrefix} decision`, {
+        wxId,
+        feature,
+        used: newUsed,
+        remaining,
+        skipConsume,
+        freeExportCount: remaining,
+      });
+    }
+    console.log(`${logPrefix} result`, { userId: user.id, feature, allowed: true, used: newUsed, remaining });
+    return createResult({
+      allowed: true,
+      isVip: false,
+      used: newUsed,
+      limit: displayLimit,
+      remaining,
+      message,
+      feature,
+      freeExportCount: remaining,
+    });
+  }
+
   if (used >= limit) {
     console.log(`${logPrefix} limitExceeded`, { userId: user.id, feature, used, limit });
     const limitText = isLifetimeQuota ? `免费限${limit}次` : `${limit}次/天`;
