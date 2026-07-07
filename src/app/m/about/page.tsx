@@ -66,14 +66,14 @@ export default function MobileAboutPage(): ReactElement {
               <div className="h-10 w-10 rounded-xl bg-rose-100 flex items-center justify-center">
                 <Heart size={18} className="text-rose-500" />
               </div>
-              <div className="text-base font-bold text-slate-900">为什么首份免费？</div>
+              <div className="text-base font-bold text-slate-900">为什么能免费做？</div>
             </div>
             <div className="text-sm text-slate-600 leading-relaxed space-y-3">
               <p>
                 因为我知道求职是什么滋味。辛辛苦苦填完简历，导出时弹出付费弹窗——这种体验太糟糕了。
               </p>
               <p>
-                <strong className="text-slate-800">你可以免费制作第一份可投递简历，并导出高清 PDF。后续如需再次修改并重新导出，可升级会员。</strong>
+                <strong className="text-slate-800">你可以免费做出一份可投递简历，并在免费额度内导出高清 PDF。</strong>
               </p>
               <p>
                 如果你觉得这个工具帮到了你，推荐给你的同学和朋友就是对我最大的鼓励。

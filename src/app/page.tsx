@@ -5,15 +5,17 @@ import { LandingEditorDemo } from "@/components/landing/LandingEditorDemo";
 import { LandingFeatures } from "@/components/landing/LandingFeatures";
 import { LandingUseCases } from "@/components/landing/LandingUseCases";
 import { LandingTemplates } from "@/components/landing/LandingTemplates";
+import { LandingTestimonials } from "@/components/landing/LandingTestimonials";
 import { LandingArticles } from "@/components/landing/LandingArticles";
 import { LandingWhyFree } from "@/components/landing/LandingWhyFree";
+import { LandingSearchIntents } from "@/components/landing/LandingSearchIntents";
 import { LandingFAQ } from "@/components/landing/LandingFAQ";
 import { LandingFooter } from "@/components/landing/LandingFooter";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { getPublicSiteStats } from "@/lib/public-site-stats";
 
 const SITE_URL = "https://aijianli.cn";
-export const revalidate = 60 * 60;
+export const revalidate = 3600;
 
 export const metadata: Metadata = {
   alternates: {
@@ -34,8 +36,10 @@ export default async function Home() {
         <LandingFeatures id="features" />
         <LandingUseCases id="use-cases" />
         <LandingTemplates id="templates" />
+        <LandingTestimonials id="testimonials" />
         <LandingArticles id="articles" />
         <LandingWhyFree id="why-free" />
+        <LandingSearchIntents id="search-intents" />
         <LandingFAQ id="faq" />
       </main>
       <LandingFooter />

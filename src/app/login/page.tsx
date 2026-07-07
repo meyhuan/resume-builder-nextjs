@@ -300,7 +300,7 @@ function LoginForm(): React.ReactElement {
             <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center mx-auto shadow-sm border border-slate-100 group-hover:scale-110 group-hover:shadow-md transition-all duration-300">
               <span className="text-2xl group-hover:animate-pulse">💯</span>
             </div>
-            <p className="text-xs font-medium text-slate-600">首份免费</p>
+            <p className="text-xs font-medium text-slate-600">免费可投递</p>
           </div>
         </div>
       </div>

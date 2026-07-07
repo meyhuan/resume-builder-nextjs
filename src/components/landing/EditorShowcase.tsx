@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import type { ReactElement } from 'react';
+import { useState, useEffect } from "react";
+import type { ReactElement } from "react";
 import {
   LayoutList,
   Wand2,
@@ -13,7 +13,7 @@ import {
   GripVertical,
   Palette,
   Layers,
-} from 'lucide-react';
+} from "lucide-react";
 
 /** Showcase animation phase definition */
 interface PhaseConfig {
@@ -22,47 +22,73 @@ interface PhaseConfig {
   readonly icon: typeof Wand2;
 }
 
-type ShowcasePhase = 'ai-generate' | 'theme-switch' | 'template-switch' | 'section-manage';
+type ShowcasePhase =
+  | "ai-generate"
+  | "theme-switch"
+  | "template-switch"
+  | "section-manage";
 
 const PHASES: readonly PhaseConfig[] = [
-  { id: 'ai-generate', label: 'AI 智能生成', icon: Wand2 },
-  { id: 'theme-switch', label: '主题配色', icon: Palette },
-  { id: 'template-switch', label: '模板切换', icon: Layers },
-  { id: 'section-manage', label: '模块管理', icon: LayoutList },
+  { id: "ai-generate", label: "AI 智能生成", icon: Wand2 },
+  { id: "theme-switch", label: "主题配色", icon: Palette },
+  { id: "template-switch", label: "模板切换", icon: Layers },
+  { id: "section-manage", label: "模块管理", icon: LayoutList },
 ];
 
 const PHASE_DURATION_MS = 5000;
 
 /** Theme color presets for animation */
-const THEME_COLORS: readonly string[] = ['#8B5CF6', '#2563EB', '#059669', '#DC2626', '#D97706'];
+const THEME_COLORS: readonly string[] = [
+  "#8B5CF6",
+  "#2563EB",
+  "#059669",
+  "#DC2626",
+  "#D97706",
+];
 
 /** Resume content lines for typing animation */
 interface ResumeLine {
-  readonly type: 'name' | 'subtitle' | 'contact' | 'section' | 'entry' | 'detail' | 'skill';
+  readonly type:
+    | "name"
+    | "subtitle"
+    | "contact"
+    | "section"
+    | "entry"
+    | "detail"
+    | "skill";
   readonly text: string;
 }
 
 const RESUME_LINES: readonly ResumeLine[] = [
-  { type: 'name', text: '张小明' },
-  { type: 'subtitle', text: '前端开发工程师 · 3年经验' },
-  { type: 'contact', text: 'xiaoming@email.com · 138-0000-0000 · 北京' },
-  { type: 'section', text: '教育背景' },
-  { type: 'entry', text: '北京大学 — 计算机科学与技术 (本科)' },
-  { type: 'detail', text: '2018.09 - 2022.06  |  GPA: 3.8/4.0' },
-  { type: 'section', text: '工作经历' },
-  { type: 'entry', text: '字节跳动 — 高级前端工程师' },
-  { type: 'detail', text: '• 负责抖音创作者后台核心模块开发与性能优化' },
-  { type: 'detail', text: '• 主导前端架构升级，首屏加载速度提升 40%' },
-  { type: 'detail', text: '• 带领 5 人小组完成直播数据看板从 0 到 1 搭建' },
-  { type: 'section', text: '技能特长' },
-  { type: 'skill', text: 'React · TypeScript · Next.js · Vue · Node.js · TailwindCSS' },
+  { type: "name", text: "张小明" },
+  { type: "subtitle", text: "前端开发工程师 · 3年经验" },
+  { type: "contact", text: "xiaoming@email.com · 138-0000-0000 · 北京" },
+  { type: "section", text: "教育背景" },
+  { type: "entry", text: "北京大学 — 计算机科学与技术 (本科)" },
+  { type: "detail", text: "2018.09 - 2022.06  |  GPA: 3.8/4.0" },
+  { type: "section", text: "工作经历" },
+  { type: "entry", text: "字节跳动 — 高级前端工程师" },
+  { type: "detail", text: "• 负责抖音创作者后台核心模块开发与性能优化" },
+  { type: "detail", text: "• 主导前端架构升级，首屏加载速度提升 40%" },
+  { type: "detail", text: "• 带领 5 人小组完成直播数据看板从 0 到 1 搭建" },
+  { type: "section", text: "技能特长" },
+  {
+    type: "skill",
+    text: "React · TypeScript · Next.js · Vue · Node.js · TailwindCSS",
+  },
 ];
 
 /** Section names for drag demo */
-const SECTIONS: readonly string[] = ['个人信息', '教育背景', '工作经历', '项目经历', '技能特长'];
+const SECTIONS: readonly string[] = [
+  "个人信息",
+  "教育背景",
+  "工作经历",
+  "项目经历",
+  "技能特长",
+];
 
 /** Template names */
-const TEMPLATE_NAMES: readonly string[] = ['简约', '专业', '现代', '创意'];
+const TEMPLATE_NAMES: readonly string[] = ["简约", "专业", "现代", "创意"];
 
 /** Toolbar item definition */
 interface ToolbarItem {
@@ -70,10 +96,10 @@ interface ToolbarItem {
 }
 
 const TOOLBAR_ITEMS: readonly ToolbarItem[] = [
-  { label: '模块管理' },
-  { label: '排版美化' },
-  { label: '参考案例' },
-  { label: 'AI优化' },
+  { label: "模块管理" },
+  { label: "排版美化" },
+  { label: "参考案例" },
+  { label: "AI优化" },
 ];
 
 /**
@@ -102,7 +128,7 @@ export const EditorShowcase = (): ReactElement => {
 
   // AI typing animation
   useEffect(() => {
-    if (phase.id !== 'ai-generate') return;
+    if (phase.id !== "ai-generate") return;
     const timer: NodeJS.Timeout = setInterval(() => {
       setTypingLine((p) => Math.min(p + 1, RESUME_LINES.length));
     }, 300);
@@ -111,7 +137,7 @@ export const EditorShowcase = (): ReactElement => {
 
   // Theme color cycling
   useEffect(() => {
-    if (phase.id !== 'theme-switch') return;
+    if (phase.id !== "theme-switch") return;
     const timer: NodeJS.Timeout = setInterval(() => {
       setColorIndex((p) => (p + 1) % THEME_COLORS.length);
     }, 900);
@@ -120,7 +146,7 @@ export const EditorShowcase = (): ReactElement => {
 
   // Template cycling
   useEffect(() => {
-    if (phase.id !== 'template-switch') return;
+    if (phase.id !== "template-switch") return;
     const timer: NodeJS.Timeout = setInterval(() => {
       setTemplateIndex((p) => (p + 1) % TEMPLATE_NAMES.length);
     }, 1200);
@@ -129,7 +155,7 @@ export const EditorShowcase = (): ReactElement => {
 
   // Section drag highlight cycling
   useEffect(() => {
-    if (phase.id !== 'section-manage') return;
+    if (phase.id !== "section-manage") return;
     let step = 0;
     const timer: NodeJS.Timeout = setInterval(() => {
       setDragHighlight(step % SECTIONS.length);
@@ -143,20 +169,20 @@ export const EditorShowcase = (): ReactElement => {
 
   // Determine which toolbar item is highlighted based on phase
   const activeToolbar: string =
-    phase.id === 'section-manage'
-      ? '模块管理'
-      : phase.id === 'theme-switch' || phase.id === 'template-switch'
-        ? '排版美化'
-        : phase.id === 'ai-generate'
-          ? 'AI优化'
-          : '';
+    phase.id === "section-manage"
+      ? "模块管理"
+      : phase.id === "theme-switch" || phase.id === "template-switch"
+        ? "排版美化"
+        : phase.id === "ai-generate"
+          ? "AI优化"
+          : "";
 
   return (
     <div className="relative">
       {/* Browser Frame */}
       <div className="rounded-2xl overflow-hidden border border-slate-200/60 shadow-[0_20px_60px_rgba(0,0,0,0.08)] bg-white">
         {/* Browser Chrome */}
-        <div className="bg-slate-50 border-b border-slate-200 px-5 py-2.5 flex items-center gap-3">
+        <div className="bg-slate-50 border-b border-slate-200 px-4 py-2 flex items-center gap-3">
           <div className="flex gap-1.5">
             <div className="w-3 h-3 rounded-full bg-[#FF5F57]" />
             <div className="w-3 h-3 rounded-full bg-[#FEBC2E]" />
@@ -164,8 +190,16 @@ export const EditorShowcase = (): ReactElement => {
           </div>
           <div className="flex-1 flex justify-center">
             <div className="px-4 py-1 bg-white rounded-lg border border-slate-200 text-xs text-slate-400 font-mono flex items-center gap-1.5">
-              <svg className="w-3 h-3 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+              <svg
+                className="w-3 h-3 text-green-500"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+                  clipRule="evenodd"
+                />
               </svg>
               aijianli.cn/editor
             </div>
@@ -183,7 +217,9 @@ export const EditorShowcase = (): ReactElement => {
             <Undo2 className="w-3 h-3 text-slate-300 mx-0.5" />
             <Redo2 className="w-3 h-3 text-slate-300 mx-0.5" />
             <div className="h-3.5 w-px bg-slate-200 mx-0.5" />
-            <span className="text-[10px] font-medium text-slate-600 truncate hidden sm:inline">张小明的简历</span>
+            <span className="text-[10px] font-medium text-slate-600 truncate hidden sm:inline">
+              张小明的简历
+            </span>
             <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full ml-0.5" />
           </div>
           {/* Center: toolbar actions */}
@@ -194,8 +230,8 @@ export const EditorShowcase = (): ReactElement => {
                   key={item.label}
                   className={`px-1.5 py-0.5 rounded text-[9px] font-medium transition-all duration-300 whitespace-nowrap ${
                     activeToolbar === item.label
-                      ? 'bg-[#8B5CF6]/10 text-[#8B5CF6]'
-                      : 'text-slate-400'
+                      ? "bg-[#8B5CF6]/10 text-[#8B5CF6]"
+                      : "text-slate-400"
                   }`}
                 >
                   {item.label}
@@ -205,20 +241,24 @@ export const EditorShowcase = (): ReactElement => {
           </div>
           {/* Right: save + export */}
           <div className="flex items-center gap-1 shrink-0">
-            <span className="text-[9px] text-emerald-500 hidden lg:inline mr-0.5">已保存</span>
+            <span className="text-[9px] text-emerald-500 hidden lg:inline mr-0.5">
+              已保存
+            </span>
             <Save className="w-3 h-3 text-slate-300" />
             <FileDown className="w-3 h-3 text-slate-300" />
-            <span className="px-2 py-0.5 text-[9px] font-medium bg-[#8B5CF6] text-white rounded hidden sm:inline">下载简历</span>
+            <span className="px-2 py-0.5 text-[9px] font-medium bg-[#8B5CF6] text-white rounded hidden sm:inline">
+              下载简历
+            </span>
           </div>
         </div>
 
         {/* Editor Body */}
-        <div className="flex min-h-[360px] lg:min-h-[440px]">
+        <div className="flex min-h-[300px] lg:min-h-[340px]">
           {/* Canvas Area */}
-          <div className="flex-1 bg-[#F8FAFC] p-3 sm:p-4 lg:p-8 flex justify-center items-start overflow-hidden">
+          <div className="flex-1 bg-[#F8FAFC] p-3 sm:p-4 lg:p-5 flex justify-center items-start overflow-hidden">
             <div
-              className="w-full max-w-[340px] bg-white rounded-lg shadow-[0_2px_20px_rgba(0,0,0,0.06)] border border-slate-100 overflow-hidden transition-all duration-500"
-              style={{ minHeight: 400 }}
+              className="w-full max-w-[300px] bg-white rounded-lg shadow-[0_2px_20px_rgba(0,0,0,0.06)] border border-slate-100 overflow-hidden transition-all duration-500"
+              style={{ minHeight: 310 }}
             >
               {/* Resume accent bar */}
               <div
@@ -226,34 +266,42 @@ export const EditorShowcase = (): ReactElement => {
                 style={{ backgroundColor: themeColor }}
               />
               {/* Resume Content */}
-              <div className="p-4 sm:p-5 space-y-2.5">
+              <div className="p-3 sm:p-4 space-y-2">
                 {RESUME_LINES.map((line, i) => {
-                  const visible: boolean = phase.id === 'ai-generate' ? i < typingLine : true;
-                  const isTypingCursor: boolean = phase.id === 'ai-generate' && i === typingLine - 1;
+                  const visible: boolean =
+                    phase.id === "ai-generate" ? i < typingLine : true;
+                  const isTypingCursor: boolean =
+                    phase.id === "ai-generate" && i === typingLine - 1;
                   if (!visible) return null;
                   return (
                     <div
                       key={`${line.type}-${i}`}
-                      className={`transition-all duration-300 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}
+                      className={`transition-all duration-300 ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"}`}
                     >
-                      {line.type === 'name' && (
+                      {line.type === "name" && (
                         <div className="flex items-center gap-3">
                           <div
-                            className="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0 transition-colors duration-700"
+                            className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs shrink-0 transition-colors duration-700"
                             style={{ backgroundColor: themeColor }}
                           >
                             张
                           </div>
-                          <div className="text-sm font-bold text-slate-800">{line.text}</div>
+                          <div className="text-sm font-bold text-slate-800">
+                            {line.text}
+                          </div>
                         </div>
                       )}
-                      {line.type === 'subtitle' && (
-                        <div className="text-[10px] text-slate-500 -mt-0.5 ml-12">{line.text}</div>
+                      {line.type === "subtitle" && (
+                        <div className="text-[10px] text-slate-500 -mt-0.5 ml-12">
+                          {line.text}
+                        </div>
                       )}
-                      {line.type === 'contact' && (
-                        <div className="text-[9px] text-slate-400 ml-12">{line.text}</div>
+                      {line.type === "contact" && (
+                        <div className="text-[9px] text-slate-400 ml-12">
+                          {line.text}
+                        </div>
                       )}
-                      {line.type === 'section' && (
+                      {line.type === "section" && (
                         <div className="flex items-center gap-1.5 pt-2 border-t border-slate-100 mt-1.5">
                           <div
                             className="w-1 h-3 rounded-full transition-colors duration-700"
@@ -267,19 +315,26 @@ export const EditorShowcase = (): ReactElement => {
                           </span>
                         </div>
                       )}
-                      {line.type === 'entry' && (
-                        <div className="text-[10px] font-semibold text-slate-700">{line.text}</div>
+                      {line.type === "entry" && (
+                        <div className="text-[10px] font-semibold text-slate-700">
+                          {line.text}
+                        </div>
                       )}
-                      {line.type === 'detail' && (
-                        <div className="text-[9px] text-slate-500 leading-relaxed">{line.text}</div>
+                      {line.type === "detail" && (
+                        <div className="text-[9px] text-slate-500 leading-relaxed">
+                          {line.text}
+                        </div>
                       )}
-                      {line.type === 'skill' && (
+                      {line.type === "skill" && (
                         <div className="flex flex-wrap gap-1">
-                          {line.text.split(' · ').map((skill) => (
+                          {line.text.split(" · ").map((skill) => (
                             <span
                               key={skill}
                               className="text-[9px] px-1.5 py-0.5 rounded transition-colors duration-700"
-                              style={{ backgroundColor: `${themeColor}15`, color: themeColor }}
+                              style={{
+                                backgroundColor: `${themeColor}15`,
+                                color: themeColor,
+                              }}
                             >
                               {skill}
                             </span>
@@ -297,20 +352,26 @@ export const EditorShowcase = (): ReactElement => {
           </div>
 
           {/* Sidebar — hidden on mobile */}
-          <div className="hidden lg:flex w-[200px] border-l border-slate-100 bg-white/80 backdrop-blur-md flex-col p-3.5 gap-3 shrink-0 overflow-hidden">
+          <div className="hidden lg:flex w-[184px] border-l border-slate-100 bg-white/80 backdrop-blur-md flex-col p-3 gap-3 shrink-0 overflow-hidden">
             {/* AI Generate sidebar */}
-            {phase.id === 'ai-generate' && (
+            {phase.id === "ai-generate" && (
               <div className="space-y-3 animate-in fade-in duration-300">
-                <div className="text-[11px] font-semibold text-slate-700">AI 智能生成</div>
+                <div className="text-[11px] font-semibold text-slate-700">
+                  AI 智能生成
+                </div>
                 <div className="bg-[#8B5CF6]/5 border border-[#8B5CF6]/20 rounded-xl p-3 space-y-2">
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-[#8B5CF6] rounded-full animate-pulse" />
-                    <span className="text-[10px] font-medium text-[#8B5CF6]">AI 正在生成内容...</span>
+                    <span className="text-[10px] font-medium text-[#8B5CF6]">
+                      AI 正在生成内容...
+                    </span>
                   </div>
                   <div className="w-full bg-[#8B5CF6]/10 rounded-full h-1.5 overflow-hidden">
                     <div
                       className="h-full bg-[#8B5CF6] rounded-full transition-all duration-300 ease-out"
-                      style={{ width: `${(typingLine / RESUME_LINES.length) * 100}%` }}
+                      style={{
+                        width: `${(typingLine / RESUME_LINES.length) * 100}%`,
+                      }}
                     />
                   </div>
                   <div className="text-[9px] text-slate-400 leading-relaxed">
@@ -318,32 +379,60 @@ export const EditorShowcase = (): ReactElement => {
                   </div>
                 </div>
                 <div className="space-y-1.5">
-                  {['分析岗位需求', '匹配个人优势', '优化措辞表达'].map((step, i) => {
-                    const completed: boolean = i <= Math.floor(typingLine / 4);
-                    return (
-                      <div key={step} className="flex items-center gap-2 text-[10px]">
+                  {["分析岗位需求", "匹配个人优势", "优化措辞表达"].map(
+                    (step, i) => {
+                      const completed: boolean =
+                        i <= Math.floor(typingLine / 4);
+                      return (
                         <div
-                          className={`w-3.5 h-3.5 rounded-full flex items-center justify-center transition-colors duration-300 ${
-                            completed ? 'bg-[#8B5CF6] text-white' : 'bg-slate-100 text-slate-300'
-                          }`}
+                          key={step}
+                          className="flex items-center gap-2 text-[10px]"
                         >
-                          <svg className="w-2 h-2" viewBox="0 0 12 12" fill="none">
-                            <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                          </svg>
+                          <div
+                            className={`w-3.5 h-3.5 rounded-full flex items-center justify-center transition-colors duration-300 ${
+                              completed
+                                ? "bg-[#8B5CF6] text-white"
+                                : "bg-slate-100 text-slate-300"
+                            }`}
+                          >
+                            <svg
+                              className="w-2 h-2"
+                              viewBox="0 0 12 12"
+                              fill="none"
+                            >
+                              <path
+                                d="M2 6l3 3 5-5"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
+                            </svg>
+                          </div>
+                          <span
+                            className={
+                              completed ? "text-slate-700" : "text-slate-400"
+                            }
+                          >
+                            {step}
+                          </span>
                         </div>
-                        <span className={completed ? 'text-slate-700' : 'text-slate-400'}>{step}</span>
-                      </div>
-                    );
-                  })}
+                      );
+                    },
+                  )}
                 </div>
               </div>
             )}
 
             {/* Theme switch sidebar */}
-            {phase.id === 'theme-switch' && (
+            {phase.id === "theme-switch" && (
               <div className="space-y-3 animate-in fade-in duration-300">
-                <div className="text-[11px] font-semibold text-slate-700">色彩风格</div>
-                <div className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">主题主色</div>
+                <div className="text-[11px] font-semibold text-slate-700">
+                  色彩风格
+                </div>
+                <div className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">
+                  主题主色
+                </div>
                 <div className="grid grid-cols-5 gap-2">
                   {THEME_COLORS.map((color, i) => (
                     <div
@@ -351,9 +440,10 @@ export const EditorShowcase = (): ReactElement => {
                       className="w-7 h-7 rounded-full border-2 transition-all duration-300 cursor-default"
                       style={{
                         backgroundColor: color,
-                        borderColor: i === colorIndex ? 'white' : 'transparent',
-                        boxShadow: i === colorIndex ? `0 0 0 2px ${color}` : 'none',
-                        transform: i === colorIndex ? 'scale(1.2)' : 'scale(1)',
+                        borderColor: i === colorIndex ? "white" : "transparent",
+                        boxShadow:
+                          i === colorIndex ? `0 0 0 2px ${color}` : "none",
+                        transform: i === colorIndex ? "scale(1.2)" : "scale(1)",
                       }}
                     />
                   ))}
@@ -362,7 +452,9 @@ export const EditorShowcase = (): ReactElement => {
                   <div>
                     <div className="flex items-center justify-between text-[10px] mb-1.5">
                       <span className="font-medium text-slate-600">行高</span>
-                      <span className="text-[#8B5CF6] font-mono bg-[#8B5CF6]/10 px-1 rounded text-[9px]">1.6</span>
+                      <span className="text-[#8B5CF6] font-mono bg-[#8B5CF6]/10 px-1 rounded text-[9px]">
+                        1.6
+                      </span>
                     </div>
                     <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
                       <div className="h-full bg-[#8B5CF6] rounded-full w-[60%] transition-all" />
@@ -371,7 +463,9 @@ export const EditorShowcase = (): ReactElement => {
                   <div>
                     <div className="flex items-center justify-between text-[10px] mb-1.5">
                       <span className="font-medium text-slate-600">间距</span>
-                      <span className="text-blue-500 font-mono bg-blue-500/10 px-1 rounded text-[9px]">1.2x</span>
+                      <span className="text-blue-500 font-mono bg-blue-500/10 px-1 rounded text-[9px]">
+                        1.2x
+                      </span>
                     </div>
                     <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
                       <div className="h-full bg-blue-500 rounded-full w-[45%] transition-all" />
@@ -382,17 +476,19 @@ export const EditorShowcase = (): ReactElement => {
             )}
 
             {/* Template switch sidebar */}
-            {phase.id === 'template-switch' && (
+            {phase.id === "template-switch" && (
               <div className="space-y-3 animate-in fade-in duration-300">
-                <div className="text-[11px] font-semibold text-slate-700">切换模板</div>
+                <div className="text-[11px] font-semibold text-slate-700">
+                  切换模板
+                </div>
                 <div className="grid grid-cols-2 gap-2">
                   {TEMPLATE_NAMES.map((name, i) => (
                     <div
                       key={name}
                       className={`aspect-[3/4] rounded-lg border-2 transition-all duration-300 flex flex-col items-center justify-center gap-1.5 cursor-default ${
                         i === templateIndex
-                          ? 'border-[#8B5CF6] bg-[#8B5CF6]/5'
-                          : 'border-slate-100 bg-slate-50'
+                          ? "border-[#8B5CF6] bg-[#8B5CF6]/5"
+                          : "border-slate-100 bg-slate-50"
                       }`}
                     >
                       {/* Mini resume skeleton */}
@@ -404,15 +500,27 @@ export const EditorShowcase = (): ReactElement => {
                       </div>
                       <span
                         className={`text-[9px] font-medium transition-colors duration-300 ${
-                          i === templateIndex ? 'text-[#8B5CF6]' : 'text-slate-400'
+                          i === templateIndex
+                            ? "text-[#8B5CF6]"
+                            : "text-slate-400"
                         }`}
                       >
                         {name}
                       </span>
                       {i === templateIndex && (
                         <div className="w-3.5 h-3.5 bg-[#8B5CF6] text-white rounded-full flex items-center justify-center absolute-ish">
-                          <svg className="w-2 h-2" viewBox="0 0 12 12" fill="none">
-                            <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                          <svg
+                            className="w-2 h-2"
+                            viewBox="0 0 12 12"
+                            fill="none"
+                          >
+                            <path
+                              d="M2 6l3 3 5-5"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
                           </svg>
                         </div>
                       )}
@@ -423,17 +531,19 @@ export const EditorShowcase = (): ReactElement => {
             )}
 
             {/* Section manage sidebar */}
-            {phase.id === 'section-manage' && (
+            {phase.id === "section-manage" && (
               <div className="space-y-3 animate-in fade-in duration-300">
-                <div className="text-[11px] font-semibold text-slate-700">模块管理</div>
+                <div className="text-[11px] font-semibold text-slate-700">
+                  模块管理
+                </div>
                 <div className="space-y-1.5">
                   {SECTIONS.map((section, i) => (
                     <div
                       key={section}
                       className={`flex items-center gap-2 px-2.5 py-2 rounded-lg border text-[10px] font-medium transition-all duration-300 cursor-default ${
                         i === dragHighlight
-                          ? 'border-[#8B5CF6] bg-[#8B5CF6]/5 text-[#8B5CF6] scale-[1.03] shadow-sm'
-                          : 'border-slate-100 bg-white/60 text-slate-600'
+                          ? "border-[#8B5CF6] bg-[#8B5CF6]/5 text-[#8B5CF6] scale-[1.03] shadow-sm"
+                          : "border-slate-100 bg-white/60 text-slate-600"
                       }`}
                     >
                       <GripVertical className="w-3 h-3 text-slate-300 shrink-0" />
@@ -441,7 +551,9 @@ export const EditorShowcase = (): ReactElement => {
                     </div>
                   ))}
                 </div>
-                <div className="text-[9px] text-slate-400 text-center font-medium">拖拽调整模块顺序</div>
+                <div className="text-[9px] text-slate-400 text-center font-medium">
+                  拖拽调整模块顺序
+                </div>
               </div>
             )}
           </div>
@@ -451,7 +563,9 @@ export const EditorShowcase = (): ReactElement => {
       {/* Floating Feature Labels */}
       <div
         className={`absolute top-[15%] right-0 lg:right-[-2%] bg-white/90 backdrop-blur-lg px-3 py-2 rounded-xl shadow-lg border border-white/50 z-20 transition-all duration-500 ${
-          phase.id === 'ai-generate' ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'
+          phase.id === "ai-generate"
+            ? "opacity-100 translate-y-0"
+            : "opacity-0 translate-y-2 pointer-events-none"
         }`}
       >
         <div className="flex items-center gap-2">
@@ -467,7 +581,9 @@ export const EditorShowcase = (): ReactElement => {
 
       <div
         className={`absolute bottom-[20%] left-0 lg:left-[-2%] bg-white/90 backdrop-blur-lg px-3 py-2 rounded-xl shadow-lg border border-white/50 z-20 transition-all duration-500 ${
-          phase.id === 'theme-switch' ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'
+          phase.id === "theme-switch"
+            ? "opacity-100 translate-y-0"
+            : "opacity-0 translate-y-2 pointer-events-none"
         }`}
       >
         <div className="flex items-center gap-2">
@@ -483,7 +599,9 @@ export const EditorShowcase = (): ReactElement => {
 
       <div
         className={`absolute top-[25%] left-0 lg:left-[-2%] bg-white/90 backdrop-blur-lg px-3 py-2 rounded-xl shadow-lg border border-white/50 z-20 transition-all duration-500 ${
-          phase.id === 'template-switch' ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'
+          phase.id === "template-switch"
+            ? "opacity-100 translate-y-0"
+            : "opacity-0 translate-y-2 pointer-events-none"
         }`}
       >
         <div className="flex items-center gap-2">
@@ -499,7 +617,9 @@ export const EditorShowcase = (): ReactElement => {
 
       <div
         className={`absolute bottom-[15%] right-0 lg:right-[-2%] bg-white/90 backdrop-blur-lg px-3 py-2 rounded-xl shadow-lg border border-white/50 z-20 transition-all duration-500 ${
-          phase.id === 'section-manage' ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'
+          phase.id === "section-manage"
+            ? "opacity-100 translate-y-0"
+            : "opacity-0 translate-y-2 pointer-events-none"
         }`}
       >
         <div className="flex items-center gap-2">
@@ -514,7 +634,7 @@ export const EditorShowcase = (): ReactElement => {
       </div>
 
       {/* Phase Indicator Pills */}
-      <div className="flex items-center justify-center gap-2 sm:gap-3 mt-6 flex-wrap">
+      <div className="flex items-center justify-center gap-2 sm:gap-3 mt-4 flex-wrap">
         {PHASES.map((p, i) => {
           const Icon = p.icon;
           const isActive: boolean = i === phaseIndex % PHASES.length;
@@ -529,8 +649,8 @@ export const EditorShowcase = (): ReactElement => {
               }}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-300 ${
                 isActive
-                  ? 'bg-[#8B5CF6] text-white shadow-sm'
-                  : 'bg-white/80 backdrop-blur-sm text-slate-500 border border-white shadow-sm hover:bg-white'
+                  ? "bg-[#8B5CF6] text-white shadow-sm"
+                  : "bg-white/80 backdrop-blur-sm text-slate-500 border border-white shadow-sm hover:bg-white"
               }`}
             >
               <Icon className="w-3 h-3" />

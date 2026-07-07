@@ -80,7 +80,7 @@ export const LegalDialog: React.FC<LegalDialogProps> = ({
           <div className="flex-1 overflow-y-auto px-8 py-6 space-y-8 text-slate-600 leading-relaxed">
             {activeTab === 'privacy' ? <PrivacyContent /> : <TermsContent />}
             <div className="pt-4 border-t border-slate-100 text-center text-[11px] text-slate-400">
-              智简简历 (aijianli.cn) — 首份可免费导出的在线 AI 简历制作平台
+              智简简历 (aijianli.cn) — 免费做出一份可投递简历的在线 AI 简历制作平台
               <br />
               最后更新：2025 年 2 月
             </div>
@@ -195,7 +195,7 @@ const TermsContent: React.FC = () => (
             <li>AI 智能生成简历内容</li>
             <li>AI 简历润色与优化</li>
             <li>AI 文本转简历（导入已有简历并重新排版）</li>
-            <li>首份 PDF 导出额度，以及按页面提示开放的图片、Markdown 导出能力</li>
+            <li>免费额度内 PDF 导出权益，以及按页面提示开放的图片、Markdown 导出能力</li>
             <li>求职攻略与面试技巧分享</li>
           </ul>
           <p className="mt-1.5 text-xs font-medium text-violet-600">基础制作能力可免费开始使用；后续多次导出或会员能力以页面提示为准。</p>

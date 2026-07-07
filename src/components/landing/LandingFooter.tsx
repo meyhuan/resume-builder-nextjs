@@ -38,7 +38,7 @@ export const LandingFooter = () => {
             <p className="text-slate-500 text-sm leading-relaxed">
               <strong>aijianli.cn (智简简历)</strong>
               <br />
-              首份可免费导出的 AI 极简简历在线制作工具。
+              免费做出一份可投递简历的 AI 极简简历在线制作工具。
               <br />
               让简历制作变得简单、清晰、可投递。
             </p>
@@ -92,8 +92,18 @@ export const LandingFooter = () => {
           <div>
             <h4 className="font-bold text-slate-900 mb-6">联系开发者</h4>
             <div className="flex items-start gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100">
-              <div className="w-20 h-auto bg-white rounded-xl shadow-sm overflow-hidden shrink-0">
-                <Image src="/wx.webp" alt="微信二维码" width={600} height={818} className="w-full h-auto object-contain" />
+              <div
+                className="w-20 h-auto bg-white rounded-xl shadow-sm overflow-hidden shrink-0"
+                style={{ width: 80, flexShrink: 0, overflow: 'hidden' }}
+              >
+                <Image
+                  src="/wx.webp"
+                  alt="微信二维码"
+                  width={600}
+                  height={818}
+                  className="w-full h-auto object-contain"
+                  style={{ display: 'block', width: '100%', height: 'auto', maxWidth: '100%' }}
+                />
               </div>
               <div className="flex-1">
                 <p className="text-xs font-semibold text-slate-900 mb-1">微信：kkyycc01</p>
