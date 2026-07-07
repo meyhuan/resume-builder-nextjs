@@ -17,6 +17,11 @@ import { track } from '@/lib/analytics';
 const H5_PAY_BASE_URL = 'https://aijianli.cn/static/pay/dist/index.html';
 const POLL_INTERVAL_MS = 3000;
 
+function createPaySessionId(): string {
+  const random = Math.random().toString(36).slice(2);
+  return `pcpay_${Date.now().toString(36)}_${random}`;
+}
+
 interface ComparisonFeature {
   feature: string;
   nonVip: string;
@@ -148,6 +153,7 @@ export default function VipUpgradeDialog({ open, onOpenChange, hidePlanOptions =
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const invitePollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const wasVipRef = useRef<boolean>(false);
+  const paySessionIdRef = useRef<string>('');
 
   const stopPolling = useCallback((): void => {
     if (pollRef.current) {
@@ -300,10 +306,12 @@ export default function VipUpgradeDialog({ open, onOpenChange, hidePlanOptions =
 
   useEffect(() => {
     if (open) {
+      paySessionIdRef.current = createPaySessionId();
       setMode('pay');
       resetInviteState();
       fetchVipInfo();
     } else {
+      paySessionIdRef.current = '';
       stopPolling();
       resetInviteState();
       setStep('loading');
@@ -313,6 +321,20 @@ export default function VipUpgradeDialog({ open, onOpenChange, hidePlanOptions =
       stopInvitePolling();
     };
   }, [open, fetchVipInfo, resetInviteState, stopInvitePolling, stopPolling]);
+
+  const selectedPlan = plans.find((plan) => plan.vipType === selectedVipType);
+  const pcPaySessionId = paySessionIdRef.current;
+  const payUrl = userId && pcPaySessionId
+    ? `${H5_PAY_BASE_URL}?${new URLSearchParams({
+        userId: String(userId),
+        source: 'web',
+        vipType: selectedVipType === null ? '' : String(selectedVipType),
+        autoPay: '1',
+        pcPaySessionId,
+        entry: 'vip_upgrade_dialog',
+        upgradeContext,
+      }).toString()}`
+    : '';
 
   useEffect(() => {
     if (step === 'qrcode' && mode === 'pay') {
@@ -325,9 +347,23 @@ export default function VipUpgradeDialog({ open, onOpenChange, hidePlanOptions =
     };
   }, [mode, step, startPolling, stopPolling]);
 
-  const payUrl = userId
-    ? `${H5_PAY_BASE_URL}?userId=${userId}&source=web&vipType=${selectedVipType ?? ''}&autoPay=1`
-    : '';
+  useEffect(() => {
+    if (step !== 'qrcode' || mode !== 'pay' || !payUrl || hidePlanOptions) {
+      return;
+    }
+    track('pay_qrcode_view', {
+      entry: 'vip_upgrade_dialog',
+      upgradeContext,
+      source: 'web',
+      payChannel: 'wechat',
+      pcPaySessionId,
+      autoPay: true,
+      planId: selectedPlan?.id,
+      vipType: selectedVipType,
+      amount: selectedPlan?.price,
+    });
+  }, [hidePlanOptions, mode, payUrl, pcPaySessionId, selectedPlan?.id, selectedPlan?.price, selectedVipType, step, upgradeContext]);
+
   const dialogCopy = CONTEXT_COPY[upgradeContext] || CONTEXT_COPY.generic;
   const handleSelectVipType = (plan: VipPlan): void => {
     setSelectedVipType(plan.vipType);
