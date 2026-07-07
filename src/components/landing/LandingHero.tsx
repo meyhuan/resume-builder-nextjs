@@ -7,13 +7,43 @@ import { EditorShowcase } from './EditorShowcase';
 import Link from 'next/link';
 import { track } from '@/lib/analytics';
 
-const TRUST_STATS = [
-  { label: '求职者使用', value: '10,000+' },
-  { label: '永久免费', value: '100%' },
-  { label: '简历生成', value: '50,000+' },
-];
+interface LandingHeroStats {
+  readonly activeUserCount: number;
+  readonly resumeCount: number;
+}
 
-export const LandingHero = () => {
+interface LandingHeroProps {
+  readonly stats: LandingHeroStats | null;
+}
+
+interface TrustStat {
+  readonly label: string;
+  readonly value: string;
+}
+
+const formatStatValue = (value: number): string => {
+  return new Intl.NumberFormat('zh-CN').format(value);
+};
+
+const buildTrustStats = (stats: LandingHeroStats | null): readonly TrustStat[] => {
+  if (!stats) {
+    return [
+      { label: 'AI 智能生成', value: '快速' },
+      { label: '高清 PDF 可导出', value: '首份免费' },
+      { label: '精品模板可选', value: '多套' },
+    ];
+  }
+
+  return [
+    { label: '位用户开始制作', value: formatStatValue(stats.activeUserCount) },
+    { label: '高清 PDF 可导出', value: '首份免费' },
+    { label: '份简历已创建', value: formatStatValue(stats.resumeCount) },
+  ];
+};
+
+export const LandingHero = ({ stats }: LandingHeroProps) => {
+  const trustStats = buildTrustStats(stats);
+
   const trackHeroCta = (cta: string, target: string): void => {
     track('landing_cta_click', {
       cta,
@@ -42,7 +72,7 @@ export const LandingHero = () => {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-violet-500"></span>
               </span>
-              👋 独立开发者作品 · 承诺永久免费
+              👋 独立开发者作品 · 首份简历可免费导出
             </div>
           </div>
 
@@ -57,7 +87,7 @@ export const LandingHero = () => {
 
           {/* Subheading */}
           <p className="text-base lg:text-lg text-slate-500 max-w-2xl leading-relaxed mt-2 mx-auto">
-            深知新人求职的痛苦，我作为独立开发者为你做了这款极简简历工具：<strong className="text-slate-700 font-semibold">无需苦想措辞，AI 自动帮你挖掘经历亮点。</strong>支持在线制作，承诺<strong className="text-slate-700 font-semibold">永久免费、高清 PDF 与 Markdown 无套路导出</strong>。
+            深知新人求职的痛苦，我作为独立开发者为你做了这款极简简历工具：<strong className="text-slate-700 font-semibold">无需苦想措辞，AI 自动帮你挖掘经历亮点。</strong>免费制作第一份可投递简历，支持<strong className="text-slate-700 font-semibold">高清 PDF 导出；后续如需多次修改和再次导出，可升级会员</strong>。
           </p>
 
           {/* CTA Buttons */}
@@ -79,13 +109,13 @@ export const LandingHero = () => {
 
           {/* Trust Stats Bar */}
           <div className="flex items-center justify-center gap-6 sm:gap-12 mt-8 mb-2">
-            {TRUST_STATS.map((stat, index) => (
+            {trustStats.map((stat, index) => (
               <React.Fragment key={stat.label}>
                 <div className="flex flex-col items-center gap-1">
                   <span className="text-2xl sm:text-3xl font-extrabold text-slate-800 tracking-tight">{stat.value}</span>
                   <span className="text-xs sm:text-sm text-slate-500 font-medium">{stat.label}</span>
                 </div>
-                {index < TRUST_STATS.length - 1 && (
+                {index < trustStats.length - 1 && (
                   <div className="w-px h-10 bg-slate-200" />
                 )}
               </React.Fragment>

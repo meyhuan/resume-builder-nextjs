@@ -66,7 +66,7 @@ export default function TermsPage(): React.ReactElement {
                   <li>简历编辑和排版（无限制）</li>
                   <li>AI简历生成（每日限额）</li>
                   <li>基础模板使用</li>
-                  <li>导出PDF（带水印）</li>
+                  <li>首份 PDF 导出额度（具体以页面提示为准）</li>
                   <li>数据存储（最多50份简历）</li>
                 </ul>
               </div>
@@ -84,7 +84,7 @@ export default function TermsPage(): React.ReactElement {
                 <p>VIP会员享有以下特权：</p>
                 <ul className="list-disc list-inside space-y-2 ml-2">
                   <li>无限AI生成次数</li>
-                  <li>导出无水印PDF</li>
+                  <li>更多 PDF 导出额度</li>
                   <li>所有高级模板</li>
                   <li>无限简历存储</li>
                   <li>优先客服支持</li>

@@ -66,14 +66,14 @@ export default function MobileAboutPage(): ReactElement {
               <div className="h-10 w-10 rounded-xl bg-rose-100 flex items-center justify-center">
                 <Heart size={18} className="text-rose-500" />
               </div>
-              <div className="text-base font-bold text-slate-900">为什么完全免费？</div>
+              <div className="text-base font-bold text-slate-900">为什么首份免费？</div>
             </div>
             <div className="text-sm text-slate-600 leading-relaxed space-y-3">
               <p>
                 因为我知道求职是什么滋味。辛辛苦苦填完简历，导出时弹出付费弹窗——这种体验太糟糕了。
               </p>
               <p>
-                <strong className="text-slate-800">所有简历编辑、AI 生成、导出 PDF 功能，永远免费。无套路、无广告、无水印。</strong>
+                <strong className="text-slate-800">你可以免费制作第一份可投递简历，并导出高清 PDF。后续如需再次修改并重新导出，可升级会员。</strong>
               </p>
               <p>
                 如果你觉得这个工具帮到了你，推荐给你的同学和朋友就是对我最大的鼓励。
@@ -148,7 +148,7 @@ export default function MobileAboutPage(): ReactElement {
 const CHANGELOG: readonly { date: string; text: string }[] = [
   { date: '2025.04', text: '🚀 移动端编辑器全新上线，支持拖拽排序、AI 润色、导入简历' },
   { date: '2025.03', text: '✨ AI 分段生成上线，每个模块都能 AI 帮你写' },
-  { date: '2025.02', text: '🎨 新增温暖模板，4 套模板全部免费' },
+  { date: '2025.02', text: '🎨 新增温暖模板，4 套模板可免费使用' },
   { date: '2025.01', text: '🐛 修了个头像裁剪的 bug，是用户微信反馈的' },
   { date: '2024.12', text: '🎉 AI 一键生成简历功能上线' },
   { date: '2024.10', text: '📝 富文本编辑器升级，支持加粗、列表' },

@@ -80,7 +80,7 @@ export const LegalDialog: React.FC<LegalDialogProps> = ({
           <div className="flex-1 overflow-y-auto px-8 py-6 space-y-8 text-slate-600 leading-relaxed">
             {activeTab === 'privacy' ? <PrivacyContent /> : <TermsContent />}
             <div className="pt-4 border-t border-slate-100 text-center text-[11px] text-slate-400">
-              智简简历 (aijianli.cn) — 完全免费的在线 AI 简历制作平台
+              智简简历 (aijianli.cn) — 首份可免费导出的在线 AI 简历制作平台
               <br />
               最后更新：2025 年 2 月
             </div>
@@ -129,7 +129,7 @@ const PrivacyContent: React.FC = () => (
         <div>
           <h3 className="font-semibold text-slate-700 text-sm mb-1">使用目的</h3>
           <ul className="list-disc pl-5 space-y-1 text-xs">
-            <li>提供简历制作、模板选择、AI 生成/润色/排版、免费导出 PDF/图片/Markdown 等核心服务。</li>
+            <li>提供简历制作、模板选择、AI 生成/润色/排版、PDF/图片/Markdown 导出等核心服务。</li>
             <li>发送服务通知（如系统更新、功能上线）。</li>
             <li>保障平台安全，防范欺诈或非法行为。</li>
           </ul>
@@ -189,16 +189,16 @@ const TermsContent: React.FC = () => (
       <div className="space-y-3 pl-8">
         <div>
           <h3 className="font-semibold text-slate-700 text-sm mb-1">服务范围</h3>
-          <p className="text-xs">本平台提供完全免费的在线简历制作服务，包括但不限于：</p>
+          <p className="text-xs">本平台提供在线简历制作服务，包括但不限于：</p>
           <ul className="list-disc pl-5 mt-1 space-y-1 text-xs">
-            <li>多款精美简历模板免费使用</li>
+            <li>多款精美简历模板可免费使用</li>
             <li>AI 智能生成简历内容</li>
             <li>AI 简历润色与优化</li>
             <li>AI 文本转简历（导入已有简历并重新排版）</li>
-            <li>免费导出 PDF、图片、Markdown 格式</li>
+            <li>首份 PDF 导出额度，以及按页面提示开放的图片、Markdown 导出能力</li>
             <li>求职攻略与面试技巧分享</li>
           </ul>
-          <p className="mt-1.5 text-xs font-medium text-violet-600">所有功能完全免费，无隐藏收费。</p>
+          <p className="mt-1.5 text-xs font-medium text-violet-600">基础制作能力可免费开始使用；后续多次导出或会员能力以页面提示为准。</p>
         </div>
         <div>
           <h3 className="font-semibold text-slate-700 text-sm mb-1">注册要求</h3>

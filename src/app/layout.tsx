@@ -13,7 +13,7 @@ import { buildResumeFontFaceCss } from '@/entities/theme/font-stacks';
 
 const SITE_URL = 'https://aijianli.cn';
 const SITE_NAME = '智简简历';
-const SITE_DESCRIPTION = '智简简历是完全免费的AI简历生成器与在线制作网站。提供极简简历模板，支持AI智能一键生成与润色优化，支持高清免费导出PDF与Markdown。无水印、无套路，是应届生、产品经理及各行业求职者的必备极简简历工具，也是超级简历等平台的完美免费平替。';
+const SITE_DESCRIPTION = '智简简历是可免费开始使用的AI简历生成器与在线制作网站。提供极简简历模板，支持AI智能一键生成与润色优化，首份简历可导出高清PDF，适合应届生、产品经理及各行业求职者快速制作可投递简历。';
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -26,8 +26,8 @@ export const metadata: Metadata = {
     'AI简历', '免费简历', '简历制作网站免费', '在线简历制作', '极简简历',
     '简历生成器', 'AI简历制作', '免费简历模板', '简历模板PDF下载', '智简简历',
     '全民简历', '超级简历平替', '英文简历', '应届生简历', '产品经理简历',
-    '在线简历免费制作导出', 'AI写简历', '简历优化', '免费导出PDF', 'Markdown简历',
-    '完全免费', '在线简历制作', 'AI简历姬', '简历自动生成', '求职工具'
+    '在线简历免费制作导出', 'AI写简历', '简历优化', '首份免费导出PDF', 'Markdown简历',
+    '免费制作首份简历', '在线简历制作', 'AI简历姬', '简历自动生成', '求职工具'
   ],
   authors: [{ name: SITE_NAME }],
   creator: SITE_NAME,

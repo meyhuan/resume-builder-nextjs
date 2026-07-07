@@ -10,8 +10,10 @@ import { LandingWhyFree } from "@/components/landing/LandingWhyFree";
 import { LandingFAQ } from "@/components/landing/LandingFAQ";
 import { LandingFooter } from "@/components/landing/LandingFooter";
 import { JsonLd } from "@/components/seo/JsonLd";
+import { getPublicSiteStats } from "@/lib/public-site-stats";
 
 const SITE_URL = "https://aijianli.cn";
+export const revalidate = 60 * 60;
 
 export const metadata: Metadata = {
   alternates: {
@@ -19,13 +21,15 @@ export const metadata: Metadata = {
   },
 };
 
-export default function Home() {
+export default async function Home() {
+  const publicSiteStats = await getPublicSiteStats();
+
   return (
     <div className="min-h-screen flex flex-col">
       <JsonLd />
       <LandingHeader />
       <main className="flex-grow">
-        <LandingHero />
+        <LandingHero stats={publicSiteStats} />
         <LandingEditorDemo id="editor-demo" />
         <LandingFeatures id="features" />
         <LandingUseCases id="use-cases" />

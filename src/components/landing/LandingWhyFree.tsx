@@ -12,8 +12,8 @@ interface WhyFreeSectionProps {
 const PROMISES = [
   {
     icon: <Heart className="w-5 h-5 text-rose-500" />,
-    title: '永久免费',
-    description: '所有功能、所有模板、所有导出，不收一分钱。没有 VIP，没有付费墙。',
+    title: '首份免费',
+    description: '免费制作并导出第一份可投递简历；之后如需再次修改并重新导出，可升级会员。',
   },
   {
     icon: <Shield className="w-5 h-5 text-violet-500" />,
@@ -49,7 +49,7 @@ export const LandingWhyFree = ({ id }: WhyFreeSectionProps) => {
 
             <h2 className="text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight leading-tight">
               为什么
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-fuchsia-500"> 完全免费？</span>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-fuchsia-500"> 首份免费？</span>
             </h2>
 
             <div className="space-y-4 text-lg text-slate-600 leading-relaxed">
@@ -62,8 +62,8 @@ export const LandingWhyFree = ({ id }: WhyFreeSectionProps) => {
               </p>
               <p>
                 所以我决定自己做一款：
-                <span className="font-semibold text-slate-900">好看、好用、完全免费</span>的简历工具，
-                让每一个求职路上的年轻人都能用上。
+                <span className="font-semibold text-slate-900">好看、好用、首份可免费导出</span>的简历工具，
+                让每一个求职路上的年轻人都能先做出一份能投递的简历。
               </p>
             </div>
 

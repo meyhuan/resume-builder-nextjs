@@ -31,7 +31,7 @@ export const LandingTemplates = ({ id }: TemplatesSectionProps) => {
           <p className="text-lg text-slate-500 max-w-2xl mx-auto">
             每一套极简简历模板都经过反复打磨，覆盖应届生、互联网、商务等主流求职场景。
             <br className="hidden md:block" />
-            支持在线制作，全部免费使用，高清 PDF 免费导出不收一分钱。
+            支持在线制作，模板可免费使用，首份高清 PDF 可直接导出。
           </p>
         </div>
 
@@ -67,7 +67,7 @@ export const LandingTemplates = ({ id }: TemplatesSectionProps) => {
                 <div className="p-5 flex items-center justify-between bg-white relative z-10">
                   <div>
                     <h3 className="text-base font-bold text-slate-800 mb-1">{item.name}</h3>
-                    <p className="text-xs text-slate-400 truncate">免费使用 · 免费导出</p>
+                    <p className="text-xs text-slate-400 truncate">免费使用 · 首份可导出</p>
                   </div>
                   <span className="px-3 py-1 bg-emerald-50 text-emerald-500 border border-emerald-100 text-[10px] font-extrabold rounded-full">
                     FREE

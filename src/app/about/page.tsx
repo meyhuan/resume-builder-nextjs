@@ -7,7 +7,7 @@ import { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: '关于开发者 - 智简简历',
-  description: '独立开发者倾力打造，永久免费的 AI 简历工具。',
+  description: '独立开发者倾力打造，首份可免费导出的 AI 简历工具。',
   alternates: {
     canonical: 'https://aijianli.cn/about',
   },
@@ -119,7 +119,7 @@ export default function AboutPage(): React.ReactElement {
                 <div className="w-12 h-12 rounded-2xl bg-rose-100 flex items-center justify-center">
                   <Heart className="w-6 h-6 text-rose-500" />
                 </div>
-                <h2 className="text-xl sm:text-2xl font-bold text-slate-800">为什么完全免费？</h2>
+                <h2 className="text-xl sm:text-2xl font-bold text-slate-800">为什么首份免费？</h2>
               </div>
               <div className="space-y-4 text-slate-600 leading-relaxed text-base sm:text-lg">
                 <p>
@@ -129,7 +129,7 @@ export default function AboutPage(): React.ReactElement {
                   作为独立开发者，我没有投资人的盈利指标，这让我能保持产品的纯粹。
                 </p>
                 <p>
-                  我承诺：<strong className="text-slate-800 font-semibold">所有简历编辑、AI 生成、AI 排版、导出 PDF 功能，永远免费。无套路、无广告、无水印。</strong>
+                  我承诺：<strong className="text-slate-800 font-semibold">你可以免费制作第一份可投递简历，并导出高清 PDF。后续如需再次修改并重新导出，可升级会员。</strong>
                 </p>
                 <p>
                   如果你觉得这个工具帮到了你，或者你拿到了满意的 Offer，推荐给你的同学和朋友就是对我最大的鼓励。
@@ -177,7 +177,7 @@ export default function AboutPage(): React.ReactElement {
             <div className="bg-gradient-to-br from-violet-600 to-fuchsia-500 rounded-3xl p-6 sm:p-8 md:p-12 shadow-lg text-center">
               <h2 className="text-2xl md:text-3xl font-extrabold text-white mb-4">开始制作你的专业简历</h2>
               <p className="text-white/80 mb-8 max-w-lg mx-auto">
-                完全免费，无需担心任何费用。AI 帮你写出亮眼的简历内容。
+                免费制作第一份可投递简历。AI 帮你写出亮眼的简历内容，后续需要再次导出时再升级。
               </p>
               <div className="flex flex-wrap gap-4 justify-center">
                 <Link href="/ai" className="inline-flex items-center gap-2 px-8 py-3 bg-white text-violet-700 font-bold rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all">

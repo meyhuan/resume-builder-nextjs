@@ -525,7 +525,7 @@ export default function ImportResumePage(): React.ReactElement {
                 {[
                   { label: '专业排版模板', sub: '多套风格，一键切换', color: 'bg-violet-500' },
                   { label: 'AI 智能解析', sub: '自动识别姓名、经历、技能', color: 'bg-fuchsia-500' },
-                  { label: 'PDF 免费导出', sub: '高清打印，即拿即用', color: 'bg-violet-400' },
+                  { label: '首份 PDF 导出', sub: '高清打印，先完成第一份', color: 'bg-violet-400' },
                   { label: '支持头像上传', sub: '裁剪调整，形象专业', color: 'bg-fuchsia-400' },
                 ].map((f) => (
                   <div key={f.label} className="flex items-start gap-2.5">

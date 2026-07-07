@@ -46,7 +46,7 @@ const DEMO_STEPS = [
   {
     icon: <FileDown className="w-5 h-5" />,
     title: '多格式导出',
-    description: '高清 PDF、PNG 图片、Markdown，一键免费导出。',
+    description: '高清 PDF、PNG 图片、Markdown，多格式导出更省心。',
     color: 'rose',
     bgClass: 'bg-rose-100 text-rose-600 group-hover:bg-rose-200',
   },

@@ -20,7 +20,7 @@ const LONG_TAIL_LINKS: ReadonlyArray<FooterLinkItem> = [
   { href: '/articles?category=fresh-graduate', label: '应届生求职简历指南' },
   { href: '/articles?category=career-guide', label: '职场转行简历怎么写' },
   { href: '/articles', label: '求职攻略与简历写作教程' },
-  { href: '/about', label: '独立开发者打造的免费简历工具' },
+  { href: '/about', label: '独立开发者打造的 AI 简历工具' },
 ];
 
 export const LandingFooter = () => {
@@ -38,9 +38,9 @@ export const LandingFooter = () => {
             <p className="text-slate-500 text-sm leading-relaxed">
               <strong>aijianli.cn (智简简历)</strong>
               <br />
-              永久免费的 AI 极简简历在线制作工具。
+              首份可免费导出的 AI 极简简历在线制作工具。
               <br />
-              让简历制作变得简单、免费、可导出。
+              让简历制作变得简单、清晰、可投递。
             </p>
             <div className="flex gap-4 pt-2">
               <button className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-violet-100 hover:text-violet-600 transition-colors">

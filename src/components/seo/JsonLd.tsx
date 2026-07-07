@@ -14,14 +14,14 @@ export const JsonLd = () => {
     '@type': 'WebApplication',
     name: SITE_NAME,
     url: SITE_URL,
-    description: '免费 AI 简历制作工具 —— 智能生成、可视化编辑、多格式导出。由独立开发者打造，永久免费。',
+    description: '可免费开始使用的 AI 简历制作工具 —— 智能生成、可视化编辑、多格式导出。由独立开发者打造，首份 PDF 可导出。',
     applicationCategory: 'BusinessApplication',
     operatingSystem: 'Web',
     offers: {
       '@type': 'Offer',
       price: '0',
       priceCurrency: 'CNY',
-      description: '永久免费，所有功能无限制使用',
+      description: '基础制作可免费开始使用，首份 PDF 导出额度按平台规则提供',
     },
     featureList: [
       'AI 智能简历生成',
