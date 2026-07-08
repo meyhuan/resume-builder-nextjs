@@ -279,7 +279,6 @@ export default function LanmuTemplate(props: TemplateProps): ReactElement {
             title={headerTitle}
             heroGradient={palette.heroGradient}
             paleColor={palette.pale}
-            primaryColor={primaryColor}
           />
 
           <section
@@ -377,9 +376,8 @@ function LanmuHero(props: {
   readonly title: string
   readonly heroGradient: string
   readonly paleColor: string
-  readonly primaryColor: string
 }): ReactElement {
-  const { header, title, heroGradient, paleColor, primaryColor } = props
+  const { header, title, heroGradient, paleColor } = props
   const metaFields = header.fields
   const secondLine = title ? [title] : []
 
