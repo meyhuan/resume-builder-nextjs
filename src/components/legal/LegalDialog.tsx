@@ -80,7 +80,7 @@ export const LegalDialog: React.FC<LegalDialogProps> = ({
           <div className="flex-1 overflow-y-auto px-8 py-6 space-y-8 text-slate-600 leading-relaxed">
             {activeTab === 'privacy' ? <PrivacyContent /> : <TermsContent />}
             <div className="pt-4 border-t border-slate-100 text-center text-[11px] text-slate-400">
-              智简简历 (aijianli.cn) — 免费做出一份可投递简历的在线 AI 简历制作平台
+              智简简历 (aijianli.cn) — 免费制作一份可投递简历的在线 AI 简历制作平台
               <br />
               最后更新：2025 年 2 月
             </div>

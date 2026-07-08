@@ -14,7 +14,7 @@ export const JsonLd = () => {
     '@type': 'WebApplication',
     name: SITE_NAME,
     url: SITE_URL,
-    description: '可免费开始使用的 AI 简历制作工具 —— 智能生成、可视化编辑、多格式导出。由独立开发者打造，帮你免费做出一份可投递简历。',
+    description: '可免费开始使用的 AI 简历制作工具 —— 智能生成、可视化编辑、多格式导出。由独立开发者打造，帮你免费制作一份可投递简历。',
     applicationCategory: 'BusinessApplication',
     operatingSystem: 'Web',
     offers: {

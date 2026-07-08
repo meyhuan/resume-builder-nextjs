@@ -38,7 +38,7 @@ export const LandingFooter = () => {
             <p className="text-slate-500 text-sm leading-relaxed">
               <strong>aijianli.cn (智简简历)</strong>
               <br />
-              免费做出一份可投递简历的 AI 极简简历在线制作工具。
+              免费制作一份可投递简历的 AI 极简简历在线制作工具。
               <br />
               让简历制作变得简单、清晰、可投递。
             </p>

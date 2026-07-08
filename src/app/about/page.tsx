@@ -7,7 +7,7 @@ import { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: '关于开发者 - 智简简历',
-  description: '独立开发者倾力打造，帮你免费做出一份可投递简历的 AI 简历工具。',
+  description: '独立开发者倾力打造，帮你免费制作一份可投递简历的 AI 简历工具。',
   alternates: {
     canonical: 'https://aijianli.cn/about',
   },
@@ -129,7 +129,7 @@ export default function AboutPage(): React.ReactElement {
                   作为独立开发者，我没有投资人的盈利指标，这让我能保持产品的纯粹。
                 </p>
                 <p>
-                  我承诺：<strong className="text-slate-800 font-semibold">你可以免费做出一份可投递简历，并在免费额度内导出高清 PDF。</strong>
+                  我承诺：<strong className="text-slate-800 font-semibold">你可以免费制作一份可投递简历，并在免费额度内导出高清 PDF。</strong>
                 </p>
                 <p>
                   如果你觉得这个工具帮到了你，或者你拿到了满意的 Offer，推荐给你的同学和朋友就是对我最大的鼓励。
@@ -177,7 +177,7 @@ export default function AboutPage(): React.ReactElement {
             <div className="bg-gradient-to-br from-violet-600 to-fuchsia-500 rounded-3xl p-6 sm:p-8 md:p-12 shadow-lg text-center">
               <h2 className="text-2xl md:text-3xl font-extrabold text-white mb-4">开始制作你的专业简历</h2>
               <p className="text-white/80 mb-8 max-w-lg mx-auto">
-                免费做出一份可投递简历。AI 帮你写出亮眼的简历内容，后续需要再次导出时再升级。
+                免费制作一份可投递简历。AI 帮你写出亮眼的简历内容，后续需要再次导出时再升级。
               </p>
               <div className="flex flex-wrap gap-4 justify-center">
                 <Link href="/ai" className="inline-flex items-center gap-2 px-8 py-3 bg-white text-violet-700 font-bold rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all">

@@ -31,14 +31,14 @@ const buildTrustStats = (
   if (!stats) {
     return [
       { label: "AI 智能生成", value: "快速" },
-      { label: "一份可投递简历", value: "免费做出" },
+      { label: "一份可投递简历", value: "免费制作" },
       { label: "精品模板可选", value: "多套" },
     ];
   }
 
   return [
     { label: "位用户开始制作", value: formatStatValue(stats.activeUserCount) },
-    { label: "一份可投递简历", value: "免费做出" },
+    { label: "一份可投递简历", value: "免费制作" },
     { label: "份简历已创建", value: formatStatValue(stats.resumeCount) },
   ];
 };
@@ -77,7 +77,7 @@ export const LandingHero = ({ stats }: LandingHeroProps) => {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-violet-500"></span>
               </span>
-              👋 独立开发者作品 · 免费做出一份可投递简历
+              👋 独立开发者作品 · 免费制作一份可投递简历
             </div>
           </div>
 
@@ -96,7 +96,7 @@ export const LandingHero = ({ stats }: LandingHeroProps) => {
             <strong className="text-slate-700 font-semibold">
               无需苦想措辞，AI 自动帮你挖掘经历亮点。
             </strong>
-            免费做出一份可投递简历，支持
+            免费制作一份可投递简历，支持
             <strong className="text-slate-700 font-semibold">
               高清无水印 PDF 导出
             </strong>

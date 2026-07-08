@@ -11,7 +11,7 @@ import { createResume, renameResume, duplicateResume, deleteResume } from "./act
 
 export const metadata: Metadata = {
   title: '我的简历 - 管理你的所有简历',
-  description: '在智简简历控制台管理你的所有简历，一键创建新简历，使用 AI 智能生成专业内容，免费做出一份可投递简历。',
+  description: '在智简简历控制台管理你的所有简历，一键创建新简历，使用 AI 智能生成专业内容，免费制作一份可投递简历。',
   robots: { index: false, follow: false },
 };
 

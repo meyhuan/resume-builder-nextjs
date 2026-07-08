@@ -12,9 +12,9 @@ interface WhyFreeSectionProps {
 const PROMISES = [
   {
     icon: <Heart className="w-5 h-5 text-rose-500" />,
-    title: "免费做出",
+    title: "免费制作",
     description:
-      "免费做出一份可投递简历，在线编辑并导出高清 PDF。",
+      "免费制作一份可投递简历，在线编辑并导出高清 PDF。",
   },
   {
     icon: <Shield className="w-5 h-5 text-violet-500" />,
@@ -59,7 +59,7 @@ export const LandingWhyFree = ({ id }: WhyFreeSectionProps) => {
               为什么
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-fuchsia-500">
                 {" "}
-                免费做出可投递简历？
+                免费制作可投递简历？
               </span>
             </h2>
 
@@ -72,7 +72,7 @@ export const LandingWhyFree = ({ id }: WhyFreeSectionProps) => {
               <p>
                 所以我决定自己做一款：
                 <span className="font-semibold text-slate-900">
-                  好看、好用、能免费做出一份可投递简历
+                  好看、好用、能免费制作一份可投递简历
                 </span>
                 的简历工具，
                 让每一个求职路上的年轻人都能先做出一份能投递的简历。

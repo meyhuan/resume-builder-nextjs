@@ -29,7 +29,7 @@ const SEARCH_INTENT_GROUPS: readonly SearchIntentGroup[] = [
       { label: "简历制作工具", href: "/editor/new" },
       { label: "一键生成简历", href: "/ai" },
       { label: "简历制作网站免费", href: "/answers/free-ai-resume-builder" },
-      { label: "免费做出一份可投递简历", href: "/ai" },
+      { label: "免费制作一份可投递简历", href: "/ai" },
       { label: "无水印简历生成器", href: "/answers/free-ai-resume-builder" },
     ],
   },

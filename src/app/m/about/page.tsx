@@ -73,7 +73,7 @@ export default function MobileAboutPage(): ReactElement {
                 因为我知道求职是什么滋味。辛辛苦苦填完简历，导出时弹出付费弹窗——这种体验太糟糕了。
               </p>
               <p>
-                <strong className="text-slate-800">你可以免费做出一份可投递简历，并在免费额度内导出高清 PDF。</strong>
+                <strong className="text-slate-800">你可以免费制作一份可投递简历，并在免费额度内导出高清 PDF。</strong>
               </p>
               <p>
                 如果你觉得这个工具帮到了你，推荐给你的同学和朋友就是对我最大的鼓励。
