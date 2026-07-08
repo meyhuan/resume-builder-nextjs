@@ -460,11 +460,6 @@ function LanmuHero(props: {
         onClick={header.openEditModal}
         onKeyDown={(event) => runClickActionOnKey(event, header.openEditModal)}
       >
-        <span
-          aria-hidden
-          className="absolute left-0 top-0 h-full w-px"
-          style={{ backgroundColor: primaryColor }}
-        />
         <EditableText
           as="h1"
           value={header.name}
