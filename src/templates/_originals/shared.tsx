@@ -59,6 +59,9 @@ export function OriginalTemplate({ resume, theme, variant, sidebarSectionIds, on
             min-height: calc(297mm - var(--original-print-page-padding-v) - 2px) !important;
             overflow: visible !important;
           }
+          .original-fresh-sidebar-rail {
+            min-height: calc(297mm - var(--original-print-page-padding-v) - 2px) !important;
+          }
           .original-page-content {
             padding-bottom: 0 !important;
           }

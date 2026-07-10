@@ -190,7 +190,7 @@ export function FreshSidebarLayout(props: {
       <div className="grid original-page-content" data-template-padding-probe="true" style={{ gridTemplateColumns: `${sideTrackWidth}px 1fr`, minHeight: '297mm', padding: `${padV}px ${padH}px`, backgroundColor: '#fff', overflow: 'hidden' }}>
         <ColumnDroppable id={COLUMN_LEFT_ID}>
           <aside
-            className="relative"
+            className="original-fresh-sidebar-rail relative"
             style={{
               width: sideWidth,
               minHeight: '297mm',

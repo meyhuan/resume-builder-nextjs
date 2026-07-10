@@ -11,6 +11,8 @@ const templateLoaderPath = path.join(root, 'src', 'templates', 'template-loader.
 const publicDir = path.join(root, 'public')
 const artifactRoot = path.join(root, 'test-artifacts', 'templates')
 const reportRoot = path.join(root, 'test-artifacts', 'reports')
+const pdfjsPath = path.join(root, 'public', 'libs', 'pdfjs', 'pdf.min.js')
+const pdfjsWorkerPath = path.join(root, 'public', 'libs', 'pdfjs', 'pdf.worker.min.js')
 const LOCAL_FIXTURES = ['full', 'sparse', 'long', 'rich']
 
 const args = parseArgs(process.argv.slice(2))
@@ -395,6 +397,8 @@ async function runLocalChecks(templateIds, registries) {
       })
 
       await checkThemeControls(browser, baseUrl, id, registry, artifactDir)
+      await checkSparsePdfTail(browser, { baseUrl, id, artifactDir, themeId: 'base' })
+      await checkSparsePdfTail(browser, { baseUrl, id, artifactDir, themeId: 'relaxed' })
       if (!args['skip-interactions']) {
         await checkLocalInteractions(browser, baseUrl, id, artifactDir)
       } else {
@@ -538,6 +542,197 @@ async function checkLocalPage(browser, options) {
   } finally {
     await page.close()
   }
+}
+
+async function checkSparsePdfTail(browser, options) {
+  const { baseUrl, id, artifactDir, themeId } = options
+  const name = `PDF sparse tail (${themeId}) (${id})`
+  const pdfPath = path.join(artifactDir, `local-pdf-sparse-${themeId}.pdf`)
+  const lastPagePath = path.join(artifactDir, `local-pdf-sparse-${themeId}-last-page.png`)
+  const page = await browser.newPage()
+
+  try {
+    await page.bringToFront()
+    await page.setViewport({ width: 1280, height: 1400, deviceScaleFactor: 1 })
+    const url = labUrl(baseUrl, id, 'sparse', themeId, 'pc')
+    const response = await page.goto(url, { waitUntil: 'networkidle2', timeout: 60_000 })
+    if (!response || !response.ok()) {
+      fail(name, `${url} returned HTTP ${response ? response.status() : 'no response'}.`)
+      return
+    }
+
+    await page.waitForSelector('[data-template-lab="ready"] [data-template-root="true"] .resume-container', { timeout: 20_000 })
+    await waitForPdfAssets(page)
+    const html = await buildTemplateLabExportHtml(page)
+
+    await page.setViewport({ width: 794, height: 1123, deviceScaleFactor: 1 })
+    await page.setContent(html, { waitUntil: ['domcontentloaded', 'load'], timeout: 45_000 })
+    await waitForPdfAssets(page)
+    await page.emulateMediaType('print')
+    await applyPdfPaginationHints(page)
+
+    const pdf = Buffer.from(await page.pdf({
+      printBackground: true,
+      displayHeaderFooter: false,
+      preferCSSPageSize: true,
+    }))
+    fs.writeFileSync(pdfPath, pdf)
+
+    const analysis = await analyzePdfPages(page, pdf)
+    if (analysis.lastPagePng) fs.writeFileSync(lastPagePath, Buffer.from(analysis.lastPagePng, 'base64'))
+    const lastPage = analysis.pages.at(-1)
+    if (!lastPage) {
+      fail(name, `Generated PDF has no pages. PDF saved to ${relative(pdfPath)}.`)
+      return
+    }
+
+    const hasTextOnEarlierPage = analysis.pages.slice(0, -1).some((item) => item.textChars > 0)
+    const hasTrailingTextlessPage = analysis.pages.length > 1 && hasTextOnEarlierPage && lastPage.textChars === 0
+    const details = [
+      `pages=${analysis.pages.length}`,
+      `lastText=${lastPage.textChars}`,
+      `lastInk=${lastPage.nonWhiteRatio}`,
+      `PDF: ${relative(pdfPath)}`,
+      analysis.lastPagePng ? `last page: ${relative(lastPagePath)}` : '',
+    ].filter(Boolean).join(', ')
+
+    if (hasTrailingTextlessPage) {
+      fail(name, `Trailing page contains no text (${details}).`)
+    } else {
+      pass(name, details)
+    }
+  } catch (error) {
+    fail(name, error.message)
+  } finally {
+    await page.close()
+  }
+}
+
+async function waitForPdfAssets(page) {
+  await page.evaluate(async () => {
+    const wait = (ms) => new Promise((resolve) => window.setTimeout(resolve, ms))
+    const fonts = document.fonts?.ready ?? Promise.resolve()
+    const images = Promise.all(Array.from(document.images).map((image) => {
+      if (image.complete) return Promise.resolve()
+      return new Promise((resolve) => {
+        image.addEventListener('load', resolve, { once: true })
+        image.addEventListener('error', resolve, { once: true })
+      })
+    }))
+    await Promise.race([Promise.all([fonts, images]), wait(8000)])
+  })
+}
+
+async function buildTemplateLabExportHtml(page) {
+  return page.evaluate(() => {
+    const templateRoot = document.querySelector('[data-template-root="true"]')
+    const container = templateRoot?.querySelector('.resume-container')
+    if (!templateRoot || !container) throw new Error('Template lab root/container missing')
+
+    const cssTexts = []
+    document.querySelectorAll('style').forEach((style) => {
+      if (style.textContent) cssTexts.push(style.textContent)
+    })
+    for (const sheet of Array.from(document.styleSheets)) {
+      try {
+        for (const rule of Array.from(sheet.cssRules)) cssTexts.push(rule.cssText)
+      } catch {
+        // Cross-origin styles are optional for the local template render.
+      }
+    }
+
+    const isBleed = container.getAttribute('data-bleed') === 'true'
+    const parsedPadding = Number.parseFloat(container.getAttribute('data-page-padding-vertical') || '22')
+    const pagePaddingVertical = Number.isFinite(parsedPadding) ? parsedPadding : 22
+    const pageMarginCss = isBleed ? 'margin: 0;' : `margin: ${pagePaddingVertical}mm 0;`
+    const firstPageMarginCss = isBleed ? '' : '@page:first { margin-top: 0; }'
+    const bleedCss = isBleed
+      ? '.page { min-height: 0 !important; height: auto !important; } .resume-container[data-bleed="true"] { min-height: calc(297mm - 1px) !important; }'
+      : ''
+
+    return `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><style>
+      ${cssTexts.join('\n')}
+      .page { border-radius: 0 !important; box-shadow: none !important; }
+      @media print {
+        @page { size: A4; ${pageMarginCss} }
+        ${firstPageMarginCss}
+        html, body { margin: 0; padding: 0; background: #fff; }
+        ${bleedCss}
+      }
+      * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .resume-container, .resume-container * { box-shadow: none !important; filter: none !important; text-shadow: none !important; }
+    </style></head><body><div class="page w-full bg-white">${templateRoot.innerHTML}</div></body></html>`
+  })
+}
+
+async function applyPdfPaginationHints(page) {
+  await page.evaluate(() => {
+    if (document.querySelector('[data-one-page="true"], [data-bleed="true"]')) return
+    const container = document.querySelector('.resume-container')
+    const paddingV = Number.parseFloat(container?.getAttribute('data-page-padding-vertical') || '0')
+    const shortBlockMax = (1123 - (2 * paddingV * 3.7795)) / 3
+    document.querySelectorAll(
+      '[data-resume-block], .resume-item, .experience-item, .education-item, .project-item',
+    ).forEach((element) => {
+      const height = element.getBoundingClientRect().height
+      const keepTogether = height > 0 && height <= shortBlockMax
+      element.style.breakInside = keepTogether ? 'avoid' : 'auto'
+      element.style.pageBreakInside = keepTogether ? 'avoid' : 'auto'
+    })
+  })
+}
+
+async function analyzePdfPages(page, pdf) {
+  if (!fs.existsSync(pdfjsPath) || !fs.existsSync(pdfjsWorkerPath)) {
+    throw new Error('Local PDF.js assets are missing under public/libs/pdfjs/.')
+  }
+
+  await page.goto('about:blank')
+  await page.addScriptTag({ path: pdfjsPath })
+  const workerSource = fs.readFileSync(pdfjsWorkerPath, 'utf8')
+  await page.evaluate((source) => {
+    const pdfjs = window['pdfjs-dist/build/pdf']
+    pdfjs.GlobalWorkerOptions.workerSrc = URL.createObjectURL(new Blob([source], { type: 'application/javascript' }))
+  }, workerSource)
+
+  return page.evaluate(async (encoded) => {
+    const pdfjs = window['pdfjs-dist/build/pdf']
+    const binary = atob(encoded)
+    const bytes = new Uint8Array(binary.length)
+    for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index)
+    const handle = await pdfjs.getDocument({ data: bytes }).promise
+    const pages = []
+    let lastPagePng = ''
+
+    for (let pageNumber = 1; pageNumber <= handle.numPages; pageNumber += 1) {
+      const pdfPage = await handle.getPage(pageNumber)
+      const text = await pdfPage.getTextContent()
+      const textChars = text.items.reduce((sum, item) => sum + String(item.str || '').trim().length, 0)
+      const viewport = pdfPage.getViewport({ scale: 0.35 })
+      const canvas = document.createElement('canvas')
+      canvas.width = Math.ceil(viewport.width)
+      canvas.height = Math.ceil(viewport.height)
+      const context = canvas.getContext('2d', { willReadFrequently: true })
+      if (!context) throw new Error('Cannot create PDF QA canvas context')
+      context.fillStyle = '#fff'
+      context.fillRect(0, 0, canvas.width, canvas.height)
+      await pdfPage.render({ canvasContext: context, viewport }).promise
+      const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data
+      let nonWhite = 0
+      for (let index = 0; index < pixels.length; index += 4) {
+        if (pixels[index] < 248 || pixels[index + 1] < 248 || pixels[index + 2] < 248) nonWhite += 1
+      }
+      pages.push({
+        pageNumber,
+        textChars,
+        nonWhiteRatio: Number((nonWhite / (canvas.width * canvas.height)).toFixed(6)),
+      })
+      if (pageNumber === handle.numPages) lastPagePng = canvas.toDataURL('image/png').split(',')[1] || ''
+    }
+
+    await handle.destroy()
+    return { pages, lastPagePng }
+  }, pdf.toString('base64'))
 }
 
 async function checkTemplateSpecificLayout(page, options) {
@@ -1800,7 +1995,7 @@ async function readThemeMetrics(browser, url, screenshot) {
     const metrics = await page.evaluate(() => {
       const root = document.querySelector('[data-template-root="true"]')
       const container = root?.querySelector('.resume-container')
-      const heading = root?.querySelector('h2')
+      const heading = root?.querySelector('h2, [data-template-section-heading="true"]')
       const paragraph = root?.querySelector('p')
       if (!root || !container) return null
       const containerStyle = getComputedStyle(container)
@@ -1862,10 +2057,28 @@ async function readThemeMetrics(browser, url, screenshot) {
           })
           .map((node) => getComputedStyle(node).color)
       )).sort()
-      const labPrimary = 'rgb(219, 39, 119)'
+      const labPrimary = 'rgb(219,39,119)'
+      const matchesLabPrimary = (value) => {
+        const normalized = String(value || '').replace(/\s+/g, '').toLowerCase()
+        return normalized.includes(labPrimary) || normalized.includes('#db2777')
+      }
       const hasLabPrimaryColor = Array.from(root.querySelectorAll('*')).some((node) => {
         const style = getComputedStyle(node)
-        return style.color === labPrimary || style.backgroundColor === labPrimary || style.borderColor === labPrimary
+        return [
+          style.color,
+          style.backgroundColor,
+          style.backgroundImage,
+          style.borderTopColor,
+          style.borderRightColor,
+          style.borderBottomColor,
+          style.borderLeftColor,
+          style.borderImageSource,
+          style.outlineColor,
+          style.fill,
+          style.stroke,
+          style.boxShadow,
+          style.textShadow,
+        ].some(matchesLabPrimary)
       })
       return {
         fontSize: parseFloat(containerStyle.fontSize),
@@ -2215,7 +2428,7 @@ function writeReport(templateIds) {
     '- 模板注册、懒加载、缩略图、主题契约、导出布局契约。',
     '- 本地 PC、移动端、稀疏数据、长内容、富文本渲染。',
     '- 字号、行高、模块间距、标题比例、页边距、主题主色。',
-    '- PDF 分页风险检查：长内容场景、打印预览入口，以及主内容流 column flex 的静态预警。',
+    '- PDF 分页风险检查：长内容场景、主内容流 column flex 静态预警，以及 sparse 数据在默认/较大页边距下的真实 PDF 无文字尾页检测。',
     '- 本地交互 QA：模板切换、主题改色与恢复默认、基础信息弹窗、头像上传入口、求职意向弹窗、经历字段编辑、模块操作入口、富文本编辑态、深色背景 hover 对比。',
     '- 一键加载真实简历场景数据，以及预览中的基础信息、求职意向、长公司名、项目名、薪资、自定义字段和长内容布局。',
     '- 模板专项布局断言会在脚本中按模板 id 执行，例如表格模板的邮箱单元格和头像单元格检查。',
@@ -2239,7 +2452,7 @@ function writeReport(templateIds) {
     '## 仍需人工确认',
     '',
     '- 真实登录态编辑器里的细节建议在浏览器中快速扫一眼；如果 headless 测试使用 `/dev/scenario-loader`，它覆盖的是同一套右侧栏、场景加载、store 更新和模板渲染链路。',
-    '- 移动端表单编辑、真实导出 PDF/图片、AI 润色/生成和会员权限依赖真实账号或外部服务，发布前需要用线上/预发环境补测。',
+    '- 移动端表单编辑、真实账号导出链路、图片导出、AI 润色/生成和会员权限依赖真实账号或外部服务，发布前需要用线上/预发环境补测。',
     '',
     '## 结论',
     '',
@@ -2294,6 +2507,8 @@ function collectReportScreenshots(id) {
     path.join(artifactRoot, id, 'local-rich.png'),
     path.join(artifactRoot, id, 'local-color.png'),
     path.join(artifactRoot, id, 'local-interactions.png'),
+    path.join(artifactRoot, id, 'local-pdf-sparse-base-last-page.png'),
+    path.join(artifactRoot, id, 'local-pdf-sparse-relaxed-last-page.png'),
     path.join(artifactRoot, 'editor-scenarios', `long-content-loaded-${id}.png`),
     path.join(artifactRoot, 'editor-scenarios', 'long-content-loaded.png'),
   ]

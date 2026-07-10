@@ -114,7 +114,7 @@ export default function XingtanTemplate(props: TemplateProps): ReactElement {
   const header = useEditableHeader(resume.name, resume.baseInfo ?? null)
   const objective = useEditableJobIntention(resume.jobIntention ?? null)
   const jobIntentionVisible: boolean = resume.jobIntentionVisible ?? Boolean(resume.jobIntention)
-  const pagePad = usePagePadding(theme, 30, 42)
+  const pagePad = usePagePadding(theme, 30, 6)
   const palette: XingtanPalette = buildPalette(theme.primaryColor)
 
   return (
@@ -139,6 +139,7 @@ export default function XingtanTemplate(props: TemplateProps): ReactElement {
 
         {/* ——— MAIN SECTIONS ———————————————————————— */}
         <main
+          data-template-padding-probe="true"
           style={{
             ...pagePad,
             paddingTop: jobIntentionVisible ? 10 * theme.spacingScale : pagePad.paddingTop,
@@ -240,12 +241,24 @@ function XingtanHero({ header, title, horizontalPadding }: HeroProps): ReactElem
           {/* 基本信息 — 紧随姓名左对齐 */}
           {fields.length > 0 && (
             <div
+              data-template-base-info-trigger="true"
+              role="button"
+              tabIndex={0}
               className="flex flex-wrap"
               style={{
                 gap: '4px 0',
                 fontSize: '0.9em',
                 color: palette.inkSoft,
                 marginTop: '1em',
+              }}
+              onClick={(event) => {
+                event.stopPropagation()
+                openEditModal()
+              }}
+              onKeyDown={(event) => {
+                if (event.key !== 'Enter' && event.key !== ' ') return
+                event.preventDefault()
+                openEditModal()
               }}
             >
               {fields.map((f, i) => (

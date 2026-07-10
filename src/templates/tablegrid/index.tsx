@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from 'react'
-import type { ReactElement, ReactNode } from 'react'
+import type { CSSProperties, ReactElement, ReactNode } from 'react'
 import { GripVertical, Plus, Trash2 } from 'lucide-react'
 import type { ResumeBlock } from '@/entities/blocks/resume-block'
 import type { Section } from '@/entities/resume/section'
@@ -32,6 +32,8 @@ const DEFAULT_PRIMARY = '#3d4b58'
 const INK = '#20242c'
 const MUTED = '#59636e'
 const SANS = RESUME_FONT_STACKS.sans
+
+type CssVars = CSSProperties & Record<`--${string}`, string | number>
 
 interface TablePalette {
   readonly primary: string
@@ -116,27 +118,36 @@ export default function TableGridTemplate(props: TemplateProps): ReactElement {
   const spacingScale = Math.min(1.45, Math.max(0.72, theme.spacingScale))
   const paragraphIndent = Math.max(0, theme.paragraphIndent ?? 0)
   const pagePaddingVertical = Math.max(24, mmToPx(theme.pagePaddingVertical))
-  const pagePaddingHorizontal = Math.max(32, mmToPx(theme.pagePaddingHorizontal))
+  const pagePaddingHorizontal = Math.max(6, mmToPx(theme.pagePaddingHorizontal))
+  const rootStyle: CssVars = {
+    minHeight: '297mm',
+    backgroundColor: '#ffffff',
+    color: palette.ink,
+    fontFamily: theme.fontFamily || SANS,
+    fontSize: `${theme.fontSize}px`,
+    lineHeight: theme.lineHeight,
+    padding: `${pagePaddingVertical}px ${pagePaddingHorizontal}px`,
+    '--tablegrid-print-page-padding-v': `${theme.pagePaddingVertical}mm`,
+  }
 
   return (
     <ResumeFrame
       resume={resume}
       theme={theme}
-      style={{
-        minHeight: '297mm',
-        backgroundColor: '#ffffff',
-        color: palette.ink,
-        fontFamily: theme.fontFamily || SANS,
-        fontSize: `${theme.fontSize}px`,
-        lineHeight: theme.lineHeight,
-        padding: `${pagePaddingVertical}px ${pagePaddingHorizontal}px`,
-      }}
+      className="tablegrid-resume-root"
+      style={rootStyle}
     >
       <style>{`
         .tablegrid-rich-text p { margin: 0; text-indent: ${paragraphIndent}em; }
         .tablegrid-rich-text ul, .tablegrid-rich-text ol { margin: 0; padding-left: 1.2em; }
         .tablegrid-rich-text li { margin: 0; }
         .tablegrid-avatar-cell > .relative { height: 100%; }
+        @media print {
+          .tablegrid-resume-root {
+            min-height: calc(297mm - var(--tablegrid-print-page-padding-v) - 2px) !important;
+            overflow: visible !important;
+          }
+        }
       `}</style>
 
       <div

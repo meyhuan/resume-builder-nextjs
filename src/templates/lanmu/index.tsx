@@ -254,6 +254,11 @@ export default function LanmuTemplate(props: TemplateProps): ReactElement {
             min-height: calc(297mm - var(--lanmu-print-page-padding-v) - 2px) !important;
             overflow: visible !important;
           }
+          [data-lanmu-panel="true"] {
+            min-height: auto !important;
+            padding-bottom: 0 !important;
+            overflow: visible !important;
+          }
           .lanmu-root { box-shadow: none !important; }
         }
       `}</style>

@@ -110,7 +110,7 @@ export default function ZhumoTemplate(props: TemplateProps): ReactElement {
   const header = useEditableHeader(resume.name, resume.baseInfo ?? null)
   const objective = useEditableJobIntention(resume.jobIntention ?? null)
   const jobIntentionVisible: boolean = resume.jobIntentionVisible ?? Boolean(resume.jobIntention)
-  const pagePad = usePagePadding(theme, 30, 42)
+  const pagePad = usePagePadding(theme, 30, 6)
   const palette: ZhumoPalette = buildPalette(theme.primaryColor)
 
   return (
@@ -148,6 +148,7 @@ export default function ZhumoTemplate(props: TemplateProps): ReactElement {
 
         {/* ——— MAIN SECTIONS ———————————————————————— */}
         <main
+          data-template-padding-probe="true"
           style={{
             ...pagePad,
             paddingTop: jobIntentionVisible ? 10 * theme.spacingScale : pagePad.paddingTop,
@@ -564,10 +565,16 @@ function ZhumoSectionHeading(props: HeadingProps): ReactElement {
         {numeral}
       </span>
       <span
+        data-template-section-heading="true"
         style={{
           display: 'inline-block',
           position: 'relative',
           paddingBottom: '0.3em',
+          fontSize: '1.28em',
+          fontWeight: 700,
+          color: palette.ink,
+          fontFamily: SERIF,
+          letterSpacing: '0.1em',
         }}
       >
         <EditableText
@@ -575,7 +582,7 @@ function ZhumoSectionHeading(props: HeadingProps): ReactElement {
           value={title}
           onCommit={onCommitTitle}
           style={{
-            fontSize: '1.28em',
+            fontSize: '1em',
             fontWeight: 700,
             color: palette.ink,
             fontFamily: SERIF,

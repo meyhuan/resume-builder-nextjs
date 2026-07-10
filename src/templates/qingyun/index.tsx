@@ -114,7 +114,7 @@ export default function QingyunTemplate(props: TemplateProps): ReactElement {
   const header = useEditableHeader(resume.name, resume.baseInfo ?? null)
   const objective = useEditableJobIntention(resume.jobIntention ?? null)
   const jobIntentionVisible: boolean = resume.jobIntentionVisible ?? Boolean(resume.jobIntention)
-  const pagePad = usePagePadding(theme, 28, 40)
+  const pagePad = usePagePadding(theme, 28, 6)
 
   const freshGradLabel: string | null = detectFreshGradLabel(
     resume.jobIntention?.currentStatus,
