@@ -5,6 +5,7 @@ import { normalizeResumeContent } from '@/entities/resume/normalize-resume-conte
 import { prisma } from '@/lib/prisma'
 import { assertCanCreateResumeForUserId } from '@/lib/resume-limits'
 import type { CreateJobInput, UpdateJobInput } from '@/lib/jobs/job-contracts'
+import { extractResumeFacts } from '@/lib/jobs/fact-extractor'
 
 function stableJson(value: unknown): string {
   if (Array.isArray(value)) return `[${value.map(stableJson).join(',')}]`
@@ -15,8 +16,9 @@ function stableJson(value: unknown): string {
   return JSON.stringify(value) ?? 'null'
 }
 
-export function hashResumeContent(content: unknown): string {
-  return createHash('sha256').update(stableJson(content)).digest('hex')
+export function hashResumeContent(content: Prisma.JsonValue): string {
+  const facts = extractResumeFacts(content)
+  return createHash('sha256').update(stableJson(facts)).digest('hex')
 }
 
 function createTailoredResumeContent(content: Prisma.JsonValue, role: string, resumeId: string): Prisma.InputJsonValue {
@@ -37,6 +39,7 @@ function createTailoredResumeContent(content: Prisma.JsonValue, role: string, re
 
 export class JobNotFoundError extends Error {}
 export class BaseResumeNotFoundError extends Error {}
+export class SourceResumeMissingError extends Error {}
 
 export async function createJobWorkspace(userId: string, input: CreateJobInput) {
   const baseResume = await prisma.resume.findFirst({
@@ -47,18 +50,33 @@ export async function createJobWorkspace(userId: string, input: CreateJobInput) 
   await assertCanCreateResumeForUserId(userId)
 
   return prisma.$transaction(async (tx) => {
-    const factSet = await tx.resumeFactSet.upsert({
-      where: { sourceResumeId: baseResume.id },
-      create: {
+    const facts = extractResumeFacts(baseResume.content, baseResume.id)
+    const contentHash = hashResumeContent(baseResume.content)
+    const existingFactSet = await tx.resumeFactSet.findUnique({ where: { sourceResumeId: baseResume.id } })
+    const factSet = existingFactSet
+      ? existingFactSet.sourceContentHash === contentHash
+        ? existingFactSet
+        : await tx.resumeFactSet.update({
+            where: { id: existingFactSet.id },
+            data: {
+              revision: { increment: 1 },
+              sourceContentHash: contentHash,
+              sourceResumeUpdatedAt: baseResume.updatedAt,
+              facts: facts as unknown as Prisma.InputJsonValue,
+              confirmedFactIds: [],
+              confirmedAt: null,
+            },
+          })
+      : await tx.resumeFactSet.create({
+          data: {
         userId,
         sourceResumeId: baseResume.id,
-        sourceContentHash: hashResumeContent(baseResume.content),
+        sourceContentHash: contentHash,
         sourceResumeUpdatedAt: baseResume.updatedAt,
-        facts: [],
+        facts: facts as unknown as Prisma.InputJsonValue,
         confirmedFactIds: [],
-      },
-      update: {},
-    })
+          },
+        })
 
     const job = await tx.job.create({
       data: {
@@ -97,6 +115,62 @@ export async function createJobWorkspace(userId: string, input: CreateJobInput) 
   })
 }
 
+export async function syncJobFacts(userId: string, jobId: string) {
+  const job = await prisma.job.findFirst({
+    where: { id: jobId, userId },
+    include: { baseResume: true, factSet: true },
+  })
+  if (!job) throw new JobNotFoundError('Job not found')
+  if (!job.baseResume) throw new SourceResumeMissingError('Source resume is missing')
+
+  const nextHash = hashResumeContent(job.baseResume.content)
+  if (nextHash === job.factSet.sourceContentHash) return job.factSet
+
+  const facts = extractResumeFacts(job.baseResume.content, job.baseResume.id)
+  return prisma.resumeFactSet.update({
+    where: { id: job.factSet.id },
+    data: {
+      revision: { increment: 1 },
+      facts: facts as unknown as Prisma.InputJsonValue,
+      confirmedFactIds: [],
+      confirmedAt: null,
+      sourceContentHash: nextHash,
+      sourceResumeUpdatedAt: job.baseResume.updatedAt,
+    },
+  })
+}
+
+export async function confirmJobFacts(userId: string, jobId: string, confirmedFactIds: readonly string[], expectedContentHash: string) {
+  const job = await prisma.job.findFirst({
+    where: { id: jobId, userId },
+    include: { baseResume: true, factSet: true },
+  })
+  if (!job) throw new JobNotFoundError('Job not found')
+  if (!job.baseResume) throw new SourceResumeMissingError('Source resume is missing')
+
+  const currentHash = hashResumeContent(job.baseResume.content)
+  if (currentHash !== expectedContentHash || currentHash !== job.factSet.sourceContentHash) {
+    throw new FactsStaleError('Facts are stale')
+  }
+  const facts = extractResumeFacts(job.baseResume.content, job.baseResume.id)
+  const validIds = new Set(facts.map((fact) => fact.id))
+  const uniqueIds = [...new Set(confirmedFactIds)]
+  if (uniqueIds.length === 0 || uniqueIds.some((id) => !validIds.has(id))) {
+    throw new InvalidFactSelectionError('Invalid fact selection')
+  }
+
+  return prisma.resumeFactSet.update({
+    where: { id: job.factSet.id },
+    data: {
+      confirmedFactIds: uniqueIds,
+      confirmedAt: new Date(),
+    },
+  })
+}
+
+export class FactsStaleError extends Error {}
+export class InvalidFactSelectionError extends Error {}
+
 export async function updateJobWorkspace(userId: string, jobId: string, input: UpdateJobInput) {
   const existing = await prisma.job.findFirst({ where: { id: jobId, userId } })
   if (!existing) throw new JobNotFoundError('Job not found')
@@ -134,4 +208,3 @@ export async function deleteJobWorkspace(userId: string, jobId: string): Promise
   if (!existing) throw new JobNotFoundError('Job not found')
   await prisma.job.delete({ where: { id: jobId } })
 }
-
