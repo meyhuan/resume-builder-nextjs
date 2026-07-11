@@ -669,8 +669,9 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
     return () => window.removeEventListener('beforeunload', handleBeforeUnload)
   }, [])
 
-  // Determine back destination based on auth state
-  const backPath = token ? '/dashboard' : '/'
+  const jobId = typeof initialData?.jobId === 'string' ? initialData.jobId : null
+  // Job-tailored resumes return to their workspace; ordinary resumes keep the existing behavior.
+  const backPath = jobId ? `/dashboard/jobs/${jobId}` : token ? '/dashboard' : '/'
   // Handle back navigation with unsaved changes warning
   const handleBack = useCallback(() => {
     if (hasUnsavedChanges && resumeId) {
@@ -686,9 +687,9 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
       // Guest users who abandon unsaved changes just get router back
       router.back()
     } else {
-      router.push('/dashboard')
+      router.push(backPath)
     }
-  }, [router, token])
+  }, [router, token, backPath])
 
   // Stable callback to patch the current template's theme
   const patchTheme = useCallback((patch: Partial<ThemeTokens>): void => {
@@ -1018,6 +1019,11 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
             <span className="text-sm font-medium text-slate-700 truncate max-w-[180px]">
               {resume.name || '未命名简历'}
             </span>
+            {jobId && (
+              <span className="rounded-full border border-violet-100 bg-violet-50 px-2 py-0.5 text-[10px] font-medium text-violet-600">
+                岗位版本
+              </span>
+            )}
             {hasUnsavedChanges && (
               <span className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse shrink-0" title="未保存" />
             )}

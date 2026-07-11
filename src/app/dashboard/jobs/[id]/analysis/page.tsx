@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
-import { AlertCircle, ArrowLeft, ArrowRight, CheckCircle2, FileText, Lightbulb, Target } from 'lucide-react'
+import { AlertCircle, ArrowLeft, ArrowRight, CheckCircle2, FileText, Lightbulb, Sparkles, Target } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { JobPageShell } from '@/components/jobs/job-page-shell'
 import { ReanalyzeButton } from '@/components/jobs/reanalyze-button'
@@ -54,17 +54,16 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
       <div className="grid gap-6 xl:grid-cols-[260px_minmax(0,1fr)]">
         <aside className="space-y-4">
           <section className="rounded-2xl border border-white bg-white/90 p-6 text-center shadow-sm"><div className="mx-auto flex h-32 w-32 items-center justify-center rounded-full border-[10px] border-violet-100 bg-violet-50 text-4xl font-bold text-violet-700">{analysis.score}</div><h2 className="mt-4 font-semibold text-slate-800">基础内容覆盖</h2><p className="mt-2 text-xs leading-5 text-slate-400">该分数只表示已确认事实对 JD 关键词的覆盖，不代表面试或录用概率。</p></section>
-          <section className="rounded-2xl border border-violet-100 bg-violet-50/70 p-5"><h3 className="font-medium text-slate-800">下一步</h3><p className="mt-2 text-sm leading-6 text-slate-500">先检查缺失项是否有真实经历支持，再进入岗位简历编辑。AI 逐条建议将在下一阶段接入。</p>{job.tailoredResume && <Button asChild className="mt-4 w-full bg-violet-600 text-white hover:bg-violet-700"><Link href={`/editor/${job.tailoredResume.id}`}><FileText />打开岗位简历</Link></Button>}</section>
+          <section className="rounded-2xl border border-violet-100 bg-violet-50/70 p-5"><h3 className="font-medium text-slate-800">下一步</h3><p className="mt-2 text-sm leading-6 text-slate-500">基于已确认事实生成逐条建议，审核后再写入岗位简历。你也可以跳过 AI，直接编辑。</p><Button asChild className="mt-4 w-full bg-violet-600 text-white hover:bg-violet-700"><Link href={`/dashboard/jobs/${job.id}/tailor`}><Sparkles />生成岗位建议</Link></Button>{job.tailoredResume && <Button asChild variant="outline" className="mt-2 w-full border-violet-200 bg-white text-violet-700"><Link href={`/editor/${job.tailoredResume.id}`}><FileText />跳过 AI，直接编辑</Link></Button>}</section>
         </aside>
 
         <div className="space-y-6">
           <div className="grid gap-4 md:grid-cols-2"><section className="rounded-2xl border border-emerald-100 bg-white/90 p-5 shadow-sm"><div className="mb-3 flex items-center gap-2"><CheckCircle2 className="h-5 w-5 text-emerald-500" /><h2 className="font-semibold text-slate-800">已覆盖关键词</h2></div><div>{analysis.matchedKeywords.length > 0 ? analysis.matchedKeywords.map((keyword) => <span key={keyword} className="mb-2 mr-2 inline-flex rounded-full border border-emerald-100 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">{keyword}</span>) : <p className="text-sm text-slate-400">暂未发现明确覆盖项</p>}</div></section><section className="rounded-2xl border border-amber-100 bg-white/90 p-5 shadow-sm"><div className="mb-3 flex items-center gap-2"><AlertCircle className="h-5 w-5 text-amber-500" /><h2 className="font-semibold text-slate-800">待核实或补强</h2></div><div>{analysis.missingKeywords.map((keyword) => <span key={keyword} className="mb-2 mr-2 inline-flex rounded-full border border-amber-100 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">{keyword}</span>)}</div></section></div>
           <section className="rounded-2xl border border-white bg-white/90 p-6 shadow-sm"><div className="mb-4 flex items-center gap-2"><Target className="h-5 w-5 text-violet-500" /><h2 className="font-semibold text-slate-800">优先调整建议</h2></div><div className="space-y-3">{analysis.prioritySuggestions.map((suggestion, index) => <div key={suggestion} className="flex gap-3 rounded-xl bg-slate-50 p-4"><span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-violet-100 text-xs font-bold text-violet-700">{index + 1}</span><p className="text-sm leading-6 text-slate-600">{suggestion}</p></div>)}</div></section>
           <section className="rounded-2xl border border-white bg-white/90 p-6 shadow-sm"><div className="mb-4 flex items-center gap-2"><Lightbulb className="h-5 w-5 text-fuchsia-500" /><h2 className="font-semibold text-slate-800">按模块检查</h2></div><div className="grid gap-4 lg:grid-cols-3">{analysis.sectionSuggestions.map((item) => <div key={item.section} className="rounded-xl border border-slate-100 p-4"><h3 className="font-medium text-slate-800">{item.section}</h3><p className="mt-2 text-xs leading-5 text-amber-700">{item.issue}</p><p className="mt-3 text-sm leading-6 text-slate-500">{item.suggestion}</p></div>)}</div></section>
-          <div className="flex items-center justify-between"><Button asChild variant="ghost"><Link href={`/dashboard/jobs/${job.id}/facts`}><ArrowLeft />重新选择事实</Link></Button>{job.tailoredResume && <Button asChild className="rounded-lg bg-gradient-to-r from-violet-600 to-fuchsia-500 px-6 text-white hover:from-violet-700 hover:to-fuchsia-600"><Link href={`/editor/${job.tailoredResume.id}`}>继续编辑岗位简历<ArrowRight /></Link></Button>}</div>
+          <div className="flex items-center justify-between"><Button asChild variant="ghost"><Link href={`/dashboard/jobs/${job.id}/facts`}><ArrowLeft />重新选择事实</Link></Button><Button asChild className="rounded-lg bg-gradient-to-r from-violet-600 to-fuchsia-500 px-6 text-white hover:from-violet-700 hover:to-fuchsia-600"><Link href={`/dashboard/jobs/${job.id}/tailor`}>生成并审核 AI 建议<ArrowRight /></Link></Button></div>
         </div>
       </div>
     </JobPageShell>
   )
 }
-

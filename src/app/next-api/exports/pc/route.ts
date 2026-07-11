@@ -82,7 +82,7 @@ export async function POST(req: Request): Promise<NextResponse> {
     stage = 'load-resume';
     const resume = await prisma.resume.findFirst({
       where: { id: resumeId, user: { wxId } },
-      select: { id: true, title: true, template: true, userId: true },
+      select: { id: true, title: true, template: true, userId: true, jobId: true },
     });
     if (!resume) {
       logStage(requestId, 'resume-not-found', { resumeId, elapsedMs: Date.now() - startedAt });
@@ -143,36 +143,44 @@ export async function POST(req: Request): Promise<NextResponse> {
     }
 
     stage = 'upsert-export-record';
-    await prisma.exportRecord.upsert({
-      where: { token: saved.token },
-      update: {
-        userId: resume.userId,
-        wxId,
-        resumeId: resume.id,
-        resumeTitle: resume.title || fileName,
-        templateId: templateId || resume.template || null,
-        type: 'pdf',
-        fileName,
-        ossKey: ossAsset.key,
-        ossUrl: ossAsset.url,
-        expiresAt: new Date(saved.expiresAt),
-        status: 'available',
-        confirmedAt: new Date(),
-      },
-      create: {
-        userId: resume.userId,
-        wxId,
-        resumeId: resume.id,
-        resumeTitle: resume.title || fileName,
-        templateId: templateId || resume.template || null,
-        type: 'pdf',
-        fileName,
-        token: saved.token,
-        ossKey: ossAsset.key,
-        ossUrl: ossAsset.url,
-        expiresAt: new Date(saved.expiresAt),
-        status: 'available',
-      },
+    await prisma.$transaction(async (tx) => {
+      await tx.exportRecord.upsert({
+        where: { token: saved.token },
+        update: {
+          userId: resume.userId,
+          wxId,
+          resumeId: resume.id,
+          resumeTitle: resume.title || fileName,
+          templateId: templateId || resume.template || null,
+          type: 'pdf',
+          fileName,
+          ossKey: ossAsset.key,
+          ossUrl: ossAsset.url,
+          expiresAt: new Date(saved.expiresAt),
+          status: 'available',
+          confirmedAt: new Date(),
+        },
+        create: {
+          userId: resume.userId,
+          wxId,
+          resumeId: resume.id,
+          resumeTitle: resume.title || fileName,
+          templateId: templateId || resume.template || null,
+          type: 'pdf',
+          fileName,
+          token: saved.token,
+          ossKey: ossAsset.key,
+          ossUrl: ossAsset.url,
+          expiresAt: new Date(saved.expiresAt),
+          status: 'available',
+        },
+      });
+      if (resume.jobId) {
+        await tx.job.update({
+          where: { id: resume.jobId },
+          data: { status: 'EXPORTED', lastExportedAt: new Date() },
+        });
+      }
     });
     logStage(requestId, 'done', { resumeId, token: saved.token, remaining: consumed.remaining, elapsedMs: Date.now() - startedAt });
 
@@ -184,6 +192,7 @@ export async function POST(req: Request): Promise<NextResponse> {
       expiresAt: new Date(saved.expiresAt).toISOString(),
       remaining: consumed.remaining,
       isVip: consumed.isVip,
+      jobId: resume.jobId,
     });
   } catch (error: unknown) {
     logFailure(requestId, stage, error, { elapsedMs: Date.now() - startedAt });
