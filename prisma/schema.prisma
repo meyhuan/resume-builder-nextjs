@@ -78,6 +78,8 @@ model Job {
   materials      JobMaterial[]
   applications   Application[]
   activities     JobActivity[]
+  interviews     Interview[]
+  outcomes       Outcome[]
 
   @@index([userId, status, updatedAt])
   @@index([baseResumeId])
@@ -105,10 +107,55 @@ model Application {
   job        Job           @relation(fields: [jobId], references: [id], onDelete: Cascade)
   resume     Resume?       @relation(fields: [resumeId], references: [id], onDelete: SetNull)
   activities JobActivity[]
+  interviews Interview[]
+  outcome    Outcome?
 
   @@index([jobId, updatedAt])
   @@index([status, nextActionAt])
   @@index([resumeId])
+}
+
+/// One interview round and the user's factual notes and preparation.
+model Interview {
+  id            String    @id @default(cuid())
+  jobId         String
+  applicationId String
+  round         String
+  scheduledAt   DateTime?
+  interviewer   String?
+  questions     Json      @default("[]")
+  answers       Json      @default("[]")
+  review        String?   @db.Text
+  nextActions   Json      @default("[]")
+  result        String    @default("PENDING")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  job         Job         @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([jobId, scheduledAt])
+  @@index([applicationId, scheduledAt])
+}
+
+/// User-provided result feedback for one application.
+model Outcome {
+  id               String   @id @default(cuid())
+  jobId            String
+  applicationId    String   @unique
+  result           String
+  replyReceived    Boolean  @default(false)
+  interviewReached Int      @default(0)
+  offerReceived    Boolean  @default(false)
+  reasonCodes      Json     @default("[]")
+  note             String?  @db.Text
+  submittedAt      DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  job         Job         @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([jobId, submittedAt])
 }
 
 /// Immutable status and note history for a Job or one of its applications.
