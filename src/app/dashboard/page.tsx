@@ -25,7 +25,7 @@ export default async function DashboardPage() {
   }
   try {
     const resumes = await prisma.resume.findMany({
-      where: { user: { wxId: userId } },
+      where: { user: { wxId: userId }, jobId: null },
       orderBy: { updatedAt: "desc" },
     });
     return (

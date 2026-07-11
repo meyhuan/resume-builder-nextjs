@@ -105,7 +105,7 @@ export async function POST(req: Request): Promise<NextResponse> {
 
   if (action === 'list') {
     const resumes = await prisma.resume.findMany({
-      where: { userId: user.id },
+      where: { userId: user.id, jobId: null },
       orderBy: { updatedAt: 'desc' },
       select: { id: true, title: true, thumbnail: true, updatedAt: true, template: true, content: true },
     })
@@ -138,7 +138,7 @@ export async function POST(req: Request): Promise<NextResponse> {
     const { resumeId } = body
     if (!resumeId) return NextResponse.json({ error: 'Missing resumeId' }, { status: 400 })
     const source = await prisma.resume.findFirst({
-      where: { id: resumeId, userId: user.id },
+      where: { id: resumeId, userId: user.id, jobId: null },
     })
     if (!source) return NextResponse.json({ error: 'Resume not found' }, { status: 404 })
 
@@ -165,7 +165,7 @@ export async function POST(req: Request): Promise<NextResponse> {
     const { resumeId, title } = body
     if (!resumeId || !title) return NextResponse.json({ error: 'Missing resumeId or title' }, { status: 400 })
     const resume = await prisma.resume.updateMany({
-      where: { id: resumeId, userId: user.id },
+      where: { id: resumeId, userId: user.id, jobId: null },
       data: { title },
     })
     if (resume.count === 0) return NextResponse.json({ error: 'Resume not found' }, { status: 404 })
@@ -176,7 +176,7 @@ export async function POST(req: Request): Promise<NextResponse> {
     const { resumeId } = body
     if (!resumeId) return NextResponse.json({ error: 'Missing resumeId' }, { status: 400 })
     const deleted = await prisma.resume.deleteMany({
-      where: { id: resumeId, userId: user.id },
+      where: { id: resumeId, userId: user.id, jobId: null },
     })
     if (deleted.count === 0) return NextResponse.json({ error: 'Resume not found' }, { status: 404 })
     return NextResponse.json({ success: true })

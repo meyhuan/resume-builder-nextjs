@@ -9,35 +9,97 @@ generator client {
 }
 
 model User {
-  id         String     @id @default(cuid())
-  clerkId    String?    @unique
-  wxId       String?    @unique  // Java tb_cvuser.id (auth_uid cookie value)
-  javaUserId String?    @unique  // Java tb_user.id (VIP / payment system)
-  email      String?    @unique
+  id         String           @id @default(cuid())
+  clerkId    String?          @unique
+  wxId       String?          @unique // Java tb_cvuser.id (auth_uid cookie value)
+  javaUserId String?          @unique // Java tb_user.id (VIP / payment system)
+  email      String?          @unique
   name       String?
   avatar     String?
   resumes    Resume[]
   exports    ExportRecord[]
   feedbacks  Feedback[]
   quotas     UserQuota[]
+  jobs       Job[]
+  factSets   ResumeFactSet[]
   migration  ResumeMigration?
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
 }
 
 model Resume {
-  id        String   @id @default(cuid())
-  title     String
-  content   Json
-  template  String   @default("simple")
-  thumbnail String?
-  meta      Json?    // { javaId?: string, migratedAt?: ISO string, ... }
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String         @id @default(cuid())
+  title         String
+  content       Json
+  template      String         @default("simple")
+  thumbnail     String?
+  meta          Json? // { javaId?: string, migratedAt?: ISO string, ... }
+  jobId         String?        @unique
+  userId        String
+  user          User           @relation(fields: [userId], references: [id])
+  job           Job?           @relation("JobTailoredResume", fields: [jobId], references: [id], onDelete: Cascade)
+  sourceFactSet ResumeFactSet? @relation("FactSetSource")
+  baseForJobs   Job[]          @relation("JobBaseResume")
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
 
   @@index([userId])
+  @@index([userId, jobId])
+}
+
+/// A target role and the workspace that groups its tailored resume and materials.
+/// status: 'PREPARING' | 'READY' | 'EXPORTED' | 'ARCHIVED'
+model Job {
+  id             String    @id @default(cuid())
+  userId         String
+  company        String?
+  role           String
+  jd             String    @db.Text
+  source         String?
+  sourceUrl      String?
+  location       String?
+  salaryRange    String?
+  identity       String    @default("professional")
+  status         String    @default("PREPARING")
+  baseResumeId   String?
+  factSetId      String
+  matchSnapshot  Json?
+  suggestionSet  Json?
+  lastExportedAt DateTime?
+  archivedAt     DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  baseResume     Resume?       @relation("JobBaseResume", fields: [baseResumeId], references: [id], onDelete: SetNull)
+  factSet        ResumeFactSet @relation(fields: [factSetId], references: [id])
+  tailoredResume Resume?       @relation("JobTailoredResume")
+
+  @@index([userId, status, updatedAt])
+  @@index([baseResumeId])
+  @@index([factSetId])
+}
+
+/// A reusable, user-confirmable fact snapshot extracted from one base resume.
+model ResumeFactSet {
+  id                    String    @id @default(cuid())
+  userId                String
+  sourceResumeId        String?   @unique
+  schemaVersion         Int       @default(1)
+  revision              Int       @default(1)
+  facts                 Json      @default("[]")
+  confirmedFactIds      Json      @default("[]")
+  sourceContentHash     String
+  sourceResumeUpdatedAt DateTime?
+  confirmedAt           DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  user         User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sourceResume Resume? @relation("FactSetSource", fields: [sourceResumeId], references: [id], onDelete: SetNull)
+  jobs         Job[]
+
+  @@index([userId, updatedAt])
 }
 
 model ExportRecord {
@@ -79,23 +141,23 @@ model ResumeMigration {
 }
 
 model Feedback {
-  id          String   @id @default(cuid())
-  content     String   // The feedback text content
-  contact     String?  // Optional contact info (email/phone/wechat)
-  attachment  String?  // Optional base64 or URL for uploaded image/screenshot
-  diagnostics Json?
-  requestLogs Json?
-  status      String   @default("RECEIVED")
-  adminReply  String?
+  id           String    @id @default(cuid())
+  content      String // The feedback text content
+  contact      String? // Optional contact info (email/phone/wechat)
+  attachment   String? // Optional base64 or URL for uploaded image/screenshot
+  diagnostics  Json?
+  requestLogs  Json?
+  status       String    @default("RECEIVED")
+  adminReply   String?
   adminReplyAt DateTime?
-  likeCount   Int      @default(0)
-  userId      String?  // Optional relation if user is logged in
-  user        User?    @relation(fields: [userId], references: [id])
-  createdAt   DateTime @default(now())
+  likeCount    Int       @default(0)
+  userId       String? // Optional relation if user is logged in
+  user         User?     @relation(fields: [userId], references: [id])
+  createdAt    DateTime  @default(now())
 }
 
 model UserQuota {
-  userId    String   @id  // References User.id, one row per user
+  userId    String   @id // References User.id, one row per user
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   quotas    Json     @default("{}") // { "ai:generate-resume": { used: 5, date: "2025-01-15" }, ... }
   updatedAt DateTime @updatedAt

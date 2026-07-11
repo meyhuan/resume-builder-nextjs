@@ -108,7 +108,7 @@ export default async function MobileEditHomePage(
         select: { id: true, title: true, content: true, template: true },
       })
     : await prisma.resume.findFirst({
-        where: { userId: user.id },
+        where: { userId: user.id, jobId: null },
         orderBy: { updatedAt: 'desc' },
         select: { id: true, title: true, content: true, template: true },
       })

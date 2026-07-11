@@ -32,15 +32,17 @@ export async function renameResume(id: string, title: string) {
   const userId = cookieStore.get("auth_uid")?.value;
   if (!userId) throw new Error("Unauthorized");
   
-  await prisma.resume.update({
+  const renamed = await prisma.resume.updateMany({
     where: {
       id,
-      user: { wxId: userId }
+      user: { wxId: userId },
+      jobId: null,
     },
     data: {
       title
     }
   });
+  if (renamed.count === 0) throw new Error("Resume not found");
   
   revalidatePath("/dashboard");
 }
@@ -50,8 +52,8 @@ export async function duplicateResume(id: string) {
   const userId = cookieStore.get("auth_uid")?.value;
   if (!userId) throw new Error("Unauthorized");
   
-  const existingResume = await prisma.resume.findUnique({
-    where: { id, user: { wxId: userId } }
+  const existingResume = await prisma.resume.findFirst({
+    where: { id, user: { wxId: userId }, jobId: null }
   });
   
   if (!existingResume) throw new Error("Resume not found");
@@ -80,12 +82,14 @@ export async function deleteResume(id: string) {
   const userId = cookieStore.get("auth_uid")?.value;
   if (!userId) throw new Error("Unauthorized");
   
-  await prisma.resume.delete({
+  const deleted = await prisma.resume.deleteMany({
     where: {
       id,
-      user: { wxId: userId }
+      user: { wxId: userId },
+      jobId: null,
     }
   });
+  if (deleted.count === 0) throw new Error("Resume not found");
   
   revalidatePath("/dashboard");
 }

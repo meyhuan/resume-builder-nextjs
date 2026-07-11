@@ -26,7 +26,7 @@ export async function GET(req: Request, { params }: RouteParams) {
     const resume = await prisma.resume.findUnique({
       where: { 
         id,
-        user: { wxId: userId }
+        user: { wxId: userId },
       }
     })
     
@@ -114,12 +114,16 @@ export async function DELETE(req: Request, { params }: RouteParams) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    await prisma.resume.delete({
+    const deleted = await prisma.resume.deleteMany({
       where: { 
         id,
-        user: { wxId: userId }
+        user: { wxId: userId },
+        jobId: null,
       }
     })
+    if (deleted.count === 0) {
+      return NextResponse.json({ error: 'Resume not found' }, { status: 404 })
+    }
     
     return NextResponse.json({ success: true })
   } catch {
