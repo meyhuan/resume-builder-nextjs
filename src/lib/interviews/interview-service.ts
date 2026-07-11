@@ -1,6 +1,7 @@
 import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { ApplicationNotFoundError } from '@/lib/applications/application-service'
+import { deriveJobApplicationStatus } from '@/lib/applications/application-contracts'
 import type { CreateInterviewInput, OutcomeInput, UpdateInterviewInput } from '@/lib/interviews/interview-contracts'
 
 export class InterviewNotFoundError extends Error {}
@@ -30,10 +31,12 @@ export async function createInterview(userId: string, applicationId: string, inp
       },
     })
     await tx.jobActivity.create({ data: { jobId: application.jobId, applicationId, type: 'INTERVIEW', occurredAt, note: `${input.round}${input.interviewer ? ` · ${input.interviewer}` : ''}`, metadata: { interviewId: interview.id } as Prisma.InputJsonValue } })
-    if (application.status !== 'OFFER') {
+    if (!['OFFER', 'REJECTED', 'WITHDRAWN'].includes(application.status)) {
       await tx.application.update({ where: { id: applicationId }, data: { status: 'INTERVIEWING' } })
-      await tx.job.update({ where: { id: application.jobId }, data: { status: 'INTERVIEWING' } })
       if (application.status !== 'INTERVIEWING') await tx.jobActivity.create({ data: { jobId: application.jobId, applicationId, type: 'STATUS_CHANGE', fromStatus: application.status, toStatus: 'INTERVIEWING', occurredAt: new Date() } })
+      const applicationStatuses = await tx.application.findMany({ where: { jobId: application.jobId }, select: { status: true } })
+      const nextJobStatus = deriveJobApplicationStatus(applicationStatuses.map((item) => item.status))
+      if (nextJobStatus) await tx.job.update({ where: { id: application.jobId }, data: { status: nextJobStatus } })
     }
     return interview
   })
@@ -62,11 +65,13 @@ export async function deleteInterview(userId: string, interviewId: string): Prom
   if (deleted.count === 0) throw new InterviewNotFoundError('Interview not found')
 }
 
-function outcomeApplicationStatus(input: OutcomeInput): 'OFFER' | 'REJECTED' | 'WITHDRAWN' | null {
+function outcomeApplicationStatus(input: OutcomeInput): 'APPLIED' | 'CONTACTING' | 'INTERVIEWING' | 'OFFER' | 'REJECTED' | 'WITHDRAWN' {
   if (input.result === 'OFFER' || input.offerReceived) return 'OFFER'
   if (input.result === 'REJECTED') return 'REJECTED'
   if (input.result === 'WITHDRAWN') return 'WITHDRAWN'
-  return null
+  if (input.interviewReached > 0) return 'INTERVIEWING'
+  if (input.replyReceived) return 'CONTACTING'
+  return 'APPLIED'
 }
 
 export async function saveOutcome(userId: string, applicationId: string, input: OutcomeInput) {
@@ -78,11 +83,13 @@ export async function saveOutcome(userId: string, applicationId: string, input: 
       update: { ...input, reasonCodes: input.reasonCodes, submittedAt: new Date() },
     })
     const nextStatus = outcomeApplicationStatus(input)
-    if (nextStatus && nextStatus !== application.status) {
+    if (nextStatus !== application.status) {
       await tx.application.update({ where: { id: applicationId }, data: { status: nextStatus } })
-      await tx.job.update({ where: { id: application.jobId }, data: { status: nextStatus } })
       await tx.jobActivity.create({ data: { jobId: application.jobId, applicationId, type: 'STATUS_CHANGE', fromStatus: application.status, toStatus: nextStatus, occurredAt: new Date(), note: input.note } })
     }
+    const applicationStatuses = await tx.application.findMany({ where: { jobId: application.jobId }, select: { status: true } })
+    const nextJobStatus = deriveJobApplicationStatus(applicationStatuses.map((item) => item.status))
+    if (nextJobStatus) await tx.job.update({ where: { id: application.jobId }, data: { status: nextJobStatus } })
     await tx.jobActivity.create({ data: { jobId: application.jobId, applicationId, type: 'OUTCOME', occurredAt: new Date(), note: input.note, metadata: { result: input.result, outcomeId: outcome.id } as Prisma.InputJsonValue } })
     return outcome
   })

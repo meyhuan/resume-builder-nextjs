@@ -46,7 +46,9 @@ export async function createApplication(userId: string, jobId: string, input: Cr
         metadata: { channel: input.channel } as Prisma.InputJsonValue,
       },
     })
-    await tx.job.update({ where: { id: jobId }, data: { status: 'APPLIED' } })
+    const applicationStatuses = await tx.application.findMany({ where: { jobId }, select: { status: true } })
+    const nextJobStatus = deriveJobApplicationStatus(applicationStatuses.map((item) => item.status))
+    if (nextJobStatus) await tx.job.update({ where: { id: jobId }, data: { status: nextJobStatus } })
     return application
   })
 }
@@ -119,4 +121,3 @@ export async function deleteApplication(userId: string, applicationId: string): 
     await tx.job.update({ where: { id: existing.job.id }, data: { status } })
   })
 }
-

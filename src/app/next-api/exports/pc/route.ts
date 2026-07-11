@@ -178,7 +178,11 @@ export async function POST(req: Request): Promise<NextResponse> {
       if (resume.jobId) {
         await tx.job.update({
           where: { id: resume.jobId },
-          data: { status: 'EXPORTED', lastExportedAt: new Date() },
+          data: { lastExportedAt: new Date() },
+        });
+        await tx.job.updateMany({
+          where: { id: resume.jobId, status: { in: ['PREPARING', 'READY', 'EXPORTED'] } },
+          data: { status: 'EXPORTED' },
         });
       }
     });
