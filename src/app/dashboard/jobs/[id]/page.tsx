@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
-import { ArrowLeft, BriefcaseBusiness, CalendarClock, ExternalLink, FileText, MapPin, Sparkles } from 'lucide-react'
+import { ArrowLeft, BriefcaseBusiness, CalendarClock, ExternalLink, Files, FileText, MapPin, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { JobActions } from '@/components/jobs/job-actions'
 import { JobPageShell } from '@/components/jobs/job-page-shell'
@@ -31,6 +31,7 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
       baseResume: { select: { id: true, title: true, updatedAt: true } },
       tailoredResume: { select: { id: true, title: true, template: true, thumbnail: true, updatedAt: true } },
       factSet: { select: { revision: true, facts: true, confirmedFactIds: true, confirmedAt: true } },
+      _count: { select: { materials: true } },
     },
   })
   if (!job) notFound()
@@ -44,13 +45,14 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
       <Link href="/dashboard/jobs" className="mb-5 inline-flex items-center gap-1 text-sm text-slate-500 transition hover:text-violet-600"><ArrowLeft className="h-4 w-4" />返回目标岗位</Link>
       <header className="mb-7 flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
         <div><div className="flex flex-wrap items-center gap-3"><h1 className="text-2xl font-bold text-slate-800">{job.company ? `${job.company} · ` : ''}{job.role}</h1><JobStatusBadge status={job.status} /></div><div className="mt-2 flex flex-wrap gap-x-4 gap-y-2 text-sm text-slate-500">{job.source && <span className="inline-flex items-center gap-1"><BriefcaseBusiness className="h-4 w-4" />{job.source}</span>}{job.location && <span className="inline-flex items-center gap-1"><MapPin className="h-4 w-4" />{job.location}</span>}<span className="inline-flex items-center gap-1"><CalendarClock className="h-4 w-4" />更新于 {dateText}</span></div></div>
-        <div className="flex flex-wrap gap-2"><JobActions jobId={job.id} archived={job.status === 'ARCHIVED'} />{job.tailoredResume && <Button asChild className="rounded-lg bg-gradient-to-r from-violet-600 to-fuchsia-500 text-white hover:from-violet-700 hover:to-fuchsia-600"><Link href={`/editor/${job.tailoredResume.id}`}><FileText />打开岗位简历</Link></Button>}</div>
+        <div className="flex flex-wrap gap-2"><JobActions jobId={job.id} archived={job.status === 'ARCHIVED'} /><Button asChild variant="outline" className="rounded-lg border-violet-200 bg-white text-violet-700"><Link href={`/dashboard/jobs/${job.id}/materials`}><Files />求职材料</Link></Button>{job.tailoredResume && <Button asChild className="rounded-lg bg-gradient-to-r from-violet-600 to-fuchsia-500 text-white hover:from-violet-700 hover:to-fuchsia-600"><Link href={`/editor/${job.tailoredResume.id}`}><FileText />打开岗位简历</Link></Button>}</div>
       </header>
 
-      <div className="mb-6 grid gap-3 sm:grid-cols-3">
+      <div className="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-xl border border-white bg-white/80 p-4 shadow-sm"><p className="text-xs text-slate-400">事实快照</p><p className="mt-1 text-xl font-bold text-slate-800">{factCount || '待提取'}</p><p className="mt-1 text-xs text-slate-400">修订 R{job.factSet.revision}</p></div>
         <div className="rounded-xl border border-white bg-white/80 p-4 shadow-sm"><p className="text-xs text-slate-400">已确认事实</p><p className="mt-1 text-xl font-bold text-slate-800">{confirmedFactCount || '待确认'}</p><p className="mt-1 text-xs text-slate-400">{job.factSet.confirmedAt ? '事实已确认' : '等待用户确认'}</p></div>
         <div className="rounded-xl border border-white bg-white/80 p-4 shadow-sm"><p className="text-xs text-slate-400">岗位简历</p><p className="mt-1 text-xl font-bold text-slate-800">{job.tailoredResume ? '已创建' : '未创建'}</p><p className="mt-1 text-xs text-slate-400">{job.tailoredResume?.template ?? '—'}</p></div>
+        <div className="rounded-xl border border-white bg-white/80 p-4 shadow-sm"><p className="text-xs text-slate-400">求职材料</p><p className="mt-1 text-xl font-bold text-slate-800">{job._count.materials} / 5</p><p className="mt-1 text-xs text-slate-400">自我介绍、求职信等</p></div>
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.25fr)_380px]">

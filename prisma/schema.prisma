@@ -74,10 +74,30 @@ model Job {
   baseResume     Resume?       @relation("JobBaseResume", fields: [baseResumeId], references: [id], onDelete: SetNull)
   factSet        ResumeFactSet @relation(fields: [factSetId], references: [id])
   tailoredResume Resume?       @relation("JobTailoredResume")
+  materials      JobMaterial[]
 
   @@index([userId, status, updatedAt])
   @@index([baseResumeId])
   @@index([factSetId])
+}
+
+/// One editable material of each type per target Job.
+/// type: 'SELF_INTRO' | 'COVER_LETTER' | 'OUTREACH' | 'PROJECT_STORY' | 'INTERVIEW_PREP'
+model JobMaterial {
+  id             String   @id @default(cuid())
+  jobId          String
+  type           String
+  title          String
+  content        Json
+  sourceFactIds  Json     @default("[]")
+  generationMeta Json?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  job Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@unique([jobId, type])
+  @@index([jobId, updatedAt])
 }
 
 /// A reusable, user-confirmable fact snapshot extracted from one base resume.
