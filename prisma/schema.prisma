@@ -40,6 +40,7 @@ model Resume {
   job           Job?           @relation("JobTailoredResume", fields: [jobId], references: [id], onDelete: Cascade)
   sourceFactSet ResumeFactSet? @relation("FactSetSource")
   baseForJobs   Job[]          @relation("JobBaseResume")
+  applications  Application[]
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 
@@ -75,10 +76,59 @@ model Job {
   factSet        ResumeFactSet @relation(fields: [factSetId], references: [id])
   tailoredResume Resume?       @relation("JobTailoredResume")
   materials      JobMaterial[]
+  applications   Application[]
+  activities     JobActivity[]
 
   @@index([userId, status, updatedAt])
   @@index([baseResumeId])
   @@index([factSetId])
+}
+
+/// A concrete submission of Job materials through one channel.
+/// status: 'APPLIED' | 'CONTACTING' | 'INTERVIEWING' | 'OFFER' | 'REJECTED' | 'WITHDRAWN'
+model Application {
+  id           String    @id @default(cuid())
+  jobId        String
+  channel      String
+  appliedAt    DateTime
+  resumeId     String?
+  materialIds  Json      @default("[]")
+  contactName  String?
+  contactInfo  String?
+  status       String    @default("APPLIED")
+  nextActionAt DateTime?
+  note         String?   @db.Text
+  attachments  Json      @default("[]")
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  job        Job           @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  resume     Resume?       @relation(fields: [resumeId], references: [id], onDelete: SetNull)
+  activities JobActivity[]
+
+  @@index([jobId, updatedAt])
+  @@index([status, nextActionAt])
+  @@index([resumeId])
+}
+
+/// Immutable status and note history for a Job or one of its applications.
+model JobActivity {
+  id            String   @id @default(cuid())
+  jobId         String
+  applicationId String?
+  type          String
+  fromStatus    String?
+  toStatus      String?
+  occurredAt    DateTime
+  note          String?  @db.Text
+  metadata      Json?
+  createdAt     DateTime @default(now())
+
+  job         Job          @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  application Application? @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([jobId, occurredAt])
+  @@index([applicationId, occurredAt])
 }
 
 /// One editable material of each type per target Job.

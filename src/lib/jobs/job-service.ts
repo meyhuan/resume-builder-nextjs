@@ -172,7 +172,10 @@ export class FactsStaleError extends Error {}
 export class InvalidFactSelectionError extends Error {}
 
 export async function updateJobWorkspace(userId: string, jobId: string, input: UpdateJobInput) {
-  const existing = await prisma.job.findFirst({ where: { id: jobId, userId } })
+  const existing = await prisma.job.findFirst({
+    where: { id: jobId, userId },
+    include: { applications: { orderBy: { updatedAt: 'desc' }, take: 1, select: { status: true } } },
+  })
   if (!existing) throw new JobNotFoundError('Job not found')
 
   const nextArchived = input.archived
@@ -191,7 +194,7 @@ export async function updateJobWorkspace(userId: string, jobId: string, input: U
     data.status = 'ARCHIVED'
     data.archivedAt = new Date()
   } else if (nextArchived === false && existing.status === 'ARCHIVED') {
-    data.status = existing.lastExportedAt ? 'EXPORTED' : 'PREPARING'
+    data.status = existing.applications[0]?.status ?? (existing.lastExportedAt ? 'EXPORTED' : 'PREPARING')
     data.archivedAt = null
   }
 

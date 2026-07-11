@@ -6,8 +6,12 @@ import { Button } from '@/components/ui/button'
 import { JobActions } from '@/components/jobs/job-actions'
 import { JobPageShell } from '@/components/jobs/job-page-shell'
 import { JobStatusBadge } from '@/components/jobs/job-status-badge'
+import { ApplicationCreateDialog } from '@/components/applications/application-create-dialog'
+import { ApplicationStatusBadge } from '@/components/applications/application-status-badge'
+import { ApplicationManageDialog } from '@/components/applications/application-manage-dialog'
 import { getCurrentUser } from '@/lib/auth/current-user'
 import { prisma } from '@/lib/prisma'
+import { APPLICATION_STATUS_META, isApplicationStatus } from '@/lib/applications/application-contracts'
 
 export const metadata: Metadata = { title: '岗位详情', robots: { index: false, follow: false } }
 export const dynamic = 'force-dynamic'
@@ -18,6 +22,11 @@ interface JobDetailPageProps {
 
 function countJsonArray(value: unknown): number {
   return Array.isArray(value) ? value.length : 0
+}
+
+function applicationStatusLabel(status: string | null): string {
+  if (!status) return ''
+  return isApplicationStatus(status) ? APPLICATION_STATUS_META[status].label : status
 }
 
 export default async function JobDetailPage({ params }: JobDetailPageProps) {
@@ -31,6 +40,11 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
       baseResume: { select: { id: true, title: true, updatedAt: true } },
       tailoredResume: { select: { id: true, title: true, template: true, thumbnail: true, updatedAt: true } },
       factSet: { select: { revision: true, facts: true, confirmedFactIds: true, confirmedAt: true } },
+      materials: { select: { id: true, title: true } },
+      applications: {
+        orderBy: { appliedAt: 'desc' },
+        include: { activities: { orderBy: { occurredAt: 'desc' }, take: 5 } },
+      },
       _count: { select: { materials: true } },
     },
   })
@@ -66,6 +80,10 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
           <section className="rounded-2xl border border-white bg-white/85 p-5 shadow-sm"><h2 className="mb-4 font-semibold text-slate-800">当前流程</h2><ol className="space-y-4 text-sm"><li className="flex gap-3"><span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-xs font-bold text-emerald-700">✓</span><div><p className="font-medium text-slate-700">保存岗位信息</p><p className="text-xs text-slate-400">已完成</p></div></li><li className="flex gap-3"><span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold ${job.factSet.confirmedAt ? 'bg-emerald-100 text-emerald-700' : 'bg-violet-100 text-violet-700'}`}>{job.factSet.confirmedAt ? '✓' : '2'}</span><div><p className="font-medium text-slate-700">确认真实事实</p><p className="text-xs text-slate-400">{job.factSet.confirmedAt ? `已确认 ${confirmedFactCount} 条` : '当前步骤'}</p></div></li><li className="flex gap-3"><span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold ${job.matchSnapshot ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>{job.matchSnapshot ? '✓' : '3'}</span><div><p className="font-medium text-slate-700">岗位匹配分析</p><p className="text-xs text-slate-400">{job.matchSnapshot ? '已完成' : '待完成'}</p></div></li><li className="flex gap-3"><span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-bold text-slate-500">4</span><div><p className="font-medium text-slate-700">编辑与导出</p><p className="text-xs text-slate-400">岗位简历可编辑</p></div></li></ol></section>
         </aside>
       </div>
+      <section className="mt-6 rounded-2xl border border-white bg-white/85 p-6 shadow-sm backdrop-blur-md">
+        <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="font-semibold text-slate-800">投递记录与时间线</h2><p className="mt-1 text-sm text-slate-500">记录实际使用的简历、材料、渠道和每一次状态变化。</p></div><ApplicationCreateDialog jobId={job.id} resumeId={job.tailoredResume?.id ?? null} materials={job.materials} /></div>
+        {job.applications.length === 0 ? <div className="rounded-xl border border-dashed border-slate-200 py-10 text-center"><p className="text-sm text-slate-500">还没有投递记录。完成投递后在这里建立时间线。</p></div> : <div className="space-y-4">{job.applications.map((application) => <article key={application.id} className="rounded-xl border border-slate-100 bg-slate-50/70 p-4"><div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div><div className="flex flex-wrap items-center gap-2"><h3 className="font-medium text-slate-800">{application.channel}</h3><ApplicationStatusBadge status={application.status} /></div><p className="mt-1 text-xs text-slate-400">投递于 {new Intl.DateTimeFormat('zh-CN', { year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(application.appliedAt)}{application.contactName ? ` · 联系人 ${application.contactName}` : ''}</p>{application.note && <p className="mt-2 text-sm leading-6 text-slate-600">{application.note}</p>}</div><div className="flex flex-wrap items-center gap-2">{application.nextActionAt && <span className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700">下次跟进：{new Intl.DateTimeFormat('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(application.nextActionAt)}</span>}<ApplicationManageDialog application={{ id: application.id, status: application.status, channel: application.channel, contactName: application.contactName, contactInfo: application.contactInfo, nextActionAt: application.nextActionAt?.toISOString() ?? null, note: application.note }} /></div></div><div className="mt-4 border-l border-slate-200 pl-4">{application.activities.map((activity) => <div key={activity.id} className="relative mb-3 last:mb-0"><span className="absolute -left-[21px] top-1 h-2.5 w-2.5 rounded-full border-2 border-violet-400 bg-white" /><p className="text-xs text-slate-500">{activity.type === 'STATUS_CHANGE' ? `${activity.fromStatus ? `${applicationStatusLabel(activity.fromStatus)} → ` : ''}${applicationStatusLabel(activity.toStatus)}` : activity.note}</p><p className="mt-0.5 text-[11px] text-slate-400">{new Intl.DateTimeFormat('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(activity.occurredAt)}</p></div>)}</div></article>)}</div>}
+      </section>
     </JobPageShell>
   )
 }

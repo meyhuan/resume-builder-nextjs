@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-export const JOB_STATUSES = ['PREPARING', 'READY', 'EXPORTED', 'ARCHIVED'] as const
+export const JOB_STATUSES = ['PREPARING', 'READY', 'EXPORTED', 'APPLIED', 'CONTACTING', 'INTERVIEWING', 'OFFER', 'REJECTED', 'WITHDRAWN', 'ARCHIVED'] as const
 export type JobStatus = (typeof JOB_STATUSES)[number]
 
 export const JOB_IDENTITIES = ['student', 'graduate', 'professional'] as const
@@ -40,10 +40,15 @@ export const JOB_STATUS_META: Record<JobStatus, { label: string; className: stri
   PREPARING: { label: '准备中', className: 'border-amber-100 bg-amber-50 text-amber-700' },
   READY: { label: '已完成', className: 'border-violet-100 bg-violet-50 text-violet-700' },
   EXPORTED: { label: '已导出', className: 'border-emerald-100 bg-emerald-50 text-emerald-700' },
+  APPLIED: { label: '已投递', className: 'border-blue-100 bg-blue-50 text-blue-700' },
+  CONTACTING: { label: '沟通中', className: 'border-violet-100 bg-violet-50 text-violet-700' },
+  INTERVIEWING: { label: '面试中', className: 'border-amber-100 bg-amber-50 text-amber-700' },
+  OFFER: { label: 'Offer', className: 'border-emerald-100 bg-emerald-50 text-emerald-700' },
+  REJECTED: { label: '已拒绝', className: 'border-rose-100 bg-rose-50 text-rose-700' },
+  WITHDRAWN: { label: '已放弃', className: 'border-slate-200 bg-slate-100 text-slate-600' },
   ARCHIVED: { label: '已归档', className: 'border-slate-200 bg-slate-100 text-slate-600' },
 }
 
 export function isJobStatus(value: string): value is JobStatus {
   return JOB_STATUSES.includes(value as JobStatus)
 }
-
