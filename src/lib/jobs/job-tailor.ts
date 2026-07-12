@@ -127,10 +127,27 @@ function hasOnlySupportedClaimTokens(proposedHtml: string, sourceFacts: readonly
   return [...claimTokens(proposedHtml)].every((token) => supported.has(token))
 }
 
+const GENERIC_JD_TERMS = new Set(['岗位职责', '任职要求', '负责', '要求', '完成', '通过', '进行', '具备', '能力', '相关', '岗位', '工作', '目标', '经验', '以上', '独立', '行业', '快速', '形成', '达到', '支持', '使用', '以及', '有关', '作为', '对于', '我们', '公司'])
+
+function extractJdTerms(value: string): string[] {
+  const terms = new Set<string>()
+  const source = value.replace(/\s+/g, '')
+  for (const latinTerm of source.match(/[A-Za-z][A-Za-z0-9+.-]{1,}/g) ?? []) terms.add(latinTerm)
+  for (const segment of source.match(/[\u4e00-\u9fff]{2,}/g) ?? []) {
+    for (let length = Math.min(6, segment.length); length >= 2; length -= 1) {
+      for (let index = 0; index <= segment.length - length; index += 1) {
+        const term = segment.slice(index, index + length)
+        if (!GENERIC_JD_TERMS.has(term)) terms.add(term)
+      }
+    }
+  }
+  return [...terms].sort((left, right) => right.length - left.length)
+}
+
 function groundedFallbackSuggestions(input: Awaited<ReturnType<typeof loadTailorInput>>, requestId: string): JobTailorSuggestion[] {
-  const candidates = ['AI', '用户研究', '需求分析', '原型设计', '数据分析', '企业服务', '招聘', '从 0 到 1']
+  const candidates = extractJdTerms(`${input.job.role}\n${input.job.jd}`)
   return input.blocks.flatMap((block, index) => {
-    const keyword = candidates.find((item) => input.job.jd.includes(item) && plainText(block.originalHtml).includes(item))
+    const keyword = candidates.find((item) => plainText(block.originalHtml).includes(item) && !block.originalHtml.includes(`<strong>${item}</strong>`))
     const sourceFact = input.confirmedFacts.find((fact) => fact.blockId === block.blockId)
     if (!keyword || !sourceFact) return []
     const proposedHtml = block.originalHtml.replace(keyword, `<strong>${keyword}</strong>`)
