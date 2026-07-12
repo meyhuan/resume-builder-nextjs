@@ -1,9 +1,9 @@
 'use client'
 
-import type { FormEvent, ReactElement } from 'react'
-import { useState } from 'react'
+import type { ChangeEvent, ClipboardEvent, FormEvent, ReactElement } from 'react'
+import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, ArrowRight, BriefcaseBusiness, FileText, Loader2, ShieldCheck } from 'lucide-react'
+import { ArrowLeft, ArrowRight, BriefcaseBusiness, ClipboardPaste, FileImage, FileText, Loader2, ShieldCheck, Upload } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 
@@ -29,7 +29,68 @@ const labelClassName = 'mb-1.5 block text-sm font-medium text-slate-700'
 export function NewJobForm({ resumes }: NewJobFormProps): ReactElement {
   const router = useRouter()
   const [submitting, setSubmitting] = useState(false)
-  const [jdLength, setJdLength] = useState(0)
+  const [jd, setJd] = useState('')
+  const [recognizing, setRecognizing] = useState(false)
+  const [recognitionStage, setRecognitionStage] = useState('')
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  async function recognizeImage(file: File): Promise<void> {
+    if (!file.type.startsWith('image/')) return void toast.error('请上传岗位截图图片')
+    if (file.size > 8 * 1024 * 1024) return void toast.error('图片大小不能超过 8MB')
+    setRecognizing(true)
+    setRecognitionStage('正在上传岗位截图…')
+    try {
+      const extension = file.type.split('/')[1]?.replace('jpeg', 'jpg') || 'png'
+      const namedFile = file.name.includes('.') ? file : new File([file], `job-jd-${Date.now()}.${extension}`, { type: file.type })
+      const formData = new FormData()
+      formData.append('file', namedFile)
+      formData.append('extractionOnly', 'true')
+      const response = await fetch('/next-api/ai/import-resume-file', { method: 'POST', body: formData })
+      if (!response.ok || !response.body) throw new Error('岗位截图识别失败')
+      const reader = response.body.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
+      let extractedText = ''
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buffer += decoder.decode(value, { stream: true })
+        const chunks = buffer.split('\n\n')
+        buffer = chunks.pop() ?? ''
+        for (const chunk of chunks) {
+          const dataLine = chunk.split('\n').find((line) => line.startsWith('data: '))
+          if (!dataLine) continue
+          const event = JSON.parse(dataLine.slice(6)) as { type?: string; label?: string; text?: string; extractedText?: string; error?: string }
+          if (event.type === 'stage' && event.label) setRecognitionStage(event.label)
+          if (event.type === 'extracted' && event.text) extractedText = event.text
+          if (event.type === 'done') extractedText = event.extractedText || extractedText
+          if (event.type === 'error') throw new Error(event.error || '岗位截图识别失败')
+        }
+      }
+      if (extractedText.trim().length < 20) throw new Error('截图中没有识别到足够的岗位文字，请截取职责和任职要求区域')
+      setJd((current) => current.trim() ? `${current.trim()}\n\n${extractedText.trim()}`.slice(0, 8000) : extractedText.trim().slice(0, 8000))
+      toast.success('岗位文字已识别', { description: '请检查识别结果后再创建岗位' })
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : '岗位截图识别失败')
+    } finally {
+      setRecognizing(false)
+      setRecognitionStage('')
+    }
+  }
+
+  function handleJdPaste(event: ClipboardEvent<HTMLTextAreaElement>): void {
+    const imageItem = [...event.clipboardData.items].find((item) => item.type.startsWith('image/'))
+    const file = imageItem?.getAsFile()
+    if (!file) return
+    event.preventDefault()
+    void recognizeImage(file)
+  }
+
+  function handleImageChange(event: ChangeEvent<HTMLInputElement>): void {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (file) void recognizeImage(file)
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault()
@@ -82,7 +143,7 @@ export function NewJobForm({ resumes }: NewJobFormProps): ReactElement {
             <label><span className={labelClassName}>原始链接</span><input className={inputClassName} name="sourceUrl" type="url" placeholder="https://..." /></label>
           </div>
 
-          <label className="mt-4 block"><span className={labelClassName}>职位描述 JD *</span><textarea className="min-h-64 w-full resize-y rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm leading-6 text-slate-800 outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-100" name="jd" required minLength={50} maxLength={8000} placeholder="粘贴完整的岗位职责、任职要求和加分项……" onChange={(event) => setJdLength(event.target.value.length)} /><span className="mt-1.5 block text-xs text-slate-400">{jdLength}/8000 字，至少 50 字</span></label>
+          <div className="mt-4"><div className="mb-1.5 flex flex-wrap items-center justify-between gap-2"><span className="text-sm font-medium text-slate-700">职位描述 JD *</span><div className="flex items-center gap-2"><input ref={fileInputRef} type="file" accept="image/png,image/jpeg,image/webp,image/bmp" className="hidden" onChange={handleImageChange} /><Button type="button" size="sm" variant="outline" disabled={recognizing} onClick={() => fileInputRef.current?.click()} className="h-8 border-violet-200 bg-white text-violet-700"><Upload className="h-3.5 w-3.5" />上传岗位截图</Button></div></div><div className="mb-3 flex items-start gap-3 rounded-xl border border-violet-100 bg-violet-50/60 px-4 py-3"><ClipboardPaste className="mt-0.5 h-5 w-5 shrink-0 text-violet-600" /><div><p className="text-sm font-medium text-slate-700">BOSS 直聘无法复制？</p><p className="mt-0.5 text-xs leading-5 text-slate-500">截取岗位职责和任职要求，点击文本框按 Ctrl + V，或上传截图识别。</p></div></div><div className="relative"><textarea className="min-h-64 w-full resize-y rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm leading-6 text-slate-800 outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-100" name="jd" required minLength={50} maxLength={8000} value={jd} placeholder="粘贴完整的岗位职责、任职要求和加分项……也可以直接粘贴岗位截图" onPaste={handleJdPaste} onChange={(event) => setJd(event.target.value)} disabled={recognizing} />{recognizing && <div className="absolute inset-0 flex flex-col items-center justify-center rounded-lg bg-white/90 text-violet-700 backdrop-blur-sm"><Loader2 className="h-6 w-6 animate-spin" /><p className="mt-2 text-sm font-medium">{recognitionStage || '正在识别岗位截图…'}</p><p className="mt-1 text-xs text-slate-400">通常需要十几秒，请不要关闭页面</p></div>}</div><div className="mt-1.5 flex items-center justify-between gap-3 text-xs text-slate-400"><span>{jd.length}/8000 字，至少 50 字</span><span className="inline-flex items-center gap-1"><FileImage className="h-3.5 w-3.5" />识别后可继续修改</span></div></div>
         </section>
 
         <aside className="space-y-4">
@@ -109,11 +170,10 @@ export function NewJobForm({ resumes }: NewJobFormProps): ReactElement {
 
       <div className="flex items-center justify-between">
         <Button type="button" variant="ghost" onClick={() => router.push('/dashboard/jobs')}><ArrowLeft />返回岗位列表</Button>
-        <Button type="submit" disabled={submitting || resumes.length === 0} className="rounded-lg bg-gradient-to-r from-violet-600 to-fuchsia-500 px-6 text-white shadow-sm hover:from-violet-700 hover:to-fuchsia-600">
+        <Button type="submit" disabled={submitting || recognizing || resumes.length === 0} className="rounded-lg bg-gradient-to-r from-violet-600 to-fuchsia-500 px-6 text-white shadow-sm hover:from-violet-700 hover:to-fuchsia-600">
           {submitting ? <Loader2 className="animate-spin" /> : <ArrowRight />}{submitting ? '正在创建…' : '创建岗位并继续'}
         </Button>
       </div>
     </form>
   )
 }
-

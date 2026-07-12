@@ -265,6 +265,7 @@ export async function POST(request: NextRequest): Promise<Response> {
 
       const formData = await request.formData();
       const file = getUploadedFormFile(formData.get('file'));
+      const extractionOnly = formData.get('extractionOnly') === 'true';
       if (!file) {
         await send('error', { error: '请上传简历文件' });
         return;
@@ -299,6 +300,12 @@ export async function POST(request: NextRequest): Promise<Response> {
 
       await send('stage', { label: `已提取 ${extractedText.length} 个字符，AI 解析中…`, progress: 60 });
       await send('extracted', { text: extractedText });
+
+      if (extractionOnly) {
+        await send('stage', { label: '岗位文字识别完成', progress: 100 });
+        await send('done', { extractedText });
+        return;
+      }
 
       console.log(`[import-resume-file] Extracted ${extractedText.length} chars, calling LLM`);
       const resumeData = await parseTextWithLLM(extractedText);
