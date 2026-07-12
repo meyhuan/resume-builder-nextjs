@@ -1,10 +1,10 @@
 'use client'
 
 import type { ReactElement } from 'react'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { AlertCircle, ArrowLeft, ArrowRight, Check, FileText, Loader2, RefreshCw, ShieldCheck, Sparkles } from 'lucide-react'
+import { AlertCircle, ArrowLeft, ArrowRight, Check, FileText, HelpCircle, Loader2, RefreshCw, ShieldCheck, Sparkles } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import type { ResumeFact } from '@/lib/jobs/fact-extractor'
@@ -19,10 +19,10 @@ interface TailorReviewProps {
 
 interface ApiResponse { readonly code?: string; readonly error?: string; readonly suggestionSet?: JobSuggestionSet; readonly resumeId?: string }
 
-function SuggestionCard({ suggestion, selected, factLabels, onToggle }: { readonly suggestion: JobTailorSuggestion; readonly selected: boolean; readonly factLabels: ReadonlyMap<string, string>; readonly onToggle: () => void }): ReactElement {
+function SuggestionCard({ suggestion, selected, factLabels, formatText, onToggle }: { readonly suggestion: JobTailorSuggestion; readonly selected: boolean; readonly factLabels: ReadonlyMap<string, string>; readonly formatText: (value: string) => string; readonly onToggle: () => void }): ReactElement {
   return (
     <article className={`rounded-2xl border p-5 shadow-sm transition ${selected ? 'border-violet-200 bg-violet-50/40' : 'border-slate-200 bg-white/70 opacity-70'}`}>
-      <div className="flex items-start gap-3"><button type="button" onClick={onToggle} aria-label={selected ? '取消此建议' : '选择此建议'} className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 ${selected ? 'border-violet-500 bg-violet-500 text-white' : 'border-slate-300 bg-white text-transparent'}`}><Check className="h-3 w-3" /></button><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center justify-between gap-2"><h2 className="font-semibold text-slate-800">{suggestion.label}</h2><span className="text-xs text-slate-400">建议审核</span></div><p className="mt-2 text-sm leading-6 text-slate-500">{suggestion.reason}</p></div></div>
+      <div className="flex items-start gap-3"><button type="button" onClick={onToggle} aria-label={selected ? '取消此建议' : '选择此建议'} className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 ${selected ? 'border-violet-500 bg-violet-500 text-white' : 'border-slate-300 bg-white text-transparent'}`}><Check className="h-3 w-3" /></button><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center justify-between gap-2"><h2 className="font-semibold text-slate-800">{suggestion.label}</h2><span className="text-xs text-slate-400">建议审核</span></div><p className="mt-2 text-sm leading-6 text-slate-500">{formatText(suggestion.reason)}</p></div></div>
       <div className="mt-4 grid gap-3 lg:grid-cols-2"><div><p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-400">原文</p><div className="min-h-24 rounded-xl bg-slate-100 p-3 text-sm leading-6 text-slate-500 line-through" dangerouslySetInnerHTML={{ __html: suggestion.originalHtml }} /></div><div><p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-emerald-500">建议文本</p><div className="min-h-24 rounded-xl bg-emerald-50 p-3 text-sm leading-6 text-emerald-800" dangerouslySetInnerHTML={{ __html: suggestion.proposedHtml }} /></div></div>
       <div className="mt-4 flex flex-wrap items-center gap-2">{suggestion.matchedKeywords.map((keyword) => <span key={keyword} className="rounded-full border border-violet-100 bg-white px-2.5 py-1 text-xs text-violet-700">{keyword}</span>)}<span className="text-xs text-slate-400">事实来源：{suggestion.sourceFactIds.map((id) => factLabels.get(id) ?? id).join('、')}</span></div>
     </article>
@@ -35,7 +35,13 @@ export function TailorReview({ jobId, resumeId, suggestionSet, facts }: TailorRe
   const [generationIssue, setGenerationIssue] = useState<string | null>(null)
   const [selected, setSelected] = useState(() => new Set(suggestionSet?.suggestions.map((item) => item.id) ?? []))
   const factLabels = useMemo(() => new Map(facts.map((fact) => [fact.id, fact.label])), [facts])
+  const factReferenceLabels = useMemo(() => new Map(facts.flatMap((fact) => [[fact.id, fact.label], [fact.blockId, fact.label]] as const)), [facts])
+  const formatUserFacingText = (value: string): string => [...factReferenceLabels].reduce((text, [id, label]) => text.replaceAll(id, label), value)
   const applied = Boolean(suggestionSet?.appliedAt)
+
+  useEffect(() => {
+    setSelected(new Set(suggestionSet?.suggestions.map((item) => item.id) ?? []))
+  }, [suggestionSet?.id, suggestionSet?.suggestions])
 
   async function generate(regenerate: boolean): Promise<void> {
     setBusy(true)
@@ -85,8 +91,17 @@ export function TailorReview({ jobId, resumeId, suggestionSet, facts }: TailorRe
     )
   }
 
-  const allSelected = selected.size === suggestionSet.suggestions.length
+  const followUps = suggestionSet.followUps ?? []
+  const allSelected = suggestionSet.suggestions.length > 0 && selected.size === suggestionSet.suggestions.length
   return (
-    <div className="space-y-5"><div className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white/80 p-4 sm:flex-row sm:items-center sm:justify-between"><div><p className="font-medium text-slate-800">AI 生成了 {suggestionSet.suggestions.length} 条建议</p><p className="mt-1 text-xs text-slate-400">已选择 {selected.size} 条，确认后才会写入岗位简历。</p></div><div className="flex gap-2"><Button size="sm" variant="ghost" onClick={() => setSelected(allSelected ? new Set() : new Set(suggestionSet.suggestions.map((item) => item.id)))}>{allSelected ? '全部取消' : '全部选择'}</Button><Button size="sm" variant="outline" onClick={() => generate(true)} disabled={busy}><RefreshCw />重新生成</Button></div></div>{suggestionSet.suggestions.map((suggestion) => <SuggestionCard key={suggestion.id} suggestion={suggestion} selected={selected.has(suggestion.id)} factLabels={factLabels} onToggle={() => setSelected((current) => { const next = new Set(current); if (next.has(suggestion.id)) next.delete(suggestion.id); else next.add(suggestion.id); return next })} />)}<div className="sticky bottom-4 flex items-center justify-between rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-lg backdrop-blur-xl"><Button asChild variant="ghost"><Link href={`/dashboard/jobs/${jobId}/analysis`}><ArrowLeft />返回分析</Link></Button><Button onClick={apply} disabled={busy || selected.size === 0} className="rounded-lg bg-gradient-to-r from-violet-600 to-fuchsia-500 px-6 text-white hover:from-violet-700 hover:to-fuchsia-600">{busy ? <Loader2 className="animate-spin" /> : <ArrowRight />}{busy ? '正在应用…' : `应用选中的 ${selected.size} 条`}</Button></div></div>
+    <div className="space-y-5">
+      <div className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white/80 p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div><p className="font-medium text-slate-800">找到 {suggestionSet.suggestions.length} 条可直接应用建议{followUps.length > 0 ? `，以及 ${followUps.length} 个待确认问题` : ''}</p><p className="mt-1 text-xs text-slate-400">直接建议只强调原文证据；补充问题不会自动写入简历。</p></div>
+        <div className="flex gap-2">{suggestionSet.suggestions.length > 0 && <Button size="sm" variant="ghost" onClick={() => setSelected(allSelected ? new Set() : new Set(suggestionSet.suggestions.map((item) => item.id)))}>{allSelected ? '全部取消' : '全部选择'}</Button>}<Button size="sm" variant="outline" onClick={() => generate(true)} disabled={busy}><RefreshCw />重新生成</Button></div>
+      </div>
+      {suggestionSet.suggestions.map((suggestion) => <SuggestionCard key={suggestion.id} suggestion={suggestion} selected={selected.has(suggestion.id)} factLabels={factLabels} formatText={formatUserFacingText} onToggle={() => setSelected((current) => { const next = new Set(current); if (next.has(suggestion.id)) next.delete(suggestion.id); else next.add(suggestion.id); return next })} />)}
+      {followUps.length > 0 && <section className="rounded-2xl border border-amber-100 bg-amber-50/70 p-5"><div className="flex items-start gap-3"><HelpCircle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" /><div><h2 className="font-semibold text-slate-800">回答这些问题，可以生成更有说服力的建议</h2><p className="mt-1 text-sm text-slate-500">只有你确认并补充到简历中的内容，才会在下一次生成时使用。</p></div></div><div className="mt-4 grid gap-3 md:grid-cols-2">{followUps.map((item) => <article key={item.id} className="rounded-xl border border-amber-100 bg-white p-4"><p className="text-sm font-medium leading-6 text-slate-700">{formatUserFacingText(item.question)}</p><p className="mt-2 text-xs leading-5 text-slate-500">{formatUserFacingText(item.reason)}</p><div className="mt-3 flex flex-wrap gap-1.5">{item.relatedKeywords.map((keyword) => <span key={keyword} className="rounded-full bg-amber-50 px-2 py-1 text-xs text-amber-700">{keyword}</span>)}</div></article>)}</div><div className="mt-4 flex flex-wrap gap-2"><Button asChild size="sm" variant="outline" className="border-amber-200 bg-white text-amber-800"><Link href={`/editor/${resumeId}?jobId=${jobId}`}><FileText />补充岗位简历</Link></Button><Button asChild size="sm" variant="ghost" className="text-amber-800"><Link href={`/dashboard/jobs/${jobId}/facts`}>重新确认事实</Link></Button></div></section>}
+      <div className="sticky bottom-4 flex items-center justify-between rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-lg backdrop-blur-xl"><Button asChild variant="ghost"><Link href={`/dashboard/jobs/${jobId}/analysis`}><ArrowLeft />返回分析</Link></Button>{suggestionSet.suggestions.length > 0 ? <Button onClick={apply} disabled={busy || selected.size === 0} className="rounded-lg bg-gradient-to-r from-violet-600 to-fuchsia-500 px-6 text-white hover:from-violet-700 hover:to-fuchsia-600">{busy ? <Loader2 className="animate-spin" /> : <ArrowRight />}{busy ? '正在应用…' : `应用选中的 ${selected.size} 条`}</Button> : <Button asChild className="bg-violet-600 text-white hover:bg-violet-700"><Link href={`/editor/${resumeId}?jobId=${jobId}`}><FileText />去补充简历</Link></Button>}</div>
+    </div>
   )
 }

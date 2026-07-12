@@ -29,8 +29,7 @@ export default async function MaterialEditorPage({ params }: MaterialEditorPageP
     <JobPageShell>
       <Link href={`/dashboard/jobs/${job.id}/materials`} className="mb-5 inline-flex items-center gap-1 text-sm text-slate-500 hover:text-violet-600"><ArrowLeft className="h-4 w-4" />返回材料包</Link>
       <header className="mb-7"><h1 className="text-2xl font-bold text-slate-800">{meta.label}</h1><p className="mt-1 text-sm text-slate-500">{job.company ? `${job.company} · ` : ''}{job.role} · {meta.description}</p></header>
-      <JobMaterialEditor jobId={job.id} type={type} label={meta.label} description={meta.description} initialMaterial={material && content ? { id: material.id, title: material.title, text: content.text, updatedAt: material.updatedAt.toISOString() } : null} />
+      <JobMaterialEditor jobId={job.id} type={type} label={meta.label} description={meta.description} initialMaterial={material && content ? { id: material.id, title: material.title, text: content.text, missingInfo: content.missingInfo ?? [], updatedAt: material.updatedAt.toISOString() } : null} />
     </JobPageShell>
   )
 }
-

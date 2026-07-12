@@ -4,7 +4,7 @@ import type { KeyboardEvent, ReactElement } from 'react'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Clipboard, FilePenLine, Loader2, RefreshCw, Save, Sparkles, Trash2 } from 'lucide-react'
+import { ArrowLeft, Clipboard, FilePenLine, HelpCircle, Loader2, RefreshCw, Save, Sparkles, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
@@ -14,6 +14,7 @@ interface MaterialDraft {
   readonly id: string
   readonly title: string
   readonly text: string
+  readonly missingInfo: readonly { readonly question: string; readonly reason: string }[]
   readonly updatedAt: string
 }
 
@@ -123,6 +124,7 @@ export function JobMaterialEditor(props: JobMaterialEditorProps): ReactElement {
 
   return (
     <div className="space-y-4">
+      {props.initialMaterial.missingInfo.length > 0 && <section className="rounded-2xl border border-amber-100 bg-amber-50/70 p-5"><div className="flex items-start gap-3"><HelpCircle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" /><div><h2 className="font-semibold text-slate-800">补充这些信息，材料会更有说服力</h2><p className="mt-1 text-sm text-slate-500">这些问题不会进入复制正文。没有答案也可以直接使用当前安全短版。</p></div></div><div className="mt-4 grid gap-3 md:grid-cols-2">{props.initialMaterial.missingInfo.map((item) => <div key={item.question} className="rounded-xl border border-amber-100 bg-white p-4"><p className="text-sm font-medium leading-6 text-slate-700">{item.question}</p><p className="mt-1 text-xs leading-5 text-slate-500">{item.reason}</p></div>)}</div></section>}
       <section className="overflow-hidden rounded-2xl border border-white bg-white/90 shadow-sm backdrop-blur-md">
         <div className="flex flex-col gap-3 border-b border-slate-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 flex-1 items-center gap-3"><FilePenLine className="h-5 w-5 shrink-0 text-violet-500" /><input value={title} onChange={(event) => { setTitle(event.target.value); setDirty(true) }} maxLength={120} aria-label="材料标题" className="min-w-0 flex-1 border-0 bg-transparent font-semibold text-slate-800 outline-none" /><span className={`shrink-0 text-xs ${dirty ? 'text-amber-500' : 'text-emerald-600'}`}>{dirty ? '未保存' : '已保存'}</span></div>

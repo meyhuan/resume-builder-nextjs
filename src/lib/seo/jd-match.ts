@@ -13,6 +13,7 @@ export type JdMatchSectionSuggestion = {
 export type JdMatchResponse = {
   readonly score: number;
   readonly matchedKeywords: readonly string[];
+  readonly transferableKeywords: readonly string[];
   readonly missingKeywords: readonly string[];
   readonly prioritySuggestions: readonly string[];
   readonly sectionSuggestions: readonly JdMatchSectionSuggestion[];
@@ -51,6 +52,28 @@ const KEYWORD_DICTIONARY: readonly string[] = [
   '留存',
   '活动运营',
   '内容运营',
+  'CRM',
+  '电商运营',
+  '用户运营',
+  '私域运营',
+  '品类运营',
+  '店铺运营',
+  '用户分层',
+  '精细化运营',
+  '会员运营',
+  '商城运营',
+  '选品',
+  '测款',
+  '爆款',
+  '竞品分析',
+  '搜索优化',
+  '付费推广',
+  '流量获取',
+  'GMV',
+  '复盘',
+  '天猫',
+  '淘宝',
+  '京东',
   '小红书',
   '抖音',
   '公众号',
@@ -99,8 +122,36 @@ const STOPWORDS: ReadonlySet<string> = new Set([
   '推动',
 ]);
 
+const TRANSFERABLE_EVIDENCE_ALIASES: Readonly<Record<string, readonly string[]>> = {
+  '电商运营': ['商城运营', '活动运营', '大促', 'GMV', '商品运营', '用户运营'],
+  '店铺运营': ['商城运营', '活动运营', 'GMV', '商品运营'],
+  '品类运营': ['商品运营', '选品', 'GMV', '活动运营'],
+  '用户运营': ['用户分层', '会员运营', '私域运营', '活动运营', '用户触达', '用户生命周期'],
+  '数据分析': ['数据监控', '数据复盘', '数据驱动', '埋点', '指标分析', '经营分析'],
+  '付费推广': ['广告投放', '投放', '万相台', '直通车', '千川'],
+  '竞品分析': ['竞品监控', '市场分析', '行业分析'],
+  '项目管理': ['排期', '需求评审', '项目推进', '跨团队协作', '交付'],
+  '增长': ['转化率', '留存', '复购', 'GMV', '拉新'],
+};
+
 function normalizeText(value: string): string {
   return value.toLowerCase().replace(/\s+/g, ' ').trim();
+}
+
+const IGNORED_SECTION_HEADING = /^(薪资福利|薪酬福利|福利待遇|职位福利|公司福利|工作时间|上班时间|作息时间|我们提供)[：:]?$/i;
+const JD_SECTION_HEADING = /^(岗位职责|工作职责|职位职责|工作内容|任职要求|任职资格|职位要求|岗位要求|加分项|优先条件|公司介绍|发展规划|其他福利|薪资福利|薪酬福利|福利待遇|职位福利|公司福利|工作时间|上班时间|作息时间|我们提供)[：:]?$/i;
+
+export function extractJobRequirementText(value: string): string {
+  let ignored = false;
+  return value.split(/\r?\n/).flatMap((rawLine) => {
+    const line = rawLine.trim();
+    const heading = line.replace(/^[#*\s]+/, '').replace(/[：:]$/, '');
+    if (JD_SECTION_HEADING.test(line) || JD_SECTION_HEADING.test(heading)) {
+      ignored = IGNORED_SECTION_HEADING.test(line) || IGNORED_SECTION_HEADING.test(heading) || /^(公司介绍|发展规划|其他福利)$/.test(heading);
+      return ignored ? [] : [line];
+    }
+    return ignored ? [] : [line];
+  }).join('\n');
 }
 
 function uniq(values: readonly string[]): string[] {
@@ -144,32 +195,37 @@ function cleanFallbackTerm(value: string): string {
   return term;
 }
 
-function extractJdKeywords(jobDescription: string, targetRole?: string): string[] {
+export function extractJdKeywords(jobDescription: string, targetRole?: string): string[] {
   const dictionaryKeywords = extractDictionaryKeywords(jobDescription, targetRole);
   if (dictionaryKeywords.length >= 8) {
     return dictionaryKeywords.slice(0, 24);
   }
-  return uniq([...dictionaryKeywords, ...extractFallbackTerms(jobDescription)]).slice(0, 24);
+  const fallbackTerms = extractFallbackTerms(jobDescription).filter((term) => !dictionaryKeywords.some((keyword) => term.toLowerCase().includes(keyword.toLowerCase())));
+  return uniq([...dictionaryKeywords, ...fallbackTerms]).slice(0, 24);
 }
 
 function includesKeyword(text: string, keyword: string): boolean {
   return normalizeText(text).includes(keyword.toLowerCase());
 }
 
-function createPrioritySuggestions(missingKeywords: readonly string[], targetRole?: string): string[] {
+function includesTransferableEvidence(text: string, keyword: string): boolean {
+  return (TRANSFERABLE_EVIDENCE_ALIASES[keyword] ?? []).some((alias) => includesKeyword(text, alias));
+}
+
+function createPrioritySuggestions(missingKeywords: readonly string[], transferableKeywords: readonly string[], targetRole?: string): string[] {
   const roleLabel = targetRole?.trim() || '目标岗位';
   if (missingKeywords.length === 0) {
     return [
-      `当前简历已覆盖 ${roleLabel} JD 中的大部分核心关键词，下一步重点检查项目结果是否量化。`,
+      transferableKeywords.length > 0 ? `当前已确认事实对 ${roleLabel} JD 已有直接或可迁移证据；其中 ${transferableKeywords.slice(0, 4).join('、')} 仍需用户确认具体对应关系。` : `当前已确认事实覆盖了 ${roleLabel} JD 中的大部分核心关键词，下一步检查最相关经历是否足够具体。`,
       '把最匹配的项目经历放到简历前半部分，减少招聘方寻找信息的成本。',
-      '补充 1-2 个可验证指标，例如效率提升、命中率、转化率、成本变化或交付周期。',
+      '如果你确实有尚未写入的范围、周期或结果记录，可以补充；没有数据时不要为了量化而编造。',
     ];
   }
   const topMissing = missingKeywords.slice(0, 5).join('、');
   return [
-    `优先补齐 JD 高频但简历缺失的关键词：${topMissing}。`,
-    `在项目经历中自然写入这些关键词，不要只堆在技能栏。`,
-    `围绕 ${roleLabel} 增加“业务问题、你的动作、使用方法/工具、最终结果”的表达。`,
+    `优先核实这些要求是否有真实证据：${topMissing}。`,
+    transferableKeywords.length > 0 ? `可进一步确认这些相邻能力是否能形成证据：${transferableKeywords.slice(0, 4).join('、')}。` : '先区分“直接做过、可迁移经历、暂时没有证据”，不要把 JD 关键词直接塞进简历。',
+    `对有证据的内容，围绕 ${roleLabel} 补全“背景、你的动作、使用方法/工具、已验证结果”；没有证据的内容保留为面试准备项。`,
   ];
 }
 
@@ -189,34 +245,36 @@ function createSectionSuggestions(
     },
     {
       section: '项目经历',
-      issue: missingKeywords.length > 0 ? `项目描述中缺少 ${missingPreview} 等 JD 关键词。` : '项目经历已有关键词基础，但结果表达还可以更具体。',
-      suggestion: '按“业务背景 + 个人动作 + 工具/方法 + 指标结果”重写项目 bullet，避免只描述职责。',
+      issue: missingKeywords.length > 0 ? `已确认内容中暂未发现 ${missingPreview} 等要求的直接证据。` : '项目经历已有关键词基础，但结果表达还可以更具体。',
+      suggestion: '先核实是否有对应经历；有证据再按“业务背景 + 个人动作 + 工具/方法 + 已验证结果”整理，没有数据时使用定性结果。',
     },
     {
       section: '技能关键词',
       issue: '技能栏应服务岗位初筛，而不是罗列所有工具。',
-      suggestion: missingKeywords.length > 0 ? `把 ${missingPreview} 拆到技能栏或项目标签中，但必须与真实经历对应。` : '保留与 JD 高相关的技能，把低相关工具后移或删除。',
+      suggestion: missingKeywords.length > 0 ? `只有确认自己实际使用或实践过 ${missingPreview} 后，才写入技能栏或经历。` : '保留与 JD 高相关的技能，把低相关工具后移或删除。',
     },
   ];
 }
 
 export function analyzeJdMatch(input: JdMatchRequest): JdMatchResponse {
-  const jobDescription = input.jobDescription.slice(0, MAX_JD_MATCH_JD_LENGTH);
+  const jobDescription = extractJobRequirementText(input.jobDescription.slice(0, MAX_JD_MATCH_JD_LENGTH));
   const resumeText = input.resumeText.slice(0, MAX_JD_MATCH_RESUME_LENGTH);
   const jdKeywords = extractJdKeywords(jobDescription, input.targetRole);
   const matchedKeywords = jdKeywords.filter((keyword) => includesKeyword(resumeText, keyword));
-  const missingKeywords = jdKeywords.filter((keyword) => !includesKeyword(resumeText, keyword));
-  const rawScore = jdKeywords.length === 0 ? 0 : Math.round((matchedKeywords.length / jdKeywords.length) * 100);
+  const transferableKeywords = jdKeywords.filter((keyword) => !includesKeyword(resumeText, keyword) && includesTransferableEvidence(resumeText, keyword));
+  const missingKeywords = jdKeywords.filter((keyword) => !includesKeyword(resumeText, keyword) && !includesTransferableEvidence(resumeText, keyword));
+  const rawScore = jdKeywords.length === 0 ? 0 : Math.round(((matchedKeywords.length + transferableKeywords.length * 0.5) / jdKeywords.length) * 100);
   const score = Math.min(100, Math.max(0, rawScore));
 
   return {
     score,
     matchedKeywords,
+    transferableKeywords,
     missingKeywords,
-    prioritySuggestions: createPrioritySuggestions(missingKeywords, input.targetRole),
+    prioritySuggestions: createPrioritySuggestions(missingKeywords, transferableKeywords, input.targetRole),
     sectionSuggestions: createSectionSuggestions(matchedKeywords, missingKeywords, input.targetRole),
     nextActions: [
-      '先补缺失关键词对应的真实经历，避免虚构项目。',
+      '先把未覆盖要求分成“可迁移经历、需要确认、确实缺失”，避免虚构项目。',
       '把最匹配的项目放到简历前半部分，并量化结果。',
       '完成修改后再用 AI 一键优化或选择岗位模板生成投递版本。',
     ],
