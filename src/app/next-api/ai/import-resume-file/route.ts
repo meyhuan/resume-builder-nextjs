@@ -10,6 +10,7 @@ import { checkQuota } from '@/lib/quota/quota-checker';
 import { applyRateLimit } from '@/lib/ai/with-rate-limit';
 import { getDefaultModel, resolveApiKey } from '@/lib/ai/ai-runtime-config';
 import { buildImportSystemPrompt, buildImportUserPrompt } from '@/lib/ai/import-prompt-builder';
+import { getCurrentUser } from '@/lib/auth/current-user';
 
 const POLL_INTERVAL_MS = 3000;
 const MAX_POLL_COUNT = 20;
@@ -80,6 +81,7 @@ interface DocmindLayout {
 interface UploadedFormFile {
   name: string;
   size: number;
+  type: string;
   arrayBuffer: () => Promise<ArrayBuffer>;
 }
 
@@ -89,11 +91,13 @@ function getUploadedFormFile(value: FormDataEntryValue | null): UploadedFormFile
   if (
     typeof candidate.name === 'string' &&
     typeof candidate.size === 'number' &&
+    typeof candidate.type === 'string' &&
     typeof candidate.arrayBuffer === 'function'
   ) {
     return {
       name: candidate.name,
       size: candidate.size,
+      type: candidate.type,
       arrayBuffer: () => candidate.arrayBuffer!.call(value),
     };
   }
@@ -244,10 +248,22 @@ export async function POST(request: NextRequest): Promise<Response> {
 
   const run = async (): Promise<void> => {
     try {
-      const quota = await checkQuota('ai:import-section');
-      if (!quota.allowed) {
-        await send('error', { error: quota.message, quotaExceeded: true, remaining: quota.remaining });
-        return;
+      const formData = await request.formData();
+      const file = getUploadedFormFile(formData.get('file'));
+      const extractionOnly = formData.get('extractionOnly') === 'true';
+
+      if (extractionOnly) {
+        const user = await getCurrentUser();
+        if (!user) {
+          await send('error', { error: '请先登录后再识别岗位截图' });
+          return;
+        }
+      } else {
+        const quota = await checkQuota('ai:import-section');
+        if (!quota.allowed) {
+          await send('error', { error: quota.message, quotaExceeded: true, remaining: quota.remaining });
+          return;
+        }
       }
 
       const rateLimitResponse = await applyRateLimit(request);
@@ -263,18 +279,19 @@ export async function POST(request: NextRequest): Promise<Response> {
         return;
       }
 
-      const formData = await request.formData();
-      const file = getUploadedFormFile(formData.get('file'));
-      const extractionOnly = formData.get('extractionOnly') === 'true';
       if (!file) {
-        await send('error', { error: '请上传简历文件' });
+        await send('error', { error: extractionOnly ? '请粘贴岗位截图' : '请上传简历文件' });
         return;
       }
 
       const fileName = file.name;
       const ext = fileName.split('.').pop()?.toLowerCase() ?? '';
       if (!ALLOWED_EXTENSIONS.has(ext)) {
-        await send('error', { error: '不支持的文件格式，请上传 Word、PDF 或图片文件' });
+        await send('error', { error: extractionOnly ? '请使用 PNG、JPG、BMP 等图片格式的岗位截图' : '不支持的文件格式，请上传 Word、PDF 或图片文件' });
+        return;
+      }
+      if (extractionOnly && !file.type.startsWith('image/')) {
+        await send('error', { error: '岗位文字识别仅支持图片截图' });
         return;
       }
       if (file.size > MAX_FILE_SIZE) {
