@@ -2,6 +2,7 @@
 
 import { useRef, useState, type ChangeEvent, type ReactElement } from 'react'
 import { ImagePlus, MessageCircle, X } from 'lucide-react'
+import { usePathname } from 'next/navigation'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { submitFeedback } from '@/app/dashboard/feedback/actions'
@@ -13,6 +14,7 @@ const CONTACT_MAX_CHARS = 120
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024
 
 export function FeedbackWidget(): ReactElement {
+  const pathname = usePathname()
   const [isOpen, setIsOpen] = useState<boolean>(false)
   const [content, setContent] = useState<string>('')
   const [contact, setContact] = useState<string>('')
@@ -22,6 +24,10 @@ export function FeedbackWidget(): ReactElement {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const canSubmit: boolean = Boolean(content.trim() && contact.trim()) && !isSubmitting
+
+  // Dashboard already exposes a dedicated feedback entry in its sidebar.
+  // Hiding the global floating trigger also keeps it from covering workflow actions.
+  if (pathname.startsWith('/dashboard')) return <></>
 
   const clearAttachment = (): void => {
     if (attachmentPreview) URL.revokeObjectURL(attachmentPreview)
