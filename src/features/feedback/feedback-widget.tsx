@@ -1,8 +1,7 @@
 'use client'
 
-import { useRef, useState, type ChangeEvent, type ReactElement } from 'react'
+import { useEffect, useRef, useState, type ChangeEvent, type PointerEvent, type ReactElement } from 'react'
 import { ImagePlus, MessageCircle, X } from 'lucide-react'
-import { usePathname } from 'next/navigation'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { submitFeedback } from '@/app/dashboard/feedback/actions'
@@ -12,22 +11,51 @@ import { getRequestLogs } from './request-log-store'
 const MAX_CONTENT_CHARS = 500
 const CONTACT_MAX_CHARS = 120
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024
+const FEEDBACK_POSITION_KEY = 'feedback-widget-bottom'
+const DEFAULT_BOTTOM = 24
+const EDGE_GAP = 16
 
 export function FeedbackWidget(): ReactElement {
-  const pathname = usePathname()
   const [isOpen, setIsOpen] = useState<boolean>(false)
+  const [bottom, setBottom] = useState<number>(DEFAULT_BOTTOM)
   const [content, setContent] = useState<string>('')
   const [contact, setContact] = useState<string>('')
   const [attachmentFile, setAttachmentFile] = useState<File | null>(null)
   const [attachmentPreview, setAttachmentPreview] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const dragRef = useRef<{ pointerId: number; startY: number; startBottom: number; currentBottom: number; moved: boolean } | null>(null)
 
   const canSubmit: boolean = Boolean(content.trim() && contact.trim()) && !isSubmitting
 
-  // Dashboard already exposes a dedicated feedback entry in its sidebar.
-  // Hiding the global floating trigger also keeps it from covering workflow actions.
-  if (pathname.startsWith('/dashboard')) return <></>
+  useEffect(() => {
+    const saved = Number(window.localStorage.getItem(FEEDBACK_POSITION_KEY))
+    if (Number.isFinite(saved)) setBottom(Math.max(EDGE_GAP, Math.min(saved, window.innerHeight - 80)))
+  }, [])
+
+  const handlePointerDown = (event: PointerEvent<HTMLButtonElement>): void => {
+    event.currentTarget.setPointerCapture(event.pointerId)
+    dragRef.current = { pointerId: event.pointerId, startY: event.clientY, startBottom: bottom, currentBottom: bottom, moved: false }
+  }
+
+  const handlePointerMove = (event: PointerEvent<HTMLButtonElement>): void => {
+    const drag = dragRef.current
+    if (!drag || drag.pointerId !== event.pointerId) return
+    const distance = drag.startY - event.clientY
+    if (Math.abs(distance) > 4) drag.moved = true
+    const maxBottom = Math.max(EDGE_GAP, window.innerHeight - event.currentTarget.offsetHeight - EDGE_GAP)
+    drag.currentBottom = Math.max(EDGE_GAP, Math.min(drag.startBottom + distance, maxBottom))
+    setBottom(drag.currentBottom)
+  }
+
+  const handlePointerUp = (event: PointerEvent<HTMLButtonElement>): void => {
+    const drag = dragRef.current
+    if (!drag || drag.pointerId !== event.pointerId) return
+    event.currentTarget.releasePointerCapture(event.pointerId)
+    dragRef.current = null
+    if (drag.moved) window.localStorage.setItem(FEEDBACK_POSITION_KEY, String(drag.currentBottom))
+    else setIsOpen(true)
+  }
 
   const clearAttachment = (): void => {
     if (attachmentPreview) URL.revokeObjectURL(attachmentPreview)
@@ -108,9 +136,14 @@ export function FeedbackWidget(): ReactElement {
     <>
       <button
         type="button"
-        onClick={(): void => setIsOpen(true)}
-        className="fixed bottom-6 right-6 z-40 hidden items-center gap-2 rounded-full bg-slate-900 px-4 py-3 text-sm font-medium text-white shadow-lg shadow-slate-900/20 transition hover:-translate-y-0.5 hover:bg-slate-800 lg:inline-flex"
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={(): void => { dragRef.current = null }}
+        style={{ bottom, touchAction: 'none' }}
+        className="fixed right-6 z-40 hidden cursor-ns-resize items-center gap-2 rounded-full bg-slate-900 px-4 py-3 text-sm font-medium text-white shadow-lg shadow-slate-900/20 transition-colors hover:bg-slate-800 lg:inline-flex"
         aria-label="打开反馈"
+        title="点击反馈，或上下拖动调整位置"
       >
         <MessageCircle className="h-4 w-4" />
         反馈
