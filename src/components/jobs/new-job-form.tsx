@@ -1,9 +1,9 @@
 'use client'
 
-import type { ChangeEvent, ClipboardEvent, FormEvent, ReactElement } from 'react'
-import { useRef, useState } from 'react'
+import type { ClipboardEvent, FormEvent, ReactElement } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, ArrowRight, BriefcaseBusiness, ClipboardPaste, FileImage, FileText, Loader2, ShieldCheck, Upload } from 'lucide-react'
+import { ArrowLeft, ArrowRight, BriefcaseBusiness, ClipboardPaste, FileImage, FileText, Loader2, ShieldCheck } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 
@@ -32,7 +32,6 @@ export function NewJobForm({ resumes }: NewJobFormProps): ReactElement {
   const [jd, setJd] = useState('')
   const [recognizing, setRecognizing] = useState(false)
   const [recognitionStage, setRecognitionStage] = useState('')
-  const fileInputRef = useRef<HTMLInputElement>(null)
 
   async function recognizeImage(file: File): Promise<void> {
     if (!file.type.startsWith('image/')) return void toast.error('请上传岗位截图图片')
@@ -86,12 +85,6 @@ export function NewJobForm({ resumes }: NewJobFormProps): ReactElement {
     void recognizeImage(file)
   }
 
-  function handleImageChange(event: ChangeEvent<HTMLInputElement>): void {
-    const file = event.target.files?.[0]
-    event.target.value = ''
-    if (file) void recognizeImage(file)
-  }
-
   async function handleSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault()
     if (submitting) return
@@ -143,7 +136,7 @@ export function NewJobForm({ resumes }: NewJobFormProps): ReactElement {
             <label><span className={labelClassName}>原始链接</span><input className={inputClassName} name="sourceUrl" type="url" placeholder="https://..." /></label>
           </div>
 
-          <div className="mt-4"><div className="mb-1.5 flex flex-wrap items-center justify-between gap-2"><span className="text-sm font-medium text-slate-700">职位描述 JD *</span><div className="flex items-center gap-2"><input ref={fileInputRef} type="file" accept="image/png,image/jpeg,image/webp,image/bmp" className="hidden" onChange={handleImageChange} /><Button type="button" size="sm" variant="outline" disabled={recognizing} onClick={() => fileInputRef.current?.click()} className="h-8 border-violet-200 bg-white text-violet-700"><Upload className="h-3.5 w-3.5" />上传岗位截图</Button></div></div><div className="mb-3 flex items-start gap-3 rounded-xl border border-violet-100 bg-violet-50/60 px-4 py-3"><ClipboardPaste className="mt-0.5 h-5 w-5 shrink-0 text-violet-600" /><div><p className="text-sm font-medium text-slate-700">BOSS 直聘无法复制？</p><p className="mt-0.5 text-xs leading-5 text-slate-500">截取岗位职责和任职要求，点击文本框按 Ctrl + V，或上传截图识别。</p></div></div><div className="relative"><textarea className="min-h-64 w-full resize-y rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm leading-6 text-slate-800 outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-100" name="jd" required minLength={50} maxLength={8000} value={jd} placeholder="粘贴完整的岗位职责、任职要求和加分项……也可以直接粘贴岗位截图" onPaste={handleJdPaste} onChange={(event) => setJd(event.target.value)} disabled={recognizing} />{recognizing && <div className="absolute inset-0 flex flex-col items-center justify-center rounded-lg bg-white/90 text-violet-700 backdrop-blur-sm"><Loader2 className="h-6 w-6 animate-spin" /><p className="mt-2 text-sm font-medium">{recognitionStage || '正在识别岗位截图…'}</p><p className="mt-1 text-xs text-slate-400">通常需要十几秒，请不要关闭页面</p></div>}</div><div className="mt-1.5 flex items-center justify-between gap-3 text-xs text-slate-400"><span>{jd.length}/8000 字，至少 50 字</span><span className="inline-flex items-center gap-1"><FileImage className="h-3.5 w-3.5" />识别后可继续修改</span></div></div>
+          <div className="mt-4"><span className={labelClassName}>职位描述 JD *</span><div className="mb-3 flex items-start gap-3 rounded-xl border border-violet-100 bg-violet-50/60 px-4 py-3"><ClipboardPaste className="mt-0.5 h-5 w-5 shrink-0 text-violet-600" /><div><p className="text-sm font-medium text-slate-700">支持粘贴文字或截图</p><p className="mt-0.5 text-xs leading-5 text-slate-500">截取岗位职责和任职要求，点击下方文本框按 Ctrl + V 即可识别。</p></div></div><div className="relative"><textarea className="min-h-64 w-full resize-y rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm leading-6 text-slate-800 outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-100" name="jd" required minLength={50} maxLength={8000} value={jd} placeholder="粘贴岗位职责、任职要求和加分项，也支持直接粘贴截图……" onPaste={handleJdPaste} onChange={(event) => setJd(event.target.value)} disabled={recognizing} />{recognizing && <div className="absolute inset-0 flex flex-col items-center justify-center rounded-lg bg-white/90 text-violet-700 backdrop-blur-sm"><Loader2 className="h-6 w-6 animate-spin" /><p className="mt-2 text-sm font-medium">{recognitionStage || '正在识别岗位截图…'}</p><p className="mt-1 text-xs text-slate-400">通常需要十几秒，请不要关闭页面</p></div>}</div><div className="mt-1.5 flex items-center justify-between gap-3 text-xs text-slate-400"><span>{jd.length}/8000 字，至少 50 字</span><span className="inline-flex items-center gap-1"><FileImage className="h-3.5 w-3.5" />截图识别后可继续修改</span></div></div>
         </section>
 
         <aside className="space-y-4">
