@@ -1,12 +1,14 @@
 import fs from 'fs/promises'
 import os from 'os'
 import path from 'path'
+import { randomUUID } from 'crypto'
 import puppeteerCore from 'puppeteer-core'
 import type { Browser, Page } from 'puppeteer-core'
 import chromium from '@sparticuz/chromium'
 
 const DEFAULT_IDLE_CLOSE_MS = 10 * 60 * 1000
 const DEFAULT_DISK_CACHE_SIZE_BYTES = 128 * 1024 * 1024
+const BROWSER_INSTANCE_ID = randomUUID().slice(0, 8)
 
 let browserPromise: Promise<Browser> | null = null
 let activePageCount = 0
@@ -26,7 +28,7 @@ function getCacheRoot(): string {
 
 function getUserDataDir(): string {
   const workerId = process.env.PM2_INSTANCE_ID || process.env.NODE_APP_INSTANCE || 'local'
-  return path.join(getCacheRoot(), `profile-${workerId}-${process.pid}`)
+  return path.join(getCacheRoot(), `profile-${workerId}-${process.pid}-${BROWSER_INSTANCE_ID}`)
 }
 
 function getDiskCacheDir(): string {

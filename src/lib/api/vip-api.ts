@@ -1,5 +1,6 @@
 import { cookies } from 'next/headers';
 import { fetchJavaWithLog, parseJsonWithLog } from './fetch-with-log';
+import { isLocalE2eIdentity } from '@/lib/auth/e2e-auth';
 
 export interface VipInfoData {
   userId?: number;
@@ -119,6 +120,9 @@ export async function checkVipStatus(): Promise<VipStatusResult> {
     const cookieStore = await cookies();
     const unionid = cookieStore.get('auth_uid')?.value;
     if (!unionid) return { isVip: false };
+    if (isLocalE2eIdentity(unionid)) {
+      return { isVip: true, userId: unionid, unionid, freeExportCount: 99 };
+    }
     const result = await fetchVipFromJava(unionid, '[quota]');
     if (!result.ok) return { isVip: false };
     return {
@@ -138,6 +142,9 @@ export async function checkVipStatus(): Promise<VipStatusResult> {
  */
 export async function checkVipStatusForWxId(wxId: string): Promise<VipStatusResult> {
   try {
+    if (isLocalE2eIdentity(wxId)) {
+      return { isVip: true, userId: wxId, unionid: wxId, freeExportCount: 99 };
+    }
     const result = await fetchVipFromJava(wxId, '[quota:wxid]');
     if (!result.ok) return { isVip: false, userId: wxId, unionid: wxId };
     return {

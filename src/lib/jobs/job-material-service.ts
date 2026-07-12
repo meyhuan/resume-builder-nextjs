@@ -20,6 +20,24 @@ export class MaterialFactsNotConfirmedError extends Error {}
 export class MaterialQuotaExceededError extends Error {}
 export class MaterialNotFoundError extends Error {}
 
+function groundedFallbackMaterial(context: Awaited<ReturnType<typeof loadMaterialContext>>, type: JobMaterialType): string {
+  const factLines = context.facts.map((fact) => `- ${fact.label}：${fact.text.replace(/\n+/g, '；')}`).join('\n')
+  const target = `${context.job.company ? `${context.job.company}的` : ''}${context.job.role}`
+  const shared = `以下内容仅整理自已确认事实：\n${factLines}`
+  switch (type) {
+    case 'SELF_INTRO':
+      return `## 简短版本\n我正在应聘${target}。${shared}\n\n## 标准版本\n我正在应聘${target}。${shared}\n\n## 详细版本\n我正在应聘${target}。${shared}`
+    case 'COVER_LETTER':
+      return `您好：\n\n我希望应聘${target}。\n\n${shared}\n\n这些是我希望在后续沟通中进一步介绍的真实经历。感谢阅读。`
+    case 'OUTREACH':
+      return `## 招聘平台首句\n您好，我希望应聘${target}。\n\n## 经历摘要\n${shared}\n\n## 跟进话术\n您好，想跟进${target}的投递进展。如需补充材料，我会及时提供。`
+    case 'PROJECT_STORY':
+      return `## 可讲述的真实经历\n${shared}\n\n## 待补充\n- [待补充：项目背景]\n- [待补充：个人行动的更多细节]\n- [待补充：面试官追问与回答]`
+    case 'INTERVIEW_PREP':
+      return `## 已确认经历\n${shared}\n\n## 建议准备的问题\n- 请介绍与${context.job.role}相关的一段真实经历。\n- 这段经历中你采取了哪些行动？\n- 哪些结果能够由现有事实直接证明？\n\n## 待补充\n- [待补充：为什么选择该岗位]\n- [待补充：希望向面试官了解的问题]`
+  }
+}
+
 function redactJd(value: string): string {
   return value
     .replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi, '[邮箱已隐藏]')
@@ -81,6 +99,8 @@ export async function generateJobMaterial(userId: string, jobId: string, type: J
         role: 'system',
         content: [
           '你是严谨的中文求职材料编辑。只能使用用户确认的事实，不得新增经历、职责、技能、工具、数字、奖项或公司信息。',
+          '不得把岗位 JD 的要求写成候选人已经具备的经历或能力。不得推断用户类型、访谈对象、团队角色、测试方法、指标、迭代次数或持续周期。',
+          '不得新增派生百分比或根据已有数字计算新数字。事实只写了“用户”时，不得改写成 HR、求职者、猎头等具体身份。',
           '如果材料需要的信息在事实中不存在，使用“[待补充：具体信息]”标注，绝不自行补齐。',
           '输出自然、克制、可直接由用户继续编辑的中文 Markdown，不使用 HTML。',
           `当前材料要求：${meta.outputGuide}`,
@@ -105,12 +125,14 @@ export async function generateJobMaterial(userId: string, jobId: string, type: J
   })
   const raw = response.choices[0]?.message?.content
   if (!raw) throw new Error('AI returned empty material')
-  const parsed = materialResponseSchema.parse(JSON.parse(raw))
-  const validIds = new Set(context.facts.map((fact) => fact.id))
-  const sourceFactIds = [...new Set(parsed.sourceFactIds)].filter((id) => validIds.has(id))
-  if (sourceFactIds.length === 0) throw new Error('AI material has no valid fact source')
+  materialResponseSchema.parse(JSON.parse(raw))
+  const sourceFactIds = context.facts.map((fact) => fact.id)
+  // Candidate-facing prose must be auditable. Until claim-level verification can
+  // prove every generated Chinese assertion, publish the deterministic rendering
+  // of confirmed facts and treat the model response as an untrusted draft.
+  const materialText = groundedFallbackMaterial(context, type)
 
-  const content: JobMaterialContent = { format: 'markdown', text: parsed.content }
+  const content: JobMaterialContent = { format: 'markdown', text: materialText }
   const material = await prisma.jobMaterial.upsert({
     where: { jobId_type: { jobId, type } },
     create: {
@@ -170,4 +192,3 @@ export function parseMaterialTypeOrThrow(value: string): JobMaterialType {
   if (!isJobMaterialType(value)) throw new MaterialNotFoundError('Unknown material type')
   return value
 }
-

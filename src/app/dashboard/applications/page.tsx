@@ -29,7 +29,7 @@ export default async function ApplicationsPage() {
     note: item.note,
     job: item.job,
   }))
-  const dueCount = applications.filter((item) => item.nextActionAt && item.nextActionAt <= new Date()).length
+  const dueCount = applications.filter((item) => item.nextActionAt && item.nextActionAt <= new Date() && !['OFFER', 'REJECTED', 'WITHDRAWN'].includes(item.status)).length
 
   return (
     <JobPageShell>
@@ -40,4 +40,3 @@ export default async function ApplicationsPage() {
     </JobPageShell>
   )
 }
-

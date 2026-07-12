@@ -46,6 +46,7 @@ export function TailorReview({ jobId, resumeId, suggestionSet, facts }: TailorRe
       router.refresh()
     } catch (error) {
       toast.error(error instanceof Error ? error.message : '生成建议失败')
+    } finally {
       setBusy(false)
     }
   }
@@ -83,4 +84,3 @@ export function TailorReview({ jobId, resumeId, suggestionSet, facts }: TailorRe
     <div className="space-y-5"><div className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white/80 p-4 sm:flex-row sm:items-center sm:justify-between"><div><p className="font-medium text-slate-800">AI 生成了 {suggestionSet.suggestions.length} 条建议</p><p className="mt-1 text-xs text-slate-400">已选择 {selected.size} 条，确认后才会写入岗位简历。</p></div><div className="flex gap-2"><Button size="sm" variant="ghost" onClick={() => setSelected(allSelected ? new Set() : new Set(suggestionSet.suggestions.map((item) => item.id)))}>{allSelected ? '全部取消' : '全部选择'}</Button><Button size="sm" variant="outline" onClick={() => generate(true)} disabled={busy}><RefreshCw />重新生成</Button></div></div>{suggestionSet.suggestions.map((suggestion) => <SuggestionCard key={suggestion.id} suggestion={suggestion} selected={selected.has(suggestion.id)} factLabels={factLabels} onToggle={() => setSelected((current) => { const next = new Set(current); if (next.has(suggestion.id)) next.delete(suggestion.id); else next.add(suggestion.id); return next })} />)}<div className="sticky bottom-4 flex items-center justify-between rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-lg backdrop-blur-xl"><Button asChild variant="ghost"><Link href={`/dashboard/jobs/${jobId}/analysis`}><ArrowLeft />返回分析</Link></Button><Button onClick={apply} disabled={busy || selected.size === 0} className="rounded-lg bg-gradient-to-r from-violet-600 to-fuchsia-500 px-6 text-white hover:from-violet-700 hover:to-fuchsia-600">{busy ? <Loader2 className="animate-spin" /> : <ArrowRight />}{busy ? '正在应用…' : `应用选中的 ${selected.size} 条`}</Button></div></div>
   )
 }
-

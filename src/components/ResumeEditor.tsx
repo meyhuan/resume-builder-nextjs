@@ -171,7 +171,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
   const resume = useAppStore((s) => s.resume)
   // Mutable resumeId — starts undefined in guest mode, set after first save
   const [resumeId, setResumeId] = useState<string | undefined>(initialResumeId)
-  const { isLoginOpen, requireAuth, handleLoginSuccess, handleLoginClose } = useRequireAuth()
+  const { isLoginOpen, requireAuth, handleLoginSuccess, handleLoginClose, isLoggedIn } = useRequireAuth()
   const { token, logout } = useAuthStore()
   const { isVip, quota, refreshQuota, requirePdf, requireAi, showUpgrade, setShowUpgrade } = useVipCheck()
   
@@ -180,7 +180,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
   useEffect(() => {
     setIsHydrated(true)
   }, [])
-  const needsForceLogin = isHydrated && !token
+  const needsForceLogin = isHydrated && !token && !isLoggedIn()
 
   const setResume = useAppStore((s) => s.setResume)
   const resetResume = useAppStore((s) => s.resetResume)

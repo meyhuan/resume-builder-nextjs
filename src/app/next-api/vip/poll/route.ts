@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { fetchVipFromJava } from '@/lib/api/vip-api'
+import { isLocalE2eIdentity, localE2eVipResponse } from '@/lib/auth/e2e-auth'
 
 /**
  * GET /next-api/vip/poll
@@ -13,6 +14,7 @@ export async function GET(): Promise<NextResponse> {
     if (!unionid) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+    if (isLocalE2eIdentity(unionid)) return NextResponse.json(localE2eVipResponse())
 
     const vipResult = await fetchVipFromJava(unionid, '[vip/poll]')
     if (!vipResult.ok) {

@@ -58,6 +58,7 @@ export function JobMaterialEditor(props: JobMaterialEditorProps): ReactElement {
       router.refresh()
     } catch (error) {
       toast.error(error instanceof Error ? error.message : '生成材料失败')
+    } finally {
       setBusy(false)
     }
   }
@@ -136,4 +137,3 @@ export function JobMaterialEditor(props: JobMaterialEditorProps): ReactElement {
     </div>
   )
 }
-

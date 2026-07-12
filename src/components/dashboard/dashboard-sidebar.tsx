@@ -66,7 +66,7 @@ export default function DashboardSidebar(): ReactElement {
   const avatarText = getAvatarText();
 
   return (
-    <aside className="fixed left-0 top-0 bottom-0 w-[200px] bg-white border-r border-slate-100 flex flex-col z-40 print:hidden">
+    <aside className="fixed bottom-0 left-0 top-0 z-40 hidden w-[200px] flex-col border-r border-slate-100 bg-white print:hidden lg:flex">
       {/* Logo */}
       <div className="px-5 pt-6 pb-4">
         <Link href="/" className="block">

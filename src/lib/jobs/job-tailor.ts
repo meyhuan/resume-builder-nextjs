@@ -107,6 +107,47 @@ function sanitizeHtml(value: string): string {
     .trim()
 }
 
+function plainText(value: string): string {
+  return value.replace(/<[^>]*>/g, ' ').replace(/&nbsp;|&#160;/gi, ' ').replace(/&amp;/gi, '&')
+}
+
+function comparableText(value: string): string {
+  return plainText(value).replace(/[\s，。；：、！？,.!?:;()（）【】\x5B\x5D“”'"-]/g, '')
+}
+
+function claimTokens(value: string): Set<string> {
+  const text = plainText(value)
+  const tokens = text.match(/\d+(?:\.\d+)?%?|[A-Za-z][A-Za-z0-9+.-]*/g) ?? []
+  return new Set(tokens.map((token) => token.toLowerCase()))
+}
+
+/** Reject the most dangerous hallucinations: new metrics, counts, acronyms, tools or audience labels. */
+function hasOnlySupportedClaimTokens(proposedHtml: string, sourceFacts: readonly ResumeFact[]): boolean {
+  const supported = claimTokens(sourceFacts.map((fact) => fact.text).join('\n'))
+  return [...claimTokens(proposedHtml)].every((token) => supported.has(token))
+}
+
+function groundedFallbackSuggestions(input: Awaited<ReturnType<typeof loadTailorInput>>, requestId: string): JobTailorSuggestion[] {
+  const candidates = ['AI', '用户研究', '需求分析', '原型设计', '数据分析', '企业服务', '招聘', '从 0 到 1']
+  return input.blocks.flatMap((block, index) => {
+    const keyword = candidates.find((item) => input.job.jd.includes(item) && plainText(block.originalHtml).includes(item))
+    const sourceFact = input.confirmedFacts.find((fact) => fact.blockId === block.blockId)
+    if (!keyword || !sourceFact) return []
+    const proposedHtml = block.originalHtml.replace(keyword, `<strong>${keyword}</strong>`)
+    if (proposedHtml === block.originalHtml) return []
+    return [{
+      id: `${requestId}:fallback:${index + 1}`,
+      blockId: block.blockId,
+      label: block.label,
+      originalHtml: block.originalHtml,
+      proposedHtml,
+      reason: `突出原文中已经存在且与岗位相关的“${keyword}”，不增加任何新事实。`,
+      matchedKeywords: [keyword],
+      sourceFactIds: [sourceFact.id],
+    }]
+  })
+}
+
 function redactJd(value: string): string {
   return value
     .replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi, '[邮箱已隐藏]')
@@ -156,6 +197,8 @@ function buildPrompt(input: Awaited<ReturnType<typeof loadTailorInput>>): { syst
   const system = [
     '你是严谨的中文求职材料编辑，只能基于用户已确认的真实事实调整简历表达。',
     '禁止新增公司、职位、项目、学历、日期、职责、工具、指标或成果。禁止把“参与/协助”升级成“主导/负责”。',
+    '禁止推断原文未写明的用户身份、访谈数量、团队角色、方法、指标或百分比；即使可以计算，也不得新增派生数字。',
+    'JD 中出现但确认事实中没有明确出现的关键词，只能在 reason 中说明缺口，不能写进 proposedHtml。',
     '只能修改收到的正文 block，不修改标题字段，不增加、删除或排序 block。',
     '每条建议必须引用至少一个 sourceFactId；如果事实不足则不要输出该 block 的建议。',
     '建议应自然匹配 JD，不要机械堆砌关键词。',
@@ -175,7 +218,11 @@ function buildPrompt(input: Awaited<ReturnType<typeof loadTailorInput>>): { syst
 export async function generateJobSuggestions(userId: string, jobId: string, regenerate = false) {
   const input = await loadTailorInput(userId, jobId)
   const cached = parseSuggestionSet(input.job.suggestionSet)
-  if (!regenerate && cached?.inputHash === input.inputHash && cached.suggestions.length > 0) {
+  const cachedIsGrounded = cached?.suggestions.every((suggestion) => {
+    const sourceFacts = suggestion.sourceFactIds.map((id) => input.confirmedFacts.find((fact) => fact.id === id)).filter((fact): fact is ResumeFact => Boolean(fact))
+    return sourceFacts.length > 0 && hasOnlySupportedClaimTokens(suggestion.proposedHtml, sourceFacts)
+  })
+  if (!regenerate && cached?.inputHash === input.inputHash && cached.suggestions.length > 0 && cachedIsGrounded) {
     return { suggestionSet: cached, cached: true, remaining: null }
   }
 
@@ -200,12 +247,12 @@ export async function generateJobSuggestions(userId: string, jobId: string, rege
   const blockMap = new Map(input.blocks.map((block) => [block.blockId, block]))
   const factMap = new Map(input.confirmedFacts.map((fact) => [fact.id, fact]))
   const suggestedBlockIds = new Set<string>()
-  const suggestions: JobTailorSuggestion[] = parsed.suggestions.flatMap((item, index) => {
+  let suggestions: JobTailorSuggestion[] = parsed.suggestions.flatMap((item, index) => {
     const block = blockMap.get(item.blockId)
     const sourceFacts = [...new Set(item.sourceFactIds)].map((id) => factMap.get(id)).filter((fact): fact is ResumeFact => Boolean(fact))
     if (!block || suggestedBlockIds.has(item.blockId) || sourceFacts.length === 0 || !sourceFacts.some((fact) => fact.blockId === block.blockId)) return []
     const proposedHtml = sanitizeHtml(item.proposedHtml)
-    if (!proposedHtml || proposedHtml === block.originalHtml) return []
+    if (!proposedHtml || proposedHtml === block.originalHtml || !hasOnlySupportedClaimTokens(proposedHtml, sourceFacts) || comparableText(proposedHtml) !== comparableText(block.originalHtml)) return []
     suggestedBlockIds.add(item.blockId)
     return [{
       id: `${requestId}:${index + 1}`,
@@ -218,6 +265,7 @@ export async function generateJobSuggestions(userId: string, jobId: string, rege
       sourceFactIds: sourceFacts.map((fact) => fact.id),
     }]
   })
+  if (suggestions.length === 0) suggestions = groundedFallbackSuggestions(input, requestId)
   if (suggestions.length === 0) throw new TailorNoContentError('No valid suggestions')
 
   const suggestionSet: JobSuggestionSet = {
@@ -274,7 +322,7 @@ export async function applyJobSuggestions(userId: string, jobId: string, suggest
     prisma.job.update({
       where: { id: input.job.id },
       data: {
-        status: 'READY',
+        status: ['PREPARING', 'READY', 'EXPORTED'].includes(input.job.status) ? 'READY' : undefined,
         suggestionSet: appliedSuggestionSet as unknown as Prisma.InputJsonValue,
         matchSnapshot: {
           ...previousMatch,
