@@ -7,6 +7,7 @@
  * AI result is shown as a diff preview before being written to the store.
  */
 import { useState, useEffect, useCallback, useRef, useMemo, type ReactElement } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Sparkles, ChevronDown, ChevronUp, Check, Loader2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAppStore } from '@/state/store';
@@ -14,7 +15,7 @@ import { useVipCheck } from '@/hooks/use-vip-check';
 import { useOptimizeResume } from '@/lib/ai/use-optimize-resume';
 import type { SectionIdentity } from '@/lib/ai/section-types';
 import { SECTION_IDENTITY_OPTIONS } from '@/lib/ai/section-types';
-import type { OptimizeResumeBlock } from '@/lib/ai/optimize-resume-prompt-builder';
+import type { OptimizeConfirmedEvidence, OptimizeResumeBlock } from '@/lib/ai/optimize-resume-prompt-builder';
 import { MIN_OPTIMIZE_CONTENT_LENGTH, MAX_OPTIMIZE_JD_LENGTH } from '@/lib/ai/optimize-resume-prompt-builder';
 import type { ResumeBlock } from '@/entities/blocks/resume-block';
 import { track } from '@/lib/analytics';
@@ -159,6 +160,8 @@ function DiffCard(props: {
 }
 
 export default function AiOptimizePanel(): ReactElement {
+  const searchParams = useSearchParams();
+  const jobId = searchParams.get('jobId');
   const resume = useAppStore((s) => s.resume);
   const setResume = useAppStore((s) => s.setResume);
   const { quota, quotaLoaded, setShowUpgrade } = useVipCheck();
@@ -169,6 +172,8 @@ export default function AiOptimizePanel(): ReactElement {
   const [identity, setIdentity] = useState<SectionIdentity>('professional');
   const [loadingMsgIdx, setLoadingMsgIdx] = useState(0);
   const [acceptedIds, setAcceptedIds] = useState<Set<string>>(new Set());
+  const [isLoadingJobContext, setIsLoadingJobContext] = useState(Boolean(jobId));
+  const [confirmedEvidence, setConfirmedEvidence] = useState<OptimizeConfirmedEvidence[]>([]);
   const [originalMap, setOriginalMap] = useState<Record<string, string>>({});
   const loadingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -200,6 +205,31 @@ export default function AiOptimizePanel(): ReactElement {
     return () => stopLoadingMessages();
   }, [stopLoadingMessages]);
 
+  useEffect(() => {
+    if (!jobId) return;
+    const controller = new AbortController();
+    void fetch(`/next-api/jobs/${jobId}`, { signal: controller.signal })
+      .then(async (response) => {
+        if (!response.ok) return null;
+        return response.json() as Promise<{
+          job?: { jd?: string; identity?: SectionIdentity };
+          confirmedEvidence?: OptimizeConfirmedEvidence[];
+        }>;
+      })
+      .then((context) => {
+        if (context?.job?.jd) setJd(context.job.jd.slice(0, MAX_OPTIMIZE_JD_LENGTH));
+        if (context?.job?.identity) setIdentity(context.job.identity);
+        setConfirmedEvidence(context?.confirmedEvidence ?? []);
+      })
+      .catch((fetchError: unknown) => {
+        if (!(fetchError instanceof DOMException && fetchError.name === 'AbortError')) {
+          setConfirmedEvidence([]);
+        }
+      })
+      .finally(() => setIsLoadingJobContext(false));
+    return () => controller.abort();
+  }, [jobId]);
+
   const handleRun = async (): Promise<void> => {
     if (!optimizeQuota?.isVip && !optimizeQuota?.allowed) {
       setShowUpgrade(true);
@@ -216,7 +246,14 @@ export default function AiOptimizePanel(): ReactElement {
     setPhase('loading');
     startLoadingMessages();
 
-    const result = await run({ blocks: sendableBlocks, identity, jobDescription: jd || undefined });
+    const result = await run({
+      blocks: sendableBlocks,
+      identity,
+      jobDescription: jd || undefined,
+      jobId: jobId || undefined,
+      confirmedEvidence,
+      realisticMode: Boolean(jobId),
+    });
 
     stopLoadingMessages();
 
@@ -454,6 +491,13 @@ export default function AiOptimizePanel(): ReactElement {
             className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-xs text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-200 focus:border-violet-300 leading-relaxed transition-colors"
           />
           <p className="text-[11px] text-slate-400">JD 为可选项，不填也可直接优化</p>
+          {jobId && (
+            <p className="rounded-lg bg-emerald-50 px-3 py-2 text-[11px] leading-5 text-emerald-700">
+              {isLoadingJobContext
+                ? '正在载入岗位和已确认事实…'
+                : `岗位版严格事实模式已开启：只使用 ${confirmedEvidence.length} 条已确认事实，不新增未经证实的动作、工具或数据。`}
+            </p>
+          )}
         </div>
 
         {sendableBlocks.length > 0 && (

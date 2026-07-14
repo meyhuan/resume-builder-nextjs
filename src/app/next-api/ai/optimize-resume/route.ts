@@ -9,6 +9,9 @@ import {
   MAX_OPTIMIZE_JD_LENGTH,
 } from '@/lib/ai/optimize-resume-prompt-builder';
 import type { OptimizeResumeRequest } from '@/lib/ai/optimize-resume-prompt-builder';
+import { getCurrentUser } from '@/lib/auth/current-user';
+import { parseResumeFacts } from '@/lib/jobs/fact-extractor';
+import { prisma } from '@/lib/prisma';
 
 /**
  * POST /next-api/ai/optimize-resume
@@ -25,6 +28,7 @@ export async function POST(request: NextRequest): Promise<Response> {
       blocks,
       identity,
       jobDescription,
+      jobId,
       realisticMode = false,
       model: modelName,
     } = body;
@@ -45,8 +49,35 @@ export async function POST(request: NextRequest): Promise<Response> {
       return NextResponse.json({ error: '所有模块内容过少，请先填写简历内容再使用一键优化' }, { status: 400 });
     }
 
-    const truncatedJd = jobDescription
-      ? jobDescription.slice(0, MAX_OPTIMIZE_JD_LENGTH)
+    let effectiveIdentity = identity;
+    let effectiveJd = jobDescription;
+    let confirmedEvidence: Array<{ blockId: string; text: string }> = [];
+    if (jobId) {
+      const user = await getCurrentUser();
+      if (!user) return NextResponse.json({ error: '请先登录' }, { status: 401 });
+      const job = await prisma.job.findFirst({
+        where: { id: jobId, userId: user.id },
+        include: { factSet: { select: { facts: true, confirmedFactIds: true, confirmedAt: true } } },
+      });
+      if (!job) return NextResponse.json({ error: '岗位不存在' }, { status: 404 });
+      if (!job.factSet.confirmedAt) {
+        return NextResponse.json({ error: '请先确认可用于该岗位的真实事实' }, { status: 409 });
+      }
+      const confirmedIds = Array.isArray(job.factSet.confirmedFactIds)
+        ? new Set(job.factSet.confirmedFactIds.filter((value): value is string => typeof value === 'string'))
+        : new Set<string>();
+      confirmedEvidence = parseResumeFacts(job.factSet.facts)
+        .filter((fact) => confirmedIds.has(fact.id))
+        .map((fact) => ({ blockId: fact.blockId, text: fact.text.trim().slice(0, 2000) }))
+        .slice(0, 50);
+      if (job.identity === 'student' || job.identity === 'graduate' || job.identity === 'professional') {
+        effectiveIdentity = job.identity;
+      }
+      effectiveJd = job.jd;
+    }
+
+    const truncatedJd = effectiveJd
+      ? effectiveJd.slice(0, MAX_OPTIMIZE_JD_LENGTH)
       : undefined;
 
     const modelConfig = getModelByName(modelName ?? '');
@@ -57,8 +88,8 @@ export async function POST(request: NextRequest): Promise<Response> {
       baseURL: modelConfig.baseUrl,
     });
 
-    const systemPrompt = buildOptimizeSystemPrompt(identity, realisticMode);
-    const userPrompt = buildOptimizeUserPrompt(filteredBlocks, truncatedJd);
+    const systemPrompt = buildOptimizeSystemPrompt(effectiveIdentity, realisticMode || Boolean(jobId));
+    const userPrompt = buildOptimizeUserPrompt(filteredBlocks, truncatedJd, confirmedEvidence);
 
     const stream = await client.chat.completions.create({
       model: modelConfig.name,

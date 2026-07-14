@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { ZodError } from 'zod'
 import { getCurrentUser } from '@/lib/auth/current-user'
+import { parseResumeFacts } from '@/lib/jobs/fact-extractor'
 import { updateJobSchema } from '@/lib/jobs/job-contracts'
 import { deleteJobWorkspace, JobNotFoundError, updateJobWorkspace } from '@/lib/jobs/job-service'
 import { prisma } from '@/lib/prisma'
@@ -19,12 +20,24 @@ export async function GET(_request: Request, context: RouteContext): Promise<Res
     include: {
       baseResume: { select: { id: true, title: true, updatedAt: true } },
       tailoredResume: { select: { id: true, title: true, template: true, thumbnail: true, updatedAt: true } },
-      factSet: { select: { id: true, revision: true, confirmedAt: true, sourceContentHash: true } },
+      factSet: { select: { id: true, revision: true, confirmedAt: true, sourceContentHash: true, facts: true, confirmedFactIds: true } },
     },
   })
 
   if (!job) return NextResponse.json({ code: 'JOB_NOT_FOUND', error: '岗位不存在' }, { status: 404 })
-  return NextResponse.json({ job })
+  const confirmedIds = Array.isArray(job.factSet.confirmedFactIds)
+    ? new Set(job.factSet.confirmedFactIds.filter((value): value is string => typeof value === 'string'))
+    : new Set<string>()
+  const confirmedEvidence = parseResumeFacts(job.factSet.facts)
+    .filter((fact) => confirmedIds.has(fact.id))
+    .map((fact) => ({ blockId: fact.blockId, text: fact.text }))
+  const safeFactSet = {
+    id: job.factSet.id,
+    revision: job.factSet.revision,
+    confirmedAt: job.factSet.confirmedAt,
+    sourceContentHash: job.factSet.sourceContentHash,
+  }
+  return NextResponse.json({ job: { ...job, factSet: safeFactSet }, confirmedEvidence })
 }
 
 export async function PATCH(request: Request, context: RouteContext): Promise<Response> {

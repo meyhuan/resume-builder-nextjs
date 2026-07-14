@@ -2,12 +2,15 @@
 
 import { useState, useCallback, useRef } from 'react';
 import type { SectionIdentity } from '@/lib/ai/section-types';
-import type { OptimizeResumeBlock } from '@/lib/ai/optimize-resume-prompt-builder';
+import type { OptimizeConfirmedEvidence, OptimizeResumeBlock } from '@/lib/ai/optimize-resume-prompt-builder';
+import { validateEvidenceBoundRewrite } from '@/lib/jobs/evidence-rewrite-validator';
 
 export interface OptimizeResumeParams {
   readonly blocks: OptimizeResumeBlock[];
   readonly identity: SectionIdentity;
   readonly jobDescription?: string;
+  readonly jobId?: string;
+  readonly confirmedEvidence?: readonly OptimizeConfirmedEvidence[];
   readonly realisticMode?: boolean;
 }
 
@@ -62,7 +65,13 @@ export function useOptimizeResume(): UseOptimizeResumeReturn {
         const response = await fetch('/next-api/ai/optimize-resume', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(params),
+          body: JSON.stringify({
+            blocks: params.blocks,
+            identity: params.identity,
+            jobDescription: params.jobDescription,
+            jobId: params.jobId,
+            realisticMode: params.realisticMode,
+          }),
           signal: controller.signal,
         });
 
@@ -112,9 +121,27 @@ export function useOptimizeResume(): UseOptimizeResumeReturn {
         }
 
         const parsed = extractResultMap(accumulated);
-        setResultMap(parsed);
+        const guarded = params.realisticMode
+          ? Object.fromEntries(
+              Object.entries(parsed).filter(([blockId, proposedHtml]) => {
+                const sourceBlock = params.blocks.find((block) => block.blockId === blockId);
+                if (!sourceBlock) return false;
+                const blockEvidence = (params.confirmedEvidence ?? [])
+                  .filter((fact) => fact.blockId === blockId)
+                  .map((fact) => fact.text);
+                return validateEvidenceBoundRewrite(
+                  [sourceBlock.contentHtml, ...blockEvidence].join('\n'),
+                  proposedHtml,
+                ).safe;
+              }),
+            )
+          : parsed;
+        if (params.realisticMode && Object.keys(guarded).length === 0 && Object.keys(parsed).length > 0) {
+          throw new Error('AI 建议包含已确认事实没有的数字、工具或平台，已为你拦截。请先补充真实内容后重试。');
+        }
+        setResultMap(guarded);
         setIsRunning(false);
-        return parsed;
+        return guarded;
       } catch (err) {
         if (err instanceof DOMException && err.name === 'AbortError') {
           setIsRunning(false);
