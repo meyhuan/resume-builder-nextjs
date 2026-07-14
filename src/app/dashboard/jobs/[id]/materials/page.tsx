@@ -56,6 +56,12 @@ export default async function MaterialsPage({ params }: MaterialsPageProps) {
   const materialMap = new Map(
     job.materials.map((material) => [material.type, material]),
   );
+  const recommendedType: JobMaterialType =
+    job.status === "INTERVIEWING" ? "INTERVIEW_PREP" : "OUTREACH";
+  const orderedTypes = [
+    recommendedType,
+    ...JOB_MATERIAL_TYPES.filter((type) => type !== recommendedType),
+  ];
 
   return (
     <JobPageShell>
@@ -79,13 +85,19 @@ export default async function MaterialsPage({ params }: MaterialsPageProps) {
           variant="outline"
           className="border-violet-200 bg-white text-violet-700"
         >
-          <Link href={`/dashboard/jobs/${job.id}/facts`}>管理可用事实</Link>
+          <Link href={`/dashboard/jobs/${job.id}/analysis`}>查看岗位证据</Link>
         </Button>
       </header>
       <section className="mb-6 rounded-2xl border border-violet-100 bg-violet-50/60 p-5">
-        <h2 className="font-semibold text-slate-800">这不是五份重复文案</h2>
+        <p className="text-xs font-semibold text-violet-600">当前最值得准备</p>
+        <h2 className="mt-1 font-semibold text-slate-800">
+          {JOB_MATERIAL_META[recommendedType].label}
+        </h2>
         <p className="mt-2 text-sm leading-6 text-slate-500">
-          每份材料对应一个真实求职场景。建议先创建最紧迫的一份，生成后仍可逐句编辑，不需要一次全部完成。
+          {recommendedType === "INTERVIEW_PREP"
+            ? "你已经进入面试阶段，优先根据 JD 和真实经历准备问题、回答提纲与反问。"
+            : "你还没有进入面试阶段，优先准备招聘平台首句、投递邮件和后续跟进话术。"}{" "}
+          其他材料按需创建，不需要一次全部完成。
         </p>
       </section>
       {!job.factSet.confirmedAt ? (
@@ -106,7 +118,7 @@ export default async function MaterialsPage({ params }: MaterialsPageProps) {
         </section>
       ) : (
         <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-          {JOB_MATERIAL_TYPES.map((type) => {
+          {orderedTypes.map((type) => {
             const meta = JOB_MATERIAL_META[type];
             const material = materialMap.get(type);
             const Icon = ICONS[type];
@@ -120,11 +132,18 @@ export default async function MaterialsPage({ params }: MaterialsPageProps) {
                   <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-violet-50 text-violet-600 transition group-hover:bg-violet-100">
                     <Icon className="h-5 w-5" />
                   </div>
-                  <span
-                    className={`rounded-full px-2.5 py-1 text-xs ${material ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"}`}
-                  >
-                    {material ? "已创建" : "未创建"}
-                  </span>
+                  <div className="flex flex-col items-end gap-1.5">
+                    {type === recommendedType && (
+                      <span className="rounded-full bg-violet-100 px-2.5 py-1 text-xs font-medium text-violet-700">
+                        当前推荐
+                      </span>
+                    )}
+                    <span
+                      className={`rounded-full px-2.5 py-1 text-xs ${material ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"}`}
+                    >
+                      {material ? "已创建" : "未创建"}
+                    </span>
+                  </div>
                 </div>
                 <h2 className="mt-5 font-semibold text-slate-800 group-hover:text-violet-700">
                   {meta.label}

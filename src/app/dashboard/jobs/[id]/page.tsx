@@ -23,6 +23,8 @@ import { InterviewDialog } from "@/components/interviews/interview-dialog";
 import { OutcomeDialog } from "@/components/interviews/outcome-dialog";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { prisma } from "@/lib/prisma";
+import { parseJobMatchSnapshot } from "@/lib/jobs/job-evidence";
+import { parseSuggestionSet } from "@/lib/jobs/job-tailor";
 import {
   APPLICATION_STATUS_META,
   isApplicationStatus,
@@ -85,7 +87,7 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
           confirmedAt: true,
         },
       },
-      materials: { select: { id: true, title: true } },
+      materials: { select: { id: true, title: true, type: true } },
       applications: {
         orderBy: { appliedAt: "desc" },
         include: {
@@ -103,6 +105,31 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
 
   const factCount = countJsonArray(job.factSet.facts);
   const confirmedFactCount = countJsonArray(job.factSet.confirmedFactIds);
+  const analysis = parseJobMatchSnapshot(job.matchSnapshot);
+  const requirements = Array.isArray(analysis?.requirements)
+    ? analysis.requirements
+    : [];
+  const directRequirementCount = requirements.filter(
+    (item) => item.status === "direct",
+  ).length;
+  const transferableRequirementCount = requirements.filter(
+    (item) => item.status === "transferable",
+  ).length;
+  const appliedSuggestionCount =
+    parseSuggestionSet(job.suggestionSet)?.appliedSuggestionIds?.length ?? 0;
+  const hasOutreach = job.materials.some(
+    (material) => material.type === "OUTREACH",
+  );
+  const latestInterview = job.applications
+    .flatMap((application) => application.interviews)
+    .sort(
+      (left, right) =>
+        (right.scheduledAt ?? right.createdAt).getTime() -
+        (left.scheduledAt ?? left.createdAt).getTime(),
+    )[0];
+  const latestInterviewNextAction = latestInterview
+    ? jsonStringArray(latestInterview.nextActions)[0]
+    : undefined;
   const dateText = new Intl.DateTimeFormat("zh-CN", {
     year: "numeric",
     month: "long",
@@ -124,26 +151,50 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
           label: "开始分析",
           href: `/dashboard/jobs/${job.id}/facts`,
         }
-      : job._count.materials < 5
+      : appliedSuggestionCount === 0
         ? {
-            title: "准备当前最需要的求职材料",
-            description: "不必一次生成全部五份，先选择即将使用的一份。",
-            label: "选择材料",
-            href: `/dashboard/jobs/${job.id}/materials`,
+            title: "审核有证据支持的岗位改写",
+            description:
+              "逐条查看原文、建议表达和真实证据，只有你采用的内容会写入岗位简历。",
+            label: "生成并审核改写",
+            href: `/dashboard/jobs/${job.id}/tailor`,
           }
         : job.applications.length === 0
-          ? {
-              title: "完成投递后记录结果",
-              description: "记录渠道、时间和下次跟进，之后会自动形成时间线。",
-              label: "记录投递",
-              href: `#applications`,
-            }
-          : {
-              title: "更新投递状态与下一步",
-              description: "记录联系、面试或结果，让复盘基于真实过程。",
-              label: "查看投递记录",
-              href: "#applications",
-            };
+          ? hasOutreach
+            ? {
+                title: "检查岗位简历并完成投递",
+                description:
+                  "沟通话术已经准备好。投递完成后记录渠道和跟进时间。",
+                label: "打开岗位简历",
+                href: job.tailoredResume
+                  ? `/editor/${job.tailoredResume.id}?jobId=${job.id}`
+                  : `#applications`,
+              }
+            : {
+                title: "准备一段招聘平台沟通话术",
+                description:
+                  "岗位简历已经准备好，下一步只生成当前投递最需要的一份材料。",
+                label: "准备沟通话术",
+                href: `/dashboard/jobs/${job.id}/materials/outreach`,
+              }
+          : job.status === "INTERVIEWING"
+            ? {
+                title:
+                  latestInterviewNextAction || "记录面试问题，准备下一轮",
+                description: latestInterview
+                  ? "根据真实面试问题补强回答，不用重新浏览整个工作台。"
+                  : "记录面试官重点追问、没答完整的部分和下一步准备。",
+                label: latestInterview ? "准备下一轮面试" : "记录面试反馈",
+                href: latestInterview
+                  ? `/dashboard/jobs/${job.id}/materials/interview-prep`
+                  : "#applications",
+              }
+            : {
+                title: "更新投递状态与下一步",
+                description: "记录联系、面试或结果，让复盘基于真实过程。",
+                label: "查看投递记录",
+                href: "#applications",
+              };
 
   return (
     <JobPageShell>
@@ -210,38 +261,56 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
 
       <div className="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-xl border border-white bg-white/80 p-4 shadow-sm">
-          <p className="text-xs text-slate-400">事实快照</p>
-          <p className="mt-1 text-xl font-bold text-slate-800">
-            {factCount || "待提取"}
-          </p>
-          <p className="mt-1 text-xs text-slate-400">
-            修订 R{job.factSet.revision}
-          </p>
-        </div>
-        <div className="rounded-xl border border-white bg-white/80 p-4 shadow-sm">
-          <p className="text-xs text-slate-400">已确认事实</p>
+          <p className="text-xs text-slate-400">可用于本岗位的经历</p>
           <p className="mt-1 text-xl font-bold text-slate-800">
             {confirmedFactCount || "待确认"}
           </p>
           <p className="mt-1 text-xs text-slate-400">
-            {job.factSet.confirmedAt ? "事实已确认" : "等待用户确认"}
+            {job.factSet.confirmedAt
+              ? "已由你确认"
+              : `从 ${factCount} 段经历中选择`}
+          </p>
+        </div>
+        <div className="rounded-xl border border-white bg-white/80 p-4 shadow-sm">
+          <p className="text-xs text-slate-400">已找到的岗位证据</p>
+          <p className="mt-1 text-xl font-bold text-slate-800">
+            {job.matchSnapshot
+              ? directRequirementCount + transferableRequirementCount
+              : "待匹配"}
+          </p>
+          <p className="mt-1 text-xs text-slate-400">
+            {job.matchSnapshot
+              ? `${directRequirementCount} 项直接 · ${transferableRequirementCount} 项可迁移`
+              : "等待匹配"}
           </p>
         </div>
         <div className="rounded-xl border border-white bg-white/80 p-4 shadow-sm">
           <p className="text-xs text-slate-400">岗位简历</p>
           <p className="mt-1 text-xl font-bold text-slate-800">
-            {job.tailoredResume ? "已创建" : "未创建"}
+            {appliedSuggestionCount > 0
+              ? "已优化"
+              : job.tailoredResume
+                ? "待审核"
+                : "未创建"}
           </p>
           <p className="mt-1 text-xs text-slate-400">
-            {job.tailoredResume?.template ?? "—"}
+            {appliedSuggestionCount > 0
+              ? `已采用 ${appliedSuggestionCount} 条改写`
+              : "母版保持不变"}
           </p>
         </div>
         <div className="rounded-xl border border-white bg-white/80 p-4 shadow-sm">
-          <p className="text-xs text-slate-400">求职材料</p>
+          <p className="text-xs text-slate-400">投递进度</p>
           <p className="mt-1 text-xl font-bold text-slate-800">
-            {job._count.materials} / 5
+            {job.applications.length > 0
+              ? applicationStatusLabel(job.applications[0]?.status ?? null)
+              : "未投递"}
           </p>
-          <p className="mt-1 text-xs text-slate-400">自我介绍、求职信等</p>
+          <p className="mt-1 text-xs text-slate-400">
+            {job.applications.length > 0
+              ? `${job.applications.length} 次投递记录`
+              : "准备好后再记录"}
+          </p>
         </div>
       </div>
 

@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { parseResumeFacts } from "@/lib/jobs/fact-extractor";
+import { mergeJobEvidence } from "@/lib/jobs/job-evidence";
 import { prisma } from "@/lib/prisma";
 
 export const metadata: Metadata = {
@@ -64,19 +65,27 @@ export default async function ReviewPage() {
       orderBy: { appliedAt: "desc" },
       include: {
         outcome: true,
+        interviews: { select: { nextActions: true } },
         job: { select: { id: true, role: true, company: true } },
       },
     }),
   ]);
 
-  const outcomes = applications.flatMap((item) =>
-    item.outcome ? [item.outcome] : [],
-  );
-  const replied = outcomes.filter((item) => item.replyReceived).length;
-  const interviewed = outcomes.filter(
-    (item) => item.interviewReached > 0,
+  const replied = applications.filter(
+    (application) =>
+      application.outcome?.replyReceived ||
+      ["CONTACTING", "INTERVIEWING", "OFFER"].includes(application.status),
   ).length;
-  const offered = outcomes.filter((item) => item.offerReceived).length;
+  const interviewed = applications.filter(
+    (application) =>
+      application.interviews.length > 0 ||
+      (application.outcome?.interviewReached ?? 0) > 0 ||
+      ["INTERVIEWING", "OFFER"].includes(application.status),
+  ).length;
+  const offered = applications.filter(
+    (application) =>
+      application.outcome?.offerReceived || application.status === "OFFER",
+  ).length;
   const channels = ranked(applications.map((item) => item.channel));
   const gaps = ranked(
     jobs.flatMap((job) => missingKeywords(job.matchSnapshot)),
@@ -90,10 +99,24 @@ export default async function ReviewPage() {
             )
           : [],
       );
-      return parseResumeFacts(job.factSet.facts)
-        .filter((fact) => confirmed.has(fact.id))
-        .map((fact) => fact.label);
+      const baseFacts = parseResumeFacts(job.factSet.facts).filter((fact) =>
+        confirmed.has(fact.id),
+      );
+      return mergeJobEvidence(baseFacts, job.matchSnapshot).map(
+        (fact) => fact.label,
+      );
     }),
+  );
+  const interviewActions = ranked(
+    applications.flatMap((application) =>
+      application.interviews.flatMap((interview) =>
+        Array.isArray(interview.nextActions)
+          ? interview.nextActions.filter(
+              (item): item is string => typeof item === "string",
+            )
+          : [],
+      ),
+    ),
   );
   const overdue = applications.filter(
     (item) =>
@@ -173,6 +196,11 @@ export default async function ReviewPage() {
             title="被反复使用的真实经历"
             empty="确认岗位事实后，这里会汇总高频经历。"
             items={facts}
+          />
+          <ReviewList
+            title="面试后需要补强"
+            empty="记录面试问题和下一步准备后，这里会汇总需要反复练习的内容。"
+            items={interviewActions}
           />
           <section className="rounded-2xl border border-white bg-white/85 p-6 shadow-sm">
             <div className="flex items-center justify-between">
