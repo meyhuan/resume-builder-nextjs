@@ -97,8 +97,15 @@ function mapBaseInfo(ext: ExternalResume): BaseInfo | undefined {
     phone: bi.phone,
     email: bi.mail,
     gender: bi.gender,
-    age: bi.age ? parseInt(bi.age, 10) : undefined,
+    age: parseAge(bi.age),
   };
+}
+
+function parseAge(value: string | undefined): number | undefined {
+  if (!value) return undefined;
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed) || parsed <= 0 || parsed > 120) return undefined;
+  return parsed;
 }
 
 function mapSelfEvaluation(ext: ExternalResume): Section | undefined {

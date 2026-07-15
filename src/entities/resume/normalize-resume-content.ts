@@ -29,10 +29,20 @@ export function normalizeResumeContent(
     ...rawResume,
     id: normalizeString(rawResume.id) || options.fallbackId || 'resume-imported',
     name: normalizeString(rawResume.name),
+    baseInfo: normalizeBaseInfo(rawResume.baseInfo),
     sections: rawSections.map((section, sectionIndex) =>
       normalizeSection(section as Partial<Section> & RawRecord, sectionIndex, usedSectionIds, usedBlockIds),
     ),
   } as ResumeData
+}
+
+function normalizeBaseInfo(value: unknown): unknown {
+  if (!isRawRecord(value)) return value
+  const { age, ...rest } = value
+  const normalizedAge = normalizeAge(age)
+  return normalizedAge === undefined
+    ? rest
+    : { ...rest, age: normalizedAge }
 }
 
 function normalizeSection(
@@ -155,6 +165,18 @@ function normalizeString(value: unknown): string {
   if (typeof value === 'string') return value.replace(ZERO_WIDTH_PATTERN, '').trim()
   if (typeof value === 'number' || typeof value === 'boolean') return String(value)
   return ''
+}
+
+function normalizeAge(value: unknown): number | undefined {
+  const parsed = typeof value === 'number'
+    ? value
+    : Number.parseInt(normalizeString(value), 10)
+  if (!Number.isFinite(parsed) || parsed <= 0 || parsed > 120) return undefined
+  return parsed
+}
+
+function isRawRecord(value: unknown): value is RawRecord {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
 function escapeHtml(value: string): string {
