@@ -65,6 +65,8 @@ function normalizeResume(resume: ResumeData | null | undefined, fallbackId: stri
     baseInfo: base.baseInfo,
     jobIntention: base.jobIntention,
     jobIntentionVisible: base.jobIntentionVisible,
+    headerJobIntentionVisible: base.headerJobIntentionVisible,
+    portfolio: base.portfolio,
     sections: Array.isArray(base.sections) ? base.sections : [],
   }
   return withNormalizedJobPosition(normalizeResumeContent(normalized, { fallbackId }))

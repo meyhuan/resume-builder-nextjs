@@ -37,6 +37,7 @@ import { getRenderableResume } from '@/entities/resume/renderable-resume'
 import { normalizeResumeContent } from '@/entities/resume/normalize-resume-content'
 import { joinExportFileNameParts, sanitizeExportFileName } from '@/lib/export-file-name'
 import { track } from '@/lib/analytics'
+import { PortfolioAppendix } from '@/components/portfolio/portfolio-appendix'
 
 const AI_CACHE_KEYS: Record<string, string> = {
   ai: 'wizard_pending_resume',
@@ -192,6 +193,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
   const canUndo = useAppStore((s) => s.pastStates.length > 0)
   const canRedo = useAppStore((s) => s.futureStates.length > 0)
   const printRef = useRef<HTMLDivElement>(null)
+  const resumeBodyRef = useRef<HTMLDivElement>(null)
 
   // Initialize template state from URL query param or 'simple' default
   const defaultTemplate = searchParams.get('template') || 'simple'
@@ -473,7 +475,9 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
    * Persist resume to DB. In guest mode (no resumeId), creates a new
    * resume first, then saves. Auth is checked before any API call.
    */
-  const doSave = useCallback(async (): Promise<string | undefined> => {
+  const doSave = useCallback(async (
+    options: { readonly revalidateDashboard?: boolean } = {},
+  ): Promise<string | undefined> => {
     setIsSaving(true)
     let currentId = resumeId
     let createStarted = false
@@ -588,7 +592,9 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
       setLastSaved(new Date())
       setSavedSnapshot(JSON.stringify({ resume, theme, tpl, onePageMode, onePageSnapshot, sidebarSectionIds }))
       clearEditorDraftBackup()
-      await revalidateDashboard()
+      if (options.revalidateDashboard !== false) {
+        await revalidateDashboard()
+      }
       toast.success('保存成功')
       return currentId
     } catch (e) {
@@ -699,7 +705,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
 
   // One-page mode hook
   const { status: onePageStatus, reset: resetOnePage } = useOnePageMode({
-    contentRef: printRef,
+    contentRef: resumeBodyRef,
     theme,
     patchTheme,
     enabled: onePageMode,
@@ -1106,8 +1112,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
             <AiSectionProvider requireVip={requireAi}>
             <div
               ref={printRef}
-              className="page w-full bg-white shadow-[0_0_50px_rgba(0,0,0,0.05)] rounded-xl print:shadow-none print:rounded-none overflow-hidden"
-              {...(onePageMode ? { 'data-one-page': 'true' } : {})}
+              className="page w-full bg-white shadow-[0_0_50px_rgba(0,0,0,0.05)] rounded-xl print:shadow-none print:rounded-none"
             >
               {/* Suspense 包裹动态加载的模板 */}
               <Suspense
@@ -1121,21 +1126,24 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
                   </div>
                 }
               >
-                {TemplateComponent ? (
-                  <TemplateComponent
-                    resume={renderableResume}
-                    theme={theme}
-                    sidebarSectionIds={sidebarSectionIds}
-                    onSidebarSectionIdsChange={setSidebarSectionIds}
-                  />
-                ) : (
-                  <div className="flex items-center justify-center h-[297mm] bg-white">
-                    <div className="text-center text-gray-500">
-                      <p className="text-lg mb-2">❌ 模板未找到</p>
-                      <p className="text-sm">模板 ID: {tpl}</p>
+                <div ref={resumeBodyRef} className="resume-document-main" {...(onePageMode ? { 'data-one-page': 'true' } : {})}>
+                  {TemplateComponent ? (
+                    <TemplateComponent
+                      resume={renderableResume}
+                      theme={theme}
+                      sidebarSectionIds={sidebarSectionIds}
+                      onSidebarSectionIdsChange={setSidebarSectionIds}
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center h-[297mm] bg-white">
+                      <div className="text-center text-gray-500">
+                        <p className="text-lg mb-2">❌ 模板未找到</p>
+                        <p className="text-sm">模板 ID: {tpl}</p>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
+                <PortfolioAppendix portfolio={renderableResume.portfolio} />
               </Suspense>
             </div>
             </AiSectionProvider>
@@ -1154,6 +1162,10 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
               onePage={onePageMode}
               onePageStatus={onePageStatus}
               onOnePageChange={setOnePageMode}
+              resumeId={resumeId}
+              onRequireResumeId={async (): Promise<string | null> => (
+                resumeId ?? await doSave({ revalidateDashboard: false }) ?? null
+              )}
             />
           </aside>
         )}

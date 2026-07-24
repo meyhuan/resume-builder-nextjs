@@ -34,7 +34,7 @@ interface EditHomeSearchParams {
 function hasEditableContent(content: unknown): boolean {
   if (!content || typeof content !== 'object' || Array.isArray(content)) return false
   const resume = content as Partial<ResumeData>
-  if (resume.name || resume.baseInfo || resume.jobIntention) return true
+  if (resume.name || resume.baseInfo || resume.jobIntention || resume.portfolio?.images.length) return true
   return Array.isArray(resume.sections) && resume.sections.length > 0
 }
 

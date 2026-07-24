@@ -7,11 +7,13 @@ import type { ThemeTokens } from '@/entities/theme/theme-tokens'
 import { getResumeFontFamily, normalizeResumeFontTheme } from '@/entities/theme/font-stacks'
 import { TEMPLATE_REGISTRY } from '@/templates/template-loader'
 import { useAppStore } from '@/state/store'
+import { PortfolioAppendix } from '@/components/portfolio/portfolio-appendix'
 
 interface PrintRendererProps {
   readonly resume: ResumeData
   readonly templateId: string
   readonly savedTheme?: ThemeTokens
+  readonly onePage?: boolean
 }
 
 const DEFAULT_THEME: ThemeTokens = {
@@ -38,7 +40,7 @@ function resolveTheme(templateId: string): ThemeTokens {
  * Client-side renderer for the print page.
  * Sets data-print-ready="1" after fonts load so puppeteer can capture.
  */
-export default function PrintRenderer({ resume, templateId, savedTheme }: PrintRendererProps): ReactElement {
+export default function PrintRenderer({ resume, templateId, savedTheme, onePage = false }: PrintRendererProps): ReactElement {
   const config = TEMPLATE_REGISTRY[templateId] || TEMPLATE_REGISTRY['simple']
   const defaultTheme: ThemeTokens = useMemo(() => resolveTheme(config?.id ?? 'simple'), [config])
   const renderableResume = useMemo(() => getRenderableResume(resume), [resume])
@@ -101,7 +103,10 @@ export default function PrintRenderer({ resume, templateId, savedTheme }: PrintR
         }
       `}</style>
       <Suspense fallback={<div data-print-loading="1" />}>
-        <TemplateComponent resume={renderableResume} theme={theme} />
+        <div className="resume-document-main" data-one-page={onePage ? 'true' : 'false'}>
+          <TemplateComponent resume={renderableResume} theme={theme} />
+        </div>
+        <PortfolioAppendix portfolio={renderableResume.portfolio} />
       </Suspense>
     </div>
   )

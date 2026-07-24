@@ -73,7 +73,7 @@ export default async function PrintPage(props: PrintPageProps): Promise<ReactEle
         }`
   const onePageCss = isOnePage
     ? `
-        .page[data-one-page="true"] {
+        .resume-document-main[data-one-page="true"] {
           max-height: 297mm !important;
           height: 297mm !important;
           overflow: hidden !important;
@@ -108,8 +108,8 @@ export default async function PrintPage(props: PrintPageProps): Promise<ReactEle
         ${onePageCss}
         ${bleedPageCss}
       `}</style>
-      <div className="page" id="print-root" data-one-page={isOnePage ? 'true' : 'false'}>
-        <PrintRenderer resume={resumeData} templateId={templateId} savedTheme={savedTheme} />
+      <div className="page" id="print-root">
+        <PrintRenderer resume={resumeData} templateId={templateId} savedTheme={savedTheme} onePage={isOnePage} />
       </div>
     </div>
   )

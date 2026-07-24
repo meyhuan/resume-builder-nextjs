@@ -79,7 +79,7 @@
       content: none !important;
     }
     /* One-page mode: enforce single page */
-    .page[data-one-page="true"] {
+    .resume-document-main[data-one-page="true"] {
       max-height: 297mm !important;
       height: 297mm !important;
       overflow: hidden !important;

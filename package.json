@@ -24,6 +24,7 @@
     "template:qa:all": "node scripts/verify-template.mjs --all --local",
     "template:thumbs": "node scripts/generate-template-thumbnails.mjs",
     "template:convert": "node scripts/convert-html-template.mjs",
+    "e2e:portfolio": "node scripts/e2e-portfolio.mjs",
     "seo:submit": "node scripts/seo-submit.mjs",
     "import:supabase": "node scripts/import-supabase-csv.mjs",
     "migrate:oss-assets": "node scripts/migrate-oss-assets.mjs",

@@ -8,6 +8,7 @@ import { getAllTemplates, getTemplate } from '@/templates/template-loader'
 import { useAppStore } from '@/state/store'
 import { RESUME_SCENARIOS } from '@/dev/resume-scenarios'
 import type { ThemeTokens } from '@/entities/theme/theme-tokens'
+import { PortfolioAppendix } from '@/components/portfolio/portfolio-appendix'
 
 const DEFAULT_TEMPLATE = 'lanxin'
 
@@ -57,6 +58,7 @@ export default function ScenarioLoaderClient(): ReactElement {
             <div className="mx-auto w-[794px] bg-white shadow-sm" data-scenario-preview="true">
               <Suspense fallback={<div className="p-6">Loading template...</div>}>
                 {Template ? <Template resume={resume} theme={theme} /> : null}
+                <PortfolioAppendix portfolio={resume.portfolio} />
               </Suspense>
             </div>
           </section>

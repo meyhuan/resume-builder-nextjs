@@ -1,6 +1,8 @@
 import type { ResumeBlock } from '@/entities/blocks/resume-block'
 import type { ResumeData } from '@/entities/resume/resume-data'
 import type { Section } from '@/entities/resume/section'
+import type { PortfolioImage, ResumePortfolio } from '@/entities/resume/portfolio'
+import { MAX_PORTFOLIO_IMAGES } from '@/entities/resume/portfolio'
 
 interface NormalizeResumeOptions {
   readonly fallbackId?: string
@@ -30,10 +32,42 @@ export function normalizeResumeContent(
     id: normalizeString(rawResume.id) || options.fallbackId || 'resume-imported',
     name: normalizeString(rawResume.name),
     baseInfo: normalizeBaseInfo(rawResume.baseInfo),
+    portfolio: normalizePortfolio(rawResume.portfolio),
     sections: rawSections.map((section, sectionIndex) =>
       normalizeSection(section as Partial<Section> & RawRecord, sectionIndex, usedSectionIds, usedBlockIds),
     ),
   } as ResumeData
+}
+
+function normalizePortfolio(value: unknown): ResumePortfolio | undefined {
+  if (!isRawRecord(value)) return undefined
+  const rawImages = Array.isArray(value.images) ? value.images : []
+  const images: PortfolioImage[] = rawImages
+    .slice(0, MAX_PORTFOLIO_IMAGES)
+    .map((item, index): PortfolioImage | null => {
+      if (!isRawRecord(item)) return null
+      const url = normalizeString(item.url)
+      const objectKey = normalizeString(item.objectKey)
+      const width = normalizePositiveNumber(item.width)
+      const height = normalizePositiveNumber(item.height)
+      if (!url || !objectKey || !width || !height) return null
+      return {
+        id: normalizeString(item.id) || `portfolio-image-${index + 1}`,
+        url,
+        objectKey,
+        width,
+        height,
+        caption: normalizeString(item.caption) || undefined,
+        sortOrder: index,
+      }
+    })
+    .filter((item): item is PortfolioImage => item !== null)
+
+  return {
+    enabled: value.enabled !== false,
+    title: normalizeString(value.title) || '作品集',
+    images,
+  }
 }
 
 function normalizeBaseInfo(value: unknown): unknown {
@@ -173,6 +207,11 @@ function normalizeAge(value: unknown): number | undefined {
     : Number.parseInt(normalizeString(value), 10)
   if (!Number.isFinite(parsed) || parsed <= 0 || parsed > 120) return undefined
   return parsed
+}
+
+function normalizePositiveNumber(value: unknown): number | undefined {
+  const parsed = typeof value === 'number' ? value : Number(value)
+  return Number.isFinite(parsed) && parsed > 0 ? Math.round(parsed) : undefined
 }
 
 function isRawRecord(value: unknown): value is RawRecord {

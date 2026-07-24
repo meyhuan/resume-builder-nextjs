@@ -5,11 +5,25 @@ import { cookies } from 'next/headers'
 import { persistResumeAssets } from '@/lib/persist-resume-assets'
 import type { ResumeData } from '@/entities/resume/resume-data'
 import { normalizeResumeContent } from '@/entities/resume/normalize-resume-content'
+import { deleteOssAsset } from '@/lib/upload-oss-asset'
 
 interface RouteParams {
   params: Promise<{
     id: string
   }>
+}
+
+function readPortfolioObjectKeys(content: unknown): Set<string> {
+  if (!content || typeof content !== 'object' || Array.isArray(content)) return new Set()
+  const portfolio = (content as Record<string, unknown>).portfolio
+  if (!portfolio || typeof portfolio !== 'object' || Array.isArray(portfolio)) return new Set()
+  const images = (portfolio as Record<string, unknown>).images
+  if (!Array.isArray(images)) return new Set()
+  return new Set(images.flatMap((image): string[] => {
+    if (!image || typeof image !== 'object' || Array.isArray(image)) return []
+    const objectKey = (image as Record<string, unknown>).objectKey
+    return typeof objectKey === 'string' && objectKey ? [objectKey] : []
+  }))
 }
 
 // GET /next-api/resumes/[id] - Get a single resume
@@ -55,6 +69,14 @@ export async function PUT(req: Request, { params }: RouteParams) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const existingResume = await prisma.resume.findFirst({
+      where: { id, user: { wxId: userId } },
+      select: { content: true, userId: true },
+    })
+    if (!existingResume) {
+      return NextResponse.json({ error: 'Resume not found' }, { status: 404 })
+    }
+
     updateStep = 'parse-body'
     const body = await req.json()
     const { title, content, template, thumbnail } = body
@@ -89,6 +111,24 @@ export async function PUT(req: Request, { params }: RouteParams) {
       },
       data,
     })
+
+    const oldKeys = readPortfolioObjectKeys(existingResume.content)
+    const nextKeys = readPortfolioObjectKeys(persistedAssets.content)
+    const expectedPrefix = `portfolio/${existingResume.userId}/${id}/`
+    const removedKeys = [...oldKeys].filter((key) => key.startsWith(expectedPrefix) && !nextKeys.has(key))
+    if (removedKeys.length > 0) {
+      void Promise.allSettled(removedKeys.map((key) => deleteOssAsset(key))).then((results) => {
+        results.forEach((result, index) => {
+          if (result.status === 'rejected') {
+            console.warn('portfolio-image-cleanup-failed', {
+              resumeId: id,
+              objectKey: removedKeys[index],
+              error: result.reason instanceof Error ? result.reason.message : String(result.reason),
+            })
+          }
+        })
+      })
+    }
     
     return NextResponse.json(resume)
   } catch (error: unknown) {

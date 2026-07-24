@@ -23,7 +23,7 @@ const PDF_RENDER_TIMEOUT_MS = 45_000;
 const ASSET_READY_TIMEOUT_MS = 8_000;
 
 async function waitForDocumentAssets(page: Page): Promise<void> {
-  await page.evaluate(async (timeoutMs: number) => {
+  const failedPortfolioImages = await page.evaluate(async (timeoutMs: number): Promise<string[]> => {
     const wait = (ms: number): Promise<void> => new Promise((resolve) => {
       window.setTimeout(resolve, ms);
     });
@@ -36,7 +36,13 @@ async function waitForDocumentAssets(page: Page): Promise<void> {
       });
     }));
     await Promise.race([Promise.all([fontsReady, imagesReady]), wait(timeoutMs)]);
+    return Array.from(document.querySelectorAll<HTMLImageElement>('.portfolio-appendix img'))
+      .filter((image) => !image.complete || image.naturalWidth === 0)
+      .map((image) => image.currentSrc || image.src);
   }, ASSET_READY_TIMEOUT_MS);
+  if (failedPortfolioImages.length > 0) {
+    throw new Error(`Portfolio images failed to load: ${failedPortfolioImages.length}`);
+  }
 }
 
 export async function POST(req: Request) {

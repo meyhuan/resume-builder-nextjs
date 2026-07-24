@@ -13,6 +13,18 @@ interface UploadOssAssetResult {
   readonly url: string
 }
 
+function createOssClient(): OSS {
+  const bucket: string = getRequiredEnv('ALIYUN_OSS_BUCKET')
+  const endpoint: string = normalizeOssEndpoint(getRequiredEnv('ALIYUN_OSS_ENDPOINT'), bucket)
+  return new OSS({
+    region: getRequiredEnv('ALIYUN_OSS_REGION'),
+    bucket,
+    endpoint,
+    accessKeyId: getRequiredEnv('ALIYUN_OSS_ACCESS_KEY_ID'),
+    accessKeySecret: getRequiredEnv('ALIYUN_OSS_ACCESS_KEY_SECRET'),
+  })
+}
+
 function getRequiredEnv(name: string): string {
   const value: string | undefined = process.env[name]
   if (!value) {
@@ -54,15 +66,14 @@ function buildPublicUrl(key: string): string {
 }
 
 export async function uploadOssAsset(input: UploadOssAssetInput): Promise<UploadOssAssetResult> {
-  const bucket: string = getRequiredEnv('ALIYUN_OSS_BUCKET')
-  const endpoint: string = normalizeOssEndpoint(getRequiredEnv('ALIYUN_OSS_ENDPOINT'), bucket)
-  const client: OSS = new OSS({
-    region: getRequiredEnv('ALIYUN_OSS_REGION'),
-    bucket,
-    endpoint,
-    accessKeyId: getRequiredEnv('ALIYUN_OSS_ACCESS_KEY_ID'),
-    accessKeySecret: getRequiredEnv('ALIYUN_OSS_ACCESS_KEY_SECRET'),
-  })
+  if (isE2eAssetMockEnabled()) {
+    const key: string = buildObjectKey(input.directory, input.extension, input.customFileName)
+    return {
+      key,
+      url: `data:${input.mimeType};base64,${input.fileBuffer.toString('base64')}`,
+    }
+  }
+  const client: OSS = createOssClient()
   const key: string = buildObjectKey(input.directory, input.extension, input.customFileName)
   await client.put(key, input.fileBuffer, {
     mime: input.mimeType,
@@ -74,4 +85,14 @@ export async function uploadOssAsset(input: UploadOssAssetInput): Promise<Upload
     key,
     url: buildPublicUrl(key),
   }
+}
+
+export async function deleteOssAsset(objectKey: string): Promise<void> {
+  if (isE2eAssetMockEnabled()) return
+  await createOssClient().delete(objectKey)
+}
+
+function isE2eAssetMockEnabled(): boolean {
+  return process.env.E2E_AUTH_ENABLED === 'true'
+    && process.env.E2E_ASSET_UPLOAD_MOCK === 'true'
 }

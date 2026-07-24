@@ -24,6 +24,7 @@ import { joinExportFileNameParts } from '@/lib/export-file-name'
 import { useInMiniProgram } from '../_components/use-mini-program'
 import { useMiniProgramCapabilities } from '../_components/use-mini-program-capabilities'
 import { BottomActionBar } from './_components/bottom-action-bar'
+import { PortfolioAppendix } from '@/components/portfolio/portfolio-appendix'
 import {
   ONE_PAGE_BADGE_STYLES,
   PreviewSettingsSheet,
@@ -126,6 +127,7 @@ export default function MobilePreviewClient(): ReactElement {
   const [userZoom, setUserZoom] = useState<number>(1)
   const stageRef = useRef<HTMLDivElement>(null)
   const innerRef = useRef<HTMLDivElement>(null)
+  const resumeBodyRef = useRef<HTMLDivElement>(null)
   const pinchStateRef = useRef<{ startDist: number; startZoom: number } | null>(null)
   const lastTapRef = useRef<number>(0)
   const settingsSavingRef = useRef<boolean>(false)
@@ -291,7 +293,7 @@ export default function MobilePreviewClient(): ReactElement {
 
   // Drive the auto-fit algorithm against the unscaled template content (innerRef).
   const { status: onePageStatus } = useOnePageMode({
-    contentRef: innerRef,
+    contentRef: resumeBodyRef,
     theme,
     patchTheme: updateTheme,
     enabled: onePageFit,
@@ -700,7 +702,10 @@ export default function MobilePreviewClient(): ReactElement {
                 }}
               >
                 <Suspense fallback={<TemplateFallback />}>
-                  {Template ? <Template resume={renderableResume} theme={theme} /> : null}
+                  <div ref={resumeBodyRef} className="resume-document-main" data-one-page={onePageFit ? 'true' : 'false'}>
+                    {Template ? <Template resume={renderableResume} theme={theme} /> : null}
+                  </div>
+                  <PortfolioAppendix portfolio={renderableResume.portfolio} />
                 </Suspense>
               </div>
 

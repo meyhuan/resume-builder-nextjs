@@ -19,6 +19,7 @@ import { Layout, Database, X } from 'lucide-react'
 import SectionManager from '@/ui/section-manager'
 import AiOptimizePanel from '@/ui/ai-optimize-panel'
 import Image from 'next/image'
+import PortfolioManager from '@/components/portfolio/portfolio-manager'
 
 export interface RightSidebarProps {
   readonly activePanel: PanelId
@@ -31,6 +32,8 @@ export interface RightSidebarProps {
   readonly onePage?: boolean
   readonly onePageStatus?: OnePageStatus
   readonly onOnePageChange?: (v: boolean) => void
+  readonly resumeId?: string
+  readonly onRequireResumeId?: () => Promise<string | null>
 }
 
 /** Map panel IDs to display titles. */
@@ -38,6 +41,7 @@ const PANEL_TITLES: Record<PanelId, string> = {
   sections: '模块管理',
   layout: '排版美化',
   ai: 'AI一键优化',
+  portfolio: '图片作品集',
   // examples: '参考案例',
   // photo: '证件照',
   // analysis: '智能分析',
@@ -45,6 +49,7 @@ const PANEL_TITLES: Record<PanelId, string> = {
 
 export default function RightSidebar(props: RightSidebarProps): ReactElement {
   const { activePanel, onClose, theme, tpl, templates } = props
+  const portfolio = useAppStore((state) => state.resume.portfolio)
 
   return (
     <div className="flex flex-col h-full bg-transparent">
@@ -80,6 +85,20 @@ export default function RightSidebar(props: RightSidebarProps): ReactElement {
         />
       )}
       {activePanel === 'ai' && <AiOptimizePanel />}
+      {activePanel === 'portfolio' && (
+        <div className="flex-1 overflow-y-auto custom-scrollbar">
+          <PortfolioManager
+            resumeId={props.resumeId ?? null}
+            onRequireResumeId={props.onRequireResumeId}
+            portfolio={portfolio}
+            onChange={(portfolio): void => {
+              useAppStore.getState().setResume((draft) => {
+                draft.portfolio = portfolio
+              })
+            }}
+          />
+        </div>
+      )}
       {/* {activePanel === 'examples' && <PlaceholderPanel text="参考案例功能即将上线" />} */}
       {/* {activePanel === 'photo' && <PlaceholderPanel text="证件照功能即将上线" />} */}
       {/* {activePanel === 'analysis' && <PlaceholderPanel text="智能分析功能即将上线" />} */}

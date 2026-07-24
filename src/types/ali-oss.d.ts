@@ -13,5 +13,6 @@ declare module 'ali-oss' {
   export default class OSS {
     public constructor(options: OSSOptions);
     public put(name: string, file: Buffer, options?: PutObjectOptions): Promise<unknown>;
+    public delete(name: string): Promise<unknown>;
   }
 }

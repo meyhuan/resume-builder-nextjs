@@ -22,7 +22,7 @@ export function buildResumeHtml(element: HTMLElement, options?: ResumeHtmlOption
   const isBleed: boolean = markup.includes('data-bleed="true"')
   const pagePaddingVertical: number = extractPagePaddingVertical(markup)
   const onePageCss: string = isOnePage
-    ? `\n    .page[data-one-page="true"] {\n      max-height: 297mm !important;\n      height: 297mm !important;\n      overflow: hidden !important;\n      page-break-after: avoid !important;\n      break-after: avoid !important;\n    }`
+    ? `\n    .resume-document-main[data-one-page="true"] {\n      max-height: 297mm !important;\n      height: 297mm !important;\n      overflow: hidden !important;\n      page-break-after: avoid !important;\n      break-after: avoid !important;\n    }`
     : ''
   const pageMarginCss: string = isOnePage
     ? 'margin: 0;'

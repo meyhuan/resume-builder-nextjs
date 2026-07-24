@@ -19,6 +19,7 @@ import { HomeActionBar } from './_components/home-action-bar'
 import { JobIntentionPreview } from './_components/job-intention-preview'
 import { ResumeProfileCard } from './_components/resume-profile-card'
 import { SectionsList } from './_components/sections-list'
+import { PortfolioPreview } from './_components/portfolio-preview'
 import { TemplateSpecificSettings } from './_components/template-metrics-preview'
 
 /**
@@ -477,6 +478,7 @@ export default function MobileEditHomeClient(
       <TemplateSpecificSettings resume={resume} templateId={currentTemplateId} />
 
       <SectionsList sections={resume.sections} />
+      <PortfolioPreview portfolio={resume.portfolio} />
 
       <AddMoreModules emptyModules={emptyOptionalModules} />
 
