@@ -11,6 +11,14 @@ import {
 
 const ALLOWED_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
 
+function isUploadedFile(value: FormDataEntryValue | null): value is File {
+  return value !== null
+    && typeof value !== 'string'
+    && typeof value.arrayBuffer === 'function'
+    && typeof value.type === 'string'
+    && typeof value.size === 'number'
+}
+
 interface RouteParams {
   readonly params: Promise<{ readonly id: string }>
 }
@@ -44,7 +52,7 @@ export async function POST(request: Request, { params }: RouteParams): Promise<R
 
     const form = await request.formData()
     const entry = form.get('file')
-    if (!(entry instanceof File)) {
+    if (!isUploadedFile(entry)) {
       return NextResponse.json({ error: '未检测到上传图片' }, { status: 400 })
     }
     if (!ALLOWED_MIME_TYPES.has(entry.type)) {
