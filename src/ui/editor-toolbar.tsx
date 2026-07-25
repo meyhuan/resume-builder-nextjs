@@ -9,7 +9,6 @@ import {
   LayoutList,
   Sparkles,
   Wand2,
-  Images,
   // BookOpen,
   // ImageIcon,
   // BarChart3,
@@ -35,7 +34,6 @@ const TOOLBAR_ACTIONS: ToolbarAction[] = [
   { id: 'sections', label: '模块管理', icon: <LayoutList className="h-3.5 w-3.5" /> },
   { id: 'layout', label: '排版美化', icon: <Sparkles className="h-3.5 w-3.5" /> },
   { id: 'ai', label: 'AI一键优化', icon: <Wand2 className="h-3.5 w-3.5" /> },
-  { id: 'portfolio', label: '图片作品集', icon: <Images className="h-3.5 w-3.5" /> },
   // { id: 'examples', label: '参考案例', icon: <BookOpen className="h-3.5 w-3.5" /> },
   // { id: 'photo', label: '证件照', icon: <ImageIcon className="h-3.5 w-3.5" /> },
   // { id: 'analysis', label: '智能分析', icon: <BarChart3 className="h-3.5 w-3.5" /> },
@@ -44,11 +42,10 @@ const TOOLBAR_ACTIONS: ToolbarAction[] = [
 export interface EditorToolbarProps {
   readonly activePanel: PanelId | null
   readonly onPanelChange: (panel: PanelId | null) => void
-  readonly showPortfolio?: boolean
 }
 
 export default function EditorToolbar(props: EditorToolbarProps): ReactElement {
-  const { activePanel, onPanelChange, showPortfolio = false } = props
+  const { activePanel, onPanelChange } = props
 
   function handleClick(id: PanelId): void {
     onPanelChange(activePanel === id ? null : id)
@@ -56,7 +53,7 @@ export default function EditorToolbar(props: EditorToolbarProps): ReactElement {
 
   return (
     <nav className="flex items-center gap-1.5 bg-white/70 backdrop-blur-md rounded-xl border border-white shadow-sm">
-      {TOOLBAR_ACTIONS.filter((action) => action.id !== 'portfolio' || showPortfolio).map((action) => {
+      {TOOLBAR_ACTIONS.map((action) => {
         const isActive: boolean = activePanel === action.id
         return (
           <button

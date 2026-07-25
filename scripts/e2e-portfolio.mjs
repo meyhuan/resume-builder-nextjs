@@ -196,7 +196,6 @@ async function run() {
     await page.click('[data-editor-panel="sections"]')
     await page.waitForSelector('[data-add-portfolio]')
     await page.click('[data-add-portfolio]')
-    await page.waitForSelector('[data-editor-panel="portfolio"]')
     await page.waitForSelector('[data-portfolio-manager="true"]')
 
     const titleInput = await page.$('[data-portfolio-title]')
@@ -228,7 +227,9 @@ async function run() {
     await waitForSaved(page)
     await page.waitForNetworkIdle({ idleTime: 500, timeout: 15_000 }).catch(() => undefined)
     if (!await page.$('[data-portfolio-manager="true"]')) {
-      await page.click('[data-editor-panel="portfolio"]')
+      await page.click('[data-editor-panel="sections"]')
+      await page.waitForSelector('[data-edit-portfolio]')
+      await page.click('[data-edit-portfolio]')
       await page.waitForSelector('[data-portfolio-manager="true"]')
     }
     await page.screenshot({ path: path.join(artifactDir, 'pc-portfolio-saved.png'), fullPage: true })
@@ -242,16 +243,19 @@ async function run() {
       timeout: 90_000,
     })
     await page.waitForNetworkIdle({ idleTime: 500, timeout: 30_000 }).catch(() => undefined)
-    await page.click('[data-editor-panel="portfolio"]')
+    assert(!await page.$('[data-editor-panel="portfolio"]'), 'Portfolio should not be a top-level toolbar action')
+    await page.click('[data-editor-panel="sections"]')
+    await page.waitForSelector('[data-edit-portfolio]')
+    await page.click('[data-edit-portfolio]')
     await page.waitForSelector('[data-portfolio-manager="true"]')
     assert(JSON.stringify(await readCaptions(page)) === JSON.stringify(['作品B', '作品A']), 'PC reload order mismatch')
-    await page.click('[data-editor-panel="portfolio"]')
+    await page.click('button[aria-label="关闭侧边栏"]')
     await page.click('[data-editor-panel="sections"]')
     await page.waitForSelector('[data-toggle-portfolio]')
     await page.click('[data-toggle-portfolio]')
-    await page.waitForFunction(() => !document.querySelector('[data-editor-panel="portfolio"]'))
+    await page.waitForFunction(() => !document.querySelector('.portfolio-appendix'))
     await page.click('[data-toggle-portfolio]')
-    await page.waitForSelector('[data-editor-panel="portfolio"]')
+    await page.waitForSelector('.portfolio-appendix')
 
     await page.close()
     page = await browser.newPage()

@@ -231,6 +231,7 @@ export default function SectionManager(props: SectionManagerProps): ReactElement
                 </span>
                 <button
                   type="button"
+                  data-edit-portfolio
                   className="min-w-0 flex-1 text-left"
                   onClick={props.onOpenPortfolio}
                 >
