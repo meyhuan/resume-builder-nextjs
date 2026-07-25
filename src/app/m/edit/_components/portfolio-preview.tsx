@@ -5,13 +5,15 @@ import { useRouter } from 'next/navigation'
 import { ChevronRight, Images } from 'lucide-react'
 import type { ResumePortfolio } from '@/entities/resume/portfolio'
 
-export function PortfolioPreview(props: { readonly portfolio?: ResumePortfolio }): ReactElement {
+export function PortfolioPreview(props: { readonly portfolio?: ResumePortfolio }): ReactElement | null {
   const router = useRouter()
+  if (props.portfolio?.enabled !== true) return null
   const count = props.portfolio?.images.length ?? 0
   return (
     <div className="mt-2 px-3">
       <button
         type="button"
+        data-portfolio-preview
         onClick={(): void => router.push('/m/edit/portfolio')}
         className="grid w-full grid-cols-[32px_1fr_auto_16px] items-center gap-2 rounded-[18px] border border-[#edf0f5] bg-white p-3.5 text-left shadow-[0_8px_24px_rgba(15,23,42,0.045)]"
       >

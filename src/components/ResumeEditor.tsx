@@ -1032,7 +1032,11 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
           {/* Center: toolbar actions (absolutely centered) */}
           <div className="order-last w-full overflow-x-auto lg:order-none lg:w-auto lg:absolute lg:left-1/2 lg:top-1/2 lg:-translate-x-1/2 lg:-translate-y-1/2">
             <div className="min-w-max">
-              <EditorToolbar activePanel={activePanel} onPanelChange={setActivePanel} />
+              <EditorToolbar
+                activePanel={activePanel}
+                onPanelChange={setActivePanel}
+                showPortfolio={resume.portfolio?.enabled === true}
+              />
             </div>
           </div>
 
@@ -1154,6 +1158,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
             <RightSidebar
               activePanel={activePanel}
               onClose={() => setActivePanel(null)}
+              onOpenPortfolio={() => setActivePanel('portfolio')}
               theme={theme}
               tpl={tpl}
               templates={getAllTemplates()}

@@ -21,7 +21,7 @@ export interface ResumePortfolio {
 
 export function createEmptyPortfolio(): ResumePortfolio {
   return {
-    enabled: true,
+    enabled: false,
     title: '作品集',
     images: [],
   }

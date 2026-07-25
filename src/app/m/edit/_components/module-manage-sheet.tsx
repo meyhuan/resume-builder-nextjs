@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useMemo, useState, type ReactElement, type ReactNode } from 'react'
+import { useRouter } from 'next/navigation'
 import {
   closestCenter,
   DndContext,
@@ -18,11 +19,22 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { Eye, EyeOff, GripVertical, Image as ImageIcon, Target, Trash2 } from 'lucide-react'
+import {
+  ChevronRight,
+  Eye,
+  EyeOff,
+  GripVertical,
+  Image as ImageIcon,
+  Images,
+  Plus,
+  Target,
+  Trash2,
+} from 'lucide-react'
 import { toast } from 'sonner'
 import { BottomSheet } from '@/components/ui/bottom-sheet'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import type { Section } from '@/entities/resume/section'
+import { createEmptyPortfolio } from '@/entities/resume/portfolio'
 import { findModuleBySectionTitle } from '@/entities/module/module-config'
 import { useDraftStore } from '@/features/edit/draft/draft-store'
 import { createLogger } from '@/lib/logger'
@@ -39,6 +51,7 @@ interface ModuleManageSheetProps {
  * Bottom sheet for module management: drag-reorder and delete sections.
  */
 export function ModuleManageSheet({ open, onClose }: ModuleManageSheetProps): ReactElement {
+  const router = useRouter()
   const draft = useDraftStore((s) => s.draft)
   const updateDraft = useDraftStore((s) => s.updateDraft)
   const reorder = useDraftStore((s) => s.reorderSections)
@@ -48,6 +61,9 @@ export function ModuleManageSheet({ open, onClose }: ModuleManageSheetProps): Re
   const showAvatar: boolean = draft?.baseInfo?.showAvatar !== false
   const showJobIntention: boolean = draft?.jobIntentionVisible !== false
   const showHeaderJobIntention: boolean = showJobIntention && draft?.headerJobIntentionVisible !== false
+  const hasPortfolio: boolean = draft?.portfolio !== undefined
+  const showPortfolio: boolean = draft?.portfolio?.enabled === true
+  const portfolioImageCount: number = draft?.portfolio?.images.length ?? 0
 
   const [pendingRemove, setPendingRemove] = useState<Section | null>(null)
 
@@ -103,6 +119,32 @@ export function ModuleManageSheet({ open, onClose }: ModuleManageSheetProps): Re
     })
     toast.success(nextVisible ? '已显示头部求职意向' : '已隐藏头部求职意向')
   }, [showHeaderJobIntention, showJobIntention, updateDraft])
+
+  const handleAddPortfolio = useCallback((): void => {
+    updateDraft('portfolio', (resume) => {
+      resume.portfolio = {
+        ...(resume.portfolio ?? createEmptyPortfolio()),
+        enabled: true,
+      }
+    })
+    toast.success('已添加图片作品集')
+    onClose()
+    router.push('/m/edit/portfolio')
+  }, [onClose, router, updateDraft])
+
+  const handleTogglePortfolio = useCallback((): void => {
+    if (!draft?.portfolio) return
+    const nextVisible = !showPortfolio
+    updateDraft('portfolio.enabled', (resume) => {
+      if (resume.portfolio) resume.portfolio.enabled = nextVisible
+    })
+    toast.success(nextVisible ? '已显示图片作品集' : '已隐藏图片作品集，已上传图片仍会保留')
+  }, [draft?.portfolio, showPortfolio, updateDraft])
+
+  const handleEditPortfolio = useCallback((): void => {
+    onClose()
+    router.push('/m/edit/portfolio')
+  }, [onClose, router])
 
   const items = sections.map((s) => s.id)
 
@@ -168,6 +210,70 @@ export function ModuleManageSheet({ open, onClose }: ModuleManageSheetProps): Re
             </SortableContext>
           </DndContext>
         )}
+
+        <div className="mt-5">
+          <div className="mb-2 text-[12px] font-semibold text-slate-500">附加内容</div>
+          {hasPortfolio ? (
+            <div className="flex items-center gap-3 rounded-[14px] border border-[#edf0f5] bg-white px-3 py-3 shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
+              <div className={cn(
+                'flex h-8 w-8 shrink-0 items-center justify-center rounded-xl',
+                showPortfolio ? 'bg-violet-50 text-violet-600' : 'bg-slate-100 text-slate-400',
+              )}>
+                <Images size={17} />
+              </div>
+              <button type="button" onClick={handleEditPortfolio} className="min-w-0 flex-1 text-left">
+                <span className={cn(
+                  'block truncate text-[14px] font-semibold',
+                  showPortfolio ? 'text-slate-900' : 'text-slate-400',
+                )}>
+                  图片作品集
+                </span>
+                <span className="mt-0.5 block truncate text-[11px] text-slate-400">
+                  {portfolioImageCount > 0 ? `${portfolioImageCount} 张图片` : '尚未上传图片'} · 固定附在正文后
+                </span>
+              </button>
+              <button
+                type="button"
+                data-toggle-portfolio
+                onClick={handleTogglePortfolio}
+                aria-label={`${showPortfolio ? '隐藏' : '显示'}图片作品集`}
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-slate-400 transition-colors hover:bg-slate-100 active:bg-slate-200"
+              >
+                {showPortfolio ? <Eye size={16} /> : <EyeOff size={16} />}
+              </button>
+              <button
+                type="button"
+                data-edit-portfolio
+                onClick={handleEditPortfolio}
+                aria-label="编辑图片作品集"
+                className="flex h-8 w-6 shrink-0 items-center justify-center text-slate-300"
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              data-add-portfolio
+              onClick={handleAddPortfolio}
+              className="flex w-full items-center gap-3 rounded-[14px] border border-dashed border-violet-200 bg-violet-50/60 px-3 py-3 text-left active:bg-violet-100"
+            >
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white text-violet-600 shadow-sm">
+                <Images size={17} />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[14px] font-semibold text-slate-900">图片作品集</span>
+                <span className="mt-0.5 block truncate text-[11px] text-slate-400">
+                  上传作品图片，随 PDF 一起导出
+                </span>
+              </span>
+              <span className="flex shrink-0 items-center gap-1 text-[12px] font-semibold text-violet-600">
+                <Plus size={14} />
+                添加
+              </span>
+            </button>
+          )}
+        </div>
       </BottomSheet>
 
       <ConfirmDialog

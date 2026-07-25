@@ -24,6 +24,7 @@ import PortfolioManager from '@/components/portfolio/portfolio-manager'
 export interface RightSidebarProps {
   readonly activePanel: PanelId
   readonly onClose: () => void
+  readonly onOpenPortfolio?: () => void
   readonly theme: ThemeTokens
   readonly tpl: string
   readonly templates: TemplateConfig[]
@@ -70,7 +71,10 @@ export default function RightSidebar(props: RightSidebarProps): ReactElement {
 
       {/* Panel content */}
       {activePanel === 'sections' && (
-        <SectionManager onClose={onClose} />
+        <SectionManager
+          onClose={onClose}
+          onOpenPortfolio={props.onOpenPortfolio ?? (() => undefined)}
+        />
       )}
       {activePanel === 'layout' && (
         <LayoutPanel

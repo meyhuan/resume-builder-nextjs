@@ -44,10 +44,11 @@ const TOOLBAR_ACTIONS: ToolbarAction[] = [
 export interface EditorToolbarProps {
   readonly activePanel: PanelId | null
   readonly onPanelChange: (panel: PanelId | null) => void
+  readonly showPortfolio?: boolean
 }
 
 export default function EditorToolbar(props: EditorToolbarProps): ReactElement {
-  const { activePanel, onPanelChange } = props
+  const { activePanel, onPanelChange, showPortfolio = false } = props
 
   function handleClick(id: PanelId): void {
     onPanelChange(activePanel === id ? null : id)
@@ -55,7 +56,7 @@ export default function EditorToolbar(props: EditorToolbarProps): ReactElement {
 
   return (
     <nav className="flex items-center gap-1.5 bg-white/70 backdrop-blur-md rounded-xl border border-white shadow-sm">
-      {TOOLBAR_ACTIONS.map((action) => {
+      {TOOLBAR_ACTIONS.filter((action) => action.id !== 'portfolio' || showPortfolio).map((action) => {
         const isActive: boolean = activePanel === action.id
         return (
           <button

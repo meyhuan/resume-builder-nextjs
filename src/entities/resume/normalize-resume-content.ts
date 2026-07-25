@@ -64,7 +64,7 @@ function normalizePortfolio(value: unknown): ResumePortfolio | undefined {
     .filter((item): item is PortfolioImage => item !== null)
 
   return {
-    enabled: value.enabled !== false,
+    enabled: value.enabled === true,
     title: normalizeString(value.title) || '作品集',
     images,
   }

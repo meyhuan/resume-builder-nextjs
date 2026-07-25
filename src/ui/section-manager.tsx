@@ -23,10 +23,12 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { MinusCircle, PlusSquare, X } from 'lucide-react'
+import { Eye, EyeOff, Images, MinusCircle, PlusSquare, X } from 'lucide-react'
+import { toast } from 'sonner'
 import { useAppStore } from '@/state/store'
 import type { Section } from '@/entities/resume/section'
 import { getSectionTypeRegistry } from '@/entities/blocks/block-factory'
+import { createEmptyPortfolio } from '@/entities/resume/portfolio'
 
 /** Derive addable section labels from the central registry. */
 const PREDEFINED_LABELS: readonly string[] = getSectionTypeRegistry().map((e) => e.label)
@@ -53,6 +55,7 @@ function getUniqueCustomSectionTitle(existingTitles: ReadonlySet<string>): strin
 /** Props accepted by the top-level panel. */
 export interface SectionManagerProps {
   readonly onClose: () => void
+  readonly onOpenPortfolio: () => void
 }
 
 /**
@@ -67,9 +70,13 @@ export default function SectionManager(props: SectionManagerProps): ReactElement
   const setAvatarVisibility = useAppStore((s) => s.setAvatarVisibility)
   const setJobIntentionVisibility = useAppStore((s) => s.setJobIntentionVisibility)
   const setHeaderJobIntentionVisibility = useAppStore((s) => s.setHeaderJobIntentionVisibility)
+  const setResume = useAppStore((s) => s.setResume)
   const showPhotoAvatar: boolean = resume.baseInfo?.showAvatar !== false
   const isJobIntentionVisible: boolean = resume.jobIntentionVisible !== false
   const isHeaderJobIntentionVisible: boolean = isJobIntentionVisible && resume.headerJobIntentionVisible !== false
+  const hasPortfolio: boolean = resume.portfolio !== undefined
+  const isPortfolioVisible: boolean = resume.portfolio?.enabled === true
+  const portfolioImageCount: number = resume.portfolio?.images.length ?? 0
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 4 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 5 } })
@@ -99,6 +106,26 @@ export default function SectionManager(props: SectionManagerProps): ReactElement
         ? getUniqueCustomSectionTitle(existingTitles)
         : label
     )
+  }
+
+  function handleAddPortfolio(): void {
+    setResume((draft) => {
+      draft.portfolio = {
+        ...(draft.portfolio ?? createEmptyPortfolio()),
+        enabled: true,
+      }
+    })
+    toast.success('已添加图片作品集')
+    props.onOpenPortfolio()
+  }
+
+  function handleTogglePortfolio(): void {
+    if (!resume.portfolio) return
+    const nextVisible = !isPortfolioVisible
+    setResume((draft) => {
+      if (draft.portfolio) draft.portfolio.enabled = nextVisible
+    })
+    toast.success(nextVisible ? '已显示图片作品集' : '已隐藏图片作品集，已上传图片仍会保留')
   }
 
   return (
@@ -191,6 +218,60 @@ export default function SectionManager(props: SectionManagerProps): ReactElement
             </div>
           </div>
         )}
+
+        <div className="mt-6">
+          <p className="mb-3 text-sm font-semibold text-slate-700">附加内容</p>
+          {hasPortfolio ? (
+            <div className="rounded-xl border border-white bg-white/60 px-3 py-3 shadow-sm backdrop-blur-md">
+              <div className="flex items-center gap-3">
+                <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
+                  isPortfolioVisible ? 'bg-violet-50 text-violet-600' : 'bg-slate-100 text-slate-400'
+                }`}>
+                  <Images size={18} />
+                </span>
+                <button
+                  type="button"
+                  className="min-w-0 flex-1 text-left"
+                  onClick={props.onOpenPortfolio}
+                >
+                  <span className="block text-sm font-medium text-slate-700">图片作品集</span>
+                  <span className="mt-0.5 block text-xs text-slate-400">
+                    {portfolioImageCount > 0 ? `${portfolioImageCount} 张图片` : '尚未上传图片'} · 固定附在正文后
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  data-toggle-portfolio
+                  aria-label={`${isPortfolioVisible ? '隐藏' : '显示'}图片作品集`}
+                  title={isPortfolioVisible ? '隐藏作品集' : '显示作品集'}
+                  onClick={handleTogglePortfolio}
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-400 transition-colors hover:bg-slate-100 hover:text-violet-600"
+                >
+                  {isPortfolioVisible ? <Eye size={17} /> : <EyeOff size={17} />}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              type="button"
+              data-add-portfolio
+              onClick={handleAddPortfolio}
+              className="flex w-full items-center gap-3 rounded-xl border border-dashed border-violet-200 bg-violet-50/50 px-3 py-3 text-left transition-colors hover:border-violet-400 hover:bg-violet-50"
+            >
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-violet-600 shadow-sm">
+                <Images size={18} />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-medium text-slate-700">图片作品集</span>
+                <span className="mt-0.5 block text-xs text-slate-400">上传作品图片，随 PDF 一起导出</span>
+              </span>
+              <span className="flex items-center gap-1 text-xs font-semibold text-violet-600">
+                <PlusSquare size={15} />
+                添加
+              </span>
+            </button>
+          )}
+        </div>
       </div>
     </div>
   )
