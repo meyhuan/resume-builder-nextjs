@@ -8,7 +8,7 @@ RELEASE_ID="${RELEASE_ID:-$(date +%Y%m%d-%H%M%S)}"
 PACKAGE_PATH="${PACKAGE_PATH:-$RELEASE_ROOT/.incoming/$RELEASE_ID.zip}"
 CURRENT_LINK="$RELEASE_ROOT/current"
 RELEASE_DIR="$RELEASE_ROOT/$RELEASE_ID"
-HEALTH_URL="${HEALTH_URL:-http://127.0.0.1:3000/}"
+HEALTH_URL="${HEALTH_URL:-http://127.0.0.1:3000/next-api/health}"
 KEEP_RELEASES="${KEEP_RELEASES:-5}"
 
 PREV_TARGET=""
@@ -174,6 +174,7 @@ copy_runtime_env
 cd "$RELEASE_DIR"
 pnpm install --frozen-lockfile --ignore-scripts
 pnpm exec prisma generate
+pnpm exec prisma migrate deploy
 
 ln -sfn "$RELEASE_DIR" "$CURRENT_LINK"
 point_legacy_dir_to_current

@@ -4,6 +4,31 @@
 
 ## 📖 文档列表
 
+### 产品与需求
+
+#### [product/job-fit-resume-tailoring-prd.md](./product/job-fit-resume-tailoring-prd.md)
+
+**岗位定制简历 / AI 简历智能优化 PRD**
+
+- 基础简历 + 目标岗位 JD 一键生成独立岗位版本
+- Dashboard 入口、生成进度、完整简历 Diff 与编辑器衔接
+- AI 事实边界、异常状态、埋点与验收标准
+
+#### [product/job-search-workspace-prd.md](./product/job-search-workspace-prd.md)
+
+**求职材料工作区 PRD**
+
+- 母版简历、目标岗位、岗位版本与求职材料的长期产品形态
+- 岗位定制 MVP 的实施细节以专项 PRD 为准
+
+#### [AI_SECTION_GEN_PRD.md](./AI_SECTION_GEN_PRD.md)
+
+**AI 模块生成与润色 PRD**
+
+- 简历模块级 AI 生成、润色与交互规范
+
+---
+
 ### 模板系统
 
 #### [QUICK_START_DYNAMIC_TEMPLATES.md](./QUICK_START_DYNAMIC_TEMPLATES.md)

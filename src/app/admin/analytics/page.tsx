@@ -124,6 +124,25 @@ interface RevenueData {
   conversion: RevenueConversion[];
 }
 
+interface JobFitWindow {
+  total: number;
+  completed: number;
+  failed: number;
+  cancelled: number;
+  successRate: number;
+  cancelRate: number;
+  p50Ms: number;
+  p90Ms: number;
+  factGuardRejectCount: number;
+}
+
+interface JobFitData {
+  generatedAt: string;
+  windows: { h24: JobFitWindow; d7: JobFitWindow };
+  failureStages: Array<{ key: string; count: number }>;
+  errorCodes: Array<{ key: string; count: number }>;
+}
+
 type AnalyticsState = {
   overview: OverviewData | null;
   lifecycle: LifecycleData | null;
@@ -132,6 +151,7 @@ type AnalyticsState = {
   create: FunnelData | null;
   errors: ErrorData | null;
   revenue: RevenueData | null;
+  jobFit: JobFitData | null;
 };
 
 type PlatformFilter = 'all' | 'web' | 'mini_program' | 'h5_pay' | 'backend';
@@ -260,6 +280,7 @@ export default function AnalyticsAdminPage(): React.ReactElement {
     create: null,
     errors: null,
     revenue: null,
+    jobFit: null,
   });
 
   const totalEvents = useMemo(() => {
@@ -284,7 +305,7 @@ export default function AnalyticsAdminPage(): React.ReactElement {
     setLoading(true);
     setError(null);
     try {
-      const [overview, lifecycle, pay, exportFunnel, create, errors, revenue] = await Promise.all([
+      const [overview, lifecycle, pay, exportFunnel, create, errors, revenue, jobFit] = await Promise.all([
         fetchAnalytics('overview', days, platform, passwordToUse) as Promise<OverviewData>,
         fetchAnalytics('lifecycle', days, platform, passwordToUse, clientType) as Promise<LifecycleData>,
         fetchAnalytics('pay', days, platform, passwordToUse) as Promise<FunnelData>,
@@ -292,10 +313,11 @@ export default function AnalyticsAdminPage(): React.ReactElement {
         fetchAnalytics('create', days, platform, passwordToUse) as Promise<FunnelData>,
         fetchAnalytics('errors', days, platform, passwordToUse) as Promise<ErrorData>,
         fetchAnalytics('revenue', days, platform, passwordToUse) as Promise<RevenueData>,
+        fetchAnalytics('jobFit', days, platform, passwordToUse) as Promise<JobFitData>,
       ]);
       setStoredAdminPassword(passwordToUse);
       setHasStoredPassword(true);
-      setData({ overview, lifecycle, pay, export: exportFunnel, create, errors, revenue });
+      setData({ overview, lifecycle, pay, export: exportFunnel, create, errors, revenue, jobFit });
       setLoaded(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : '加载失败');
@@ -378,7 +400,7 @@ export default function AnalyticsAdminPage(): React.ReactElement {
                   setHasStoredPassword(false);
                   setAdminPassword('');
                   setLoaded(false);
-                  setData({ overview: null, lifecycle: null, pay: null, export: null, create: null, errors: null, revenue: null });
+                  setData({ overview: null, lifecycle: null, pay: null, export: null, create: null, errors: null, revenue: null, jobFit: null });
                 }}
                 className="h-10 rounded-lg border border-slate-200 px-3 text-sm text-slate-600 hover:bg-slate-50"
               >
@@ -410,6 +432,8 @@ export default function AnalyticsAdminPage(): React.ReactElement {
           </section>
 
           <LifecycleFunnelCard data={data.lifecycle} />
+
+          <JobFitAnalyticsCard data={data.jobFit} />
 
           <RevenueCard data={data.revenue} />
 
@@ -488,6 +512,56 @@ export default function AnalyticsAdminPage(): React.ReactElement {
       )}
     </div>
   );
+}
+
+function JobFitAnalyticsCard({ data }: { data: JobFitData | null }): React.ReactElement {
+  const windows = [
+    { label: '最近 24 小时', value: data?.windows.h24 },
+    { label: '最近 7 天', value: data?.windows.d7 },
+  ];
+  return (
+    <section className="rounded-xl border border-slate-200 bg-white p-5">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-2 text-sm font-semibold text-slate-900"><Sparkles className="h-4 w-4 text-violet-600" />岗位定制运行质量</div>
+          <p className="mt-1 text-xs text-slate-400">只统计任务状态、耗时和错误枚举，不采集简历或 JD 正文。</p>
+        </div>
+        <span className="text-xs text-slate-400">{data?.generatedAt ? new Date(data.generatedAt).toLocaleString('zh-CN') : '-'}</span>
+      </div>
+      <div className="mt-4 grid gap-4 xl:grid-cols-2">
+        {windows.map(({ label, value }) => (
+          <div key={label} className="rounded-lg border border-slate-100 p-4">
+            <div className="flex items-center justify-between"><span className="text-sm font-semibold text-slate-800">{label}</span><span className="text-xs text-slate-400">{formatNumber(value?.total)} 个任务</span></div>
+            <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+              <MiniMetric label="成功率" value={formatPercent(value?.successRate)} />
+              <MiniMetric label="取消率" value={formatPercent(value?.cancelRate)} />
+              <MiniMetric label="P50" value={formatDuration(value?.p50Ms)} />
+              <MiniMetric label="P90" value={formatDuration(value?.p90Ms)} />
+            </div>
+            <p className="mt-3 text-xs text-slate-500">完成 {formatNumber(value?.completed)} · 失败 {formatNumber(value?.failed)} · 取消 {formatNumber(value?.cancelled)} · 事实守卫拦截 {formatNumber(value?.factGuardRejectCount)}</p>
+          </div>
+        ))}
+      </div>
+      <div className="mt-4 grid gap-4 md:grid-cols-2">
+        <JobFitFailureList title="失败阶段（7 天）" rows={data?.failureStages ?? []} />
+        <JobFitFailureList title="错误码（7 天）" rows={data?.errorCodes ?? []} />
+      </div>
+    </section>
+  );
+}
+
+function MiniMetric({ label, value }: { label: string; value: string }): React.ReactElement {
+  return <div className="rounded-lg bg-slate-50 px-3 py-2"><div className="text-[11px] text-slate-400">{label}</div><div className="mt-1 text-sm font-semibold text-slate-900">{value}</div></div>;
+}
+
+function JobFitFailureList({ title, rows }: { title: string; rows: Array<{ key: string; count: number }> }): React.ReactElement {
+  return <div className="rounded-lg bg-slate-50 p-3"><p className="text-xs font-semibold text-slate-700">{title}</p><div className="mt-2 space-y-1">{rows.length ? rows.slice(0, 6).map((row) => <div key={row.key} className="flex justify-between text-xs text-slate-500"><span>{row.key}</span><span className="font-medium text-slate-700">{formatNumber(row.count)}</span></div>) : <p className="text-xs text-slate-400">暂无失败</p>}</div></div>;
+}
+
+function formatDuration(value?: number): string {
+  if (!value) return '-';
+  if (value < 1000) return `${value} ms`;
+  return `${(value / 1000).toFixed(value < 10000 ? 1 : 0)} s`;
 }
 
 function LifecycleFunnelCard(props: { data: LifecycleData | null }): React.ReactElement {

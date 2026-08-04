@@ -49,7 +49,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps): Rea
   return (
     <div className="flex min-h-screen">
       <DashboardSidebar />
-      <main className="flex-1 ml-[200px]">
+      <main className="min-w-0 flex-1 md:ml-[200px]">
         {children}
       </main>
       <VipUpgradeDialog open={showUpgrade} onOpenChange={setShowUpgrade} />

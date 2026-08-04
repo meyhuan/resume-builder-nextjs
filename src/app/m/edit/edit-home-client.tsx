@@ -421,7 +421,7 @@ export default function MobileEditHomeClient(
           onClick={handleCreateNew}
           className="px-5 py-2.5 rounded-xl bg-violet-600 text-white text-sm font-medium shadow-lg shadow-violet-600/30 active:scale-95 transition-transform"
         >
-          创建新简历
+          创建空白简历
         </button>
       </div>
     )

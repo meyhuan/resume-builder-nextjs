@@ -8,12 +8,20 @@ export async function GET(): Promise<NextResponse> {
   const checks: Record<string, 'ok' | 'error'> = {
     app: 'ok',
     db: 'ok',
+    jobFitSchema: 'ok',
   }
 
   try {
     await prisma.$queryRaw`SELECT 1`
   } catch {
     checks.db = 'error'
+  }
+
+  try {
+    const rows = await prisma.$queryRaw<Array<{ table_name: string | null }>>`SELECT to_regclass('"JobFitTask"')::text AS table_name`
+    if (!rows[0]?.table_name) checks.jobFitSchema = 'error'
+  } catch {
+    checks.jobFitSchema = 'error'
   }
 
   const ok = Object.values(checks).every((status) => status === 'ok')

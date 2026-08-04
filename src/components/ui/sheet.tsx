@@ -28,7 +28,7 @@ SheetOverlay.displayName = 'SheetOverlay';
 
 interface SheetContentProps
   extends React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> {
-  readonly side?: 'right' | 'left';
+  readonly side?: 'right' | 'left' | 'bottom';
 }
 
 const SheetContent = React.forwardRef<
@@ -41,10 +41,14 @@ const SheetContent = React.forwardRef<
       ref={ref}
       className={cn(
         'fixed z-50 flex flex-col bg-white shadow-xl transition-transform duration-300 ease-in-out',
-        'inset-y-0 w-[480px] max-w-[90vw]',
+        side === 'bottom'
+          ? 'inset-x-0 bottom-0 max-h-[85vh] w-full rounded-t-2xl data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom'
+          : 'inset-y-0 w-[480px] max-w-[90vw]',
         side === 'right'
           ? 'right-0 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right'
-          : 'left-0 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left',
+          : side === 'left'
+            ? 'left-0 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left'
+            : '',
         className,
       )}
       {...props}

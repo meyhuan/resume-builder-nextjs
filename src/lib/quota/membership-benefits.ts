@@ -49,6 +49,11 @@ export const AI_FEATURE_QUOTAS: Record<string, FeatureQuota> = {
     displayName: 'AI 一键优化简历',
     description: '结合岗位JD一键优化全部简历内容',
   },
+  'ai:job-fit': {
+    nonVipLimit: DEFAULT_QUOTA_LIMITS.aiJobFit,
+    displayName: '岗位定制简历',
+    description: '根据目标岗位生成可追溯的独立简历版本',
+  },
 } as const;
 
 /** Export-related quotas */

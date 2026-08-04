@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { MoreVertical, Edit2, Copy, Trash2, Loader2 } from 'lucide-react';
+import { MoreVertical, Edit2, Copy, Trash2, Loader2, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 
 import {
@@ -114,6 +114,14 @@ export function ResumeCardActions({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-40 rounded-xl">
+          <DropdownMenuItem
+            onSelect={() => { window.location.href = `/dashboard/job-fit?resumeId=${resumeId}`; }}
+            className="cursor-pointer gap-2 py-2 text-violet-600 focus:bg-violet-50 focus:text-violet-700"
+          >
+            <Sparkles className="h-4 w-4" />
+            <span>针对岗位优化</span>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
           <DropdownMenuItem 
             onSelect={() => setIsRenameOpen(true)}
             className="cursor-pointer gap-2 py-2 group focus:bg-slate-50 focus:text-slate-900 hover:bg-slate-50 hover:text-slate-900"

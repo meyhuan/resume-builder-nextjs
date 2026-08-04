@@ -9,6 +9,7 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
+    "test:job-fit": "vitest run src/lib/job-fit/__tests__",
     "verify:template": "node scripts/verify-template.mjs",
     "xhs:package": "node scripts/create-xhs-publish-package.mjs",
     "xhs:publish-assist": "node scripts/xhs-publish-assistant.mjs",
@@ -43,6 +44,7 @@
     "@lexical/list": "^0.36.1",
     "@lexical/react": "^0.36.1",
     "@lexical/utils": "^0.36.1",
+    "@meyhuan/job-fit-engine": "0.1.0-beta.6",
     "@prisma/client": "^5.10.0",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-dropdown-menu": "^2.1.16",
@@ -113,6 +115,7 @@
     "prisma": "^5.10.0",
     "tailwindcss": "^4.1.13",
     "typescript": "~5.8.3",
-    "typescript-eslint": "^8.44.0"
+    "typescript-eslint": "^8.44.0",
+    "vitest": "^3.2.4"
   }
 }

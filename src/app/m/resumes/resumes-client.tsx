@@ -257,7 +257,7 @@ export default function MobileResumesClient(): ReactElement {
             disabled={creating}
             className="px-5 py-2.5 rounded-xl bg-violet-600 text-white text-sm font-medium shadow-lg shadow-violet-600/30 active:scale-95 transition-transform disabled:opacity-70"
           >
-            {creating ? '创建中…' : '创建新简历'}
+            {creating ? '创建中…' : '创建空白简历'}
           </button>
         </div>
       ) : (
@@ -285,7 +285,7 @@ export default function MobileResumesClient(): ReactElement {
             'disabled:opacity-70',
           )}
           style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 20px)' }}
-          aria-label="创建新简历"
+          aria-label="创建空白简历"
         >
           {creating ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
           <span className="text-sm font-medium">新建简历</span>

@@ -648,7 +648,7 @@ function EmptyResumesHint({
         disabled={creating}
         className="mt-3 px-4 py-2 rounded-xl bg-violet-600 text-white text-[13px] font-medium active:scale-95 transition-transform disabled:opacity-70"
       >
-        {creating ? '创建中…' : '创建新简历'}
+        {creating ? '创建中…' : '创建空白简历'}
       </button>
     </section>
   )

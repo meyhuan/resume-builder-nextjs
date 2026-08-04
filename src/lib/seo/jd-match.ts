@@ -76,6 +76,29 @@ const KEYWORD_DICTIONARY: readonly string[] = [
   '客户调研',
   'SaaS',
   'B端',
+  // Product / B2B SaaS (English JDs must not fall back to page chrome or prose.)
+  'Product Manager',
+  'Product Owner',
+  'Product backlog',
+  'Roadmap',
+  'User stories',
+  'Acceptance criteria',
+  'Agile',
+  'Sprint planning',
+  'Backlog refinement',
+  'Release planning',
+  'Stakeholder management',
+  'Data pipeline',
+  'Data delivery',
+  'Data quality',
+  'Product metrics',
+  'Data science',
+  'Technical documentation',
+  'API',
+  'Jira',
+  'Confluence',
+  'Analytics',
+  'B2B',
 ];
 
 const STOPWORDS: ReadonlySet<string> = new Set([
@@ -153,7 +176,15 @@ function extractJdKeywords(jobDescription: string, targetRole?: string): string[
 }
 
 function includesKeyword(text: string, keyword: string): boolean {
-  return normalizeText(text).includes(keyword.toLowerCase());
+  const normalizedText = normalizeText(text);
+  const normalizedKeyword = keyword.toLowerCase();
+  // A Latin acronym such as "AI" must not match the "AI" at the start of
+  // "AIS-derived". Chinese terms intentionally retain substring matching.
+  if (/^[a-z0-9][a-z0-9 .+#/-]*$/i.test(keyword)) {
+    const escaped = normalizedKeyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return new RegExp(`(^|[^a-z0-9])${escaped}(?=$|[^a-z0-9])`, 'i').test(normalizedText);
+  }
+  return normalizedText.includes(normalizedKeyword);
 }
 
 function createPrioritySuggestions(missingKeywords: readonly string[], targetRole?: string): string[] {
@@ -203,7 +234,10 @@ function createSectionSuggestions(
 export function analyzeJdMatch(input: JdMatchRequest): JdMatchResponse {
   const jobDescription = input.jobDescription.slice(0, MAX_JD_MATCH_JD_LENGTH);
   const resumeText = input.resumeText.slice(0, MAX_JD_MATCH_RESUME_LENGTH);
-  const jdKeywords = extractJdKeywords(jobDescription, input.targetRole);
+  // The requested title is useful as context for suggestions, but it is not
+  // evidence of matching. Otherwise merely changing the job-intention title
+  // can inflate the score without strengthening the resume itself.
+  const jdKeywords = extractJdKeywords(jobDescription);
   const matchedKeywords = jdKeywords.filter((keyword) => includesKeyword(resumeText, keyword));
   const missingKeywords = jdKeywords.filter((keyword) => !includesKeyword(resumeText, keyword));
   const rawScore = jdKeywords.length === 0 ? 0 : Math.round((matchedKeywords.length / jdKeywords.length) * 100);

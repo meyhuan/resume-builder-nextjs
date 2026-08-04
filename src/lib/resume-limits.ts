@@ -21,14 +21,14 @@ export function isResumeLimitExceededError(error: unknown): error is ResumeLimit
 }
 
 export async function assertCanCreateResumeForUserId(userId: string): Promise<void> {
-  const count = await prisma.resume.count({ where: { userId } })
+  const count = await prisma.resume.count({ where: { userId, kind: 'BASE' } })
   if (count >= MAX_RESUME_COUNT) {
     throw new ResumeLimitExceededError(count)
   }
 }
 
 export async function assertCanCreateResumeForWxId(wxId: string): Promise<void> {
-  const count = await prisma.resume.count({ where: { user: { wxId } } })
+  const count = await prisma.resume.count({ where: { user: { wxId }, kind: 'BASE' } })
   if (count >= MAX_RESUME_COUNT) {
     throw new ResumeLimitExceededError(count)
   }

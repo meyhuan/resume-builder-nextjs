@@ -20,6 +20,8 @@ export const DEFAULT_QUOTA_LIMITS = {
   aiPolishSection: 5,
   /** AI: One-click optimize entire resume (per day) */
   aiOptimizeResume: 2,
+  /** AI: Generate a job-specific resume version (per day) */
+  aiJobFit: 2,
   /** PDF export base limit. Non-VIP PDF exports are governed by Java freeExportCount as remaining balance. */
   pdfExport: 0,
 } as const;

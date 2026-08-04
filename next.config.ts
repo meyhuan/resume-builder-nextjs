@@ -4,6 +4,19 @@ const aliyunOssHostname: string = process.env.ALIYUN_OSS_HOSTNAME || 'aijianli-n
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  // The shared Job Fit engine intentionally depends on Node-only modules (for
+  // hashing and provider calls). Keep it outside Next's instrumentation bundle.
+  serverExternalPackages: ['@meyhuan/job-fit-engine'],
+  webpack(config, { isServer }) {
+    if (isServer) {
+      config.externals ??= [];
+      config.externals.push({
+        crypto: 'commonjs crypto',
+        'node:crypto': 'commonjs node:crypto',
+      });
+    }
+    return config;
+  },
   images: {
     remotePatterns: [
       {

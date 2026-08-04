@@ -17,6 +17,7 @@ model User {
   name       String?
   avatar     String?
   resumes    Resume[]
+  jobFitTasks JobFitTask[]
   exports    ExportRecord[]
   feedbacks  Feedback[]
   quotas     UserQuota[]
@@ -32,12 +33,122 @@ model Resume {
   template  String   @default("simple")
   thumbnail String?
   meta      Json?    // { javaId?: string, migratedAt?: ISO string, ... }
+  kind      ResumeKind @default(BASE)
+  sourceResumeId String?
+  sourceResume Resume? @relation("ResumeJobFitSource", fields: [sourceResumeId], references: [id], onDelete: SetNull)
+  tailoredResumes Resume[] @relation("ResumeJobFitSource")
+  jobFitSourceTasks JobFitTask[] @relation("JobFitSourceResume")
+  jobFitTailoredTask JobFitTask? @relation("JobFitTailoredResume")
   userId    String
   user      User     @relation(fields: [userId], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([userId])
+  @@index([userId, kind, updatedAt])
+  @@index([sourceResumeId])
+}
+
+enum ResumeKind {
+  BASE
+  JOB_FIT
+}
+
+enum JobFitSourceType {
+  EXISTING
+  FILE
+  TEXT
+}
+
+enum JobFitStatus {
+  DRAFT
+  PARSING_SOURCE
+  READY
+  QUEUED
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+  EXPIRED
+}
+
+enum JobFitStage {
+  PREPARE
+  ANALYZE
+  OPTIMIZE
+  EXPLAIN
+}
+
+enum JobFitQuotaState {
+  NONE
+  RESERVED
+  COMMITTED
+  RELEASED
+}
+
+enum JobFitOptimizationMode {
+  PROFESSIONAL
+  SPRINT
+}
+
+model JobFitTask {
+  id                   String           @id @default(cuid())
+  userId               String
+  user                 User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sourceType           JobFitSourceType
+  sourceResumeId       String?
+  sourceResume         Resume?          @relation("JobFitSourceResume", fields: [sourceResumeId], references: [id], onDelete: SetNull)
+  tailoredResumeId     String?          @unique
+  tailoredResume       Resume?          @relation("JobFitTailoredResume", fields: [tailoredResumeId], references: [id], onDelete: SetNull)
+  idempotencyKey       String
+  retryOfTaskId        String?
+  retryOfTask          JobFitTask?       @relation("JobFitRetries", fields: [retryOfTaskId], references: [id], onDelete: SetNull)
+  retries              JobFitTask[]      @relation("JobFitRetries")
+  billingRootTaskId    String?
+  companyName          String?
+  jobTitle             String?
+  jobDescription       String?
+  jobUrl               String?
+  focusAreas           Json             @default("[]")
+  optimizationMode     JobFitOptimizationMode @default(PROFESSIONAL)
+  sourceSnapshot       Json?
+  sourceHash           String?
+  optimizedSnapshot    Json?
+  scoring              Json?
+  summary              Json?
+  changes              Json?
+  claims               Json?
+  readiness            String?
+  resultSchemaVersion  String?
+  engineVersion        String?
+  status               JobFitStatus     @default(DRAFT)
+  stage                JobFitStage      @default(PREPARE)
+  progress             Int              @default(0)
+  errorCode            String?
+  errorMessage         String?
+  retryable            Boolean          @default(false)
+  quotaState           JobFitQuotaState @default(NONE)
+  quotaDate            String?
+  leaseToken           String?
+  leaseExpiresAt       DateTime?
+  cancelRequestedAt    DateTime?
+  promptVersion        String           @default("job-fit-prompt-v1")
+  scoringVersion       String           @default("job-fit-score-v1")
+  modelName            String?
+  factGuardRejectCount Int              @default(0)
+  startedAt            DateTime?
+  completedAt          DateTime?
+  failedAt             DateTime?
+  cancelledAt          DateTime?
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+
+  @@unique([userId, idempotencyKey])
+  @@index([userId, createdAt])
+  @@index([userId, status])
+  @@index([status, leaseExpiresAt])
+  @@index([sourceResumeId])
+  @@index([billingRootTaskId])
 }
 
 model ExportRecord {

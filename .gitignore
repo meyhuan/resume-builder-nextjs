@@ -22,7 +22,7 @@ test-artifacts/
 .env.oversee
 
 # Prisma
-/prisma/migrations/
+# Migrations are tracked so production and CI can apply schema changes safely.
 /prisma/*.db
 /prisma/*.db-journal
 
@@ -43,3 +43,6 @@ test-artifacts/
 # Deploy archives
 deploy.zip
 *.zip
+
+# Local Codex development logs and session artifacts
+/.codex/
