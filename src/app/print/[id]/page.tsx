@@ -101,7 +101,7 @@ export default async function PrintPage(props: PrintPageProps): Promise<ReactEle
         html, body { margin: 0; padding: 0; background: #ffffff; }
         .print-stage { width: 210mm; margin: 0 auto; background: #ffffff; }
         .print-stage .page { width: 210mm; min-height: ${printPageMinHeightCss}; background: #ffffff; box-shadow: none; border-radius: 0; }
-        .print-stage * { box-shadow: none !important; filter: none !important; text-shadow: none !important; font-synthesis: none; }
+        .print-stage * { box-shadow: none !important; filter: none !important; text-shadow: none !important; font-synthesis: style; }
         /* Keep the first-page top owned by the template; @page handles later page margins. */
         @page { size: A4; ${pageMarginCss} }
         ${firstPageMarginCss}
