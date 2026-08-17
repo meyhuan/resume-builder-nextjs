@@ -15,8 +15,6 @@ export function AiWaitingState(props: {
   const [elapsed, setElapsed] = useState(0);
 
   useEffect(() => {
-    setMessageIdx(0);
-    setElapsed(0);
     const messageTimer = window.setInterval(() => {
       setMessageIdx((index) => (index + 1) % props.messages.length);
     }, 2800);

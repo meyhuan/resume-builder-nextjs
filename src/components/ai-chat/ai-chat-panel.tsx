@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactElement } from 'react';
+import { useCallback, useEffect, useRef, type FormEvent, type ReactElement } from 'react';
 import { Clock, Loader2, Plus, SendHorizonal, Sparkles, Trash2 } from 'lucide-react';
 import { useEditorAIChat } from '@/hooks/use-ai-chat';
 import { useChatHistory } from '@/hooks/use-chat-history';
@@ -87,20 +87,20 @@ function AiChatSession(props: {
   const setPendingAiMessage = useEditorUiStore((state) => state.setPendingAiMessage);
   const openModal = useEditorUiStore((state) => state.openModal);
   const scrollerRef = useRef<HTMLDivElement>(null);
-  const [isAtBottom, setIsAtBottom] = useState(true);
+  const isAtBottomRef = useRef(true);
 
   const handleScroll = useCallback((): void => {
     const el = scrollerRef.current;
     if (!el) return;
     const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 48;
-    setIsAtBottom(nearBottom);
+    isAtBottomRef.current = nearBottom;
   }, []);
 
   useEffect(() => {
-    if (isAtBottom && scrollerRef.current) {
+    if (isAtBottomRef.current && scrollerRef.current) {
       scrollerRef.current.scrollTo({ top: scrollerRef.current.scrollHeight, behavior: 'smooth' });
     }
-  }, [messages, isLoading, isAtBottom]);
+  }, [messages, isLoading]);
 
   useEffect(() => {
     if (isLoading || messages.length === 0) return;
@@ -119,17 +119,17 @@ function AiChatSession(props: {
     const text = pendingAiMessage;
     setPendingAiMessage(null);
     void sendMessage({ text });
-    setIsAtBottom(true);
+    isAtBottomRef.current = true;
   }, [pendingAiMessage, sendMessage, setPendingAiMessage]);
 
   const submitAndScroll = (event: FormEvent<HTMLFormElement>): void => {
     handleSubmit(event);
-    setIsAtBottom(true);
+    isAtBottomRef.current = true;
   };
 
   const sendQuickPrompt = (prompt: string): void => {
     void sendMessage({ text: prompt });
-    setIsAtBottom(true);
+    isAtBottomRef.current = true;
   };
 
   const empty = messages.length === 0;

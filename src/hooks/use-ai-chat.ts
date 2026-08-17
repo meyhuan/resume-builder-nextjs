@@ -52,7 +52,7 @@ export function useEditorAIChat({ initialMessages, sessionId }: UseEditorAIChatO
   const pendingUndoToastRef = useRef(false);
   const prevStatusRef = useRef<string>('ready');
   const startedRef = useRef(false);
-  const quotaBlockedRef = useRef(false);
+  const [quotaBlocked, setQuotaBlocked] = useState(false);
 
   const transport = useMemo(
     () =>
@@ -66,7 +66,7 @@ export function useEditorAIChat({ initialMessages, sessionId }: UseEditorAIChatO
           if (response.status === 429) {
             const data = parseAssistErrorPayload(await response.clone().json().catch(() => ({})));
             if (handleAssistQuotaError('chat', data)) {
-              quotaBlockedRef.current = true;
+              setQuotaBlocked(true);
             } else if (data.error) {
               trackAssistFailed('chat', data.error);
             }
@@ -123,11 +123,9 @@ export function useEditorAIChat({ initialMessages, sessionId }: UseEditorAIChatO
     if (status === 'streaming' || status === 'submitted') return;
     if (startedRef.current) {
       startedRef.current = false;
-      if (quotaBlockedRef.current) {
-        quotaBlockedRef.current = false;
-      } else if (error) {
+      if (!quotaBlocked && error) {
         trackAssistFailed('chat', error.message);
-      } else {
+      } else if (!quotaBlocked) {
         trackAssistSuccess('chat');
         refreshEditorAssistQuota();
       }
@@ -136,7 +134,7 @@ export function useEditorAIChat({ initialMessages, sessionId }: UseEditorAIChatO
       pendingUndoToastRef.current = false;
       toast.success('已写入简历，可用顶栏撤销还原');
     }
-  }, [status, error]);
+  }, [status, error, quotaBlocked]);
 
   const handleInputChange = useCallback((event: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInput(event.target.value);
@@ -145,6 +143,7 @@ export function useEditorAIChat({ initialMessages, sessionId }: UseEditorAIChatO
   const gatedSend = useCallback((text: string): boolean => {
     if (!text.trim() || isLoading) return false;
     if (!canUseEditorAssist()) return false;
+    setQuotaBlocked(false);
     startedRef.current = true;
     trackAssistStart('chat');
     void sendMessage({ text: text.trim() });

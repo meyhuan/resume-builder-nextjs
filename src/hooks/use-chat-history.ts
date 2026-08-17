@@ -64,18 +64,16 @@ function createSessionId(): string {
 export function useChatHistory(resumeId: string | undefined) {
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
-  const [loaded, setLoaded] = useState(false);
+  const [loadedResumeId, setLoadedResumeId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!resumeId) return;
     let cancelled = false;
-    setLoaded(false);
-    setActiveSessionId(null);
     void loadSessions(resumeId).then((loadedSessions) => {
       if (cancelled) return;
       setSessions(loadedSessions);
       setActiveSessionId(loadedSessions[0]?.id ?? createSessionId());
-      setLoaded(true);
+      setLoadedResumeId(resumeId);
     });
     return () => {
       cancelled = true;
@@ -111,12 +109,15 @@ export function useChatHistory(resumeId: string | undefined) {
     return id;
   }, []);
 
-  const activeSession = sessions.find((session) => session.id === activeSessionId) ?? null;
+  const loaded = loadedResumeId === resumeId;
+  const currentSessions = loaded ? sessions : [];
+  const currentSessionId = loaded ? activeSessionId : null;
+  const activeSession = currentSessions.find((session) => session.id === currentSessionId) ?? null;
 
   return {
-    sessions,
+    sessions: currentSessions,
     activeSession,
-    activeSessionId,
+    activeSessionId: currentSessionId,
     setActiveSessionId,
     saveSession,
     deleteSession,

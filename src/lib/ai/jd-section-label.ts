@@ -73,7 +73,7 @@ function parseResumePath(value: string): ParsedPath | null {
 
 function looksLikeCodePath(value: string): boolean {
   if (/[\u4e00-\u9fff]/.test(value)) return false;
-  return /[.\[]/.test(value)
+  return value.includes('.') || value.includes('[')
     || /^(jobIntention|baseInfo|sections)\b/i.test(value)
     || /^[a-z]+(?:[A-Z][a-z]+)+$/.test(value);
 }
@@ -137,7 +137,12 @@ export function formatJdSuggestionSection(
 
   if (!looksLikeCodePath(trimmed)) return trimmed;
 
-  const last = trimmed.split(/[.\[\]]+/).filter((part) => part && !/^\d+$/.test(part)).pop() ?? trimmed;
+  const last = trimmed
+    .replaceAll('[', '.')
+    .replaceAll(']', '.')
+    .split('.')
+    .filter((part) => part && !/^\d+$/.test(part))
+    .pop() ?? trimmed;
   if (last === 'content' || last === 'label' || last === 'title' || last === 'html') {
     return '简历内容';
   }

@@ -181,13 +181,16 @@ export function JdAnalysisDialog(props: {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
-  const loadHistory = useCallback(async () => {
-    setHistory(await listAnalysisHistory<JdAnalysisOutput>(HISTORY_KIND, historyKey));
-  }, [historyKey]);
-
   useEffect(() => {
-    if (open) void loadHistory();
-  }, [open, loadHistory]);
+    if (!open) return;
+    let cancelled = false;
+    void listAnalysisHistory<JdAnalysisOutput>(HISTORY_KIND, historyKey).then((items) => {
+      if (!cancelled) setHistory(items);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [open, historyKey]);
 
   const handleCancel = useCallback((): void => {
     abortRef.current?.abort();
