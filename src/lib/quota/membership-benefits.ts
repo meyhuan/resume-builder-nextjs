@@ -49,6 +49,11 @@ export const AI_FEATURE_QUOTAS: Record<string, FeatureQuota> = {
     displayName: 'AI 一键优化简历',
     description: '结合岗位JD一键优化全部简历内容',
   },
+  'ai:editor-assist': {
+    nonVipLimit: DEFAULT_QUOTA_LIMITS.aiEditorAssist,
+    displayName: 'AI 编辑助手',
+    description: '对话、岗位匹配、翻译、求职信和语法检查',
+  },
 } as const;
 
 /** Export-related quotas */

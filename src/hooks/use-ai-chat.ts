@@ -3,11 +3,22 @@
 import { DefaultChatTransport, type UIMessage } from 'ai';
 import { useChat } from '@ai-sdk/react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { toast } from 'sonner';
 import {
   applyChangeProposal,
   extractProposalsFromMessages,
 } from '@/components/ai-chat/apply-block-change';
 import { useAppStore } from '@/state/store';
+import { useVipStore } from '@/store/use-vip-store';
+import {
+  handleAssistQuotaError,
+  parseAssistErrorPayload,
+  trackAssistBlocked,
+  trackAssistFailed,
+  trackAssistStart,
+  trackAssistSuccess,
+  refreshEditorAssistQuota,
+} from '@/lib/ai/assist-client';
 
 interface UseEditorAIChatOptions {
   initialMessages?: UIMessage[];
@@ -26,10 +37,22 @@ function getAppliedKeys(sessionId: string): Set<string> {
   return keys;
 }
 
+function canUseEditorAssist(): boolean {
+  const { quota, setShowUpgrade } = useVipStore.getState();
+  if (quota.aiEditorAssist.isVip || quota.aiEditorAssist.allowed) return true;
+  setShowUpgrade(true, 'ai');
+  trackAssistBlocked('chat');
+  return false;
+}
+
 export function useEditorAIChat({ initialMessages, sessionId }: UseEditorAIChatOptions) {
   const [input, setInput] = useState('');
   const sessionKey = sessionId || 'local';
   const appliedKeysRef = useRef(getAppliedKeys(sessionKey));
+  const pendingUndoToastRef = useRef(false);
+  const prevStatusRef = useRef<string>('ready');
+  const startedRef = useRef(false);
+  const quotaBlockedRef = useRef(false);
 
   const transport = useMemo(
     () =>
@@ -38,6 +61,18 @@ export function useEditorAIChat({ initialMessages, sessionId }: UseEditorAIChatO
         body: () => ({
           resumeData: useAppStore.getState().resume,
         }),
+        fetch: async (input, init) => {
+          const response = await fetch(input, init);
+          if (response.status === 429) {
+            const data = parseAssistErrorPayload(await response.clone().json().catch(() => ({})));
+            if (handleAssistQuotaError('chat', data)) {
+              quotaBlockedRef.current = true;
+            } else if (data.error) {
+              trackAssistFailed('chat', data.error);
+            }
+          }
+          return response;
+        },
       }),
     [],
   );
@@ -76,20 +111,55 @@ export function useEditorAIChat({ initialMessages, sessionId }: UseEditorAIChatO
       applyChangeProposal(item.proposal);
       keys.add(item.key);
     }
+    pendingUndoToastRef.current = true;
   }, [messages]);
 
   const isLoading = status === 'streaming' || status === 'submitted';
+
+  useEffect(() => {
+    const prev = prevStatusRef.current;
+    prevStatusRef.current = status;
+    if (prev !== 'streaming' && prev !== 'submitted') return;
+    if (status === 'streaming' || status === 'submitted') return;
+    if (startedRef.current) {
+      startedRef.current = false;
+      if (quotaBlockedRef.current) {
+        quotaBlockedRef.current = false;
+      } else if (error) {
+        trackAssistFailed('chat', error.message);
+      } else {
+        trackAssistSuccess('chat');
+        refreshEditorAssistQuota();
+      }
+    }
+    if (pendingUndoToastRef.current) {
+      pendingUndoToastRef.current = false;
+      toast.success('已写入简历，可用顶栏撤销还原');
+    }
+  }, [status, error]);
 
   const handleInputChange = useCallback((event: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInput(event.target.value);
   }, []);
 
+  const gatedSend = useCallback((text: string): boolean => {
+    if (!text.trim() || isLoading) return false;
+    if (!canUseEditorAssist()) return false;
+    startedRef.current = true;
+    trackAssistStart('chat');
+    void sendMessage({ text: text.trim() });
+    return true;
+  }, [isLoading, sendMessage]);
+
   const handleSubmit = useCallback((event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!input.trim() || isLoading) return;
-    void sendMessage({ text: input.trim() });
+    if (!gatedSend(input)) return;
     setInput('');
-  }, [input, isLoading, sendMessage]);
+  }, [gatedSend, input]);
+
+  const sendGatedMessage = useCallback((params: { text: string }): void => {
+    gatedSend(params.text);
+  }, [gatedSend]);
 
   const clearMessages = useCallback(() => {
     setMessages([]);
@@ -104,7 +174,7 @@ export function useEditorAIChat({ initialMessages, sessionId }: UseEditorAIChatO
     status,
     error,
     clearMessages,
-    sendMessage,
+    sendMessage: sendGatedMessage,
     setMessages,
   };
 }

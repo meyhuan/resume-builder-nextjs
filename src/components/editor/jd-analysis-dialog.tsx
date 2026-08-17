@@ -40,6 +40,8 @@ import { formatJdSuggestionSection } from '@/lib/ai/jd-section-label';
 import { useAppStore } from '@/state/store';
 import { useEditorUiStore } from '@/state/editor-ui-store';
 import { useVipCheck } from '@/hooks/use-vip-check';
+import { trackAssistBlocked } from '@/lib/ai/assist-client';
+import { EditorAssistQuotaHint } from '@/components/ai/editor-assist-quota-hint';
 import { MAX_OPTIMIZE_JD_LENGTH } from '@/lib/ai/optimize-resume-prompt-builder';
 
 const HISTORY_KIND = 'jd-analysis';
@@ -169,7 +171,7 @@ export function JdAnalysisDialog(props: {
   const closeModal = useEditorUiStore((state) => state.closeModal);
   const handoffToChat = useEditorUiStore((state) => state.handoffToChat);
   const resume = useAppStore((state) => state.resume);
-  const { requireAi } = useVipCheck();
+  const { requireAiFeature } = useVipCheck();
   const historyKey = props.resumeId || resume.id || 'local';
   const [jobDescription, setJobDescription] = useState('');
   const { isRunning, result, error, run, reset } = useJdAnalysis();
@@ -204,7 +206,10 @@ export function JdAnalysisDialog(props: {
   };
 
   const handleAnalyze = async (): Promise<void> => {
-    if (!jobDescription.trim() || !requireAi()) return;
+    if (!jobDescription.trim() || !requireAiFeature('aiEditorAssist')) {
+      if (jobDescription.trim()) trackAssistBlocked('jd-analysis');
+      return;
+    }
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
@@ -244,7 +249,7 @@ export function JdAnalysisDialog(props: {
           <DialogHeader className="px-6 pb-0 pt-6">
             <DialogTitle className="flex items-center gap-2">
               <FileSearch className="h-5 w-5 text-violet-600" />
-              JD 匹配分析
+              岗位匹配
             </DialogTitle>
             <DialogDescription>粘贴职位描述，分析简历匹配度并给出可执行建议。</DialogDescription>
           </DialogHeader>
@@ -284,15 +289,18 @@ export function JdAnalysisDialog(props: {
                       {error}
                     </div>
                   ) : null}
-                  <div className="flex justify-end gap-2">
-                    <Button variant="outline" onClick={handleClose}>关闭</Button>
-                    <Button
-                      className="bg-violet-600 text-white hover:bg-violet-700"
-                      disabled={!jobDescription.trim()}
-                      onClick={() => void handleAnalyze()}
-                    >
-                      开始分析
-                    </Button>
+                  <div className="space-y-2">
+                    <div className="flex justify-end gap-2">
+                      <Button variant="outline" onClick={handleClose}>关闭</Button>
+                      <Button
+                        className="bg-violet-600 text-white hover:bg-violet-700"
+                        disabled={!jobDescription.trim()}
+                        onClick={() => void handleAnalyze()}
+                      >
+                        开始分析
+                      </Button>
+                    </div>
+                    <EditorAssistQuotaHint />
                   </div>
                 </div>
               ) : (
@@ -300,7 +308,8 @@ export function JdAnalysisDialog(props: {
                   <div className="min-h-0 flex-1 overflow-y-auto">
                     <JdAnalysisResultView result={result} jobDescription={jobDescription} />
                   </div>
-                  <div className="flex justify-end gap-2 border-t border-slate-100 px-6 py-4">
+                  <div className="space-y-2 border-t border-slate-100 px-6 py-4">
+                    <div className="flex justify-end gap-2">
                     <Button variant="outline" onClick={handleClose}>关闭</Button>
                     <Button variant="outline" className="gap-1.5" onClick={() => reset()}>
                       <RotateCcw className="h-3.5 w-3.5" />
@@ -312,6 +321,8 @@ export function JdAnalysisDialog(props: {
                         一键优化
                       </Button>
                     ) : null}
+                    </div>
+                    <EditorAssistQuotaHint />
                   </div>
                 </>
               )}

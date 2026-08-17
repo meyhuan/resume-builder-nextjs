@@ -33,6 +33,17 @@ import type { GrammarCheckOutput, GrammarIssue } from '@/lib/ai/grammar-check-sc
 import { useAppStore } from '@/state/store';
 import { useEditorUiStore } from '@/state/editor-ui-store';
 import { useVipCheck } from '@/hooks/use-vip-check';
+import {
+  handleAssistQuotaError,
+  parseAssistErrorPayload,
+  trackAssistBlocked,
+  trackAssistFailed,
+  trackAssistStart,
+  trackAssistSuccess,
+  refreshEditorAssistQuota,
+} from '@/lib/ai/assist-client';
+
+import { EditorAssistQuotaHint } from '@/components/ai/editor-assist-quota-hint';
 
 const HISTORY_KIND = 'grammar-check';
 
@@ -118,7 +129,7 @@ export function GrammarCheckDialog(props: {
   const closeModal = useEditorUiStore((state) => state.closeModal);
   const handoffToChat = useEditorUiStore((state) => state.handoffToChat);
   const resume = useAppStore((state) => state.resume);
-  const { requireAi } = useVipCheck();
+  const { requireAiFeature } = useVipCheck();
   const historyKey = props.resumeId || resume.id || 'local';
   const [isChecking, setIsChecking] = useState(false);
   const [result, setResult] = useState<GrammarCheckOutput | null>(null);
@@ -154,22 +165,37 @@ export function GrammarCheckDialog(props: {
   };
 
   const handleCheck = async (): Promise<void> => {
-    if (!requireAi()) return;
+    if (!requireAiFeature('aiEditorAssist')) {
+      trackAssistBlocked('grammar-check');
+      return;
+    }
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
     setIsChecking(true);
     setError('');
     try {
+      trackAssistStart('grammar-check');
       const response = await fetch('/next-api/ai/grammar-check', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ resumeData: resume }),
         signal: controller.signal,
       });
-      const data = await response.json() as GrammarCheckOutput & { error?: string };
-      if (!response.ok) throw new Error(data.error || '语法检查失败');
+      const data = await response.json() as GrammarCheckOutput & {
+        error?: string;
+        quotaExceeded?: boolean;
+      };
+      if (!response.ok) {
+        const payload = parseAssistErrorPayload(data);
+        if (!handleAssistQuotaError('grammar-check', payload)) {
+          trackAssistFailed('grammar-check', data.error || '语法检查失败');
+        }
+        throw new Error(data.error || '语法检查失败');
+      }
       setResult(data);
+      trackAssistSuccess('grammar-check');
+      refreshEditorAssistQuota();
       const saved = await saveAnalysisHistory(HISTORY_KIND, historyKey, {
         id: createHistoryId(),
         createdAt: Date.now(),
@@ -237,11 +263,14 @@ export function GrammarCheckDialog(props: {
                       {error}
                     </div>
                   ) : null}
-                  <div className="flex gap-2">
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="flex gap-2">
                     <Button variant="outline" onClick={handleClose}>关闭</Button>
                     <Button className="bg-violet-600 text-white hover:bg-violet-700" onClick={() => void handleCheck()}>
                       开始检查
                     </Button>
+                    </div>
+                    <EditorAssistQuotaHint />
                   </div>
                 </div>
               ) : (
@@ -249,7 +278,8 @@ export function GrammarCheckDialog(props: {
                   <div className="min-h-0 flex-1 overflow-y-auto">
                     <GrammarResultView result={result} />
                   </div>
-                  <div className="flex justify-end gap-2 border-t border-slate-100 px-6 py-4">
+                  <div className="space-y-2 border-t border-slate-100 px-6 py-4">
+                    <div className="flex justify-end gap-2">
                     <Button variant="outline" onClick={handleClose}>关闭</Button>
                     <Button variant="outline" className="gap-1.5" onClick={() => { setResult(null); void handleCheck(); }}>
                       <RotateCcw className="h-3.5 w-3.5" />
@@ -261,6 +291,8 @@ export function GrammarCheckDialog(props: {
                         全部修复
                       </Button>
                     ) : null}
+                    </div>
+                    <EditorAssistQuotaHint />
                   </div>
                 </>
               )}

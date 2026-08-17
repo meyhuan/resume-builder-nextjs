@@ -96,12 +96,15 @@ export default function JdResumeMatchPage(): ReactElement {
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-fuchsia-500"> 缺失的岗位关键词</span>
               </h1>
               <p className="text-base md:text-lg text-slate-500 leading-relaxed max-w-3xl">
-                先做分析，再做改写。这个工具会提取目标岗位关键词，检查你的简历是否覆盖，并给出分模块优化建议。
+                先做分析，再做改写。这个工具会提取目标岗位关键词，检查你的简历是否覆盖，并给出分模块优化建议。完整分析并直接改简历，请到电脑编辑器顶栏的「岗位匹配」。
               </p>
               <div className="flex flex-wrap gap-3">
                 <Link href="/ai" className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-violet-600 text-white font-semibold shadow-lg shadow-violet-500/20 hover:bg-violet-700 transition-colors">
                   用 AI 生成新简历
                   <ArrowRight className="w-4 h-4" />
+                </Link>
+                <Link href="/dashboard" className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-white text-slate-700 font-semibold border border-slate-200 hover:border-violet-200 hover:text-violet-600 transition-colors">
+                  打开编辑器岗位匹配
                 </Link>
                 <Link href="/templates" className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-white text-slate-700 font-semibold border border-slate-200 hover:border-violet-200 hover:text-violet-600 transition-colors">
                   选择岗位模板

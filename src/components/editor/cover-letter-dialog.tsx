@@ -16,6 +16,16 @@ import { cn } from '@/lib/utils';
 import { useAppStore } from '@/state/store';
 import { useEditorUiStore } from '@/state/editor-ui-store';
 import { useVipCheck } from '@/hooks/use-vip-check';
+import {
+  handleAssistQuotaError,
+  parseAssistErrorPayload,
+  trackAssistBlocked,
+  trackAssistFailed,
+  trackAssistStart,
+  trackAssistSuccess,
+  refreshEditorAssistQuota,
+} from '@/lib/ai/assist-client';
+import { EditorAssistQuotaHint } from '@/components/ai/editor-assist-quota-hint';
 
 type Tone = 'formal' | 'friendly' | 'confident';
 
@@ -35,7 +45,7 @@ export function CoverLetterDialog(): ReactElement {
   const open = useEditorUiStore((state) => state.activeModal === 'cover-letter');
   const closeModal = useEditorUiStore((state) => state.closeModal);
   const resume = useAppStore((state) => state.resume);
-  const { requireAi } = useVipCheck();
+  const { requireAiFeature } = useVipCheck();
   const [jobDescription, setJobDescription] = useState('');
   const [tone, setTone] = useState<Tone>('formal');
   const [language, setLanguage] = useState('zh');
@@ -64,22 +74,39 @@ export function CoverLetterDialog(): ReactElement {
   };
 
   const handleGenerate = async (): Promise<void> => {
-    if (!jobDescription.trim() || !requireAi()) return;
+    if (!jobDescription.trim() || !requireAiFeature('aiEditorAssist')) {
+      if (jobDescription.trim()) trackAssistBlocked('cover-letter');
+      return;
+    }
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
     setIsGenerating(true);
     setError('');
     try {
+      trackAssistStart('cover-letter');
       const response = await fetch('/next-api/ai/cover-letter', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ resumeData: resume, jobDescription, tone, language }),
         signal: controller.signal,
       });
-      const data = await response.json() as { title?: string; content?: string; error?: string };
-      if (!response.ok) throw new Error(data.error || '生成失败');
+      const data = await response.json() as {
+        title?: string;
+        content?: string;
+        error?: string;
+        quotaExceeded?: boolean;
+      };
+      if (!response.ok) {
+        const payload = parseAssistErrorPayload(data);
+        if (!handleAssistQuotaError('cover-letter', payload)) {
+          trackAssistFailed('cover-letter', data.error || '生成失败');
+        }
+        throw new Error(data.error || '生成失败');
+      }
       setResult({ title: data.title || '求职信', content: data.content || '' });
+      trackAssistSuccess('cover-letter');
+      refreshEditorAssistQuota();
     } catch (err) {
       if (isAbortError(err)) return;
       setError(err instanceof Error ? err.message : '生成失败');
@@ -163,7 +190,8 @@ export function CoverLetterDialog(): ReactElement {
                 {error}
               </div>
             ) : null}
-            <div className="flex justify-end gap-2">
+            <div className="space-y-2">
+              <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={handleClose}>关闭</Button>
               <Button
                 className="bg-violet-600 text-white hover:bg-violet-700"
@@ -172,6 +200,8 @@ export function CoverLetterDialog(): ReactElement {
               >
                 生成求职信
               </Button>
+              </div>
+              <EditorAssistQuotaHint />
             </div>
           </div>
         ) : (

@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useAppStore } from '@/state/store';
 import { useEditorUiStore } from '@/state/editor-ui-store';
+import { EditorAssistQuotaHint } from '@/components/ai/editor-assist-quota-hint';
 
 const QUICK_PROMPTS = [
   '分析这份简历与目标岗位的匹配度',
@@ -255,12 +256,13 @@ function AiChatSession(props: {
               }
             }}
           />
-          <div className="flex justify-end px-2 pb-2">
+          <div className="flex items-center justify-between gap-2 px-2 pb-2">
+            <EditorAssistQuotaHint className="min-w-0 flex-1 text-left" />
             <Button
               type="submit"
               size="sm"
               disabled={isLoading || !input.trim()}
-              className="h-8 rounded-full bg-violet-600 px-3 text-white"
+              className="h-8 shrink-0 rounded-full bg-violet-600 px-3 text-white"
             >
               <SendHorizonal className="h-3.5 w-3.5" />
             </Button>

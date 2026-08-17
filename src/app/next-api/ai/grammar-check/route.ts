@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateText } from 'ai';
 import { extractAIConfig, getJsonProviderOptions, getModel, AIConfigError } from '@/lib/ai/provider';
-import { applyRateLimit } from '@/lib/ai/with-rate-limit';
+import { withQuotaCheck } from '@/lib/quota/quota-guard';
 import { extractJson } from '@/lib/ai/extract-json';
 import { grammarCheckInputSchema, grammarCheckOutputSchema } from '@/lib/ai/grammar-check-schema';
 import { serializeResumeContext } from '@/lib/ai/resume-context';
@@ -35,9 +35,7 @@ CRITICAL: You are a JSON API. Your entire response must be a single valid JSON o
 
 export async function POST(request: NextRequest): Promise<Response> {
   try {
-    const limited = await applyRateLimit(request);
-    if (limited) return limited;
-
+    return withQuotaCheck('ai:editor-assist', async () => {
     const body = await request.json();
     const parsed = grammarCheckInputSchema.safeParse(body);
     if (!parsed.success) {
@@ -63,6 +61,7 @@ export async function POST(request: NextRequest): Promise<Response> {
 
     const checkResult = extractJson(result.text, grammarCheckOutputSchema);
     return NextResponse.json(checkResult);
+    });
   } catch (error) {
     if (error instanceof AIConfigError) {
       return NextResponse.json({ error: error.message }, { status: 503 });

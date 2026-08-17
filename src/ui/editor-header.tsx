@@ -119,10 +119,10 @@ export default function EditorHeader(props: EditorHeaderProps): ReactElement {
             size="sm"
             onClick={() => openModal('jd-analysis')}
             className="h-8"
-            title="JD 匹配"
+            title="岗位匹配"
           >
             <FileSearch className="h-4 w-4" />
-            <span className="ml-1 hidden text-xs sm:inline">JD 匹配</span>
+            <span className="ml-1 hidden text-xs sm:inline">岗位匹配</span>
           </Button>
           <Button
             variant="ghost"
@@ -166,7 +166,7 @@ export default function EditorHeader(props: EditorHeaderProps): ReactElement {
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => openModal('jd-analysis')}>
                 <FileSearch className="mr-2 h-4 w-4" />
-                JD 匹配
+                岗位匹配
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => openModal('grammar-check')}>
                 <SpellCheck className="mr-2 h-4 w-4" />

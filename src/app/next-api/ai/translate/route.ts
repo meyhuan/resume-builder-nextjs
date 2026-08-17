@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import { generateText, type LanguageModel } from 'ai';
 import { extractAIConfig, getJsonProviderOptions, getModel, AIConfigError, type AIConfig } from '@/lib/ai/provider';
 import { extractJson } from '@/lib/ai/extract-json';
-import { applyRateLimit } from '@/lib/ai/with-rate-limit';
+import { withQuotaCheck } from '@/lib/quota/quota-guard';
 import {
   translateInputSchema,
   translatedHeaderSchema,
@@ -69,9 +69,7 @@ async function runWithConcurrency<T, R>(
 
 export async function POST(request: NextRequest): Promise<Response> {
   try {
-    const limited = await applyRateLimit(request);
-    if (limited) return limited;
-
+    return withQuotaCheck('ai:editor-assist', async () => {
     const body = await request.json();
     const parsed = translateInputSchema.safeParse(body);
     if (!parsed.success) {
@@ -138,6 +136,7 @@ export async function POST(request: NextRequest): Promise<Response> {
         'Content-Type': 'application/x-ndjson',
         'Cache-Control': 'no-cache',
       },
+    });
     });
   } catch (error) {
     if (error instanceof AIConfigError) {

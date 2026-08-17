@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateText } from 'ai';
 import { extractAIConfig, getModel, AIConfigError } from '@/lib/ai/provider';
-import { applyRateLimit } from '@/lib/ai/with-rate-limit';
+import { withQuotaCheck } from '@/lib/quota/quota-guard';
 import { coverLetterInputSchema } from '@/lib/ai/cover-letter-schema';
 import { serializeResumeContext } from '@/lib/ai/resume-context';
 import type { ResumeData } from '@/entities/resume/resume-data';
@@ -64,9 +64,7 @@ function parseCoverLetter(text: string): CoverLetterOutput {
 
 export async function POST(request: NextRequest): Promise<Response> {
   try {
-    const limited = await applyRateLimit(request);
-    if (limited) return limited;
-
+    return withQuotaCheck('ai:editor-assist', async () => {
     const body = await request.json();
     const parsed = coverLetterInputSchema.safeParse(body);
     if (!parsed.success) {
@@ -98,6 +96,7 @@ Based on this resume and job description, write a tailored cover letter. Use the
     });
 
     return NextResponse.json(parseCoverLetter(result.text));
+    });
   } catch (error) {
     if (error instanceof AIConfigError) {
       return NextResponse.json({ error: error.message }, { status: 503 });

@@ -3,6 +3,14 @@
 import { useCallback, useState } from 'react';
 import type { ResumeData } from '@/entities/resume/resume-data';
 import type { JdAnalysisOutput } from '@/lib/ai/jd-analysis-schema';
+import {
+  handleAssistQuotaError,
+  parseAssistErrorPayload,
+  trackAssistFailed,
+  trackAssistStart,
+  trackAssistSuccess,
+  refreshEditorAssistQuota,
+} from '@/lib/ai/assist-client';
 
 export function useJdAnalysis() {
   const [isRunning, setIsRunning] = useState(false);
@@ -17,6 +25,7 @@ export function useJdAnalysis() {
     setIsRunning(true);
     setError(null);
     try {
+      trackAssistStart('jd-analysis');
       const response = await fetch('/next-api/ai/jd-analysis', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -26,11 +35,20 @@ export function useJdAnalysis() {
         }),
         signal: params.signal,
       });
-      const data = (await response.json()) as JdAnalysisOutput & { error?: string };
+      const data = (await response.json()) as JdAnalysisOutput & {
+        error?: string;
+        quotaExceeded?: boolean;
+      };
       if (!response.ok) {
+        const payload = parseAssistErrorPayload(data);
+        if (!handleAssistQuotaError('jd-analysis', payload)) {
+          trackAssistFailed('jd-analysis', data.error || '岗位匹配分析失败');
+        }
         throw new Error(data.error || '岗位匹配分析失败');
       }
       setResult(data);
+      trackAssistSuccess('jd-analysis');
+      refreshEditorAssistQuota();
       return data;
     } catch (err) {
       if ((err instanceof DOMException && err.name === 'AbortError') || (err instanceof Error && err.name === 'AbortError')) {

@@ -36,6 +36,7 @@ function getDaysRemaining(expireTime: string | null): number | null {
 const COMPARE_ROWS: Array<{ label: string; free: string | false; vip: string | true }> = [
   { label: 'AI 生成简历', free: '每日 3 次', vip: '无限次' },
   { label: 'AI 续写 & 润色', free: '每日 5 次', vip: '无限次' },
+  { label: 'AI 编辑助手', free: '每日 5 次', vip: '无限次' },
   { label: 'PDF 导出', free: '免费限 1 次', vip: '无水印 · 高清 · 无限' },
   { label: 'Markdown 导出', free: false, vip: true },
   { label: '图片导出', free: false, vip: true },
@@ -111,6 +112,7 @@ export default function MembershipPage(): React.ReactElement {
     { label: 'AI 导入解析', remaining: quota.aiImportSection?.remaining, limit: 3, cycle: 'daily' },
     { label: 'AI 续写内容', remaining: quota.aiGenerateSection?.remaining, limit: 5, cycle: 'daily' },
     { label: 'AI 润色文本', remaining: quota.aiPolishSection?.remaining, limit: 5, cycle: 'daily' },
+    { label: 'AI 编辑助手', remaining: quota.aiEditorAssist?.remaining, limit: 5, cycle: 'daily' },
     { label: 'PDF 导出', remaining: quota.pdfExport?.remaining, limit: 1, cycle: 'lifetime' },
   ];
 

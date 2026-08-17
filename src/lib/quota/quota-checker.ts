@@ -189,6 +189,7 @@ export async function getAllQuotas(): Promise<QuotaCheckResult[]> {
     'ai:generate-section',
     'ai:polish-section',
     'ai:optimize-resume',
+    'ai:editor-assist',
     'pdf:export',
   ];
   const results = await Promise.all(features.map((f) => peekQuota(f)));

@@ -229,7 +229,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null)
   const AUTO_SAVE_DELAY = 30000 // 30 seconds
   const [showLeaveDialog, setShowLeaveDialog] = useState(false)
-  const [activePanel, setActivePanel] = useState<PanelId | null>(null)
+  const [activePanel, setActivePanel] = useState<PanelId | null>('layout')
   const [onePageMode, setOnePageMode] = useState(false)
   const [onePageSnapshot, setOnePageSnapshot] = useState<AdjustableTokens | null>(null)
   const [sidebarSectionIds, setSidebarSectionIds] = useState<readonly string[] | undefined>(undefined)

@@ -28,9 +28,10 @@ const EMPTY_QUOTA: VipQuotaStatus = {
   aiGenerateSection: { allowed: false, remaining: 0, isVip: false, limit: DEFAULT_QUOTA_LIMITS.aiGenerateSection },
   aiPolishSection: { allowed: false, remaining: 0, isVip: false, limit: DEFAULT_QUOTA_LIMITS.aiPolishSection },
   aiOptimizeResume: { allowed: false, remaining: 0, isVip: false, limit: DEFAULT_QUOTA_LIMITS.aiOptimizeResume },
+  aiEditorAssist: { allowed: false, remaining: 0, isVip: false, limit: DEFAULT_QUOTA_LIMITS.aiEditorAssist },
   pdfExport: { allowed: false, remaining: 0, isVip: false, limit: DEFAULT_QUOTA_LIMITS.pdfExport },
 };
-const QUOTA_CACHE_KEY_PREFIX = 'vip_quota_snapshot_v1';
+const QUOTA_CACHE_KEY_PREFIX = 'vip_quota_snapshot_v2';
 const QUOTA_CACHE_TTL_MS = 30 * 60 * 1000;
 const QUOTA_FETCH_TIMEOUT_MS = 8_000;
 const QUOTA_FAILURE_TRACK_COOLDOWN_MS = 60_000;
@@ -59,6 +60,7 @@ function normalizeQuotaSnapshot(data: Record<string, VipFeatureQuota | undefined
     aiGenerateSection: data.aiGenerateSection || EMPTY_QUOTA.aiGenerateSection,
     aiPolishSection: data.aiPolishSection || EMPTY_QUOTA.aiPolishSection,
     aiOptimizeResume: data.aiOptimizeResume || EMPTY_QUOTA.aiOptimizeResume,
+    aiEditorAssist: data.aiEditorAssist || EMPTY_QUOTA.aiEditorAssist,
     pdfExport: data.pdfExport || EMPTY_QUOTA.pdfExport,
   };
 }

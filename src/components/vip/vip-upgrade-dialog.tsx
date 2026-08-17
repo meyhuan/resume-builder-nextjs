@@ -36,7 +36,7 @@ const COMPARISON_FEATURES: ComparisonFeature[] = [
   { feature: 'PDF 高清导出', nonVip: '1', vip: 'infinity' },
   { feature: 'Markdown 导出', nonVip: 'cross', vip: 'check' },
   { feature: '图片导出', nonVip: 'cross', vip: 'check' },
-  { feature: 'AI 优化简历', nonVip: 'limited', vip: 'infinity' },
+  { feature: 'AI 编辑助手', nonVip: 'limited', vip: 'infinity' },
   { feature: '精品模板', nonVip: 'cross', vip: 'check' },
   { feature: '无水印导出', nonVip: 'cross', vip: 'check' },
   { feature: '一对一简历指导', nonVip: 'cross', vip: 'check' },
@@ -49,8 +49,8 @@ const CONTEXT_COPY = {
     description: '开通后可导出高清 PDF、Markdown 和图片，长期修改下载',
   },
   ai: {
-    title: 'AI 优化额度已用完',
-    description: '开通后可继续使用 AI 生成、润色和优化，让简历更贴合岗位',
+    title: 'AI 编辑助手额度已用完',
+    description: '开通后可继续使用对话、岗位匹配、翻译、求职信和语法检查',
   },
   generic: {
     title: '升级会员',

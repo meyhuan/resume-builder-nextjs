@@ -16,6 +16,16 @@ import { cn } from '@/lib/utils';
 import { useAppStore } from '@/state/store';
 import { useEditorUiStore } from '@/state/editor-ui-store';
 import { useVipCheck } from '@/hooks/use-vip-check';
+import {
+  handleAssistQuotaError,
+  parseAssistErrorPayload,
+  trackAssistBlocked,
+  trackAssistFailed,
+  trackAssistStart,
+  trackAssistSuccess,
+  refreshEditorAssistQuota,
+} from '@/lib/ai/assist-client';
+import { EditorAssistQuotaHint } from '@/components/ai/editor-assist-quota-hint';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import {
@@ -61,7 +71,7 @@ export function TranslateDialog(props: {
 }): ReactElement {
   const open = useEditorUiStore((state) => state.activeModal === 'translate');
   const closeModal = useEditorUiStore((state) => state.closeModal);
-  const { requireAi } = useVipCheck();
+  const { requireAiFeature } = useVipCheck();
   const router = useRouter();
   const [targetLanguage, setTargetLanguage] = useState('en');
   const [mode, setMode] = useState<TranslateMode>('overwrite');
@@ -86,7 +96,10 @@ export function TranslateDialog(props: {
   }, [open]);
 
   const handleTranslate = useCallback(async () => {
-    if (!requireAi()) return;
+    if (!requireAiFeature('aiEditorAssist')) {
+      trackAssistBlocked('translate');
+      return;
+    }
     setState('translating');
     setErrorMessage('');
     setProgress({ completed: 0, total: 0 });
@@ -96,6 +109,7 @@ export function TranslateDialog(props: {
     let working = cloneResumeData(useAppStore.getState().resume);
 
     try {
+      trackAssistStart('translate');
       const response = await fetch('/next-api/ai/translate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -107,7 +121,11 @@ export function TranslateDialog(props: {
         signal: controller.signal,
       });
       if (!response.ok) {
-        const data = await response.json().catch(() => ({})) as { error?: string };
+        const data = await response.json().catch(() => ({})) as { error?: string; quotaExceeded?: boolean };
+        const payload = parseAssistErrorPayload(data);
+        if (!handleAssistQuotaError('translate', payload)) {
+          trackAssistFailed('translate', data.error || '翻译失败');
+        }
         throw new Error(data.error || '翻译失败');
       }
 
@@ -142,6 +160,8 @@ export function TranslateDialog(props: {
         } else if (data.type === 'done') {
           setFailedCount(Number(data.failedCount) || 0);
           setState('success');
+          trackAssistSuccess('translate');
+          refreshEditorAssistQuota();
           if (mode === 'overwrite') {
             applyTranslatedHeader({ language: targetLanguage });
           } else {
@@ -167,7 +187,7 @@ export function TranslateDialog(props: {
       setState('error');
       setErrorMessage(error instanceof Error ? error.message : '翻译失败');
     }
-  }, [closeModal, mode, props.template, requireAi, router, targetLanguage]);
+  }, [closeModal, mode, props.template, requireAiFeature, router, targetLanguage]);
 
   const progressPercent = progress.total > 0
     ? Math.round((progress.completed / progress.total) * 100)
@@ -250,13 +270,16 @@ export function TranslateDialog(props: {
           ) : null}
         </div>
 
-        <DialogFooter className="border-t border-slate-100 px-6 py-4">
+        <DialogFooter className="flex-col items-stretch gap-2 border-t border-slate-100 px-6 py-4 sm:flex-col">
           {state === 'idle' || state === 'error' ? (
             <>
-              <Button variant="outline" onClick={closeModal}>关闭</Button>
-              <Button className="bg-violet-600 text-white hover:bg-violet-700" onClick={() => void handleTranslate()}>
-                翻译全部
-              </Button>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={closeModal}>关闭</Button>
+                <Button className="bg-violet-600 text-white hover:bg-violet-700" onClick={() => void handleTranslate()}>
+                  翻译全部
+                </Button>
+              </div>
+              <EditorAssistQuotaHint />
             </>
           ) : null}
         </DialogFooter>

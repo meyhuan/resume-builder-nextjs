@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { extractAIConfig, AIConfigError } from '@/lib/ai/provider';
 import { analyzeJdMatch } from '@/lib/ai/analyze-jd-match';
 import { jdAnalysisInputSchema } from '@/lib/ai/jd-analysis-schema';
-import { applyRateLimit } from '@/lib/ai/with-rate-limit';
+import { withQuotaCheck } from '@/lib/quota/quota-guard';
 
 const MAX_JD_LENGTH = 5000;
 
@@ -10,13 +10,10 @@ const MAX_JD_LENGTH = 5000;
  * POST /next-api/ai/jd-analysis
  *
  * LLM-based JD match analysis. Resume is sent from the client (Zustand state).
- * Internal beta: no quota check.
  */
 export async function POST(request: NextRequest): Promise<Response> {
   try {
-    const limited = await applyRateLimit(request);
-    if (limited) return limited;
-
+    return withQuotaCheck('ai:editor-assist', async () => {
     const body = await request.json();
     const parsed = jdAnalysisInputSchema.safeParse(body);
     if (!parsed.success) {
@@ -39,6 +36,7 @@ export async function POST(request: NextRequest): Promise<Response> {
     });
 
     return NextResponse.json(result);
+    });
   } catch (error) {
     if (error instanceof AIConfigError) {
       return NextResponse.json({ error: error.message }, { status: 503 });
