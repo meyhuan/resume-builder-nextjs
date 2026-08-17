@@ -13,12 +13,10 @@ import { exportImage } from '@/io/export-image'
 import { buildResumeHtml } from '@/io/html-export'
 import { exportResumeToMarkdown } from '@/io/export-markdown'
 import RightSidebar from '@/ui/right-sidebar'
-import EditorToolbar from '@/ui/editor-toolbar'
+import EditorHeader from '@/ui/editor-header'
 import type { PanelId } from '@/ui/editor-toolbar'
 import type { ThemeTokens } from '@/entities/theme/theme-tokens'
-import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
-import { Loader2, ArrowLeft, Save, FileText, Image as ImageIcon, Undo2, Redo2 } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { revalidateDashboard } from '@/app/actions'
 import { useOnePageMode } from '@/hooks/use-one-page-mode'
@@ -38,6 +36,12 @@ import { normalizeResumeContent } from '@/entities/resume/normalize-resume-conte
 import { joinExportFileNameParts, sanitizeExportFileName } from '@/lib/export-file-name'
 import { track } from '@/lib/analytics'
 import { PortfolioAppendix } from '@/components/portfolio/portfolio-appendix'
+import { AiChatBubble } from '@/components/ai-chat/ai-chat-bubble'
+import { JdAnalysisDialog } from '@/components/editor/jd-analysis-dialog'
+import { TranslateDialog } from '@/components/editor/translate-dialog'
+import { CoverLetterDialog } from '@/components/editor/cover-letter-dialog'
+import { GrammarCheckDialog } from '@/components/editor/grammar-check-dialog'
+import { OptimizeDialog } from '@/components/editor/optimize-dialog'
 
 const AI_CACHE_KEYS: Record<string, string> = {
   ai: 'wizard_pending_resume',
@@ -225,7 +229,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null)
   const AUTO_SAVE_DELAY = 30000 // 30 seconds
   const [showLeaveDialog, setShowLeaveDialog] = useState(false)
-  const [activePanel, setActivePanel] = useState<PanelId | null>('layout')
+  const [activePanel, setActivePanel] = useState<PanelId | null>(null)
   const [onePageMode, setOnePageMode] = useState(false)
   const [onePageSnapshot, setOnePageSnapshot] = useState<AdjustableTokens | null>(null)
   const [sidebarSectionIds, setSidebarSectionIds] = useState<readonly string[] | undefined>(undefined)
@@ -986,125 +990,29 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
         <div className="absolute bottom-[-10%] left-[-5%] w-[400px] h-[400px] bg-fuchsia-500/5 rounded-full blur-[100px]" />
       </div>
 
-      <header className="z-50 bg-white border-b border-slate-200 shrink-0 print:hidden">
-        <div className="px-3 py-2 flex flex-col gap-2 lg:h-10 lg:flex-row lg:items-center lg:gap-0 relative">
-          {/* Left: nav + title */}
-          <div className="flex items-center gap-1 shrink-0 min-w-0">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleBack}
-              className="h-7 px-2 text-xs text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded"
-            >
-              <ArrowLeft className="h-3.5 w-3.5 mr-1" />
-              返回
-            </Button>
-            <div className="h-4 w-px bg-slate-200 mx-0.5" />
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={undo}
-              disabled={!canUndo}
-              className="h-7 w-7 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded disabled:opacity-30 disabled:cursor-not-allowed"
-              title="撤销 (Ctrl+Z)"
-            >
-              <Undo2 className="h-3.5 w-3.5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={redo}
-              disabled={!canRedo}
-              className="h-7 w-7 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded disabled:opacity-30 disabled:cursor-not-allowed"
-              title="重做 (Ctrl+Shift+Z)"
-            >
-              <Redo2 className="h-3.5 w-3.5" />
-            </Button>
-            <div className="h-4 w-px bg-slate-200 mx-0.5" />
-            <span className="text-sm font-medium text-slate-700 truncate max-w-[180px]">
-              {resume.name || '未命名简历'}
-            </span>
-            {hasUnsavedChanges && (
-              <span className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse shrink-0" title="未保存" />
-            )}
-          </div>
-
-          {/* Center: toolbar actions (absolutely centered) */}
-          <div className="order-last w-full overflow-x-auto lg:order-none lg:w-auto lg:absolute lg:left-1/2 lg:top-1/2 lg:-translate-x-1/2 lg:-translate-y-1/2">
-            <div className="min-w-max">
-              <EditorToolbar activePanel={activePanel} onPanelChange={setActivePanel} />
-            </div>
-          </div>
-
-          {/* Right: save + export */}
-          <div className="flex items-center gap-1 shrink-0 justify-between lg:justify-end lg:ml-auto">
-            {lastSaved && !hasUnsavedChanges && (
-              <span className="text-[10px] text-emerald-600 mr-1 hidden lg:inline">
-                已保存 {lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </span>
-            )}
-            <Button
-              onClick={handleSave}
-              disabled={isSaving}
-              variant="ghost"
-              size="sm"
-              className="h-7 px-2 text-xs text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded"
-            >
-              {isSaving ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
-              ) : (
-                <Save className="h-3.5 w-3.5 mr-1" />
-              )}
-              {isSaving ? '保存中' : '保存'}
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleExportPng}
-              title="导出 PNG"
-              aria-label="导出 PNG"
-              className="h-7 px-2 text-xs text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded"
-            >
-              <ImageIcon className="h-3.5 w-3.5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleExportMarkdown}
-              title="导出 Markdown"
-              aria-label="导出 Markdown"
-              className="h-7 px-2 text-xs text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded"
-            >
-              <FileText className="h-3.5 w-3.5" />
-            </Button>
-
-            <div className="h-4 w-px bg-slate-200 mx-1" />
-
-            <Button
-              onClick={handlePreviewPdf}
-              disabled={isGenerating}
-              size="sm"
-              className="h-7 px-3 text-xs font-medium bg-gradient-to-r from-violet-600 to-fuchsia-500 text-white hover:from-violet-700 hover:to-fuchsia-600 rounded shadow-sm"
-            >
-              {isGenerating ? (
-                <>
-                  <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
-                  生成中...
-                </>
-              ) : (
-                <>
-                  预览/导出
-                  {!isVip && quota.pdfExport.remaining !== 'unlimited' && (
-                    <span className="ml-1 text-[9px] text-white/80">
-                      ({quota.pdfExport.remaining}次)
-                    </span>
-                  )}
-                </>
-              )}
-            </Button>
-          </div>
-        </div>
-      </header>
+      <EditorHeader
+        title={resume.name || '未命名简历'}
+        isSaving={isSaving}
+        hasUnsavedChanges={hasUnsavedChanges}
+        lastSaved={lastSaved}
+        onBack={handleBack}
+        onSave={handleSave}
+        canUndo={canUndo}
+        canRedo={canRedo}
+        onUndo={undo}
+        onRedo={redo}
+        onExport={() => { void handlePreviewPdf() }}
+        isExporting={isGenerating}
+        exportQuotaLabel={
+          !isVip && quota.pdfExport.remaining !== 'unlimited'
+            ? `(${quota.pdfExport.remaining}次)`
+            : undefined
+        }
+        sectionsOpen={activePanel === 'sections'}
+        onToggleSections={() => setActivePanel(activePanel === 'sections' ? null : 'sections')}
+        themeOpen={activePanel === 'layout'}
+        onToggleTheme={() => setActivePanel(activePanel === 'layout' ? null : 'layout')}
+      />
 
       <main className="flex-1 flex overflow-hidden relative z-10">
         <div className="flex-1 overflow-auto p-6 md:p-12 custom-scrollbar bg-slate-50/30">
@@ -1196,6 +1104,8 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
         onOpenChange={(next: boolean) => { if (!next) handleClosePreview() }}
         pdfUrl={pdfBlobUrl}
         onConfirmExport={handleConfirmExport}
+        onExportPng={() => { void handleExportPng() }}
+        onExportMarkdown={handleExportMarkdown}
         onUpgradeClick={() => {
           trackExportPaywallBlock({
             exportType: 'pdf',
@@ -1208,6 +1118,12 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
         isVip={isVip}
         isConfirming={isConfirmingExport}
       />
+      <JdAnalysisDialog resumeId={resumeId} />
+      <TranslateDialog resumeId={resumeId} template={tpl} />
+      <CoverLetterDialog />
+      <GrammarCheckDialog resumeId={resumeId} />
+      <OptimizeDialog />
+      <AiChatBubble resumeId={resumeId} />
       {/* Forced login dialog for unauthenticated users */}
       <WxLoginDialog
         isOpen={needsForceLogin || isLoginOpen}

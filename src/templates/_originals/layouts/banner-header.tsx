@@ -3,6 +3,7 @@
 import type { ReactElement } from 'react'
 import type { ResumeData } from '@/entities/resume/resume-data'
 import { getHeaderJobIntentionText } from '@/entities/resume/header-job-intention'
+import { getDesiredPositionLabel } from '@/lib/resume-ui-labels'
 import type { ThemeTokens } from '@/entities/theme/theme-tokens'
 import { AvatarSlot, EditableText, FieldChip, hexToRgba, lightenHex } from '@/templates/_core'
 import type { EditableHeader, EditableJobIntention } from '@/templates/_core'
@@ -341,7 +342,7 @@ export function PurpleCornerLayout(props: {
             <>
               <span aria-hidden style={{ width: refPx(2), height: refPx(38), margin: `0 ${refPx(12)}px`, transform: 'skewX(-14deg)', backgroundColor: config.accent }} />
               <span style={{ display: 'inline-flex', alignItems: 'center', minHeight: refPx(35), padding: `${refPx(5)}px ${refPx(18)}px ${refPx(6)}px ${refPx(14)}px`, clipPath: 'polygon(0 0, calc(100% - 12px) 0, 100% 100%, 0 100%)', backgroundColor: config.accent, color: '#fff', fontSize: '0.9em', fontWeight: 700 }}>
-                求职意向：{headerJob}
+                {getDesiredPositionLabel(resume.language)}：{headerJob}
               </span>
             </>
           ) : null}

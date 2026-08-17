@@ -11,6 +11,8 @@ export interface ResumeData {
   id: UUID;
   name: string;
   contactHtml?: string;
+  /** Resume content language after translation (zh/en/…). Defaults to zh. */
+  language?: string;
   /** Optional structured base info for header. */
   baseInfo?: BaseInfo;
   /** Optional job intention. */

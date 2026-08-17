@@ -389,7 +389,7 @@ function ObjectiveSection(props: ObjectiveProps): ReactElement {
       onClick={openEditModal}
       style={{ padding: `${18 * spacingScale}px ${horizontalPadding}px ${6 * spacingScale}px` }}
     >
-      <ZhumoSectionHeading numeral="序" tag="Objective" title="求职意向" />
+      <ZhumoSectionHeading numeral="序" tag="Objective" title={objective.sectionTitle} />
 
       <button
         type="button"

@@ -335,7 +335,7 @@ export function JobIntentionBlock(props: {
       onClick={jobIntention.openEditModal}
       style={{ marginTop: scaledSpacing(topMargin, theme), cursor: 'pointer' }}
     >
-      <SectionTitle title="求职意向" config={config} />
+      <SectionTitle title={jobIntention.sectionTitle} config={config} />
       <div className="flex flex-wrap" style={{ gap: '5px 12px', color: config.muted, fontSize: '0.95em', lineHeight: 1.36 }}>
         {jobIntention.fields.map((field) => <JobField key={field.key} field={field} jobIntention={jobIntention} config={config} />)}
       </div>
@@ -355,7 +355,7 @@ export function SidebarJob({ jobIntention, accent }: { readonly jobIntention: Ed
       }}
       style={{ marginTop: 26, cursor: 'pointer' }}
     >
-      <h3 style={{ margin: '0 0 10px', color: accent, fontSize: '0.95em', fontWeight: 700 }}>求职意向</h3>
+      <h3 style={{ margin: '0 0 10px', color: accent, fontSize: '0.95em', fontWeight: 700 }}>{jobIntention.sectionTitle}</h3>
       <div className="grid" style={{ gap: 5, fontSize: '0.82em', color: 'currentColor', opacity: 0.86 }}>
         {jobIntention.fields.map((field) => <JobField key={field.key} field={field} jobIntention={jobIntention} config={CONFIG.lifeng} />)}
       </div>

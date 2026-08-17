@@ -78,6 +78,54 @@
   animation: bounce-subtle 3s ease-in-out infinite;
 }
 
+.ai-chat-markdown p {
+  margin-bottom: 0.5rem;
+}
+.ai-chat-markdown p:last-child {
+  margin-bottom: 0;
+}
+.ai-chat-markdown strong {
+  font-weight: 600;
+  color: #0f172a;
+}
+.ai-chat-markdown ul,
+.ai-chat-markdown ol {
+  margin: 0 0 0.5rem 1.1rem;
+}
+.ai-chat-markdown ul {
+  list-style: disc;
+}
+.ai-chat-markdown ol {
+  list-style: decimal;
+}
+.ai-chat-markdown li {
+  margin-bottom: 0.2rem;
+}
+.ai-chat-markdown li:last-child {
+  margin-bottom: 0;
+}
+.ai-chat-markdown code {
+  border-radius: 0.25rem;
+  background: #f5f3ff;
+  padding: 0.1rem 0.3rem;
+  font-size: 0.75rem;
+  color: #6d28d9;
+}
+.ai-chat-markdown pre {
+  margin-bottom: 0.5rem;
+  overflow-x: auto;
+  border-radius: 0.5rem;
+  background: #0f172a;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.75rem;
+  color: #e2e8f0;
+}
+.ai-chat-markdown pre code {
+  background: transparent;
+  padding: 0;
+  color: inherit;
+}
+
 /* Ensure runtime variables are defined for browsers */
 :root {
   --color-background: #ffffff;

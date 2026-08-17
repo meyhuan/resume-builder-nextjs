@@ -6,9 +6,10 @@
  * Phases: INPUT → LOADING → PREVIEW → DONE
  * AI result is shown as a diff preview before being written to the store.
  */
-import { useState, useEffect, useCallback, useRef, useMemo, type ReactElement } from 'react';
-import { Sparkles, ChevronDown, ChevronUp, Check, Loader2, AlertCircle } from 'lucide-react';
+import { useState, useCallback, useMemo, type ReactElement } from 'react';
+import { Sparkles, ChevronDown, ChevronUp, Check, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { AiWaitingState } from '@/components/ai/ai-waiting-state';
 import { useAppStore } from '@/state/store';
 import { useVipCheck } from '@/hooks/use-vip-check';
 import { useOptimizeResume } from '@/lib/ai/use-optimize-resume';
@@ -167,10 +168,8 @@ export default function AiOptimizePanel(): ReactElement {
   const [phase, setPhase] = useState<Phase>('input');
   const [jd, setJd] = useState('');
   const [identity, setIdentity] = useState<SectionIdentity>('professional');
-  const [loadingMsgIdx, setLoadingMsgIdx] = useState(0);
   const [acceptedIds, setAcceptedIds] = useState<Set<string>>(new Set());
   const [originalMap, setOriginalMap] = useState<Record<string, string>>({});
-  const loadingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const optimizeQuota = quotaLoaded ? quota.aiOptimizeResume : null;
   const remainingCount = optimizeQuota
@@ -181,24 +180,6 @@ export default function AiOptimizePanel(): ReactElement {
     () => extractOptimizableBlocks(resume),
     [resume],
   );
-
-  const startLoadingMessages = useCallback((): void => {
-    setLoadingMsgIdx(0);
-    loadingIntervalRef.current = setInterval(() => {
-      setLoadingMsgIdx((i) => (i + 1) % LOADING_MESSAGES.length);
-    }, 3000);
-  }, []);
-
-  const stopLoadingMessages = useCallback((): void => {
-    if (loadingIntervalRef.current) {
-      clearInterval(loadingIntervalRef.current);
-      loadingIntervalRef.current = null;
-    }
-  }, []);
-
-  useEffect(() => {
-    return () => stopLoadingMessages();
-  }, [stopLoadingMessages]);
 
   const handleRun = async (): Promise<void> => {
     if (!optimizeQuota?.isVip && !optimizeQuota?.allowed) {
@@ -214,11 +195,8 @@ export default function AiOptimizePanel(): ReactElement {
     setOriginalMap(snap);
 
     setPhase('loading');
-    startLoadingMessages();
 
     const result = await run({ blocks: sendableBlocks, identity, jobDescription: jd || undefined });
-
-    stopLoadingMessages();
 
     if (result && Object.keys(result).length > 0) {
       setAcceptedIds(new Set(Object.keys(result)));
@@ -232,9 +210,8 @@ export default function AiOptimizePanel(): ReactElement {
 
   const handleAbort = useCallback((): void => {
     abort();
-    stopLoadingMessages();
     setPhase('input');
-  }, [abort, stopLoadingMessages]);
+  }, [abort]);
 
   const handleApply = useCallback((): void => {
     const toApply = Object.entries(resultMap).filter(([id]) => acceptedIds.has(id));
@@ -286,26 +263,12 @@ export default function AiOptimizePanel(): ReactElement {
 
   if (phase === 'loading') {
     return (
-      <div className="flex flex-col h-full items-center justify-center gap-6 p-8">
-        <div className="relative flex h-16 w-16 items-center justify-center">
-          <div className="absolute inset-0 rounded-full bg-violet-100 animate-ping opacity-40" />
-          <div className="relative flex h-12 w-12 items-center justify-center rounded-full bg-violet-100">
-            <Loader2 className="h-6 w-6 text-violet-600 animate-spin" />
-          </div>
-        </div>
-        <div className="text-center space-y-1">
-          <p className="text-sm font-semibold text-slate-700">{LOADING_MESSAGES[loadingMsgIdx]}</p>
-          <p className="text-xs text-slate-400">AI 正在从整体视角优化你的简历</p>
-        </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-slate-400 hover:text-slate-600 text-xs"
-          onClick={handleAbort}
-        >
-          取消
-        </Button>
-      </div>
+      <AiWaitingState
+        className="h-full p-8"
+        messages={LOADING_MESSAGES}
+        hint="通常需要 15–30 秒，请稍候"
+        onCancel={handleAbort}
+      />
     );
   }
 

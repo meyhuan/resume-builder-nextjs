@@ -311,7 +311,7 @@ function LanxinJobIntentionSection(props: {
             color: INK,
           }}
         >
-          求职意向
+          {jobIntention.sectionTitle}
         </h2>
 
         <button

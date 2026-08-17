@@ -5,24 +5,13 @@
  * The active button is visually highlighted.
  */
 import type { ReactElement } from 'react'
-import {
-  LayoutList,
-  Sparkles,
-  Wand2,
-  // BookOpen,
-  // ImageIcon,
-  // BarChart3,
-} from 'lucide-react'
+import { LayoutList } from 'lucide-react'
 
 /** All possible panel identifiers. */
 export type PanelId =
   | 'sections'
   | 'layout'
-  | 'ai'
   | 'portfolio'
-  // | 'examples'
-  // | 'photo'
-  // | 'analysis'
 
 interface ToolbarAction {
   readonly id: PanelId
@@ -32,11 +21,6 @@ interface ToolbarAction {
 
 const TOOLBAR_ACTIONS: ToolbarAction[] = [
   { id: 'sections', label: '模块管理', icon: <LayoutList className="h-3.5 w-3.5" /> },
-  { id: 'layout', label: '排版美化', icon: <Sparkles className="h-3.5 w-3.5" /> },
-  { id: 'ai', label: 'AI一键优化', icon: <Wand2 className="h-3.5 w-3.5" /> },
-  // { id: 'examples', label: '参考案例', icon: <BookOpen className="h-3.5 w-3.5" /> },
-  // { id: 'photo', label: '证件照', icon: <ImageIcon className="h-3.5 w-3.5" /> },
-  // { id: 'analysis', label: '智能分析', icon: <BarChart3 className="h-3.5 w-3.5" /> },
 ]
 
 export interface EditorToolbarProps {

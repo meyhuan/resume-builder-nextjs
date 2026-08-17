@@ -3,6 +3,7 @@ import type { ReactElement } from 'react'
 import type { JobIntention } from '@/entities/user/job-intention'
 import JobIntentionModal from '@/components/modals/job-intention-modal'
 import { useAppStore } from '@/state/store'
+import { getJobIntentionFieldLabel, getJobIntentionSectionTitle } from '@/lib/resume-ui-labels'
 
 /**
  * Single field exposed for display.
@@ -31,6 +32,7 @@ export interface EditableJobIntention {
   readonly jobIntention: JobIntention | null
   /** Visible (non-empty) fields in canonical display order, incl. custom fields. */
   readonly fields: readonly JobIntentionFieldDef[]
+  readonly sectionTitle: string
   readonly openEditModal: () => void
   readonly deleteField: (key: string) => void
   readonly hoveredField: string | null
@@ -39,13 +41,13 @@ export interface EditableJobIntention {
   readonly modals: ReactElement | null
 }
 
-const FIELD_ORDER: ReadonlyArray<{ key: keyof JobIntention; label: string }> = [
-  { key: 'position', label: '意向岗位' },
-  { key: 'city', label: '意向城市' },
-  { key: 'salary', label: '期望薪资' },
-  { key: 'type', label: '求职类型' },
-  { key: 'industry', label: '期望行业' },
-  { key: 'currentStatus', label: '当前状态' },
+const FIELD_KEYS: ReadonlyArray<keyof JobIntention> = [
+  'position',
+  'city',
+  'salary',
+  'type',
+  'industry',
+  'currentStatus',
 ]
 
 /**
@@ -55,15 +57,16 @@ export function useEditableJobIntention(
   jobIntention: JobIntention | null | undefined
 ): EditableJobIntention {
   const updateJobIntention = useAppStore((s) => s.updateJobIntention)
+  const language = useAppStore((s) => s.resume.language)
   const [showModal, setShowModal] = useState<boolean>(false)
   const [hoveredField, setHoveredField] = useState<string | null>(null)
   const ji: JobIntention | null = jobIntention ?? null
   const fields: JobIntentionFieldDef[] = []
   if (ji) {
-    for (const def of FIELD_ORDER) {
-      const raw: unknown = ji[def.key]
+    for (const key of FIELD_KEYS) {
+      const raw: unknown = ji[key]
       if (typeof raw === 'string' && raw.trim().length > 0) {
-        fields.push({ key: def.key as string, label: def.label, value: raw })
+        fields.push({ key: key as string, label: getJobIntentionFieldLabel(key, language), value: raw })
       }
     }
     if (ji.customFields) {
@@ -96,6 +99,7 @@ export function useEditableJobIntention(
   return {
     jobIntention: ji,
     fields,
+    sectionTitle: getJobIntentionSectionTitle(language),
     openEditModal: () => setShowModal(true),
     deleteField,
     hoveredField,

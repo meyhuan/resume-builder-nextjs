@@ -5,6 +5,7 @@ import type { CSSProperties, ReactElement, ReactNode } from 'react'
 import { GripVertical, Plus, Trash2 } from 'lucide-react'
 import type { ResumeBlock } from '@/entities/blocks/resume-block'
 import { getHeaderJobIntentionText } from '@/entities/resume/header-job-intention'
+import { getDesiredPositionLabel } from '@/lib/resume-ui-labels'
 import type { Section } from '@/entities/resume/section'
 import { RESUME_FONT_STACKS } from '@/entities/theme/font-stacks'
 import BlockWrapper from '@/components/blocks/block-wrapper'
@@ -188,6 +189,7 @@ export default function LanzheTemplate(props: TemplateProps): ReactElement {
           header={header}
           title={headerTitle}
           heroHeight={heroHeight}
+          language={resume.language}
         />
 
         <main
@@ -230,8 +232,9 @@ function LanzheHero(props: {
   readonly header: ReturnType<typeof useEditableHeader>
   readonly title: string
   readonly heroHeight: number
+  readonly language?: string
 }): ReactElement {
-  const { header, title, heroHeight } = props
+  const { header, title, heroHeight, language } = props
   const reservedAvatarWidth = heroHeight + 40
   const avatarSize = heroHeight
   const heroRadius = heroHeight / 2
@@ -296,7 +299,7 @@ function LanzheHero(props: {
             color: '#f7fbff',
           }}
         >
-          求职意向：{title}
+          {getDesiredPositionLabel(language)}: {title}
         </div>
       ) : null}
 
@@ -369,7 +372,7 @@ function LanzheJobIntentionSection(props: {
       className="relative group/job-intention cursor-pointer"
       onClick={jobIntention.openEditModal}
     >
-      <FoldTitle titleScale={titleScale}>求职意向</FoldTitle>
+      <FoldTitle titleScale={titleScale}>{jobIntention.sectionTitle}</FoldTitle>
       <button
         type="button"
         className="absolute right-0 top-0 rounded-md border border-slate-200 bg-white px-2 py-1 text-xs text-slate-500 opacity-0 shadow-sm transition-opacity hover:bg-slate-50 group-hover/job-intention:opacity-100 print:hidden"

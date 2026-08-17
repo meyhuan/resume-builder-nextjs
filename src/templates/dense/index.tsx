@@ -25,6 +25,11 @@ import { isCustomSection } from '@/entities/blocks/block-factory'
 import { useAiSection } from '@/components/ai-section/ai-section-provider'
 import { blockTypeToModuleType, extractBlockContentHtml } from '@/components/ai-section/block-module-utils'
 import { useAppStore } from '@/state/store'
+import {
+  getBaseInfoFieldLabel,
+  getJobIntentionFieldLabel,
+  getJobIntentionSectionTitle,
+} from '@/lib/resume-ui-labels'
 
 interface DenseTemplateProps {
   readonly resume: ResumeData
@@ -166,24 +171,24 @@ function DenseHeader(props: { readonly resume: ResumeData; readonly accent: stri
     ? getHeaderJobIntentionText(resume) || customFields.find((field) => field.label.includes('意向') || field.label.includes('岗位'))?.value
     : undefined
   const jobFields = [
-    jobIntention?.position ? { label: '意向岗位', value: jobIntention.position } : null,
-    jobIntention?.salary ? { label: '期望薪资', value: jobIntention.salary } : null,
-    jobIntention?.city ? { label: '意向城市', value: jobIntention.city } : null,
-    jobIntention?.type ? { label: '求职类型', value: jobIntention.type } : null,
-    jobIntention?.industry ? { label: '期望行业', value: jobIntention.industry } : null,
-    jobIntention?.currentStatus ? { label: '当前状态', value: jobIntention.currentStatus } : null,
+    jobIntention?.position ? { label: getJobIntentionFieldLabel('position', resume.language), value: jobIntention.position } : null,
+    jobIntention?.salary ? { label: getJobIntentionFieldLabel('salary', resume.language), value: jobIntention.salary } : null,
+    jobIntention?.city ? { label: getJobIntentionFieldLabel('city', resume.language), value: jobIntention.city } : null,
+    jobIntention?.type ? { label: getJobIntentionFieldLabel('type', resume.language), value: jobIntention.type } : null,
+    jobIntention?.industry ? { label: getJobIntentionFieldLabel('industry', resume.language), value: jobIntention.industry } : null,
+    jobIntention?.currentStatus ? { label: getJobIntentionFieldLabel('currentStatus', resume.language), value: jobIntention.currentStatus } : null,
     ...(jobIntention?.customFields ?? []),
   ].filter((field): field is { label: string; value: string } => Boolean(field?.value))
   const visibleCustomFields = customFields.filter((field) => field.value)
   const profileLine = [
     baseInfo?.gender,
-    baseInfo?.age ? `年龄：${baseInfo.age}` : undefined,
+    baseInfo?.age ? `${getBaseInfoFieldLabel('age', resume.language)}：${baseInfo.age}` : undefined,
     baseInfo?.currentLocation || baseInfo?.location,
   ].filter(Boolean)
   const intentionLine = [
     workYears,
-    intention ? `求职意向：${intention}` : undefined,
-    expectedSalary ? `期望薪资：${expectedSalary}` : undefined,
+    intention ? `${getJobIntentionSectionTitle(resume.language)}：${intention}` : undefined,
+    expectedSalary ? `${getJobIntentionFieldLabel('salary', resume.language)}：${expectedSalary}` : undefined,
   ].filter(Boolean)
 
   return (

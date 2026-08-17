@@ -429,7 +429,7 @@ function JobIntentionRow({
       }}
       onClick={jobIntention.openEditModal}
     >
-      <RowLabel palette={palette} titleScale={titleScale}>求职意向</RowLabel>
+      <RowLabel palette={palette} titleScale={titleScale}>{jobIntention.sectionTitle}</RowLabel>
       <div
         className="flex min-w-0 flex-wrap content-center"
         style={{

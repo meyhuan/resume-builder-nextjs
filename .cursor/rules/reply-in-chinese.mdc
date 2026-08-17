@@ -1,0 +1,10 @@
+---
+description: Default to Chinese when talking to the user
+alwaysApply: true
+---
+
+# Reply language
+
+Always reply to the user in Chinese (简体中文), unless they explicitly ask for another language in that message.
+
+Code, identifiers, file paths, and commit messages follow existing project conventions.

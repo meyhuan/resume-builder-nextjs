@@ -323,7 +323,7 @@ function LanjiaoJobIntentionSection(props: {
             color: INK,
           }}
         >
-          求职意向
+          {jobIntention.sectionTitle}
         </h2>
       </div>
       <div className="relative">

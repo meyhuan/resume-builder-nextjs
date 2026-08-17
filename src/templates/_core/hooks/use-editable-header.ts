@@ -46,7 +46,8 @@ export interface EditableHeader {
 export function useEditableHeader(name: string, baseInfo: BaseInfo | null): EditableHeader {
   const state: HeaderState = useHeaderState(baseInfo, name)
   const updateBaseInfo = useAppStore((s) => s.updateBaseInfo)
-  const fields: readonly BaseInfoFieldDef[] = buildBaseInfoFields(baseInfo)
+  const language = useAppStore((s) => s.resume.language)
+  const fields: readonly BaseInfoFieldDef[] = buildBaseInfoFields(baseInfo, language)
 
   const onCommitName = (next: string): void => {
     const t: string = next.trim()

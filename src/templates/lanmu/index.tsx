@@ -520,7 +520,7 @@ function SideJobInfo(props: {
 
   return (
     <section style={{ marginBottom: 46 * spacingScale }}>
-      <SideTitle>求职意向</SideTitle>
+      <SideTitle>{jobIntention.sectionTitle}</SideTitle>
       <div
         data-template-job-intention-trigger="true"
         role="button"

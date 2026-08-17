@@ -354,7 +354,7 @@ function ObjectiveSection(props: ObjectiveProps): ReactElement {
       onClick={openEditModal}
       style={{ padding: `${20 * spacingScale}px ${horizontalPadding}px ${6 * spacingScale}px` }}
     >
-      <XingtanSectionHeading chapter="序" tag="Preface" title="求职意向" />
+      <XingtanSectionHeading chapter="序" tag="Preface" title={objective.sectionTitle} />
 
       <button
         type="button"

@@ -15,6 +15,7 @@ import { IconTarget } from '@/components/sections/section-icons'
 import type { JobIntention } from '@/entities/user/job-intention'
 import JobIntentionModal from '@/components/modals/job-intention-modal'
 import { useAppStore } from '@/state/store'
+import { getJobIntentionFieldLabel, getJobIntentionSectionTitle } from '@/lib/resume-ui-labels'
 import type {
   JobIntentionSectionStyles,
   JobIntentionRenderProps,
@@ -41,6 +42,8 @@ export interface JobIntentionSectionProps {
 export default function JobIntentionSection(props: JobIntentionSectionProps): ReactElement | null {
   const { jobIntention, themeColor, styles = {}, renderCustom, slots } = props
   const readOnly = useAppStore((s) => s.readOnly)
+  const language = useAppStore((s) => s.resume.language)
+  const sectionTitle = getJobIntentionSectionTitle(language)
   const [showModalRaw, setShowModalRaw] = useState(false)
   const showModal = !readOnly && showModalRaw
   const setShowModal = readOnly ? ((_: boolean): void => { void _ }) : setShowModalRaw
@@ -106,10 +109,10 @@ export default function JobIntentionSection(props: JobIntentionSectionProps): Re
             {/* Title part */}
             <div className="bg-[#f8f8f8] h-full flex items-center pl-3 pr-2 z-10 relative border-y border-[#ddd]">
               {slots?.header ? (
-                slots.header('求职意向', '#333')
+                slots.header(sectionTitle, '#333')
               ) : (
                 <h2 className={`font-bold tracking-widest ${styles.title?.className || ''}`} style={{ color: '#333' }}>
-                  求职意向
+                  {sectionTitle}
                 </h2>
               )}
               
@@ -161,13 +164,13 @@ export default function JobIntentionSection(props: JobIntentionSectionProps): Re
         
         {/* 标题 */}
         {slots?.header ? (
-          slots.header('求职意向', themeColor)
+          slots.header(sectionTitle, themeColor)
         ) : (
           <h2 
             className={styles.title?.className || 'font-bold'}
             style={{ color: styles.title?.color || themeColor }}
           >
-            求职意向
+            {sectionTitle}
           </h2>
         )}
         
@@ -208,7 +211,8 @@ export default function JobIntentionSection(props: JobIntentionSectionProps): Re
             setHoveredField,
             handleDeleteField,
             slots,
-            readOnly
+            readOnly,
+            language,
           )}
         </div>
       </section>
@@ -255,7 +259,8 @@ function renderJobFields(
   setHoveredField: (field: string | null) => void,
   handleDeleteField: (field: string) => void,
   slots: JobIntentionSlots | undefined,
-  readOnly: boolean
+  readOnly: boolean,
+  language?: string | null,
 ): ReactElement[] {
   const fields: ReactElement[] = []
   const fieldClassName = styles.fieldItem || 'flex items-center gap-1.5 text-gray-700 relative group/field hover:bg-gray-50 rounded px-1 py-0.5 transition-colors'
@@ -268,12 +273,12 @@ function renderJobFields(
     label: string
     value?: string
   }> = [
-    { key: 'position', label: '意向岗位', value: jobIntention.position },
-    { key: 'city', label: '意向城市', value: jobIntention.city },
-    { key: 'salary', label: '期望薪资', value: jobIntention.salary },
-    { key: 'type', label: '求职类型', value: jobIntention.type },
-    { key: 'industry', label: '期望行业', value: jobIntention.industry },
-    { key: 'currentStatus', label: '当前状态', value: jobIntention.currentStatus },
+    { key: 'position', label: getJobIntentionFieldLabel('position', language), value: jobIntention.position },
+    { key: 'city', label: getJobIntentionFieldLabel('city', language), value: jobIntention.city },
+    { key: 'salary', label: getJobIntentionFieldLabel('salary', language), value: jobIntention.salary },
+    { key: 'type', label: getJobIntentionFieldLabel('type', language), value: jobIntention.type },
+    { key: 'industry', label: getJobIntentionFieldLabel('industry', language), value: jobIntention.industry },
+    { key: 'currentStatus', label: getJobIntentionFieldLabel('currentStatus', language), value: jobIntention.currentStatus },
   ]
   if (jobIntention.customFields) {
     for (const cf of jobIntention.customFields) {

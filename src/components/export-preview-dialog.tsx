@@ -10,13 +10,15 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { Download, Eye, AlertCircle, Crown, Loader2 } from 'lucide-react'
+import { Download, Eye, AlertCircle, Crown, Loader2, Image as ImageIcon, FileText } from 'lucide-react'
 
 interface ExportPreviewDialogProps {
   readonly open: boolean
   readonly onOpenChange: (open: boolean) => void
   readonly pdfUrl: string
   readonly onConfirmExport: () => void
+  readonly onExportPng?: () => void
+  readonly onExportMarkdown?: () => void
   readonly onUpgradeClick?: () => void
   readonly remainingQuota?: number | 'unlimited'
   readonly isVip?: boolean
@@ -28,6 +30,8 @@ export default function ExportPreviewDialog({
   onOpenChange,
   pdfUrl,
   onConfirmExport,
+  onExportPng,
+  onExportMarkdown,
   onUpgradeClick,
   remainingQuota,
   isVip,
@@ -103,6 +107,18 @@ export default function ExportPreviewDialog({
           >
             取消
           </Button>
+          {onExportPng ? (
+            <Button variant="outline" size="sm" className="h-8 px-3 text-xs" onClick={onExportPng}>
+              <ImageIcon className="h-3.5 w-3.5 mr-1.5" />
+              PNG
+            </Button>
+          ) : null}
+          {onExportMarkdown ? (
+            <Button variant="outline" size="sm" className="h-8 px-3 text-xs" onClick={onExportMarkdown}>
+              <FileText className="h-3.5 w-3.5 mr-1.5" />
+              Markdown
+            </Button>
+          ) : null}
           <Button
             size="sm"
             className={isQuotaDepleted

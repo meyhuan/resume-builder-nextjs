@@ -25,6 +25,7 @@ import BaseInfoModal from '@/components/modals/base-info-modal'
 import AvatarCropModal from '@/components/modals/avatar-crop-modal'
 import { IconPhone, IconMail, IconGender, IconAge, IconLocation, IconWorkYear, IconInfo } from '@/components/sections/baseinfo-icons'
 import { isUserVisibleBaseInfoCustomField } from '@/lib/template-exclusive-fields'
+import { getBaseInfoFieldLabel } from '@/lib/resume-ui-labels'
 import { ELEGANT_TEMPLATE_STYLES, HEADER_BG, ACCENT_GOLD } from './styles'
 
 /** Check if every block in a section is a TextBlock. */
@@ -48,41 +49,41 @@ interface FieldDef {
 /**
  * Build displayable fields from BaseInfo.
  */
-function buildFieldDefs(baseInfo: BaseInfo | null): FieldDef[] {
+function buildFieldDefs(baseInfo: BaseInfo | null, language?: string | null): FieldDef[] {
   if (!baseInfo) return []
   const defs: FieldDef[] = []
   if (baseInfo.gender) {
-    defs.push({ key: 'gender', label: '性别', value: baseInfo.gender, icon: <IconGender /> })
+    defs.push({ key: 'gender', label: getBaseInfoFieldLabel('gender', language), value: baseInfo.gender, icon: <IconGender /> })
   }
   if (baseInfo.age !== undefined && baseInfo.age !== null) {
-    defs.push({ key: 'age', label: '年龄', value: String(baseInfo.age), icon: <IconAge /> })
+    defs.push({ key: 'age', label: getBaseInfoFieldLabel('age', language), value: String(baseInfo.age), icon: <IconAge /> })
   }
   if (baseInfo.phone) {
-    defs.push({ key: 'phone', label: '电话', value: baseInfo.phone, icon: <IconPhone /> })
+    defs.push({ key: 'phone', label: getBaseInfoFieldLabel('phone', language), value: baseInfo.phone, icon: <IconPhone /> })
   }
   if (baseInfo.email) {
-    defs.push({ key: 'email', label: '邮箱', value: baseInfo.email, icon: <IconMail /> })
+    defs.push({ key: 'email', label: getBaseInfoFieldLabel('email', language), value: baseInfo.email, icon: <IconMail /> })
   }
   if (baseInfo.currentLocation) {
-    defs.push({ key: 'currentLocation', label: '现居', value: baseInfo.currentLocation, icon: <IconLocation /> })
+    defs.push({ key: 'currentLocation', label: getBaseInfoFieldLabel('currentLocation', language), value: baseInfo.currentLocation, icon: <IconLocation /> })
   }
   if (baseInfo.nation) {
-    defs.push({ key: 'nation', label: '民族', value: baseInfo.nation, icon: <IconInfo /> })
+    defs.push({ key: 'nation', label: getBaseInfoFieldLabel('nation', language), value: baseInfo.nation, icon: <IconInfo /> })
   }
   if (baseInfo.household) {
-    defs.push({ key: 'household', label: '户籍', value: baseInfo.household, icon: <IconInfo /> })
+    defs.push({ key: 'household', label: getBaseInfoFieldLabel('household', language), value: baseInfo.household, icon: <IconInfo /> })
   }
   if (baseInfo.workStartTime) {
-    defs.push({ key: 'workStartTime', label: '工作时间', value: baseInfo.workStartTime, icon: <IconWorkYear /> })
+    defs.push({ key: 'workStartTime', label: getBaseInfoFieldLabel('workStartTime', language), value: baseInfo.workStartTime, icon: <IconWorkYear /> })
   }
   if (baseInfo.politicalStatus) {
-    defs.push({ key: 'politicalStatus', label: '政治面貌', value: baseInfo.politicalStatus, icon: <IconInfo /> })
+    defs.push({ key: 'politicalStatus', label: getBaseInfoFieldLabel('politicalStatus', language), value: baseInfo.politicalStatus, icon: <IconInfo /> })
   }
   if (baseInfo.height) {
-    defs.push({ key: 'height', label: '身高', value: `${baseInfo.height}cm`, icon: <IconInfo /> })
+    defs.push({ key: 'height', label: getBaseInfoFieldLabel('height', language), value: `${baseInfo.height}cm`, icon: <IconInfo /> })
   }
   if (baseInfo.weight) {
-    defs.push({ key: 'weight', label: '体重', value: `${baseInfo.weight}kg`, icon: <IconInfo /> })
+    defs.push({ key: 'weight', label: getBaseInfoFieldLabel('weight', language), value: `${baseInfo.weight}kg`, icon: <IconInfo /> })
   }
   if (baseInfo.customFields) {
     for (const cf of baseInfo.customFields) {
@@ -108,6 +109,7 @@ function ElegantHeader(props: {
   const [hoveredField, setHoveredField] = useState<string | null>(null)
   const [cropImageSrc, setCropImageSrc] = useState<string | null>(null)
   const updateBaseInfo = useAppStore((s) => s.updateBaseInfo)
+  const language = useAppStore((s) => s.resume.language)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const accentColor = themeColor === '#111827' ? ACCENT_GOLD : themeColor
 
@@ -138,7 +140,7 @@ function ElegantHeader(props: {
     setCropImageSrc(null)
   }, [baseInfo, name, updateBaseInfo])
 
-  const fields = buildFieldDefs(baseInfo)
+  const fields = buildFieldDefs(baseInfo, language)
 
   return (
     <>

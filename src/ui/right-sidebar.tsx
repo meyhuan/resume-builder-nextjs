@@ -17,7 +17,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import { Layout, Database, X } from 'lucide-react'
 import SectionManager from '@/ui/section-manager'
-import AiOptimizePanel from '@/ui/ai-optimize-panel'
 import Image from 'next/image'
 import PortfolioManager from '@/components/portfolio/portfolio-manager'
 
@@ -41,11 +40,7 @@ export interface RightSidebarProps {
 const PANEL_TITLES: Record<PanelId, string> = {
   sections: '模块管理',
   layout: '排版美化',
-  ai: 'AI一键优化',
   portfolio: '图片作品集',
-  // examples: '参考案例',
-  // photo: '证件照',
-  // analysis: '智能分析',
 }
 
 export default function RightSidebar(props: RightSidebarProps): ReactElement {
@@ -88,7 +83,6 @@ export default function RightSidebar(props: RightSidebarProps): ReactElement {
           onOnePageChange={props.onOnePageChange}
         />
       )}
-      {activePanel === 'ai' && <AiOptimizePanel />}
       {activePanel === 'portfolio' && (
         <div className="flex-1 overflow-y-auto custom-scrollbar">
           <PortfolioManager

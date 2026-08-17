@@ -339,7 +339,7 @@ function ObjectiveSection(props: ObjectiveProps): ReactElement {
           00/
         </span>
         <h2 style={{ margin: 0, fontSize: '1.1em', fontWeight: 600, lineHeight: 1.2, color: palette.codeDeep }}>
-          求职意向
+          {objective.sectionTitle}
         </h2>
         <span
           style={{
