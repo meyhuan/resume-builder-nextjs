@@ -74,6 +74,7 @@ export const LandingFooter = () => {
             <h4 className="font-bold text-slate-900 mb-6">支持</h4>
             <ul className="space-y-3 text-sm text-slate-500">
               <li><Link href="/about" className="hover:text-violet-600 transition-colors">关于开发者</Link></li>
+              <li><Link href="/about#changelog" className="hover:text-violet-600 transition-colors">更新日志</Link></li>
               <li><Link href="/version" className="hover:text-violet-600 transition-colors">版本信息</Link></li>
               <li><Link href="/about" className="hover:text-violet-600 transition-colors">用户反馈</Link></li>
               <li><Link href="/about" className="hover:text-violet-600 transition-colors">商务合作</Link></li>

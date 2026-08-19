@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, BadgeCheck, ChevronRight, Heart, MessageCircle, Mail, Code2 } from 'lucide-react'
 import Image from 'next/image'
+import { CHANGELOG } from '@/lib/changelog'
 import { useInMiniProgram } from '../_components/use-mini-program'
 
 /**
@@ -112,7 +113,7 @@ export default function MobileAboutPage(): ReactElement {
           </div>
 
           {/* Changelog */}
-          <div className="rounded-2xl bg-white border border-slate-200 p-5">
+          <div id="changelog" className="rounded-2xl bg-white border border-slate-200 p-5">
             <div className="text-base font-bold text-slate-900 mb-4">更新日志</div>
             <div className="space-y-3">
               {CHANGELOG.map((item, idx) => (
@@ -144,21 +145,3 @@ export default function MobileAboutPage(): ReactElement {
     </div>
   )
 }
-
-const CHANGELOG: readonly { date: string; text: string }[] = [
-  { date: '2026.08', text: '✨ 电脑编辑器上线 AI 助手：岗位匹配、翻译、面试准备（打招呼 / 题目）、语法检查，登录后每天可免费体验' },
-  { date: '2026.07', text: '🖼 作品集可以随简历一起导出 PDF，并新增蓝色风格模板' },
-  { date: '2026.06', text: '🎨 一口气上了多套新模板，还支持邀请好友得会员' },
-  { date: '2026.05', text: '📱 小程序也能下载 PDF 了，手机编辑更好用' },
-  { date: '2026.04', text: '👑 会员体系上线，支持上传文件导入简历，整份简历可一键优化' },
-  { date: '2026.03', text: '👁 导出前可预览 PDF，支持 Markdown，还做了反馈广场' },
-  { date: '2026.02', text: '⌨️ 编辑器支持撤销重做、头像裁剪，每个模块都能单独 AI 润色' },
-  { date: '2026.01', text: '🌐 网页版全面升级，微信登录，高清 PDF 导出更稳' },
-  { date: '2025.10', text: '📄 主题和间距可按模板记住，支持一页排版和更顺手的拖拽' },
-  { date: '2025.04', text: '🚀 移动端编辑器全新上线，支持拖拽排序、AI 润色、导入简历' },
-  { date: '2025.03', text: '✨ AI 分段生成上线，每个模块都能 AI 帮你写' },
-  { date: '2025.02', text: '🎨 新增温暖模板，4 套模板可免费使用' },
-  { date: '2025.01', text: '🐛 修了个头像裁剪的 bug，是用户微信反馈的' },
-  { date: '2024.12', text: '🎉 AI 一键生成简历功能上线' },
-  { date: '2024.10', text: '📝 富文本编辑器升级，支持加粗、列表' },
-]
