@@ -10,6 +10,7 @@ export type AiAssistFeature =
   | 'jd-analysis'
   | 'translate'
   | 'cover-letter'
+  | 'interview-prep'
   | 'grammar-check';
 
 export function trackAssistStart(feature: AiAssistFeature): void {

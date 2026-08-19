@@ -6,6 +6,7 @@ import {
   Briefcase,
   ChevronDown,
   ChevronLeft,
+  ClipboardList,
   FileSearch,
   Lightbulb,
   RotateCcw,
@@ -170,6 +171,7 @@ export function JdAnalysisDialog(props: {
   const open = useEditorUiStore((state) => state.activeModal === 'jd-analysis');
   const closeModal = useEditorUiStore((state) => state.closeModal);
   const handoffToChat = useEditorUiStore((state) => state.handoffToChat);
+  const openInterviewPrep = useEditorUiStore((state) => state.openInterviewPrep);
   const resume = useAppStore((state) => state.resume);
   const { requireAiFeature } = useVipCheck();
   const historyKey = props.resumeId || resume.id || 'local';
@@ -312,11 +314,19 @@ export function JdAnalysisDialog(props: {
                     <JdAnalysisResultView result={result} jobDescription={jobDescription} />
                   </div>
                   <div className="space-y-2 border-t border-slate-100 px-6 py-4">
-                    <div className="flex justify-end gap-2">
+                    <div className="flex flex-wrap justify-end gap-2">
                     <Button variant="outline" onClick={handleClose}>关闭</Button>
                     <Button variant="outline" className="gap-1.5" onClick={() => reset()}>
                       <RotateCcw className="h-3.5 w-3.5" />
                       再分析一次
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="gap-1.5"
+                      onClick={() => openInterviewPrep(jobDescription)}
+                    >
+                      <ClipboardList className="h-3.5 w-3.5" />
+                      生成面试准备
                     </Button>
                     {(result.suggestions.length > 0 || result.missingKeywords.length > 0) ? (
                       <Button className="gap-1.5 bg-violet-600 text-white hover:bg-violet-700" onClick={handleOptimize}>

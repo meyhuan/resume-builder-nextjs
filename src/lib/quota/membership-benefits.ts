@@ -52,7 +52,7 @@ export const AI_FEATURE_QUOTAS: Record<string, FeatureQuota> = {
   'ai:editor-assist': {
     nonVipLimit: DEFAULT_QUOTA_LIMITS.aiEditorAssist,
     displayName: 'AI 编辑助手',
-    description: '对话、岗位匹配、翻译、求职信和语法检查',
+    description: '对话、岗位匹配、翻译、面试准备（打招呼 / 题目）和语法检查',
   },
 } as const;
 

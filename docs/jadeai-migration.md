@@ -80,6 +80,7 @@ JD「一键优化」、语法「全部修复」：关弹窗 → `pendingAiMessag
 | `ai-chat-history:{resumeId}` | 多 session，最多 20 条 |
 | `jd-analysis-history:{resumeId}` | JD 分析结果 |
 | `grammar-check-history:{resumeId}` | 语法检查结果 |
+| `interview-prep-history:{resumeId}` | 面试准备（打招呼 / 题目） |
 
 换设备不同步。若以后要微信/PC 互通，再迁 Prisma。
 

@@ -357,7 +357,7 @@ export default function MembershipPage(): React.ReactElement {
               ))}
               <div className="px-6 py-4 border-t border-violet-100/60 bg-violet-50/30">
                 <p className="text-xs leading-5 text-slate-500">
-                  会员增值能力持续更新中：自我介绍生成、HR 打招呼话术、面试题生成、简历翻译、多岗位简历版本、模拟面试等能力将陆续探索，会员优先体验。
+                  面试准备已上线：BOSS 打招呼语、自我介绍和面试题可在电脑编辑器一次生成。模拟对练后续再做，会员优先体验。
                 </p>
               </div>
               {!isVip && (

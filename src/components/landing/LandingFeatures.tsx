@@ -316,7 +316,7 @@ export const LandingFeatures = ({
             <span className="text-[#8B5CF6]">还很聪明</span>
           </h2>
           <p className="text-base text-slate-500">
-            AI 贯穿简历制作全流程：生成、润色、岗位匹配、翻译、求职信和语法检查，帮你更快做出可投递简历。
+            AI 贯穿简历制作全流程：生成、润色、岗位匹配、翻译、面试准备和语法检查，帮你更快做出可投递简历。
           </p>
         </div>
 

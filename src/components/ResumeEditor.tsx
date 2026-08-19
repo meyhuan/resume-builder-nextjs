@@ -40,6 +40,7 @@ import { AiChatBubble } from '@/components/ai-chat/ai-chat-bubble'
 import { JdAnalysisDialog } from '@/components/editor/jd-analysis-dialog'
 import { TranslateDialog } from '@/components/editor/translate-dialog'
 import { CoverLetterDialog } from '@/components/editor/cover-letter-dialog'
+import { InterviewPrepDialog } from '@/components/editor/interview-prep-dialog'
 import { GrammarCheckDialog } from '@/components/editor/grammar-check-dialog'
 import { OptimizeDialog } from '@/components/editor/optimize-dialog'
 
@@ -1121,6 +1122,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
       <JdAnalysisDialog resumeId={resumeId} />
       <TranslateDialog resumeId={resumeId} template={tpl} />
       <CoverLetterDialog />
+      <InterviewPrepDialog resumeId={resumeId} />
       <GrammarCheckDialog resumeId={resumeId} />
       <OptimizeDialog />
       <AiChatBubble resumeId={resumeId} />

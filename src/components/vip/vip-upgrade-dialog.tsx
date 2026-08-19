@@ -50,7 +50,7 @@ const CONTEXT_COPY = {
   },
   ai: {
     title: 'AI 编辑助手额度已用完',
-    description: '开通后可继续使用对话、岗位匹配、翻译、求职信和语法检查',
+    description: '开通后可继续使用对话、岗位匹配、翻译、面试准备和语法检查',
   },
   generic: {
     title: '升级会员',

@@ -14,7 +14,7 @@ export const JsonLd = () => {
     '@type': 'WebApplication',
     name: SITE_NAME,
     url: SITE_URL,
-    description: '可免费开始使用的 AI 简历制作工具 —— 智能生成、可视化编辑、岗位匹配、翻译、求职信和多格式导出。由独立开发者打造，帮你免费制作一份可投递简历。',
+    description: '可免费开始使用的 AI 简历制作工具 —— 智能生成、可视化编辑、岗位匹配、翻译、面试准备和多格式导出。由独立开发者打造，帮你免费制作一份可投递简历。',
     applicationCategory: 'BusinessApplication',
     operatingSystem: 'Web',
     offers: {
@@ -31,7 +31,8 @@ export const JsonLd = () => {
       '电脑编辑器 AI 助手（对话改写）',
       '岗位智能匹配（分析匹配度并可改写）',
       '整份简历翻译',
-      'AI 求职信生成',
+      'BOSS 打招呼语',
+      '面试准备（自我介绍与面试题）',
       '简历语法检查',
       'AI 文本转简历（粘贴文本自动排版，支持豆包/ChatGPT/DeepSeek/Kimi/通义千问）',
       '可视化拖拽编辑',

@@ -146,7 +146,7 @@ export default function MobileAboutPage(): ReactElement {
 }
 
 const CHANGELOG: readonly { date: string; text: string }[] = [
-  { date: '2026.08', text: '✨ 电脑编辑器上线 AI 助手：岗位匹配、翻译、求职信、语法检查，登录后每天可免费体验' },
+  { date: '2026.08', text: '✨ 电脑编辑器上线 AI 助手：岗位匹配、翻译、面试准备（打招呼 / 题目）、语法检查，登录后每天可免费体验' },
   { date: '2026.07', text: '🖼 作品集可以随简历一起导出 PDF，并新增蓝色风格模板' },
   { date: '2026.06', text: '🎨 一口气上了多套新模板，还支持邀请好友得会员' },
   { date: '2026.05', text: '📱 小程序也能下载 PDF 了，手机编辑更好用' },

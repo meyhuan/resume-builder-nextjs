@@ -8,7 +8,7 @@ import {
   Upload,
   FileSearch,
   Languages,
-  FileText,
+  ClipboardList,
   SpellCheck,
   Palette,
   LayoutList,
@@ -147,12 +147,12 @@ export default function EditorHeader(props: EditorHeaderProps): ReactElement {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => openModal('cover-letter')}
+            onClick={() => openModal('interview-prep')}
             className="h-8"
-            title="求职信"
+            title="面试准备"
           >
-            <FileText className="h-4 w-4" />
-            <span className="ml-1 hidden text-xs sm:inline">求职信</span>
+            <ClipboardList className="h-4 w-4" />
+            <span className="ml-1 hidden text-xs sm:inline">面试准备</span>
           </Button>
         </div>
 
@@ -176,9 +176,9 @@ export default function EditorHeader(props: EditorHeaderProps): ReactElement {
                 <Languages className="mr-2 h-4 w-4" />
                 翻译
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => openModal('cover-letter')}>
-                <FileText className="mr-2 h-4 w-4" />
-                求职信
+              <DropdownMenuItem onClick={() => openModal('interview-prep')}>
+                <ClipboardList className="mr-2 h-4 w-4" />
+                面试准备
               </DropdownMenuItem>
               <DropdownMenuItem onClick={toggleAiChat}>
                 <Sparkles className="mr-2 h-4 w-4" />
