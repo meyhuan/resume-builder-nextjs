@@ -7,6 +7,10 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import Image from "next/image";
 import { ResumeCardActions } from "@/components/dashboard/resume-card-actions";
+import {
+  InterviewPrepCardButton,
+  InterviewPrepDashboardProvider,
+} from "@/components/dashboard/interview-prep-dashboard";
 import { createResume, renameResume, duplicateResume, deleteResume } from "./actions";
 
 export const metadata: Metadata = {
@@ -91,6 +95,9 @@ export default async function DashboardPage() {
               </Link>
             </div>
           ) : (
+            <InterviewPrepDashboardProvider
+              resumes={resumes.map((resume) => ({ id: resume.id, title: resume.title }))}
+            >
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
               {/* New Resume Card */}
               <form action={async () => {
@@ -145,10 +152,10 @@ export default async function DashboardPage() {
                         {resume.template || 'Default'}
                       </span>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center text-slate-400 text-xs">
-                        <Clock className="w-3.5 h-3.5 mr-1" />
-                        <span className="truncate max-w-[100px]">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center text-slate-400 text-xs min-w-0">
+                        <Clock className="w-3.5 h-3.5 mr-1 shrink-0" />
+                        <span className="truncate max-w-[88px]">
                           {new Date(resume.updatedAt).toLocaleDateString('zh-CN', {
                             year: 'numeric',
                             month: 'numeric',
@@ -156,18 +163,25 @@ export default async function DashboardPage() {
                           })}
                         </span>
                       </div>
-                      <ResumeCardActions 
-                        resumeId={resume.id}
-                        currentTitle={resume.title}
-                        onRename={renameResume}
-                        onDuplicate={duplicateResume}
-                        onDelete={deleteResume}
-                      />
+                      <div className="flex items-center gap-1 shrink-0">
+                        <InterviewPrepCardButton
+                          resumeId={resume.id}
+                          resumeTitle={resume.title}
+                        />
+                        <ResumeCardActions 
+                          resumeId={resume.id}
+                          currentTitle={resume.title}
+                          onRename={renameResume}
+                          onDuplicate={duplicateResume}
+                          onDelete={deleteResume}
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
               ))}
             </div>
+            </InterviewPrepDashboardProvider>
           )}
         </div>
       </div>

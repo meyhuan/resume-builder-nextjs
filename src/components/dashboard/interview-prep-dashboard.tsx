@@ -1,0 +1,132 @@
+'use client';
+
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactElement,
+  type ReactNode,
+} from 'react';
+import { InterviewPrepDialog } from '@/components/interview-prep/interview-prep-dialog';
+import {
+  listInterviewPrepHistory,
+  resolveInterviewPrepAccountId,
+  type InterviewPrepHistoryItem,
+} from '@/lib/ai/interview-prep-history';
+import type { InterviewPrepResumeOption } from '@/lib/ai/interview-prep-resume';
+
+interface InterviewPrepDashboardContextValue {
+  hasHistory: (resumeId: string) => boolean;
+  openGenerate: (resumeId: string, resumeTitle: string) => void;
+  openView: (resumeId: string, resumeTitle: string) => void;
+}
+
+const InterviewPrepDashboardContext = createContext<InterviewPrepDashboardContextValue | null>(null);
+
+export function useInterviewPrepDashboard(): InterviewPrepDashboardContextValue {
+  const value = useContext(InterviewPrepDashboardContext);
+  if (!value) {
+    throw new Error('useInterviewPrepDashboard must be used within InterviewPrepDashboardProvider');
+  }
+  return value;
+}
+
+interface InterviewPrepDashboardProviderProps {
+  readonly resumes: InterviewPrepResumeOption[];
+  readonly children: ReactNode;
+}
+
+export function InterviewPrepDashboardProvider(
+  props: InterviewPrepDashboardProviderProps,
+): ReactElement {
+  const [history, setHistory] = useState<InterviewPrepHistoryItem[]>([]);
+  const [open, setOpen] = useState(false);
+  const [resumeId, setResumeId] = useState<string | undefined>();
+  const [resumeTitle, setResumeTitle] = useState<string | undefined>();
+  const [lockResume, setLockResume] = useState(false);
+  const [initialTab, setInitialTab] = useState<'new' | 'history'>('new');
+  const [initialHistoryId, setInitialHistoryId] = useState<string | undefined>();
+
+  const reloadHistory = useCallback(async () => {
+    const wxId = resolveInterviewPrepAccountId();
+    if (!wxId) {
+      setHistory([]);
+      return;
+    }
+    setHistory(await listInterviewPrepHistory(wxId));
+  }, []);
+
+  useEffect(() => {
+    void reloadHistory();
+  }, [reloadHistory]);
+
+  const hasHistory = useCallback((id: string): boolean => {
+    return history.some((item) => item.resumeId === id);
+  }, [history]);
+
+  const openGenerate = useCallback((id: string, title: string): void => {
+    setResumeId(id);
+    setResumeTitle(title);
+    setLockResume(true);
+    setInitialTab('new');
+    setInitialHistoryId(undefined);
+    setOpen(true);
+  }, []);
+
+  const openView = useCallback((id: string, title: string): void => {
+    const latest = history.find((item) => item.resumeId === id);
+    setResumeId(id);
+    setResumeTitle(title);
+    setLockResume(true);
+    setInitialTab('history');
+    setInitialHistoryId(latest?.id);
+    setOpen(true);
+  }, [history]);
+
+  const value = useMemo<InterviewPrepDashboardContextValue>(() => ({
+    hasHistory,
+    openGenerate,
+    openView,
+  }), [hasHistory, openGenerate, openView]);
+
+  return (
+    <InterviewPrepDashboardContext.Provider value={value}>
+      {props.children}
+      <InterviewPrepDialog
+        key={open ? `${resumeId ?? 'none'}-${initialTab}-${initialHistoryId ?? 'none'}` : 'closed'}
+        open={open}
+        onOpenChange={setOpen}
+        resumeId={resumeId}
+        resumeTitle={resumeTitle}
+        lockResume={lockResume}
+        resumeOptions={props.resumes}
+        initialTab={initialTab}
+        initialHistoryId={initialHistoryId}
+        onHistoryChange={() => { void reloadHistory(); }}
+      />
+    </InterviewPrepDashboardContext.Provider>
+  );
+}
+
+export function InterviewPrepCardButton(props: {
+  readonly resumeId: string;
+  readonly resumeTitle: string;
+}): ReactElement {
+  const { hasHistory, openGenerate, openView } = useInterviewPrepDashboard();
+  const viewed = hasHistory(props.resumeId);
+  return (
+    <button
+      type="button"
+      className="shrink-0 text-xs font-medium text-violet-600 hover:text-violet-700"
+      onClick={() => {
+        if (viewed) openView(props.resumeId, props.resumeTitle);
+        else openGenerate(props.resumeId, props.resumeTitle);
+      }}
+    >
+      {viewed ? '查看面试准备' : '面试准备'}
+    </button>
+  );
+}

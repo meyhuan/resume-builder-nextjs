@@ -15,7 +15,7 @@ const LONG_TAIL_LINKS: ReadonlyArray<FooterLinkItem> = [
   { href: '/templates', label: 'ATS 友好简历模板' },
   { href: '/import', label: 'AI 文本转简历生成器' },
   { href: '/tools/jd-resume-match', label: 'JD 匹配简历优化' },
-  { href: '/editor/new', label: 'BOSS打招呼与面试准备' },
+  { href: '/interview-prep', label: 'BOSS打招呼与面试准备' },
   { href: '/ai', label: '免费 AI 简历优化工具' },
   { href: '/articles?category=resume-writing', label: '简历优化技巧大全' },
   { href: '/articles?category=interview-tips', label: '面试技巧与自我介绍模板' },
