@@ -35,7 +35,7 @@ const SEARCH_INTENT_GROUPS: readonly SearchIntentGroup[] = [
   },
   {
     title: "AI 简历生成与优化",
-    description: "没有思路或已有旧简历时，让 AI 帮你生成、润色和匹配 JD。",
+    description: "没有思路或已有旧简历时，让 AI 帮你生成、润色、匹配岗位、翻译和写求职信。",
     icon: <Bot className="h-4 w-4" />,
     items: [
       { label: "AI简历生成器", href: "/ai" },
@@ -45,6 +45,10 @@ const SEARCH_INTENT_GROUPS: readonly SearchIntentGroup[] = [
       { label: "简历修改润色", href: "/import" },
       { label: "AI智能简历制作", href: "/ai" },
       { label: "JD简历匹配", href: "/tools/jd-resume-match" },
+      { label: "岗位匹配优化", href: "/editor/new" },
+      { label: "简历翻译", href: "/editor/new" },
+      { label: "AI求职信", href: "/editor/new" },
+      { label: "简历语法检查", href: "/editor/new" },
       { label: "AI文本转简历", href: "/import" },
     ],
   },
@@ -102,7 +106,7 @@ export const LandingSearchIntents = ({
             </h2>
           </div>
           <p className="max-w-2xl text-sm leading-7 text-slate-500">
-            选择你现在最需要的方式：免费制作、AI 生成、旧简历优化、模板导出，
+            选择你现在最需要的方式：免费制作、AI 生成、岗位匹配、翻译求职信、模板导出，
             或者直接按目标岗位开始。
           </p>
         </div>

@@ -47,7 +47,7 @@ const USE_CASES: readonly UseCaseItem[] = [
     pain: "转行不知道怎么包装经历，投了很多简历却没有回音。",
     solution:
       "选择目标岗位类别，AI 会根据岗位特点自动调整用词和重点。支持模块级 AI 润色，针对单条工作经历精准优化。",
-    features: ["岗位针对性生成", "模块级 AI 润色", "JD 智能匹配"],
+    features: ["岗位针对性生成", "模块级 AI 润色", "岗位匹配改写"],
     cta: "优化我的简历",
     href: "/ai",
   },
@@ -71,9 +71,9 @@ const USE_CASES: readonly UseCaseItem[] = [
     pain: "同时投运营、产品、市场多个方向，一份简历投所有岗位效果很差。",
     solution:
       "粘贴不同岗位的 JD，AI 自动重写简历要点，一键派生多个针对性版本。每个版本都针对目标岗位关键词优化，大幅提升简历通过率。",
-    features: ["JD 自动匹配重写", "多版本一键派生", "ATS 关键词优化"],
+    features: ["岗位匹配改写", "多版本一键派生", "ATS 关键词优化"],
     cta: "开始定制简历",
-    href: "/ai",
+    href: "/editor/new",
   },
 ];
 

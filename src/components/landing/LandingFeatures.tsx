@@ -248,15 +248,15 @@ const AI_FEATURES: readonly FeatureItem[] = [
   {
     title: "AI 内容润色",
     description:
-      "模块级 AI 润色，针对单条经历精准优化措辞，支持按岗位类别定制。",
+      "模块级 AI 润色，针对单条经历精准优化措辞；电脑编辑器还可做语法检查。",
     icon: <Sparkles className="w-5 h-5" />,
     color: "text-fuchsia-500",
     bgColor: "bg-fuchsia-500/10",
     span: "md:col-span-1 md:row-span-1",
   },
   {
-    title: "JD 智能匹配",
-    description: "粘贴职位描述，AI 自动调整简历重点。",
+    title: "岗位智能匹配",
+    description: "粘贴职位描述，分析匹配度和缺失关键词，并可在电脑编辑器里一键改写简历。",
     icon: <Target className="w-5 h-5" />,
     color: "text-amber-500",
     bgColor: "bg-amber-500/10",
@@ -271,8 +271,8 @@ const AI_FEATURES: readonly FeatureItem[] = [
     span: "md:col-span-1 md:row-span-1",
   },
   {
-    title: "多语言生成",
-    description: "中英文一键切换，外企投递不再愁。",
+    title: "中英简历翻译",
+    description: "整份简历一键翻译，可覆盖当前版本或另存副本，外企投递更方便。",
     icon: <Languages className="w-5 h-5" />,
     color: "text-cyan-500",
     bgColor: "bg-cyan-500/10",
@@ -316,7 +316,7 @@ export const LandingFeatures = ({
             <span className="text-[#8B5CF6]">还很聪明</span>
           </h2>
           <p className="text-base text-slate-500">
-            AI 贯穿简历制作全流程，从生成到润色到投递优化，帮你节省 90% 的时间。
+            AI 贯穿简历制作全流程：生成、润色、岗位匹配、翻译、求职信和语法检查，帮你更快做出可投递简历。
           </p>
         </div>
 

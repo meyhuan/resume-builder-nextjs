@@ -14,6 +14,8 @@ const LONG_TAIL_LINKS: ReadonlyArray<FooterLinkItem> = [
   { href: '/ai', label: 'AI 简历在线润色' },
   { href: '/templates', label: 'ATS 友好简历模板' },
   { href: '/import', label: 'AI 文本转简历生成器' },
+  { href: '/tools/jd-resume-match', label: 'JD 匹配简历优化' },
+  { href: '/editor/new', label: 'AI 求职信与简历翻译' },
   { href: '/ai', label: '免费 AI 简历优化工具' },
   { href: '/articles?category=resume-writing', label: '简历优化技巧大全' },
   { href: '/articles?category=interview-tips', label: '面试技巧与自我介绍模板' },
@@ -62,6 +64,8 @@ export const LandingFooter = () => {
               <li><Link href="/templates" className="hover:text-violet-600 transition-colors">岗位简历模板</Link></li>
               <li><Link href="/ai" className="hover:text-violet-600 transition-colors">AI 简历生成</Link></li>
               <li><Link href="/import" className="hover:text-violet-600 transition-colors">AI 文本转简历</Link></li>
+              <li><Link href="/tools/jd-resume-match" className="hover:text-violet-600 transition-colors">JD 匹配工具</Link></li>
+              <li><Link href="/editor/new" className="hover:text-violet-600 transition-colors">AI 编辑助手</Link></li>
               <li><Link href="/articles" className="hover:text-violet-600 transition-colors">求职攻略</Link></li>
             </ul>
           </div>

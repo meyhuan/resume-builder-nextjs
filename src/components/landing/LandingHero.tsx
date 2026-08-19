@@ -100,7 +100,7 @@ export const LandingHero = ({ stats }: LandingHeroProps) => {
             <strong className="text-slate-700 font-semibold">
               高清无水印 PDF 导出
             </strong>
-            。
+            。电脑编辑器还能做岗位匹配、翻译、求职信和语法检查。
           </p>
 
           {/* CTA Buttons */}

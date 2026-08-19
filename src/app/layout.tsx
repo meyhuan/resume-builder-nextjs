@@ -14,7 +14,7 @@ import { buildResumeFontFaceCss } from "@/entities/theme/font-stacks";
 const SITE_URL = "https://aijianli.cn";
 const SITE_NAME = "智简简历";
 const SITE_DESCRIPTION =
-  "智简简历是可免费开始使用的AI简历生成器与在线制作网站。提供极简简历模板，支持AI智能一键生成与润色优化，帮你免费制作一份可投递简历，并可在免费额度内导出高清PDF。";
+  "智简简历是可免费开始使用的AI简历生成器与在线制作网站。提供极简简历模板，支持AI生成、润色、岗位匹配、翻译、求职信和语法检查，帮你免费制作一份可投递简历，并可在免费额度内导出高清PDF。";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -65,6 +65,10 @@ export const metadata: Metadata = {
     "简历润色",
     "旧简历优化",
     "JD简历匹配",
+    "岗位匹配",
+    "简历翻译",
+    "AI求职信",
+    "简历语法检查",
     "ATS友好简历",
     "PDF简历模板",
     "个人简历模板",
