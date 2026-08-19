@@ -41,6 +41,11 @@ interface InterviewPrepDashboardProviderProps {
   readonly children: ReactNode;
 }
 
+async function loadCurrentInterviewPrepHistory(): Promise<InterviewPrepHistoryItem[]> {
+  const wxId = resolveInterviewPrepAccountId();
+  return wxId ? listInterviewPrepHistory(wxId) : [];
+}
+
 export function InterviewPrepDashboardProvider(
   props: InterviewPrepDashboardProviderProps,
 ): ReactElement {
@@ -53,17 +58,18 @@ export function InterviewPrepDashboardProvider(
   const [initialHistoryId, setInitialHistoryId] = useState<string | undefined>();
 
   const reloadHistory = useCallback(async () => {
-    const wxId = resolveInterviewPrepAccountId();
-    if (!wxId) {
-      setHistory([]);
-      return;
-    }
-    setHistory(await listInterviewPrepHistory(wxId));
+    setHistory(await loadCurrentInterviewPrepHistory());
   }, []);
 
   useEffect(() => {
-    void reloadHistory();
-  }, [reloadHistory]);
+    let cancelled = false;
+    void loadCurrentInterviewPrepHistory().then((items) => {
+      if (!cancelled) setHistory(items);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const hasHistory = useCallback((id: string): boolean => {
     return history.some((item) => item.resumeId === id);

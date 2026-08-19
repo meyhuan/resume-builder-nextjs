@@ -2,6 +2,7 @@
 
 import {
   useCallback,
+  useEffect,
   useRef,
   useState,
   type ChangeEvent,
@@ -66,7 +67,10 @@ export function JdPasteField({
   const [isDragging, setIsDragging] = useState(false);
   const { isParsing, error, parseImage, clearError } = useParseJdImage();
   const busy = Boolean(disabled || isParsing);
-  valueRef.current = value;
+
+  useEffect(() => {
+    valueRef.current = value;
+  }, [value]);
 
   const applyImage = useCallback(async (file: File): Promise<void> => {
     const extracted = await parseImage(file);
