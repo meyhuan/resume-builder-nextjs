@@ -28,6 +28,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { AiWaitingState, isAbortError } from '@/components/ai/ai-waiting-state';
+import { JdPasteField } from '@/components/ai/jd-paste-field';
 import { WxLoginDialog } from '@/components/auth/WxLoginDialog';
 import VipUpgradeDialog from '@/components/vip/vip-upgrade-dialog';
 import type { ResumeData } from '@/entities/resume/resume-data';
@@ -726,26 +727,38 @@ export function InterviewPrepDialog(props: InterviewPrepDialogProps): ReactEleme
             {resumeOptions.length > 0 && !emptyResumeHint ? (
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-slate-500">使用哪份简历</label>
-                <select
-                  value={selectedResumeId}
-                  onChange={(event) => setSelectedResumeId(event.target.value)}
-                  className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-800 focus:border-violet-300 focus:outline-none focus:ring-2 focus:ring-violet-100"
-                >
-                  {resumeOptions.length > 1 && !resumeOptions.some((option) => option.id === selectedResumeId) ? (
-                    <option value="">请选择简历</option>
-                  ) : null}
-                  {resumeOptions.map((option) => (
-                    <option key={option.id} value={option.id}>{option.title}</option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <select
+                    value={selectedResumeId}
+                    onChange={(event) => setSelectedResumeId(event.target.value)}
+                    className="h-10 w-full appearance-none rounded-md border border-slate-200 bg-white px-3 pr-10 text-sm text-slate-800 focus:border-violet-300 focus:outline-none focus:ring-2 focus:ring-violet-100"
+                  >
+                    {resumeOptions.length > 1 && !resumeOptions.some((option) => option.id === selectedResumeId) ? (
+                      <option value="">请选择简历</option>
+                    ) : null}
+                    {resumeOptions.map((option) => (
+                      <option key={option.id} value={option.id}>{option.title}</option>
+                    ))}
+                  </select>
+                  <ChevronDown
+                    aria-hidden
+                    className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+                  />
+                </div>
               </div>
             ) : null}
-            <textarea
+            <JdPasteField
               value={jobDescription}
-              onChange={(event) => setJobDescription(event.target.value.slice(0, MAX_INTERVIEW_PREP_JD_LENGTH))}
-              rows={6}
-              placeholder="选填。粘贴目标岗位 JD，打招呼和面试题会更准…"
-              className="h-[160px] max-h-[160px] w-full resize-none overflow-y-auto rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm focus:border-violet-300 focus:outline-none focus:ring-2 focus:ring-violet-100"
+              onChange={(next) => setJobDescription(next.slice(0, MAX_INTERVIEW_PREP_JD_LENGTH))}
+              maxLength={MAX_INTERVIEW_PREP_JD_LENGTH}
+              rows={props.embedded ? 14 : 6}
+              placeholder="选填。粘贴目标岗位 JD，或直接粘贴 BOSS 直聘截图…"
+              hint="BOSS 直聘无法复制时，截图后粘贴或上传到这里"
+              className={
+                props.embedded
+                  ? 'min-h-[280px] w-full resize-y rounded-md border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm leading-6 focus:border-violet-300 focus:outline-none focus:ring-2 focus:ring-violet-100'
+                  : 'h-[160px] max-h-[160px] w-full resize-none overflow-y-auto rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm focus:border-violet-300 focus:outline-none focus:ring-2 focus:ring-violet-100'
+              }
             />
             {!hasJd ? (
               <p className="text-xs leading-5 text-slate-500">

@@ -51,37 +51,37 @@ export interface RateLimitResult {
  * @param identifier - userId (authenticated) or IP (anonymous)
  * @param isAuthenticated - whether the user is logged in
  */
-export function checkRateLimit(
-  identifier: string,
-  isAuthenticated: boolean,
-): RateLimitResult {
-  const limit = isAuthenticated ? DAILY_LIMIT_AUTHENTICATED : DAILY_LIMIT_ANONYMOUS;
+export function consumeRateLimit(key: string, limit: number): RateLimitResult {
   const now = Date.now();
 
-  let entry = store.get(identifier);
+  let entry = store.get(key);
   if (!entry) {
     entry = { timestamps: [] };
-    store.set(identifier, entry);
+    store.set(key, entry);
   }
 
-  // Remove timestamps outside the window
   entry.timestamps = entry.timestamps.filter((t) => now - t < WINDOW_MS);
 
   const used = entry.timestamps.length;
-
   if (used >= limit) {
     return { allowed: false, used, limit, remaining: 0 };
   }
 
-  // Consume one token
   entry.timestamps.push(now);
-
   return {
     allowed: true,
     used: used + 1,
     limit,
     remaining: limit - used - 1,
   };
+}
+
+export function checkRateLimit(
+  identifier: string,
+  isAuthenticated: boolean,
+): RateLimitResult {
+  const limit = isAuthenticated ? DAILY_LIMIT_AUTHENTICATED : DAILY_LIMIT_ANONYMOUS;
+  return consumeRateLimit(identifier, limit);
 }
 
 /**

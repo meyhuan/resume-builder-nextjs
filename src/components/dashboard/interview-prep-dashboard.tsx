@@ -10,6 +10,8 @@ import {
   type ReactElement,
   type ReactNode,
 } from 'react';
+import { ClipboardList } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { InterviewPrepDialog } from '@/components/interview-prep/interview-prep-dialog';
 import {
   listInterviewPrepHistory,
@@ -117,16 +119,25 @@ export function InterviewPrepCardButton(props: {
 }): ReactElement {
   const { hasHistory, openGenerate, openView } = useInterviewPrepDashboard();
   const viewed = hasHistory(props.resumeId);
+  const label = viewed ? '查看面试准备' : '面试准备';
   return (
-    <button
+    <Button
       type="button"
-      className="shrink-0 text-xs font-medium text-violet-600 hover:text-violet-700"
+      variant="outline"
+      title={label}
+      aria-label={label}
+      className={
+        viewed
+          ? 'h-8 w-full gap-1.5 rounded-md border-violet-200 bg-violet-50/70 text-xs font-medium text-violet-700 shadow-none hover:border-violet-300 hover:bg-violet-50 hover:text-violet-800'
+          : 'h-8 w-full gap-1.5 rounded-md border-slate-200 bg-slate-50 text-xs font-medium text-slate-700 shadow-none hover:border-violet-200 hover:bg-violet-50/60 hover:text-violet-700'
+      }
       onClick={() => {
         if (viewed) openView(props.resumeId, props.resumeTitle);
         else openGenerate(props.resumeId, props.resumeTitle);
       }}
     >
-      {viewed ? '查看面试准备' : '面试准备'}
-    </button>
+      <ClipboardList className="h-3.5 w-3.5" />
+      {label}
+    </Button>
   );
 }

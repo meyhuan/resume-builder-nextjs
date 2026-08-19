@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { extractAIConfig, AIConfigError } from '@/lib/ai/provider';
 import { analyzeJdMatch } from '@/lib/ai/analyze-jd-match';
-import { jdAnalysisInputSchema } from '@/lib/ai/jd-analysis-schema';
+import { jdAnalysisInputSchema, MAX_JD_ANALYSIS_JD_LENGTH } from '@/lib/ai/jd-analysis-schema';
 import { withQuotaCheck } from '@/lib/quota/quota-guard';
-
-const MAX_JD_LENGTH = 5000;
 
 /**
  * POST /next-api/ai/jd-analysis
@@ -31,7 +29,7 @@ export async function POST(request: NextRequest): Promise<Response> {
     const aiConfig = extractAIConfig(request);
     const result = await analyzeJdMatch({
       resumeData: parsed.data.resumeData,
-      jobDescription: jobDescription.slice(0, MAX_JD_LENGTH),
+      jobDescription: jobDescription.slice(0, MAX_JD_ANALYSIS_JD_LENGTH),
       aiConfig,
     });
 

@@ -37,13 +37,14 @@ import {
   type AnalysisHistoryItem,
 } from '@/lib/ai/analysis-history';
 import type { JdAnalysisOutput } from '@/lib/ai/jd-analysis-schema';
+import { MAX_JD_ANALYSIS_JD_LENGTH } from '@/lib/ai/jd-analysis-schema';
 import { formatJdSuggestionSection } from '@/lib/ai/jd-section-label';
 import { useAppStore } from '@/state/store';
 import { useEditorUiStore } from '@/state/editor-ui-store';
 import { useVipCheck } from '@/hooks/use-vip-check';
 import { trackAssistBlocked } from '@/lib/ai/assist-client';
 import { EditorAssistQuotaHint } from '@/components/ai/editor-assist-quota-hint';
-import { MAX_OPTIMIZE_JD_LENGTH } from '@/lib/ai/optimize-resume-prompt-builder';
+import { JdPasteField } from '@/components/ai/jd-paste-field';
 
 const HISTORY_KIND = 'jd-analysis';
 
@@ -256,7 +257,7 @@ export function JdAnalysisDialog(props: {
               <FileSearch className="h-5 w-5 text-violet-600" />
               岗位匹配
             </DialogTitle>
-            <DialogDescription>粘贴职位描述，分析简历匹配度并给出可执行建议。</DialogDescription>
+            <DialogDescription>粘贴 JD，或直接粘贴 / 上传 BOSS 直聘等截图，分析匹配度并给出建议。</DialogDescription>
           </DialogHeader>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex min-h-0 flex-1 flex-col gap-0">
@@ -281,11 +282,13 @@ export function JdAnalysisDialog(props: {
                 />
               ) : !result ? (
                 <div className="space-y-4 px-6 py-4">
-                  <textarea
+                  <JdPasteField
+                    autoFocus
                     value={jobDescription}
-                    onChange={(event) => setJobDescription(event.target.value.slice(0, MAX_OPTIMIZE_JD_LENGTH))}
+                    onChange={setJobDescription}
+                    maxLength={MAX_JD_ANALYSIS_JD_LENGTH}
                     rows={6}
-                    placeholder="粘贴目标岗位的职位描述…"
+                    placeholder="粘贴目标岗位的职位描述，或直接粘贴 BOSS 直聘截图…"
                     className="h-[200px] max-h-[200px] w-full resize-none overflow-y-auto rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm focus:border-violet-300 focus:outline-none focus:ring-2 focus:ring-violet-100"
                   />
                   {error ? (

@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import type { ResumeData } from '@/entities/resume/resume-data';
 
+export const MAX_JD_ANALYSIS_JD_LENGTH = 5000;
+
 export const jdAnalysisInputSchema = z.object({
   resumeData: z.custom<ResumeData>(),
   jobDescription: z.string().min(1),

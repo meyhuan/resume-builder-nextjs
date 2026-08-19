@@ -3,7 +3,8 @@
 import { useState, type FormEvent, type ReactElement } from 'react';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import type { JdMatchResponse } from '@/lib/seo/jd-match';
+import { JdPasteField } from '@/components/ai/jd-paste-field';
+import { MAX_JD_MATCH_JD_LENGTH, type JdMatchResponse } from '@/lib/seo/jd-match';
 
 type ApiJdMatchResponse = JdMatchResponse & {
   readonly error?: string;
@@ -48,7 +49,7 @@ export function JdMatchTool(): ReactElement {
 
   return (
     <section className="rounded-xl border border-slate-200 bg-white">
-      <form onSubmit={handleSubmit} className="space-y-5 p-5 sm:p-6">
+      <form onSubmit={handleSubmit} className="space-y-5 p-5 sm:p-8">
         <label className="block">
           <span className="text-sm font-medium text-slate-700">目标岗位</span>
           <input
@@ -59,25 +60,30 @@ export function JdMatchTool(): ReactElement {
           />
         </label>
 
-        <label className="block">
-          <span className="text-sm font-medium text-slate-700">目标岗位 JD</span>
-          <textarea
-            value={jobDescription}
-            onChange={(event) => setJobDescription(event.target.value)}
-            className="mt-2 min-h-36 w-full resize-y rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm leading-6 outline-none focus:border-violet-300 focus:bg-white focus:ring-2 focus:ring-violet-100"
-            placeholder="粘贴岗位职责、任职要求和加分项"
-          />
-        </label>
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+          <div>
+            <span className="text-sm font-medium text-slate-700">目标岗位 JD</span>
+            <div className="mt-2">
+              <JdPasteField
+                value={jobDescription}
+                onChange={(next) => setJobDescription(next.slice(0, MAX_JD_MATCH_JD_LENGTH))}
+                maxLength={MAX_JD_MATCH_JD_LENGTH}
+                placeholder="粘贴岗位职责、任职要求和加分项，或直接粘贴 BOSS 直聘截图"
+                className="min-h-[280px] w-full resize-y rounded-md border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm leading-6 outline-none focus:border-violet-300 focus:bg-white focus:ring-2 focus:ring-violet-100"
+              />
+            </div>
+          </div>
 
-        <label className="block">
-          <span className="text-sm font-medium text-slate-700">你的简历文本</span>
-          <textarea
-            value={resumeText}
-            onChange={(event) => setResumeText(event.target.value)}
-            className="mt-2 min-h-40 w-full resize-y rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm leading-6 outline-none focus:border-violet-300 focus:bg-white focus:ring-2 focus:ring-violet-100"
-            placeholder="粘贴个人优势、项目经历、工作经历和技能"
-          />
-        </label>
+          <label className="block">
+            <span className="text-sm font-medium text-slate-700">你的简历文本</span>
+            <textarea
+              value={resumeText}
+              onChange={(event) => setResumeText(event.target.value)}
+              className="mt-2 min-h-[280px] w-full resize-y rounded-md border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm leading-6 outline-none focus:border-violet-300 focus:bg-white focus:ring-2 focus:ring-violet-100"
+              placeholder="粘贴个人优势、项目经历、工作经历和技能"
+            />
+          </label>
+        </div>
 
         {error ? (
           <div className="flex items-start gap-2 rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">
@@ -95,7 +101,7 @@ export function JdMatchTool(): ReactElement {
       </form>
 
       {result ? (
-        <div className="space-y-6 border-t border-slate-100 px-5 py-5 sm:px-6">
+        <div className="space-y-6 border-t border-slate-100 px-5 py-5 sm:px-8 sm:py-6">
           <div>
             <p className="text-sm text-slate-500">匹配分</p>
             <p className="mt-1 text-3xl font-semibold tabular-nums text-slate-900">{result.score}</p>

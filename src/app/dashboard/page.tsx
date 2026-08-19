@@ -117,10 +117,10 @@ export default async function DashboardPage() {
               {resumes.map((resume) => (
                 <div
                   key={resume.id}
-                  className="group relative bg-white rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col aspect-[1/1.414] overflow-hidden"
+                  className="relative bg-white rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col aspect-[1/1.414] overflow-hidden"
                 >
                   {/* Thumbnail Container */}
-                  <Link href={`/editor/${resume.id}`} className="block relative flex-1 bg-slate-50 border-b border-slate-100 overflow-hidden">
+                  <Link href={`/editor/${resume.id}`} className="group/preview block relative flex-1 bg-slate-50 border-b border-slate-100 overflow-hidden">
                     {resume.thumbnail ? (
                       <Image
                          src={resume.thumbnail}
@@ -135,7 +135,7 @@ export default async function DashboardPage() {
                       </div>
                     )}
                     {/* Flat Glass Overlay on Hover */}
-                    <div className="absolute inset-0 bg-slate-900/5 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
+                    <div className="absolute inset-0 bg-slate-900/5 backdrop-blur-[2px] opacity-0 group-hover/preview:opacity-100 transition-opacity duration-200 flex items-center justify-center">
                       <span className="bg-white text-slate-800 text-xs font-semibold px-4 py-2 rounded-lg shadow-sm">
                         编辑简历
                       </span>
@@ -163,20 +163,18 @@ export default async function DashboardPage() {
                           })}
                         </span>
                       </div>
-                      <div className="flex items-center gap-1 shrink-0">
-                        <InterviewPrepCardButton
-                          resumeId={resume.id}
-                          resumeTitle={resume.title}
-                        />
-                        <ResumeCardActions 
-                          resumeId={resume.id}
-                          currentTitle={resume.title}
-                          onRename={renameResume}
-                          onDuplicate={duplicateResume}
-                          onDelete={deleteResume}
-                        />
-                      </div>
+                      <ResumeCardActions 
+                        resumeId={resume.id}
+                        currentTitle={resume.title}
+                        onRename={renameResume}
+                        onDuplicate={duplicateResume}
+                        onDelete={deleteResume}
+                      />
                     </div>
+                    <InterviewPrepCardButton
+                      resumeId={resume.id}
+                      resumeTitle={resume.title}
+                    />
                   </div>
                 </div>
               ))}

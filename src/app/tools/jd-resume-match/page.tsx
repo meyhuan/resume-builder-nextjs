@@ -67,7 +67,7 @@ export default function JdResumeMatchPage(): ReactElement {
       <LandingHeader forceSolid />
 
       <main className="flex-grow pt-24 pb-16">
-        <div className="mx-auto w-full max-w-3xl px-4 sm:px-6">
+        <div className="mx-auto w-full max-w-4xl px-4 sm:px-6">
           <p className="text-sm text-slate-400">
             <Link href="/" className="hover:text-slate-600">首页</Link>
             <span className="px-1.5">/</span>
@@ -78,7 +78,7 @@ export default function JdResumeMatchPage(): ReactElement {
             检查简历和岗位 JD 的关键词覆盖
           </h1>
           <p className="mt-2 text-sm leading-6 text-slate-500">
-            只做分析，不改简历。要按 JD 改内容，登录后用编辑器里的「岗位匹配」。
+            只做分析，不改简历。BOSS 直聘复制不了时，可把职位详情截图粘贴进来。要按 JD 改内容，登录后用编辑器里的「岗位匹配」。
             <Link href="/dashboard" className="ml-1 text-slate-700 underline decoration-slate-300 underline-offset-2 hover:text-violet-700">
               打开我的简历
             </Link>

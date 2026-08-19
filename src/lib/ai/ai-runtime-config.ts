@@ -24,12 +24,29 @@ const MODELS: readonly AiModelConfig[] = [
     baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
     apiKeyEnv: 'DASHSCOPE_API_KEY',
   },
+  {
+    name: 'qwen-vl-plus',
+    displayName: '通义千问 VL Plus',
+    baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+    apiKeyEnv: 'DASHSCOPE_API_KEY',
+  },
+  {
+    name: 'qwen3.5-ocr',
+    displayName: '通义千问 OCR',
+    baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+    apiKeyEnv: 'DASHSCOPE_API_KEY',
+  },
 ] as const
 
 const DEFAULT_MODEL_NAME = 'qwen-plus'
+const VISION_MODEL_NAME = 'qwen3.5-ocr'
 
 export function getDefaultModel(): AiModelConfig {
   return MODELS.find((model) => model.name === DEFAULT_MODEL_NAME) ?? MODELS[0]
+}
+
+export function getVisionModel(): AiModelConfig {
+  return MODELS.find((model) => model.name === VISION_MODEL_NAME) ?? getDefaultModel()
 }
 
 export function getModelByName(name: string): AiModelConfig {

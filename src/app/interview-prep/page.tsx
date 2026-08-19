@@ -67,7 +67,7 @@ export default function InterviewPrepPage(): ReactElement {
       <LandingHeader forceSolid />
 
       <main className="flex-grow pt-24 pb-16">
-        <div className="mx-auto w-full max-w-2xl px-4 sm:px-6">
+        <div className="mx-auto w-full max-w-4xl px-4 sm:px-6">
           <p className="text-sm text-slate-400">
             <Link href="/" className="hover:text-slate-600">首页</Link>
             <span className="px-1.5">/</span>
