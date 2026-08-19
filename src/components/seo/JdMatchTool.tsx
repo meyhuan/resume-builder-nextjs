@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, type FormEvent, type ReactElement } from 'react';
-import { AlertCircle, CheckCircle2, Loader2, Sparkles } from 'lucide-react';
+import { AlertCircle, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import type { JdMatchResponse } from '@/lib/seo/jd-match';
 
 type ApiJdMatchResponse = JdMatchResponse & {
@@ -46,105 +47,102 @@ export function JdMatchTool(): ReactElement {
   }
 
   return (
-    <section className="rounded-2xl border border-violet-100 bg-white p-6 md:p-8 shadow-sm">
-      <div className="flex items-center gap-2 text-slate-900">
-        <Sparkles className="w-5 h-5 text-violet-500" />
-        <h2 className="text-2xl font-extrabold">JD 匹配度分析</h2>
-      </div>
-
-      <form onSubmit={handleSubmit} className="mt-6 space-y-5">
+    <section className="rounded-xl border border-slate-200 bg-white">
+      <form onSubmit={handleSubmit} className="space-y-5 p-5 sm:p-6">
         <label className="block">
-          <span className="text-sm font-semibold text-slate-700">目标岗位</span>
+          <span className="text-sm font-medium text-slate-700">目标岗位</span>
           <input
             value={targetRole}
             onChange={(event) => setTargetRole(event.target.value)}
-            className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-violet-300 focus:ring-4 focus:ring-violet-100"
-            placeholder="例如：AI产品经理、AIGC运营、RAG工程师"
+            className="mt-2 h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm outline-none focus:border-violet-300 focus:ring-2 focus:ring-violet-100"
+            placeholder="例如：产品经理、前端开发"
           />
         </label>
 
         <label className="block">
-          <span className="text-sm font-semibold text-slate-700">目标岗位 JD</span>
+          <span className="text-sm font-medium text-slate-700">目标岗位 JD</span>
           <textarea
             value={jobDescription}
             onChange={(event) => setJobDescription(event.target.value)}
-            className="mt-2 min-h-40 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm leading-6 outline-none focus:border-violet-300 focus:ring-4 focus:ring-violet-100"
-            placeholder="粘贴招聘网站上的岗位职责、任职要求和加分项"
+            className="mt-2 min-h-36 w-full resize-y rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm leading-6 outline-none focus:border-violet-300 focus:bg-white focus:ring-2 focus:ring-violet-100"
+            placeholder="粘贴岗位职责、任职要求和加分项"
           />
         </label>
 
         <label className="block">
-          <span className="text-sm font-semibold text-slate-700">你的简历文本</span>
+          <span className="text-sm font-medium text-slate-700">你的简历文本</span>
           <textarea
             value={resumeText}
             onChange={(event) => setResumeText(event.target.value)}
-            className="mt-2 min-h-44 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm leading-6 outline-none focus:border-violet-300 focus:ring-4 focus:ring-violet-100"
-            placeholder="粘贴简历中的个人优势、项目经历、工作经历和技能栏"
+            className="mt-2 min-h-40 w-full resize-y rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm leading-6 outline-none focus:border-violet-300 focus:bg-white focus:ring-2 focus:ring-violet-100"
+            placeholder="粘贴个人优势、项目经历、工作经历和技能"
           />
         </label>
 
-        <button
-          type="submit"
-          disabled={isLoading}
-          className="inline-flex items-center gap-2 rounded-full bg-violet-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-violet-500/20 hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-60 transition-colors"
-        >
-          {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-          开始分析
-        </button>
+        {error ? (
+          <div className="flex items-start gap-2 rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+            <p>{error}</p>
+          </div>
+        ) : null}
+
+        <div className="flex justify-end">
+          <Button type="submit" disabled={isLoading} className="bg-violet-600 text-white hover:bg-violet-700">
+            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            {isLoading ? '正在分析…' : '开始分析'}
+          </Button>
+        </div>
       </form>
 
-      {error ? (
-        <div className="mt-6 flex items-start gap-3 rounded-xl border border-amber-100 bg-amber-50 p-4 text-sm text-amber-700">
-          <AlertCircle className="w-5 h-5 shrink-0" />
-          <p>{error}</p>
-        </div>
-      ) : null}
-
       {result ? (
-        <div className="mt-8 space-y-6">
-          <div className="rounded-2xl bg-violet-50 p-6">
-            <div className="text-sm font-semibold text-violet-700">匹配分</div>
-            <div className="mt-2 text-5xl font-extrabold text-violet-700">{result.score}</div>
-            <p className="mt-2 text-sm leading-6 text-slate-600">
-              这是基于 JD 关键词和简历文本的粗略匹配度，适合判断优先优化方向。
+        <div className="space-y-6 border-t border-slate-100 px-5 py-5 sm:px-6">
+          <div>
+            <p className="text-sm text-slate-500">匹配分</p>
+            <p className="mt-1 text-3xl font-semibold tabular-nums text-slate-900">{result.score}</p>
+            <p className="mt-1 text-sm leading-6 text-slate-500">
+              基于 JD 关键词和简历文本的粗略覆盖度，用来判断先改哪里。
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <KeywordPanel title="已覆盖关键词" keywords={result.matchedKeywords} emptyText="暂未识别到已覆盖关键词" tone="success" />
-            <KeywordPanel title="建议补充关键词" keywords={result.missingKeywords} emptyText="暂无明显缺失关键词" tone="warning" />
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+            <KeywordPanel title="已覆盖" keywords={result.matchedKeywords} emptyText="暂未识别到已覆盖关键词" tone="success" />
+            <KeywordPanel title="建议补充" keywords={result.missingKeywords} emptyText="暂无明显缺失关键词" tone="warning" />
           </div>
 
-          <div className="rounded-2xl border border-slate-100 bg-slate-50 p-5">
-            <h3 className="font-extrabold text-slate-900">优先优化建议</h3>
-            <ul className="mt-4 space-y-3 text-sm leading-6 text-slate-600">
-              {result.prioritySuggestions.map((suggestion) => (
-                <li key={suggestion}>· {suggestion}</li>
+          {result.prioritySuggestions.length > 0 ? (
+            <div>
+              <h2 className="text-sm font-medium text-slate-800">优先优化</h2>
+              <ul className="mt-2 space-y-1.5 text-sm leading-6 text-slate-600">
+                {result.prioritySuggestions.map((suggestion) => (
+                  <li key={suggestion}>· {suggestion}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+
+          {result.sectionSuggestions.length > 0 ? (
+            <div className="space-y-4">
+              <h2 className="text-sm font-medium text-slate-800">分模块建议</h2>
+              {result.sectionSuggestions.map((suggestion) => (
+                <div key={suggestion.section} className="border-t border-slate-100 pt-4 first:border-t-0 first:pt-0">
+                  <h3 className="text-sm font-medium text-slate-800">{suggestion.section}</h3>
+                  <p className="mt-1 text-sm leading-6 text-slate-500">{suggestion.issue}</p>
+                  <p className="mt-1 text-sm leading-6 text-slate-700">{suggestion.suggestion}</p>
+                </div>
               ))}
-            </ul>
-          </div>
+            </div>
+          ) : null}
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {result.sectionSuggestions.map((suggestion) => (
-              <article key={suggestion.section} className="rounded-2xl border border-slate-100 bg-white p-5">
-                <h3 className="font-extrabold text-slate-900">{suggestion.section}</h3>
-                <p className="mt-3 text-sm leading-6 text-slate-500">{suggestion.issue}</p>
-                <p className="mt-3 text-sm leading-6 text-slate-700">{suggestion.suggestion}</p>
-              </article>
-            ))}
-          </div>
-
-          <div className="rounded-2xl border border-violet-100 bg-white p-5">
-            <h3 className="font-extrabold text-slate-900">下一步</h3>
-            <ul className="mt-4 space-y-3 text-sm leading-6 text-slate-600">
-              {result.nextActions.map((action) => (
-                <li key={action} className="flex items-start gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-violet-500 shrink-0 mt-1" />
-                  <span>{action}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
+          {result.nextActions.length > 0 ? (
+            <div>
+              <h2 className="text-sm font-medium text-slate-800">下一步</h2>
+              <ul className="mt-2 space-y-1.5 text-sm leading-6 text-slate-600">
+                {result.nextActions.map((action) => (
+                  <li key={action}>· {action}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
         </div>
       ) : null}
     </section>
@@ -159,19 +157,21 @@ type KeywordPanelProps = {
 };
 
 function KeywordPanel({ title, keywords, emptyText, tone }: KeywordPanelProps): ReactElement {
-  const toneClass = tone === 'success' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700';
+  const toneClass = tone === 'success'
+    ? 'bg-emerald-50 text-emerald-800'
+    : 'bg-amber-50 text-amber-800';
   return (
-    <section className="rounded-2xl border border-slate-100 bg-white p-5">
-      <h3 className="font-extrabold text-slate-900">{title}</h3>
-      <div className="mt-4 flex flex-wrap gap-2">
+    <div>
+      <h2 className="text-sm font-medium text-slate-800">{title}</h2>
+      <div className="mt-2 flex flex-wrap gap-1.5">
         {keywords.length > 0 ? keywords.map((keyword) => (
-          <span key={keyword} className={`rounded-full px-3 py-1 text-xs font-semibold ${toneClass}`}>
+          <span key={keyword} className={`rounded-md px-2 py-0.5 text-xs ${toneClass}`}>
             {keyword}
           </span>
         )) : (
           <span className="text-sm text-slate-400">{emptyText}</span>
         )}
       </div>
-    </section>
+    </div>
   );
 }

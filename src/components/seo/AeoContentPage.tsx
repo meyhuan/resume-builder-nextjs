@@ -1,6 +1,6 @@
 import type { ReactElement } from 'react';
 import Link from 'next/link';
-import { ArrowRight, CheckCircle2, ChevronRight, HelpCircle, ListChecks, Sparkles } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { LandingFooter } from '@/components/landing/LandingFooter';
 import { LandingHeader } from '@/components/landing/LandingHeader';
 import type { AeoPage } from '@/lib/seo/aeo-pages';
@@ -84,6 +84,8 @@ function getComparisonColumns(page: AeoPage): string[] {
 
 export function AeoContentPage({ page }: AeoContentPageProps): ReactElement {
   const comparisonColumns = getComparisonColumns(page);
+  const primaryCta = page.ctas[0];
+  const secondaryCtas = page.ctas.slice(1);
   const schemas = [
     createArticleSchema(page),
     createFaqSchema(page),
@@ -92,7 +94,7 @@ export function AeoContentPage({ page }: AeoContentPageProps): ReactElement {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F8FAFC] selection:bg-fuchsia-200">
+    <div className="min-h-screen flex flex-col bg-[#F8FAFC]">
       {schemas.map((schema, index) => (
         <script
           key={index}
@@ -102,87 +104,63 @@ export function AeoContentPage({ page }: AeoContentPageProps): ReactElement {
       ))}
       <LandingHeader forceSolid />
 
-      <main className="flex-grow pt-32 pb-20">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <nav className="flex items-center gap-1.5 text-sm text-slate-400 mb-8 flex-wrap">
-            <Link href="/" className="hover:text-violet-600 transition-colors">首页</Link>
-            <ChevronRight className="w-3.5 h-3.5" />
-            <span className="text-slate-600 font-medium">{page.eyebrow}</span>
-          </nav>
+      <main className="flex-grow pt-24 pb-16">
+        <article className="mx-auto w-full max-w-3xl px-4 sm:px-6">
+          <p className="text-sm text-slate-400">
+            <Link href="/" className="hover:text-slate-600">首页</Link>
+            <span className="px-1.5">/</span>
+            <span className="text-slate-600">{page.eyebrow}</span>
+          </p>
 
-          <section className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-8 items-start">
-            <div className="space-y-6">
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white border border-violet-100 rounded-full shadow-sm">
-                <Sparkles className="w-4 h-4 text-violet-500" />
-                <span className="text-sm font-semibold text-violet-600">{page.eyebrow}</span>
-              </div>
-              <h1 className="text-3xl md:text-5xl font-extrabold text-slate-900 tracking-tight leading-tight">
-                {page.title}
-              </h1>
-              <p className="text-base md:text-lg text-slate-500 leading-relaxed max-w-3xl">
-                {page.description}
-              </p>
-              <div className="flex flex-wrap gap-3">
-                {page.ctas.map((cta, index) => (
-                  <Link
-                    key={cta.href}
-                    href={cta.href}
-                    className={index === 0
-                      ? 'inline-flex items-center gap-2 px-5 py-3 rounded-full bg-violet-600 text-white font-semibold shadow-lg shadow-violet-500/20 hover:bg-violet-700 transition-colors'
-                      : 'inline-flex items-center gap-2 px-5 py-3 rounded-full bg-white text-slate-700 font-semibold border border-slate-200 hover:border-violet-200 hover:text-violet-600 transition-colors'}
-                  >
-                    {cta.label}
-                    {index === 0 ? <ArrowRight className="w-4 h-4" /> : null}
-                  </Link>
-                ))}
-              </div>
+          <h1 className="mt-6 text-2xl font-semibold tracking-tight text-slate-900 sm:text-[28px]">
+            {page.title}
+          </h1>
+          <p className="mt-3 text-sm leading-7 text-slate-700">{page.directAnswer}</p>
+          <p className="mt-2 text-sm leading-6 text-slate-500">{page.description}</p>
+          <p className="mt-2 text-xs text-slate-400">更新日期：{page.updatedAt}</p>
+
+          {primaryCta ? (
+            <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2">
+              <Button asChild className="bg-violet-600 text-white hover:bg-violet-700">
+                <Link href={primaryCta.href}>{primaryCta.label}</Link>
+              </Button>
+              {secondaryCtas.map((cta) => (
+                <Link
+                  key={cta.href}
+                  href={cta.href}
+                  className="text-sm text-slate-700 underline decoration-slate-300 underline-offset-2 hover:text-violet-700"
+                >
+                  {cta.label}
+                </Link>
+              ))}
             </div>
+          ) : null}
 
-            <aside className="rounded-2xl border border-violet-100 bg-white p-6 shadow-sm">
-              <div className="flex items-center gap-2 text-violet-600 font-bold">
-                <CheckCircle2 className="w-5 h-5" />
-                直接结论
-              </div>
-              <p className="mt-4 text-sm leading-7 text-slate-600">{page.directAnswer}</p>
-              <div className="mt-5 text-xs text-slate-400">更新日期：{page.updatedAt}</div>
-            </aside>
-          </section>
+          {page.audience.length > 0 ? (
+            <p className="mt-8 text-sm leading-6 text-slate-500">
+              <span className="font-medium text-slate-800">适合谁：</span>
+              {page.audience.join('；')}
+            </p>
+          ) : null}
 
-          <section className="mt-10 grid grid-cols-1 md:grid-cols-3 gap-4">
-            {page.audience.map((item) => (
-              <div key={item} className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
-                <div className="flex items-start gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-violet-500 shrink-0 mt-0.5" />
-                  <p className="text-sm text-slate-600 leading-relaxed">{item}</p>
-                </div>
+          <section className="mt-10 space-y-8">
+            {page.sections.map((section) => (
+              <div key={section.heading}>
+                <h2 className="text-base font-semibold text-slate-900">{section.heading}</h2>
+                <p className="mt-2 text-sm leading-7 text-slate-600">{section.body}</p>
               </div>
             ))}
           </section>
 
-          <section className="mt-10 rounded-2xl border border-slate-100 bg-white p-6 md:p-8 shadow-sm">
-            <div className="flex items-center gap-2 text-slate-900">
-              <ListChecks className="w-5 h-5 text-violet-500" />
-              <h2 className="text-2xl font-extrabold">选择要点</h2>
-            </div>
-            <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-5">
-              {page.sections.map((section) => (
-                <article key={section.heading} className="rounded-xl border border-slate-100 bg-slate-50 p-5">
-                  <h3 className="font-bold text-slate-900">{section.heading}</h3>
-                  <p className="mt-3 text-sm leading-7 text-slate-600">{section.body}</p>
-                </article>
-              ))}
-            </div>
-          </section>
-
           {page.comparisonItems && page.comparisonItems.length > 0 ? (
-            <section className="mt-10 rounded-2xl border border-slate-100 bg-white p-6 md:p-8 shadow-sm">
-              <h2 className="text-2xl font-extrabold text-slate-900">对比表</h2>
-              <div className="mt-6 overflow-x-auto rounded-xl border border-slate-100">
+            <section className="mt-10">
+              <h2 className="text-base font-semibold text-slate-900">对比表</h2>
+              <div className="mt-3 overflow-x-auto rounded-md border border-slate-200 bg-white">
                 <table className="w-full min-w-[760px] text-left text-sm">
                   <thead className="bg-slate-50 text-slate-500">
                     <tr>
                       {comparisonColumns.map((column) => (
-                        <th key={column} className="px-4 py-3 font-semibold">{column}</th>
+                        <th key={column} className="px-4 py-3 font-medium">{column}</th>
                       ))}
                     </tr>
                   </thead>
@@ -190,7 +168,7 @@ export function AeoContentPage({ page }: AeoContentPageProps): ReactElement {
                     {page.comparisonItems.map((item, index) => (
                       <tr key={index} className="bg-white align-top">
                         {comparisonColumns.map((column) => (
-                          <td key={column} className="px-4 py-4 leading-6 text-slate-600">
+                          <td key={column} className="px-4 py-3 leading-6 text-slate-600">
                             {item[column]}
                           </td>
                         ))}
@@ -202,35 +180,35 @@ export function AeoContentPage({ page }: AeoContentPageProps): ReactElement {
             </section>
           ) : null}
 
-          <section className="mt-10 grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8 items-start">
-            <div className="rounded-2xl border border-slate-100 bg-white p-6 md:p-8 shadow-sm">
-              <div className="flex items-center gap-2 text-slate-900">
-                <HelpCircle className="w-5 h-5 text-violet-500" />
-                <h2 className="text-2xl font-extrabold">常见问题</h2>
-              </div>
-              <div className="mt-6 space-y-5">
-                {page.faq.map((item) => (
-                  <article key={item.question} className="border-b border-slate-100 pb-5 last:border-b-0 last:pb-0">
-                    <h3 className="font-bold text-slate-900">{item.question}</h3>
-                    <p className="mt-2 text-sm leading-7 text-slate-600">{item.answer}</p>
-                  </article>
-                ))}
-              </div>
-            </div>
+          {page.faq.length > 0 ? (
+            <dl className="mt-12 space-y-5 border-t border-slate-200 pt-8">
+              {page.faq.map((item) => (
+                <div key={item.question}>
+                  <dt className="text-sm font-medium text-slate-800">{item.question}</dt>
+                  <dd className="mt-1 text-sm leading-6 text-slate-500">{item.answer}</dd>
+                </div>
+              ))}
+            </dl>
+          ) : null}
 
-            <aside className="rounded-2xl border border-violet-100 bg-violet-50 p-6">
-              <h2 className="font-extrabold text-slate-900">继续查看</h2>
-              <div className="mt-4 space-y-3">
+          {page.relatedLinks.length > 0 ? (
+            <section className="mt-12 border-t border-slate-200 pt-8">
+              <h2 className="text-sm font-medium text-slate-800">继续查看</h2>
+              <ul className="mt-3 space-y-2">
                 {page.relatedLinks.map((link) => (
-                  <Link key={link.href} href={link.href} className="block rounded-xl bg-white p-4 hover:shadow-sm transition-shadow">
-                    <div className="font-semibold text-slate-900">{link.label}</div>
-                    <p className="mt-1 text-xs leading-5 text-slate-500">{link.description}</p>
-                  </Link>
+                  <li key={link.href}>
+                    <Link href={link.href} className="text-sm text-slate-700 underline decoration-slate-300 underline-offset-2 hover:text-violet-700">
+                      {link.label}
+                    </Link>
+                    {link.description ? (
+                      <span className="mt-0.5 block text-sm leading-6 text-slate-500">{link.description}</span>
+                    ) : null}
+                  </li>
                 ))}
-              </div>
-            </aside>
-          </section>
-        </div>
+              </ul>
+            </section>
+          ) : null}
+        </article>
       </main>
 
       <LandingFooter />

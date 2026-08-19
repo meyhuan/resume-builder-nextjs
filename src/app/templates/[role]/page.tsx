@@ -3,7 +3,7 @@ import type { ReactElement } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowRight, BookOpen, BriefcaseBusiness, ChevronRight, CircleCheckBig, ClipboardList, Layers3, Tags, Target, TriangleAlert, Users } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { LandingFooter } from '@/components/landing/LandingFooter';
 import { LandingHeader } from '@/components/landing/LandingHeader';
 import { getAllArticles } from '@/lib/articles/article-data';
@@ -652,273 +652,241 @@ export default async function TemplateRolePage({ params }: RolePageParams): Prom
   const breadcrumbSchema: JsonLdNode = createBreadcrumbSchema(roleRecord.role, roleRecord.slug);
   const faqSchema: JsonLdNode = createFaqSchema(faqItems);
   return (
-    <div className="min-h-screen flex flex-col bg-[#F8FAFC] selection:bg-fuchsia-200">
+    <div className="min-h-screen flex flex-col bg-[#F8FAFC]">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
       <LandingHeader forceSolid />
-      <main className="flex-grow pt-36 pb-20 relative">
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-[-8%] right-[-5%] w-[500px] h-[500px] bg-violet-500/8 rounded-full blur-[100px]" />
-          <div className="absolute bottom-[-8%] left-[-5%] w-[400px] h-[400px] bg-fuchsia-500/8 rounded-full blur-[100px]" />
-        </div>
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 space-y-10">
-          <nav className="flex items-center gap-1.5 text-sm text-slate-400 flex-wrap">
-            <Link href="/" className="hover:text-violet-600 transition-colors">首页</Link>
-            <ChevronRight className="w-3.5 h-3.5" />
-            <Link href="/templates" className="hover:text-violet-600 transition-colors">简历模板中心</Link>
-            <ChevronRight className="w-3.5 h-3.5" />
-            <span className="text-slate-600 font-medium">{roleRecord.role}简历模板</span>
-          </nav>
-          <section className="rounded-3xl bg-white/80 backdrop-blur-sm border border-white shadow-sm p-6 md:p-8 lg:p-10">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-violet-50 text-violet-600 rounded-full text-sm font-semibold">
-              <BriefcaseBusiness className="w-4 h-4" />
-              {roleRecord.industry} / {roleRecord.category}
-            </div>
-            <h1 className="text-3xl md:text-5xl font-extrabold text-slate-900 tracking-tight mt-5">
-              {roleRecord.role}简历模板与写作建议
-            </h1>
-            <p className="text-base md:text-lg text-slate-500 mt-4 max-w-3xl leading-relaxed">
-              {createPageDescription(roleRecord.role, roleRecord.industry)}
-            </p>
-            <p className="text-sm md:text-base text-slate-600 mt-4 max-w-3xl leading-relaxed">
-              {roleSummary}
-            </p>
-            <div className="flex flex-wrap gap-3 mt-6">
-              <Link href="/ai" className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-violet-600 text-white font-semibold shadow-lg shadow-violet-500/20 hover:bg-violet-700 transition-colors">
-                去 AI 生成 {roleRecord.role} 简历
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-              <Link href="/editor" className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white text-slate-700 font-semibold border border-slate-200 hover:border-violet-200 hover:text-violet-600 transition-colors">
-                直接开始编辑
-              </Link>
-              <Link href="/tools/jd-resume-match" className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white text-slate-700 font-semibold border border-slate-200 hover:border-violet-200 hover:text-violet-600 transition-colors">
-                做 JD 匹配检查
-              </Link>
-            </div>
-          </section>
-          <section className="grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-6">
-            <div className="rounded-3xl bg-white/80 backdrop-blur-sm border border-white shadow-sm p-6 md:p-8">
-              <h2 className="text-2xl font-extrabold text-slate-900">{roleRecord.role}简历怎么写</h2>
-              <div className="space-y-4 mt-6">
-                {writingPoints.map((point) => (
-                  <div key={point.title} className="rounded-2xl bg-slate-50 p-5 border border-slate-100">
-                    <div className="flex items-center gap-2 text-slate-900 font-bold">
-                      <CircleCheckBig className="w-4 h-4 text-violet-500" />
-                      {point.title}
-                    </div>
-                    <p className="text-sm text-slate-500 leading-relaxed mt-2">{point.description}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="rounded-3xl bg-white/80 backdrop-blur-sm border border-white shadow-sm p-6 md:p-8">
-              <h2 className="text-2xl font-extrabold text-slate-900">常见错误</h2>
-              <div className="space-y-4 mt-6">
-                {commonMistakes.map((mistake) => (
-                  <div key={mistake} className="rounded-2xl bg-rose-50 p-5 border border-rose-100">
-                    <div className="flex items-start gap-3">
-                      <TriangleAlert className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
-                      <p className="text-sm text-slate-600 leading-relaxed">{mistake}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </section>
-          {roleSpecialtyBlocks.length > 0 ? (
-            <section className="rounded-3xl bg-white/80 backdrop-blur-sm border border-violet-100 shadow-sm p-6 md:p-8">
-              <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
-                <div>
-                  <h2 className="text-2xl font-extrabold text-slate-900">AI产品经理专项优化</h2>
-                  <p className="text-sm text-slate-500 mt-2 leading-relaxed">
-                    围绕大模型产品落地、RAG、AI Agent、评测指标和业务结果，把经历写得更像目标岗位，而不是泛泛的产品经理简历。
-                  </p>
-                </div>
-                <Link href="/articles/ai-product-manager-resume-guide" className="inline-flex items-center gap-2 text-sm font-semibold text-violet-600 hover:text-violet-700 transition-colors">
-                  查看完整写作攻略
-                  <ArrowRight className="w-4 h-4" />
+      <main className="flex-grow pt-24 pb-16">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+          <p className="text-sm text-slate-400">
+            <Link href="/" className="hover:text-slate-600">首页</Link>
+            <span className="px-1.5">/</span>
+            <Link href="/templates" className="hover:text-slate-600">简历模板中心</Link>
+            <span className="px-1.5">/</span>
+            <span className="text-slate-600">{roleRecord.role}</span>
+          </p>
+
+          <div className="mt-6 grid grid-cols-1 items-start gap-10 lg:grid-cols-[minmax(0,1fr)_280px]">
+            <article className="min-w-0">
+              <p className="text-sm text-slate-500">{roleRecord.industry} / {roleRecord.category}</p>
+              <h1 className="mt-2 text-2xl font-semibold tracking-tight text-slate-900 sm:text-[28px]">
+                {roleRecord.role}简历怎么写
+              </h1>
+              <p className="mt-3 text-sm leading-7 text-slate-700">{roleSummary}</p>
+              <p className="mt-2 text-sm leading-6 text-slate-500">
+                {createPageDescription(roleRecord.role, roleRecord.industry)}
+              </p>
+              <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2">
+                <Button asChild className="bg-violet-600 text-white hover:bg-violet-700">
+                  <Link href="/ai">生成该岗位简历</Link>
+                </Button>
+                <Link href="/editor" className="text-sm text-slate-700 underline decoration-slate-300 underline-offset-2 hover:text-violet-700">
+                  直接编辑
+                </Link>
+                <Link href="/tools/jd-resume-match" className="text-sm text-slate-700 underline decoration-slate-300 underline-offset-2 hover:text-violet-700">
+                  JD 匹配
                 </Link>
               </div>
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-6">
-                {roleSpecialtyBlocks.map((block: RoleSpecialtyBlock) => (
-                  <div key={block.title} className="rounded-2xl bg-violet-50/60 border border-violet-100 p-5">
-                    <h3 className="text-base font-bold text-slate-900">{block.title}</h3>
-                    <p className="text-sm text-slate-600 leading-relaxed mt-2">{block.description}</p>
-                    <ul className="space-y-2 mt-4">
-                      {block.bullets.map((bullet: string) => (
-                        <li key={bullet} className="flex gap-2 text-sm text-slate-600 leading-relaxed">
-                          <CircleCheckBig className="w-4 h-4 text-violet-500 shrink-0 mt-0.5" />
-                          <span>{bullet}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ))}
-              </div>
-            </section>
-          ) : null}
-          <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="rounded-3xl bg-white/80 backdrop-blur-sm border border-white shadow-sm p-6 md:p-8">
-              <div className="flex items-center gap-2 text-slate-900">
-                <Target className="w-5 h-5 text-violet-500" />
-                <h2 className="text-2xl font-extrabold">招聘方重点关注</h2>
-              </div>
-              <div className="space-y-4 mt-6">
-                {hiringFocusItems.map((item: HiringFocusItem) => (
-                  <div key={item.title} className="rounded-2xl bg-slate-50 border border-slate-100 p-5">
-                    <h3 className="text-base font-bold text-slate-900">{item.title}</h3>
-                    <p className="text-sm text-slate-500 leading-relaxed mt-2">{item.description}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="rounded-3xl bg-white/80 backdrop-blur-sm border border-white shadow-sm p-6 md:p-8">
-              <div className="flex items-center gap-2 text-slate-900">
-                <ClipboardList className="w-5 h-5 text-violet-500" />
-                <h2 className="text-2xl font-extrabold">投递优化建议</h2>
-              </div>
-              <div className="space-y-4 mt-6">
-                {deliverySuggestions.map((suggestion: DeliverySuggestion) => (
-                  <div key={suggestion.title} className="rounded-2xl bg-slate-50 border border-slate-100 p-5">
-                    <h3 className="text-base font-bold text-slate-900">{suggestion.title}</h3>
-                    <p className="text-sm text-slate-500 leading-relaxed mt-2">{suggestion.description}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </section>
-          <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="rounded-3xl bg-white/80 backdrop-blur-sm border border-white shadow-sm p-6 md:p-8 lg:col-span-1">
-              <div className="flex items-center gap-2 text-slate-900">
-                <Users className="w-5 h-5 text-violet-500" />
-                <h2 className="text-2xl font-extrabold">适合人群</h2>
-              </div>
-              <div className="space-y-4 mt-6">
-                {audienceProfiles.map((profile: AudienceProfile) => (
-                  <div key={profile.title} className="rounded-2xl bg-slate-50 border border-slate-100 p-5">
-                    <h3 className="text-base font-bold text-slate-900">{profile.title}</h3>
-                    <p className="text-sm text-slate-500 leading-relaxed mt-2">{profile.description}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="rounded-3xl bg-white/80 backdrop-blur-sm border border-white shadow-sm p-6 md:p-8 lg:col-span-1">
-              <div className="flex items-center gap-2 text-slate-900">
-                <Layers3 className="w-5 h-5 text-violet-500" />
-                <h2 className="text-2xl font-extrabold">推荐简历模块</h2>
-              </div>
-              <div className="space-y-4 mt-6">
-                {resumeSectionSuggestions.map((section: ResumeSectionSuggestion) => (
-                  <div key={section.title} className="rounded-2xl bg-slate-50 border border-slate-100 p-5">
-                    <h3 className="text-base font-bold text-slate-900">{section.title}</h3>
-                    <p className="text-sm text-slate-500 leading-relaxed mt-2">{section.description}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="rounded-3xl bg-white/80 backdrop-blur-sm border border-white shadow-sm p-6 md:p-8 lg:col-span-1">
-              <div className="flex items-center gap-2 text-slate-900">
-                <Tags className="w-5 h-5 text-violet-500" />
-                <h2 className="text-2xl font-extrabold">岗位关键词建议</h2>
-              </div>
-              <p className="text-sm text-slate-500 mt-3 leading-relaxed">这些关键词可以自然融入你的标题、项目经历和技能描述中，帮助 {roleRecord.role} 简历更贴近招聘 JD。</p>
-              <div className="flex flex-wrap gap-3 mt-6">
-                {keywordSuggestions.map((keyword: string) => (
-                  <span key={keyword} className="px-4 py-2 rounded-full bg-violet-50 text-violet-600 text-sm font-medium">
-                    {keyword}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </section>
-          <section className="rounded-3xl bg-white/80 backdrop-blur-sm border border-white shadow-sm p-6 md:p-8">
-            <h2 className="text-2xl font-extrabold text-slate-900">推荐模板</h2>
-            <p className="text-sm text-slate-500 mt-2">根据 {roleRecord.role} 岗位常见的阅读偏好和表达重点，优先推荐这些模板。</p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-              {recommendedTemplates.map((template) => (
-                <div key={template.id} className="rounded-2xl overflow-hidden bg-slate-50 border border-slate-100">
-                  <div className="relative aspect-[3/4] bg-slate-100">
-                    <Image
-                      src={template.preview}
-                      alt={template.name}
-                      fill
-                      className="object-cover object-top"
-                      sizes="(max-width: 768px) 100vw, 33vw"
-                    />
-                  </div>
-                  <div className="p-5">
-                    <div className="text-lg font-bold text-slate-900">{template.name}</div>
-                    <p className="text-sm text-slate-500 mt-2 leading-relaxed">{template.description}</p>
-                    <p className="text-sm text-slate-600 mt-3 leading-relaxed">{template.fitReason}</p>
-                    <div className="flex flex-wrap gap-2 mt-3">
-                      {(template.tags ?? []).slice(0, 3).map((tag) => (
-                        <span key={tag} className="px-2.5 py-1 rounded-full bg-white text-slate-500 text-xs font-medium border border-slate-200">
-                          {tag}
-                        </span>
-                      ))}
+
+              <section className="mt-10">
+                <h2 className="text-base font-semibold text-slate-900">简历怎么写</h2>
+                <dl className="mt-3 space-y-4">
+                  {writingPoints.map((point) => (
+                    <div key={point.title}>
+                      <dt className="text-sm font-medium text-slate-800">{point.title}</dt>
+                      <dd className="mt-1 text-sm leading-7 text-slate-600">{point.description}</dd>
                     </div>
-                    <Link href={`/editor?template=${template.id}`} className="inline-flex items-center gap-2 text-sm font-semibold text-violet-600 mt-4 hover:text-violet-700 transition-colors">
-                      使用这个模板
-                      <ArrowRight className="w-4 h-4" />
+                  ))}
+                </dl>
+              </section>
+
+              <section className="mt-10">
+                <h2 className="text-base font-semibold text-slate-900">常见错误</h2>
+                <ul className="mt-3 space-y-2 text-sm leading-7 text-slate-600">
+                  {commonMistakes.map((mistake) => (
+                    <li key={mistake}>{mistake}</li>
+                  ))}
+                </ul>
+              </section>
+
+              {roleSpecialtyBlocks.length > 0 ? (
+                <section className="mt-10">
+                  <h2 className="text-base font-semibold text-slate-900">AI产品经理专项优化</h2>
+                  <p className="mt-2 text-sm leading-7 text-slate-600">
+                    围绕大模型产品落地、RAG、AI Agent、评测指标和业务结果，把经历写得更像目标岗位，而不是泛泛的产品经理简历。
+                    <Link href="/articles/ai-product-manager-resume-guide" className="ml-1 text-slate-700 underline decoration-slate-300 underline-offset-2 hover:text-violet-700">
+                      查看完整写作攻略
                     </Link>
+                  </p>
+                  <div className="mt-5 space-y-6">
+                    {roleSpecialtyBlocks.map((block: RoleSpecialtyBlock) => (
+                      <div key={block.title}>
+                        <h3 className="text-sm font-medium text-slate-800">{block.title}</h3>
+                        <p className="mt-1 text-sm leading-7 text-slate-600">{block.description}</p>
+                        <ul className="mt-2 space-y-1.5 text-sm leading-7 text-slate-600">
+                          {block.bullets.map((bullet: string) => (
+                            <li key={bullet}>{bullet}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))}
                   </div>
+                </section>
+              ) : null}
+
+              <section className="mt-10">
+                <h2 className="text-base font-semibold text-slate-900">招聘方重点关注</h2>
+                <dl className="mt-3 space-y-4">
+                  {hiringFocusItems.map((item: HiringFocusItem) => (
+                    <div key={item.title}>
+                      <dt className="text-sm font-medium text-slate-800">{item.title}</dt>
+                      <dd className="mt-1 text-sm leading-7 text-slate-600">{item.description}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </section>
+
+              <section className="mt-10">
+                <h2 className="text-base font-semibold text-slate-900">投递优化建议</h2>
+                <dl className="mt-3 space-y-4">
+                  {deliverySuggestions.map((suggestion: DeliverySuggestion) => (
+                    <div key={suggestion.title}>
+                      <dt className="text-sm font-medium text-slate-800">{suggestion.title}</dt>
+                      <dd className="mt-1 text-sm leading-7 text-slate-600">{suggestion.description}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </section>
+
+              <section className="mt-10">
+                <h2 className="text-base font-semibold text-slate-900">适合人群</h2>
+                <ul className="mt-3 space-y-2 text-sm leading-7 text-slate-600">
+                  {audienceProfiles.map((profile: AudienceProfile) => (
+                    <li key={profile.title}>
+                      <span className="font-medium text-slate-800">{profile.title}：</span>
+                      {profile.description}
+                    </li>
+                  ))}
+                </ul>
+              </section>
+
+              <section className="mt-10">
+                <h2 className="text-base font-semibold text-slate-900">推荐简历模块</h2>
+                <dl className="mt-3 space-y-4">
+                  {resumeSectionSuggestions.map((section: ResumeSectionSuggestion) => (
+                    <div key={section.title}>
+                      <dt className="text-sm font-medium text-slate-800">{section.title}</dt>
+                      <dd className="mt-1 text-sm leading-7 text-slate-600">{section.description}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </section>
+
+              <section className="mt-10">
+                <h2 className="text-base font-semibold text-slate-900">岗位关键词</h2>
+                <p className="mt-2 text-sm leading-7 text-slate-600">
+                  可自然写进标题、项目经历和技能描述，帮助 {roleRecord.role} 简历更贴近招聘 JD。
+                </p>
+                <p className="mt-3 text-sm leading-7 text-slate-700">{keywordSuggestions.join('、')}</p>
+              </section>
+
+              <section className="mt-10">
+                <h2 className="text-base font-semibold text-slate-900">推荐模板</h2>
+                <p className="mt-2 text-sm leading-7 text-slate-600">
+                  根据 {roleRecord.role} 岗位常见的阅读偏好，优先考虑这些模板。
+                </p>
+                <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-3">
+                  {recommendedTemplates.map((template) => (
+                    <div key={template.id} className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+                      <div className="relative aspect-[3/4] bg-slate-100">
+                        <Image
+                          src={template.preview}
+                          alt={template.name}
+                          fill
+                          className="object-cover object-top"
+                          sizes="(max-width: 768px) 100vw, 33vw"
+                        />
+                      </div>
+                      <div className="p-4">
+                        <div className="text-sm font-semibold text-slate-900">{template.name}</div>
+                        <p className="mt-1 text-sm leading-6 text-slate-500">{template.description}</p>
+                        <p className="mt-2 text-sm leading-6 text-slate-600">{template.fitReason}</p>
+                        <Link
+                          href={`/editor?template=${template.id}`}
+                          className="mt-3 inline-block text-sm text-slate-700 underline decoration-slate-300 underline-offset-2 hover:text-violet-700"
+                        >
+                          使用这个模板
+                        </Link>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </section>
-          <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="rounded-3xl bg-white/80 backdrop-blur-sm border border-white shadow-sm p-6 md:p-8">
-              <div className="flex items-center gap-2 text-slate-900">
-                <BookOpen className="w-5 h-5 text-violet-500" />
-                <h2 className="text-2xl font-extrabold">相关文章</h2>
-              </div>
-              <div className="space-y-4 mt-6">
-                {recommendedArticles.map((article) => (
-                  <Link key={article.slug} href={`/articles/${article.slug}`} className="block rounded-2xl bg-slate-50 border border-slate-100 p-5 hover:bg-white hover:border-violet-200 transition-all">
-                    <h3 className="text-base font-bold text-slate-900 hover:text-violet-600 transition-colors">{article.title}</h3>
-                    <p className="text-sm text-slate-500 mt-2 leading-relaxed line-clamp-2">{article.abstract}</p>
-                  </Link>
+              </section>
+
+              {recommendedArticles.length > 0 ? (
+                <section className="mt-10">
+                  <h2 className="text-base font-semibold text-slate-900">相关文章</h2>
+                  <ul className="mt-3 space-y-3">
+                    {recommendedArticles.map((article) => (
+                      <li key={article.slug}>
+                        <Link href={`/articles/${article.slug}`} className="text-sm text-slate-700 underline decoration-slate-300 underline-offset-2 hover:text-violet-700">
+                          {article.title}
+                        </Link>
+                        <p className="mt-0.5 line-clamp-2 text-sm leading-6 text-slate-500">{article.abstract}</p>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ) : null}
+
+              <dl className="mt-12 space-y-5 border-t border-slate-200 pt-8">
+                {faqItems.map((item) => (
+                  <div key={item.question}>
+                    <dt className="text-sm font-medium text-slate-800">{item.question}</dt>
+                    <dd className="mt-1 text-sm leading-6 text-slate-500">{item.answer}</dd>
+                  </div>
                 ))}
-              </div>
-            </div>
-            <div className="rounded-3xl bg-white/80 backdrop-blur-sm border border-white shadow-sm p-6 md:p-8">
-              <h2 className="text-2xl font-extrabold text-slate-900">相关简历范文</h2>
-              <div className="space-y-4 mt-6">
-                {recommendedExamples.length > 0 ? recommendedExamples.map((example: ResumeExample) => (
-                  <Link key={example.slug} href={`/examples/${example.slug}`} className="block rounded-2xl bg-slate-50 border border-slate-100 p-5 hover:bg-white hover:border-violet-200 transition-all">
-                    <h3 className="text-base font-bold text-slate-900 hover:text-violet-600 transition-colors">{example.role}简历范文</h3>
-                    <p className="text-sm text-slate-500 mt-2 leading-relaxed line-clamp-2">{example.description}</p>
+              </dl>
+            </article>
+
+            <aside className="space-y-8 lg:sticky lg:top-28">
+              {recommendedExamples.length > 0 ? (
+                <section>
+                  <h2 className="text-sm font-medium text-slate-800">相关范文</h2>
+                  <ul className="mt-3 space-y-2">
+                    {recommendedExamples.map((example: ResumeExample) => (
+                      <li key={example.slug}>
+                        <Link href={`/examples/${example.slug}`} className="text-sm text-slate-700 underline decoration-slate-300 underline-offset-2 hover:text-violet-700">
+                          {example.role}简历范文
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ) : (
+                <section>
+                  <h2 className="text-sm font-medium text-slate-800">相关范文</h2>
+                  <Link href="/examples" className="mt-3 block text-sm text-slate-700 underline decoration-slate-300 underline-offset-2 hover:text-violet-700">
+                    查看简历范文库
                   </Link>
-                )) : (
-                  <Link href="/examples" className="block rounded-2xl bg-slate-50 border border-slate-100 p-5 hover:bg-white hover:border-violet-200 transition-all">
-                    <h3 className="text-base font-bold text-slate-900 hover:text-violet-600 transition-colors">AI 新职业简历范文库</h3>
-                    <p className="text-sm text-slate-500 mt-2 leading-relaxed">查看项目经历、技能关键词和常见错误写法。</p>
-                  </Link>
-                )}
-              </div>
-            </div>
-            <div className="rounded-3xl bg-white/80 backdrop-blur-sm border border-white shadow-sm p-6 md:p-8">
-              <h2 className="text-2xl font-extrabold text-slate-900">相关岗位模板</h2>
-              <div className="flex flex-wrap gap-3 mt-6">
-                {relatedRoles.map((role) => (
-                  <Link key={role.slug} href={`/templates/${role.slug}`} className="px-4 py-2 rounded-full bg-slate-50 text-slate-600 text-sm hover:bg-violet-50 hover:text-violet-600 transition-colors">
-                    {role.role}
-                  </Link>
-                ))}
-              </div>
-            </div>
-          </section>
-          <section className="rounded-3xl bg-white/80 backdrop-blur-sm border border-white shadow-sm p-6 md:p-8">
-            <h2 className="text-2xl font-extrabold text-slate-900">常见问题</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-              {faqItems.map((item) => (
-                <div key={item.question} className="rounded-2xl bg-slate-50 border border-slate-100 p-5">
-                  <h3 className="text-base font-bold text-slate-900">{item.question}</h3>
-                  <p className="text-sm text-slate-500 leading-relaxed mt-3">{item.answer}</p>
-                </div>
-              ))}
-            </div>
-          </section>
+                </section>
+              )}
+              {relatedRoles.length > 0 ? (
+                <section>
+                  <h2 className="text-sm font-medium text-slate-800">相关岗位</h2>
+                  <ul className="mt-3 space-y-2">
+                    {relatedRoles.map((role) => (
+                      <li key={role.slug}>
+                        <Link href={`/templates/${role.slug}`} className="text-sm text-slate-700 underline decoration-slate-300 underline-offset-2 hover:text-violet-700">
+                          {role.role}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ) : null}
+            </aside>
+          </div>
         </div>
       </main>
       <LandingFooter />

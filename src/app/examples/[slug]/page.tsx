@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import type { ReactElement } from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowRight, BookOpen, Calendar, CheckCircle2, ChevronRight, HelpCircle, Tags, TriangleAlert } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { LandingFooter } from '@/components/landing/LandingFooter';
 import { LandingHeader } from '@/components/landing/LandingHeader';
 import { getAllResumeExamples, getResumeExampleBySlug } from '@/lib/examples/resume-examples';
@@ -81,113 +81,87 @@ export default async function ExampleDetailPage({ params }: ExamplePageProps): P
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F8FAFC] selection:bg-fuchsia-200">
+    <div className="min-h-screen flex flex-col bg-[#F8FAFC]">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
       <LandingHeader forceSolid />
 
-      <main className="flex-grow pt-32 pb-20">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <nav className="flex items-center gap-1.5 text-sm text-slate-400 mb-8 flex-wrap">
-            <Link href="/" className="hover:text-violet-600 transition-colors">首页</Link>
-            <ChevronRight className="w-3.5 h-3.5" />
-            <Link href="/examples" className="hover:text-violet-600 transition-colors">简历范文库</Link>
-            <ChevronRight className="w-3.5 h-3.5" />
-            <span className="text-slate-600 font-medium">{example.role}</span>
-          </nav>
+      <main className="flex-grow pt-24 pb-16">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+          <p className="text-sm text-slate-400">
+            <Link href="/" className="hover:text-slate-600">首页</Link>
+            <span className="px-1.5">/</span>
+            <Link href="/examples" className="hover:text-slate-600">简历范文库</Link>
+            <span className="px-1.5">/</span>
+            <span className="text-slate-600">{example.role}</span>
+          </p>
 
-          <article className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8 items-start">
+          <article className="mt-6 grid grid-cols-1 items-start gap-10 lg:grid-cols-[minmax(0,1fr)_260px]">
             <div className="min-w-0">
-              <header className="mb-8">
-                <div className="flex flex-wrap items-center gap-3 mb-4">
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-violet-50 px-3 py-1 text-xs font-semibold text-violet-600">
-                    <BookOpen className="w-3.5 h-3.5" />
-                    {example.role}范文
-                  </span>
-                  <span className="flex items-center gap-1 text-xs text-slate-400">
-                    <Calendar className="w-3.5 h-3.5" />
-                    {example.updatedAt}
-                  </span>
-                </div>
-                <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 leading-tight">
-                  {example.title}
-                </h1>
-                <p className="text-base text-slate-500 leading-relaxed mt-4">{example.description}</p>
-                <div className="flex flex-wrap gap-2 mt-4">
-                  {example.keywords.map((keyword) => (
-                    <span key={keyword} className="inline-flex items-center gap-1 rounded-md bg-white px-2.5 py-1 text-xs text-slate-500 border border-slate-100">
-                      <Tags className="w-3 h-3" />
-                      {keyword}
-                    </span>
-                  ))}
-                </div>
-              </header>
+              <p className="text-sm text-slate-500">{example.role}范文 · {example.updatedAt}</p>
+              <h1 className="mt-2 text-2xl font-semibold tracking-tight text-slate-900 sm:text-[28px]">
+                {example.title}
+              </h1>
+              <p className="mt-3 text-sm leading-7 text-slate-600">{example.description}</p>
+              <p className="mt-3 text-sm leading-6 text-slate-500">
+                {example.keywords.join('、')}
+              </p>
 
-              <section className="rounded-2xl border border-slate-100 bg-white p-6 md:p-8 shadow-sm">
-                <h2 className="text-2xl font-extrabold text-slate-900 mb-5">匿名示例简历</h2>
-                <div className="article-prose" dangerouslySetInnerHTML={{ __html: example.sampleResumeHtml }} />
+              <section className="mt-8">
+                <h2 className="text-base font-semibold text-slate-900">匿名示例简历</h2>
+                <div className="article-prose mt-3" dangerouslySetInnerHTML={{ __html: example.sampleResumeHtml }} />
               </section>
 
-              <section className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
-                  <div className="flex items-center gap-2 font-extrabold text-slate-900">
-                    <CheckCircle2 className="w-5 h-5 text-violet-500" />
-                    写作建议
-                  </div>
-                  <ul className="mt-4 space-y-3 text-sm leading-6 text-slate-600">
-                    {example.writingTips.map((tip) => (
-                      <li key={tip}>· {tip}</li>
-                    ))}
-                  </ul>
-                </div>
-                <div className="rounded-2xl border border-amber-100 bg-amber-50 p-6">
-                  <div className="flex items-center gap-2 font-extrabold text-slate-900">
-                    <TriangleAlert className="w-5 h-5 text-amber-500" />
-                    常见错误
-                  </div>
-                  <ul className="mt-4 space-y-3 text-sm leading-6 text-slate-600">
-                    {example.commonMistakes.map((mistake) => (
-                      <li key={mistake}>· {mistake}</li>
-                    ))}
-                  </ul>
-                </div>
-              </section>
-
-              <section className="mt-8 rounded-2xl border border-slate-100 bg-white p-6 md:p-8 shadow-sm">
-                <div className="flex items-center gap-2 text-slate-900">
-                  <HelpCircle className="w-5 h-5 text-violet-500" />
-                  <h2 className="text-2xl font-extrabold">常见问题</h2>
-                </div>
-                <div className="mt-6 space-y-5">
-                  {example.faq.map((item) => (
-                    <div key={item.question} className="border-b border-slate-100 pb-5 last:border-b-0 last:pb-0">
-                      <h3 className="font-bold text-slate-900">{item.question}</h3>
-                      <p className="text-sm leading-7 text-slate-600 mt-2">{item.answer}</p>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            </div>
-
-            <aside className="space-y-5 lg:sticky lg:top-28">
-              <section className="rounded-2xl border border-violet-100 bg-white p-6 shadow-sm">
-                <h2 className="font-extrabold text-slate-900">适合人群</h2>
-                <ul className="mt-4 space-y-3 text-sm leading-6 text-slate-600">
-                  {example.audience.map((item) => (
-                    <li key={item}>· {item}</li>
+              <section className="mt-10">
+                <h2 className="text-base font-semibold text-slate-900">写作建议</h2>
+                <ul className="mt-3 space-y-2 text-sm leading-7 text-slate-600">
+                  {example.writingTips.map((tip) => (
+                    <li key={tip}>{tip}</li>
                   ))}
                 </ul>
               </section>
-              <section className="rounded-2xl border border-violet-100 bg-violet-50 p-6">
-                <h2 className="font-extrabold text-slate-900">下一步</h2>
-                <div className="mt-4 space-y-3">
-                  <Link href="/ai" className="flex items-center justify-between rounded-xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white hover:bg-violet-700 transition-colors">
-                    用 AI 生成我的简历
-                    <ArrowRight className="w-4 h-4" />
-                  </Link>
+
+              <section className="mt-10">
+                <h2 className="text-base font-semibold text-slate-900">常见错误</h2>
+                <ul className="mt-3 space-y-2 text-sm leading-7 text-slate-600">
+                  {example.commonMistakes.map((mistake) => (
+                    <li key={mistake}>{mistake}</li>
+                  ))}
+                </ul>
+              </section>
+
+              <dl className="mt-12 space-y-5 border-t border-slate-200 pt-8">
+                {example.faq.map((item) => (
+                  <div key={item.question}>
+                    <dt className="text-sm font-medium text-slate-800">{item.question}</dt>
+                    <dd className="mt-1 text-sm leading-6 text-slate-500">{item.answer}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+
+            <aside className="space-y-8 lg:sticky lg:top-28">
+              <section>
+                <h2 className="text-sm font-medium text-slate-800">适合人群</h2>
+                <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-600">
+                  {example.audience.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </section>
+              <section>
+                <h2 className="text-sm font-medium text-slate-800">下一步</h2>
+                <div className="mt-3 space-y-3">
+                  <Button asChild className="bg-violet-600 text-white hover:bg-violet-700">
+                    <Link href="/ai">生成我的简历</Link>
+                  </Button>
                   {example.relatedTemplateSlugs.map((templateSlug) => (
-                    <Link key={templateSlug} href={`/templates/${templateSlug}`} className="block rounded-xl bg-white px-4 py-3 text-sm font-semibold text-slate-700 hover:text-violet-600 transition-colors">
+                    <Link
+                      key={templateSlug}
+                      href={`/templates/${templateSlug}`}
+                      className="block text-sm text-slate-700 underline decoration-slate-300 underline-offset-2 hover:text-violet-700"
+                    >
                       {templateSlug}简历模板
                     </Link>
                   ))}

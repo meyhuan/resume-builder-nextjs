@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import type { ReactElement } from 'react';
 import Link from 'next/link';
-import { ArrowRight, BookOpen, ChevronRight, Sparkles, Tags } from 'lucide-react';
 import { LandingFooter } from '@/components/landing/LandingFooter';
 import { LandingHeader } from '@/components/landing/LandingHeader';
 import { getAllResumeExamples } from '@/lib/examples/resume-examples';
@@ -46,59 +45,45 @@ export default function ExamplesPage(): ReactElement {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F8FAFC] selection:bg-fuchsia-200">
+    <div className="min-h-screen flex flex-col bg-[#F8FAFC]">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionSchema) }} />
       <LandingHeader forceSolid />
 
-      <main className="flex-grow pt-32 pb-20">
+      <main className="flex-grow pt-24 pb-16">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <section className="text-center space-y-5">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white border border-violet-100 rounded-full shadow-sm">
-              <BookOpen className="w-4 h-4 text-violet-500" />
-              <span className="text-sm font-semibold text-violet-600">AI 新职业范文库</span>
-            </div>
-            <h1 className="text-3xl md:text-5xl font-extrabold text-slate-900 tracking-tight">
-              看范文，知道
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-fuchsia-500"> 简历该写什么</span>
+          <section>
+            <h1 className="text-2xl font-semibold tracking-tight text-slate-900 sm:text-[28px]">
+              简历范文
             </h1>
-            <p className="text-base md:text-lg text-slate-500 max-w-3xl mx-auto leading-relaxed">
-              模板解决排版，范文解决内容。这里优先整理 AI 产品经理、AIGC 运营、提示词工程师、RAG 工程师等新职业的匿名简历示例。
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
+              模板解决排版，范文解决内容。优先整理 AI 产品经理、AIGC 运营、提示词工程师、RAG 工程师等新职业的匿名示例。
+              <Link href="/ai" className="ml-1 text-slate-700 underline decoration-slate-300 underline-offset-2 hover:text-violet-700">
+                生成我的简历
+              </Link>
+              <span className="text-slate-400"> · </span>
+              <Link href="/templates" className="text-slate-700 underline decoration-slate-300 underline-offset-2 hover:text-violet-700">
+                看岗位模板
+              </Link>
             </p>
-            <div className="flex flex-wrap justify-center gap-3">
-              <Link href="/ai" className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-violet-600 text-white font-semibold shadow-lg shadow-violet-500/20 hover:bg-violet-700 transition-colors">
-                用 AI 生成我的简历
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-              <Link href="/templates" className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white text-slate-700 font-semibold border border-slate-200 hover:border-violet-200 hover:text-violet-600 transition-colors">
-                查看岗位模板
-              </Link>
-            </div>
           </section>
 
-          <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mt-12">
+          <section className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {examples.map((example) => (
               <Link
                 key={example.slug}
                 href={`/examples/${example.slug}`}
-                className="group flex flex-col rounded-2xl border border-slate-100 bg-white p-6 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all"
+                className="group flex flex-col rounded-xl border border-slate-200 bg-white p-5 hover:border-slate-300"
               >
-                <div className="flex items-center justify-between gap-3">
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-violet-50 px-3 py-1 text-xs font-semibold text-violet-600">
-                    <Sparkles className="w-3.5 h-3.5" />
-                    {example.role}
-                  </span>
-                  <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-violet-500 transition-colors" />
-                </div>
-                <h2 className="text-lg font-extrabold text-slate-900 mt-4 group-hover:text-violet-600 transition-colors">
+                <span className="text-xs text-slate-500">{example.role}</span>
+                <h2 className="mt-2 text-base font-semibold text-slate-900 group-hover:text-violet-700">
                   {example.title}
                 </h2>
-                <p className="text-sm text-slate-500 leading-relaxed mt-3 flex-1">
+                <p className="mt-2 flex-1 text-sm leading-6 text-slate-500">
                   {example.description}
                 </p>
-                <div className="flex flex-wrap gap-2 mt-5 pt-4 border-t border-slate-100">
+                <div className="mt-4 flex flex-wrap gap-1.5 border-t border-slate-100 pt-3">
                   {example.keywords.slice(0, 3).map((keyword) => (
-                    <span key={keyword} className="inline-flex items-center gap-1 rounded-md bg-slate-50 px-2 py-1 text-xs text-slate-500">
-                      <Tags className="w-3 h-3" />
+                    <span key={keyword} className="rounded-md bg-slate-50 px-2 py-0.5 text-xs text-slate-500">
                       {keyword}
                     </span>
                   ))}

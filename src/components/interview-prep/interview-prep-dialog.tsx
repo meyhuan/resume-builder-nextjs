@@ -384,7 +384,6 @@ export function InterviewPrepDialog(props: InterviewPrepDialogProps): ReactEleme
   const boundResumeRef = useRef(boundResume);
   const intendedPosition = (isEditorBound ? editorResume : boundResume)?.jobIntention?.position?.trim() ?? '';
   const hasJd = jobDescription.trim().length > 0;
-  const selectedOption = resumeOptions.find((item) => item.id === selectedResumeId);
   const historyFilterOptions = Array.from(
     new Map(history.map((item) => [item.resumeId, item.resumeTitle || '未命名简历'])).entries(),
   );
@@ -421,18 +420,28 @@ export function InterviewPrepDialog(props: InterviewPrepDialogProps): ReactEleme
   }, [props.resumeOptions]);
 
   useEffect(() => {
-    if (props.resumeId) setSelectedResumeId(props.resumeId);
-  }, [props.resumeId]);
+    if (resumeOptions.length === 0) return;
+    const selectedIsValid = selectedResumeId
+      && resumeOptions.some((option) => option.id === selectedResumeId);
+    if (selectedIsValid) return;
+    if (props.resumeId && resumeOptions.some((option) => option.id === props.resumeId)) {
+      setSelectedResumeId(props.resumeId);
+      return;
+    }
+    if (resumeOptions.length === 1) {
+      setSelectedResumeId(resumeOptions[0].id);
+    }
+  }, [props.resumeId, resumeOptions, selectedResumeId]);
 
   useEffect(() => {
     if (!open) return;
     void loadHistory();
-    if (!lockResume && resolveInterviewPrepAccountId()) {
+    if (resolveInterviewPrepAccountId()) {
       void loadResumeOptions().catch(() => {
         setError('无法加载简历列表');
       });
     }
-  }, [open, lockResume, loadHistory, loadResumeOptions]);
+  }, [open, loadHistory, loadResumeOptions]);
 
   useEffect(() => {
     if (!open) return;
@@ -503,29 +512,36 @@ export function InterviewPrepDialog(props: InterviewPrepDialogProps): ReactEleme
     resumeId: string;
     resumeTitle: string;
   } | 'empty' | 'pick'> => {
-    if (boundResumeRef.current && (lockResume || isEditorBound)) {
-      const resume = boundResumeRef.current;
-      return {
-        resume,
-        resumeId: props.resumeId || resume.id || 'local',
-        resumeTitle: props.resumeTitle || resume.name || '未命名简历',
-      };
+    const selectedId = selectedResumeIdRef.current || props.resumeId || '';
+    if (boundResumeRef.current) {
+      const bound = boundResumeRef.current;
+      const usesBoundResume = !selectedId
+        || selectedId === props.resumeId
+        || selectedId === bound.id;
+      if (usesBoundResume) {
+        return {
+          resume: bound,
+          resumeId: props.resumeId || bound.id || 'local',
+          resumeTitle: props.resumeTitle || bound.name || '未命名简历',
+        };
+      }
     }
 
     const options = resumeOptions.length > 0 ? resumeOptions : await loadResumeOptions();
     if (options.length === 0) return 'empty';
 
-    let targetId = selectedResumeIdRef.current || props.resumeId || '';
-    if (lockResume && props.resumeId) targetId = props.resumeId;
+    let targetId = selectedId;
     if (!targetId && options.length === 1) targetId = options[0].id;
     if (!targetId) return 'pick';
 
     const option = options.find((item) => item.id === targetId);
-    if (!option) return options.length === 1 ? {
-      ...(await fetchInterviewPrepResume(options[0].id)),
-      resumeId: options[0].id,
-      resumeTitle: options[0].title,
-    } : 'pick';
+    if (!option) {
+      return options.length === 1 ? {
+        ...(await fetchInterviewPrepResume(options[0].id)),
+        resumeId: options[0].id,
+        resumeTitle: options[0].title,
+      } : 'pick';
+    }
 
     if (boundResumeRef.current && boundResumeRef.current.id === targetId) {
       return {
@@ -541,7 +557,7 @@ export function InterviewPrepDialog(props: InterviewPrepDialogProps): ReactEleme
       resumeId: targetId,
       resumeTitle: fetched.title || option.title,
     };
-  }, [isEditorBound, loadResumeOptions, lockResume, props.resumeId, props.resumeTitle, resumeOptions]);
+  }, [loadResumeOptions, props.resumeId, props.resumeTitle, resumeOptions]);
 
   const runGenerate = useCallback(async (forcedResumeId?: string): Promise<void> => {
     const draft = loadInterviewPrepDraft();
@@ -672,35 +688,21 @@ export function InterviewPrepDialog(props: InterviewPrepDialogProps): ReactEleme
     URL.revokeObjectURL(url);
   };
 
-  const header = (
-    <div className={props.embedded ? 'px-6 pb-0 pt-6' : undefined}>
-      {props.embedded ? (
-        <>
-          <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-900">
-            <ClipboardList className="h-5 w-5 text-violet-600" />
-            面试准备
-          </h2>
-          <p className="mt-1 text-sm text-slate-500">
-            根据你的简历生成打招呼语、自我介绍和面试题。粘贴 JD 会更针对目标岗位。未登录也可先填写。
-          </p>
-        </>
-      ) : (
-        <DialogHeader className="px-6 pb-0 pt-6">
-          <DialogTitle className="flex items-center gap-2">
-            <ClipboardList className="h-5 w-5 text-violet-600" />
-            面试准备
-          </DialogTitle>
-          <DialogDescription>
-            根据当前简历生成打招呼语、自我介绍和面试题。粘贴 JD 会更针对目标岗位。
-          </DialogDescription>
-        </DialogHeader>
-      )}
-    </div>
+  const header = props.embedded ? null : (
+    <DialogHeader className="px-6 pb-0 pt-6">
+      <DialogTitle className="flex items-center gap-2">
+        <ClipboardList className="h-5 w-5 text-violet-600" />
+        面试准备
+      </DialogTitle>
+      <DialogDescription>
+        根据当前简历生成打招呼语、自我介绍和面试题。粘贴 JD 会更针对目标岗位。
+      </DialogDescription>
+    </DialogHeader>
   );
 
   const body = (
     <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'new' | 'history')} className="flex min-h-0 flex-1 flex-col gap-0">
-      <div className="px-6 pt-3">
+      <div className={props.embedded ? 'px-6 pt-4' : 'px-6 pt-3'}>
         <TabsList className="w-full">
           <TabsTrigger value="new" className="flex-1" disabled={isGenerating}>新准备</TabsTrigger>
           <TabsTrigger value="history" className="flex-1 gap-1.5" disabled={isGenerating}>
@@ -721,7 +723,7 @@ export function InterviewPrepDialog(props: InterviewPrepDialogProps): ReactEleme
           />
         ) : !result ? (
           <div className="space-y-4 px-6 py-4">
-            {!lockResume && resumeOptions.length > 1 ? (
+            {resumeOptions.length > 0 && !emptyResumeHint ? (
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-slate-500">使用哪份简历</label>
                 <select
@@ -729,18 +731,14 @@ export function InterviewPrepDialog(props: InterviewPrepDialogProps): ReactEleme
                   onChange={(event) => setSelectedResumeId(event.target.value)}
                   className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-800 focus:border-violet-300 focus:outline-none focus:ring-2 focus:ring-violet-100"
                 >
-                  <option value="">生成时再选</option>
+                  {resumeOptions.length > 1 && !resumeOptions.some((option) => option.id === selectedResumeId) ? (
+                    <option value="">请选择简历</option>
+                  ) : null}
                   {resumeOptions.map((option) => (
                     <option key={option.id} value={option.id}>{option.title}</option>
                   ))}
                 </select>
               </div>
-            ) : null}
-            {lockResume && (props.resumeTitle || selectedOption?.title) ? (
-              <p className="text-xs text-slate-500">将使用简历「{props.resumeTitle || selectedOption?.title}」</p>
-            ) : null}
-            {!lockResume && resumeOptions.length === 1 ? (
-              <p className="text-xs text-slate-500">将使用简历「{resumeOptions[0].title}」</p>
             ) : null}
             <textarea
               value={jobDescription}
@@ -919,9 +917,7 @@ export function InterviewPrepDialog(props: InterviewPrepDialogProps): ReactEleme
         onClose={handleLoginClose}
         onSuccess={() => {
           handleLoginSuccess();
-          if (!lockResume) {
-            void loadResumeOptions().catch(() => undefined);
-          }
+          void loadResumeOptions().catch(() => undefined);
         }}
         subtitle={LOGIN_SUBTITLE}
       />
@@ -951,7 +947,7 @@ export function InterviewPrepDialog(props: InterviewPrepDialogProps): ReactEleme
   if (props.embedded) {
     return (
       <>
-        <section className="flex min-h-[520px] flex-col overflow-hidden rounded-2xl border border-violet-100 bg-white shadow-sm">
+        <section className="flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white">
           {header}
           {body}
         </section>
