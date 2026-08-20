@@ -798,10 +798,14 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
         throw new Error(errorData.details || 'PDF generation failed')
       }
       const blob: Blob = await response.blob()
+      const autoOptimized = response.headers.get('X-Pdf-Auto-Optimized') === '1'
       const url: string = window.URL.createObjectURL(blob)
       setPdfBlob(blob)
       setPdfBlobUrl(url)
       setShowPreview(true)
+      if (autoOptimized) {
+        toast.message('作品集图片已自动优化，正在保持导出清晰度与文件大小平衡')
+      }
     } catch (e) {
       console.error('PDF generation failed:', e)
       toast.error(e instanceof Error ? `PDF 生成失败: ${e.message}` : 'PDF 生成失败，请重试')
@@ -879,7 +883,13 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
         body: form,
       })
       if (!exportRes.ok) {
-        const errorData = await exportRes.json()
+        const responseText = await exportRes.text()
+        let errorData: { error?: string; quotaExceeded?: boolean; fileTooLarge?: boolean; fileBytes?: number; maxBytes?: number } = {}
+        try {
+          errorData = JSON.parse(responseText) as typeof errorData
+        } catch {
+          // Nginx can return HTML before Next.js receives an oversized request.
+        }
         if (exportRes.status === 401) {
           backupEditorDraft('stale-auth-before-login')
           logout()
@@ -894,6 +904,8 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
           entry: 'pc_export_preview',
           stage: 'create_export_record',
           statusCode: exportRes.status,
+          pdfBytes: pdfBlob.size,
+          fileTooLarge: Boolean(errorData.fileTooLarge || exportRes.status === 413),
           failureReason: errorData.error || (errorData.quotaExceeded ? 'quota_exceeded' : 'export_http_error'),
         })
         if (errorData.quotaExceeded) {
@@ -906,7 +918,9 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
           })
           setShowUpgrade(true, 'pdf-export')
         } else {
-          toast.error(errorData.error || '导出次数已用完，开通会员可继续导出 PDF')
+          toast.error(errorData.fileTooLarge
+            ? errorData.error || 'PDF 文件较大，请减少作品集图片后重试'
+            : errorData.error || '导出保存失败，请重试')
         }
         return
       }

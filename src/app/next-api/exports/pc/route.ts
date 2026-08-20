@@ -8,6 +8,7 @@ import { checkQuota, peekQuota } from '@/lib/quota/quota-checker';
 import { sanitizeExportFileName } from '@/lib/export-file-name';
 
 const OSS_UPLOAD_TIMEOUT_MS = 30_000;
+const MAX_STORED_PDF_BYTES = 45 * 1024 * 1024;
 
 function getStringField(form: FormData, key: string): string {
   const value = form.get(key);
@@ -71,6 +72,20 @@ export async function POST(req: Request): Promise<NextResponse> {
     if (!resumeId) {
       logStage(requestId, 'missing-resume-id', { elapsedMs: Date.now() - startedAt });
       return NextResponse.json({ error: 'Missing resumeId' }, { status: 400 });
+    }
+    if (file.size > MAX_STORED_PDF_BYTES) {
+      logStage(requestId, 'pdf-too-large', {
+        resumeId,
+        fileBytes: file.size,
+        maxBytes: MAX_STORED_PDF_BYTES,
+        elapsedMs: Date.now() - startedAt,
+      });
+      return NextResponse.json({
+        error: '这份 PDF 图片较多且文件较大，请减少作品集图片后重试。',
+        fileTooLarge: true,
+        fileBytes: file.size,
+        maxBytes: MAX_STORED_PDF_BYTES,
+      }, { status: 413 });
     }
     logStage(requestId, 'parsed-form', {
       resumeId,
