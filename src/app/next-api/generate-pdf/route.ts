@@ -21,6 +21,9 @@ import { closeSharedPuppeteerPage, newSharedPuppeteerPage } from '@/lib/puppetee
 
 const PDF_RENDER_TIMEOUT_MS = 45_000;
 const ASSET_READY_TIMEOUT_MS = 8_000;
+const PDF_AUTO_OPTIMIZE_THRESHOLD_BYTES = 25 * 1024 * 1024;
+const OSS_EXPORT_IMAGE_WIDTH = 1600;
+const OSS_EXPORT_IMAGE_QUALITY = 75;
 
 async function waitForDocumentAssets(page: Page): Promise<void> {
   const failedPortfolioImages = await page.evaluate(async (timeoutMs: number): Promise<string[]> => {
@@ -43,6 +46,30 @@ async function waitForDocumentAssets(page: Page): Promise<void> {
   if (failedPortfolioImages.length > 0) {
     throw new Error(`Portfolio images failed to load: ${failedPortfolioImages.length}`);
   }
+}
+
+async function optimizeOssImagesForPdf(page: Page): Promise<number> {
+  return page.evaluate(({ width, quality }) => {
+    let optimizedCount = 0;
+    for (const image of Array.from(document.images)) {
+      try {
+        const source = image.currentSrc || image.src;
+        const url = new URL(source);
+        if (!url.hostname.endsWith('.aliyuncs.com')) continue;
+
+        url.searchParams.set(
+          'x-oss-process',
+          `image/resize,w_${width}/quality,q_${quality}/format,webp`,
+        );
+        image.removeAttribute('srcset');
+        image.src = url.toString();
+        optimizedCount += 1;
+      } catch {
+        // Keep non-OSS or malformed image URLs unchanged.
+      }
+    }
+    return optimizedCount;
+  }, { width: OSS_EXPORT_IMAGE_WIDTH, quality: OSS_EXPORT_IMAGE_QUALITY });
 }
 
 export async function POST(req: Request) {
@@ -85,6 +112,7 @@ export async function POST(req: Request) {
     let page: Page | undefined;
     try {
       page = await newSharedPuppeteerPage();
+      const pdfPage = page;
       page.setDefaultNavigationTimeout(PDF_RENDER_TIMEOUT_MS);
       page.setDefaultTimeout(PDF_RENDER_TIMEOUT_MS);
       
@@ -102,25 +130,44 @@ export async function POST(req: Request) {
         await page.evaluate(getClientPaginationScript());
       }
       
-      // Generate PDF
-      const pdf = await page.pdf({
+      const createPdf = () => pdfPage.pdf({
         printBackground: true,
         displayHeaderFooter: false,
         preferCSSPageSize: true,
       });
+      let pdf = await createPdf();
+      let autoOptimized = false;
+
+      // Large portfolio PDFs can exceed the upload gateway limit even when each
+      // original image is reasonable. Re-render only those PDFs with OSS image
+      // processing, keeping normal exports untouched.
+      if (pdf.length > PDF_AUTO_OPTIMIZE_THRESHOLD_BYTES) {
+        const optimizedImageCount = await optimizeOssImagesForPdf(page);
+        if (optimizedImageCount > 0) {
+          await waitForDocumentAssets(page);
+          pdf = await createPdf();
+          autoOptimized = true;
+          console.log('[generate-pdf] auto-optimized-images', {
+            optimizedImageCount,
+            bytes: pdf.length,
+          });
+        }
+      }
 
       if (returnUrl) {
         const token = await savePdfTemp(Buffer.from(pdf), safeFileName)
         const url = `/next-api/pdf-file/${token}`
-        console.log('[generate-pdf] return PDF temp URL', { token, url, elapsedMs: Date.now() - startedAt })
+        console.log('[generate-pdf] return PDF temp URL', { token, url, autoOptimized, elapsedMs: Date.now() - startedAt })
         return NextResponse.json({ url })
       }
 
-      console.log('[generate-pdf] done', { bytes: pdf.length, elapsedMs: Date.now() - startedAt });
+      console.log('[generate-pdf] done', { bytes: pdf.length, autoOptimized, elapsedMs: Date.now() - startedAt });
       return new NextResponse(pdf as unknown as BodyInit, {
         headers: {
           'Content-Type': 'application/pdf',
           'Content-Disposition': buildExportContentDisposition('attachment', safeFileName, 'pdf'),
+          'X-Pdf-Size-Bytes': String(pdf.length),
+          'X-Pdf-Auto-Optimized': autoOptimized ? '1' : '0',
         },
       });
     } finally {
