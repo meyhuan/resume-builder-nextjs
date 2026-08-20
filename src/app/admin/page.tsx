@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Crown, Search, RotateCcw, User, CheckCircle, AlertCircle, LogIn, Shield, Copy, FileText, ChevronDown, ChevronUp } from 'lucide-react';
+import { Crown, Search, RotateCcw, User, CheckCircle, AlertCircle, LogIn, Shield, Copy, FileText, ChevronDown, ChevronUp, Download, Minus, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getPublicJavaApiBaseUrl } from '@/lib/java-api-base';
 import { clearStoredAdminPassword, getStoredAdminPassword, setStoredAdminPassword } from '@/lib/admin-auth';
@@ -37,7 +37,6 @@ interface CopySourceUser {
 interface VipFormData {
   vipType: number;
   expiryDate: string;
-  freeExportCount: number;
 }
 
 type CopyMode = 'to-user' | 'to-current';
@@ -75,10 +74,11 @@ export default function AdminPage(): React.ReactElement {
   const [targetUserId, setTargetUserId] = useState('');
   const [copyLoading, setCopyLoading] = useState(false);
   const [copyMessage, setCopyMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [exportCount, setExportCount] = useState(0);
+  const [exportCountLoading, setExportCountLoading] = useState(false);
   const [vipForm, setVipForm] = useState<VipFormData>({
     vipType: 1,
     expiryDate: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 16),
-    freeExportCount: 0,
   });
 
   useEffect(() => {
@@ -132,7 +132,9 @@ export default function AdminPage(): React.ReactElement {
         setMessage({ type: 'error', text: json.message || '用户未找到' });
         return;
       }
-      setUser(json.data as UserInfo);
+      const foundUser = json.data as UserInfo;
+      setUser(foundUser);
+      setExportCount(Math.max(0, foundUser.freeExportCount ?? 0));
       setShowVipForm(false);
     } catch (err) {
       setMessage({ type: 'error', text: '搜索失败: ' + (err instanceof Error ? err.message : '未知错误') });
@@ -152,7 +154,7 @@ export default function AdminPage(): React.ReactElement {
         body: JSON.stringify({
           vipType: vipForm.vipType,
           expiryDate: vipForm.expiryDate,
-          freeExportCount: vipForm.freeExportCount,
+          freeExportCount: user.freeExportCount ?? 0,
         }),
       });
       const json = await res.json();
@@ -382,6 +384,37 @@ export default function AdminPage(): React.ReactElement {
     }
   }
 
+  async function updateExportCount(): Promise<void> {
+    if (!user) return;
+    if (!Number.isInteger(exportCount) || exportCount < 0) {
+      setMessage({ type: 'error', text: '剩余导出次数必须是非负整数' });
+      return;
+    }
+
+    setExportCountLoading(true);
+    setMessage(null);
+    try {
+      const res = await fetch(`${JAVA_API}/admin/users/${user.id}/export-count`, {
+        method: 'PUT',
+        headers: adminHeaders(),
+        body: JSON.stringify({ freeExportCount: exportCount }),
+      });
+      const json = await res.json();
+      if (!res.ok || json.status !== 100) {
+        setMessage({ type: 'error', text: json.result || json.message || '导出次数保存失败' });
+        return;
+      }
+      const savedCount = Number(json.data?.freeExportCount ?? exportCount);
+      setUser((current) => current ? { ...current, freeExportCount: savedCount } : current);
+      setExportCount(savedCount);
+      setMessage({ type: 'success', text: `剩余导出次数已更新为 ${savedCount} 次` });
+    } catch (err) {
+      setMessage({ type: 'error', text: '导出次数保存失败: ' + (err instanceof Error ? err.message : '未知错误') });
+    } finally {
+      setExportCountLoading(false);
+    }
+  }
+
   function getVipStatusText(vipStatus: number, vipType: number): string {
     if (vipStatus === 0) return '非VIP';
     return `VIP (${VIP_TYPES[vipType] || '未知'})`;
@@ -504,13 +537,69 @@ export default function AdminPage(): React.ReactElement {
                 ['OpenID', <span key="o" className="font-mono text-xs">{user.openid}</span>],
                 ['VIP 类型', VIP_TYPES[user.vipType] || '-'],
                 ['到期时间', user.vipExpireTime ? new Date(user.vipExpireTime).toLocaleString('zh-CN') : '无'],
-                ['免费导出次数', String(user.freeExportCount ?? '-')],
               ] as [string, React.ReactNode][]).map(([label, val]) => (
                 <div key={label} className="flex justify-between py-2 border-b border-slate-100">
                   <span className="text-slate-500">{label}</span>
                   <span className="font-medium text-slate-700">{val}</span>
                 </div>
               ))}
+            </div>
+
+            <div className="mb-6 border-y border-slate-100 py-5">
+              <div className="mb-3 flex items-center gap-2">
+                <Download className="h-4 w-4 text-violet-500" />
+                <div>
+                  <h4 className="text-sm font-semibold text-slate-700">剩余导出次数</h4>
+                  <p className="text-xs text-slate-400">仅修改单次导出余额，不影响会员状态</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-[40px_minmax(56px,1fr)_40px_48px] gap-2 sm:grid-cols-[40px_minmax(80px,1fr)_40px_48px_auto]">
+                <button
+                  type="button"
+                  onClick={() => setExportCount((count) => Math.max(0, count - 1))}
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:border-violet-300 hover:text-violet-600"
+                  title="减少 1 次"
+                  aria-label="减少 1 次导出"
+                >
+                  <Minus className="h-4 w-4" />
+                </button>
+                <input
+                  type="number"
+                  min={0}
+                  step={1}
+                  value={exportCount}
+                  onChange={(event) => {
+                    const nextCount = Number(event.target.value);
+                    setExportCount(Number.isFinite(nextCount) ? Math.max(0, nextCount) : 0);
+                  }}
+                  className="h-10 min-w-0 flex-1 rounded-lg border border-slate-200 bg-slate-50 px-3 text-center text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  aria-label="剩余导出次数"
+                />
+                <button
+                  type="button"
+                  onClick={() => setExportCount((count) => count + 1)}
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:border-violet-300 hover:text-violet-600"
+                  title="增加 1 次"
+                  aria-label="增加 1 次导出"
+                >
+                  <Plus className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setExportCount((count) => count + 5)}
+                  className="h-10 shrink-0 rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-600 hover:border-violet-300 hover:text-violet-600"
+                >
+                  +5
+                </button>
+                <button
+                  type="button"
+                  onClick={updateExportCount}
+                  disabled={exportCountLoading || exportCount === (user.freeExportCount ?? 0)}
+                  className="col-span-4 h-10 rounded-lg bg-violet-600 px-4 text-sm font-medium text-white hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-50 sm:col-span-1"
+                >
+                  {exportCountLoading ? '保存中...' : '保存次数'}
+                </button>
+              </div>
             </div>
 
             <div className="flex gap-3">
@@ -578,16 +667,6 @@ export default function AdminPage(): React.ReactElement {
                     type="datetime-local"
                     value={vipForm.expiryDate}
                     onChange={(e) => setVipForm((f) => ({ ...f, expiryDate: e.target.value }))}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs text-slate-500 mb-1">免费导出次数</label>
-                  <input
-                    type="number"
-                    min={0}
-                    value={vipForm.freeExportCount}
-                    onChange={(e) => setVipForm((f) => ({ ...f, freeExportCount: Number(e.target.value) }))}
                     className="w-full px-3 py-2 border border-slate-200 rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
                   />
                 </div>
