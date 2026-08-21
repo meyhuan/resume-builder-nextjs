@@ -11,6 +11,8 @@ import Image from 'next/image';
 import { setCookie } from 'cookies-next';
 import { LegalDialog } from '@/components/legal/LegalDialog';
 import { track } from '@/lib/analytics';
+import { AutomationLoginForm } from '@/components/auth/AutomationLoginForm';
+import { useAutomationLoginMode } from '@/lib/automation-login-mode';
 
 type LegalTab = 'privacy' | 'terms';
 
@@ -23,8 +25,12 @@ interface WxLoginDialogProps {
 }
 
 type WxStatus = 'pending' | 'scanned' | 'confirming' | 'expired';
+type LoginMethod = 'wechat' | 'automation';
 
 export const WxLoginDialog: React.FC<WxLoginDialogProps> = ({ isOpen, onClose, onSuccess, closeable = true, subtitle }) => {
+  const automationEnabled = useAutomationLoginMode();
+  const [loginMethodOverride, setLoginMethodOverride] = useState<LoginMethod | null>(null);
+  const loginMethod: LoginMethod = loginMethodOverride || (automationEnabled ? 'automation' : 'wechat');
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<WxStatus>('pending');
   const [qrcodeUrl, setQrcodeUrl] = useState('');
@@ -196,7 +202,7 @@ export const WxLoginDialog: React.FC<WxLoginDialogProps> = ({ isOpen, onClose, o
   };
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && loginMethod === 'wechat') {
       getQr();
     } else {
       stopPolling();
@@ -207,10 +213,17 @@ export const WxLoginDialog: React.FC<WxLoginDialogProps> = ({ isOpen, onClose, o
       stopExpireCountdown();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen]);
+  }, [isOpen, loginMethod]);
 
   const handleRefresh = () => {
     getQr();
+  };
+
+  const handleAutomationSuccess = (): void => {
+    stopPolling();
+    stopExpireCountdown();
+    onSuccess?.();
+    onClose();
   };
 
   return (
@@ -241,11 +254,21 @@ export const WxLoginDialog: React.FC<WxLoginDialogProps> = ({ isOpen, onClose, o
               <span className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center text-white">
                 <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>
               </span>
-              微信扫码登录
+              {loginMethod === 'automation' ? '自动化账号登录' : '微信扫码登录'}
             </DialogTitle>
-            <p className="text-slate-500 mt-2 text-sm font-medium">{subtitle || '即刻解锁 AI 简历超能力'}</p>
+            <p className="text-slate-500 mt-2 text-sm font-medium">
+              {loginMethod === 'automation' ? '授权测试入口' : (subtitle || '即刻解锁 AI 简历超能力')}
+            </p>
           </div>
 
+          {loginMethod === 'automation' ? (
+            <div className="relative z-10 rounded-2xl border border-white/60 bg-white/50 p-6 shadow-inner backdrop-blur-sm">
+              <AutomationLoginForm
+                onSuccess={handleAutomationSuccess}
+                onUseWechat={() => setLoginMethodOverride('wechat')}
+              />
+            </div>
+          ) : (
           <div className="bg-white/50 rounded-2xl p-6 border border-white/60 shadow-inner flex flex-col items-center relative z-10 backdrop-blur-sm">
             {errorMessage ? (
               <div className="w-64 h-64 bg-rose-50/50 rounded-xl border border-rose-100 p-6 flex flex-col items-center justify-center text-center gap-3">
@@ -307,7 +330,17 @@ export const WxLoginDialog: React.FC<WxLoginDialogProps> = ({ isOpen, onClose, o
                 <div className="h-[20px]" /> /* Placeholder to maintain height */
               )}
             </div>
+            {automationEnabled && (
+              <button
+                type="button"
+                onClick={() => setLoginMethodOverride('automation')}
+                className="mt-3 text-xs font-medium text-slate-500 transition hover:text-violet-600"
+              >
+                使用自动化账号登录
+              </button>
+            )}
           </div>
+          )}
 
           <div className="mt-8 text-center relative z-10">
             <p className="text-xs text-slate-400">
