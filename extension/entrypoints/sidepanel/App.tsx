@@ -4,14 +4,20 @@ import {
   CircleAlert,
   ClipboardCheck,
   ExternalLink,
+  LogIn,
   LogOut,
   RefreshCw,
+  ShieldCheck,
   Sparkles,
 } from "lucide-react";
 import type { FillResult } from "../../lib/types";
 
 interface Status {
   connected: boolean;
+  onboardingAccepted: boolean;
+  autoConnectEnabled: boolean;
+  connectionIssue: "login_required" | "server_error" | null;
+  awaitingLogin: boolean;
   hasProfile: boolean;
   submitDetected: boolean;
   application: {
@@ -22,26 +28,34 @@ interface Status {
   } | null;
 }
 
-const WEBSITE = "https://aijianli.cn";
+const WEBSITE = import.meta.env.WXT_API_BASE_URL || "https://aijianli.cn";
 
 export default function App() {
   const [status, setStatus] = useState<Status>({
     connected: false,
+    onboardingAccepted: false,
+    autoConnectEnabled: false,
+    connectionIssue: null,
+    awaitingLogin: false,
     hasProfile: false,
     submitDetected: false,
     application: null,
   });
+  const [initialized, setInitialized] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState<FillResult | null>(null);
 
-  const refresh = useCallback(async () => {
-    const response = await browser.runtime.sendMessage({ type: "status" });
+  const refresh = useCallback(async (initialize = false) => {
+    const response = await browser.runtime.sendMessage({
+      type: initialize ? "initialize" : "status",
+    });
     if (!response?.error) setStatus(response as Status);
+    setInitialized(true);
   }, []);
 
   useEffect(() => {
-    void refresh();
+    void refresh(true);
     const timer = window.setInterval(() => void refresh(), 1500);
     return () => window.clearInterval(timer);
   }, [refresh]);
@@ -70,32 +84,110 @@ export default function App() {
     if (response) setResult(response);
   }
 
+  if (!initialized)
+    return (
+      <main className="shell">
+        <Brand />
+        <section className="loadingState">
+          <RefreshCw className="spin" size={22} />
+          <p>正在检查智简简历登录状态…</p>
+        </section>
+      </main>
+    );
+
+  if (!status.onboardingAccepted)
+    return (
+      <main className="shell">
+        <Brand />
+        <section className="hero onboarding">
+          <div className="heroIcon">
+            <ShieldCheck size={24} />
+          </div>
+          <h1>开始前，了解一下</h1>
+          <p>智简网申助手会在你操作时：</p>
+          <ul className="permissionList">
+            <li>同步你维护的网申资料，用于填写当前页面</li>
+            <li>创建投递记录，方便后续跟进状态</li>
+            <li>不会自动提交、处理验证码或读取浏览历史</li>
+          </ul>
+          <button
+            className="primary"
+            disabled={busy}
+            onClick={() => void action("accept-onboarding")}
+          >
+            {busy ? "正在检查登录状态…" : "同意并开始使用"}
+          </button>
+          <a className="textLink" href={`${WEBSITE}/privacy`} target="_blank">
+            查看隐私说明 <ExternalLink size={13} />
+          </a>
+          {error && <ErrorMessage text={error} />}
+        </section>
+        <Privacy />
+      </main>
+    );
+
   if (!status.connected)
     return (
       <main className="shell">
         <Brand />
         <section className="hero">
           <div className="heroIcon">
-            <Sparkles size={24} />
+            {status.autoConnectEnabled ? (
+              <LogIn size={24} />
+            ) : (
+              <Sparkles size={24} />
+            )}
           </div>
-          <h1>告别重复填写网申</h1>
+          <h1>
+            {status.autoConnectEnabled ? "登录后自动连接" : "自动连接已关闭"}
+          </h1>
           <p>
-            连接智简简历后，插件会读取你维护的网申资料。已登录网站时无需再次扫码。
+            {status.autoConnectEnabled
+              ? status.awaitingLogin
+                ? "正在等待你完成登录。登录成功后，无需返回授权，插件会自动获取网申资料。"
+                : "如果你已经登录智简简历，可以直接重新检测；否则先打开登录页。"
+              : "重新启用后，插件会优先复用智简简历的现有登录状态，不需要再次扫码。"}
           </p>
           <button
             className="primary"
             disabled={busy}
-            onClick={() => void action("connect")}
+            onClick={() =>
+              void action(
+                status.autoConnectEnabled
+                  ? status.connectionIssue === "login_required"
+                    ? "open-login"
+                    : "retry-silent-connect"
+                  : "enable-auto-connect",
+              )
+            }
           >
-            {busy ? "正在连接…" : "连接智简简历"}
+            {busy
+              ? "正在检测…"
+              : !status.autoConnectEnabled
+                ? "重新启用自动连接"
+                : status.connectionIssue === "login_required"
+                  ? "打开智简简历登录"
+                  : "重新检测登录状态"}
           </button>
+          {status.autoConnectEnabled && (
+            <button
+              className="secondary subtle"
+              disabled={busy}
+              onClick={() => void action("retry-silent-connect")}
+            >
+              我已登录，重新检测
+            </button>
+          )}
           <a
             className="textLink"
             href={`${WEBSITE}/dashboard/application-profile`}
             target="_blank"
           >
-            先去维护网申资料 <ExternalLink size={13} />
+            维护网申资料 <ExternalLink size={13} />
           </a>
+          {status.connectionIssue === "server_error" && (
+            <ErrorMessage text="暂时无法连接智简简历，请稍后重试。" />
+          )}
           {error && <ErrorMessage text={error} />}
         </section>
         <Privacy />

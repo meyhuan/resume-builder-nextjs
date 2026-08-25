@@ -15,6 +15,24 @@ export function hashCredential(value: string): string {
   return createHash("sha256").update(value, "utf8").digest("hex");
 }
 
+export async function issueExtensionAuthCode(input: {
+  userId: string;
+  redirectUri: string;
+  codeChallenge: string;
+}): Promise<string> {
+  const code = randomCredential();
+  await prisma.extensionAuthCode.create({
+    data: {
+      userId: input.userId,
+      codeHash: hashCredential(code),
+      codeChallenge: input.codeChallenge,
+      redirectUri: input.redirectUri,
+      expiresAt: new Date(Date.now() + 5 * 60 * 1000),
+    },
+  });
+  return code;
+}
+
 export function isAllowedExtensionRedirect(raw: string): boolean {
   try {
     const url = new URL(raw);

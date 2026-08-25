@@ -52,6 +52,9 @@ input {
   margin-top: 38px;
   text-align: center;
 }
+.hero.onboarding {
+  margin-top: 24px;
+}
 .heroIcon {
   display: grid;
   place-items: center;
@@ -72,6 +75,31 @@ input {
   color: #64748b;
   font-size: 13px;
   line-height: 1.7;
+}
+.permissionList {
+  margin: 0 0 20px;
+  padding: 14px 14px 14px 30px;
+  border: 1px solid #ede9fe;
+  border-radius: 13px;
+  background: #faf8ff;
+  color: #475569;
+  font-size: 12px;
+  line-height: 1.65;
+  text-align: left;
+}
+.permissionList li + li {
+  margin-top: 7px;
+}
+.loadingState {
+  display: grid;
+  place-items: center;
+  min-height: 240px;
+  color: #7c3aed;
+}
+.loadingState p {
+  margin-top: -65px;
+  color: #64748b;
+  font-size: 12px;
 }
 .card {
   margin-bottom: 12px;
@@ -116,6 +144,11 @@ input {
 .secondary {
   background: #ede9fe;
   color: #6d28d9;
+}
+.secondary.subtle {
+  margin-top: 9px;
+  background: #f8fafc;
+  color: #64748b;
 }
 .primary:disabled,
 .secondary:disabled {

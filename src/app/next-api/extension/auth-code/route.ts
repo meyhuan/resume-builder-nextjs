@@ -1,10 +1,8 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { requireCurrentUser } from "@/lib/current-user";
 import {
-  hashCredential,
+  issueExtensionAuthCode,
   isAllowedExtensionRedirect,
-  randomCredential,
 } from "@/features/extension-auth/server";
 
 export async function POST(request: Request) {
@@ -27,15 +25,10 @@ export async function POST(request: Request) {
         { status: 400 },
       );
     }
-    const code = randomCredential();
-    await prisma.extensionAuthCode.create({
-      data: {
-        userId: user.id,
-        codeHash: hashCredential(code),
-        codeChallenge,
-        redirectUri,
-        expiresAt: new Date(Date.now() + 5 * 60 * 1000),
-      },
+    const code = await issueExtensionAuthCode({
+      userId: user.id,
+      codeChallenge,
+      redirectUri,
     });
     return NextResponse.json({ code });
   } catch (error) {

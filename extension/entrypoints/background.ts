@@ -1,4 +1,5 @@
 import { buildFillActions } from "../lib/mapping";
+import { ExtensionAuthError, parseAuthCallback } from "../lib/auth";
 import type {
   ApplicationProfileEnvelope,
   FillAction,
@@ -12,6 +13,9 @@ interface ExtensionMessage {
   type: string;
   applicationId?: string;
 }
+
+const SILENT_RETRY_MS = 4_000;
+let authInFlight: Promise<Record<string, unknown>> | null = null;
 
 export default defineBackground(() => {
   browser.sidePanel
@@ -33,8 +37,16 @@ export default defineBackground(() => {
 });
 
 async function handleMessage(message: ExtensionMessage): Promise<unknown> {
-  if (message.type === "status") return getStatus();
-  if (message.type === "connect") return connect();
+  if (message.type === "initialize") {
+    await browser.storage.session.remove("silentAuthLastAttemptAt");
+    return getStatus(true);
+  }
+  if (message.type === "status") return getStatus(true);
+  if (message.type === "accept-onboarding") return acceptOnboarding();
+  if (message.type === "enable-auto-connect") return enableAutoConnect();
+  if (message.type === "retry-silent-connect") return retrySilentConnect();
+  if (message.type === "open-login") return openLogin();
+  if (message.type === "connect") return connect(true);
   if (message.type === "disconnect") return disconnect();
   if (message.type === "fill") return fillCurrentPage();
   if (message.type === "mark-applied" && message.applicationId)
@@ -46,25 +58,137 @@ async function handleMessage(message: ExtensionMessage): Promise<unknown> {
   throw new Error("不支持的插件操作");
 }
 
-async function getStatus(): Promise<Record<string, unknown>> {
-  const local = await browser.storage.local.get(["accessToken", "expiresAt"]);
-  const session = await browser.storage.session.get([
+async function getStatus(
+  trySilentConnection = false,
+): Promise<Record<string, unknown>> {
+  let local = await browser.storage.local.get([
+    "accessToken",
+    "expiresAt",
+    "onboardingAccepted",
+    "autoConnectEnabled",
+  ]);
+  let session = await browser.storage.session.get([
     "profileEnvelope",
     "draftApplication",
     "submitDetected",
+    "authIssue",
+    "silentAuthLastAttemptAt",
+    "awaitingLoginUntil",
   ]);
-  const connected =
+  let connected =
     Boolean(local.accessToken) &&
     (!local.expiresAt || new Date(String(local.expiresAt)) > new Date());
+
+  const onboardingAccepted = local.onboardingAccepted === true;
+  const autoConnectEnabled = local.autoConnectEnabled === true;
+  if (
+    trySilentConnection &&
+    onboardingAccepted &&
+    autoConnectEnabled &&
+    !connected
+  ) {
+    const now = Date.now();
+    const lastAttempt = Number(session.silentAuthLastAttemptAt || 0);
+    const awaitingLogin = Number(session.awaitingLoginUntil || 0) > now;
+    const shouldAttempt =
+      lastAttempt === 0 ||
+      (awaitingLogin && now - lastAttempt >= SILENT_RETRY_MS);
+    if (shouldAttempt) {
+      try {
+        await connect(false);
+      } catch {
+        // The status response below explains whether login is required.
+      }
+      local = await browser.storage.local.get([
+        "accessToken",
+        "expiresAt",
+        "onboardingAccepted",
+        "autoConnectEnabled",
+      ]);
+      session = await browser.storage.session.get([
+        "profileEnvelope",
+        "draftApplication",
+        "submitDetected",
+        "authIssue",
+        "awaitingLoginUntil",
+      ]);
+      connected =
+        Boolean(local.accessToken) &&
+        (!local.expiresAt || new Date(String(local.expiresAt)) > new Date());
+    }
+  }
+
   return {
     connected,
+    onboardingAccepted,
+    autoConnectEnabled,
+    connectionIssue: connected ? null : session.authIssue || null,
+    awaitingLogin: Number(session.awaitingLoginUntil || 0) > Date.now(),
     hasProfile: Boolean(session.profileEnvelope),
     application: session.draftApplication || null,
     submitDetected: Boolean(session.submitDetected),
   };
 }
 
-async function connect(): Promise<Record<string, unknown>> {
+async function acceptOnboarding(): Promise<Record<string, unknown>> {
+  await browser.storage.local.set({
+    onboardingAccepted: true,
+    autoConnectEnabled: true,
+  });
+  await browser.storage.session.remove([
+    "authIssue",
+    "silentAuthLastAttemptAt",
+  ]);
+  try {
+    await connect(false);
+  } catch {
+    // A missing website session is rendered as a login prompt, not an error.
+  }
+  return getStatus(false);
+}
+
+async function enableAutoConnect(): Promise<Record<string, unknown>> {
+  await browser.storage.local.set({ autoConnectEnabled: true });
+  return retrySilentConnect();
+}
+
+async function retrySilentConnect(): Promise<Record<string, unknown>> {
+  await browser.storage.session.remove([
+    "authIssue",
+    "silentAuthLastAttemptAt",
+  ]);
+  try {
+    await connect(false);
+  } catch {
+    // Return a useful state instead of surfacing a technical auth exception.
+  }
+  return getStatus(false);
+}
+
+async function openLogin(): Promise<Record<string, unknown>> {
+  await browser.storage.session.set({
+    authIssue: "login_required",
+    silentAuthLastAttemptAt: 0,
+    awaitingLoginUntil: Date.now() + 2 * 60 * 1000,
+  });
+  await browser.tabs.create({
+    url: `${API_BASE}/login?redirect=${encodeURIComponent("/dashboard/application-profile")}`,
+  });
+  return getStatus(false);
+}
+
+async function connect(interactive: boolean): Promise<Record<string, unknown>> {
+  if (authInFlight) return authInFlight;
+  authInFlight = performConnection(interactive).finally(() => {
+    authInFlight = null;
+  });
+  return authInFlight;
+}
+
+async function performConnection(
+  interactive: boolean,
+): Promise<Record<string, unknown>> {
+  await browser.storage.session.set({ silentAuthLastAttemptAt: Date.now() });
   const verifier = base64Url(crypto.getRandomValues(new Uint8Array(48)));
   const challenge = base64Url(
     new Uint8Array(
@@ -73,20 +197,35 @@ async function connect(): Promise<Record<string, unknown>> {
   );
   const state = base64Url(crypto.getRandomValues(new Uint8Array(24)));
   const redirectUri = browser.identity.getRedirectURL("oauth2");
-  const authorizeUrl = new URL("/extension/authorize", API_BASE);
+  const authorizeUrl = new URL(
+    interactive
+      ? "/extension/authorize"
+      : "/next-api/extension/silent-authorize",
+    API_BASE,
+  );
   authorizeUrl.searchParams.set("redirect_uri", redirectUri);
   authorizeUrl.searchParams.set("state", state);
   authorizeUrl.searchParams.set("code_challenge", challenge);
-  const callbackRaw = await browser.identity.launchWebAuthFlow({
-    url: authorizeUrl.toString(),
-    interactive: true,
-  });
-  if (!callbackRaw) throw new Error("未完成智简简历授权");
-  const callback = new URL(callbackRaw);
-  if (callback.searchParams.get("state") !== state)
-    throw new Error("授权状态校验失败");
-  const code = callback.searchParams.get("code");
-  if (!code) throw new Error("没有收到授权码");
+  let code: string;
+  try {
+    const callbackRaw = await browser.identity.launchWebAuthFlow({
+      url: authorizeUrl.toString(),
+      interactive,
+      ...(interactive
+        ? {}
+        : {
+            abortOnLoadForNonInteractive: false,
+            timeoutMsForNonInteractive: 8_000,
+          }),
+    });
+    if (!callbackRaw) throw new Error("未完成智简简历授权");
+    code = parseAuthCallback(callbackRaw, state);
+  } catch (error) {
+    const issue =
+      error instanceof ExtensionAuthError ? error.code : "server_error";
+    await browser.storage.session.set({ authIssue: issue });
+    throw error;
+  }
   const response = await fetch(`${API_BASE}/next-api/extension/token`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -102,23 +241,42 @@ async function connect(): Promise<Record<string, unknown>> {
   await browser.storage.local.set({
     accessToken: payload.accessToken,
     expiresAt: payload.expiresAt,
+    onboardingAccepted: true,
+    autoConnectEnabled: true,
   });
+  await browser.storage.session.remove([
+    "authIssue",
+    "awaitingLoginUntil",
+    "silentAuthLastAttemptAt",
+  ]);
   await loadProfile(true);
   return { connected: true, hasProfile: true };
 }
 
 async function disconnect(): Promise<{ connected: false }> {
-  await browser.storage.local.remove(["accessToken", "expiresAt"]);
-  await browser.storage.session.clear();
+  await browser.storage.local.set({ autoConnectEnabled: false });
+  await clearConnectionState();
   return { connected: false };
 }
 
+async function clearConnectionState(): Promise<void> {
+  await browser.storage.local.remove(["accessToken", "expiresAt"]);
+  await browser.storage.session.clear();
+}
+
 async function loadProfile(force = false): Promise<ApplicationProfileEnvelope> {
-  const [{ accessToken }, cached] = await Promise.all([
+  let [{ accessToken }, cached] = await Promise.all([
     browser.storage.local.get("accessToken"),
     browser.storage.session.get(["profileEnvelope", "profileEtag"]),
   ]);
-  if (!accessToken) throw new Error("请先连接智简简历");
+  if (!accessToken) {
+    await connect(false);
+    [{ accessToken }, cached] = await Promise.all([
+      browser.storage.local.get("accessToken"),
+      browser.storage.session.get(["profileEnvelope", "profileEtag"]),
+    ]);
+  }
+  if (!accessToken) throw new Error("请先登录智简简历");
   if (!force && cached.profileEnvelope) {
     void refreshProfile(
       String(accessToken),
@@ -147,8 +305,9 @@ async function refreshProfile(
     return cached.profileEnvelope as ApplicationProfileEnvelope;
   }
   if (response.status === 401) {
-    await disconnect();
-    throw new Error("连接已过期，请重新连接智简简历");
+    await clearConnectionState();
+    await browser.storage.session.set({ authIssue: "login_required" });
+    throw new Error("登录状态已过期，请重新登录智简简历");
   }
   const payload = await response.json();
   if (!response.ok) throw new Error(payload.error || "读取网申资料失败");
