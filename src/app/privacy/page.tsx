@@ -50,6 +50,8 @@ export default function PrivacyPage(): React.ReactElement {
                 <ul className="list-disc list-inside space-y-2 ml-2">
                   <li><strong>账户信息</strong>：微信授权登录时获取的openid、昵称、头像</li>
                   <li><strong>简历内容</strong>：您填写的个人经历、教育背景、技能等信息</li>
+                  <li><strong>网申资料</strong>：您主动维护的联系方式、身份信息、求职意向、经历和常见问答</li>
+                  <li><strong>投递记录</strong>：您通过浏览器插件或网站保存的公司、职位、申请链接、投递状态和备注</li>
                   <li><strong>使用数据</strong>：功能使用频率、导出次数、AI生成次数</li>
                   <li><strong>设备信息</strong>：IP地址、浏览器类型、操作系统（用于优化服务）</li>
                 </ul>
@@ -69,6 +71,7 @@ export default function PrivacyPage(): React.ReactElement {
                 <ul className="list-disc list-inside space-y-2 ml-2">
                   <li>提供简历编辑、AI生成、导出PDF等核心功能</li>
                   <li>保存和同步您的简历数据</li>
+                  <li>在您主动点击插件时，将网申资料填写到当前招聘申请页面，并同步投递进度</li>
                   <li>改进产品功能和用户体验</li>
                   <li>发送服务通知（如VIP到期提醒）</li>
                   <li>防止欺诈和滥用行为</li>
@@ -107,6 +110,8 @@ export default function PrivacyPage(): React.ReactElement {
                 <p>我们采取以下措施保护您的数据：</p>
                 <ul className="list-disc list-inside space-y-2 ml-2">
                   <li>数据传输使用HTTPS加密</li>
+                  <li>网申资料正文在服务器端加密存储，插件授权可由您随时撤销</li>
+                  <li>插件仅在您主动点击时读取当前页面，不收集浏览历史，也不会自动提交申请</li>
                   <li>数据库访问需要身份验证</li>
                   <li>服务器部署在国内，符合数据安全法规</li>
                   <li>定期备份数据，防止数据丢失</li>
@@ -122,6 +127,7 @@ export default function PrivacyPage(): React.ReactElement {
                 <p>您对自己的个人信息拥有以下权利：</p>
                 <ul className="list-disc list-inside space-y-2 ml-2">
                   <li><strong>访问权</strong>：查看您保存的简历和个人信息</li>
+                  <li><strong>授权管理权</strong>：查看并撤销已连接的浏览器插件</li>
                   <li><strong>修改权</strong>：更新或更正您的信息</li>
                   <li><strong>删除权</strong>：删除您的账户和所有相关数据</li>
                   <li><strong>导出权</strong>：导出您的简历为PDF或其他格式</li>

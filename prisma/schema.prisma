@@ -21,6 +21,10 @@ model User {
   feedbacks  Feedback[]
   quotas     UserQuota[]
   migration  ResumeMigration?
+  applicationProfile       ApplicationProfile?
+  jobApplications          JobApplication[]
+  extensionAuthorizations  ExtensionAuthorization[]
+  extensionAuthCodes       ExtensionAuthCode[]
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @updatedAt
 }
@@ -36,8 +40,101 @@ model Resume {
   user      User     @relation(fields: [userId], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  applicationProfiles ApplicationProfile[]
+  jobApplications     JobApplication[]
 
   @@index([userId])
+}
+
+model ApplicationProfile {
+  userId           String   @id
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  defaultResumeId  String?
+  defaultResume    Resume?  @relation(fields: [defaultResumeId], references: [id], onDelete: SetNull)
+  encryptedPayload String
+  schemaVersion    Int      @default(1)
+  lastResumeSyncAt DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([defaultResumeId])
+}
+
+enum JobApplicationStatus {
+  DRAFT
+  APPLIED
+  ASSESSMENT
+  INTERVIEW
+  OFFER
+  REJECTED
+  WITHDRAWN
+}
+
+model JobApplication {
+  id             String               @id @default(cuid())
+  userId         String
+  user           User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resumeId       String?
+  resume         Resume?              @relation(fields: [resumeId], references: [id], onDelete: SetNull)
+  companyName    String
+  jobTitle       String
+  location       String?
+  jobUrl         String?
+  applicationUrl String?
+  sourceDomain   String?
+  status         JobApplicationStatus @default(DRAFT)
+  appliedAt      DateTime?
+  note           String?
+  fingerprint    String
+  events         JobApplicationEvent[]
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+
+  @@unique([userId, fingerprint])
+  @@index([userId, status, updatedAt])
+  @@index([resumeId])
+}
+
+model JobApplicationEvent {
+  id            String                @id @default(cuid())
+  applicationId String
+  application   JobApplication        @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  fromStatus    JobApplicationStatus?
+  toStatus      JobApplicationStatus?
+  note          String?
+  createdAt     DateTime              @default(now())
+
+  @@index([applicationId, createdAt])
+}
+
+model ExtensionAuthCode {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  codeHash      String   @unique
+  codeChallenge String
+  redirectUri   String
+  expiresAt     DateTime
+  usedAt        DateTime?
+  createdAt     DateTime @default(now())
+
+  @@index([userId, expiresAt])
+}
+
+model ExtensionAuthorization {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash  String   @unique
+  deviceName String?
+  scopes     String[]
+  expiresAt  DateTime
+  lastUsedAt DateTime?
+  revokedAt  DateTime?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([userId, expiresAt])
 }
 
 model ExportRecord {
