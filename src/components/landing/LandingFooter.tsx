@@ -4,6 +4,7 @@ import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Github, Twitter, MessageCircle } from 'lucide-react';
+import { MiniProgramEntry } from './MiniProgramEntry';
 
 type FooterLinkItem = {
   href: string;
@@ -66,6 +67,11 @@ export const LandingFooter = () => {
               <li><Link href="/import" className="hover:text-violet-600 transition-colors">AI 文本转简历</Link></li>
               <li><Link href="/tools/jd-resume-match" className="hover:text-violet-600 transition-colors">JD 匹配工具</Link></li>
               <li><Link href="/editor/new" className="hover:text-violet-600 transition-colors">AI 编辑助手</Link></li>
+              <li>
+                <MiniProgramEntry entry="footer_product" className="text-left transition-colors hover:text-violet-600">
+                  微信小程序
+                </MiniProgramEntry>
+              </li>
               <li><Link href="/articles" className="hover:text-violet-600 transition-colors">求职攻略</Link></li>
             </ul>
           </div>
@@ -95,7 +101,30 @@ export const LandingFooter = () => {
           </div>
 
           <div>
-            <h4 className="font-bold text-slate-900 mb-6">联系开发者</h4>
+            <h4 className="font-bold text-slate-900 mb-6">微信入口</h4>
+            <MiniProgramEntry
+              entry="footer_qr_card"
+              className="mb-3 flex w-full items-start gap-4 rounded-2xl border border-emerald-100 bg-emerald-50/60 p-4 text-left transition-colors hover:border-emerald-200 hover:bg-emerald-50"
+            >
+              <span className="w-20 shrink-0 overflow-hidden rounded-xl bg-white shadow-sm">
+                <Image
+                  src="/wechat-mini-program-qr.jpg"
+                  alt="智简简历模板制作微信小程序二维码"
+                  width={430}
+                  height={490}
+                  className="block h-auto w-full"
+                />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="mb-1 block text-xs font-semibold text-slate-900">微信小程序</span>
+                <span className="block text-[10px] leading-relaxed text-slate-500">
+                  点击放大小程序码
+                  <br />
+                  手机编辑 · 多端同步 · PDF 导出
+                </span>
+              </span>
+            </MiniProgramEntry>
+
             <div className="flex items-start gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100">
               <div
                 className="w-20 h-auto bg-white rounded-xl shadow-sm overflow-hidden shrink-0"
@@ -111,7 +140,7 @@ export const LandingFooter = () => {
                 />
               </div>
               <div className="flex-1">
-                <p className="text-xs font-semibold text-slate-900 mb-1">微信：kkyycc01</p>
+                <p className="text-xs font-semibold text-slate-900 mb-1">开发者微信：kkyycc01</p>
                 <p className="text-[10px] text-slate-500 leading-relaxed">
                   扫码添加「职场学长袁小智」
                   <br />

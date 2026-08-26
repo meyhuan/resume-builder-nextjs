@@ -2,8 +2,9 @@
 
 import React from "react";
 import { LandingButton } from "./LandingButton";
-import { Wand2, FileText } from "lucide-react";
+import { Wand2, FileText, Smartphone } from "lucide-react";
 import { EditorShowcase } from "./EditorShowcase";
+import { MiniProgramEntry } from "./MiniProgramEntry";
 import Link from "next/link";
 import { track } from "@/lib/analytics";
 
@@ -132,6 +133,15 @@ export const LandingHero = ({ stats }: LandingHeroProps) => {
               </LandingButton>
             </Link>
           </div>
+
+          <MiniProgramEntry
+            entry="landing_hero"
+            className="inline-flex items-center gap-2 whitespace-nowrap rounded-full px-3 py-2 text-xs font-semibold text-slate-600 transition-colors hover:bg-violet-50 hover:text-violet-700 sm:text-sm"
+          >
+            <Smartphone className="h-4 w-4 text-violet-500" />
+            微信小程序 · 手机也能改简历
+            <span className="text-violet-600">扫码使用 →</span>
+          </MiniProgramEntry>
 
           {/* Trust Stats Bar */}
           <div className="flex items-center justify-center gap-6 sm:gap-10 mt-5">
