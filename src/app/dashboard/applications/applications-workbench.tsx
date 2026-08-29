@@ -1,10 +1,13 @@
 "use client";
 
 import * as Dialog from "@radix-ui/react-dialog";
+import * as Popover from "@radix-ui/react-popover";
 import {
   AlertCircle,
   ArrowRight,
+  CalendarDays,
   CalendarClock,
+  ChevronLeft,
   ChevronRight,
   CircleDot,
   Clock3,
@@ -223,6 +226,10 @@ export default function ApplicationsWorkbench(): ReactElement {
   }
 
   function selectAttention(next: Exclude<AttentionFilter, null>): void {
+    if (attention === next) {
+      setAttention(null);
+      return;
+    }
     setAttention(next);
     setView("ALL");
   }
@@ -428,6 +435,7 @@ function AttentionButton({
     <button
       type="button"
       onClick={onClick}
+      aria-pressed={active}
       className={`flex min-h-20 items-center justify-between gap-3 border-b border-r border-slate-100 px-4 text-left transition-colors duration-150 last:border-r-0 hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-violet-600 ${
         active ? "bg-violet-50" : "bg-white"
       }`}
@@ -641,21 +649,19 @@ function ApplicationDrawer({
                       </select>
                     </Field>
                     <Field label="下一步时间">
-                      <input
-                        type="datetime-local"
+                      <DateTimePicker
                         value={nextActionAt}
-                        onChange={(event) =>
-                          setNextActionAt(event.target.value)
-                        }
-                        className="application-input"
+                        onChange={setNextActionAt}
+                        placeholder="选择下一步日期和时间"
+                        side="left"
                       />
                     </Field>
                     <Field label="网申截止时间">
-                      <input
-                        type="datetime-local"
+                      <DateTimePicker
                         value={deadlineAt}
-                        onChange={(event) => setDeadlineAt(event.target.value)}
-                        className="application-input"
+                        onChange={setDeadlineAt}
+                        placeholder="选择网申截止时间"
+                        side="left"
                       />
                     </Field>
                   </div>
@@ -901,11 +907,10 @@ function CreateDialog({
               />
             </Field>
             <Field label="网申截止时间（选填）">
-              <input
-                type="datetime-local"
+              <DateTimePicker
                 value={deadlineAt}
-                onChange={(event) => setDeadlineAt(event.target.value)}
-                className="application-input"
+                onChange={setDeadlineAt}
+                placeholder="选择网申截止时间"
               />
             </Field>
           </div>
@@ -930,6 +935,240 @@ function CreateDialog({
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
+  );
+}
+
+function DateTimePicker({
+  value,
+  onChange,
+  placeholder,
+  side = "bottom",
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+  side?: "top" | "right" | "bottom" | "left";
+}): ReactElement {
+  const selected = parseLocalDateTime(value);
+  const [open, setOpen] = useState(false);
+  const [visibleMonth, setVisibleMonth] = useState(() =>
+    startOfMonth(selected || new Date()),
+  );
+
+  const year = visibleMonth.getFullYear();
+  const month = visibleMonth.getMonth();
+  const firstWeekday = (new Date(year, month, 1).getDay() + 6) % 7;
+  const dayCount = new Date(year, month + 1, 0).getDate();
+  const calendarCells = Array.from(
+    { length: Math.ceil((firstWeekday + dayCount) / 7) * 7 },
+    (_, index) => {
+      const day = index - firstWeekday + 1;
+      return day >= 1 && day <= dayCount ? day : null;
+    },
+  );
+
+  function chooseDay(day: number): void {
+    const base = selected || new Date();
+    const next = new Date(
+      year,
+      month,
+      day,
+      selected ? base.getHours() : 9,
+      selected ? base.getMinutes() : 0,
+    );
+    onChange(toLocalDateTimeValue(next));
+  }
+
+  function changeTime(part: "hour" | "minute", nextValue: number): void {
+    const base = selected || new Date();
+    const next = new Date(base);
+    if (part === "hour") next.setHours(nextValue);
+    else next.setMinutes(nextValue);
+    next.setSeconds(0, 0);
+    onChange(toLocalDateTimeValue(next));
+  }
+
+  const minuteOptions = Array.from(
+    new Set([
+      ...Array.from({ length: 12 }, (_, index) => index * 5),
+      ...(selected ? [selected.getMinutes()] : []),
+    ]),
+  ).sort((a, b) => a - b);
+
+  return (
+    <Popover.Root
+      open={open}
+      onOpenChange={(nextOpen) => {
+        if (nextOpen) setVisibleMonth(startOfMonth(selected || new Date()));
+        setOpen(nextOpen);
+      }}
+    >
+      <Popover.Trigger asChild>
+        <button
+          type="button"
+          className="application-input flex items-center justify-between gap-3 text-left transition-colors"
+          aria-label={
+            value
+              ? `${placeholder}，当前为${formatPickerValue(value)}`
+              : placeholder
+          }
+        >
+          <span className={value ? "text-slate-800" : "text-slate-400"}>
+            {value ? formatPickerValue(value) : placeholder}
+          </span>
+          <CalendarDays
+            className="h-4 w-4 shrink-0 text-slate-400"
+            aria-hidden="true"
+          />
+        </button>
+      </Popover.Trigger>
+      <Popover.Portal>
+        <Popover.Content
+          align="start"
+          side={side}
+          sideOffset={8}
+          collisionPadding={16}
+          className="application-date-popover z-[500] w-[min(22rem,calc(100vw-2rem))] rounded-2xl border border-slate-200 bg-white p-3 shadow-2xl focus:outline-none"
+        >
+          <div className="flex items-center justify-between">
+            <button
+              type="button"
+              onClick={() => setVisibleMonth(new Date(year, month - 1, 1))}
+              className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 active:bg-slate-200 focus-visible:outline-2 focus-visible:outline-violet-600"
+              aria-label="上个月"
+            >
+              <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+            </button>
+            <strong className="text-sm font-semibold text-slate-900">
+              {year}年{month + 1}月
+            </strong>
+            <button
+              type="button"
+              onClick={() => setVisibleMonth(new Date(year, month + 1, 1))}
+              className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 active:bg-slate-200 focus-visible:outline-2 focus-visible:outline-violet-600"
+              aria-label="下个月"
+            >
+              <ChevronRight className="h-4 w-4" aria-hidden="true" />
+            </button>
+          </div>
+
+          <div className="mt-2 grid grid-cols-7 text-center text-xs text-slate-400">
+            {["一", "二", "三", "四", "五", "六", "日"].map((label) => (
+              <span key={label} className="py-1.5">
+                {label}
+              </span>
+            ))}
+          </div>
+          <div
+            className="grid grid-cols-7 gap-1"
+            role="grid"
+            aria-label={`${year}年${month + 1}月`}
+          >
+            {calendarCells.map((day, index) => {
+              if (!day) return <span key={`empty-${index}`} className="h-9" />;
+              const isSelected =
+                selected?.getFullYear() === year &&
+                selected.getMonth() === month &&
+                selected.getDate() === day;
+              const today = new Date();
+              const isToday =
+                today.getFullYear() === year &&
+                today.getMonth() === month &&
+                today.getDate() === day;
+              return (
+                <button
+                  key={day}
+                  type="button"
+                  onClick={() => chooseDay(day)}
+                  className={`h-8 rounded-lg text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-violet-600 ${
+                    isSelected
+                      ? "bg-violet-600 font-semibold text-white hover:bg-violet-700"
+                      : isToday
+                        ? "bg-violet-50 font-semibold text-violet-700 hover:bg-violet-100"
+                        : "text-slate-700 hover:bg-slate-100 active:bg-slate-200"
+                  }`}
+                  aria-pressed={isSelected}
+                  aria-label={`${year}年${month + 1}月${day}日${isToday ? "，今天" : ""}`}
+                >
+                  {day}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="mt-3 border-t border-slate-100 pt-3">
+            <p className="text-xs font-medium text-slate-500">具体时间</p>
+            <div className="mt-2 grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+              <select
+                value={selected?.getHours() ?? 9}
+                onChange={(event) =>
+                  changeTime("hour", Number(event.target.value))
+                }
+                className="application-input text-center"
+                aria-label="小时"
+              >
+                {Array.from({ length: 24 }, (_, hour) => (
+                  <option key={hour} value={hour}>
+                    {String(hour).padStart(2, "0")} 时
+                  </option>
+                ))}
+              </select>
+              <span className="text-slate-300">:</span>
+              <select
+                value={selected?.getMinutes() ?? 0}
+                onChange={(event) =>
+                  changeTime("minute", Number(event.target.value))
+                }
+                className="application-input text-center"
+                aria-label="分钟"
+              >
+                {minuteOptions.map((minute) => (
+                  <option key={minute} value={minute}>
+                    {String(minute).padStart(2, "0")} 分
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-2">
+            <button
+              type="button"
+              onClick={() => {
+                onChange("");
+                setOpen(false);
+              }}
+              disabled={!value}
+              className="min-h-10 whitespace-nowrap rounded-lg px-2 text-sm text-slate-500 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-violet-600"
+            >
+              清除
+            </button>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => {
+                  const now = new Date();
+                  now.setSeconds(0, 0);
+                  onChange(toLocalDateTimeValue(now));
+                  setVisibleMonth(startOfMonth(now));
+                }}
+                className="min-h-10 whitespace-nowrap rounded-lg px-3 text-sm font-medium text-violet-700 hover:bg-violet-50 active:bg-violet-100 focus-visible:outline-2 focus-visible:outline-violet-600"
+              >
+                现在
+              </button>
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="min-h-10 whitespace-nowrap rounded-lg bg-violet-600 px-3 text-sm font-semibold text-white hover:bg-violet-700 active:bg-violet-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600"
+              >
+                完成
+              </button>
+            </div>
+          </div>
+          <Popover.Arrow className="fill-white" />
+        </Popover.Content>
+      </Popover.Portal>
+    </Popover.Root>
   );
 }
 
@@ -1108,4 +1347,29 @@ function toLocalDateTime(value?: string | null): string {
 }
 function toIsoDateTime(value: string): string | null {
   return value ? new Date(value).toISOString() : null;
+}
+
+function parseLocalDateTime(value: string): Date | null {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function startOfMonth(value: Date): Date {
+  return new Date(value.getFullYear(), value.getMonth(), 1);
+}
+
+function toLocalDateTimeValue(value: Date): string {
+  const year = value.getFullYear();
+  const month = String(value.getMonth() + 1).padStart(2, "0");
+  const day = String(value.getDate()).padStart(2, "0");
+  const hour = String(value.getHours()).padStart(2, "0");
+  const minute = String(value.getMinutes()).padStart(2, "0");
+  return `${year}-${month}-${day}T${hour}:${minute}`;
+}
+
+function formatPickerValue(value: string): string {
+  const date = parseLocalDateTime(value);
+  if (!date) return "";
+  return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日 ${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
 }
