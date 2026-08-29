@@ -80,8 +80,26 @@ export default function App() {
   }
 
   async function fill(): Promise<void> {
-    const response = (await action("fill")) as FillResult | null;
-    if (response) setResult(response);
+    setBusy(true);
+    setError("");
+    try {
+      const granted = await browser.permissions.request({
+        origins: ["https://*/*", "http://*/*"],
+      });
+      if (!granted) {
+        throw new Error(
+          "需要网页访问权限才能填写招聘表单。你可以稍后再次点击并允许。",
+        );
+      }
+      const response = await browser.runtime.sendMessage({ type: "fill" });
+      if (response?.error) throw new Error(response.error);
+      setResult(response as FillResult);
+      await refresh();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "操作失败，请重试");
+    } finally {
+      setBusy(false);
+    }
   }
 
   if (!initialized)
@@ -222,7 +240,8 @@ export default function App() {
       <section className="card">
         <h2>当前申请页面</h2>
         <p className="muted">
-          点击后扫描当前页，只填写已枚举且资料中有值的字段。
+          点击后扫描当前页，只填写已枚举且资料中有值的字段。首次使用时，Chrome
+          会请求网页访问权限。
         </p>
         <button className="primary" disabled={busy} onClick={() => void fill()}>
           {busy ? (

@@ -321,13 +321,29 @@ async function refreshProfile(
 
 async function fillCurrentPage(): Promise<FillResult> {
   const profile = await loadProfile();
-  const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
-  if (!tab.id || !tab.url || !/^https?:/.test(tab.url))
-    throw new Error("请在招聘申请页面使用插件");
-  const snapshotResult = await browser.scripting.executeScript({
-    target: { tabId: tab.id },
-    func: collectPageSnapshot,
+  const [tab] = await browser.tabs.query({
+    active: true,
+    lastFocusedWindow: true,
   });
+  if (!tab?.id) throw new Error("没有找到当前活动标签页，请重新打开招聘页面");
+  if (!tab.url)
+    throw new Error("未获得当前网站访问权限，请点击一键填写并允许 Chrome 授权");
+  if (!/^https?:/.test(tab.url)) throw new Error("请在招聘申请页面使用插件");
+  let snapshotResult;
+  try {
+    snapshotResult = await browser.scripting.executeScript({
+      target: { tabId: tab.id },
+      func: collectPageSnapshot,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (/permission|cannot access|not allowed|host/i.test(message)) {
+      throw new Error(
+        "Chrome 尚未允许插件访问当前网站，请重新点击一键填写并允许访问权限",
+      );
+    }
+    throw new Error(`无法扫描当前页面：${message}`);
+  }
   const snapshot = snapshotResult[0]?.result as PageSnapshot | undefined;
   if (!snapshot) throw new Error("无法读取当前页面表单");
   const actions = buildFillActions(profile.profile, snapshot.fields);
