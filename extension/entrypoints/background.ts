@@ -1,10 +1,12 @@
 import { buildFillActions } from "../lib/mapping";
 import { ExtensionAuthError, parseAuthCallback } from "../lib/auth";
+import { getSiteAdapter } from "../lib/site-adapters";
 import type {
   ApplicationProfileEnvelope,
   FillAction,
   FillResult,
   PageSnapshot,
+  SiteAdapter,
 } from "../lib/types";
 
 const API_BASE = import.meta.env.WXT_API_BASE_URL || "https://aijianli.cn";
@@ -329,11 +331,13 @@ async function fillCurrentPage(): Promise<FillResult> {
   if (!tab.url)
     throw new Error("未获得当前网站访问权限，请点击一键填写并允许 Chrome 授权");
   if (!/^https?:/.test(tab.url)) throw new Error("请在招聘申请页面使用插件");
+  const siteAdapter = getSiteAdapter(new URL(tab.url).hostname);
   let snapshotResult;
   try {
     snapshotResult = await browser.scripting.executeScript({
       target: { tabId: tab.id },
       func: collectPageSnapshot,
+      args: [siteAdapter],
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
@@ -436,7 +440,7 @@ function base64Url(bytes: Uint8Array): string {
     .replace(/=+$/, "");
 }
 
-function collectPageSnapshot(): PageSnapshot {
+function collectPageSnapshot(adapter: SiteAdapter | null): PageSnapshot {
   const blocked =
     /password|密码|验证码|captcha|银行卡|bank card|协议|同意条款|csrf|token|tracking/i;
   const controls = [
@@ -447,6 +451,10 @@ function collectPageSnapshot(): PageSnapshot {
   const fields = controls.flatMap((element, index) => {
     const input = element as HTMLInputElement;
     const type = (input.type || "").toLowerCase();
+    if (adapter?.rootSelector && !element.closest(adapter.rootSelector))
+      return [];
+    if (adapter?.ignoreSelectors.some((selector) => element.matches(selector)))
+      return [];
     if (
       [
         "hidden",
@@ -485,15 +493,21 @@ function collectPageSnapshot(): PageSnapshot {
       type === "radio" || type === "checkbox"
         ? wrappingLabel || element.parentElement?.textContent || ""
         : "";
-    const context = [
-      explicitLabel,
-      wrappingLabel,
-      input.getAttribute("aria-label"),
-      input.placeholder,
-      input.name,
-      input.id,
-      groupLabel,
-    ]
+    const adapterContext =
+      adapter?.contextRules.find((rule) => element.matches(rule.selector))
+        ?.context || "";
+    const contextParts = adapterContext
+      ? [adapterContext]
+      : [
+          explicitLabel,
+          wrappingLabel,
+          input.getAttribute("aria-label"),
+          input.placeholder,
+          input.name,
+          input.id,
+          groupLabel,
+        ];
+    const context = contextParts
       .filter(Boolean)
       .join(" ")
       .replace(/\s+/g, " ")

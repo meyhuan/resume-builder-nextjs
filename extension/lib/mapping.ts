@@ -175,6 +175,10 @@ const DEFINITIONS: Array<{ paths: string[]; aliases: string[] }> = [
     aliases: ["职位名称", "实习岗位", "工作职位", "job title", "position"],
   },
   {
+    paths: ["experiences[].industry"],
+    aliases: ["行业", "行业类别", "所属行业", "industry"],
+  },
+  {
     paths: ["experiences[].startDate"],
     aliases: ["工作开始时间", "实习开始时间", "employment start date"],
   },
@@ -188,6 +192,7 @@ const DEFINITIONS: Array<{ paths: string[]; aliases: string[] }> = [
       "工作内容",
       "实习内容",
       "工作职责",
+      "工作描述",
       "经历描述",
       "responsibilities",
       "experience description",

@@ -7,6 +7,18 @@ export interface FieldDescriptor {
   options: string[];
 }
 
+export interface SiteContextRule {
+  selector: string;
+  context: string;
+}
+
+export interface SiteAdapter {
+  id: string;
+  rootSelector?: string;
+  ignoreSelectors: string[];
+  contextRules: SiteContextRule[];
+}
+
 export interface JobInfo {
   companyName: string;
   jobTitle: string;
