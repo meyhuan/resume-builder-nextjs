@@ -9,6 +9,17 @@ describe("getSiteAdapter", () => {
       selector: "#telephone",
       context: "手机号码",
     });
+    expect(adapter?.contextRules).toContainEqual({
+      selector: "#birthday",
+      context: "出生日期",
+      controlKind: "readonly-date",
+      allowReadOnly: true,
+    });
+    expect(adapter?.repeaters?.map((rule) => rule.profilePath)).toEqual([
+      "experiences",
+      "projects",
+      "education",
+    ]);
   });
 
   it("selects the Tencent careers adapter and excludes custom selectors", () => {
@@ -18,6 +29,13 @@ describe("getSiteAdapter", () => {
     expect(adapter?.contextRules.some((rule) => rule.context === "姓名")).toBe(
       true,
     );
+    expect(
+      adapter?.contextRules.some(
+        (rule) =>
+          rule.context === "学历" && rule.controlKind === "custom-select",
+      ),
+    ).toBe(true);
+    expect(adapter?.repeaters).toHaveLength(2);
   });
 
   it("falls back to generic scanning for other sites", () => {

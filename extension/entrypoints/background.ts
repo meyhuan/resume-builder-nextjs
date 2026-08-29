@@ -1,4 +1,4 @@
-import { buildFillActions } from "../lib/mapping";
+import { buildFillPlan } from "../lib/mapping";
 import { ExtensionAuthError, parseAuthCallback } from "../lib/auth";
 import { getSiteAdapter } from "../lib/site-adapters";
 import type {
@@ -332,6 +332,13 @@ async function fillCurrentPage(): Promise<FillResult> {
     throw new Error("未获得当前网站访问权限，请点击一键填写并允许 Chrome 授权");
   if (!/^https?:/.test(tab.url)) throw new Error("请在招聘申请页面使用插件");
   const siteAdapter = getSiteAdapter(new URL(tab.url).hostname);
+  if (siteAdapter?.repeaters?.length) {
+    await browser.scripting.executeScript({
+      target: { tabId: tab.id },
+      func: preparePageForProfile,
+      args: [siteAdapter, profile.profile],
+    });
+  }
   let snapshotResult;
   try {
     snapshotResult = await browser.scripting.executeScript({
@@ -350,26 +357,27 @@ async function fillCurrentPage(): Promise<FillResult> {
   }
   const snapshot = snapshotResult[0]?.result as PageSnapshot | undefined;
   if (!snapshot) throw new Error("无法读取当前页面表单");
-  const actions = buildFillActions(profile.profile, snapshot.fields);
+  const plan = buildFillPlan(profile.profile, snapshot.fields);
   const fillResult = await browser.scripting.executeScript({
     target: { tabId: tab.id },
     func: applyFillActions,
-    args: [actions],
+    args: [plan.actions],
   });
-  const summary = fillResult[0]?.result as { filled: number; skipped: number };
+  const summary = fillResult[0]?.result as {
+    filled: number;
+    alreadyFilled: number;
+    failed: string[];
+  };
   const result: FillResult = {
     filled: summary?.filled || 0,
-    skipped: summary?.skipped || 0,
-    unmatched: snapshot.fields
-      .filter(
-        (field) => !actions.some((action) => action.fieldId === field.fieldId),
-      )
-      .map((field) => field.context)
-      .filter(Boolean)
-      .slice(0, 20),
+    skipped: (summary?.alreadyFilled || 0) + (summary?.failed?.length || 0),
+    alreadyFilled: summary?.alreadyFilled || 0,
+    failed: summary?.failed || [],
+    missingProfile: plan.missingProfile,
+    unmatched: plan.unmatched,
     job: snapshot.job,
   };
-  if (result.filled > 0) {
+  if (result.filled + result.alreadyFilled > 0) {
     const application = await createDraft(
       snapshot.job,
       profile.defaultResumeId,
@@ -440,17 +448,56 @@ function base64Url(bytes: Uint8Array): string {
     .replace(/=+$/, "");
 }
 
+async function preparePageForProfile(
+  adapter: SiteAdapter,
+  profile: Record<string, unknown>,
+): Promise<{ addedRows: number }> {
+  let addedRows = 0;
+  const waitForRender = (): Promise<void> =>
+    new Promise((resolve) => setTimeout(resolve, 120));
+  for (const repeater of adapter.repeaters || []) {
+    const rows = profile[repeater.profilePath];
+    const desired = Math.min(
+      Array.isArray(rows) ? rows.length : 0,
+      repeater.maxRows || 10,
+    );
+    let current = document.querySelectorAll(repeater.rowSelector).length;
+    while (current < desired) {
+      const button = document.querySelector<HTMLElement>(
+        repeater.addButtonSelector,
+      );
+      if (!button) break;
+      button.click();
+      await waitForRender();
+      const next = document.querySelectorAll(repeater.rowSelector).length;
+      if (next <= current) break;
+      addedRows += next - current;
+      current = next;
+    }
+  }
+  return { addedRows };
+}
+
 function collectPageSnapshot(adapter: SiteAdapter | null): PageSnapshot {
   const blocked =
     /password|密码|验证码|captcha|银行卡|bank card|协议|同意条款|csrf|token|tracking/i;
-  const controls = [
+  const nativeControls = [
     ...document.querySelectorAll<HTMLElement>(
       'input, textarea, select, [contenteditable="true"]',
     ),
   ];
+  const customControls = (adapter?.contextRules || [])
+    .filter((rule) => rule.controlKind && rule.controlKind !== "native")
+    .flatMap((rule) => [
+      ...document.querySelectorAll<HTMLElement>(rule.selector),
+    ]);
+  const controls = [...new Set([...nativeControls, ...customControls])];
   const fields = controls.flatMap((element, index) => {
     const input = element as HTMLInputElement;
     const type = (input.type || "").toLowerCase();
+    const adapterRule = adapter?.contextRules.find((rule) =>
+      element.matches(rule.selector),
+    );
     if (adapter?.rootSelector && !element.closest(adapter.rootSelector))
       return [];
     if (adapter?.ignoreSelectors.some((selector) => element.matches(selector)))
@@ -469,7 +516,7 @@ function collectPageSnapshot(adapter: SiteAdapter | null): PageSnapshot {
       return [];
     if (
       input.disabled ||
-      input.readOnly ||
+      (input.readOnly && !adapterRule?.allowReadOnly) ||
       element.getAttribute("aria-hidden") === "true"
     )
       return [];
@@ -493,9 +540,7 @@ function collectPageSnapshot(adapter: SiteAdapter | null): PageSnapshot {
       type === "radio" || type === "checkbox"
         ? wrappingLabel || element.parentElement?.textContent || ""
         : "";
-    const adapterContext =
-      adapter?.contextRules.find((rule) => element.matches(rule.selector))
-        ?.context || "";
+    const adapterContext = adapterRule?.context || "";
     const contextParts = adapterContext
       ? [adapterContext]
       : [
@@ -519,6 +564,7 @@ function collectPageSnapshot(adapter: SiteAdapter | null): PageSnapshot {
         fieldId,
         tag: element.tagName.toLowerCase(),
         type,
+        controlKind: adapterRule?.controlKind || "native",
         context,
         optionText: optionText.trim().slice(0, 200),
         options:
@@ -581,29 +627,89 @@ function collectPageSnapshot(adapter: SiteAdapter | null): PageSnapshot {
   };
 }
 
-function applyFillActions(actions: FillAction[]): {
+async function applyFillActions(actions: FillAction[]): Promise<{
   filled: number;
-  skipped: number;
-} {
+  alreadyFilled: number;
+  failed: string[];
+}> {
   let filled = 0;
-  let skipped = 0;
+  let alreadyFilled = 0;
+  const failed: string[] = [];
   const normalize = (value: string): string =>
     value.toLowerCase().replace(/[\s:：*＊()（）_\-/]/g, "");
+  const chooseOption = (
+    container: HTMLElement,
+    selector: string,
+    value: string,
+  ): boolean => {
+    const normalizedValue = normalize(value);
+    const option = [...container.querySelectorAll<HTMLElement>(selector)].find(
+      (candidate) => {
+        const text = normalize(candidate.textContent || "");
+        return text === normalizedValue || text.includes(normalizedValue);
+      },
+    );
+    option?.click();
+    return Boolean(option);
+  };
   for (const action of actions) {
     const element = document.querySelector<HTMLElement>(
       `[data-aijianli-field-id="${action.fieldId}"]`,
     );
     if (!element) {
-      skipped++;
+      failed.push(action.context || "页面控件已变化");
       continue;
     }
     const input = element as HTMLInputElement;
+    if (action.controlKind === "custom-select") {
+      const current = (element.textContent || "").trim();
+      if (current && !/^选择|请选择/.test(current)) {
+        alreadyFilled++;
+        continue;
+      }
+      element.click();
+      const container = element.parentElement || element;
+      if (!chooseOption(container, "li", action.value)) {
+        failed.push(action.context || "自定义下拉框");
+        continue;
+      }
+      element.setAttribute("data-aijianli-filled", "true");
+      filled++;
+      continue;
+    }
+    if (action.controlKind === "year-month") {
+      const yearControl = element.querySelector<HTMLElement>(".select-left");
+      const monthControl = element.querySelector<HTMLElement>(".select-right");
+      const currentYear = (yearControl?.textContent || "").trim();
+      if (currentYear && currentYear !== "年") {
+        alreadyFilled++;
+        continue;
+      }
+      const date = action.value.match(/(\d{4})\D*(\d{1,2})?/);
+      if (!date || !yearControl || !monthControl) {
+        failed.push(action.context || "年月选择器");
+        continue;
+      }
+      const year = date[1];
+      const month = String(Number(date[2] || "1")).padStart(2, "0");
+      yearControl.click();
+      const yearSelected = chooseOption(element, ".small-select-li", year);
+      monthControl.click();
+      const monthSelected = chooseOption(element, ".splicing-select-li", month);
+      if (!yearSelected || !monthSelected) {
+        failed.push(action.context || "年月选择器");
+        continue;
+      }
+      element.setAttribute("data-aijianli-filled", "true");
+      filled++;
+      continue;
+    }
     if (
       input.value?.trim() ||
       (input.type === "checkbox" && input.checked) ||
       (input.type === "radio" && input.checked)
     ) {
-      skipped++;
+      alreadyFilled++;
       continue;
     }
     if (element instanceof HTMLSelectElement) {
@@ -613,7 +719,7 @@ function applyFillActions(actions: FillAction[]): {
           normalize(candidate.text).includes(normalize(action.value)),
       );
       if (!option) {
-        skipped++;
+        failed.push(action.context || "下拉框");
         continue;
       }
       element.value = option.value;
@@ -622,14 +728,19 @@ function applyFillActions(actions: FillAction[]): {
     } else if (element.isContentEditable) {
       element.textContent = action.value;
     } else {
-      const value =
-        input.type === "date"
-          ? action.value
-              .replace(/[./年]/g, "-")
-              .replace(/月/g, "-")
-              .replace(/日/g, "")
-              .slice(0, 10)
-          : action.value;
+      let value = action.value;
+      if (input.type === "date" || action.controlKind === "readonly-date") {
+        value = value
+          .replace(/[./年]/g, "-")
+          .replace(/月/g, "-")
+          .replace(/日/g, "")
+          .slice(0, 10);
+        if (/^\d{4}-\d{1,2}$/.test(value)) value += "-01";
+        if (!/^\d{4}-\d{1,2}-\d{1,2}$/.test(value)) {
+          failed.push(action.context || "日期控件");
+          continue;
+        }
+      }
       const prototype =
         element instanceof HTMLTextAreaElement
           ? HTMLTextAreaElement.prototype
@@ -645,7 +756,7 @@ function applyFillActions(actions: FillAction[]): {
     element.setAttribute("data-aijianli-filled", "true");
     filled++;
   }
-  return { filled, skipped };
+  return { filled, alreadyFilled, failed: [...new Set(failed)].slice(0, 20) };
 }
 
 function attachSubmitMonitor(): void {

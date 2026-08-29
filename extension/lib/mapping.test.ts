@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildFillActions } from "./mapping";
+import { buildFillActions, buildFillPlan } from "./mapping";
 
 describe("static field mapping", () => {
   const profile = {
@@ -187,5 +187,64 @@ describe("static field mapping", () => {
       "计算机",
       "学习能力强，沟通协作顺畅",
     ]);
+  });
+
+  it("does not duplicate the last repeated record when the page has more rows", () => {
+    const plan = buildFillPlan(profile, [
+      {
+        fieldId: "1",
+        tag: "input",
+        type: "text",
+        context: "学校",
+        optionText: "",
+        options: [],
+      },
+      {
+        fieldId: "2",
+        tag: "input",
+        type: "text",
+        context: "学校",
+        optionText: "",
+        options: [],
+      },
+      {
+        fieldId: "3",
+        tag: "input",
+        type: "text",
+        context: "学校",
+        optionText: "",
+        options: [],
+      },
+    ]);
+
+    expect(plan.actions.map((action) => action.value)).toEqual([
+      "第一大学",
+      "第二大学",
+    ]);
+    expect(plan.missingProfile).toEqual(["学校"]);
+  });
+
+  it("separates missing profile data from unsupported fields", () => {
+    const plan = buildFillPlan(profile, [
+      {
+        fieldId: "1",
+        tag: "input",
+        type: "text",
+        context: "政治面貌",
+        optionText: "",
+        options: [],
+      },
+      {
+        fieldId: "2",
+        tag: "input",
+        type: "text",
+        context: "内部推荐码",
+        optionText: "",
+        options: [],
+      },
+    ]);
+
+    expect(plan.missingProfile).toEqual(["政治面貌"]);
+    expect(plan.unmatched).toEqual(["内部推荐码"]);
   });
 });

@@ -263,14 +263,38 @@ export default function App() {
               <span>已填写</span>
             </div>
             <div>
-              <strong>{result.skipped}</strong>
-              <span>已跳过</span>
+              <strong>{result.alreadyFilled}</strong>
+              <span>原本有值</span>
             </div>
             <div>
-              <strong>{result.unmatched.length}</strong>
-              <span>未识别</span>
+              <strong>{result.missingProfile.length}</strong>
+              <span>资料待补充</span>
+            </div>
+            <div>
+              <strong>{result.failed.length + result.unmatched.length}</strong>
+              <span>暂未填写</span>
             </div>
           </div>
+          {result.missingProfile.length > 0 && (
+            <details>
+              <summary>查看需要补充的资料</summary>
+              <ul>
+                {result.missingProfile.slice(0, 10).map((field, index) => (
+                  <li key={`${field}-${index}`}>{field}</li>
+                ))}
+              </ul>
+            </details>
+          )}
+          {result.failed.length > 0 && (
+            <details>
+              <summary>查看控件填写失败项</summary>
+              <ul>
+                {result.failed.slice(0, 10).map((field, index) => (
+                  <li key={`${field}-${index}`}>{field}</li>
+                ))}
+              </ul>
+            </details>
+          )}
           {result.unmatched.length > 0 && (
             <details>
               <summary>查看未识别字段</summary>

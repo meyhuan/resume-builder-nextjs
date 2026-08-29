@@ -3,6 +3,13 @@ import type { FieldDescriptor, FillAction } from "./types";
 interface Candidate {
   aliases: string[];
   values: string[];
+  repeatable: boolean;
+}
+
+export interface FillPlan {
+  actions: FillAction[];
+  missingProfile: string[];
+  unmatched: string[];
 }
 
 const DEFINITIONS: Array<{ paths: string[]; aliases: string[] }> = [
@@ -201,6 +208,14 @@ const DEFINITIONS: Array<{ paths: string[]; aliases: string[] }> = [
   { paths: ["projects[].name"], aliases: ["项目名称", "project name"] },
   { paths: ["projects[].role"], aliases: ["项目角色", "project role"] },
   {
+    paths: ["projects[].startDate"],
+    aliases: ["项目开始时间", "project start date"],
+  },
+  {
+    paths: ["projects[].endDate"],
+    aliases: ["项目结束时间", "project end date"],
+  },
+  {
     paths: ["projects[].description"],
     aliases: ["项目描述", "项目内容", "project description"],
   },
@@ -244,9 +259,21 @@ export function buildFillActions(
   profile: Record<string, unknown>,
   fields: FieldDescriptor[],
 ): FillAction[] {
+  return buildFillPlan(profile, fields).actions.map(({ fieldId, value }) => ({
+    fieldId,
+    value,
+  }));
+}
+
+export function buildFillPlan(
+  profile: Record<string, unknown>,
+  fields: FieldDescriptor[],
+): FillPlan {
   const candidates = buildCandidates(profile);
   const usage = new Map<number, number>();
   const actions: FillAction[] = [];
+  const missingProfile: string[] = [];
+  const unmatched: string[] = [];
   for (const field of fields) {
     const context = normalize(field.context);
     let bestIndex = -1;
@@ -254,40 +281,62 @@ export function buildFillActions(
     candidates.forEach((candidate, index) => {
       for (const alias of candidate.aliases) {
         const normalizedAlias = normalize(alias);
+        const currentHasValue =
+          bestIndex >= 0 && candidates[bestIndex].values.some(Boolean);
+        const candidateHasValue = candidate.values.some(Boolean);
         if (
           (context === normalizedAlias || context.includes(normalizedAlias)) &&
-          normalizedAlias.length > bestLength
+          (normalizedAlias.length > bestLength ||
+            (normalizedAlias.length === bestLength &&
+              candidateHasValue &&
+              !currentHasValue))
         ) {
           bestIndex = index;
           bestLength = normalizedAlias.length;
         }
       }
     });
-    if (bestIndex < 0) continue;
+    if (bestIndex < 0) {
+      unmatched.push(field.context);
+      continue;
+    }
     const candidate = candidates[bestIndex];
     const occurrence = usage.get(bestIndex) || 0;
-    const value =
-      candidate.values[Math.min(occurrence, candidate.values.length - 1)] || "";
+    const value = candidate.repeatable
+      ? candidate.values[occurrence] || ""
+      : candidate.values[Math.min(occurrence, candidate.values.length - 1)] ||
+        "";
     usage.set(bestIndex, occurrence + 1);
-    if (!value) continue;
+    if (!value) {
+      missingProfile.push(field.context);
+      continue;
+    }
     if (
       (field.type === "radio" || field.type === "checkbox") &&
       field.optionText &&
       !optionMatches(field.optionText, value)
     )
       continue;
-    actions.push({ fieldId: field.fieldId, value });
+    actions.push({
+      fieldId: field.fieldId,
+      value,
+      context: field.context,
+      controlKind: field.controlKind,
+    });
   }
-  return actions;
+  return {
+    actions,
+    missingProfile: unique(missingProfile),
+    unmatched: unique(unmatched),
+  };
 }
 
 function buildCandidates(profile: Record<string, unknown>): Candidate[] {
   const result = DEFINITIONS.map((definition) => ({
     aliases: definition.aliases,
-    values: definition.paths
-      .flatMap((path) => readPath(profile, path))
-      .filter(Boolean),
-  })).filter((candidate) => candidate.values.length > 0);
+    values: definition.paths.flatMap((path) => readPath(profile, path)),
+    repeatable: definition.paths.some((path) => path.includes("[]")),
+  }));
   const commonAnswers = Array.isArray(profile.commonAnswers)
     ? (profile.commonAnswers as Array<Record<string, unknown>>)
     : [];
@@ -297,9 +346,14 @@ function buildCandidates(profile: Record<string, unknown>): Candidate[] {
       ...(Array.isArray(answer.keywords) ? answer.keywords.map(String) : []),
     ].filter(Boolean);
     const value = String(answer.answer || "");
-    if (aliases.length && value) result.push({ aliases, values: [value] });
+    if (aliases.length)
+      result.push({ aliases, values: [value], repeatable: false });
   }
   return result;
+}
+
+function unique(values: string[]): string[] {
+  return [...new Set(values.filter(Boolean))].slice(0, 30);
 }
 
 function readPath(value: Record<string, unknown>, path: string): string[] {
