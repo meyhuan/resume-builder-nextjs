@@ -84,6 +84,9 @@ model JobApplication {
   sourceDomain   String?
   status         JobApplicationStatus @default(DRAFT)
   appliedAt      DateTime?
+  deadlineAt     DateTime?
+  nextActionAt   DateTime?
+  nextActionType String?
   note           String?
   fingerprint    String
   events         JobApplicationEvent[]
@@ -92,6 +95,7 @@ model JobApplication {
 
   @@unique([userId, fingerprint])
   @@index([userId, status, updatedAt])
+  @@index([userId, nextActionAt])
   @@index([resumeId])
 }
 

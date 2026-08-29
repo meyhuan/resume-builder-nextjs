@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import ApplicationsClient from "./applications-client";
+import ApplicationsWorkbench from "./applications-workbench";
+import "./applications-workbench.css";
 
 export const metadata: Metadata = {
   title: "投递管理",
@@ -7,5 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function ApplicationsPage() {
-  return <ApplicationsClient />;
+  return <ApplicationsWorkbench />;
 }

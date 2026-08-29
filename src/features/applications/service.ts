@@ -44,6 +44,9 @@ export async function createOrReuseApplication(userId: string, raw: unknown) {
       jobUrl: input.jobUrl || null,
       applicationUrl: input.applicationUrl || null,
       sourceDomain: input.sourceDomain || null,
+      deadlineAt: input.deadlineAt ? new Date(input.deadlineAt) : null,
+      nextActionAt: input.nextActionAt ? new Date(input.nextActionAt) : null,
+      nextActionType: input.nextActionType || null,
       note: input.note || null,
       fingerprint,
       events: {
@@ -80,6 +83,20 @@ export async function updateApplication(
       jobUrl: input.jobUrl === "" ? null : input.jobUrl,
       applicationUrl: input.applicationUrl === "" ? null : input.applicationUrl,
       sourceDomain: input.sourceDomain === "" ? null : input.sourceDomain,
+      deadlineAt:
+        input.deadlineAt === null
+          ? null
+          : input.deadlineAt
+            ? new Date(input.deadlineAt)
+            : undefined,
+      nextActionAt:
+        input.nextActionAt === null
+          ? null
+          : input.nextActionAt
+            ? new Date(input.nextActionAt)
+            : undefined,
+      nextActionType:
+        input.nextActionType === null ? null : input.nextActionType,
       note: input.note === "" ? null : input.note,
       appliedAt:
         input.status === "APPLIED" && !current.appliedAt

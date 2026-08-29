@@ -1,0 +1,93 @@
+/* Hallmark · macrostructure: Workbench · genre: modern-minimal · tone: utilitarian · anchor hue: violet · pre-emit critique: P5 H5 E5 S5 R5 V4 · contrast: pass (40–41) · nav: N2 · footer: none · slop: pass (42–45) · honest: pass (46) · chrome: pass (47) · tokens: pass (48) · responsive/mobile: pass (34, 49, 50–57) */
+
+:root {
+  --application-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --application-ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+  --application-duration-short: 180ms;
+  --application-duration-long: 280ms;
+}
+
+.applications-workbench {
+  font-variant-numeric: tabular-nums;
+}
+
+.application-input {
+  min-height: 2.75rem;
+  width: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: 0.75rem;
+  background: var(--color-background);
+  padding-inline: 0.75rem;
+  color: var(--color-foreground);
+  font-size: 0.875rem;
+  outline: 2px solid transparent;
+  outline-offset: 1px;
+}
+
+.application-input:hover {
+  background: var(--color-muted);
+}
+
+.application-input:focus-visible {
+  outline-color: var(--color-ring);
+}
+
+.application-input:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.application-drawer-overlay[data-state="open"] {
+  animation: application-fade-in var(--application-duration-long)
+    var(--application-ease-out);
+}
+
+.application-drawer[data-state="open"] {
+  animation: application-drawer-in var(--application-duration-long)
+    var(--application-ease-out);
+}
+
+.application-modal[data-state="open"] {
+  animation: application-modal-in var(--application-duration-long)
+    var(--application-ease-out);
+}
+
+@keyframes application-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes application-drawer-in {
+  from {
+    opacity: 0;
+    transform: translateX(1rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes application-modal-in {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .application-drawer-overlay[data-state="open"],
+  .application-drawer[data-state="open"],
+  .application-modal[data-state="open"] {
+    animation-duration: 150ms;
+    animation-name: application-fade-in;
+  }
+}

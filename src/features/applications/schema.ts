@@ -1,8 +1,11 @@
 import { createHash } from "node:crypto";
 import { z } from "zod";
-import { APPLICATION_STATUSES } from "./status";
+import { APPLICATION_ACTION_TYPES, APPLICATION_STATUSES } from "./status";
 
 export const applicationStatusSchema = z.enum(APPLICATION_STATUSES);
+
+export const applicationActionTypeSchema = z.enum(APPLICATION_ACTION_TYPES);
+const nullableDateTime = z.string().datetime().nullable().optional();
 
 export const createApplicationSchema = z.object({
   companyName: z.string().trim().min(1).max(300),
@@ -12,6 +15,9 @@ export const createApplicationSchema = z.object({
   applicationUrl: z.string().trim().max(2_000).optional().default(""),
   sourceDomain: z.string().trim().max(300).optional().default(""),
   resumeId: z.string().trim().max(100).nullable().optional().default(null),
+  deadlineAt: nullableDateTime,
+  nextActionAt: nullableDateTime,
+  nextActionType: applicationActionTypeSchema.nullable().optional(),
   note: z.string().trim().max(10_000).optional().default(""),
 });
 
@@ -23,6 +29,9 @@ export const updateApplicationSchema = z.object({
   applicationUrl: z.string().trim().max(2_000).optional(),
   sourceDomain: z.string().trim().max(300).optional(),
   resumeId: z.string().trim().max(100).nullable().optional(),
+  deadlineAt: nullableDateTime,
+  nextActionAt: nullableDateTime,
+  nextActionType: applicationActionTypeSchema.nullable().optional(),
   note: z.string().trim().max(10_000).optional(),
   status: applicationStatusSchema.optional(),
 });
