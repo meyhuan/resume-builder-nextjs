@@ -1,5 +1,7 @@
 "use client";
 
+/* Hallmark · modern-minimal · utilitarian restraint · violet anchor · profile section stack · pre-emit critique: P5 H4 E4 S5 R5 V4 */
+
 import { useEffect, useState, type ReactElement } from "react";
 import { Plus, RefreshCw, Save, ShieldCheck, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -7,6 +9,18 @@ import {
   createEmptyApplicationProfile,
   type ApplicationProfilePayload,
 } from "@/features/application-profile/schema";
+import {
+  cities,
+  commonQuestions,
+  ethnicities,
+  industries,
+  nationalities,
+  relationships,
+  roles,
+  salaryRanges,
+  type FieldOption,
+  type ProfileFieldConfig,
+} from "./field-options";
 
 interface ResumeOption {
   id: string;
@@ -21,7 +35,9 @@ interface Authorization {
 }
 
 const inputClass =
-  "w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-100";
+  "min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline outline-2 outline-offset-1 outline-transparent transition-colors placeholder:text-slate-400 hover:border-slate-300 focus-visible:border-violet-500 focus-visible:outline-violet-600 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:opacity-60";
+
+type FieldDefinition = string | ProfileFieldConfig;
 
 export default function ApplicationProfileClient(): ReactElement {
   const [profile, setProfile] = useState<ApplicationProfilePayload>(
@@ -152,7 +168,7 @@ export default function ApplicationProfileClient(): ReactElement {
           <button
             onClick={save}
             disabled={saving}
-            className="inline-flex items-center gap-2 rounded-xl bg-violet-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-violet-700 disabled:opacity-60"
+            className="inline-flex min-h-11 items-center gap-2 whitespace-nowrap rounded-xl bg-violet-600 px-5 py-2.5 text-sm font-semibold text-white outline outline-2 outline-offset-1 outline-transparent transition-colors hover:bg-violet-700 focus-visible:outline-violet-600 active:bg-violet-800 disabled:cursor-not-allowed disabled:bg-violet-400 disabled:opacity-60"
           >
             <Save className="h-4 w-4" />
             {saving ? "保存中…" : "保存资料"}
@@ -181,7 +197,7 @@ export default function ApplicationProfileClient(): ReactElement {
             </select>
             <button
               onClick={syncResume}
-              className="inline-flex items-center gap-2 rounded-lg border border-violet-200 bg-violet-50 px-4 py-2 text-sm font-medium text-violet-700 hover:bg-violet-100"
+              className="inline-flex min-h-11 items-center gap-2 whitespace-nowrap rounded-xl border border-violet-200 bg-violet-50 px-4 py-2 text-sm font-medium text-violet-700 outline outline-2 outline-offset-1 outline-transparent transition-colors hover:bg-violet-100 focus-visible:outline-violet-600 active:bg-violet-200"
             >
               <RefreshCw className="h-4 w-4" />
               从简历补充空缺
@@ -196,13 +212,29 @@ export default function ApplicationProfileClient(): ReactElement {
           labels={{
             fullName: "姓名",
             englishName: "英文名",
-            gender: "性别",
-            birthDate: "出生日期",
-            maritalStatus: "婚姻状况",
-            healthStatus: "健康状况",
-            height: "身高",
-            weight: "体重",
-            photoUrl: "照片地址",
+            gender: {
+              label: "性别",
+              kind: "select",
+              options: ["男", "女", "不便透露"],
+            },
+            birthDate: { label: "出生日期", kind: "date" },
+            maritalStatus: {
+              label: "婚姻状况",
+              kind: "select",
+              options: ["未婚", "已婚", "离异", "不便透露"],
+            },
+            healthStatus: {
+              label: "健康状况",
+              kind: "select",
+              options: ["健康", "良好", "一般"],
+            },
+            height: { label: "身高", kind: "number", suffix: "cm" },
+            weight: { label: "体重", kind: "number", suffix: "kg" },
+            photoUrl: {
+              label: "照片地址",
+              kind: "url",
+              placeholder: "https://",
+            },
           }}
         />
         <ObjectSection
@@ -210,14 +242,27 @@ export default function ApplicationProfileClient(): ReactElement {
           value={profile.contact}
           onChange={(value) => updateSection("contact", value)}
           labels={{
-            phone: "手机",
-            alternatePhone: "备用手机",
-            email: "邮箱",
-            alternateEmail: "备用邮箱",
-            currentCity: "现居城市",
-            hometown: "籍贯",
-            householdRegistration: "户籍所在地",
-            address: "详细地址",
+            phone: { label: "手机", kind: "tel", autoComplete: "tel" },
+            alternatePhone: { label: "备用手机", kind: "tel" },
+            email: { label: "邮箱", kind: "email", autoComplete: "email" },
+            alternateEmail: { label: "备用邮箱", kind: "email" },
+            currentCity: {
+              label: "现居城市",
+              kind: "suggest",
+              options: cities,
+              quickOptions: ["北京", "上海", "广州", "深圳", "杭州"],
+            },
+            hometown: { label: "籍贯", kind: "suggest", options: cities },
+            householdRegistration: {
+              label: "户籍所在地",
+              kind: "suggest",
+              options: cities,
+            },
+            address: {
+              label: "详细地址",
+              placeholder: "省 / 市 / 区 / 街道",
+              autoComplete: "street-address",
+            },
           }}
         />
         <ObjectSection
@@ -225,11 +270,36 @@ export default function ApplicationProfileClient(): ReactElement {
           value={profile.identity}
           onChange={(value) => updateSection("identity", value)}
           labels={{
-            idType: "证件类型",
+            idType: {
+              label: "证件类型",
+              kind: "select",
+              options: [
+                "居民身份证",
+                "护照",
+                "港澳居民来往内地通行证",
+                "台湾居民来往大陆通行证",
+                "其他",
+              ],
+            },
             idNumber: "证件号码",
-            nationality: "国籍",
-            ethnicity: "民族",
-            politicalStatus: "政治面貌",
+            nationality: {
+              label: "国籍/地区",
+              kind: "suggest",
+              options: nationalities,
+            },
+            ethnicity: { label: "民族", kind: "suggest", options: ethnicities },
+            politicalStatus: {
+              label: "政治面貌",
+              kind: "select",
+              options: [
+                "群众",
+                "共青团员",
+                "中共预备党员",
+                "中共党员",
+                "民主党派",
+                "无党派人士",
+              ],
+            },
           }}
           sensitive
         />
@@ -238,12 +308,40 @@ export default function ApplicationProfileClient(): ReactElement {
           value={profile.jobPreference}
           onChange={(value) => updateSection("jobPreference", value)}
           labels={{
-            targetRole: "目标岗位",
-            targetCity: "目标城市",
-            employmentType: "工作类型",
-            expectedSalary: "期望薪资",
-            availableDate: "到岗时间",
-            acceptAdjustment: "是否接受调剂",
+            targetRole: {
+              label: "目标岗位",
+              kind: "suggest",
+              options: roles,
+              placeholder: "输入岗位，或从常见岗位中选择",
+            },
+            targetCity: {
+              label: "目标城市",
+              kind: "suggest",
+              options: cities,
+              quickOptions: ["北京", "上海", "广州", "深圳", "杭州", "不限"],
+            },
+            employmentType: {
+              label: "工作类型",
+              kind: "select",
+              options: ["全职", "实习", "兼职", "校招", "管培生"],
+            },
+            expectedSalary: {
+              label: "期望薪资",
+              kind: "suggest",
+              options: salaryRanges,
+              quickOptions: ["面议", "8K-10K", "10K-15K", "15K-20K"],
+            },
+            availableDate: {
+              label: "到岗时间",
+              kind: "suggest",
+              options: ["随时到岗", "一周内", "两周内", "一个月内", "面议"],
+              quickOptions: ["随时到岗", "两周内", "面议"],
+            },
+            acceptAdjustment: {
+              label: "是否接受调剂",
+              kind: "select",
+              options: ["是", "否", "视情况而定"],
+            },
           }}
         />
 
@@ -267,15 +365,41 @@ export default function ApplicationProfileClient(): ReactElement {
           labels={{
             school: "学校",
             major: "专业",
-            degree: "学历",
-            startDate: "开始时间",
-            endDate: "结束时间",
-            educationType: "培养方式",
+            degree: {
+              label: "学历",
+              kind: "select",
+              options: [
+                "中专",
+                "高中",
+                "大专",
+                "本科",
+                "硕士",
+                "博士",
+                "MBA",
+                "EMBA",
+                "其他",
+              ],
+            },
+            startDate: { label: "开始时间", kind: "month" },
+            endDate: { label: "结束时间", kind: "month" },
+            educationType: {
+              label: "培养方式",
+              kind: "select",
+              options: [
+                "全日制",
+                "非全日制",
+                "海外教育",
+                "成人教育",
+                "自考",
+                "其他",
+              ],
+            },
             gpa: "GPA",
             rank: "排名",
             courses: "主修课程",
             description: "补充说明",
           }}
+          addLabel="新增教育经历"
         />
         <ArraySection
           title="工作与实习经历"
@@ -293,15 +417,23 @@ export default function ApplicationProfileClient(): ReactElement {
             description: "",
           })}
           labels={{
-            type: "类型（work/intern）",
+            type: {
+              label: "经历类型",
+              kind: "select",
+              options: [
+                { value: "work", label: "工作经历" },
+                { value: "intern", label: "实习经历" },
+              ],
+            },
             company: "公司",
             position: "职位",
-            industry: "行业",
-            location: "地点",
-            startDate: "开始时间",
-            endDate: "结束时间",
+            industry: { label: "行业", kind: "suggest", options: industries },
+            location: { label: "地点", kind: "suggest", options: cities },
+            startDate: { label: "开始时间", kind: "month" },
+            endDate: { label: "结束时间", kind: "month" },
             description: "经历描述",
           }}
+          addLabel="新增工作或实习经历"
         />
         <ArraySection
           title="项目经历"
@@ -318,10 +450,11 @@ export default function ApplicationProfileClient(): ReactElement {
           labels={{
             name: "项目名称",
             role: "角色",
-            startDate: "开始时间",
-            endDate: "结束时间",
+            startDate: { label: "开始时间", kind: "month" },
+            endDate: { label: "结束时间", kind: "month" },
             description: "项目描述",
           }}
+          addLabel="新增项目经历"
         />
         <ArraySection
           title="校园经历"
@@ -338,10 +471,11 @@ export default function ApplicationProfileClient(): ReactElement {
           labels={{
             organization: "组织/社团",
             position: "职务",
-            startDate: "开始时间",
-            endDate: "结束时间",
+            startDate: { label: "开始时间", kind: "month" },
+            endDate: { label: "结束时间", kind: "month" },
             description: "经历描述",
           }}
+          addLabel="新增校园经历"
         />
 
         <ObjectSection
@@ -361,17 +495,41 @@ export default function ApplicationProfileClient(): ReactElement {
           value={profile.links}
           onChange={(value) => updateSection("links", value)}
           labels={{
-            personalWebsite: "个人网站",
-            github: "GitHub",
-            portfolio: "作品集",
-            linkedin: "LinkedIn",
+            personalWebsite: {
+              label: "个人网站",
+              kind: "url",
+              placeholder: "https://",
+            },
+            github: {
+              label: "GitHub",
+              kind: "url",
+              placeholder: "https://github.com/",
+            },
+            portfolio: {
+              label: "作品集",
+              kind: "url",
+              placeholder: "https://",
+            },
+            linkedin: {
+              label: "LinkedIn",
+              kind: "url",
+              placeholder: "https://linkedin.com/in/",
+            },
           }}
         />
         <ObjectSection
           title="紧急联系人"
           value={profile.emergencyContact}
           onChange={(value) => updateSection("emergencyContact", value)}
-          labels={{ name: "姓名", relationship: "关系", phone: "电话" }}
+          labels={{
+            name: "姓名",
+            relationship: {
+              label: "关系",
+              kind: "suggest",
+              options: relationships,
+            },
+            phone: { label: "电话", kind: "tel" },
+          }}
         />
         <ArraySection
           title="家庭成员"
@@ -387,11 +545,16 @@ export default function ApplicationProfileClient(): ReactElement {
           })}
           labels={{
             name: "姓名",
-            relationship: "关系",
+            relationship: {
+              label: "关系",
+              kind: "suggest",
+              options: relationships,
+            },
             employer: "工作单位",
             position: "职务",
-            phone: "电话",
+            phone: { label: "电话", kind: "tel" },
           }}
+          addLabel="新增家庭成员"
         />
         <ArraySection
           title="常见网申问答"
@@ -404,10 +567,15 @@ export default function ApplicationProfileClient(): ReactElement {
             answer: "",
           })}
           labels={{
-            question: "问题",
+            question: {
+              label: "问题",
+              kind: "suggest",
+              options: commonQuestions,
+            },
             keywords: "匹配关键词（逗号分隔）",
             answer: "答案",
           }}
+          addLabel="新增常见问答"
         />
 
         <Section
@@ -484,7 +652,7 @@ function ObjectSection<T extends Record<string, string>>({
   title: string;
   value: T;
   onChange: (value: T) => void;
-  labels: Partial<Record<keyof T, string>>;
+  labels: Partial<Record<keyof T, FieldDefinition>>;
   multiline?: boolean;
   sensitive?: boolean;
 }): ReactElement {
@@ -498,28 +666,18 @@ function ObjectSection<T extends Record<string, string>>({
       }
     >
       <div className="grid gap-4 sm:grid-cols-2">
-        {Object.entries(labels).map(([key, label]) => (
-          <label key={key} className="text-sm text-slate-600">
-            <span className="mb-1.5 block">{label}</span>
-            {multiline ? (
-              <textarea
-                rows={3}
-                value={value[key] || ""}
-                onChange={(event) =>
-                  onChange({ ...value, [key]: event.target.value })
-                }
-                className={inputClass}
-              />
-            ) : (
-              <input
-                value={value[key] || ""}
-                onChange={(event) =>
-                  onChange({ ...value, [key]: event.target.value })
-                }
-                className={inputClass}
-              />
-            )}
-          </label>
+        {Object.entries(labels).map(([key, definition]) => (
+          <ProfileField
+            key={key}
+            id={`${title}-${key}`}
+            definition={
+              multiline && typeof definition === "string"
+                ? { label: definition, kind: "textarea" }
+                : (definition ?? key)
+            }
+            value={value[key] || ""}
+            onChange={(nextValue) => onChange({ ...value, [key]: nextValue })}
+          />
         ))}
       </div>
     </Section>
@@ -532,12 +690,14 @@ function ArraySection<T extends Record<string, unknown>>({
   onChange,
   create,
   labels,
+  addLabel = "新增一条",
 }: {
   title: string;
   items: T[];
   onChange: (items: T[]) => void;
   create: () => T;
-  labels: Partial<Record<keyof T, string>>;
+  labels: Partial<Record<keyof T, FieldDefinition>>;
+  addLabel?: string;
 }): ReactElement {
   function change(index: number, key: string, raw: string): void {
     const next = items.map((item, itemIndex) => {
@@ -563,42 +723,35 @@ function ArraySection<T extends Record<string, unknown>>({
             key={String(item.id || index)}
             className="relative grid gap-3 rounded-xl border border-slate-200 bg-slate-50/60 p-4 sm:grid-cols-2"
           >
-            {Object.entries(labels).map(([key, label]) => (
-              <label
+            {Object.entries(labels).map(([key, definition]) => (
+              <div
                 key={key}
                 className={`text-sm text-slate-600 ${/description|answer|courses/.test(key) ? "sm:col-span-2" : ""}`}
               >
-                <span className="mb-1 block">{label}</span>
-                {/description|answer|courses/.test(key) ? (
-                  <textarea
-                    rows={3}
-                    value={
-                      Array.isArray(item[key])
-                        ? (item[key] as string[]).join("，")
-                        : String(item[key] || "")
-                    }
-                    onChange={(event) => change(index, key, event.target.value)}
-                    className={inputClass}
-                  />
-                ) : (
-                  <input
-                    value={
-                      Array.isArray(item[key])
-                        ? (item[key] as string[]).join("，")
-                        : String(item[key] || "")
-                    }
-                    onChange={(event) => change(index, key, event.target.value)}
-                    className={inputClass}
-                  />
-                )}
-              </label>
+                <ProfileField
+                  id={`${title}-${index}-${key}`}
+                  definition={
+                    /description|answer|courses/.test(key) &&
+                    typeof definition === "string"
+                      ? { label: definition, kind: "textarea" }
+                      : (definition ?? key)
+                  }
+                  value={
+                    Array.isArray(item[key])
+                      ? (item[key] as string[]).join("，")
+                      : String(item[key] || "")
+                  }
+                  onChange={(nextValue) => change(index, key, nextValue)}
+                />
+              </div>
             ))}
             <button
               type="button"
               onClick={() =>
                 onChange(items.filter((_, itemIndex) => itemIndex !== index))
               }
-              className="absolute right-3 top-3 rounded-lg bg-white p-2 text-slate-400 shadow-sm hover:text-rose-500"
+              className="absolute right-3 top-3 rounded-lg bg-white p-2 text-slate-400 shadow-sm outline outline-2 outline-offset-1 outline-transparent transition-colors hover:text-rose-500 focus-visible:outline-violet-600 active:bg-rose-50"
+              aria-label={`删除第 ${index + 1} 条${title}`}
             >
               <Trash2 className="h-4 w-4" />
             </button>
@@ -607,12 +760,147 @@ function ArraySection<T extends Record<string, unknown>>({
         <button
           type="button"
           onClick={() => onChange([...items, create()])}
-          className="inline-flex items-center gap-2 rounded-lg border border-dashed border-violet-300 px-4 py-2 text-sm text-violet-700 hover:bg-violet-50"
+          className="inline-flex min-h-11 items-center gap-2 whitespace-nowrap rounded-xl border border-dashed border-violet-300 px-4 py-2 text-sm text-violet-700 outline outline-2 outline-offset-1 outline-transparent transition-colors hover:bg-violet-50 focus-visible:outline-violet-600 active:bg-violet-100"
         >
           <Plus className="h-4 w-4" />
-          新增一条
+          {addLabel}
         </button>
       </div>
     </Section>
+  );
+}
+
+function ProfileField({
+  id,
+  definition,
+  value,
+  onChange,
+}: {
+  id: string;
+  definition: FieldDefinition;
+  value: string;
+  onChange: (value: string) => void;
+}): ReactElement {
+  const config: ProfileFieldConfig =
+    typeof definition === "string" ? { label: definition } : definition;
+  const kind = config.kind || "text";
+  const options = normalizeOptions(config.options || []);
+  const hasCurrentOption = options.some((option) => option.value === value);
+  const datalistId = `${id.replace(/[^a-zA-Z0-9_-]/g, "-")}-options`;
+  const type = ["date", "month", "number", "email", "tel", "url"].includes(kind)
+    ? kind
+    : "text";
+
+  const label = (
+    <span className="mb-1.5 block font-medium text-slate-600">
+      {config.label}
+    </span>
+  );
+
+  if (kind === "textarea") {
+    return (
+      <label htmlFor={id} className="block text-sm text-slate-600">
+        {label}
+        <textarea
+          id={id}
+          rows={3}
+          value={value}
+          placeholder={config.placeholder}
+          onChange={(event) => onChange(event.target.value)}
+          className={`${inputClass} py-2.5 leading-6`}
+        />
+      </label>
+    );
+  }
+
+  if (kind === "select") {
+    return (
+      <label htmlFor={id} className="block text-sm text-slate-600">
+        {label}
+        <select
+          id={id}
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          className={inputClass}
+        >
+          <option value="">请选择</option>
+          {value && !hasCurrentOption && <option value={value}>{value}</option>}
+          {options.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </label>
+    );
+  }
+
+  return (
+    <label htmlFor={id} className="block text-sm text-slate-600">
+      {label}
+      <span className="relative block">
+        <input
+          id={id}
+          type={type}
+          list={kind === "suggest" ? datalistId : undefined}
+          value={value}
+          autoComplete={config.autoComplete}
+          placeholder={config.placeholder}
+          onChange={(event) => onChange(event.target.value)}
+          onClick={(event) => {
+            if (kind !== "date" && kind !== "month") return;
+            try {
+              event.currentTarget.showPicker();
+            } catch {
+              // Browsers without showPicker still expose the native date control.
+            }
+          }}
+          className={`${inputClass} ${config.suffix ? "pr-12" : ""}`}
+        />
+        {config.suffix && (
+          <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-xs text-slate-400">
+            {config.suffix}
+          </span>
+        )}
+      </span>
+      {kind === "suggest" && (
+        <datalist id={datalistId}>
+          {options.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </datalist>
+      )}
+      {config.quickOptions && config.quickOptions.length > 0 && (
+        <span
+          className="mt-2 flex flex-wrap gap-1.5"
+          aria-label={`${config.label}快捷选项`}
+        >
+          {config.quickOptions.map((option) => (
+            <button
+              key={option}
+              type="button"
+              onClick={() => onChange(option)}
+              className={`whitespace-nowrap rounded-full border px-2.5 py-1 text-xs outline outline-2 outline-offset-1 outline-transparent transition-colors focus-visible:outline-violet-600 active:bg-violet-100 ${
+                value === option
+                  ? "border-violet-300 bg-violet-50 font-medium text-violet-700"
+                  : "border-slate-200 bg-white text-slate-500 hover:border-violet-200 hover:text-violet-700"
+              }`}
+            >
+              {option}
+            </button>
+          ))}
+        </span>
+      )}
+    </label>
+  );
+}
+
+function normalizeOptions(
+  options: readonly (string | FieldOption)[],
+): FieldOption[] {
+  return options.map((option) =>
+    typeof option === "string" ? { value: option, label: option } : option,
   );
 }
