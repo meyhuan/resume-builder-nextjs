@@ -5,6 +5,7 @@
 import { useEffect, useState, type ReactElement } from "react";
 import { Plus, RefreshCw, Save, ShieldCheck, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { AutocompleteInput } from "@/components/ui/autocomplete-input";
 import {
   createEmptyApplicationProfile,
   type ApplicationProfilePayload,
@@ -786,7 +787,6 @@ function ProfileField({
   const kind = config.kind || "text";
   const options = normalizeOptions(config.options || []);
   const hasCurrentOption = options.some((option) => option.value === value);
-  const datalistId = `${id.replace(/[^a-zA-Z0-9_-]/g, "-")}-options`;
   const type = ["date", "month", "number", "email", "tel", "url"].includes(kind)
     ? kind
     : "text";
@@ -835,6 +835,46 @@ function ProfileField({
     );
   }
 
+  if (kind === "suggest") {
+    return (
+      <div className="block text-sm text-slate-600">
+        <label htmlFor={id} className="mb-1.5 block font-medium text-slate-600">
+          {config.label}
+        </label>
+        <AutocompleteInput
+          id={id}
+          value={value}
+          options={options}
+          autoComplete={config.autoComplete}
+          placeholder={config.placeholder}
+          onValueChange={onChange}
+          className={inputClass}
+        />
+        {config.quickOptions && config.quickOptions.length > 0 && (
+          <div
+            className="mt-2 flex flex-wrap gap-1.5"
+            aria-label={`${config.label}快捷选项`}
+          >
+            {config.quickOptions.map((option) => (
+              <button
+                key={option}
+                type="button"
+                onClick={() => onChange(option)}
+                className={`whitespace-nowrap rounded-full border px-2.5 py-1 text-xs outline outline-2 outline-offset-1 outline-transparent transition-colors focus-visible:outline-violet-600 active:bg-violet-100 ${
+                  value === option
+                    ? "border-violet-300 bg-violet-50 font-medium text-violet-700"
+                    : "border-slate-200 bg-white text-slate-500 hover:border-violet-200 hover:text-violet-700"
+                }`}
+              >
+                {option}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <label htmlFor={id} className="block text-sm text-slate-600">
       {label}
@@ -842,7 +882,6 @@ function ProfileField({
         <input
           id={id}
           type={type}
-          list={kind === "suggest" ? datalistId : undefined}
           value={value}
           autoComplete={config.autoComplete}
           placeholder={config.placeholder}
@@ -863,36 +902,6 @@ function ProfileField({
           </span>
         )}
       </span>
-      {kind === "suggest" && (
-        <datalist id={datalistId}>
-          {options.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </datalist>
-      )}
-      {config.quickOptions && config.quickOptions.length > 0 && (
-        <span
-          className="mt-2 flex flex-wrap gap-1.5"
-          aria-label={`${config.label}快捷选项`}
-        >
-          {config.quickOptions.map((option) => (
-            <button
-              key={option}
-              type="button"
-              onClick={() => onChange(option)}
-              className={`whitespace-nowrap rounded-full border px-2.5 py-1 text-xs outline outline-2 outline-offset-1 outline-transparent transition-colors focus-visible:outline-violet-600 active:bg-violet-100 ${
-                value === option
-                  ? "border-violet-300 bg-violet-50 font-medium text-violet-700"
-                  : "border-slate-200 bg-white text-slate-500 hover:border-violet-200 hover:text-violet-700"
-              }`}
-            >
-              {option}
-            </button>
-          ))}
-        </span>
-      )}
     </label>
   );
 }
