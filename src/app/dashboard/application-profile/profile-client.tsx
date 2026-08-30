@@ -7,6 +7,10 @@ import { Plus, RefreshCw, Save, ShieldCheck, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { AutocompleteInput } from "@/components/ui/autocomplete-input";
 import {
+  ChineseDateInput,
+  ChineseMonthInput,
+} from "@/components/ui/chinese-month-input";
+import {
   createEmptyApplicationProfile,
   type ApplicationProfilePayload,
 } from "@/features/application-profile/schema";
@@ -787,7 +791,7 @@ function ProfileField({
   const kind = config.kind || "text";
   const options = normalizeOptions(config.options || []);
   const hasCurrentOption = options.some((option) => option.value === value);
-  const type = ["date", "month", "number", "email", "tel", "url"].includes(kind)
+  const type = ["date", "number", "email", "tel", "url"].includes(kind)
     ? kind
     : "text";
 
@@ -875,6 +879,40 @@ function ProfileField({
     );
   }
 
+  if (kind === "month") {
+    return (
+      <div className="block text-sm text-slate-600">
+        <label htmlFor={id} className="mb-1.5 block font-medium text-slate-600">
+          {config.label}
+        </label>
+        <ChineseMonthInput
+          id={id}
+          value={value}
+          onValueChange={onChange}
+          placeholder={config.placeholder}
+          className={inputClass}
+        />
+      </div>
+    );
+  }
+
+  if (kind === "date") {
+    return (
+      <div className="block text-sm text-slate-600">
+        <label htmlFor={id} className="mb-1.5 block font-medium text-slate-600">
+          {config.label}
+        </label>
+        <ChineseDateInput
+          id={id}
+          value={value}
+          onValueChange={onChange}
+          placeholder={config.placeholder}
+          className={inputClass}
+        />
+      </div>
+    );
+  }
+
   return (
     <label htmlFor={id} className="block text-sm text-slate-600">
       {label}
@@ -886,14 +924,6 @@ function ProfileField({
           autoComplete={config.autoComplete}
           placeholder={config.placeholder}
           onChange={(event) => onChange(event.target.value)}
-          onClick={(event) => {
-            if (kind !== "date" && kind !== "month") return;
-            try {
-              event.currentTarget.showPicker();
-            } catch {
-              // Browsers without showPicker still expose the native date control.
-            }
-          }}
           className={`${inputClass} ${config.suffix ? "pr-12" : ""}`}
         />
         {config.suffix && (
