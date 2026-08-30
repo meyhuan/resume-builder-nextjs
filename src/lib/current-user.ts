@@ -5,8 +5,10 @@ export async function getCurrentUser() {
   const store = await cookies();
   const wxId = store.get("auth_uid")?.value;
   if (!wxId) return null;
-  return prisma.user.findUnique({
+  return prisma.user.upsert({
     where: { wxId },
+    update: {},
+    create: { wxId },
     select: { id: true, wxId: true, name: true, email: true },
   });
 }
