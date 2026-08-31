@@ -43,11 +43,7 @@ import { CoverLetterDialog } from '@/components/editor/cover-letter-dialog'
 import { InterviewPrepDialog } from '@/components/editor/interview-prep-dialog'
 import { GrammarCheckDialog } from '@/components/editor/grammar-check-dialog'
 import { OptimizeDialog } from '@/components/editor/optimize-dialog'
-import {
-  MINI_PROGRAM_NAME,
-  MiniProgramDialog,
-} from '@/components/landing/MiniProgramEntry'
-import { MiniProgramSaveReminder } from '@/components/editor/mini-program-save-reminder'
+import { MiniProgramDialog } from '@/components/landing/MiniProgramEntry'
 
 const AI_CACHE_KEYS: Record<string, string> = {
   ai: 'wizard_pending_resume',
@@ -101,7 +97,7 @@ interface EditorDraftBackup {
 
 const EDITOR_DRAFT_BACKUP_KEY = 'resume_editor_draft_backup_v1'
 const EDITOR_DRAFT_BACKUP_TTL_MS = 24 * 60 * 60 * 1000
-const MINI_PROGRAM_SAVE_REMINDER_KEY_PREFIX = 'mini_program_save_reminder_v1'
+const MINI_PROGRAM_EXPORT_REMINDER_KEY = 'mini_program_export_reminder_v1'
 
 function areStringArraysEqual(
   left: readonly string[] | undefined,
@@ -251,7 +247,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
   const [savedSnapshot, setSavedSnapshot] = useState<string>('')
   const [miniProgramDialogOpen, setMiniProgramDialogOpen] = useState(false)
-  const miniProgramReminderShownRef = useRef(false)
+  const miniProgramExportReminderShownRef = useRef(false)
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null)
   const AUTO_SAVE_DELAY = 30000 // 30 seconds
   const [showLeaveDialog, setShowLeaveDialog] = useState(false)
@@ -507,49 +503,16 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
    * Persist resume to DB. In guest mode (no resumeId), creates a new
    * resume first, then saves. Auth is checked before any API call.
    */
-  const showMiniProgramSaveReminder = useCallback((savedResumeId: string): boolean => {
-    if (miniProgramReminderShownRef.current) return false
-
-    const reminderKey = `${MINI_PROGRAM_SAVE_REMINDER_KEY_PREFIX}:${savedResumeId}`
+  const showMiniProgramExportReminder = useCallback((): boolean => {
+    if (miniProgramExportReminderShownRef.current) return false
     try {
-      if (window.localStorage.getItem(reminderKey)) return false
-      window.localStorage.setItem(reminderKey, '1')
+      if (window.localStorage.getItem(MINI_PROGRAM_EXPORT_REMINDER_KEY)) return false
+      window.localStorage.setItem(MINI_PROGRAM_EXPORT_REMINDER_KEY, '1')
     } catch {
       // The in-memory flag still prevents repeated reminders during this session.
     }
-    miniProgramReminderShownRef.current = true
-
-    toast.custom((toastId) => (
-      <MiniProgramSaveReminder
-        onDismiss={() => toast.dismiss(toastId)}
-        onViewQr={() => {
-          toast.dismiss(toastId)
-          setMiniProgramDialogOpen(true)
-          track('landing_cta_click', {
-            cta: 'view_mini_program_qr',
-            target: 'wechat_mini_program_qr',
-            entry: 'pc_editor_first_save_reminder',
-            source: 'save_success_reminder',
-            resumeId: savedResumeId,
-          })
-        }}
-        onCopyName={() => {
-          void navigator.clipboard.writeText(MINI_PROGRAM_NAME).then(() => {
-            toast.success('小程序名称已复制')
-            track('landing_cta_click', {
-              cta: 'copy_mini_program_name',
-              target: MINI_PROGRAM_NAME,
-              entry: 'pc_editor_first_save_reminder',
-              source: 'save_success_reminder',
-              resumeId: savedResumeId,
-            })
-          }).catch(() => {
-            toast.error(`请在微信中搜索「${MINI_PROGRAM_NAME}」`)
-          })
-        }}
-      />
-    ), { duration: 10000 })
-
+    miniProgramExportReminderShownRef.current = true
+    setMiniProgramDialogOpen(true)
     return true
   }, [])
 
@@ -676,7 +639,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
       if (options.revalidateDashboard !== false) {
         await revalidateDashboard()
       }
-      if (!showMiniProgramSaveReminder(currentId) && options.showSuccessToast !== false) {
+      if (options.showSuccessToast !== false) {
         toast.success('保存成功')
       }
       return currentId
@@ -702,7 +665,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
     } finally {
       setIsSaving(false)
     }
-  }, [resumeId, resume, tpl, theme, onePageMode, onePageSnapshot, sidebarSectionIds, showMiniProgramSaveReminder])
+  }, [resumeId, resume, tpl, theme, onePageMode, onePageSnapshot, sidebarSectionIds])
 
   /** Auth-gated save — prompts login if user is not authenticated. */
   const handleSave = useCallback(() => {
@@ -815,13 +778,15 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
         a.download = `${sanitizeExportFileName(resume.name)}.md`
         a.click()
         URL.revokeObjectURL(url)
-        toast.success('Markdown导出成功')
+        if (!showMiniProgramExportReminder()) {
+          toast.success('Markdown导出成功')
+        }
       } catch (error) {
         console.error('Export markdown failed:', error)
         toast.error('Markdown导出失败，请重试')
       }
     })
-  }, [resume, requireAuth, requirePdf, trackExportPaywallBlock])
+  }, [resume, requireAuth, requirePdf, showMiniProgramExportReminder, trackExportPaywallBlock])
 
   async function handleExportPng(): Promise<void> {
     if (!requirePdf()) {
@@ -840,6 +805,9 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
     })
     try {
       await exportImage<HTMLDivElement>(printRef, { fileName: 'resume', pixelRatio: 2 })
+      if (!showMiniProgramExportReminder()) {
+        toast.success('图片导出成功')
+      }
       track('export_success', {
         resumeId,
         templateId: tpl,
@@ -919,7 +887,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
 
     let exportResumeId = resumeId
     if (!exportResumeId || hasUnsavedChanges) {
-      const savedId = await doSave()
+      const savedId = await doSave({ showSuccessToast: false })
       if (!savedId) {
         track('export_failed', {
           resumeId: exportResumeId,
@@ -1037,7 +1005,9 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
     a.download = `${sanitizeExportFileName(fileName)}.pdf`
     a.click()
     handleClosePreview()
-    toast.success('PDF 导出成功')
+    if (!showMiniProgramExportReminder()) {
+      toast.success('PDF 导出成功')
+    }
     track('export_success', {
       resumeId: exportResumeId,
       templateId: tpl,
@@ -1220,7 +1190,8 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
       <MiniProgramDialog
         open={miniProgramDialogOpen}
         onOpenChange={setMiniProgramDialogOpen}
-        entry="pc_editor_first_save_reminder"
+        entry="pc_editor_first_export_reminder"
+        variant="export-success"
       />
       <AiChatBubble resumeId={resumeId} />
       {/* Forced login dialog for unauthenticated users */}

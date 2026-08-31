@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
-import { Check, Copy, ScanLine, Smartphone } from 'lucide-react';
+import { Check, CheckCircle2, Copy, ScanLine, Smartphone } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -27,10 +27,18 @@ interface MiniProgramDialogProps {
   readonly open: boolean;
   readonly onOpenChange: (open: boolean) => void;
   readonly entry: string;
+  readonly variant?: 'default' | 'export-success';
 }
 
-function MiniProgramDialogContent({ entry }: { readonly entry: string }): React.ReactElement {
+function MiniProgramDialogContent({
+  entry,
+  variant = 'default',
+}: {
+  readonly entry: string;
+  readonly variant?: 'default' | 'export-success';
+}): React.ReactElement {
   const [copied, setCopied] = useState(false);
+  const isExportSuccess = variant === 'export-success';
 
   useEffect(() => {
     if (!copied) return;
@@ -60,12 +68,21 @@ function MiniProgramDialogContent({ entry }: { readonly entry: string }): React.
     >
       <div className="bg-violet-50 px-6 pb-5 pt-6">
         <DialogHeader className="pr-8 text-left">
-          <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-xl bg-violet-600 text-white">
-            <Smartphone className="h-5 w-5" />
+          <div className={cn(
+            'mb-2 flex h-10 w-10 items-center justify-center rounded-xl text-white',
+            isExportSuccess ? 'bg-emerald-500' : 'bg-violet-600',
+          )}>
+            {isExportSuccess
+              ? <CheckCircle2 className="h-5 w-5" />
+              : <Smartphone className="h-5 w-5" />}
           </div>
-          <DialogTitle className="text-xl text-slate-900">在微信小程序制作简历</DialogTitle>
+          <DialogTitle className="text-xl text-slate-900">
+            {isExportSuccess ? '简历已导出' : '在微信小程序制作简历'}
+          </DialogTitle>
           <DialogDescription className="leading-6 text-slate-600">
-            手机端统一使用微信小程序。简历与电脑端账号同步，随时补内容、换模板和导出 PDF。
+            {isExportSuccess
+              ? '下次不在电脑旁，也可以打开微信小程序，继续编辑并导出这份简历。'
+              : '手机端统一使用微信小程序。简历与电脑端账号同步，随时补内容、换模板和导出 PDF。'}
           </DialogDescription>
         </DialogHeader>
       </div>
@@ -114,10 +131,11 @@ export function MiniProgramDialog({
   open,
   onOpenChange,
   entry,
+  variant = 'default',
 }: MiniProgramDialogProps): React.ReactElement {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <MiniProgramDialogContent entry={entry} />
+      <MiniProgramDialogContent entry={entry} variant={variant} />
     </Dialog>
   );
 }
