@@ -24,6 +24,7 @@ import {
 import { useAuthStore } from "@/store/use-auth-store";
 import { useState, useEffect } from "react";
 import { VipExpirationReminder } from "@/components/vip/vip-expiration-reminder";
+import { track } from "@/lib/analytics";
 
 /** Navigation item definition. */
 interface NavItem {
@@ -88,11 +89,13 @@ function NavigationGroup({
   items,
   pathname,
   onNavigate,
+  surface,
 }: {
   label: string;
   items: NavItem[];
   pathname: string;
   onNavigate?: () => void;
+  surface: "desktop_sidebar" | "mobile_drawer";
 }): ReactElement {
   return (
     <section aria-label={label} className="space-y-1">
@@ -105,7 +108,15 @@ function NavigationGroup({
           <Link
             key={item.key}
             href={item.href}
-            onClick={onNavigate}
+            onClick={() => {
+              track("sidebar_nav_click", {
+                itemKey: item.key,
+                destination: item.href,
+                group: label,
+                surface,
+              });
+              onNavigate?.();
+            }}
             aria-current={active ? "page" : undefined}
             className={`relative flex min-h-11 items-center gap-3 whitespace-nowrap rounded-lg px-3.5 py-2.5 text-sm font-medium outline-none transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-1 active:bg-slate-100 ${
               active
@@ -130,15 +141,25 @@ function NavigationGroup({
 function FeedbackLink({
   pathname,
   onNavigate,
+  surface,
 }: {
   pathname: string;
   onNavigate?: () => void;
+  surface: "desktop_sidebar" | "mobile_drawer";
 }): ReactElement {
   const active = isPathActive(pathname, FEEDBACK_NAV_ITEM.href);
   return (
     <Link
       href={FEEDBACK_NAV_ITEM.href}
-      onClick={onNavigate}
+      onClick={() => {
+        track("sidebar_nav_click", {
+          itemKey: FEEDBACK_NAV_ITEM.key,
+          destination: FEEDBACK_NAV_ITEM.href,
+          group: "帮助与反馈",
+          surface,
+        });
+        onNavigate?.();
+      }}
       aria-current={active ? "page" : undefined}
       className={`relative flex min-h-11 items-center gap-3 whitespace-nowrap rounded-lg px-3.5 py-2.5 text-sm font-medium outline-none transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-1 active:bg-slate-100 ${
         active
@@ -237,22 +258,33 @@ export default function DashboardSidebar(): ReactElement {
                   items={JOB_NAV_ITEMS}
                   pathname={pathname}
                   onNavigate={() => setMobileOpen(false)}
+                  surface="mobile_drawer"
                 />
                 <NavigationGroup
                   label="其他功能"
                   items={OTHER_NAV_ITEMS}
                   pathname={pathname}
                   onNavigate={() => setMobileOpen(false)}
+                  surface="mobile_drawer"
                 />
               </nav>
               <div className="mt-4 space-y-3 border-t border-slate-100 px-1 pt-3">
                 <FeedbackLink
                   pathname={pathname}
                   onNavigate={() => setMobileOpen(false)}
+                  surface="mobile_drawer"
                 />
                 <Link
                   href="/dashboard/membership"
-                  onClick={() => setMobileOpen(false)}
+                  onClick={() => {
+                    track("sidebar_nav_click", {
+                      itemKey: "account_card",
+                      destination: "/dashboard/membership",
+                      group: "账户",
+                      surface: "mobile_drawer",
+                    });
+                    setMobileOpen(false);
+                  }}
                   className="flex min-h-11 items-center gap-3 rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-2.5 text-sm font-medium text-slate-700 outline-none transition-colors duration-150 hover:bg-slate-100 focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-1 active:bg-slate-200"
                 >
                   <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-violet-600 text-xs font-bold text-white">
@@ -289,18 +321,20 @@ export default function DashboardSidebar(): ReactElement {
             label="求职工具"
             items={JOB_NAV_ITEMS}
             pathname={pathname}
+            surface="desktop_sidebar"
           />
           <NavigationGroup
             label="其他功能"
             items={OTHER_NAV_ITEMS}
             pathname={pathname}
+            surface="desktop_sidebar"
           />
         </nav>
 
         {/* Bottom: User Info + Copyright */}
         <div className="mt-auto px-3 pb-4 pt-3">
           <div className="mb-3 border-t border-slate-100 pt-3">
-            <FeedbackLink pathname={pathname} />
+            <FeedbackLink pathname={pathname} surface="desktop_sidebar" />
           </div>
 
           {/* User Card with VIP upgrade for non-VIP */}
@@ -309,6 +343,14 @@ export default function DashboardSidebar(): ReactElement {
               {/* User Info Row */}
               <Link
                 href="/dashboard/membership"
+                onClick={() =>
+                  track("sidebar_nav_click", {
+                    itemKey: "account_card",
+                    destination: "/dashboard/membership",
+                    group: "账户",
+                    surface: "desktop_sidebar",
+                  })
+                }
                 className="flex min-h-14 items-center gap-2.5 px-3 py-2.5 outline-none transition-colors duration-150 hover:bg-slate-100 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-violet-500 active:bg-slate-200"
                 aria-label="查看账户与会员信息"
               >
@@ -353,6 +395,14 @@ export default function DashboardSidebar(): ReactElement {
               {!userInfo?.vip?.isVip && (
                 <Link
                   href="/dashboard/membership"
+                  onClick={() =>
+                    track("sidebar_nav_click", {
+                      itemKey: "upgrade_membership",
+                      destination: "/dashboard/membership",
+                      group: "账户",
+                      surface: "desktop_sidebar",
+                    })
+                  }
                   className="flex min-h-10 items-center justify-center gap-1.5 whitespace-nowrap border-t border-slate-200 bg-white px-3 py-2 text-xs font-medium text-violet-700 outline-none transition-colors duration-150 hover:bg-violet-50 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-violet-500 active:bg-violet-100"
                 >
                   <Crown className="w-3.5 h-3.5" />

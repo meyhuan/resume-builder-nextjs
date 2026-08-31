@@ -1,6 +1,7 @@
 import { buildFillPlan } from "../lib/mapping";
 import { ExtensionAuthError, parseAuthCallback } from "../lib/auth";
 import { getSiteAdapter } from "../lib/site-adapters";
+import { trackExtensionEvent } from "../lib/analytics";
 import type {
   ApplicationProfileEnvelope,
   FillAction,
@@ -50,7 +51,7 @@ async function handleMessage(message: ExtensionMessage): Promise<unknown> {
   if (message.type === "open-login") return openLogin();
   if (message.type === "connect") return connect(true);
   if (message.type === "disconnect") return disconnect();
-  if (message.type === "fill") return fillCurrentPage();
+  if (message.type === "fill") return fillCurrentPageWithAnalytics();
   if (message.type === "mark-applied" && message.applicationId)
     return markApplied(message.applicationId);
   if (message.type === "submit-detected") {
@@ -146,6 +147,9 @@ async function acceptOnboarding(): Promise<Record<string, unknown>> {
   } catch {
     // A missing website session is rendered as a login prompt, not an error.
   }
+  void trackExtensionEvent("extension_onboarding_accept", {
+    authMode: "silent",
+  });
   return getStatus(false);
 }
 
@@ -252,10 +256,14 @@ async function performConnection(
     "silentAuthLastAttemptAt",
   ]);
   await loadProfile(true);
+  void trackExtensionEvent("extension_connect_success", {
+    authMode: interactive ? "interactive" : "silent",
+  });
   return { connected: true, hasProfile: true };
 }
 
 async function disconnect(): Promise<{ connected: false }> {
+  void trackExtensionEvent("extension_disconnect");
   await browser.storage.local.set({ autoConnectEnabled: false });
   await clearConnectionState();
   return { connected: false };
@@ -395,6 +403,46 @@ async function fillCurrentPage(): Promise<FillResult> {
   return result;
 }
 
+async function fillCurrentPageWithAnalytics(): Promise<FillResult> {
+  const startedAt = Date.now();
+  const [tab] = await browser.tabs.query({
+    active: true,
+    lastFocusedWindow: true,
+  });
+  const sourceDomain = getSourceDomain(tab?.url);
+  const adapterId = sourceDomain
+    ? getSiteAdapter(sourceDomain)?.id || "generic"
+    : "unknown";
+  void trackExtensionEvent("extension_fill_start", {
+    sourceDomain,
+    adapterId,
+    supportedSite: adapterId !== "generic" && adapterId !== "unknown",
+  });
+  try {
+    const result = await fillCurrentPage();
+    void trackExtensionEvent("extension_fill_result", {
+      status: "success",
+      sourceDomain: result.job?.sourceDomain || sourceDomain,
+      adapterId,
+      durationMs: Date.now() - startedAt,
+      filledCount: result.filled,
+      alreadyFilledCount: result.alreadyFilled,
+      failedCount: result.failed.length,
+      missingProfileCount: result.missingProfile.length,
+      unmatchedCount: result.unmatched.length,
+    });
+    return result;
+  } catch (error) {
+    void trackExtensionEvent("extension_fill_result", {
+      status: "failed",
+      sourceDomain,
+      adapterId,
+      durationMs: Date.now() - startedAt,
+    });
+    throw error;
+  }
+}
+
 async function createDraft(
   job: PageSnapshot["job"],
   resumeId: string | null,
@@ -410,6 +458,10 @@ async function createDraft(
   });
   const payload = await response.json();
   if (!response.ok) throw new Error(payload.error || "创建投递记录失败");
+  void trackExtensionEvent("extension_application_created", {
+    sourceDomain: job.sourceDomain,
+    status: "DRAFT",
+  });
   return payload.application;
 }
 
@@ -434,7 +486,18 @@ async function markApplied(
     draftApplication: payload,
     submitDetected: false,
   });
+  void trackExtensionEvent("extension_mark_applied", { status: "APPLIED" });
   return payload;
+}
+
+function getSourceDomain(url: string | undefined): string {
+  if (!url) return "";
+  try {
+    const parsed = new URL(url);
+    return /^https?:$/.test(parsed.protocol) ? parsed.hostname : "";
+  } catch {
+    return "";
+  }
 }
 
 function base64Url(bytes: Uint8Array): string {

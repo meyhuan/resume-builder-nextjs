@@ -8,6 +8,7 @@ export type AnalyticsEventName =
   | 'login_prompt_view'
   | 'landing_cta_click'
   | 'dashboard_view'
+  | 'sidebar_nav_click'
   | 'resume_create_start'
   | 'resume_create_success'
   | 'resume_create_failed'

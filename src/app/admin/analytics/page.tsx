@@ -135,7 +135,7 @@ type AnalyticsState = {
 };
 
 type PlatformFilter = 'all' | 'web' | 'mini_program' | 'h5_pay' | 'backend';
-type ClientTypeFilter = 'all' | 'pc_web' | 'mobile_web' | 'mini_program_webview' | 'mini_program_native';
+type ClientTypeFilter = 'all' | 'pc_web' | 'mobile_web' | 'mini_program_webview' | 'mini_program_native' | 'browser_extension';
 
 const EVENT_LABELS: Record<string, string> = {
   page_view: '页面访问',
@@ -143,6 +143,16 @@ const EVENT_LABELS: Record<string, string> = {
   login_prompt_view: '登录弹窗曝光',
   landing_cta_click: '首页 CTA 点击',
   dashboard_view: '访问个人中心',
+  sidebar_nav_click: '侧边栏导航点击',
+  extension_sidepanel_open: '打开网申助手',
+  extension_onboarding_accept: '同意插件使用说明',
+  extension_connect_success: '插件连接成功',
+  extension_disconnect: '插件断开连接',
+  extension_fill_start: '插件开始填写',
+  extension_fill_result: '插件填写结果',
+  extension_permission_denied: '插件网页权限被拒绝',
+  extension_application_created: '插件创建投递记录',
+  extension_mark_applied: '插件确认已投递',
   resume_create_start: '开始创建简历',
   resume_create_success: '创建简历成功',
   resume_create_failed: '创建简历失败',
@@ -207,6 +217,7 @@ const CLIENT_TYPE_OPTIONS: Array<{ value: ClientTypeFilter; label: string }> = [
   { value: 'mobile_web', label: '生命周期：手机 Web' },
   { value: 'mini_program_webview', label: '生命周期：小程序 WebView' },
   { value: 'mini_program_native', label: '生命周期：小程序原生' },
+  { value: 'browser_extension', label: '生命周期：浏览器插件' },
 ];
 
 function formatNumber(value: number | undefined): string {

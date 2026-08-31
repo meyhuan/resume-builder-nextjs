@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   CheckCircle2,
   CircleAlert,
@@ -11,6 +11,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import type { FillResult } from "../../lib/types";
+import { trackExtensionEvent } from "../../lib/analytics";
 
 interface Status {
   connected: boolean;
@@ -45,6 +46,7 @@ export default function App() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState<FillResult | null>(null);
+  const openTracked = useRef(false);
 
   const refresh = useCallback(async (initialize = false) => {
     const response = await browser.runtime.sendMessage({
@@ -59,6 +61,12 @@ export default function App() {
     const timer = window.setInterval(() => void refresh(), 1500);
     return () => window.clearInterval(timer);
   }, [refresh]);
+
+  useEffect(() => {
+    if (!status.connected || openTracked.current) return;
+    openTracked.current = true;
+    void trackExtensionEvent("extension_sidepanel_open");
+  }, [status.connected]);
 
   async function action(
     type: string,
@@ -87,6 +95,9 @@ export default function App() {
         origins: ["https://*/*", "http://*/*"],
       });
       if (!granted) {
+        void trackExtensionEvent("extension_permission_denied", {
+          permission: "host_access",
+        });
         throw new Error(
           "需要网页访问权限才能填写招聘表单。你可以稍后再次点击并允许。",
         );
