@@ -76,6 +76,7 @@ interface ResumeEditorProps {
 
 interface InitialBaselineTarget {
   readonly resumeId: string
+  readonly resumeFingerprint: string
   readonly tpl: string
   readonly theme: ThemeTokens
   readonly onePageMode: boolean
@@ -136,9 +137,25 @@ function readEditorDraftBackup(): EditorDraftBackup | null {
       window.localStorage.removeItem(EDITOR_DRAFT_BACKUP_KEY)
       return null
     }
-    return parsed as EditorDraftBackup
+    const backup = parsed as EditorDraftBackup
+    if (!hasConsistentDraftBaseline(backup)) {
+      window.localStorage.removeItem(EDITOR_DRAFT_BACKUP_KEY)
+      return null
+    }
+    return backup
   } catch {
     return null
+  }
+}
+
+function hasConsistentDraftBaseline(backup: EditorDraftBackup): boolean {
+  try {
+    const baseline = JSON.parse(backup.savedSnapshot) as {
+      readonly resume?: { readonly id?: unknown }
+    }
+    return typeof baseline.resume?.id === 'string' && baseline.resume.id === backup.resume.id
+  } catch {
+    return false
   }
 }
 
@@ -296,6 +313,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
     setTpl(tplId)
     pendingInitialBaselineRef.current = {
       resumeId: initialData.id,
+      resumeFingerprint: JSON.stringify(useAppStore.getState().resume),
       tpl: tplId,
       theme: getThemeForTemplate(tplId),
       onePageMode: restoredOnePage,
@@ -426,6 +444,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
     const pending = pendingInitialBaselineRef.current
     if (!pending) return
     if (initialData?.id !== pending.resumeId) return
+    if (JSON.stringify(resume) !== pending.resumeFingerprint) return
     if (tpl !== pending.tpl) return
     if (onePageMode !== pending.onePageMode) return
     if (!isJsonEqual(theme, pending.theme)) return
@@ -434,7 +453,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
 
     setSavedSnapshot(currentFingerprint)
     pendingInitialBaselineRef.current = null
-  }, [currentFingerprint, initialData?.id, onePageMode, onePageSnapshot, sidebarSectionIds, theme, tpl])
+  }, [currentFingerprint, initialData?.id, onePageMode, onePageSnapshot, resume, sidebarSectionIds, theme, tpl])
 
   // Keep ref in sync for beforeunload handler
   useEffect(() => {
