@@ -45,6 +45,9 @@ input {
   font-size: 12px;
   line-height: 1.55;
 }
+.repeaterFailure {
+  color: #dc2626;
+}
 .brand strong {
   font-size: 15px;
 }

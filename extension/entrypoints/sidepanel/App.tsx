@@ -291,10 +291,25 @@ export default function App() {
               工作经历：资料 {result.profileExperienceCount} 条
               {typeof result.pageExperienceCount === "number" && (
                 <>
-                  ，页面现有 {result.pageExperienceCount} 条，本次新增{" "}
-                  {result.addedExperienceRows || 0} 条
+                  ，填写前{" "}
+                  {result.pageExperienceCount -
+                    (result.addedExperienceRows || 0)}{" "}
+                  条，新增 {result.addedExperienceRows || 0} 条，最终{" "}
+                  {result.pageExperienceCount} 条
                 </>
               )}
+              {result.repeaterDiagnostics
+                ?.filter(
+                  (item) =>
+                    item.profilePath === "experiences" && item.failureReason,
+                )
+                .map((item) => (
+                  <span className="repeaterFailure" key={item.profilePath}>
+                    {item.failureReason === "button_not_found"
+                      ? "。未找到新增按钮"
+                      : "。新增按钮点击后页面没有响应"}
+                  </span>
+                ))}
             </p>
           )}
           {result.missingProfile.length > 0 && (

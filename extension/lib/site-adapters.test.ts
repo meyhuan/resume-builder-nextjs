@@ -36,10 +36,10 @@ describe("getSiteAdapter", () => {
       ),
     ).toBe(true);
     expect(adapter?.repeaters).toHaveLength(2);
-    expect(adapter?.repeaters?.[0]?.addButtonSelector).toBe(
+    expect(adapter?.repeaters?.[0]?.addButtonSelectors[0]).toBe(
       ".experience-message > .add-experience .add-text.experience",
     );
-    expect(adapter?.repeaters?.[1]?.addButtonSelector).toBe(
+    expect(adapter?.repeaters?.[1]?.addButtonSelectors[0]).toBe(
       ".education-message > .add-experience .add-text.education",
     );
   });

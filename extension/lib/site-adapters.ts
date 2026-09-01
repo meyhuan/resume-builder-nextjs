@@ -88,19 +88,31 @@ const JD_ADAPTER: SiteAdapter = {
     {
       profilePath: "experiences",
       rowSelector: ".work-exp .cont-item",
-      addButtonSelector: ".work-exp .add-btn",
+      addButtonSelectors: [
+        ".work-exp .add-btn button",
+        ".work-exp .add-btn [role='button']",
+        ".work-exp .add-btn",
+      ],
       maxRows: 10,
     },
     {
       profilePath: "projects",
       rowSelector: ".project-exp .cont-item",
-      addButtonSelector: ".project-exp .add-btn",
+      addButtonSelectors: [
+        ".project-exp .add-btn button",
+        ".project-exp .add-btn [role='button']",
+        ".project-exp .add-btn",
+      ],
       maxRows: 10,
     },
     {
       profilePath: "education",
       rowSelector: ".edu-exp .cont-item",
-      addButtonSelector: ".edu-exp .add-btn",
+      addButtonSelectors: [
+        ".edu-exp .add-btn button",
+        ".edu-exp .add-btn [role='button']",
+        ".edu-exp .add-btn",
+      ],
       maxRows: 10,
     },
   ],
@@ -169,15 +181,19 @@ const TENCENT_ADAPTER: SiteAdapter = {
     {
       profilePath: "experiences",
       rowSelector: ".experience-message .create-empirical",
-      addButtonSelector:
+      addButtonSelectors: [
         ".experience-message > .add-experience .add-text.experience",
+        ".experience-message > .add-experience",
+      ],
       maxRows: 10,
     },
     {
       profilePath: "education",
       rowSelector: ".education-message .create-education",
-      addButtonSelector:
+      addButtonSelectors: [
         ".education-message > .add-experience .add-text.education",
+        ".education-message > .add-experience",
+      ],
       maxRows: 10,
     },
   ],

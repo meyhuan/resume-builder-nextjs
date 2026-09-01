@@ -24,8 +24,34 @@ export interface SiteContextRule {
 export interface SiteRepeaterRule {
   profilePath: "education" | "experiences" | "projects";
   rowSelector: string;
-  addButtonSelector: string;
+  addButtonSelectors: string[];
   maxRows?: number;
+  renderTimeoutMs?: number;
+}
+
+export type RepeaterStatus =
+  | "complete"
+  | "not_needed"
+  | "no_profile_rows"
+  | "button_not_found"
+  | "button_unresponsive"
+  | "partial";
+
+export interface RepeaterDiagnostic {
+  profilePath: SiteRepeaterRule["profilePath"];
+  desired: number;
+  initial: number;
+  current: number;
+  added: number;
+  attempts: number;
+  status: RepeaterStatus;
+  failureReason?: "button_not_found" | "button_unresponsive";
+  selectorUsed?: string;
+}
+
+export interface RepeaterExecutionSummary {
+  addedRows: number;
+  diagnostics: RepeaterDiagnostic[];
 }
 
 export interface SiteAdapter {
@@ -74,4 +100,5 @@ export interface FillResult {
   profileExperienceCount?: number;
   pageExperienceCount?: number;
   addedExperienceRows?: number;
+  repeaterDiagnostics?: RepeaterDiagnostic[];
 }

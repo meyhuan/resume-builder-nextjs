@@ -5,6 +5,9 @@ export type ExtensionAnalyticsEventName =
   | "extension_disconnect"
   | "extension_fill_start"
   | "extension_fill_result"
+  | "extension_fill_complete"
+  | "extension_fill_partial"
+  | "extension_fill_failed"
   | "extension_permission_denied"
   | "extension_application_created"
   | "extension_mark_applied";

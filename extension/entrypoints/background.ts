@@ -2,11 +2,13 @@ import { buildFillPlan } from "../lib/mapping";
 import { ExtensionAuthError, parseAuthCallback } from "../lib/auth";
 import { getSiteAdapter } from "../lib/site-adapters";
 import { trackExtensionEvent } from "../lib/analytics";
+import { runRepeaterEngine } from "../lib/repeater-engine";
 import type {
   ApplicationProfileEnvelope,
   FillAction,
   FillResult,
   PageSnapshot,
+  RepeaterExecutionSummary,
   SiteAdapter,
 } from "../lib/types";
 
@@ -342,19 +344,19 @@ async function fillCurrentPage(): Promise<FillResult> {
     throw new Error("未获得当前网站访问权限，请点击一键填写并允许 Chrome 授权");
   if (!/^https?:/.test(tab.url)) throw new Error("请在招聘申请页面使用插件");
   const siteAdapter = getSiteAdapter(new URL(tab.url).hostname);
-  let repeaterSummary:
-    | {
-        rows: Record<
-          string,
-          { desired: number; initial: number; current: number; added: number }
-        >;
-      }
-    | undefined;
+  let repeaterSummary: RepeaterExecutionSummary | undefined;
   if (siteAdapter?.repeaters?.length) {
+    const desiredCounts = Object.fromEntries(
+      siteAdapter.repeaters.map((rule) => {
+        const rows = profile.profile[rule.profilePath];
+        return [rule.profilePath, Array.isArray(rows) ? rows.length : 0];
+      }),
+    );
     const preparation = await browser.scripting.executeScript({
       target: { tabId: tab.id },
-      func: preparePageForProfile,
-      args: [siteAdapter, profile.profile],
+      world: "MAIN",
+      func: runRepeaterEngine,
+      args: [siteAdapter.repeaters, desiredCounts],
     });
     repeaterSummary = preparation[0]?.result;
   }
@@ -398,8 +400,13 @@ async function fillCurrentPage(): Promise<FillResult> {
     profileExperienceCount: Array.isArray(profile.profile.experiences)
       ? profile.profile.experiences.length
       : 0,
-    pageExperienceCount: repeaterSummary?.rows.experiences?.current,
-    addedExperienceRows: repeaterSummary?.rows.experiences?.added,
+    pageExperienceCount: repeaterSummary?.diagnostics.find(
+      (item) => item.profilePath === "experiences",
+    )?.current,
+    addedExperienceRows: repeaterSummary?.diagnostics.find(
+      (item) => item.profilePath === "experiences",
+    )?.added,
+    repeaterDiagnostics: repeaterSummary?.diagnostics,
   };
   if (result.filled + result.alreadyFilled > 0) {
     const application = await createDraft(
@@ -436,8 +443,21 @@ async function fillCurrentPageWithAnalytics(): Promise<FillResult> {
   });
   try {
     const result = await fillCurrentPage();
-    void trackExtensionEvent("extension_fill_result", {
-      status: "success",
+    const experienceRepeater = result.repeaterDiagnostics?.find(
+      (item) => item.profilePath === "experiences",
+    );
+    const repeaterIncomplete = result.repeaterDiagnostics?.some((item) =>
+      ["partial", "button_not_found", "button_unresponsive"].includes(
+        item.status,
+      ),
+    );
+    const compatibilityIncomplete =
+      repeaterIncomplete ||
+      result.failed.length > 0 ||
+      result.unmatched.length > 0;
+    const fillStatus = compatibilityIncomplete ? "partial" : "success";
+    const fillProperties = {
+      status: fillStatus,
       sourceDomain: result.job?.sourceDomain || sourceDomain,
       adapterId,
       durationMs: Date.now() - startedAt,
@@ -446,10 +466,39 @@ async function fillCurrentPageWithAnalytics(): Promise<FillResult> {
       failedCount: result.failed.length,
       missingProfileCount: result.missingProfile.length,
       unmatchedCount: result.unmatched.length,
-    });
+      repeaterStatus: experienceRepeater?.status,
+      repeaterFailureReason: experienceRepeater?.failureReason,
+      repeaterDesiredCount: experienceRepeater?.desired,
+      repeaterInitialCount: experienceRepeater?.initial,
+      repeaterFinalCount: experienceRepeater?.current,
+      repeaterAddedCount: experienceRepeater?.added,
+      repeaterAttempts: experienceRepeater?.attempts,
+      repeaterRuleCount: result.repeaterDiagnostics?.length || 0,
+      repeaterFailureCount:
+        result.repeaterDiagnostics?.filter((item) => item.failureReason).length ||
+        0,
+      repeaterAddedTotal:
+        result.repeaterDiagnostics?.reduce(
+          (total, item) => total + item.added,
+          0,
+        ) || 0,
+    } as const;
+    void trackExtensionEvent("extension_fill_result", fillProperties);
+    void trackExtensionEvent(
+      compatibilityIncomplete
+        ? "extension_fill_partial"
+        : "extension_fill_complete",
+      fillProperties,
+    );
     return result;
   } catch (error) {
     void trackExtensionEvent("extension_fill_result", {
+      status: "failed",
+      sourceDomain,
+      adapterId,
+      durationMs: Date.now() - startedAt,
+    });
+    void trackExtensionEvent("extension_fill_failed", {
       status: "failed",
       sourceDomain,
       adapterId,
@@ -525,62 +574,6 @@ function base64Url(bytes: Uint8Array): string {
     .replace(/\+/g, "-")
     .replace(/\//g, "_")
     .replace(/=+$/, "");
-}
-
-async function preparePageForProfile(
-  adapter: SiteAdapter,
-  profile: Record<string, unknown>,
-): Promise<{
-  addedRows: number;
-  rows: Record<
-    string,
-    { desired: number; initial: number; current: number; added: number }
-  >;
-}> {
-  let addedRows = 0;
-  const rowSummary: Record<
-    string,
-    { desired: number; initial: number; current: number; added: number }
-  > = {};
-  const waitForRowCount = async (
-    selector: string,
-    previousCount: number,
-  ): Promise<number> => {
-    const deadline = Date.now() + 800;
-    let count = document.querySelectorAll(selector).length;
-    while (count <= previousCount && Date.now() < deadline) {
-      await new Promise((resolve) => setTimeout(resolve, 50));
-      count = document.querySelectorAll(selector).length;
-    }
-    return count;
-  };
-  for (const repeater of adapter.repeaters || []) {
-    const rows = profile[repeater.profilePath];
-    const desired = Math.min(
-      Array.isArray(rows) ? rows.length : 0,
-      repeater.maxRows || 10,
-    );
-    let current = document.querySelectorAll(repeater.rowSelector).length;
-    const initial = current;
-    while (current < desired) {
-      const button = document.querySelector<HTMLElement>(
-        repeater.addButtonSelector,
-      );
-      if (!button) break;
-      button.click();
-      const next = await waitForRowCount(repeater.rowSelector, current);
-      if (next <= current) break;
-      addedRows += next - current;
-      current = next;
-    }
-    rowSummary[repeater.profilePath] = {
-      desired,
-      initial,
-      current,
-      added: current - initial,
-    };
-  }
-  return { addedRows, rows: rowSummary };
 }
 
 function collectPageSnapshot(adapter: SiteAdapter | null): PageSnapshot {
