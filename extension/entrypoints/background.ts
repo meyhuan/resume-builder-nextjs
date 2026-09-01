@@ -296,7 +296,7 @@ async function loadProfile(force = false): Promise<ApplicationProfileEnvelope> {
   }
   return refreshProfile(
     String(accessToken),
-    cached.profileEtag as string | undefined,
+    force ? undefined : (cached.profileEtag as string | undefined),
   );
 }
 
@@ -342,12 +342,21 @@ async function fillCurrentPage(): Promise<FillResult> {
     throw new Error("未获得当前网站访问权限，请点击一键填写并允许 Chrome 授权");
   if (!/^https?:/.test(tab.url)) throw new Error("请在招聘申请页面使用插件");
   const siteAdapter = getSiteAdapter(new URL(tab.url).hostname);
+  let repeaterSummary:
+    | {
+        rows: Record<
+          string,
+          { desired: number; initial: number; current: number; added: number }
+        >;
+      }
+    | undefined;
   if (siteAdapter?.repeaters?.length) {
-    await browser.scripting.executeScript({
+    const preparation = await browser.scripting.executeScript({
       target: { tabId: tab.id },
       func: preparePageForProfile,
       args: [siteAdapter, profile.profile],
     });
+    repeaterSummary = preparation[0]?.result;
   }
   let snapshotResult;
   try {
@@ -386,6 +395,11 @@ async function fillCurrentPage(): Promise<FillResult> {
     missingProfile: plan.missingProfile,
     unmatched: plan.unmatched,
     job: snapshot.job,
+    profileExperienceCount: Array.isArray(profile.profile.experiences)
+      ? profile.profile.experiences.length
+      : 0,
+    pageExperienceCount: repeaterSummary?.rows.experiences?.current,
+    addedExperienceRows: repeaterSummary?.rows.experiences?.added,
   };
   if (result.filled + result.alreadyFilled > 0) {
     const application = await createDraft(
@@ -516,8 +530,18 @@ function base64Url(bytes: Uint8Array): string {
 async function preparePageForProfile(
   adapter: SiteAdapter,
   profile: Record<string, unknown>,
-): Promise<{ addedRows: number }> {
+): Promise<{
+  addedRows: number;
+  rows: Record<
+    string,
+    { desired: number; initial: number; current: number; added: number }
+  >;
+}> {
   let addedRows = 0;
+  const rowSummary: Record<
+    string,
+    { desired: number; initial: number; current: number; added: number }
+  > = {};
   const waitForRowCount = async (
     selector: string,
     previousCount: number,
@@ -537,6 +561,7 @@ async function preparePageForProfile(
       repeater.maxRows || 10,
     );
     let current = document.querySelectorAll(repeater.rowSelector).length;
+    const initial = current;
     while (current < desired) {
       const button = document.querySelector<HTMLElement>(
         repeater.addButtonSelector,
@@ -548,8 +573,14 @@ async function preparePageForProfile(
       addedRows += next - current;
       current = next;
     }
+    rowSummary[repeater.profilePath] = {
+      desired,
+      initial,
+      current,
+      added: current - initial,
+    };
   }
-  return { addedRows };
+  return { addedRows, rows: rowSummary };
 }
 
 function collectPageSnapshot(adapter: SiteAdapter | null): PageSnapshot {

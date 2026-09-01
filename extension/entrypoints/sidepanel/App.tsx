@@ -286,6 +286,17 @@ export default function App() {
               <span>暂未填写</span>
             </div>
           </div>
+          {typeof result.profileExperienceCount === "number" && (
+            <p className="repeaterSummary">
+              工作经历：资料 {result.profileExperienceCount} 条
+              {typeof result.pageExperienceCount === "number" && (
+                <>
+                  ，页面现有 {result.pageExperienceCount} 条，本次新增{" "}
+                  {result.addedExperienceRows || 0} 条
+                </>
+              )}
+            </p>
+          )}
           {result.missingProfile.length > 0 && (
             <details>
               <summary>查看需要补充的资料</summary>

@@ -71,4 +71,7 @@ export interface FillResult {
   unmatched: string[];
   applicationId?: string;
   job?: JobInfo;
+  profileExperienceCount?: number;
+  pageExperienceCount?: number;
+  addedExperienceRows?: number;
 }

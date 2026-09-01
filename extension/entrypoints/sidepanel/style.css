@@ -36,6 +36,15 @@ input {
 .brand span {
   display: block;
 }
+.repeaterSummary {
+  margin: 12px 0 0;
+  border-radius: 10px;
+  background: #f5f3ff;
+  padding: 9px 11px;
+  color: #6d28d9;
+  font-size: 12px;
+  line-height: 1.55;
+}
 .brand strong {
   font-size: 15px;
 }
