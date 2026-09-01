@@ -376,7 +376,11 @@ export default function App() {
 function Brand() {
   return (
     <header className="brand">
-      <div className="logo">智</div>
+      <img
+        className="logo"
+        src={browser.runtime.getURL("/icon/128.png")}
+        alt="智简简历"
+      />
       <div>
         <strong>智简网申助手</strong>
         <span>快速填表 · 投递留痕</span>
