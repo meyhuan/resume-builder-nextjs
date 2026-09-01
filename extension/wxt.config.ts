@@ -6,7 +6,7 @@ export default defineConfig({
     name: "智简网申助手",
     description:
       "读取智简简历网申资料，快速填写公司招聘官网表单并记录投递进度。",
-    version: "0.2.1",
+    version: "0.2.2",
     icons: {
       16: "icon/16.png",
       32: "icon/32.png",

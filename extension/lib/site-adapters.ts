@@ -169,13 +169,15 @@ const TENCENT_ADAPTER: SiteAdapter = {
     {
       profilePath: "experiences",
       rowSelector: ".experience-message .create-empirical",
-      addButtonSelector: ".experience-message > .add-experience",
+      addButtonSelector:
+        ".experience-message > .add-experience .add-text.experience",
       maxRows: 10,
     },
     {
       profilePath: "education",
       rowSelector: ".education-message .create-education",
-      addButtonSelector: ".education-message > .add-experience",
+      addButtonSelector:
+        ".education-message > .add-experience .add-text.education",
       maxRows: 10,
     },
   ],

@@ -36,6 +36,12 @@ describe("getSiteAdapter", () => {
       ),
     ).toBe(true);
     expect(adapter?.repeaters).toHaveLength(2);
+    expect(adapter?.repeaters?.[0]?.addButtonSelector).toBe(
+      ".experience-message > .add-experience .add-text.experience",
+    );
+    expect(adapter?.repeaters?.[1]?.addButtonSelector).toBe(
+      ".education-message > .add-experience .add-text.education",
+    );
   });
 
   it("falls back to generic scanning for other sites", () => {
