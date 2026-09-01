@@ -330,7 +330,9 @@ async function refreshProfile(
 }
 
 async function fillCurrentPage(): Promise<FillResult> {
-  const profile = await loadProfile();
+  // A user-triggered fill must use the latest profile. Returning the session
+  // cache here can miss newly synced repeatable rows such as work experience.
+  const profile = await loadProfile(true);
   const [tab] = await browser.tabs.query({
     active: true,
     lastFocusedWindow: true,
@@ -516,8 +518,18 @@ async function preparePageForProfile(
   profile: Record<string, unknown>,
 ): Promise<{ addedRows: number }> {
   let addedRows = 0;
-  const waitForRender = (): Promise<void> =>
-    new Promise((resolve) => setTimeout(resolve, 120));
+  const waitForRowCount = async (
+    selector: string,
+    previousCount: number,
+  ): Promise<number> => {
+    const deadline = Date.now() + 800;
+    let count = document.querySelectorAll(selector).length;
+    while (count <= previousCount && Date.now() < deadline) {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      count = document.querySelectorAll(selector).length;
+    }
+    return count;
+  };
   for (const repeater of adapter.repeaters || []) {
     const rows = profile[repeater.profilePath];
     const desired = Math.min(
@@ -531,8 +543,7 @@ async function preparePageForProfile(
       );
       if (!button) break;
       button.click();
-      await waitForRender();
-      const next = document.querySelectorAll(repeater.rowSelector).length;
+      const next = await waitForRowCount(repeater.rowSelector, current);
       if (next <= current) break;
       addedRows += next - current;
       current = next;
