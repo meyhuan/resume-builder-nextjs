@@ -54,7 +54,12 @@ export default function ApplicationProfileClient(): ReactElement {
   const [authorizations, setAuthorizations] = useState<Authorization[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [dirty, setDirty] = useState(false);
+  const [savedProfile, setSavedProfile] = useState(() =>
+    JSON.stringify(createEmptyApplicationProfile()),
+  );
+  const [savedResumeId, setSavedResumeId] = useState("");
+  const profileDirty = JSON.stringify(profile) !== savedProfile;
+  const dirty = profileDirty || defaultResumeId !== savedResumeId;
   const [loadError, setLoadError] = useState("");
   const [syncing, setSyncing] = useState(false);
   const [authorizationError, setAuthorizationError] = useState(false);
@@ -128,6 +133,8 @@ export default function ApplicationProfileClient(): ReactElement {
       ]);
       setProfile(data.profile);
       setDefaultResumeId(data.defaultResumeId || "");
+      setSavedProfile(JSON.stringify(data.profile));
+      setSavedResumeId(data.defaultResumeId || "");
       setResumes(data.resumes || []);
       setAuthorizationError(auth === null);
       if (auth) setAuthorizations(auth);
@@ -144,7 +151,6 @@ export default function ApplicationProfileClient(): ReactElement {
   ): void {
     setProfile((current) => ({ ...current, [section]: value }));
     revision.current++;
-    setDirty(true);
   }
 
   async function save(): Promise<void> {
@@ -162,7 +168,8 @@ export default function ApplicationProfileClient(): ReactElement {
           profile,
         }),
       });
-      if (revision.current === submittedRevision) setDirty(false);
+      setSavedProfile(JSON.stringify(profile));
+      setSavedResumeId(defaultResumeId);
       toast.success(
         revision.current === submittedRevision
           ? "网申资料已保存"
@@ -178,7 +185,7 @@ export default function ApplicationProfileClient(): ReactElement {
 
   async function syncResume(): Promise<void> {
     if (busy.current) return;
-    if (dirty) {
+    if (profileDirty) {
       toast.warning("请先保存当前修改，再从简历补充空缺。");
       return;
     }
@@ -192,15 +199,18 @@ export default function ApplicationProfileClient(): ReactElement {
     try {
       const result = await applicationRequest<{
         profile: ApplicationProfilePayload;
+        defaultResumeId: string;
       }>("/next-api/application-profile/sync", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ resumeId: defaultResumeId }),
       });
+      setSavedProfile(JSON.stringify(result.profile));
+      setSavedResumeId(result.defaultResumeId);
       if (revision.current === syncRevision) {
         setProfile(result.profile);
-        setDirty(false);
+        setDefaultResumeId(result.defaultResumeId);
         toast.success("已从简历补充空缺信息，不会覆盖原有内容");
       } else
         toast.warning(
@@ -277,410 +287,416 @@ export default function ApplicationProfileClient(): ReactElement {
           </p>
         )}
 
-        <Section
-          title="默认简历"
-          description="第一次同步会导入简历内容，后续只补空缺，不覆盖你在本页维护的信息。"
-        >
-          <div className="flex flex-wrap gap-3">
-            <select
-              value={defaultResumeId}
-              onChange={(event) => {
-                setDefaultResumeId(event.target.value);
-                revision.current++;
-                setDirty(true);
-              }}
-              className={`${inputClass} max-w-sm`}
-            >
-              <option value="">请选择默认简历</option>
-              {resumes.map((resume) => (
-                <option key={resume.id} value={resume.id}>
-                  {resume.title}
-                </option>
-              ))}
-            </select>
-            <button
-              onClick={syncResume}
-              disabled={saving || syncing}
-              className="inline-flex min-h-11 items-center gap-2 whitespace-nowrap rounded-xl border border-violet-200 bg-violet-50 px-4 py-2 text-sm font-medium text-violet-700 outline outline-2 outline-offset-1 outline-transparent transition-colors hover:bg-violet-100 focus-visible:outline-violet-600 active:bg-violet-200"
-            >
-              <RefreshCw className="h-4 w-4" />
-              {syncing ? "正在补充…" : "从简历补充空缺"}
-            </button>
-          </div>
-        </Section>
+        <fieldset disabled={syncing} className="min-w-0">
+          <Section
+            title="默认简历"
+            description="第一次同步会导入简历内容，后续只补空缺，不覆盖你在本页维护的信息。"
+          >
+            <div className="flex flex-wrap gap-3">
+              <select
+                aria-label="默认简历"
+                value={defaultResumeId}
+                onChange={(event) => {
+                  setDefaultResumeId(event.target.value);
+                  revision.current++;
+                }}
+                className={`${inputClass} max-w-sm`}
+              >
+                <option value="">请选择默认简历</option>
+                {resumes.map((resume) => (
+                  <option key={resume.id} value={resume.id}>
+                    {resume.title}
+                  </option>
+                ))}
+              </select>
+              <button
+                onClick={syncResume}
+                disabled={saving || syncing}
+                className="inline-flex min-h-11 items-center gap-2 whitespace-nowrap rounded-xl border border-violet-200 bg-violet-50 px-4 py-2 text-sm font-medium text-violet-700 outline outline-2 outline-offset-1 outline-transparent transition-colors hover:bg-violet-100 focus-visible:outline-violet-600 active:bg-violet-200"
+              >
+                <RefreshCw className="h-4 w-4" />
+                {syncing ? "正在补充…" : "从简历补充空缺"}
+              </button>
+            </div>
+          </Section>
 
-        <ObjectSection
-          title="基本信息"
-          value={profile.personal}
-          onChange={(value) => updateSection("personal", value)}
-          labels={{
-            fullName: "姓名",
-            englishName: "英文名",
-            gender: {
-              label: "性别",
-              kind: "select",
-              options: ["男", "女", "不便透露"],
-            },
-            birthDate: { label: "出生日期", kind: "date" },
-            maritalStatus: {
-              label: "婚姻状况",
-              kind: "select",
-              options: ["未婚", "已婚", "离异", "不便透露"],
-            },
-            healthStatus: {
-              label: "健康状况",
-              kind: "select",
-              options: ["健康", "良好", "一般"],
-            },
-            height: { label: "身高", kind: "number", suffix: "cm" },
-            weight: { label: "体重", kind: "number", suffix: "kg" },
-            photoUrl: {
-              label: "照片地址",
-              kind: "url",
-              placeholder: "https://",
-            },
-          }}
-        />
-        <ObjectSection
-          title="联系方式"
-          value={profile.contact}
-          onChange={(value) => updateSection("contact", value)}
-          labels={{
-            phone: { label: "手机", kind: "tel", autoComplete: "tel" },
-            alternatePhone: { label: "备用手机", kind: "tel" },
-            email: { label: "邮箱", kind: "email", autoComplete: "email" },
-            alternateEmail: { label: "备用邮箱", kind: "email" },
-            currentCity: {
-              label: "现居城市",
-              kind: "suggest",
-              options: cities,
-              quickOptions: ["北京", "上海", "广州", "深圳", "杭州"],
-            },
-            hometown: { label: "籍贯", kind: "suggest", options: cities },
-            householdRegistration: {
-              label: "户籍所在地",
-              kind: "suggest",
-              options: cities,
-            },
-            address: {
-              label: "详细地址",
-              placeholder: "省 / 市 / 区 / 街道",
-              autoComplete: "street-address",
-            },
-          }}
-        />
-        <ObjectSection
-          title="身份信息"
-          value={profile.identity}
-          onChange={(value) => updateSection("identity", value)}
-          labels={{
-            idType: {
-              label: "证件类型",
-              kind: "select",
-              options: [
-                "居民身份证",
-                "护照",
-                "港澳居民来往内地通行证",
-                "台湾居民来往大陆通行证",
-                "其他",
-              ],
-            },
-            idNumber: "证件号码",
-            nationality: {
-              label: "国籍/地区",
-              kind: "suggest",
-              options: nationalities,
-            },
-            ethnicity: { label: "民族", kind: "suggest", options: ethnicities },
-            politicalStatus: {
-              label: "政治面貌",
-              kind: "select",
-              options: [
-                "群众",
-                "共青团员",
-                "中共预备党员",
-                "中共党员",
-                "民主党派",
-                "无党派人士",
-              ],
-            },
-          }}
-          sensitive
-        />
-        <ObjectSection
-          title="求职意向"
-          value={profile.jobPreference}
-          onChange={(value) => updateSection("jobPreference", value)}
-          labels={{
-            targetRole: {
-              label: "目标岗位",
-              kind: "suggest",
-              options: roles,
-              placeholder: "输入岗位，或从常见岗位中选择",
-            },
-            targetCity: {
-              label: "目标城市",
-              kind: "suggest",
-              options: cities,
-              quickOptions: ["北京", "上海", "广州", "深圳", "杭州", "不限"],
-            },
-            employmentType: {
-              label: "工作类型",
-              kind: "select",
-              options: ["全职", "实习", "兼职", "校招", "管培生"],
-            },
-            expectedSalary: {
-              label: "期望薪资",
-              kind: "suggest",
-              options: salaryRanges,
-              quickOptions: ["面议", "8K-10K", "10K-15K", "15K-20K"],
-            },
-            availableDate: {
-              label: "到岗时间",
-              kind: "suggest",
-              options: ["随时到岗", "一周内", "两周内", "一个月内", "面议"],
-              quickOptions: ["随时到岗", "两周内", "面议"],
-            },
-            acceptAdjustment: {
-              label: "是否接受调剂",
-              kind: "select",
-              options: ["是", "否", "视情况而定"],
-            },
-          }}
-        />
+          <ObjectSection
+            title="基本信息"
+            value={profile.personal}
+            onChange={(value) => updateSection("personal", value)}
+            labels={{
+              fullName: "姓名",
+              englishName: "英文名",
+              gender: {
+                label: "性别",
+                kind: "select",
+                options: ["男", "女", "不便透露"],
+              },
+              birthDate: { label: "出生日期", kind: "date" },
+              maritalStatus: {
+                label: "婚姻状况",
+                kind: "select",
+                options: ["未婚", "已婚", "离异", "不便透露"],
+              },
+              healthStatus: {
+                label: "健康状况",
+                kind: "select",
+                options: ["健康", "良好", "一般"],
+              },
+              height: { label: "身高", kind: "number", suffix: "cm" },
+              weight: { label: "体重", kind: "number", suffix: "kg" },
+              photoUrl: {
+                label: "照片地址",
+                kind: "url",
+                placeholder: "https://",
+              },
+            }}
+          />
+          <ObjectSection
+            title="联系方式"
+            value={profile.contact}
+            onChange={(value) => updateSection("contact", value)}
+            labels={{
+              phone: { label: "手机", kind: "tel", autoComplete: "tel" },
+              alternatePhone: { label: "备用手机", kind: "tel" },
+              email: { label: "邮箱", kind: "email", autoComplete: "email" },
+              alternateEmail: { label: "备用邮箱", kind: "email" },
+              currentCity: {
+                label: "现居城市",
+                kind: "suggest",
+                options: cities,
+                quickOptions: ["北京", "上海", "广州", "深圳", "杭州"],
+              },
+              hometown: { label: "籍贯", kind: "suggest", options: cities },
+              householdRegistration: {
+                label: "户籍所在地",
+                kind: "suggest",
+                options: cities,
+              },
+              address: {
+                label: "详细地址",
+                placeholder: "省 / 市 / 区 / 街道",
+                autoComplete: "street-address",
+              },
+            }}
+          />
+          <ObjectSection
+            title="身份信息"
+            value={profile.identity}
+            onChange={(value) => updateSection("identity", value)}
+            labels={{
+              idType: {
+                label: "证件类型",
+                kind: "select",
+                options: [
+                  "居民身份证",
+                  "护照",
+                  "港澳居民来往内地通行证",
+                  "台湾居民来往大陆通行证",
+                  "其他",
+                ],
+              },
+              idNumber: "证件号码",
+              nationality: {
+                label: "国籍/地区",
+                kind: "suggest",
+                options: nationalities,
+              },
+              ethnicity: {
+                label: "民族",
+                kind: "suggest",
+                options: ethnicities,
+              },
+              politicalStatus: {
+                label: "政治面貌",
+                kind: "select",
+                options: [
+                  "群众",
+                  "共青团员",
+                  "中共预备党员",
+                  "中共党员",
+                  "民主党派",
+                  "无党派人士",
+                ],
+              },
+            }}
+            sensitive
+          />
+          <ObjectSection
+            title="求职意向"
+            value={profile.jobPreference}
+            onChange={(value) => updateSection("jobPreference", value)}
+            labels={{
+              targetRole: {
+                label: "目标岗位",
+                kind: "suggest",
+                options: roles,
+                placeholder: "输入岗位，或从常见岗位中选择",
+              },
+              targetCity: {
+                label: "目标城市",
+                kind: "suggest",
+                options: cities,
+                quickOptions: ["北京", "上海", "广州", "深圳", "杭州", "不限"],
+              },
+              employmentType: {
+                label: "工作类型",
+                kind: "select",
+                options: ["全职", "实习", "兼职", "校招", "管培生"],
+              },
+              expectedSalary: {
+                label: "期望薪资",
+                kind: "suggest",
+                options: salaryRanges,
+                quickOptions: ["面议", "8K-10K", "10K-15K", "15K-20K"],
+              },
+              availableDate: {
+                label: "到岗时间",
+                kind: "suggest",
+                options: ["随时到岗", "一周内", "两周内", "一个月内", "面议"],
+                quickOptions: ["随时到岗", "两周内", "面议"],
+              },
+              acceptAdjustment: {
+                label: "是否接受调剂",
+                kind: "select",
+                options: ["是", "否", "视情况而定"],
+              },
+            }}
+          />
 
-        <ArraySection
-          title="教育经历"
-          items={profile.education}
-          onChange={(items) => updateSection("education", items)}
-          create={() => ({
-            id: crypto.randomUUID(),
-            school: "",
-            major: "",
-            degree: "",
-            startDate: "",
-            endDate: "",
-            educationType: "",
-            gpa: "",
-            rank: "",
-            courses: "",
-            description: "",
-          })}
-          labels={{
-            school: "学校",
-            major: "专业",
-            degree: {
-              label: "学历",
-              kind: "select",
-              options: [
-                "中专",
-                "高中",
-                "大专",
-                "本科",
-                "硕士",
-                "博士",
-                "MBA",
-                "EMBA",
-                "其他",
-              ],
-            },
-            startDate: { label: "开始时间", kind: "month" },
-            endDate: { label: "结束时间", kind: "month" },
-            educationType: {
-              label: "培养方式",
-              kind: "select",
-              options: [
-                "全日制",
-                "非全日制",
-                "海外教育",
-                "成人教育",
-                "自考",
-                "其他",
-              ],
-            },
-            gpa: "GPA",
-            rank: "排名",
-            courses: "主修课程",
-            description: "补充说明",
-          }}
-          addLabel="新增教育经历"
-        />
-        <ArraySection
-          title="工作与实习经历"
-          items={profile.experiences}
-          onChange={(items) => updateSection("experiences", items)}
-          create={() => ({
-            id: crypto.randomUUID(),
-            type: "intern" as const,
-            company: "",
-            position: "",
-            industry: "",
-            location: "",
-            startDate: "",
-            endDate: "",
-            description: "",
-          })}
-          labels={{
-            type: {
-              label: "经历类型",
-              kind: "select",
-              options: [
-                { value: "work", label: "工作经历" },
-                { value: "intern", label: "实习经历" },
-              ],
-            },
-            company: "公司",
-            position: "职位",
-            industry: { label: "行业", kind: "suggest", options: industries },
-            location: { label: "地点", kind: "suggest", options: cities },
-            startDate: { label: "开始时间", kind: "month" },
-            endDate: { label: "结束时间", kind: "month" },
-            description: "经历描述",
-          }}
-          addLabel="新增工作或实习经历"
-        />
-        <ArraySection
-          title="项目经历"
-          items={profile.projects}
-          onChange={(items) => updateSection("projects", items)}
-          create={() => ({
-            id: crypto.randomUUID(),
-            name: "",
-            role: "",
-            startDate: "",
-            endDate: "",
-            description: "",
-          })}
-          labels={{
-            name: "项目名称",
-            role: "角色",
-            startDate: { label: "开始时间", kind: "month" },
-            endDate: { label: "结束时间", kind: "month" },
-            description: "项目描述",
-          }}
-          addLabel="新增项目经历"
-        />
-        <ArraySection
-          title="校园经历"
-          items={profile.campus}
-          onChange={(items) => updateSection("campus", items)}
-          create={() => ({
-            id: crypto.randomUUID(),
-            organization: "",
-            position: "",
-            startDate: "",
-            endDate: "",
-            description: "",
-          })}
-          labels={{
-            organization: "组织/社团",
-            position: "职务",
-            startDate: { label: "开始时间", kind: "month" },
-            endDate: { label: "结束时间", kind: "month" },
-            description: "经历描述",
-          }}
-          addLabel="新增校园经历"
-        />
+          <ArraySection
+            title="教育经历"
+            items={profile.education}
+            onChange={(items) => updateSection("education", items)}
+            create={() => ({
+              id: crypto.randomUUID(),
+              school: "",
+              major: "",
+              degree: "",
+              startDate: "",
+              endDate: "",
+              educationType: "",
+              gpa: "",
+              rank: "",
+              courses: "",
+              description: "",
+            })}
+            labels={{
+              school: "学校",
+              major: "专业",
+              degree: {
+                label: "学历",
+                kind: "select",
+                options: [
+                  "中专",
+                  "高中",
+                  "大专",
+                  "本科",
+                  "硕士",
+                  "博士",
+                  "MBA",
+                  "EMBA",
+                  "其他",
+                ],
+              },
+              startDate: { label: "开始时间", kind: "month" },
+              endDate: { label: "结束时间", kind: "month" },
+              educationType: {
+                label: "培养方式",
+                kind: "select",
+                options: [
+                  "全日制",
+                  "非全日制",
+                  "海外教育",
+                  "成人教育",
+                  "自考",
+                  "其他",
+                ],
+              },
+              gpa: "GPA",
+              rank: "排名",
+              courses: "主修课程",
+              description: "补充说明",
+            }}
+            addLabel="新增教育经历"
+          />
+          <ArraySection
+            title="工作与实习经历"
+            items={profile.experiences}
+            onChange={(items) => updateSection("experiences", items)}
+            create={() => ({
+              id: crypto.randomUUID(),
+              type: "intern" as const,
+              company: "",
+              position: "",
+              industry: "",
+              location: "",
+              startDate: "",
+              endDate: "",
+              description: "",
+            })}
+            labels={{
+              type: {
+                label: "经历类型",
+                kind: "select",
+                options: [
+                  { value: "work", label: "工作经历" },
+                  { value: "intern", label: "实习经历" },
+                ],
+              },
+              company: "公司",
+              position: "职位",
+              industry: { label: "行业", kind: "suggest", options: industries },
+              location: { label: "地点", kind: "suggest", options: cities },
+              startDate: { label: "开始时间", kind: "month" },
+              endDate: { label: "结束时间", kind: "month" },
+              description: "经历描述",
+            }}
+            addLabel="新增工作或实习经历"
+          />
+          <ArraySection
+            title="项目经历"
+            items={profile.projects}
+            onChange={(items) => updateSection("projects", items)}
+            create={() => ({
+              id: crypto.randomUUID(),
+              name: "",
+              role: "",
+              startDate: "",
+              endDate: "",
+              description: "",
+            })}
+            labels={{
+              name: "项目名称",
+              role: "角色",
+              startDate: { label: "开始时间", kind: "month" },
+              endDate: { label: "结束时间", kind: "month" },
+              description: "项目描述",
+            }}
+            addLabel="新增项目经历"
+          />
+          <ArraySection
+            title="校园经历"
+            items={profile.campus}
+            onChange={(items) => updateSection("campus", items)}
+            create={() => ({
+              id: crypto.randomUUID(),
+              organization: "",
+              position: "",
+              startDate: "",
+              endDate: "",
+              description: "",
+            })}
+            labels={{
+              organization: "组织/社团",
+              position: "职务",
+              startDate: { label: "开始时间", kind: "month" },
+              endDate: { label: "结束时间", kind: "month" },
+              description: "经历描述",
+            }}
+            addLabel="新增校园经历"
+          />
 
-        <ObjectSection
-          title="能力与评价"
-          value={profile.abilities}
-          onChange={(value) => updateSection("abilities", value)}
-          labels={{
-            skills: "技能",
-            certificates: "证书",
-            languages: "语言能力",
-            selfEvaluation: "自我评价",
-          }}
-          multiline
-        />
-        <ObjectSection
-          title="个人链接"
-          value={profile.links}
-          onChange={(value) => updateSection("links", value)}
-          labels={{
-            personalWebsite: {
-              label: "个人网站",
-              kind: "url",
-              placeholder: "https://",
-            },
-            github: {
-              label: "GitHub",
-              kind: "url",
-              placeholder: "https://github.com/",
-            },
-            portfolio: {
-              label: "作品集",
-              kind: "url",
-              placeholder: "https://",
-            },
-            linkedin: {
-              label: "LinkedIn",
-              kind: "url",
-              placeholder: "https://linkedin.com/in/",
-            },
-          }}
-        />
-        <ObjectSection
-          title="紧急联系人"
-          value={profile.emergencyContact}
-          onChange={(value) => updateSection("emergencyContact", value)}
-          labels={{
-            name: "姓名",
-            relationship: {
-              label: "关系",
-              kind: "suggest",
-              options: relationships,
-            },
-            phone: { label: "电话", kind: "tel" },
-          }}
-        />
-        <ArraySection
-          title="家庭成员"
-          items={profile.familyMembers}
-          onChange={(items) => updateSection("familyMembers", items)}
-          create={() => ({
-            id: crypto.randomUUID(),
-            name: "",
-            relationship: "",
-            employer: "",
-            position: "",
-            phone: "",
-          })}
-          labels={{
-            name: "姓名",
-            relationship: {
-              label: "关系",
-              kind: "suggest",
-              options: relationships,
-            },
-            employer: "工作单位",
-            position: "职务",
-            phone: { label: "电话", kind: "tel" },
-          }}
-          addLabel="新增家庭成员"
-        />
-        <ArraySection
-          title="常见网申问答"
-          items={profile.commonAnswers}
-          onChange={(items) => updateSection("commonAnswers", items)}
-          create={() => ({
-            id: crypto.randomUUID(),
-            question: "",
-            keywords: [],
-            answer: "",
-          })}
-          labels={{
-            question: {
-              label: "问题",
-              kind: "suggest",
-              options: commonQuestions,
-            },
-            keywords: "匹配关键词（逗号分隔）",
-            answer: "答案",
-          }}
-          addLabel="新增常见问答"
-        />
+          <ObjectSection
+            title="能力与评价"
+            value={profile.abilities}
+            onChange={(value) => updateSection("abilities", value)}
+            labels={{
+              skills: "技能",
+              certificates: "证书",
+              languages: "语言能力",
+              selfEvaluation: "自我评价",
+            }}
+            multiline
+          />
+          <ObjectSection
+            title="个人链接"
+            value={profile.links}
+            onChange={(value) => updateSection("links", value)}
+            labels={{
+              personalWebsite: {
+                label: "个人网站",
+                kind: "url",
+                placeholder: "https://",
+              },
+              github: {
+                label: "GitHub",
+                kind: "url",
+                placeholder: "https://github.com/",
+              },
+              portfolio: {
+                label: "作品集",
+                kind: "url",
+                placeholder: "https://",
+              },
+              linkedin: {
+                label: "LinkedIn",
+                kind: "url",
+                placeholder: "https://linkedin.com/in/",
+              },
+            }}
+          />
+          <ObjectSection
+            title="紧急联系人"
+            value={profile.emergencyContact}
+            onChange={(value) => updateSection("emergencyContact", value)}
+            labels={{
+              name: "姓名",
+              relationship: {
+                label: "关系",
+                kind: "suggest",
+                options: relationships,
+              },
+              phone: { label: "电话", kind: "tel" },
+            }}
+          />
+          <ArraySection
+            title="家庭成员"
+            items={profile.familyMembers}
+            onChange={(items) => updateSection("familyMembers", items)}
+            create={() => ({
+              id: crypto.randomUUID(),
+              name: "",
+              relationship: "",
+              employer: "",
+              position: "",
+              phone: "",
+            })}
+            labels={{
+              name: "姓名",
+              relationship: {
+                label: "关系",
+                kind: "suggest",
+                options: relationships,
+              },
+              employer: "工作单位",
+              position: "职务",
+              phone: { label: "电话", kind: "tel" },
+            }}
+            addLabel="新增家庭成员"
+          />
+          <ArraySection
+            title="常见网申问答"
+            items={profile.commonAnswers}
+            onChange={(items) => updateSection("commonAnswers", items)}
+            create={() => ({
+              id: crypto.randomUUID(),
+              question: "",
+              keywords: [],
+              answer: "",
+            })}
+            labels={{
+              question: {
+                label: "问题",
+                kind: "suggest",
+                options: commonQuestions,
+              },
+              keywords: "匹配关键词（逗号分隔）",
+              answer: "答案",
+            }}
+            addLabel="新增常见问答"
+          />
+        </fieldset>
 
         <Section
           title="已连接的浏览器插件"

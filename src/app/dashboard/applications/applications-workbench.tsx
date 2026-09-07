@@ -725,7 +725,6 @@ function ApplicationDrawer({
                         value={nextActionAt}
                         onChange={setNextActionAt}
                         placeholder="选择下一步日期和时间"
-                        side="left"
                       />
                     </Field>
                     <Field label="网申截止时间">
@@ -733,7 +732,6 @@ function ApplicationDrawer({
                         value={deadlineAt}
                         onChange={setDeadlineAt}
                         placeholder="选择网申截止时间"
-                        side="left"
                       />
                     </Field>
                   </div>
@@ -1028,12 +1026,10 @@ function DateTimePicker({
   value,
   onChange,
   placeholder,
-  side = "bottom",
 }: {
   value: string;
   onChange: (value: string) => void;
   placeholder: string;
-  side?: "top" | "right" | "bottom" | "left";
 }): ReactElement {
   const selected = parseLocalDateTime(value);
   const [open, setOpen] = useState(false);
@@ -1111,10 +1107,10 @@ function DateTimePicker({
       <Popover.Portal>
         <Popover.Content
           align="start"
-          side={side}
+          side="bottom"
           sideOffset={8}
           collisionPadding={16}
-          className="application-date-popover z-[500] w-[min(22rem,calc(100vw-2rem))] rounded-2xl border border-slate-200 bg-white p-3 shadow-2xl focus:outline-none"
+          className="application-date-popover z-[500] max-h-[var(--radix-popover-content-available-height)] w-[min(22rem,calc(100vw-2rem))] overflow-y-auto rounded-2xl border border-slate-200 bg-white p-3 shadow-2xl focus:outline-none"
         >
           <div className="flex items-center justify-between">
             <button

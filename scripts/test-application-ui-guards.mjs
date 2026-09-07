@@ -44,5 +44,33 @@ try {
   assert.ok(await page.$eval('article',n=>n.innerText.includes('待投递')),'响应前不应显示已投递');
   await page.waitForFunction(()=>document.querySelector('article')?.innerText.includes('已投递'));
   assert.equal(patches,1,'重复点击产生多次PATCH');
+  // Check both drawer inputs across wide, narrow desktop and mobile viewports.
+  await page.click('article button');
+  await page.waitForSelector('[role="dialog"] textarea',{visible:true});
+  for (const width of [1280, 892, 390]) {
+    await page.setViewport({width,height:900});
+    for (const label of ['选择下一步日期和时间','选择网申截止时间']) {
+      console.log(`Checking date popover: ${width}px ${label}`);
+      const trigger=await page.$(`button[aria-label="${label}"]`);
+      await trigger.scrollIntoView();
+      await page.waitForFunction((label) => {
+        const trigger=document.querySelector(`button[aria-label="${label}"]`);
+        return trigger && !trigger.matches(':disabled');
+      },{},label);
+      await trigger.click();
+      await page.waitForSelector('.application-date-popover',{visible:true});
+      await page.waitForFunction(() => {
+        const p=document.querySelector('.application-date-popover');
+        const r=p?.getBoundingClientRect();
+        return r && r.x>=0 && r.right<=innerWidth && r.y>=0 && r.bottom<=innerHeight;
+      });
+      const box=await page.$eval('.application-date-popover',p=>({side:p.dataset.side,text:p.textContent}));
+      assert.ok(['top','bottom'].includes(box.side),'日期浮层不应出现在输入框左右侧');
+      assert.ok(box.text.includes('具体时间')&&box.text.includes('清除')&&box.text.includes('完成'));
+      await page.keyboard.press('Escape');
+      await page.waitForSelector('.application-date-popover',{hidden:true});
+    }
+  }
+  console.log('PASS: both Chinese date popovers stay within viewport and above/below their input at 1280/892/390px');
   console.log('PASS: actual browser drawer cancel preserves unsaved note; confirmed close dismisses; repeated category click clears filter; double-click sends one PATCH and waits for acknowledgement');
 } finally {await browser.close();}
