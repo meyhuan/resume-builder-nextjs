@@ -30,6 +30,10 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
               <BarChart3 className="w-4 h-4" />
               埋点统计
             </Link>
+            <Link href="/admin/extension-metrics" className="flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+              <BarChart3 className="w-4 h-4" />
+              插件填写效果
+            </Link>
             <Link
               href="/dashboard"
               className="flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors mt-auto"

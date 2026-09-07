@@ -123,13 +123,14 @@ const PrivacyContent: React.FC = () => (
           <h3 className="font-semibold text-slate-700 text-sm mb-1">收集范围</h3>
           <ul className="list-disc pl-5 space-y-1 text-xs">
             <li><strong>注册时：</strong>需提供微信授权等必要信息用于账号验证与登录。</li>
-            <li><strong>服务过程中：</strong>可能收集简历内容、模板使用记录、操作日志等信息，用于优化服务体验、提供 AI 功能（如智能生成简历、AI 润色）及账户安全管理。</li>
+            <li><strong>服务过程中：</strong>可能收集简历内容、您主动维护的网申资料、投递记录、模板使用记录和必要操作日志，用于提供简历、自动填表、投递管理及账户安全功能。</li>
           </ul>
         </div>
         <div>
           <h3 className="font-semibold text-slate-700 text-sm mb-1">使用目的</h3>
           <ul className="list-disc pl-5 space-y-1 text-xs">
             <li>提供简历制作、模板选择、AI 生成/润色/排版、PDF/图片/Markdown 导出等核心服务。</li>
+            <li>仅在您主动点击浏览器插件时读取当前申请页面、填写已保存资料并创建投递记录；插件不会自动提交申请或收集浏览历史。</li>
             <li>发送服务通知（如系统更新、功能上线）。</li>
             <li>保障平台安全，防范欺诈或非法行为。</li>
           </ul>

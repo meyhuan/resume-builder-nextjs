@@ -23,6 +23,11 @@ test-artifacts/
 
 # Prisma
 /prisma/migrations/
+!/prisma/migrations/
+/prisma/migrations/*
+!/prisma/migrations/202608250001_add_application_autofill/
+!/prisma/migrations/202608290001_add_application_next_action/
+!/prisma/migrations/202609060001_extension_telemetry/
 /prisma/*.db
 /prisma/*.db-journal
 

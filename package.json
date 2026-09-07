@@ -28,7 +28,12 @@
     "seo:submit": "node scripts/seo-submit.mjs",
     "import:supabase": "node scripts/import-supabase-csv.mjs",
     "migrate:oss-assets": "node scripts/migrate-oss-assets.mjs",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "extension:dev": "pnpm --dir extension dev",
+    "extension:build": "pnpm --dir extension build",
+    "extension:test": "pnpm --dir extension test",
+    "extension:zip": "pnpm --dir extension zip",
+    "test:application-autofill": "vitest run src/features/application-profile src/features/applications"
   },
   "dependencies": {
     "@ai-sdk/openai": "^4.0.42",
@@ -119,6 +124,7 @@
     "prisma": "^5.10.0",
     "tailwindcss": "^4.1.13",
     "typescript": "~5.8.3",
-    "typescript-eslint": "^8.44.0"
+    "typescript-eslint": "^8.44.0",
+    "vitest": "^3.2.4"
   }
 }
