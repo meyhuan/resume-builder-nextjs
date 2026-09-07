@@ -36,7 +36,7 @@ export async function issueExtensionAuthCode(input: {
 export function isAllowedExtensionRedirect(raw: string): boolean {
   try {
     const url = new URL(raw);
-    if (url.protocol !== "https:" || !url.hostname.endsWith(".chromiumapp.org"))
+    if (url.protocol !== "https:" || !url.hostname.endsWith(".chromiumapp.org") || url.port || url.username || url.password || url.pathname !== "/oauth2" || url.search || url.hash)
       return false;
     const extensionId = url.hostname.slice(0, -".chromiumapp.org".length);
     if (!/^[a-p]{32}$/.test(extensionId)) return false;

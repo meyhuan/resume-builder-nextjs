@@ -1,8 +1,13 @@
 import { buildFillPlan } from "../lib/mapping";
 import { ExtensionAuthError, parseAuthCallback } from "../lib/auth";
 import { getSiteAdapter } from "../lib/site-adapters";
-import { trackExtensionEvent } from "../lib/analytics";
+import { createTelemetryQueue, type TelemetryName } from "../lib/telemetry-queue";
+import { apiRequest } from "../lib/api-request";
 import { runRepeaterEngine } from "../lib/repeater-engine";
+import { collectPageSnapshot } from "../lib/page-scanner";
+import { applyFillActions } from "../lib/fill-executor";
+import { isDateCompletionPolicy, readDatePolicy, writeDatePolicy, type DateCompletionPolicy } from "../lib/date-policy";
+import { matchingSession, pageSessionKey, samePage, type PageIdentity } from "../lib/page-session";
 import type {
   ApplicationProfileEnvelope,
   FillAction,
@@ -13,23 +18,52 @@ import type {
 } from "../lib/types";
 
 const API_BASE = import.meta.env.WXT_API_BASE_URL || "https://aijianli.cn";
+const TELEMETRY_ALARM = "extension-telemetry-retry";
+const telemetry = createTelemetryQueue({
+  storage: browser.storage.local,
+  schedule: async () => {
+    if (!await browser.alarms.get(TELEMETRY_ALARM)) await browser.alarms.create(TELEMETRY_ALARM, {periodInMinutes: 1});
+  },
+  send: async (token, event) => (await fetch(`${API_BASE}/next-api/extension/analytics`, {
+    method: "POST", headers: {Authorization: `Bearer ${token}`, "Content-Type": "application/json"},
+    body: JSON.stringify(event), signal: AbortSignal.timeout(8_000),
+  })).status,
+});
+async function trackExtensionEvent(eventName: TelemetryName, properties: Record<string, unknown> = {}): Promise<void> {
+  try { await telemetry.enqueue(eventName, properties); void telemetry.flush(); } catch { /* Non-blocking telemetry. */ }
+}
 
 interface ExtensionMessage {
   type: string;
   applicationId?: string;
+  page?: PageIdentity;
+  datePolicy?: DateCompletionPolicy;
+  rememberDatePolicy?: boolean;
+  eventName?: TelemetryName;
+  properties?: Record<string, unknown>;
 }
 
 const SILENT_RETRY_MS = 4_000;
 let authInFlight: Promise<Record<string, unknown>> | null = null;
+const pageVersions = new Map<number, number>();
+const fillingTabs = new Set<number>();
 
 export default defineBackground(() => {
+  // WXT's browser wrapper may omit this newer method even when Chrome supports it.
+  const nativeStorage = (globalThis as unknown as {chrome?: {storage?: {local?: {
+    setAccessLevel?: (options: {accessLevel: "TRUSTED_CONTEXTS"}) => Promise<void>;
+  }}}}).chrome?.storage?.local;
+  void nativeStorage?.setAccessLevel?.({accessLevel: "TRUSTED_CONTEXTS"})?.catch(() => undefined);
+  browser.alarms.onAlarm.addListener(alarm => { if (alarm.name === TELEMETRY_ALARM) void telemetry.flush(); });
+  browser.runtime.onStartup.addListener(() => { void telemetry.flush(); });
   browser.sidePanel
     .setPanelBehavior({ openPanelOnActionClick: true })
     .catch(() => undefined);
 
   browser.runtime.onMessage.addListener(
-    (message: ExtensionMessage, _sender, sendResponse) => {
-      void handleMessage(message)
+    (message: ExtensionMessage, sender, sendResponse) => {
+      const senderPage = sender.tab?.id && sender.url ? { tabId: sender.tab.id, url: sender.url } : null;
+      void handleMessage(message, senderPage)
         .then(sendResponse)
         .catch((error) =>
           sendResponse({
@@ -39,9 +73,32 @@ export default defineBackground(() => {
       return true;
     },
   );
+  browser.tabs.onRemoved.addListener((tabId) => {
+    pageVersions.set(tabId, (pageVersions.get(tabId) || 0) + 1);
+    void browser.storage.session.remove(pageSessionKey(tabId));
+  });
+  browser.tabs.onUpdated.addListener((tabId, change) => {
+    if (change.status === "loading" || change.url) {
+      pageVersions.set(tabId, (pageVersions.get(tabId) || 0) + 1);
+      void browser.storage.session.remove(pageSessionKey(tabId));
+    }
+  });
 });
 
-async function handleMessage(message: ExtensionMessage): Promise<unknown> {
+async function activePage(): Promise<PageIdentity | null> {
+  const [tab] = await browser.tabs.query({ active: true, lastFocusedWindow: true });
+  return tab?.id && tab.url ? { tabId: tab.id, url: tab.url } : null;
+}
+async function readPageSession(page: PageIdentity | null) {
+  if (!page) return null;
+  const key = pageSessionKey(page.tabId);
+  return matchingSession((await browser.storage.session.get(key))[key], page);
+}
+async function handleMessage(message: ExtensionMessage, senderPage: PageIdentity | null): Promise<unknown> {
+  if (message.type === "analytics-track" && !senderPage && message.eventName) {
+    await trackExtensionEvent(message.eventName, message.properties);
+    return {ok: true};
+  }
   if (message.type === "initialize") {
     await browser.storage.session.remove("silentAuthLastAttemptAt");
     return getStatus(true);
@@ -53,11 +110,31 @@ async function handleMessage(message: ExtensionMessage): Promise<unknown> {
   if (message.type === "open-login") return openLogin();
   if (message.type === "connect") return connect(true);
   if (message.type === "disconnect") return disconnect();
-  if (message.type === "fill") return fillCurrentPageWithAnalytics();
+  if (message.type === "set-date-policy") {
+    if (!samePage(message.page, await activePage())) throw new Error("页面已切换，请重新设置日期偏好");
+    await writeDatePolicy(browser.storage.local, message.page!.url, message.datePolicy);
+    return { ok: true };
+  }
+  if (message.type === "fill") {
+    if (!samePage(message.page, await activePage())) throw new Error("页面已切换，请在当前页面重新点击填写");
+    const page = message.page!;
+    if (fillingTabs.has(page.tabId)) throw new Error("此页面正在填写，请稍候");
+    fillingTabs.add(page.tabId);
+    try {
+      if (message.datePolicy !== undefined && !isDateCompletionPolicy(message.datePolicy)) throw new Error("无效的日期补全选项");
+      const policy = message.datePolicy ?? await readDatePolicy(browser.storage.local, page.url);
+      if (message.rememberDatePolicy === true && message.datePolicy !== undefined) {
+        await writeDatePolicy(browser.storage.local, page.url, policy);
+      }
+      return await fillCurrentPageWithAnalytics(page, policy);
+    }
+    finally { fillingTabs.delete(page.tabId); }
+  }
   if (message.type === "mark-applied" && message.applicationId)
-    return markApplied(message.applicationId);
+    return markApplied(message.applicationId, message.page);
   if (message.type === "submit-detected") {
-    await browser.storage.session.set({ submitDetected: true });
+    const session = await readPageSession(senderPage);
+    if (session) await browser.storage.session.set({ [pageSessionKey(senderPage!.tabId)]: { ...session, submitDetected: true } });
     return { ok: true };
   }
   throw new Error("不支持的插件操作");
@@ -123,15 +200,19 @@ async function getStatus(
     }
   }
 
+  const page = await activePage();
+  const pageSession = await readPageSession(page);
   return {
+    page,
+    datePolicy: page && /^https?:/.test(page.url) ? await readDatePolicy(browser.storage.local, page.url) : "ask",
     connected,
     onboardingAccepted,
     autoConnectEnabled,
     connectionIssue: connected ? null : session.authIssue || null,
     awaitingLogin: Number(session.awaitingLoginUntil || 0) > Date.now(),
     hasProfile: Boolean(session.profileEnvelope),
-    application: session.draftApplication || null,
-    submitDetected: Boolean(session.submitDetected),
+    application: pageSession?.application || null,
+    submitDetected: Boolean(pageSession?.submitDetected),
   };
 }
 
@@ -234,7 +315,7 @@ async function performConnection(
     await browser.storage.session.set({ authIssue: issue });
     throw error;
   }
-  const response = await fetch(`${API_BASE}/next-api/extension/token`, {
+  const response = await apiRequest(`${API_BASE}/next-api/extension/token`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -272,6 +353,7 @@ async function disconnect(): Promise<{ connected: false }> {
 }
 
 async function clearConnectionState(): Promise<void> {
+  await telemetry.clear();
   await browser.storage.local.remove(["accessToken", "expiresAt"]);
   await browser.storage.session.clear();
 }
@@ -306,7 +388,7 @@ async function refreshProfile(
   token: string,
   etag?: string,
 ): Promise<ApplicationProfileEnvelope> {
-  const response = await fetch(`${API_BASE}/next-api/extension/profile`, {
+  const response = await apiRequest(`${API_BASE}/next-api/extension/profile`, {
     headers: {
       Authorization: `Bearer ${token}`,
       ...(etag ? { "If-None-Match": etag } : {}),
@@ -331,35 +413,24 @@ async function refreshProfile(
   return envelope;
 }
 
-async function fillCurrentPage(): Promise<FillResult> {
+async function fillCurrentPage(page: PageIdentity, datePolicy: DateCompletionPolicy): Promise<FillResult> {
+  const version = pageVersions.get(page.tabId) || 0;
+  const assertUnchanged = async () => {
+    const current = await browser.tabs.get(page.tabId);
+    if (current.url !== page.url || (pageVersions.get(page.tabId) || 0) !== version)
+      throw new Error("页面已变化，本次填写已停止，请重新点击填写");
+  };
   // A user-triggered fill must use the latest profile. Returning the session
   // cache here can miss newly synced repeatable rows such as work experience.
   const profile = await loadProfile(true);
-  const [tab] = await browser.tabs.query({
-    active: true,
-    lastFocusedWindow: true,
-  });
+  const tab = await browser.tabs.get(page.tabId);
+  if (tab.url !== page.url) throw new Error("页面已变化，请重新填写");
   if (!tab?.id) throw new Error("没有找到当前活动标签页，请重新打开招聘页面");
   if (!tab.url)
     throw new Error("未获得当前网站访问权限，请点击一键填写并允许 Chrome 授权");
   if (!/^https?:/.test(tab.url)) throw new Error("请在招聘申请页面使用插件");
   const siteAdapter = getSiteAdapter(new URL(tab.url).hostname);
   let repeaterSummary: RepeaterExecutionSummary | undefined;
-  if (siteAdapter?.repeaters?.length) {
-    const desiredCounts = Object.fromEntries(
-      siteAdapter.repeaters.map((rule) => {
-        const rows = profile.profile[rule.profilePath];
-        return [rule.profilePath, Array.isArray(rows) ? rows.length : 0];
-      }),
-    );
-    const preparation = await browser.scripting.executeScript({
-      target: { tabId: tab.id },
-      world: "MAIN",
-      func: runRepeaterEngine,
-      args: [siteAdapter.repeaters, desiredCounts],
-    });
-    repeaterSummary = preparation[0]?.result;
-  }
   let snapshotResult;
   try {
     snapshotResult = await browser.scripting.executeScript({
@@ -376,22 +447,55 @@ async function fillCurrentPage(): Promise<FillResult> {
     }
     throw new Error(`无法扫描当前页面：${message}`);
   }
-  const snapshot = snapshotResult[0]?.result as PageSnapshot | undefined;
+  let snapshot = snapshotResult[0]?.result as PageSnapshot | undefined;
   if (!snapshot) throw new Error("无法读取当前页面表单");
+  const repeaters = siteAdapter?.repeaters?.length
+    ? siteAdapter.repeaters
+    : snapshot.repeaters || [];
+  if (repeaters.length) {
+    const desiredCounts = Object.fromEntries(
+      repeaters.map((rule) => {
+        const rows = profile.profile[rule.profilePath];
+        return [rule.profilePath, Array.isArray(rows) ? rows.length : 0];
+      }),
+    );
+    await assertUnchanged();
+    const preparation = await browser.scripting.executeScript({
+      target: { tabId: tab.id },
+      world: "MAIN",
+      func: runRepeaterEngine,
+      args: [repeaters, desiredCounts],
+    });
+    repeaterSummary = preparation[0]?.result;
+    const refreshed = await browser.scripting.executeScript({
+      target: { tabId: tab.id },
+      func: collectPageSnapshot,
+      args: [siteAdapter],
+    });
+    snapshot = refreshed[0]?.result as PageSnapshot | undefined;
+    if (!snapshot) throw new Error("新增经历后无法读取表单");
+  }
   const plan = buildFillPlan(profile.profile, snapshot.fields);
+  await assertUnchanged();
   const fillResult = await browser.scripting.executeScript({
     target: { tabId: tab.id },
     func: applyFillActions,
-    args: [plan.actions],
+    args: [plan.actions, { allowMonthStart: datePolicy === "first-day" }],
   });
   const summary = fillResult[0]?.result as {
     filled: number;
     alreadyFilled: number;
+    failedCount: number;
     failed: string[];
+    controlMetrics?: Record<string, number>;
   };
   const result: FillResult = {
+    controlMetrics: summary?.controlMetrics,
     filled: summary?.filled || 0,
-    skipped: (summary?.alreadyFilled || 0) + (summary?.failed?.length || 0),
+    skipped: (summary?.alreadyFilled || 0) + (summary?.failedCount || 0),
+    failedCount: summary?.failedCount || 0,
+    missingProfileCount: plan.missingProfileCount,
+    unmatchedCount: plan.unmatchedCount,
     alreadyFilled: summary?.alreadyFilled || 0,
     failed: summary?.failed || [],
     missingProfile: plan.missingProfile,
@@ -407,26 +511,37 @@ async function fillCurrentPage(): Promise<FillResult> {
       (item) => item.profilePath === "experiences",
     )?.added,
     repeaterDiagnostics: repeaterSummary?.diagnostics,
+    detectedFieldCount: snapshot.fields.length,
+    contextualFieldCount: snapshot.fields.filter(
+      (field) =>
+        field.labelSource === "nearby" || field.labelSource === "label",
+    ).length,
   };
   if (result.filled + result.alreadyFilled > 0) {
+    await assertUnchanged();
+    try {
     const application = await createDraft(
       snapshot.job,
       profile.defaultResumeId,
     );
     result.applicationId = String(application.id);
+    await assertUnchanged();
     await browser.storage.session.set({
-      draftApplication: application,
-      submitDetected: false,
+      [pageSessionKey(tab.id)]: { page, application, submitDetected: false },
     });
     await browser.scripting.executeScript({
       target: { tabId: tab.id },
       func: attachSubmitMonitor,
     });
+    } catch {
+      await assertUnchanged();
+      result.recordingError = "网页填写结果已保留，但投递记录同步未完成。请稍后重试，或到投递管理中核对记录。";
+    }
   }
   return result;
 }
 
-async function fillCurrentPageWithAnalytics(): Promise<FillResult> {
+async function fillCurrentPageWithAnalytics(page: PageIdentity, datePolicy: DateCompletionPolicy): Promise<FillResult> {
   const startedAt = Date.now();
   const [tab] = await browser.tabs.query({
     active: true,
@@ -437,12 +552,14 @@ async function fillCurrentPageWithAnalytics(): Promise<FillResult> {
     ? getSiteAdapter(sourceDomain)?.id || "generic"
     : "unknown";
   void trackExtensionEvent("extension_fill_start", {
+    engineVersion: "openjob-context-v4",
+    extensionVersion: browser.runtime.getManifest().version,
     sourceDomain,
     adapterId,
     supportedSite: adapterId !== "generic" && adapterId !== "unknown",
   });
   try {
-    const result = await fillCurrentPage();
+    const result = await fillCurrentPage(page, datePolicy);
     const experienceRepeater = result.repeaterDiagnostics?.find(
       (item) => item.profilePath === "experiences",
     );
@@ -452,20 +569,31 @@ async function fillCurrentPageWithAnalytics(): Promise<FillResult> {
       ),
     );
     const compatibilityIncomplete =
+      !!result.recordingError ||
       repeaterIncomplete ||
       result.failed.length > 0 ||
-      result.unmatched.length > 0;
+      result.unmatched.length > 0 ||
+      result.missingProfile.length > 0 ||
+      !result.detectedFieldCount ||
+      result.filled + result.alreadyFilled === 0;
     const fillStatus = compatibilityIncomplete ? "partial" : "success";
     const fillProperties = {
+      dateCompletionPolicy: datePolicy,
+      engineVersion: "openjob-context-v4",
+      recordingFailed: !!result.recordingError,
+      extensionVersion: browser.runtime.getManifest().version,
+      detectedFieldCount: result.detectedFieldCount,
+      contextualFieldCount: result.contextualFieldCount,
       status: fillStatus,
       sourceDomain: result.job?.sourceDomain || sourceDomain,
       adapterId,
       durationMs: Date.now() - startedAt,
       filledCount: result.filled,
       alreadyFilledCount: result.alreadyFilled,
-      failedCount: result.failed.length,
-      missingProfileCount: result.missingProfile.length,
-      unmatchedCount: result.unmatched.length,
+      failedCount: result.failedCount,
+      missingProfileCount: result.missingProfileCount,
+      unmatchedCount: result.unmatchedCount,
+      ...result.controlMetrics,
       repeaterStatus: experienceRepeater?.status,
       repeaterFailureReason: experienceRepeater?.failureReason,
       repeaterDesiredCount: experienceRepeater?.desired,
@@ -475,16 +603,16 @@ async function fillCurrentPageWithAnalytics(): Promise<FillResult> {
       repeaterAttempts: experienceRepeater?.attempts,
       repeaterRuleCount: result.repeaterDiagnostics?.length || 0,
       repeaterFailureCount:
-        result.repeaterDiagnostics?.filter((item) => item.failureReason).length ||
-        0,
+        result.repeaterDiagnostics?.filter((item) => item.failureReason)
+          .length || 0,
       repeaterAddedTotal:
         result.repeaterDiagnostics?.reduce(
           (total, item) => total + item.added,
           0,
         ) || 0,
     } as const;
-    void trackExtensionEvent("extension_fill_result", fillProperties);
-    void trackExtensionEvent(
+    await trackExtensionEvent("extension_fill_result", fillProperties);
+    await trackExtensionEvent(
       compatibilityIncomplete
         ? "extension_fill_partial"
         : "extension_fill_complete",
@@ -492,7 +620,9 @@ async function fillCurrentPageWithAnalytics(): Promise<FillResult> {
     );
     return result;
   } catch (error) {
-    void trackExtensionEvent("extension_fill_result", {
+    await trackExtensionEvent("extension_fill_result", {
+      engineVersion: "openjob-context-v4",
+      extensionVersion: browser.runtime.getManifest().version,
       status: "failed",
       sourceDomain,
       adapterId,
@@ -513,7 +643,7 @@ async function createDraft(
   resumeId: string | null,
 ): Promise<Record<string, unknown>> {
   const { accessToken } = await browser.storage.local.get("accessToken");
-  const response = await fetch(`${API_BASE}/next-api/extension/applications`, {
+  const response = await apiRequest(`${API_BASE}/next-api/extension/applications`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -532,9 +662,14 @@ async function createDraft(
 
 async function markApplied(
   applicationId: string,
+  page?: PageIdentity,
 ): Promise<Record<string, unknown>> {
+  const current = await activePage();
+  const session = await readPageSession(current);
+  if (!samePage(page, current) || session?.application?.id !== applicationId)
+    throw new Error("页面或投递记录已变化，请在对应页面重新确认");
   const { accessToken } = await browser.storage.local.get("accessToken");
-  const response = await fetch(
+  const response = await apiRequest(
     `${API_BASE}/next-api/extension/applications/${applicationId}`,
     {
       method: "PATCH",
@@ -548,8 +683,7 @@ async function markApplied(
   const payload = await response.json();
   if (!response.ok) throw new Error(payload.error || "更新投递状态失败");
   await browser.storage.session.set({
-    draftApplication: payload,
-    submitDetected: false,
+    [pageSessionKey(current!.tabId)]: { ...session, application: payload, submitDetected: false },
   });
   void trackExtensionEvent("extension_mark_applied", { status: "APPLIED" });
   return payload;
@@ -574,287 +708,6 @@ function base64Url(bytes: Uint8Array): string {
     .replace(/\+/g, "-")
     .replace(/\//g, "_")
     .replace(/=+$/, "");
-}
-
-function collectPageSnapshot(adapter: SiteAdapter | null): PageSnapshot {
-  const blocked =
-    /password|密码|验证码|captcha|银行卡|bank card|协议|同意条款|csrf|token|tracking/i;
-  const nativeControls = [
-    ...document.querySelectorAll<HTMLElement>(
-      'input, textarea, select, [contenteditable="true"]',
-    ),
-  ];
-  const customControls = (adapter?.contextRules || [])
-    .filter((rule) => rule.controlKind && rule.controlKind !== "native")
-    .flatMap((rule) => [
-      ...document.querySelectorAll<HTMLElement>(rule.selector),
-    ]);
-  const controls = [...new Set([...nativeControls, ...customControls])];
-  const fields = controls.flatMap((element, index) => {
-    const input = element as HTMLInputElement;
-    const type = (input.type || "").toLowerCase();
-    const adapterRule = adapter?.contextRules.find((rule) =>
-      element.matches(rule.selector),
-    );
-    if (adapter?.rootSelector && !element.closest(adapter.rootSelector))
-      return [];
-    if (adapter?.ignoreSelectors.some((selector) => element.matches(selector)))
-      return [];
-    if (
-      [
-        "hidden",
-        "password",
-        "file",
-        "submit",
-        "reset",
-        "button",
-        "image",
-      ].includes(type)
-    )
-      return [];
-    if (
-      input.disabled ||
-      (input.readOnly && !adapterRule?.allowReadOnly) ||
-      element.getAttribute("aria-hidden") === "true"
-    )
-      return [];
-    if (
-      element.offsetParent === null &&
-      getComputedStyle(element).position !== "fixed"
-    )
-      return [];
-    const fieldId = `aijianli-${Date.now()}-${index}`;
-    element.setAttribute("data-aijianli-field-id", fieldId);
-    const explicitLabel = input.id
-      ? document.querySelector<HTMLLabelElement>(
-          `label[for="${CSS.escape(input.id)}"]`,
-        )?.innerText
-      : "";
-    const wrappingLabel = element.closest("label")?.innerText || "";
-    const group = element.closest('[role="group"], fieldset, tr');
-    const groupLabel =
-      group?.querySelector('legend, th, [class*="label"]')?.textContent || "";
-    const optionText =
-      type === "radio" || type === "checkbox"
-        ? wrappingLabel || element.parentElement?.textContent || ""
-        : "";
-    const adapterContext = adapterRule?.context || "";
-    const contextParts = adapterContext
-      ? [adapterContext]
-      : [
-          explicitLabel,
-          wrappingLabel,
-          input.getAttribute("aria-label"),
-          input.placeholder,
-          input.name,
-          input.id,
-          groupLabel,
-        ];
-    const context = contextParts
-      .filter(Boolean)
-      .join(" ")
-      .replace(/\s+/g, " ")
-      .trim()
-      .slice(0, 500);
-    if (!context || blocked.test(context)) return [];
-    return [
-      {
-        fieldId,
-        tag: element.tagName.toLowerCase(),
-        type,
-        controlKind: adapterRule?.controlKind || "native",
-        context,
-        optionText: optionText.trim().slice(0, 200),
-        options:
-          element instanceof HTMLSelectElement
-            ? [...element.options].map((option) => option.text.trim())
-            : [],
-      },
-    ];
-  });
-
-  let structured: Record<string, unknown> = {};
-  for (const script of document.querySelectorAll<HTMLScriptElement>(
-    'script[type="application/ld+json"]',
-  )) {
-    try {
-      const value = JSON.parse(script.textContent || "{}");
-      const candidates = Array.isArray(value)
-        ? value
-        : value["@graph"] || [value];
-      const job = candidates.find(
-        (item: Record<string, unknown>) => item?.["@type"] === "JobPosting",
-      );
-      if (job) {
-        structured = job;
-        break;
-      }
-    } catch {
-      /* ignore invalid publisher JSON-LD */
-    }
-  }
-  const organization = structured.hiringOrganization as
-    | Record<string, unknown>
-    | undefined;
-  const address = (
-    structured.jobLocation as Record<string, unknown> | undefined
-  )?.address as Record<string, unknown> | undefined;
-  const companyName = String(
-    organization?.name ||
-      document
-        .querySelector('meta[property="og:site_name"]')
-        ?.getAttribute("content") ||
-      location.hostname.replace(/^www\./, ""),
-  );
-  const jobTitle = String(
-    structured.title ||
-      document.querySelector("h1")?.textContent?.trim() ||
-      document.title ||
-      "未识别职位",
-  ).slice(0, 300);
-  return {
-    fields,
-    job: {
-      companyName: companyName.slice(0, 300),
-      jobTitle,
-      location: String(address?.addressLocality || "").slice(0, 300),
-      jobUrl: location.href,
-      applicationUrl: location.href,
-      sourceDomain: location.hostname,
-    },
-  };
-}
-
-async function applyFillActions(actions: FillAction[]): Promise<{
-  filled: number;
-  alreadyFilled: number;
-  failed: string[];
-}> {
-  let filled = 0;
-  let alreadyFilled = 0;
-  const failed: string[] = [];
-  const normalize = (value: string): string =>
-    value.toLowerCase().replace(/[\s:：*＊()（）_\-/]/g, "");
-  const chooseOption = (
-    container: HTMLElement,
-    selector: string,
-    value: string,
-  ): boolean => {
-    const normalizedValue = normalize(value);
-    const option = [...container.querySelectorAll<HTMLElement>(selector)].find(
-      (candidate) => {
-        const text = normalize(candidate.textContent || "");
-        return text === normalizedValue || text.includes(normalizedValue);
-      },
-    );
-    option?.click();
-    return Boolean(option);
-  };
-  for (const action of actions) {
-    const element = document.querySelector<HTMLElement>(
-      `[data-aijianli-field-id="${action.fieldId}"]`,
-    );
-    if (!element) {
-      failed.push(action.context || "页面控件已变化");
-      continue;
-    }
-    const input = element as HTMLInputElement;
-    if (action.controlKind === "custom-select") {
-      const current = (element.textContent || "").trim();
-      if (current && !/^选择|请选择/.test(current)) {
-        alreadyFilled++;
-        continue;
-      }
-      element.click();
-      const container = element.parentElement || element;
-      if (!chooseOption(container, "li", action.value)) {
-        failed.push(action.context || "自定义下拉框");
-        continue;
-      }
-      element.setAttribute("data-aijianli-filled", "true");
-      filled++;
-      continue;
-    }
-    if (action.controlKind === "year-month") {
-      const yearControl = element.querySelector<HTMLElement>(".select-left");
-      const monthControl = element.querySelector<HTMLElement>(".select-right");
-      const currentYear = (yearControl?.textContent || "").trim();
-      if (currentYear && currentYear !== "年") {
-        alreadyFilled++;
-        continue;
-      }
-      const date = action.value.match(/(\d{4})\D*(\d{1,2})?/);
-      if (!date || !yearControl || !monthControl) {
-        failed.push(action.context || "年月选择器");
-        continue;
-      }
-      const year = date[1];
-      const month = String(Number(date[2] || "1")).padStart(2, "0");
-      yearControl.click();
-      const yearSelected = chooseOption(element, ".small-select-li", year);
-      monthControl.click();
-      const monthSelected = chooseOption(element, ".splicing-select-li", month);
-      if (!yearSelected || !monthSelected) {
-        failed.push(action.context || "年月选择器");
-        continue;
-      }
-      element.setAttribute("data-aijianli-filled", "true");
-      filled++;
-      continue;
-    }
-    if (
-      input.value?.trim() ||
-      (input.type === "checkbox" && input.checked) ||
-      (input.type === "radio" && input.checked)
-    ) {
-      alreadyFilled++;
-      continue;
-    }
-    if (element instanceof HTMLSelectElement) {
-      const option = [...element.options].find(
-        (candidate) =>
-          normalize(candidate.text) === normalize(action.value) ||
-          normalize(candidate.text).includes(normalize(action.value)),
-      );
-      if (!option) {
-        failed.push(action.context || "下拉框");
-        continue;
-      }
-      element.value = option.value;
-    } else if (input.type === "checkbox" || input.type === "radio") {
-      input.click();
-    } else if (element.isContentEditable) {
-      element.textContent = action.value;
-    } else {
-      let value = action.value;
-      if (input.type === "date" || action.controlKind === "readonly-date") {
-        value = value
-          .replace(/[./年]/g, "-")
-          .replace(/月/g, "-")
-          .replace(/日/g, "")
-          .slice(0, 10);
-        if (/^\d{4}-\d{1,2}$/.test(value)) value += "-01";
-        if (!/^\d{4}-\d{1,2}-\d{1,2}$/.test(value)) {
-          failed.push(action.context || "日期控件");
-          continue;
-        }
-      }
-      const prototype =
-        element instanceof HTMLTextAreaElement
-          ? HTMLTextAreaElement.prototype
-          : HTMLInputElement.prototype;
-      Object.getOwnPropertyDescriptor(prototype, "value")?.set?.call(
-        element,
-        value,
-      );
-    }
-    element.dispatchEvent(new Event("input", { bubbles: true }));
-    element.dispatchEvent(new Event("change", { bubbles: true }));
-    element.dispatchEvent(new Event("blur", { bubbles: true }));
-    element.setAttribute("data-aijianli-filled", "true");
-    filled++;
-  }
-  return { filled, alreadyFilled, failed: [...new Set(failed)].slice(0, 20) };
 }
 
 function attachSubmitMonitor(): void {

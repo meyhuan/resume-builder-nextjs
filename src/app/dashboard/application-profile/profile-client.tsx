@@ -2,7 +2,8 @@
 
 /* Hallmark · modern-minimal · utilitarian restraint · violet anchor · profile section stack · pre-emit critique: P5 H4 E4 S5 R5 V4 */
 
-import { useEffect, useState, type ReactElement } from "react";
+import { useEffect, useRef, useState, type ReactElement } from "react";
+import { applicationRequest } from "@/features/applications/client-request";
 import { Plus, RefreshCw, Save, ShieldCheck, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { AutocompleteInput } from "@/components/ui/autocomplete-input";
@@ -54,6 +55,12 @@ export default function ApplicationProfileClient(): ReactElement {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
+  const [loadError, setLoadError] = useState("");
+  const [syncing, setSyncing] = useState(false);
+  const [authorizationError, setAuthorizationError] = useState(false);
+  const revision = useRef(0);
+  const busy = useRef(false);
+  const revoking = useRef(new Set<string>());
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -63,26 +70,69 @@ export default function ApplicationProfileClient(): ReactElement {
   }, []);
   useEffect(() => {
     const warn = (event: BeforeUnloadEvent): void => {
-      if (dirty) event.preventDefault();
+      if (dirty) {
+        event.preventDefault();
+        event.returnValue = "";
+      }
+    };
+    const warnNavigation = (event: MouseEvent): void => {
+      if (
+        !dirty ||
+        event.button !== 0 ||
+        event.ctrlKey ||
+        event.metaKey ||
+        event.shiftKey ||
+        event.altKey
+      )
+        return;
+      const link =
+        event.target instanceof Element
+          ? event.target.closest<HTMLAnchorElement>("a[href]")
+          : null;
+      if (!link || link.target === "_blank" || link.hasAttribute("download"))
+        return;
+      const destination = new URL(link.href, window.location.href);
+      if (
+        destination.origin !== window.location.origin ||
+        destination.pathname === window.location.pathname
+      )
+        return;
+      if (
+        !window.confirm("有未保存的修改，离开后这些修改会丢失。确定离开吗？")
+      ) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
     };
     window.addEventListener("beforeunload", warn);
-    return () => window.removeEventListener("beforeunload", warn);
+    document.addEventListener("click", warnNavigation, true);
+    return () => {
+      window.removeEventListener("beforeunload", warn);
+      document.removeEventListener("click", warnNavigation, true);
+    };
   }, [dirty]);
 
   async function load(): Promise<void> {
+    setLoading(true);
+    setLoadError("");
     try {
-      const [profileResponse, authResponse] = await Promise.all([
-        fetch("/next-api/application-profile", { credentials: "include" }),
-        fetch("/next-api/extension/authorizations", { credentials: "include" }),
+      const [data, auth] = await Promise.all([
+        applicationRequest<{
+          profile: ApplicationProfilePayload;
+          defaultResumeId: string | null;
+          resumes: ResumeOption[];
+        }>("/next-api/application-profile"),
+        applicationRequest<Authorization[]>(
+          "/next-api/extension/authorizations",
+        ).catch(() => null),
       ]);
-      if (!profileResponse.ok) throw new Error("读取网申资料失败");
-      const data = await profileResponse.json();
       setProfile(data.profile);
       setDefaultResumeId(data.defaultResumeId || "");
       setResumes(data.resumes || []);
-      if (authResponse.ok) setAuthorizations(await authResponse.json());
+      setAuthorizationError(auth === null);
+      if (auth) setAuthorizations(auth);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "读取网申资料失败");
+      setLoadError(error instanceof Error ? error.message : "读取网申资料失败");
     } finally {
       setLoading(false);
     }
@@ -93,13 +143,17 @@ export default function ApplicationProfileClient(): ReactElement {
     value: ApplicationProfilePayload[K],
   ): void {
     setProfile((current) => ({ ...current, [section]: value }));
+    revision.current++;
     setDirty(true);
   }
 
   async function save(): Promise<void> {
+    if (busy.current || loadError) return;
+    busy.current = true;
+    const submittedRevision = revision.current;
     setSaving(true);
     try {
-      const response = await fetch("/next-api/application-profile", {
+      await applicationRequest("/next-api/application-profile", {
         method: "PUT",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -108,55 +162,92 @@ export default function ApplicationProfileClient(): ReactElement {
           profile,
         }),
       });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error || "保存失败");
-      setDirty(false);
-      toast.success("网申资料已保存");
+      if (revision.current === submittedRevision) setDirty(false);
+      toast.success(
+        revision.current === submittedRevision
+          ? "网申资料已保存"
+          : "上一版本已保存，刚才新增的修改仍需保存",
+      );
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "保存失败");
     } finally {
       setSaving(false);
+      busy.current = false;
     }
   }
 
   async function syncResume(): Promise<void> {
+    if (busy.current) return;
+    if (dirty) {
+      toast.warning("请先保存当前修改，再从简历补充空缺。");
+      return;
+    }
     if (!defaultResumeId) {
       toast.warning("请先选择默认简历");
       return;
     }
-    const response = await fetch("/next-api/application-profile/sync", {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ resumeId: defaultResumeId }),
-    });
-    const result = await response.json();
-    if (!response.ok) {
-      toast.error(result.error || "同步失败");
-      return;
+    busy.current = true;
+    setSyncing(true);
+    const syncRevision = revision.current;
+    try {
+      const result = await applicationRequest<{
+        profile: ApplicationProfilePayload;
+      }>("/next-api/application-profile/sync", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ resumeId: defaultResumeId }),
+      });
+      if (revision.current === syncRevision) {
+        setProfile(result.profile);
+        setDirty(false);
+        toast.success("已从简历补充空缺信息，不会覆盖原有内容");
+      } else
+        toast.warning(
+          "简历同步已完成，当前新编辑的内容已保留，请保存后再次补充空缺。",
+        );
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "同步失败");
+    } finally {
+      busy.current = false;
+      setSyncing(false);
     }
-    setProfile(result.profile);
-    setDirty(false);
-    toast.success("已从简历补充空缺信息，不会覆盖原有内容");
   }
 
   async function revoke(id: string): Promise<void> {
-    const response = await fetch(`/next-api/extension/authorizations/${id}`, {
-      method: "DELETE",
-      credentials: "include",
-    });
-    if (!response.ok) {
-      toast.error("撤销授权失败");
-      return;
+    if (revoking.current.has(id)) return;
+    revoking.current.add(id);
+    try {
+      await applicationRequest(`/next-api/extension/authorizations/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      setAuthorizations((items) => items.filter((item) => item.id !== id));
+      toast.success("插件授权已撤销");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "撤销授权失败");
+    } finally {
+      revoking.current.delete(id);
     }
-    setAuthorizations((items) => items.filter((item) => item.id !== id));
-    toast.success("插件授权已撤销");
   }
 
   if (loading)
     return (
       <div className="min-h-screen bg-slate-50 p-12 text-sm text-slate-500">
         正在读取网申资料…
+      </div>
+    );
+
+  if (loadError)
+    return (
+      <div className="p-8" role="alert">
+        <p>{loadError}</p>
+        <button
+          className="mt-4 rounded-xl bg-violet-600 px-4 py-3 text-white"
+          onClick={() => void load()}
+        >
+          重新读取资料
+        </button>
       </div>
     );
 
@@ -172,13 +263,19 @@ export default function ApplicationProfileClient(): ReactElement {
           </div>
           <button
             onClick={save}
-            disabled={saving}
+            disabled={saving || syncing}
             className="inline-flex min-h-11 items-center gap-2 whitespace-nowrap rounded-xl bg-violet-600 px-5 py-2.5 text-sm font-semibold text-white outline outline-2 outline-offset-1 outline-transparent transition-colors hover:bg-violet-700 focus-visible:outline-violet-600 active:bg-violet-800 disabled:cursor-not-allowed disabled:bg-violet-400 disabled:opacity-60"
           >
             <Save className="h-4 w-4" />
             {saving ? "保存中…" : "保存资料"}
           </button>
         </div>
+
+        {dirty && (
+          <p role="status" className="mb-4 text-sm text-amber-700">
+            有未保存的修改，插件暂时无法读取这些修改。
+          </p>
+        )}
 
         <Section
           title="默认简历"
@@ -189,6 +286,7 @@ export default function ApplicationProfileClient(): ReactElement {
               value={defaultResumeId}
               onChange={(event) => {
                 setDefaultResumeId(event.target.value);
+                revision.current++;
                 setDirty(true);
               }}
               className={`${inputClass} max-w-sm`}
@@ -202,10 +300,11 @@ export default function ApplicationProfileClient(): ReactElement {
             </select>
             <button
               onClick={syncResume}
+              disabled={saving || syncing}
               className="inline-flex min-h-11 items-center gap-2 whitespace-nowrap rounded-xl border border-violet-200 bg-violet-50 px-4 py-2 text-sm font-medium text-violet-700 outline outline-2 outline-offset-1 outline-transparent transition-colors hover:bg-violet-100 focus-visible:outline-violet-600 active:bg-violet-200"
             >
               <RefreshCw className="h-4 w-4" />
-              从简历补充空缺
+              {syncing ? "正在补充…" : "从简历补充空缺"}
             </button>
           </div>
         </Section>
@@ -587,7 +686,11 @@ export default function ApplicationProfileClient(): ReactElement {
           title="已连接的浏览器插件"
           description="撤销后，对应浏览器需要重新连接才能读取资料。"
         >
-          {authorizations.length === 0 ? (
+          {authorizationError ? (
+            <p role="alert" className="text-sm text-amber-700">
+              插件授权列表读取失败，请保存当前修改后刷新重试。
+            </p>
+          ) : authorizations.length === 0 ? (
             <p className="text-sm text-slate-400">尚未连接插件</p>
           ) : (
             <div className="space-y-3">

@@ -15,8 +15,15 @@ export async function runRepeaterEngine(
   const diagnostics: RepeaterDiagnostic[] = [];
   let addedRows = 0;
 
+  const visible = (element: Element): boolean => {
+    for (let node: Element | null = element; node; node = node.parentElement) {
+      const style = getComputedStyle(node);
+      if (node.hasAttribute('hidden') || node.getAttribute('aria-hidden') === 'true' || style.display === 'none' || style.visibility === 'hidden') return false;
+    }
+    return true;
+  };
   const countRows = (selector: string): number =>
-    document.querySelectorAll(selector).length;
+    [...document.querySelectorAll(selector)].filter(visible).length;
 
   const waitForGrowth = async (
     selector: string,
@@ -35,7 +42,7 @@ export async function runRepeaterEngine(
   const clickCandidates = (element: HTMLElement): HTMLElement[] => {
     const descendants = [
       ...element.querySelectorAll<HTMLElement>(
-        "button, [role='button'], a, input[type='button'], input[type='submit'], p, span",
+        "button, [role='button'], a, input[type='button'], p, span",
       ),
     ].reverse();
     return [...new Set([...descendants, element])];
@@ -45,6 +52,9 @@ export async function runRepeaterEngine(
     const input = element as HTMLButtonElement;
     const style = window.getComputedStyle(element);
     return (
+      visible(element) &&
+      !element.closest('button[type="submit"],input[type="submit"],[aria-disabled="true"],[disabled]') &&
+      !(element.closest('button')?.form && element.closest('button')?.type === 'submit') &&
       !input.disabled &&
       element.getAttribute("aria-disabled") !== "true" &&
       style.display !== "none" &&
@@ -89,7 +99,8 @@ export async function runRepeaterEngine(
       continue;
     }
 
-    while (current < desired) {
+    // Bound retries across nested fallback selectors; never stall on a broken button.
+    while (current < desired && attempts < 24) {
       let foundClickableTarget = false;
       let grew = false;
 
@@ -99,6 +110,7 @@ export async function runRepeaterEngine(
         ];
         for (const configuredTarget of configuredTargets) {
           for (const target of clickCandidates(configuredTarget)) {
+            if (attempts >= 24) break;
             if (!canClick(target)) continue;
             foundClickableTarget = true;
             attempts += 1;
@@ -128,6 +140,8 @@ export async function runRepeaterEngine(
         break;
       }
     }
+
+    if (current < desired && !failureReason) failureReason = "button_unresponsive";
 
     diagnostics.push({
       profilePath: rule.profilePath,

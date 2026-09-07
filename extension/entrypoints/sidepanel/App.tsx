@@ -12,8 +12,12 @@ import {
 } from "lucide-react";
 import type { FillResult } from "../../lib/types";
 import { trackExtensionEvent } from "../../lib/analytics";
+import { samePage, type PageIdentity } from "../../lib/page-session";
+import type { DateCompletionPolicy } from "../../lib/date-policy";
 
 interface Status {
+  page?: PageIdentity | null;
+  datePolicy?: DateCompletionPolicy;
   connected: boolean;
   onboardingAccepted: boolean;
   autoConnectEnabled: boolean;
@@ -46,20 +50,59 @@ export default function App() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState<FillResult | null>(null);
+  const [rememberDates, setRememberDates] = useState(false);
+  const [datePromptDismissed, setDatePromptDismissed] = useState(false);
   const openTracked = useRef(false);
+  const pageRef = useRef<PageIdentity | null>(null);
+  const epoch = useRef(0);
+  const refreshSequence = useRef(0);
 
   const refresh = useCallback(async (initialize = false) => {
+    const sequence = ++refreshSequence.current;
+    const requestEpoch = epoch.current;
     const response = await browser.runtime.sendMessage({
       type: initialize ? "initialize" : "status",
     });
-    if (!response?.error) setStatus(response as Status);
+    if (sequence !== refreshSequence.current || requestEpoch !== epoch.current) return;
+    if (!response?.error) {
+      if (!samePage(pageRef.current, response.page)) {
+        pageRef.current = response.page || null;
+        epoch.current++;
+        setResult(null);
+        setDatePromptDismissed(false);
+        setRememberDates(false);
+        setError("");
+        setBusy(false);
+      }
+      setStatus(response as Status);
+    }
     setInitialized(true);
   }, []);
 
   useEffect(() => {
     void refresh(true);
+    const invalidate = () => {
+      epoch.current++;
+      pageRef.current = null;
+      setResult(null);
+      setDatePromptDismissed(false);
+      setRememberDates(false);
+      setError("");
+      setBusy(false);
+      setStatus((previous) => ({ ...previous, page: null, application: null, submitDetected: false }));
+      void refresh();
+    };
+    const updated = (id: number, change: { url?: string; status?: string }) => {
+      if (id === pageRef.current?.tabId && (change.url || change.status === "loading")) invalidate();
+    };
+    browser.tabs.onActivated.addListener(invalidate);
+    browser.tabs.onUpdated.addListener(updated);
     const timer = window.setInterval(() => void refresh(), 1500);
-    return () => window.clearInterval(timer);
+    return () => {
+      window.clearInterval(timer);
+      browser.tabs.onActivated.removeListener(invalidate);
+      browser.tabs.onUpdated.removeListener(updated);
+    };
   }, [refresh]);
 
   useEffect(() => {
@@ -72,22 +115,26 @@ export default function App() {
     type: string,
     extra: Record<string, unknown> = {},
   ): Promise<unknown> {
+    const requestEpoch = epoch.current;
     setBusy(true);
     setError("");
     try {
-      const response = await browser.runtime.sendMessage({ type, ...extra });
+      const response = await browser.runtime.sendMessage({ type, page: pageRef.current, ...extra });
+      if (requestEpoch !== epoch.current) return null;
       if (response?.error) throw new Error(response.error);
       await refresh();
       return response;
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "操作失败，请重试");
+      if (requestEpoch === epoch.current) setError(cause instanceof Error ? cause.message : "操作失败，请重试");
       return null;
     } finally {
-      setBusy(false);
+      if (requestEpoch === epoch.current) setBusy(false);
     }
   }
 
-  async function fill(): Promise<void> {
+  async function fill(datePolicy?: DateCompletionPolicy): Promise<void> {
+    const requestEpoch = epoch.current;
+    const page = pageRef.current;
     setBusy(true);
     setError("");
     try {
@@ -102,14 +149,19 @@ export default function App() {
           "需要网页访问权限才能填写招聘表单。你可以稍后再次点击并允许。",
         );
       }
-      const response = await browser.runtime.sendMessage({ type: "fill" });
+      if (requestEpoch !== epoch.current || !page) return;
+      const response = await browser.runtime.sendMessage({ type: "fill", page,
+        ...(datePolicy ? { datePolicy, rememberDatePolicy: rememberDates } : {}),
+      });
+      if (requestEpoch !== epoch.current) return;
       if (response?.error) throw new Error(response.error);
       setResult(response as FillResult);
+      setDatePromptDismissed(false);
       await refresh();
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "操作失败，请重试");
+      if (requestEpoch === epoch.current) setError(cause instanceof Error ? cause.message : "操作失败，请重试");
     } finally {
-      setBusy(false);
+      if (requestEpoch === epoch.current) setBusy(false);
     }
   }
 
@@ -135,6 +187,7 @@ export default function App() {
           <h1>开始前，了解一下</h1>
           <p>智简网申助手会在你操作时：</p>
           <ul className="permissionList">
+            <li>记录站点域名、填写数量和固定失败分类，用于改进兼容性；不上传简历正文</li>
             <li>同步你维护的网申资料，用于填写当前页面</li>
             <li>创建投递记录，方便后续跟进状态</li>
             <li>不会自动提交、处理验证码或读取浏览历史</li>
@@ -251,10 +304,10 @@ export default function App() {
       <section className="card">
         <h2>当前申请页面</h2>
         <p className="muted">
-          点击后扫描当前页，只填写已枚举且资料中有值的字段。首次使用时，Chrome
+          根据字段标签和所属经历识别当前表单，只填写资料中有值的内容。首次使用时，Chrome
           会请求网页访问权限。
         </p>
-        <button className="primary" disabled={busy} onClick={() => void fill()}>
+        <button className="primary" disabled={busy || !status.page} onClick={() => void fill()}>
           {busy ? (
             <>
               <RefreshCw className="spin" size={17} /> 正在填写…
@@ -263,11 +316,46 @@ export default function App() {
             "一键填写此页面"
           )}
         </button>
+        {status.datePolicy && status.datePolicy !== "ask" && (
+          <div className="datePreference">
+            <p className="muted">此网站的日期偏好：{status.datePolicy === "first-day" ? "缺少具体日期时使用当月1日，请核对" : "缺少具体日期时留空，手动填写"}。</p>
+            <button className="textLink" disabled={busy} onClick={async () => {
+              const response = await action("set-date-policy", { datePolicy: "ask" });
+              if (response) setDatePromptDismissed(false);
+            }}>重新询问日期补全</button>
+          </div>
+        )}
         {error && <ErrorMessage text={error} />}
       </section>
+      {!!result?.controlMetrics?.controlDatePrecisionMissingCount && (status.datePolicy || "ask") === "ask" && !datePromptDismissed && (
+        <section className="card dateConfirmation" aria-labelledby="date-confirmation-title">
+          <h2 id="date-confirmation-title">这些日期需要你确认</h2>
+          <p className="muted">有 {result.controlMetrics.controlDatePrecisionMissingCount} 个日期只有年月，但网站要求具体到日。是否临时使用当月1日？例如：2023年3月 → 2023年3月1日。</p>
+          <p className="muted">1日并非资料中的真实日期，请确认适用后再选择。不修改原始网申资料，不替换已有日期，“至今”不会变成结束日期。</p>
+          <label className="dateRemember"><input type="checkbox" checked={rememberDates} disabled={busy} onChange={event => setRememberDates(event.target.checked)} />在此网站记住选择（仅此浏览器）</label>
+          <button className="primary" disabled={busy || !status.page} onClick={() => void fill("first-day")}>使用当月1日继续填写</button>
+          <button className="secondary subtle" disabled={busy} onClick={async () => {
+            const requestEpoch = epoch.current;
+            if (rememberDates) {
+              const response = await action("set-date-policy", { datePolicy: "manual" });
+              if (!response) return;
+            }
+            if (requestEpoch === epoch.current) setDatePromptDismissed(true);
+          }}>保持空白，手动填写</button>
+        </section>
+      )}
       {result && (
         <section className="card">
           <h2>填写结果</h2>
+          {result.recordingError && <ErrorMessage text={result.recordingError} />}
+          {!!result.controlMetrics?.dateCompletionAppliedCount && <p className="repeaterSummary">已按你的选择，将 {result.controlMetrics.dateCompletionAppliedCount} 个日期补为当月1日。请核对真实日期后再提交。</p>}
+          {typeof result.detectedFieldCount === "number" && (
+            <p className="muted">
+              检测到 {result.detectedFieldCount} 个控件，其中{" "}
+              {result.contextualFieldCount || 0}{" "}
+              个取得了标签或上下文（不代表已匹配或填写）。请核对结果后再提交。
+            </p>
+          )}
           <div className="metrics">
             <div>
               <strong>{result.filled}</strong>
@@ -278,11 +366,11 @@ export default function App() {
               <span>原本有值</span>
             </div>
             <div>
-              <strong>{result.missingProfile.length}</strong>
+              <strong>{result.missingProfileCount ?? result.missingProfile.length}</strong>
               <span>资料待补充</span>
             </div>
             <div>
-              <strong>{result.failed.length + result.unmatched.length}</strong>
+              <strong>{(result.failedCount ?? result.failed.length) + (result.unmatchedCount ?? result.unmatched.length)}</strong>
               <span>暂未填写</span>
             </div>
           </div>

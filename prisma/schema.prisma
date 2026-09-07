@@ -25,6 +25,7 @@ model User {
   jobApplications          JobApplication[]
   extensionAuthorizations  ExtensionAuthorization[]
   extensionAuthCodes       ExtensionAuthCode[]
+  extensionTelemetry       ExtensionTelemetryEvent[]
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @updatedAt
 }
@@ -139,6 +140,20 @@ model ExtensionAuthorization {
   updatedAt  DateTime @updatedAt
 
   @@index([userId, expiresAt])
+}
+
+// Canonical, deduplicated receipt of extension metrics. No resume/form values.
+model ExtensionTelemetryEvent {
+  id           String   @id
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  eventName    String
+  occurredAt   DateTime
+  receivedAt   DateTime @default(now())
+  properties   Json
+
+  @@index([eventName, occurredAt])
+  @@index([userId, receivedAt])
 }
 
 model ExportRecord {

@@ -25,7 +25,7 @@ export default function PrivacyPage(): React.ReactElement {
               <span className="text-sm font-semibold text-violet-700">隐私保护</span>
             </div>
             <h1 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">隐私政策</h1>
-            <p className="text-slate-500">最后更新日期：2025年1月</p>
+            <p className="text-slate-500">最后更新日期：2026年9月</p>
           </div>
 
           <div className="space-y-8">
@@ -53,6 +53,7 @@ export default function PrivacyPage(): React.ReactElement {
                   <li><strong>网申资料</strong>：您主动维护的联系方式、身份信息、求职意向、经历和常见问答</li>
                   <li><strong>投递记录</strong>：您通过浏览器插件或网站保存的公司、职位、申请链接、投递状态和备注</li>
                   <li><strong>使用数据</strong>：功能使用频率、导出次数、AI生成次数</li>
+                  <li><strong>插件填写效果</strong>：招聘站点域名、插件版本、耗时、填写数量和固定失败分类；统计不包含完整招聘链接、简历正文、字段值或具体日期</li>
                   <li><strong>设备信息</strong>：IP地址、浏览器类型、操作系统（用于优化服务）</li>
                 </ul>
               </div>
@@ -112,6 +113,7 @@ export default function PrivacyPage(): React.ReactElement {
                   <li>数据传输使用HTTPS加密</li>
                   <li>网申资料正文在服务器端加密存储，插件授权可由您随时撤销</li>
                   <li>插件仅在您主动点击时读取当前页面，不收集浏览历史，也不会自动提交申请</li>
+                  <li>插件待发送的统计在本机最多保留7天、100条，网络恢复后重试；断开连接时清除待发送统计。日期补全偏好只保存在当前浏览器，并按网站隔离</li>
                   <li>数据库访问需要身份验证</li>
                   <li>服务器部署在国内，符合数据安全法规</li>
                   <li>定期备份数据，防止数据丢失</li>

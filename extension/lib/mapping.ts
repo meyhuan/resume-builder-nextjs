@@ -4,9 +4,12 @@ interface Candidate {
   aliases: string[];
   values: string[];
   repeatable: boolean;
+  path?: string;
 }
 
 export interface FillPlan {
+  missingProfileCount: number;
+  unmatchedCount: number;
   actions: FillAction[];
   missingProfile: string[];
   unmatched: string[];
@@ -45,6 +48,8 @@ const DEFINITIONS: Array<{ paths: string[]; aliases: string[] }> = [
     aliases: [
       "手机号",
       "手机号码",
+      "手机",
+      "手机号",
       "联系电话",
       "电话",
       "mobile",
@@ -66,6 +71,7 @@ const DEFINITIONS: Array<{ paths: string[]; aliases: string[] }> = [
       "现居地",
       "现居城市",
       "当前城市",
+      "目前所在城市",
       "current city",
       "current location",
     ],
@@ -111,6 +117,7 @@ const DEFINITIONS: Array<{ paths: string[]; aliases: string[] }> = [
     paths: ["jobPreference.targetCity"],
     aliases: [
       "期望城市",
+      "期望工作城市",
       "工作地点",
       "意向城市",
       "preferred city",
@@ -173,6 +180,10 @@ const DEFINITIONS: Array<{ paths: string[]; aliases: string[] }> = [
     ],
   },
   { paths: ["education[].gpa"], aliases: ["gpa", "平均绩点", "绩点"] },
+  {
+    paths: ["education[].description"],
+    aliases: ["学校经历内容", "在校经历", "教育经历描述", "education description"],
+  },
   {
     paths: ["experiences[].company"],
     aliases: ["公司名称", "实习单位", "工作单位", "company", "employer"],
@@ -275,11 +286,56 @@ export function buildFillPlan(
   const missingProfile: string[] = [];
   const unmatched: string[] = [];
   for (const field of fields) {
+    if (field.section === "other-person") {
+      unmatched.push(field.context);
+      continue;
+    }
     const context = normalize(field.context);
     let bestIndex = -1;
     let bestLength = 0;
     candidates.forEach((candidate, index) => {
-      for (const alias of candidate.aliases) {
+      // A description textarea must not fall back to a short entity-name alias.
+      if (field.tag.toLowerCase() === "textarea" && /\.(school|company|position|name)$/.test(candidate.path || "")) return;
+      const scope = candidate.path?.split("[].")[0];
+      if (
+        field.section &&
+        field.section !== "personal" &&
+        scope !== field.section
+      )
+        return;
+      if (field.section === "personal" && candidate.repeatable) return;
+      const scopedAliases: Record<string, string[]> = {
+        "experiences[].company": [
+          "公司",
+          "公司名称",
+          "单位名称",
+          "company",
+          "employer",
+        ],
+        "experiences[].position": ["职务", "职位", "position", "title"],
+        "experiences[].description": [
+          "职务描述",
+          "工作内容",
+          "职责描述",
+          "description",
+          "职责",
+        ],
+        "projects[].name": ["名称", "name", "项目名称"],
+        "projects[].description": ["职责描述", "描述", "description"],
+        "education[].school": ["学校全称", "学校名称", "school", "university"],
+        "education[].description": ["学校经历内容", "description"],
+      };
+      const extra =
+        field.section && field.section !== "personal"
+          ? scopedAliases[candidate.path || ""] || []
+          : [];
+      if (field.section && field.section !== "personal") {
+        if (candidate.path?.endsWith(".startDate"))
+          extra.push("开始日期", "开始时间", "start date");
+        if (candidate.path?.endsWith(".endDate"))
+          extra.push("结束日期", "结束时间", "end date");
+      }
+      for (const alias of [...candidate.aliases, ...extra]) {
         const normalizedAlias = normalize(alias);
         const currentHasValue =
           bestIndex >= 0 && candidates[bestIndex].values.some(Boolean);
@@ -301,7 +357,10 @@ export function buildFillPlan(
       continue;
     }
     const candidate = candidates[bestIndex];
-    const occurrence = usage.get(bestIndex) || 0;
+    const occurrence =
+      candidate.repeatable && field.rowIndex !== undefined
+        ? field.rowIndex
+        : usage.get(bestIndex) || 0;
     const value = candidate.repeatable
       ? candidate.values[occurrence] || ""
       : candidate.values[Math.min(occurrence, candidate.values.length - 1)] ||
@@ -326,13 +385,16 @@ export function buildFillPlan(
   }
   return {
     actions,
+    missingProfileCount: missingProfile.length,
+    unmatchedCount: unmatched.length,
     missingProfile: unique(missingProfile),
     unmatched: unique(unmatched),
   };
 }
 
 function buildCandidates(profile: Record<string, unknown>): Candidate[] {
-  const result = DEFINITIONS.map((definition) => ({
+  const result: Candidate[] = DEFINITIONS.map((definition) => ({
+    path: definition.paths[0],
     aliases: definition.aliases,
     values: definition.paths.flatMap((path) => readPath(profile, path)),
     repeatable: definition.paths.some((path) => path.includes("[]")),

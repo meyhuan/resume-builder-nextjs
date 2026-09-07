@@ -19,6 +19,7 @@ export async function trackServerAnalyticsEvent(event: ServerAnalyticsEvent): Pr
   try {
     const baseUrl = getServerJavaApiBaseUrl()
     const response = await fetch(`${baseUrl}/analytics/events`, {
+      signal: AbortSignal.timeout(5_000),
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(event),

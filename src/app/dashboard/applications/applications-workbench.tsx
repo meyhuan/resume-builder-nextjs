@@ -23,10 +23,12 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactElement,
 } from "react";
 import { toast } from "sonner";
+import { applicationRequest } from "@/features/applications/client-request";
 import {
   APPLICATION_ACTION_TYPES,
   APPLICATION_STATUSES,
@@ -118,14 +120,29 @@ export default function ApplicationsWorkbench(): ReactElement {
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
+  const [loadError, setLoadError] = useState("");
+  const pending = useRef(new Set<string>());
+  const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
+
+  function release(id: string): void {
+    pending.current.delete(id);
+    setPendingIds(new Set(pending.current));
+  }
 
   const load = useCallback(async (): Promise<void> => {
-    const response = await fetch("/next-api/applications", {
-      credentials: "include",
-    });
-    if (response.ok) setItems(await response.json());
-    else toast.error("没有读到投递记录，请刷新页面重试。");
-    setLoading(false);
+    setLoading(true);
+    setLoadError("");
+    try {
+      setItems(
+        await applicationRequest<ApplicationItem[]>("/next-api/applications"),
+      );
+    } catch (error) {
+      setLoadError(
+        error instanceof Error ? error.message : "没有读到投递记录，请重试。",
+      );
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -184,45 +201,53 @@ export default function ApplicationsWorkbench(): ReactElement {
     id: string,
     body: Record<string, unknown>,
   ): Promise<ApplicationItem | null> {
-    const previous = items.find((item) => item.id === id);
-    if (!previous) return null;
-    setItems((current) =>
-      current.map((item) =>
-        item.id === id ? ({ ...item, ...body } as ApplicationItem) : item,
-      ),
-    );
-    const response = await fetch(`/next-api/applications/${id}`, {
-      method: "PATCH",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    const result = await response.json();
-    if (!response.ok) {
-      setItems((current) =>
-        current.map((item) => (item.id === id ? previous : item)),
+    if (pending.current.has(id)) return null;
+    pending.current.add(id);
+    setPendingIds(new Set(pending.current));
+    try {
+      const result = await applicationRequest<ApplicationItem>(
+        `/next-api/applications/${id}`,
+        {
+          method: "PATCH",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        },
       );
-      toast.error(result.error || "没有保存这次修改，请重试。");
+      setItems((current) =>
+        current.map((item) => (item.id === id ? result : item)),
+      );
+      return result;
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "没有保存这次修改，请重试。",
+      );
       return null;
+    } finally {
+      release(id);
     }
-    setItems((current) =>
-      current.map((item) => (item.id === id ? result : item)),
-    );
-    return result;
   }
 
   async function remove(id: string): Promise<boolean> {
-    const response = await fetch(`/next-api/applications/${id}`, {
-      method: "DELETE",
-      credentials: "include",
-    });
-    if (!response.ok) {
-      toast.error("没有删除这条记录，请重试。");
+    if (pending.current.has(id)) return false;
+    pending.current.add(id);
+    setPendingIds(new Set(pending.current));
+    try {
+      await applicationRequest(`/next-api/applications/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      setItems((current) => current.filter((item) => item.id !== id));
+      setSelectedId(null);
+      return true;
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "没有删除这条记录，请重试。",
+      );
       return false;
+    } finally {
+      release(id);
     }
-    setItems((current) => current.filter((item) => item.id !== id));
-    setSelectedId(null);
-    return true;
   }
 
   function selectAttention(next: Exclude<AttentionFilter, null>): void {
@@ -322,7 +347,7 @@ export default function ApplicationsWorkbench(): ReactElement {
                   key={key}
                   type="button"
                   onClick={() => {
-                    setView(key);
+                    setView((current) => (current === key ? "ALL" : key));
                     setAttention(null);
                   }}
                   className={`min-h-10 shrink-0 whitespace-nowrap rounded-lg px-3 text-sm font-medium transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-violet-600 ${
@@ -372,6 +397,16 @@ export default function ApplicationsWorkbench(): ReactElement {
           <div className="mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-white">
             {loading ? (
               <ApplicationSkeleton />
+            ) : loadError ? (
+              <div role="alert" className="p-6 text-sm text-rose-700">
+                <p>{loadError}</p>
+                <button
+                  onClick={() => void load()}
+                  className="mt-3 rounded-lg border px-4 py-2"
+                >
+                  重新读取投递记录
+                </button>
+              </div>
             ) : visible.length === 0 ? (
               <EmptyState
                 hasItems={items.length > 0}
@@ -388,6 +423,7 @@ export default function ApplicationsWorkbench(): ReactElement {
                   <ApplicationRow
                     key={item.id}
                     item={item}
+                    pending={pendingIds.has(item.id)}
                     onOpen={() => setSelectedId(item.id)}
                     onUpdate={(body) => void update(item.id, body)}
                   />
@@ -401,6 +437,7 @@ export default function ApplicationsWorkbench(): ReactElement {
       <ApplicationDrawer
         key={selected?.id || "closed"}
         item={selected}
+        pending={selected ? pendingIds.has(selected.id) : false}
         onClose={() => setSelectedId(null)}
         onUpdate={update}
         onRemove={remove}
@@ -409,7 +446,13 @@ export default function ApplicationsWorkbench(): ReactElement {
         open={showCreate}
         onOpenChange={setShowCreate}
         onCreated={(item) => {
-          setItems((current) => [item, ...current]);
+          setItems((current) => [
+            item,
+            ...current.filter((existing) => existing.id !== item.id),
+          ]);
+          setView("ALL");
+          setAttention(null);
+          setQuery("");
           setShowCreate(false);
           setSelectedId(item.id);
         }}
@@ -453,10 +496,12 @@ function AttentionButton({
 
 function ApplicationRow({
   item,
+  pending,
   onOpen,
   onUpdate,
 }: {
   item: ApplicationItem;
+  pending: boolean;
   onOpen: () => void;
   onUpdate: (body: Record<string, unknown>) => void;
 }): ReactElement {
@@ -514,6 +559,7 @@ function ApplicationRow({
             <button
               type="button"
               onClick={() => onUpdate({ status: next.status })}
+              disabled={pending}
               className="inline-flex min-h-10 items-center whitespace-nowrap rounded-lg border border-slate-200 px-3 text-sm font-medium text-slate-700 transition-[background-color,transform] duration-150 hover:bg-slate-50 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600"
             >
               {next.label}
@@ -535,11 +581,13 @@ function ApplicationRow({
 
 function ApplicationDrawer({
   item,
+  pending,
   onClose,
   onUpdate,
   onRemove,
 }: {
   item: ApplicationItem | null;
+  pending: boolean;
   onClose: () => void;
   onUpdate: (
     id: string,
@@ -563,25 +611,46 @@ function ApplicationDrawer({
   const [saving, setSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleteText, setDeleteText] = useState("");
+  const dirty = Boolean(
+    item &&
+      (status !== item.status ||
+        note !== (item.note || "") ||
+        nextActionType !== (item.nextActionType || "") ||
+        nextActionAt !== toLocalDateTime(item.nextActionAt) ||
+        deadlineAt !== toLocalDateTime(item.deadlineAt)),
+  );
 
   async function save(): Promise<void> {
-    if (!item) return;
+    if (!item || saving || pending) return;
     setSaving(true);
-    const result = await onUpdate(item.id, {
-      status,
-      note,
-      nextActionType: nextActionType || null,
-      nextActionAt: toIsoDateTime(nextActionAt),
-      deadlineAt: toIsoDateTime(deadlineAt),
-    });
-    setSaving(false);
-    if (result) onClose();
+    try {
+      const result = await onUpdate(item.id, {
+        status,
+        note,
+        nextActionType: nextActionType || null,
+        nextActionAt: toIsoDateTime(nextActionAt),
+        deadlineAt: toIsoDateTime(deadlineAt),
+      });
+      if (result) onClose();
+    } catch {
+      toast.error("没有保存这次修改，请保留内容后重试。");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
     <Dialog.Root
       open={Boolean(item)}
-      onOpenChange={(open) => !open && onClose()}
+      onOpenChange={(open) => {
+        if (
+          !open &&
+          !saving &&
+          !pending &&
+          (!dirty || window.confirm("有未保存的投递修改，确定关闭吗？"))
+        )
+          onClose();
+      }}
     >
       <Dialog.Portal>
         <Dialog.Overlay className="application-drawer-overlay fixed inset-0 z-[400] bg-slate-950/30" />
@@ -609,7 +678,10 @@ function ApplicationDrawer({
                 </Dialog.Close>
               </header>
 
-              <div className="applications-scrollbar flex-1 overflow-y-auto px-5 py-6 sm:px-7">
+              <fieldset
+                disabled={saving || pending}
+                className="applications-scrollbar min-w-0 flex-1 overflow-y-auto px-5 py-6 sm:px-7"
+              >
                 <section>
                   <h2 className="text-sm font-semibold text-slate-950">
                     当前进展
@@ -773,7 +845,9 @@ function ApplicationDrawer({
                       <div className="mt-3 flex flex-wrap gap-2">
                         <button
                           type="button"
-                          disabled={deleteText !== item.companyName}
+                          disabled={
+                            deleteText !== item.companyName || pending || saving
+                          }
                           onClick={() => void onRemove(item.id)}
                           className="min-h-10 whitespace-nowrap rounded-lg bg-rose-600 px-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-600"
                         >
@@ -793,7 +867,7 @@ function ApplicationDrawer({
                     </div>
                   )}
                 </section>
-              </div>
+              </fieldset>
 
               <footer className="flex items-center justify-between gap-3 border-t border-slate-200 bg-white px-5 py-4 sm:px-7">
                 <span className="text-xs text-slate-500">
@@ -802,7 +876,7 @@ function ApplicationDrawer({
                 <button
                   type="button"
                   onClick={() => void save()}
-                  disabled={saving}
+                  disabled={saving || pending}
                   className="inline-flex min-h-11 min-w-24 items-center justify-center whitespace-nowrap rounded-xl bg-violet-600 px-4 text-sm font-semibold text-white hover:bg-violet-700 disabled:cursor-wait disabled:opacity-60 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600"
                 >
                   {saving ? "保存中…" : "保存修改"}
@@ -830,35 +904,47 @@ function CreateDialog({
   const [applicationUrl, setApplicationUrl] = useState("");
   const [deadlineAt, setDeadlineAt] = useState("");
   const [saving, setSaving] = useState(false);
+  const submitting = useRef(false);
 
   async function submit(): Promise<void> {
+    if (submitting.current || !companyName.trim() || !jobTitle.trim()) return;
+    submitting.current = true;
     setSaving(true);
-    const response = await fetch("/next-api/applications", {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        companyName,
-        jobTitle,
-        applicationUrl,
-        deadlineAt: toIsoDateTime(deadlineAt),
-      }),
-    });
-    const result = await response.json();
-    setSaving(false);
-    if (!response.ok) {
-      toast.error(result.error || "没有创建这条投递，请检查信息后重试。");
-      return;
+    try {
+      const result = await applicationRequest<{ application: ApplicationItem }>(
+        "/next-api/applications",
+        {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            companyName,
+            jobTitle,
+            applicationUrl,
+            deadlineAt: toIsoDateTime(deadlineAt),
+          }),
+        },
+      );
+      onCreated(result.application);
+      setCompanyName("");
+      setJobTitle("");
+      setApplicationUrl("");
+      setDeadlineAt("");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "没有创建这条投递，请重试。",
+      );
+    } finally {
+      submitting.current = false;
+      setSaving(false);
     }
-    onCreated(result.application);
-    setCompanyName("");
-    setJobTitle("");
-    setApplicationUrl("");
-    setDeadlineAt("");
   }
 
   return (
-    <Dialog.Root open={open} onOpenChange={onOpenChange}>
+    <Dialog.Root
+      open={open}
+      onOpenChange={(next) => !saving && onOpenChange(next)}
+    >
       <Dialog.Portal>
         <Dialog.Overlay className="application-drawer-overlay fixed inset-0 z-[400] bg-slate-950/30" />
         <Dialog.Content className="application-modal fixed inset-0 z-[401] m-auto h-fit max-h-[85dvh] w-[calc(100%-2rem)] max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl focus:outline-none sm:p-7">
@@ -881,7 +967,7 @@ function CreateDialog({
               </button>
             </Dialog.Close>
           </div>
-          <div className="mt-6 space-y-4">
+          <fieldset disabled={saving} className="mt-6 min-w-0 space-y-4">
             <Field label="公司">
               <input
                 autoFocus
@@ -913,7 +999,7 @@ function CreateDialog({
                 placeholder="选择网申截止时间"
               />
             </Field>
-          </div>
+          </fieldset>
           <div className="mt-7 flex justify-end gap-2">
             <Dialog.Close asChild>
               <button

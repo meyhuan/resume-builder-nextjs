@@ -6,13 +6,26 @@ export interface FieldDescriptor {
   context: string;
   optionText: string;
   options: string[];
+  section?:
+    | "personal"
+    | "experiences"
+    | "projects"
+    | "education"
+    | "other-person";
+  rowIndex?: number;
+  labelSource?: "adapter" | "label" | "nearby" | "attribute";
 }
 
 export type FieldControlKind =
   | "native"
   | "readonly-date"
   | "custom-select"
+  | "generic-select"
+  | "popup-date"
+  | "cascader"
+  | "unsupported"
   | "year-month";
+// Generic ARIA/component selection is separate from the existing Tencent driver.
 
 export interface SiteContextRule {
   selector: string;
@@ -74,6 +87,7 @@ export interface JobInfo {
 export interface PageSnapshot {
   fields: FieldDescriptor[];
   job: JobInfo;
+  repeaters?: SiteRepeaterRule[];
 }
 export interface FillAction {
   fieldId: string;
@@ -89,6 +103,11 @@ export interface ApplicationProfileEnvelope {
 }
 
 export interface FillResult {
+  recordingError?: string;
+  controlMetrics?: Record<string, number>;
+  failedCount?: number;
+  missingProfileCount?: number;
+  unmatchedCount?: number;
   filled: number;
   skipped: number;
   alreadyFilled: number;
@@ -101,4 +120,6 @@ export interface FillResult {
   pageExperienceCount?: number;
   addedExperienceRows?: number;
   repeaterDiagnostics?: RepeaterDiagnostic[];
+  detectedFieldCount?: number;
+  contextualFieldCount?: number;
 }

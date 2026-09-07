@@ -153,12 +153,12 @@ const TENCENT_ADAPTER: SiteAdapter = {
       controlKind: "custom-select",
     },
     {
-      selector: ".create-empirical .start-time-module",
+      selector: ".create-empirical .start-time-module > .resume-module-left",
       context: "工作开始时间",
       controlKind: "year-month",
     },
     {
-      selector: ".create-empirical .end-time-module",
+      selector: ".create-empirical .end-time-module,.create-empirical .end-time",
       context: "工作结束时间",
       controlKind: "year-month",
     },
