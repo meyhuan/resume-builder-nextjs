@@ -6,6 +6,19 @@
 * {
   box-sizing: border-box;
 }
+.pageAvailability {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid #ddd6fe;
+  border-radius: 12px;
+  background: #f5f3ff;
+  color: #334155;
+  font-size: 13px;
+  line-height: 1.7;
+}
+.pageAvailability p { margin: 0 0 10px; }
+.pageAvailability p:last-child { margin-bottom: 0; }
+.pageAvailability .secondary, .pageAvailability .primary { margin-bottom: 10px; }
 body {
   margin: 0;
   min-width: 320px;

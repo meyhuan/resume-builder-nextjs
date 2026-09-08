@@ -8,6 +8,7 @@ import { collectPageSnapshot } from "../lib/page-scanner";
 import { applyFillActions } from "../lib/fill-executor";
 import { isDateCompletionPolicy, readDatePolicy, writeDatePolicy, type DateCompletionPolicy } from "../lib/date-policy";
 import { matchingSession, pageSessionKey, samePage, type PageIdentity } from "../lib/page-session";
+import { classifyActiveTab, type PageContext } from "../lib/page-context";
 import type {
   ApplicationProfileEnvelope,
   FillAction,
@@ -86,8 +87,13 @@ export default defineBackground(() => {
 });
 
 async function activePage(): Promise<PageIdentity | null> {
-  const [tab] = await browser.tabs.query({ active: true, lastFocusedWindow: true });
-  return tab?.id && tab.url ? { tabId: tab.id, url: tab.url } : null;
+  return (await activePageContext()).page;
+}
+async function activePageContext(): Promise<PageContext> {
+  try {
+    const [tab] = await browser.tabs.query({ active: true, lastFocusedWindow: true });
+    return classifyActiveTab(tab);
+  } catch { return { page: null, pageIssue: "page_unavailable" }; }
 }
 async function readPageSession(page: PageIdentity | null) {
   if (!page) return null;
@@ -200,10 +206,11 @@ async function getStatus(
     }
   }
 
-  const page = await activePage();
+  const { page, pageIssue } = await activePageContext();
   const pageSession = await readPageSession(page);
   return {
     page,
+    pageIssue,
     datePolicy: page && /^https?:/.test(page.url) ? await readDatePolicy(browser.storage.local, page.url) : "ask",
     connected,
     onboardingAccepted,

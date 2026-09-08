@@ -14,9 +14,11 @@ import type { FillResult } from "../../lib/types";
 import { trackExtensionEvent } from "../../lib/analytics";
 import { samePage, type PageIdentity } from "../../lib/page-session";
 import type { DateCompletionPolicy } from "../../lib/date-policy";
+import { PAGE_ISSUE_MESSAGES, type PageIssue } from "../../lib/page-context";
 
 interface Status {
   page?: PageIdentity | null;
+  pageIssue?: PageIssue | null;
   datePolicy?: DateCompletionPolicy;
   connected: boolean;
   onboardingAccepted: boolean;
@@ -49,6 +51,9 @@ export default function App() {
   const [initialized, setInitialized] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [statusError, setStatusError] = useState("");
+  const [checkingPage, setCheckingPage] = useState(false);
+  const checkingPageRef = useRef(false);
   const [result, setResult] = useState<FillResult | null>(null);
   const [rememberDates, setRememberDates] = useState(false);
   const [datePromptDismissed, setDatePromptDismissed] = useState(false);
@@ -56,16 +61,23 @@ export default function App() {
   const pageRef = useRef<PageIdentity | null>(null);
   const epoch = useRef(0);
   const refreshSequence = useRef(0);
+  const refreshInFlight = useRef(false);
 
   const refresh = useCallback(async (initialize = false) => {
+    if (refreshInFlight.current) return;
+    refreshInFlight.current = true;
     const sequence = ++refreshSequence.current;
     const requestEpoch = epoch.current;
-    const response = await browser.runtime.sendMessage({
-      type: initialize ? "initialize" : "status",
-    });
-    if (sequence !== refreshSequence.current || requestEpoch !== epoch.current) return;
-    if (!response?.error) {
-      if (!samePage(pageRef.current, response.page)) {
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+    try {
+      const response = await Promise.race([
+        browser.runtime.sendMessage({ type: initialize ? "initialize" : "status" }),
+        new Promise<never>((_, reject) => { timeout = setTimeout(() => reject(new Error("status_timeout")), 12000); }),
+      ]);
+      if (sequence !== refreshSequence.current || requestEpoch !== epoch.current) return;
+      if (!response || response.error) throw new Error("status_unavailable");
+      setStatusError("");
+      if ((pageRef.current || response.page) && !samePage(pageRef.current, response.page)) {
         pageRef.current = response.page || null;
         epoch.current++;
         setResult(null);
@@ -75,9 +87,39 @@ export default function App() {
         setBusy(false);
       }
       setStatus(response as Status);
+    } catch {
+      if (sequence === refreshSequence.current && requestEpoch === epoch.current) {
+        setStatusError("插件状态检测失败，请重新检测；如果仍失败，请关闭侧栏后重新打开插件。");
+      }
+    } finally {
+      clearTimeout(timeout);
+      refreshInFlight.current = false;
+      setInitialized(true);
     }
-    setInitialized(true);
   }, []);
+
+  async function recoverPage(requestAccess: boolean) {
+    if (checkingPageRef.current) return;
+    checkingPageRef.current = true;
+    setCheckingPage(true);
+    setError("");
+    try {
+      // Keep this request directly in the click gesture, before any awaited status call.
+      if (requestAccess) {
+        const granted = await browser.permissions.request({ origins: ["https://*/*", "http://*/*"] });
+        if (!granted) {
+          void trackExtensionEvent("extension_permission_denied", { permission: "host_access" });
+          throw new Error("未获得网页访问权限，尚未填写任何内容。你可以再次点击“授权并重新检测”，或在招聘页面点击浏览器工具栏中的插件图标后重新检测。");
+        }
+      }
+      await refresh();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "无法申请网页访问权限，请重新打开插件后重试。");
+    } finally {
+      checkingPageRef.current = false;
+      setCheckingPage(false);
+    }
+  }
 
   useEffect(() => {
     void refresh(true);
@@ -175,6 +217,15 @@ export default function App() {
         </section>
       </main>
     );
+
+  if (statusError && !status.connected) return (
+    <main className="shell"><Brand /><section className="card">
+      <ErrorMessage text={statusError} />
+      <button className="secondary" disabled={checkingPage} onClick={() => void recoverPage(false)}>{checkingPage ? "正在重新检测…" : "重新检测插件状态"}</button>
+    </section><Privacy /></main>
+  );
+
+  const pageIssue = status.pageIssue || (!status.page ? "site_access_required" : null);
 
   if (!status.onboardingAccepted)
     return (
@@ -307,7 +358,7 @@ export default function App() {
           根据字段标签和所属经历识别当前表单，只填写资料中有值的内容。首次使用时，Chrome
           会请求网页访问权限。
         </p>
-        <button className="primary" disabled={busy || !status.page} onClick={() => void fill()}>
+        <button className="primary" aria-describedby={pageIssue || statusError ? "page-availability" : undefined} disabled={busy || checkingPage || !status.page || !!statusError} onClick={() => void fill()}>
           {busy ? (
             <>
               <RefreshCw className="spin" size={17} /> 正在填写…
@@ -316,6 +367,13 @@ export default function App() {
             "一键填写此页面"
           )}
         </button>
+        {(pageIssue || statusError) && <div id="page-availability" className="pageAvailability" role="status">
+          <p>{statusError || PAGE_ISSUE_MESSAGES[pageIssue!]}</p>
+          <button className={!statusError && pageIssue === "site_access_required" ? "primary" : "secondary"} disabled={busy || checkingPage} onClick={() => void recoverPage(!statusError && pageIssue === "site_access_required")}>
+            {checkingPage ? "正在重新检测…" : !statusError && pageIssue === "site_access_required" ? "授权并重新检测" : "重新检测当前页面"}
+          </button>
+          {!statusError && pageIssue === "site_access_required" && <p className="muted">授权只用于识别页面，不会自动填写或提交。若浏览器要求选择网站访问范围，请按提示确认。</p>}
+        </div>}
         {status.datePolicy && status.datePolicy !== "ask" && (
           <div className="datePreference">
             <p className="muted">此网站的日期偏好：{status.datePolicy === "first-day" ? "缺少具体日期时使用当月1日，请核对" : "缺少具体日期时留空，手动填写"}。</p>
