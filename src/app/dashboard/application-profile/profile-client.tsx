@@ -6,6 +6,7 @@ import { useEffect, useRef, useState, type ReactElement } from "react";
 import { applicationRequest } from "@/features/applications/client-request";
 import { Plus, RefreshCw, Save, ShieldCheck, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { ExtensionGuideLink } from "@/components/extension/extension-guide-link";
 import { AutocompleteInput } from "@/components/ui/autocomplete-input";
 import {
   ChineseDateInput,
@@ -271,15 +272,30 @@ export default function ApplicationProfileClient(): ReactElement {
               在这里集中维护招聘官网经常要求的信息，插件会读取已保存的版本。
             </p>
           </div>
-          <button
-            onClick={save}
-            disabled={saving || syncing}
-            className="inline-flex min-h-11 items-center gap-2 whitespace-nowrap rounded-xl bg-violet-600 px-5 py-2.5 text-sm font-semibold text-white outline outline-2 outline-offset-1 outline-transparent transition-colors hover:bg-violet-700 focus-visible:outline-violet-600 active:bg-violet-800 disabled:cursor-not-allowed disabled:bg-violet-400 disabled:opacity-60"
-          >
-            <Save className="h-4 w-4" />
-            {saving ? "保存中…" : "保存资料"}
-          </button>
+          <div className="flex flex-wrap items-center gap-3">
+            <ExtensionGuideLink source="application_profile" />
+            <button
+              onClick={save}
+              disabled={saving || syncing}
+              className="inline-flex min-h-11 items-center gap-2 whitespace-nowrap rounded-xl bg-violet-600 px-5 py-2.5 text-sm font-semibold text-white outline outline-2 outline-offset-1 outline-transparent transition-colors hover:bg-violet-700 focus-visible:outline-violet-600 active:bg-violet-800 disabled:cursor-not-allowed disabled:bg-violet-400 disabled:opacity-60"
+            >
+              <Save className="h-4 w-4" />
+              {saving ? "保存中…" : "保存资料"}
+            </button>
+          </div>
         </div>
+
+        {!authorizationError && authorizations.length === 0 && (
+          <aside
+            className="mb-6 rounded-xl border border-border bg-background p-4 text-sm leading-6 text-foreground"
+            aria-label="插件使用提示"
+          >
+            <p className="font-semibold">资料填好后，如何用到招聘官网？</p>
+            <p className="mt-1 text-muted-foreground">
+              先保存资料，再安装「智简网申助手」。在公司招聘官网打开插件，点击“一键填写此页面”。不使用插件也可以继续维护资料和手动管理投递。
+            </p>
+          </aside>
+        )}
 
         {dirty && (
           <p role="status" className="mb-4 text-sm text-amber-700">
@@ -707,7 +723,15 @@ export default function ApplicationProfileClient(): ReactElement {
               插件授权列表读取失败，请保存当前修改后刷新重试。
             </p>
           ) : authorizations.length === 0 ? (
-            <p className="text-sm text-slate-400">尚未连接插件</p>
+            <div className="space-y-3">
+              <p className="text-sm text-slate-600">
+                还没有插件连接授权。安装后，在同一个浏览器登录智简简历，再打开插件完成首次使用说明。
+              </p>
+              <ExtensionGuideLink
+                source="authorization_empty"
+                label="查看安装步骤"
+              />
+            </div>
           ) : (
             <div className="space-y-3">
               {authorizations.map((item) => (

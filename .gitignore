@@ -48,3 +48,4 @@ test-artifacts/
 # Deploy archives
 deploy.zip
 *.zip
+!/public/downloads/extension/zhijian-autofill-*.zip

@@ -1,0 +1,13 @@
+{
+  "date": "2026-09-07",
+  "scope": "extension installation guide and dashboard entry links",
+  "framework": "Next.js 15, React 19, Tailwind CSS v4",
+  "preserve": {
+    "typography": "existing project font-sans; no new font downloads",
+    "palette": "src/styles/tailwind.css semantic theme tokens, violet primary on white",
+    "spacing": "existing Tailwind scale",
+    "components": "existing dashboard navigation and form behavior"
+  },
+  "introduce": ["step-based installation guide", "inline interaction feedback", "public production ZIP download"],
+  "themePolicy": "Reuse the existing Tailwind theme; do not introduce a competing global token stylesheet."
+}

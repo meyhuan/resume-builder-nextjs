@@ -14,8 +14,10 @@ import {
   ClipboardList,
   Crown,
   Download,
+  ExternalLink,
   FileText,
   Menu,
+  Puzzle,
   MessageSquareHeart,
   Sparkles,
   UserRoundPen,
@@ -32,6 +34,7 @@ interface NavItem {
   readonly label: string;
   readonly href: string;
   readonly icon: ReactElement;
+  readonly newTab?: boolean;
 }
 
 const JOB_NAV_ITEMS: NavItem[] = [
@@ -70,12 +73,21 @@ const OTHER_NAV_ITEMS: NavItem[] = [
   },
 ];
 
-const FEEDBACK_NAV_ITEM: NavItem = {
-  key: "feedback",
-  label: "用户反馈",
-  href: "/dashboard/feedback",
-  icon: <MessageSquareHeart className="h-[18px] w-[18px]" />,
-};
+const HELP_NAV_ITEMS: NavItem[] = [
+  {
+    key: "extension",
+    label: "插件安装与使用",
+    href: "/extension",
+    icon: <Puzzle className="h-[18px] w-[18px]" />,
+    newTab: true,
+  },
+  {
+    key: "feedback",
+    label: "用户反馈",
+    href: "/dashboard/feedback",
+    icon: <MessageSquareHeart className="h-[18px] w-[18px]" />,
+  },
+];
 
 const COPYRIGHT_YEAR = new Date().getFullYear();
 
@@ -108,6 +120,8 @@ function NavigationGroup({
           <Link
             key={item.key}
             href={item.href}
+            target={item.newTab ? "_blank" : undefined}
+            rel={item.newTab ? "noopener noreferrer" : undefined}
             onClick={() => {
               track("sidebar_nav_click", {
                 itemKey: item.key,
@@ -131,6 +145,7 @@ function NavigationGroup({
               {item.icon}
             </span>
             <span>{item.label}</span>
+            {item.newTab && <span className="sr-only">（新窗口）</span>}
           </Link>
         );
       })}
@@ -138,7 +153,7 @@ function NavigationGroup({
   );
 }
 
-function FeedbackLink({
+function HelpLinks({
   pathname,
   onNavigate,
   surface,
@@ -147,34 +162,59 @@ function FeedbackLink({
   onNavigate?: () => void;
   surface: "desktop_sidebar" | "mobile_drawer";
 }): ReactElement {
-  const active = isPathActive(pathname, FEEDBACK_NAV_ITEM.href);
   return (
-    <Link
-      href={FEEDBACK_NAV_ITEM.href}
-      onClick={() => {
-        track("sidebar_nav_click", {
-          itemKey: FEEDBACK_NAV_ITEM.key,
-          destination: FEEDBACK_NAV_ITEM.href,
-          group: "帮助与反馈",
-          surface,
-        });
-        onNavigate?.();
-      }}
-      aria-current={active ? "page" : undefined}
-      className={`relative flex min-h-11 items-center gap-3 whitespace-nowrap rounded-lg px-3.5 py-2.5 text-sm font-medium outline-none transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-1 active:bg-slate-100 ${
-        active
-          ? "bg-violet-50/80 text-violet-700 before:absolute before:inset-y-2 before:left-0 before:w-0.5 before:rounded-full before:bg-violet-600"
-          : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"
-      }`}
-    >
-      <span
-        aria-hidden="true"
-        className={active ? "text-violet-600" : "text-slate-400"}
-      >
-        {FEEDBACK_NAV_ITEM.icon}
-      </span>
-      <span>{FEEDBACK_NAV_ITEM.label}</span>
-    </Link>
+    <section aria-label="帮助与反馈" className="space-y-1">
+      <p className="px-2 pb-1 text-[11px] font-medium text-slate-400">
+        帮助与反馈
+      </p>
+      {HELP_NAV_ITEMS.map((item) => {
+        const active = !item.newTab && isPathActive(pathname, item.href);
+        return (
+          <Link
+            key={item.key}
+            href={item.href}
+            target={item.newTab ? "_blank" : undefined}
+            rel={item.newTab ? "noopener noreferrer" : undefined}
+            onClick={() => {
+              try {
+                track("sidebar_nav_click", {
+                  itemKey: item.key,
+                  destination: item.href,
+                  group: "帮助与反馈",
+                  surface,
+                });
+              } catch {
+                /* Help navigation must remain usable when analytics is unavailable. */
+              }
+              onNavigate?.();
+            }}
+            aria-current={active ? "page" : undefined}
+            className={`group relative flex min-h-11 items-center gap-2 whitespace-nowrap rounded-lg px-2 py-2.5 text-sm font-medium outline-none transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-1 active:bg-violet-100 ${
+              active
+                ? "bg-violet-50/80 text-violet-700 before:absolute before:inset-y-2 before:left-0 before:w-0.5 before:rounded-full before:bg-violet-600"
+                : "text-slate-500 hover:bg-violet-50 hover:text-violet-700"
+            }`}
+          >
+            <span
+              aria-hidden="true"
+              className={`shrink-0 ${active ? "text-violet-600" : "text-slate-400 group-hover:text-violet-600"}`}
+            >
+              {item.icon}
+            </span>
+            <span>{item.label}</span>
+            {item.newTab && (
+              <>
+                <ExternalLink
+                  className="ml-auto h-3.5 w-3.5 shrink-0"
+                  aria-hidden="true"
+                />
+                <span className="sr-only">（新标签页打开）</span>
+              </>
+            )}
+          </Link>
+        );
+      })}
+    </section>
   );
 }
 
@@ -237,8 +277,11 @@ export default function DashboardSidebar(): ReactElement {
           </Dialog.Trigger>
           <Dialog.Portal>
             <Dialog.Overlay className="fixed inset-0 z-50 bg-slate-950/20 backdrop-blur-[1px] md:hidden" />
-            <Dialog.Content className="fixed inset-y-0 right-0 z-50 flex w-[min(86vw,320px)] flex-col bg-white p-4 shadow-2xl focus:outline-none md:hidden">
-              <div className="flex h-12 items-center justify-between px-2">
+            <Dialog.Content
+              aria-describedby={undefined}
+              className="fixed inset-y-0 right-0 z-50 flex w-[min(86vw,320px)] flex-col overflow-y-auto bg-white p-4 shadow-2xl focus:outline-none md:hidden"
+            >
+              <div className="flex h-12 shrink-0 items-center justify-between px-2">
                 <Dialog.Title className="text-base font-semibold text-slate-900">
                   功能导航
                 </Dialog.Title>
@@ -252,7 +295,7 @@ export default function DashboardSidebar(): ReactElement {
                   </button>
                 </Dialog.Close>
               </div>
-              <nav className="mt-4 flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-1">
+              <nav className="mb-4 mt-4 flex shrink-0 flex-col gap-6 px-1">
                 <NavigationGroup
                   label="求职工具"
                   items={JOB_NAV_ITEMS}
@@ -268,8 +311,8 @@ export default function DashboardSidebar(): ReactElement {
                   surface="mobile_drawer"
                 />
               </nav>
-              <div className="mt-4 space-y-3 border-t border-slate-100 px-1 pt-3">
-                <FeedbackLink
+              <div className="mt-auto shrink-0 space-y-3 border-t border-slate-100 px-1 pt-3">
+                <HelpLinks
                   pathname={pathname}
                   onNavigate={() => setMobileOpen(false)}
                   surface="mobile_drawer"
@@ -298,9 +341,12 @@ export default function DashboardSidebar(): ReactElement {
         </Dialog.Root>
       </header>
 
-      <aside className="fixed bottom-0 left-0 top-0 z-40 hidden w-[200px] flex-col border-r border-slate-100 bg-white print:hidden md:flex">
+      <aside
+        aria-label="工作台侧边栏"
+        className="fixed bottom-0 left-0 top-0 z-40 hidden w-[200px] flex-col overflow-y-auto border-r border-slate-100 bg-white print:hidden md:flex"
+      >
         {/* Logo */}
-        <div className="px-4 pb-3 pt-5">
+        <div className="shrink-0 px-4 pb-3 pt-5">
           <Link
             href="/"
             className="block rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2"
@@ -316,7 +362,7 @@ export default function DashboardSidebar(): ReactElement {
         </div>
 
         {/* Nav Items */}
-        <nav className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-3 pt-3">
+        <nav className="flex shrink-0 flex-col gap-6 px-3 pt-3">
           <NavigationGroup
             label="求职工具"
             items={JOB_NAV_ITEMS}
@@ -332,9 +378,9 @@ export default function DashboardSidebar(): ReactElement {
         </nav>
 
         {/* Bottom: User Info + Copyright */}
-        <div className="mt-auto px-3 pb-4 pt-3">
+        <div className="mt-auto shrink-0 px-3 pb-4 pt-3">
           <div className="mb-3 border-t border-slate-100 pt-3">
-            <FeedbackLink pathname={pathname} surface="desktop_sidebar" />
+            <HelpLinks pathname={pathname} surface="desktop_sidebar" />
           </div>
 
           {/* User Card with VIP upgrade for non-VIP */}

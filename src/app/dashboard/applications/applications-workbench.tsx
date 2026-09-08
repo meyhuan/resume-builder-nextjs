@@ -28,6 +28,7 @@ import {
   type ReactElement,
 } from "react";
 import { toast } from "sonner";
+import { ExtensionGuideLink } from "@/components/extension/extension-guide-link";
 import { applicationRequest } from "@/features/applications/client-request";
 import {
   APPLICATION_ACTION_TYPES,
@@ -271,14 +272,17 @@ export default function ApplicationsWorkbench(): ReactElement {
               先处理今天要做的事，再回看每一次申请的进展。
             </p>
           </div>
-          <button
-            type="button"
-            onClick={() => setShowCreate(true)}
-            className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-violet-600 px-4 text-sm font-semibold text-white shadow-sm transition-[background-color,transform] duration-150 hover:bg-violet-700 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600"
-          >
-            <Plus className="h-4 w-4" aria-hidden="true" />
-            添加投递
-          </button>
+          <div className="flex flex-wrap items-center gap-3">
+            <ExtensionGuideLink source="applications" label="用插件填写网申" />
+            <button
+              type="button"
+              onClick={() => setShowCreate(true)}
+              className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-violet-600 px-4 text-sm font-semibold text-white shadow-sm transition-[background-color,transform] duration-150 hover:bg-violet-700 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600"
+            >
+              <Plus className="h-4 w-4" aria-hidden="true" />
+              添加投递
+            </button>
+          </div>
         </header>
 
         <section className="mt-6 grid overflow-hidden rounded-2xl border border-slate-200 bg-white lg:grid-cols-[1.25fr_1fr]">

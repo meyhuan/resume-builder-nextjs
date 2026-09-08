@@ -63,6 +63,21 @@ function syncButton() {
 }
 const dirtyMessage = "有未保存的修改，插件暂时无法读取这些修改。";
 
+it("shows installation guidance and opens guide links separately from unsaved data", async () => {
+  await mount();
+  fireEvent.change(nameInput(), { target: { value: "尚未保存的资料" } });
+  expect(screen.getByRole("complementary", { name: "插件使用提示" })).toBeInTheDocument();
+  const links = [...document.querySelectorAll('a[href="/extension"]')];
+  expect(links.length).toBeGreaterThanOrEqual(2);
+  for (const link of links) {
+    expect(link).toHaveAttribute("target", "_blank");
+    expect(link.getAttribute("rel")).toContain("noopener");
+  }
+  expect(nameInput()).toHaveValue("尚未保存的资料");
+  expect(screen.getByText(dirtyMessage)).toBeInTheDocument();
+  expect(mocks.request.mock.calls.some(([, init]) => init?.method === "PUT")).toBe(false);
+});
+
 it("selecting a resume can sync immediately without saving an empty profile first", async () => {
   await mount();
   selectResume("resume-b");
