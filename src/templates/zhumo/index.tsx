@@ -151,7 +151,7 @@ export default function ZhumoTemplate(props: TemplateProps): ReactElement {
           data-template-padding-probe="true"
           style={{
             ...pagePad,
-            paddingTop: jobIntentionVisible ? 10 * theme.spacingScale : pagePad.paddingTop,
+            paddingTop: (jobIntentionVisible ? 10 : 18) * theme.spacingScale,
           }}
         >
           {resume.sections.map((section: Section, i: number) => (

@@ -182,10 +182,11 @@ export default function ZijiTemplate(props: TemplateProps): ReactElement {
   const palette = useMemo(() => buildZijiPalette(theme.primaryColor), [theme.primaryColor])
   const primaryColor = palette.primary
   const titleScale = Math.min(1.2, Math.max(0.86, theme.titleScale ?? 1))
-  const spacingScale = Math.max(0.72, theme.spacingScale)
+  const spacingScale = Math.max(0, theme.spacingScale)
   const contentLineHeight = Math.max(1.18, theme.lineHeight)
   const panelPadX = Math.max(42, mmToPx(theme.pagePaddingHorizontal) * 0.9)
-  const panelPadTop = Math.max(32, mmToPx(theme.pagePaddingVertical) * 0.48)
+  // The panel follows the hero; its top inset is not another page margin.
+  const panelPadTop = 34 * spacingScale
   const panelPadBottom = Math.max(38, mmToPx(theme.pagePaddingVertical) * 0.58)
   const sideColumnWidth = Math.max(166, 174 + (panelPadX - 51) * 0.25)
   const railColumnWidth = 42
@@ -298,17 +299,6 @@ export default function ZijiTemplate(props: TemplateProps): ReactElement {
         }}
       >
         <div className="ziji-root" style={{ position: 'relative', minHeight: '297mm', overflow: 'hidden', backgroundColor: '#fff' }}>
-          <div
-            aria-hidden
-            data-ziji-hero-backdrop="true"
-            className="absolute inset-x-0 top-0"
-            style={{
-              height: 260,
-              background: palette.heroGradient,
-              zIndex: 0,
-            }}
-          />
-
           <ZijiHero
             header={header}
             title={headerTitle}
@@ -338,7 +328,7 @@ export default function ZijiTemplate(props: TemplateProps): ReactElement {
               }}
             >
               <ColumnDroppable id={COLUMN_LEFT_ID}>
-                <aside data-ziji-column="left" style={{ paddingTop: 3, minHeight: 360 }}>
+                <aside data-ziji-column="left" style={{ paddingTop: 0, minHeight: 360 }}>
                   {isJobIntentionVisible ? (
                     <SideJobInfo
                       jobIntention={jobIntention}
@@ -425,11 +415,17 @@ function ZijiHero(props: {
     <section
       className="relative overflow-visible"
       style={{
-        height: 216,
+        minHeight: header.baseInfo?.showAvatar === false ? 216 : 228,
         background: heroGradient,
         zIndex: 1,
       }}
     >
+      <div
+        aria-hidden
+        data-ziji-hero-backdrop="true"
+        className="absolute inset-x-0 top-0"
+        style={{ bottom: '-20%', background: heroGradient, zIndex: -1 }}
+      />
       <div
         aria-hidden
         className="absolute right-5 top-4 text-right font-bold uppercase tracking-[2px] text-white/20"
@@ -473,7 +469,7 @@ function ZijiHero(props: {
         )}
       />
 
-      <div className="absolute text-white" style={{ left: 252, right: 42, top: 88 }}>
+      <div className="relative text-white" style={{ marginLeft: 252, marginRight: 42, paddingTop: 88, paddingBottom: 12 }}>
         <div className="font-bold tracking-normal" style={{ fontSize: '2.25em', lineHeight: 1 }}>
           Hello,I'm
         </div>

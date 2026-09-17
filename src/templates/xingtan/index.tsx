@@ -142,7 +142,7 @@ export default function XingtanTemplate(props: TemplateProps): ReactElement {
           data-template-padding-probe="true"
           style={{
             ...pagePad,
-            paddingTop: jobIntentionVisible ? 10 * theme.spacingScale : pagePad.paddingTop,
+            paddingTop: (jobIntentionVisible ? 10 : 20) * theme.spacingScale,
           }}
         >
           {resume.sections.map((section: Section, i: number) => (

@@ -134,7 +134,7 @@ export default function MashangTemplate(props: TemplateProps): ReactElement {
           className="mashang-page-content"
           style={{
             ...pagePad,
-            paddingTop: jobIntentionVisible ? 10 * theme.spacingScale : pagePad.paddingTop,
+            paddingTop: (jobIntentionVisible ? 10 : 18) * theme.spacingScale,
           }}
         >
           {resume.sections.map((section: Section, i: number) => (

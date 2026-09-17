@@ -32,7 +32,8 @@ import type { VariantConfig } from './types'
 import { SERIF } from './types'
 
 export function scaledSpacing(base: number, theme?: Pick<ThemeTokens, 'spacingScale'>): number {
-  const scale = Math.max(0.2, theme?.spacingScale ?? 1)
+  // Zero is an intentional setting. Keep minimum cell/decoration sizes local.
+  const scale = Math.max(0, theme?.spacingScale ?? 1)
   return Math.round(base * scale * 10) / 10
 }
 

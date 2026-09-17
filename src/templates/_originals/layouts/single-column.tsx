@@ -156,7 +156,7 @@ export function CampusLayout(props: {
         className="group relative"
         onClick={header.openEditModal}
         style={{
-          margin: `-${padV}px -${padH}px 34px`,
+          margin: `-${padV}px -${padH}px ${34 * theme.spacingScale}px`,
           padding: `44px ${padH}px 28px`,
           background: config.heroTone === 'soft'
             ? `linear-gradient(135deg, ${lightenHex(config.accent, 0.82)}, #ffffff)`

@@ -169,7 +169,7 @@ export default function QingyunTemplate(props: TemplateProps): ReactElement {
         )}
 
         {/* ——— MAIN SECTIONS ————————————————————————— */}
-        <main data-template-padding-probe="true" className="qingyun-page-content" style={{ ...pagePad, paddingTop: jobIntentionVisible ? 12 * theme.spacingScale : pagePad.paddingTop }}>
+        <main data-template-padding-probe="true" className="qingyun-page-content" style={{ ...pagePad, paddingTop: (jobIntentionVisible ? 12 : 24) * theme.spacingScale }}>
           {resume.sections.map((section: Section, index: number) => (
             <div key={section.id} style={{ marginBottom: index < resume.sections.length - 1 ? 26 * theme.spacingScale : 0 }}>
               <SortableSection sectionId={section.id}>

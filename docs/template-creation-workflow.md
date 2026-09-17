@@ -27,6 +27,10 @@ If the reference screenshot is only provided in chat, save it to a local file wh
    - Example: a `1228px` wide reference should use a scale of about `0.647`.
 4. Keep user-adjustable theme controls functional. Avoid hardcoding values that should follow `theme.fontSize`, `theme.lineHeight`, `theme.spacingScale`, or `theme.primaryColor`.
    - If the visual design needs a default multiplier, derive from the theme, e.g. `theme.lineHeight * 1.26`, not a fixed `lineHeight: 1.9`.
+5. Keep page margins separate from module spacing. The gap after a full-width hero is an internal module gap, not another top page margin. It must follow `spacingScale`, including when job intention is hidden.
+   - Honor `spacingScale = 0`; do not clamp module gaps to a positive minimum. Keep any minimum needed for table cells or decorative elements local to those elements.
+   - Keep hero text in normal flow where possible, and reserve the visible avatar height inside the hero. A zero gap must not expose text/avatar overflow that used to be hidden by whitespace.
+   - Verify both job-intention states at spacing 0, 1, and 3 in screen and print media. The template lab accepts `&spacing=0&job=hidden` for this regression.
 
 ## Implementation Rules
 

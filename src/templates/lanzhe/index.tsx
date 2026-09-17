@@ -67,7 +67,7 @@ export default function LanzheTemplate(props: TemplateProps): ReactElement {
   const paleColor = lightenHex(primaryColor, 0.88)
   const titleScale = Math.min(1.18, Math.max(0.88, theme.titleScale ?? 1))
   const contentLineHeight = Math.max(1.25, theme.lineHeight)
-  const spacingScale = Math.max(0.78, theme.spacingScale)
+  const spacingScale = Math.max(0, theme.spacingScale)
   const pagePaddingHorizontal = Math.max(34, mmToPx(theme.pagePaddingHorizontal))
   const pagePaddingVertical = Math.max(36, mmToPx(theme.pagePaddingVertical))
   const paperLeft = pagePaddingHorizontal

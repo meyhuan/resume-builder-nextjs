@@ -165,10 +165,11 @@ export default function LanmuTemplate(props: TemplateProps): ReactElement {
   const palette = useMemo(() => buildLanmuPalette(theme.primaryColor), [theme.primaryColor])
   const primaryColor = palette.primary
   const titleScale = Math.min(1.2, Math.max(0.86, theme.titleScale ?? 1))
-  const spacingScale = Math.max(0.72, theme.spacingScale)
+  const spacingScale = Math.max(0, theme.spacingScale)
   const contentLineHeight = Math.max(1.18, theme.lineHeight)
   const pagePadX = Math.max(0, mmToPx(theme.pagePaddingHorizontal) * 0.72)
-  const pagePadTop = Math.max(26, mmToPx(theme.pagePaddingVertical) * 0.46)
+  // Combine the former 34px gap and ~32px inset into one scalable hero gap.
+  const pagePadTop = 66 * spacingScale
   const pagePadBottom = Math.max(34, mmToPx(theme.pagePaddingVertical) * 0.58)
   const sideColumnWidth = Math.max(150, 164 + (pagePadX - 37) * 0.18)
   const railColumnWidth = 52
@@ -292,7 +293,7 @@ export default function LanmuTemplate(props: TemplateProps): ReactElement {
             className="relative"
             style={{
               minHeight: 820,
-              marginTop: 34,
+              marginTop: 0,
               padding: `${pagePadTop}px ${pagePadX}px ${pagePadBottom}px ${pagePadX}px`,
               zIndex: 1,
               background: '#fff',
@@ -390,7 +391,9 @@ function LanmuHero(props: {
     <section
       className="relative overflow-visible"
       style={{
-        height: 192,
+        minHeight: header.baseInfo?.showAvatar === false ? 192 : 193,
+        display: 'grid',
+        gridTemplateColumns: '240px minmax(0, 1fr)',
         background: '#fff',
         zIndex: 1,
       }}
@@ -446,19 +449,18 @@ function LanmuHero(props: {
       />
 
       <div
-        className="absolute text-white"
+        className="relative text-white"
         data-template-base-info-trigger="true"
         role="button"
         tabIndex={0}
         style={{
-          left: 240,
-          top: 0,
-          right: 0,
-          height: 192,
+          gridColumn: 2,
+          minHeight: 192,
           borderBottomLeftRadius: 40,
           background: heroGradient,
           paddingLeft: 36,
           paddingTop: 43,
+          paddingBottom: 12,
         }}
         onClick={header.openEditModal}
         onKeyDown={(event) => runClickActionOnKey(event, header.openEditModal)}

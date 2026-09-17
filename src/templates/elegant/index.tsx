@@ -344,7 +344,12 @@ export default function ElegantTemplate(props: ElegantTemplateProps): ReactEleme
       <div
         className="resume-body-content elegant-body-content print:!pb-0"
         data-template-padding-probe="true"
-        style={{ padding: bodyPadding }}
+        style={{
+          padding: bodyPadding,
+          // The full-width header already occupies the page top. This is a
+          // header-to-content gap, not another page margin inside the page.
+          paddingTop: `${24 * theme.spacingScale}px`,
+        }}
       >
         {isJobIntentionVisible ? (
           <div style={{ marginBottom: `${24 * theme.spacingScale}px` }}>

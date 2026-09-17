@@ -57,7 +57,8 @@ export default function LanjiaoTemplate(props: TemplateProps): ReactElement {
   const pagePaddingVertical = Math.max(28, mmToPx(theme.pagePaddingVertical) * 0.88)
   const pagePaddingHorizontal = Math.max(0, mmToPx(theme.pagePaddingHorizontal) * 0.95)
   const heroHeight = 250
-  const contentPaddingTop = Math.max(18 * theme.spacingScale, pagePaddingVertical * 0.48)
+  // Space after the hero is module spacing, independent of the page margins.
+  const contentPaddingTop = 32 * theme.spacingScale
   const contentPaddingBottom = Math.max(34, pagePaddingVertical)
   const rootStyle: CssVars = {
     minHeight: '297mm',

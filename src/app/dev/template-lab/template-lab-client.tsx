@@ -22,15 +22,24 @@ export default function TemplateLabClient(): ReactElement {
   const templateId = TEMPLATE_REGISTRY[requestedTemplateId] ? requestedTemplateId : 'simple'
   const fixtureId = normalizeFixtureId(searchParams.get('fixture'))
   const themeId = normalizeThemeId(searchParams.get('theme'))
+  const spacingOverride = searchParams.get('spacing')
+  const hideJobIntention = searchParams.get('job') === 'hidden'
   const viewport = searchParams.get('viewport') === 'mobile' ? 'mobile' : 'pc'
-  const resume: ResumeData = useMemo(() => getTemplateFixture(fixtureId), [fixtureId])
-  const theme: ThemeTokens = useMemo(() => getTemplateLabTheme(themeId), [themeId])
+  const resume: ResumeData = useMemo(() => {
+    const fixture = getTemplateFixture(fixtureId)
+    return hideJobIntention ? { ...fixture, jobIntentionVisible: false } : fixture
+  }, [fixtureId, hideJobIntention])
+  const theme: ThemeTokens = useMemo(() => {
+    const base = getTemplateLabTheme(themeId)
+    const scale = spacingOverride === null ? NaN : Number(spacingOverride)
+    return Number.isFinite(scale) && scale >= 0 && scale <= 3 ? { ...base, spacingScale: scale } : base
+  }, [themeId, spacingOverride])
   const Template = TEMPLATE_REGISTRY[templateId]?.component
   const setReadOnly = useAppStore((s) => s.setReadOnly)
   const setResume = useAppStore((s) => s.setResume)
   const titleScale: number = theme.titleScale ?? 1
   const paragraphIndent: number = theme.paragraphIndent ?? 0
-  const labKey = `${templateId}:${fixtureId}:${themeId}:${viewport}`
+  const labKey = `${templateId}:${fixtureId}:${themeId}:${viewport}:${spacingOverride}:${hideJobIntention}`
   const [readyKey, setReadyKey] = useState<string | null>(null)
   const ready = readyKey === labKey
   const mobileScale = 0.46
