@@ -55,7 +55,7 @@ export const ELEGANT_TEMPLATE_STYLES: TemplateStylesConfig = {
   },
 
   jobIntention: {
-    container: 'py-3 relative group cursor-pointer print:cursor-default',
+    container: 'py-0 relative group cursor-pointer print:cursor-default',
     header: 'flex items-center gap-2.5 pb-2 mb-3 relative',
     headerBorderBottom: true,
     title: {
@@ -81,7 +81,7 @@ export const ELEGANT_TEMPLATE_STYLES: TemplateStylesConfig = {
   sectionHeader: {
     fontSize: '1.285em',
     fontWeight: 'bold',
-    containerClassName: 'pb-1',
+    containerClassName: 'pb-0',
     icon: {
       size: '1.5em',
     },
@@ -111,6 +111,6 @@ export const ELEGANT_TEMPLATE_STYLES: TemplateStylesConfig = {
       fontWeight: 'bold',
       className: 'text-gray-700 ml-4 shrink-0',
     },
-    content: 'text-[1em] text-gray-500 text-justify',
+    content: '!py-0 text-[1em] text-gray-500 text-justify',
   },
 }

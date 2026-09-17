@@ -21,6 +21,8 @@ export interface BlockWrapperProps {
   readonly dragHandleRef?: (element: HTMLElement | null) => void;
   readonly showDragHandle?: boolean;
   readonly disableHover?: boolean;
+  /** Disable legacy spacing when the template owns block and section gaps. */
+  readonly flush?: boolean;
 }
 
 const HOVER_DELAY_MS = 200;
@@ -29,7 +31,7 @@ const HOVER_POLL_MS = 500;
 export default function BlockWrapper(props: BlockWrapperProps): ReactElement {
   const readOnly = useAppStore((s) => s.readOnly);
   if (readOnly) {
-    return <div className="group/block relative rounded mb-4 last:mb-0 pb-1">{props.children}</div>;
+    return <div className={`group/block relative rounded ${props.flush ? 'flow-root' : 'mb-4 last:mb-0 pb-1'}`}>{props.children}</div>;
   }
   return <EditableBlockHoverWrapper {...props} />;
 }
@@ -75,7 +77,7 @@ function EditableBlockHoverWrapper(props: BlockWrapperProps): ReactElement {
   return (
     <div
       ref={containerRef}
-      className="group/block relative rounded mb-4 last:mb-0 pb-1"
+      className={`group/block relative rounded ${props.flush ? 'flow-root' : 'mb-4 last:mb-0 pb-1'}`}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >

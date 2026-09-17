@@ -108,6 +108,6 @@ export const TIMELINE_TEMPLATE_STYLES: TemplateStylesConfig = {
       fontWeight: 'bold',
       className: 'hidden',
     },
-    content: 'text-[1em] text-gray-500 text-justify',
+    content: '!py-0 text-[1em] text-gray-500 text-justify',
   },
 }

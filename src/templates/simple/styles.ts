@@ -49,7 +49,7 @@ export const SIMPLE_TEMPLATE_STYLES: TemplateStylesConfig = {
   },
   
   jobIntention: {
-    container: 'py-3 relative group cursor-pointer print:cursor-default',
+    container: 'py-0 relative group cursor-pointer print:cursor-default',
     header: 'flex items-center gap-2.5 pb-0.5 relative',
     title: {
       className: 'font-bold',
@@ -109,7 +109,7 @@ export const SIMPLE_TEMPLATE_STYLES: TemplateStylesConfig = {
       fontWeight: 'bold',
       className: 'text-neutral-800 ml-3 shrink-0',
     },
-    content: 'text-[0.98em] text-justify mt-1',
+    content: '!py-0 text-[0.98em] text-justify mt-1',
     contentColor: '#555555',
   },
 }

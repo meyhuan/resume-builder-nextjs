@@ -81,6 +81,7 @@ function BlockRendererWrapper(props: {
   return (
     <div style={{ marginBottom: blockIndex < totalBlocks - 1 ? `${13 * spacingScale}px` : '0' }}>
       <BlockWrapper
+        flush
         blockType={blockTypeLabel}
         onAdd={block.type !== 'text' ? (): void => addBlock(sectionId) : undefined}
         onPolish={moduleType ? handlePolish : undefined}
@@ -182,7 +183,7 @@ export default function SimpleTemplate(props: SimpleTemplateProps): ReactElement
           const section = resume.sections.find((s) => s.id === sectionId)
           if (!section) return null
           return (
-            <SectionContainer themeColor={theme.primaryColor}>
+            <SectionContainer flush themeColor={theme.primaryColor}>
               <SectionHeader
                 sectionId={section.id}
                 title={section.title}
@@ -271,7 +272,7 @@ function SectionView(props: SectionViewProps): ReactElement {
   }
   
   return (
-    <SectionContainer themeColor={themeColor}>
+    <SectionContainer flush themeColor={themeColor}>
       <SectionHeader
         sectionId={sectionId}
         title={title}

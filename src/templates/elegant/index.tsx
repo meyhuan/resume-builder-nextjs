@@ -223,6 +223,7 @@ function ElegantHeader(props: {
               {fields.map((f) => (
                 <div
                   key={f.key}
+                  data-template-base-info-field="true"
                   className="flex items-center gap-2 text-white/80 relative group/field hover:bg-white/10 rounded pl-1 pr-5 py-0.5 transition-colors whitespace-nowrap text-[0.92em]"
                   onMouseEnter={() => setHoveredField(f.key)}
                   onMouseLeave={() => setHoveredField(null)}
@@ -290,6 +291,7 @@ function BlockRendererWrapper(props: {
   return (
     <div style={{ marginBottom: blockIndex < totalBlocks - 1 ? `${16 * spacingScale}px` : '0' }}>
       <BlockWrapper
+        flush
         blockType={blockTypeLabel}
         onAdd={block.type !== 'text' ? (): void => addBlock(sectionId) : undefined}
         onPolish={moduleType ? (): void => openPolish(block.id, extractBlockContentHtml(block), moduleType) : undefined}
@@ -342,10 +344,7 @@ export default function ElegantTemplate(props: ElegantTemplateProps): ReactEleme
       <div
         className="resume-body-content elegant-body-content print:!pb-0"
         data-template-padding-probe="true"
-        style={{ 
-          padding: bodyPadding,
-          paddingTop: `calc(${theme.pagePaddingVertical}mm * ${theme.spacingScale})` 
-        }}
+        style={{ padding: bodyPadding }}
       >
         <DragDropProvider
           resume={resume}
@@ -357,7 +356,7 @@ export default function ElegantTemplate(props: ElegantTemplateProps): ReactEleme
             const section = resume.sections.find((s) => s.id === sectionId)
             if (!section) return null
             return (
-              <SectionContainer themeColor={accentColor}>
+              <SectionContainer flush themeColor={accentColor}>
                 <SectionHeader
                   sectionId={section.id}
                   title={section.title}
@@ -454,7 +453,7 @@ function ElegantSectionView(props: ElegantSectionViewProps): ReactElement {
   const icon = getSectionIcon(title)
 
   return (
-    <SectionContainer themeColor={themeColor}>
+    <SectionContainer flush themeColor={themeColor}>
       {/* Section header with gold underline */}
       <div
         className="relative pb-2 mb-3"

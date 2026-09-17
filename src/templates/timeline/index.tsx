@@ -65,6 +65,7 @@ function BlockRendererWrapper(props: BlockRendererWrapperProps): ReactElement {
   return (
     <div style={{ marginBottom: blockIndex < totalBlocks - 1 ? `${16 * spacingScale}px` : '0' }}>
       <BlockWrapper
+        flush
         blockType={blockTypeLabel}
         onAdd={block.type !== 'text' ? (): void => addBlock(sectionId) : undefined}
         onPolish={moduleType ? (): void => openPolish(block.id, extractBlockContentHtml(block), moduleType) : undefined}
@@ -193,7 +194,7 @@ function TimelineBlockRow(props: TimelineBlockRowProps): ReactElement {
         />
       </div>
       {/* Right column — block content */}
-      <div className="flex-1 min-w-0 pl-4 pb-1">
+      <div className="flex-1 min-w-0 pl-4">
         <BlockRendererWrapper
           block={block}
           sectionId={sectionId}
@@ -233,7 +234,7 @@ function SectionView(props: SectionViewProps): ReactElement {
   const { setNodeRef } = useDroppable({ id: `${DndIds.SECTION_DROP_ID_PREFIX}${sectionId}` })
   const icon = getSectionIcon(title)
   return (
-    <SectionContainer themeColor={themeColor}>
+    <SectionContainer flush themeColor={themeColor}>
       <SectionHeader
         sectionId={sectionId}
         title={title}
@@ -344,7 +345,7 @@ export default function TimelineTemplate(props: TimelineTemplateProps): ReactEle
           const section = resume.sections.find((s) => s.id === sectionId)
           if (!section) return null
           return (
-            <SectionContainer themeColor={theme.primaryColor}>
+            <SectionContainer flush themeColor={theme.primaryColor}>
               <SectionHeader
                 sectionId={section.id}
                 title={section.title}

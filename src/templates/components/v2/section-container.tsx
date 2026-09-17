@@ -8,6 +8,8 @@ import type { ReactElement, ReactNode, CSSProperties } from 'react'
 interface SectionContainerProps {
   readonly children: ReactNode
   readonly themeColor: string
+  /** The template owns vertical spacing; hover decoration must not affect flow. */
+  readonly flush?: boolean
 }
 
 /**
@@ -15,19 +17,19 @@ interface SectionContainerProps {
  * All templates use the same hover behavior for consistency.
  */
 export default function SectionContainer(props: SectionContainerProps): ReactElement {
-  const { children, themeColor } = props
+  const { children, themeColor, flush = false } = props
   const [isHovered, setIsHovered] = useState(false)
 
   const baseClassName = [
-    'mb-1',
-    'p-1',
+    flush ? 'px-1 flow-root' : 'mb-1 p-1',
     'rounded-lg',
     'transition-all duration-200 group group/section-edit',
     isHovered ? 'shadow-sm' : '',
   ].filter(Boolean).join(' ')
 
   const dynamicStyle: CSSProperties = {
-    border: isHovered ? `1px solid ${themeColor}20` : '1px solid transparent',
+    border: flush ? undefined : isHovered ? `1px solid ${themeColor}20` : '1px solid transparent',
+    outline: flush && isHovered ? `1px solid ${themeColor}20` : undefined,
     background: isHovered ? 'rgba(249, 250, 251, 0.5)' : 'transparent',
   }
 
