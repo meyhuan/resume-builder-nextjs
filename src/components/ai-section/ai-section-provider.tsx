@@ -9,6 +9,8 @@ import { useAppStore } from '@/state/store';
 import type { ResumeBlock } from '@/entities/blocks/resume-block';
 import { extractBlockPrefill } from '@/components/ai-section/block-module-utils';
 import { track } from '@/lib/analytics';
+import { toResumeContext } from '@/lib/ai/resume-context';
+import { useEditorUiStore } from '@/state/editor-ui-store';
 
 // ---------------------------------------------------------------------------
 // Context types
@@ -70,6 +72,12 @@ export default function AiSectionProvider(props: AiSectionProviderProps): ReactE
   const openPolish = useCallback(
     (blockId: string, contentHtml: string, moduleType: SectionModuleType): void => {
       if (requireVip && !requireVip()) return;
+      const context = toResumeContext(useAppStore.getState().resume);
+      const section = context.sections.find((item) => item.blocks.some((block) => block.blockId === blockId));
+      const label = section?.blocks.find((block) => block.blockId === blockId)?.label;
+      useEditorUiStore.setState({ sectionAiTarget: [section?.title, label].filter(Boolean).join(' · ') });
+      setGenerateOpen(false);
+      useEditorUiStore.getState().setActivePanel('polish');
       setPolishBlockId(blockId);
       setPolishContent(contentHtml);
       setPolishModule(moduleType);
@@ -81,6 +89,12 @@ export default function AiSectionProvider(props: AiSectionProviderProps): ReactE
   const openGenerate = useCallback(
     (blockId: string, moduleType: SectionModuleType, block?: ResumeBlock): void => {
       if (requireVip && !requireVip()) return;
+      const context = toResumeContext(useAppStore.getState().resume);
+      const section = context.sections.find((item) => item.blocks.some((block) => block.blockId === blockId));
+      const label = section?.blocks.find((block) => block.blockId === blockId)?.label;
+      useEditorUiStore.setState({ sectionAiTarget: [section?.title, label].filter(Boolean).join(' · ') });
+      setPolishOpen(false);
+      useEditorUiStore.getState().setActivePanel('generate');
       setGenerateBlockId(blockId);
       setGenerateModule(moduleType);
       setGeneratePrefill(block ? extractBlockPrefill(block) : {});
@@ -156,8 +170,9 @@ export default function AiSectionProvider(props: AiSectionProviderProps): ReactE
       {children}
 
       <AiPolishSheet
+        key={`polish-${polishBlockId}`}
         open={polishOpen}
-        onOpenChange={setPolishOpen}
+        onOpenChange={(open) => { setPolishOpen(open); if (!open && useEditorUiStore.getState().activePanel === 'polish') useEditorUiStore.getState().setActivePanel(null); }}
         originalContent={polishContent}
         moduleType={polishModule}
         defaultIdentity={defaultIdentity}
@@ -165,8 +180,9 @@ export default function AiSectionProvider(props: AiSectionProviderProps): ReactE
       />
 
       <AiGenerateSheet
+        key={`generate-${generateBlockId}`}
         open={generateOpen}
-        onOpenChange={setGenerateOpen}
+        onOpenChange={(open) => { setGenerateOpen(open); if (!open && useEditorUiStore.getState().activePanel === 'generate') useEditorUiStore.getState().setActivePanel(null); }}
         moduleType={generateModule}
         defaultIdentity={defaultIdentity}
         blockPrefill={generatePrefill}

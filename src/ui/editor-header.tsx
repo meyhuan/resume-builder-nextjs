@@ -97,6 +97,7 @@ export default function EditorHeader(props: EditorHeaderProps): ReactElement {
           onClick={props.onUndo}
           disabled={!props.canUndo}
           className="h-8 w-8"
+          aria-label="撤销"
           title="撤销 (Ctrl+Z)"
         >
           <Undo2 className="h-4 w-4" />
@@ -107,13 +108,14 @@ export default function EditorHeader(props: EditorHeaderProps): ReactElement {
           onClick={props.onRedo}
           disabled={!props.canRedo}
           className="h-8 w-8"
+          aria-label="重做"
           title="重做 (Ctrl+Shift+Z)"
         >
           <Redo2 className="h-4 w-4" />
         </Button>
         <div className="hidden h-6 w-px bg-slate-200 sm:block" />
 
-        <div className="hidden items-center gap-1 md:flex">
+        <div className="hidden items-center gap-1 2xl:flex">
           <Button
             variant="ghost"
             size="sm"
@@ -156,7 +158,7 @@ export default function EditorHeader(props: EditorHeaderProps): ReactElement {
           </Button>
         </div>
 
-        <div className="md:hidden">
+        <div className="2xl:hidden">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -164,6 +166,8 @@ export default function EditorHeader(props: EditorHeaderProps): ReactElement {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={props.onToggleSections}>模块管理</DropdownMenuItem>
+              <DropdownMenuItem onClick={props.onToggleTheme}>样式设置</DropdownMenuItem>
               <DropdownMenuItem onClick={() => openModal('jd-analysis')}>
                 <FileSearch className="mr-2 h-4 w-4" />
                 岗位匹配
@@ -202,6 +206,8 @@ export default function EditorHeader(props: EditorHeaderProps): ReactElement {
               ? 'bg-violet-100 text-violet-700 hover:bg-violet-100'
               : 'text-violet-600 hover:bg-violet-50 hover:text-violet-700'
           }`}
+          aria-label="AI 助手"
+          aria-pressed={showAiChat}
           title="AI 助手"
         >
           <Sparkles className="h-4 w-4" />
@@ -212,7 +218,7 @@ export default function EditorHeader(props: EditorHeaderProps): ReactElement {
           size="icon"
           data-editor-panel="sections"
           onClick={props.onToggleSections}
-          className="h-8 w-8 cursor-pointer rounded-full sm:w-auto sm:px-3"
+          className="hidden h-8 w-8 cursor-pointer rounded-full sm:flex sm:w-auto sm:px-3"
           title="模块管理"
         >
           <LayoutList className="h-4 w-4" />
@@ -222,11 +228,11 @@ export default function EditorHeader(props: EditorHeaderProps): ReactElement {
           variant={props.themeOpen ? 'secondary' : 'ghost'}
           size="icon"
           onClick={props.onToggleTheme}
-          className="h-8 w-8 cursor-pointer rounded-full sm:w-auto sm:px-3"
-          title="主题"
+          className="hidden h-8 w-8 cursor-pointer rounded-full sm:flex sm:w-auto sm:px-3"
+          title="样式"
         >
           <Palette className="h-4 w-4" />
-          <span className="ml-1 hidden text-xs sm:inline">主题</span>
+          <span className="ml-1 hidden text-xs sm:inline">样式</span>
         </Button>
         <div className="hidden h-6 w-px bg-slate-200 sm:block" />
         <Button

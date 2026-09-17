@@ -14,7 +14,9 @@ import { buildResumeHtml } from '@/io/html-export'
 import { exportResumeToMarkdown } from '@/io/export-markdown'
 import RightSidebar from '@/ui/right-sidebar'
 import EditorHeader from '@/ui/editor-header'
-import type { PanelId } from '@/ui/editor-toolbar'
+import EditorWorkspaceTabs from '@/ui/editor-workspace-tabs'
+import { useEditorUiStore } from '@/state/editor-ui-store'
+import { EditorAiPanel } from '@/components/ai-chat/editor-ai-panel'
 import type { ThemeTokens } from '@/entities/theme/theme-tokens'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -36,7 +38,6 @@ import { normalizeResumeContent } from '@/entities/resume/normalize-resume-conte
 import { joinExportFileNameParts, sanitizeExportFileName } from '@/lib/export-file-name'
 import { track } from '@/lib/analytics'
 import { PortfolioAppendix } from '@/components/portfolio/portfolio-appendix'
-import { AiChatBubble } from '@/components/ai-chat/ai-chat-bubble'
 import { JdAnalysisDialog } from '@/components/editor/jd-analysis-dialog'
 import { TranslateDialog } from '@/components/editor/translate-dialog'
 import { CoverLetterDialog } from '@/components/editor/cover-letter-dialog'
@@ -251,7 +252,9 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null)
   const AUTO_SAVE_DELAY = 30000 // 30 seconds
   const [showLeaveDialog, setShowLeaveDialog] = useState(false)
-  const [activePanel, setActivePanel] = useState<PanelId | null>('layout')
+  const activePanel = useEditorUiStore((state) => state.activePanel)
+  const setActivePanel = useEditorUiStore((state) => state.setActivePanel)
+  useEffect(() => { setActivePanel(null) }, [initialResumeId, setActivePanel])
   const [onePageMode, setOnePageMode] = useState(false)
   const [onePageSnapshot, setOnePageSnapshot] = useState<AdjustableTokens | null>(null)
   const [sidebarSectionIds, setSidebarSectionIds] = useState<readonly string[] | undefined>(undefined)
@@ -1046,7 +1049,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
   const renderableResume = useMemo(() => getRenderableResume(resume), [resume])
 
   return (
-    <div className="h-screen bg-slate-50/50 text-slate-900 flex flex-col overflow-hidden relative">
+    <div className="h-dvh bg-slate-50/50 text-slate-900 flex flex-col overflow-hidden relative">
       {/* Background Decorative Orbs */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] bg-violet-500/5 rounded-full blur-[100px]" />
@@ -1077,10 +1080,10 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
         onToggleTheme={() => setActivePanel(activePanel === 'layout' ? null : 'layout')}
       />
 
+      <AiSectionProvider requireVip={requireAi}>
       <main className="flex-1 flex overflow-hidden relative z-10">
-        <div className="flex-1 overflow-auto p-6 md:p-12 custom-scrollbar bg-slate-50/30">
-          <div className="mx-auto max-w-[210mm] transition-all duration-500">
-            <AiSectionProvider requireVip={requireAi}>
+        <div data-editor-canvas className={`min-w-0 flex-1 overflow-auto p-3 sm:p-6 xl:p-8 custom-scrollbar bg-slate-50/30 ${activePanel ? 'hidden md:block print:block' : ''}`}>
+          <div className="mx-auto max-w-[210mm] md:w-[210mm] md:max-xl:[zoom:0.8] print:[zoom:1]">
             <div
               ref={printRef}
               className="page w-full bg-white shadow-[0_0_50px_rgba(0,0,0,0.05)] rounded-xl print:shadow-none print:rounded-none"
@@ -1117,13 +1120,16 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
                 <PortfolioAppendix portfolio={renderableResume.portfolio} />
               </Suspense>
             </div>
-            </AiSectionProvider>
           </div>
         </div>
-        {activePanel && (
-          <aside className="print:hidden w-[400px] border-l border-slate-100 bg-white/80 backdrop-blur-xl shrink-0 h-full overflow-y-auto custom-scrollbar shadow-[-4px_0_30px_rgba(0,0,0,0.02)]">
+        <aside aria-label="编辑工具" data-editor-workspace className={`print:hidden min-w-0 w-full md:w-[320px] xl:w-[360px] 2xl:w-[380px] border-l border-slate-200 bg-white shrink-0 h-full overflow-hidden ${activePanel ? 'flex flex-col' : 'hidden'}`}>
+          <EditorWorkspaceTabs activePanel={activePanel} onChange={setActivePanel} />
+          <div className={activePanel === 'ai' ? 'min-h-0 flex-1' : 'hidden'}><EditorAiPanel resumeId={resumeId} /></div>
+          <div id="editor-section-ai" className={activePanel === 'polish' || activePanel === 'generate' ? 'min-h-0 flex-1 flex flex-col' : 'hidden'} />
+          {activePanel && activePanel !== 'ai' && activePanel !== 'polish' && activePanel !== 'generate' && <div className="min-h-0 flex-1 overflow-hidden">
             <RightSidebar
               activePanel={activePanel}
+              embedded
               onClose={() => setActivePanel(null)}
               onOpenPortfolio={() => setActivePanel('portfolio')}
               theme={theme}
@@ -1139,9 +1145,10 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
                 resumeId ?? await doSave({ revalidateDashboard: false }) ?? null
               )}
             />
-          </aside>
-        )}
+          </div>}
+        </aside>
       </main>
+      </AiSectionProvider>
       {/* 离开确认弹窗 */}
       <ConfirmDialog
         open={showLeaveDialog}
@@ -1193,7 +1200,6 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
         entry="pc_editor_first_export_reminder"
         variant="export-success"
       />
-      <AiChatBubble resumeId={resumeId} />
       {/* Forced login dialog for unauthenticated users */}
       <WxLoginDialog
         isOpen={needsForceLogin || isLoginOpen}

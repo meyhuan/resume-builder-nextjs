@@ -9,7 +9,7 @@ import {
   SheetTitle,
   SheetDescription,
   SheetFooter,
-} from '@/components/ui/sheet';
+} from '@/components/ai-section/section-ai-surface';
 import { Button } from '@/components/ui/button';
 import { Wand2, Loader2, AlertTriangle, RefreshCw, Sparkles } from 'lucide-react';
 import { useGenerateSection } from '@/lib/ai/use-generate-section';
@@ -164,7 +164,7 @@ export default function AiGenerateSheet(props: AiGenerateSheetProps): ReactEleme
   const displayHtml: string = hasResult ? editedResult : streamedHtml;
 
   return (
-    <Sheet open={open} onOpenChange={handleClose}>
+    <Sheet task="generate" open={open} onOpenChange={handleClose}>
       <SheetContent side="right" className="flex flex-col">
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">
@@ -416,7 +416,7 @@ export default function AiGenerateSheet(props: AiGenerateSheetProps): ReactEleme
             disabled={!displayHtml.trim() || isGenerating}
             className="h-8 text-xs rounded-lg bg-gradient-to-r from-violet-600 to-fuchsia-500 text-white hover:from-violet-700 hover:to-fuchsia-600 disabled:opacity-40"
           >
-            插入到简历
+            应用到这一段
           </Button>
         </SheetFooter>
       </SheetContent>

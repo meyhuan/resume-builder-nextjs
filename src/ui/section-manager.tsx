@@ -54,6 +54,7 @@ function getUniqueCustomSectionTitle(existingTitles: ReadonlySet<string>): strin
 
 /** Props accepted by the top-level panel. */
 export interface SectionManagerProps {
+  readonly embedded?: boolean
   readonly onClose: () => void
   readonly onOpenPortfolio: () => void
 }
@@ -131,7 +132,7 @@ export default function SectionManager(props: SectionManagerProps): ReactElement
   return (
     <div className="flex flex-col h-full bg-transparent">
       {/* Header */}
-      <div className="flex items-center justify-between px-5 pt-5 pb-3">
+      {!props.embedded && <div className="flex items-center justify-between px-5 pt-5 pb-3">
         <h2 className="text-lg font-bold text-slate-800">模块管理</h2>
         <button
           type="button"
@@ -140,10 +141,10 @@ export default function SectionManager(props: SectionManagerProps): ReactElement
         >
           <X size={18} />
         </button>
-      </div>
+      </div>}
 
       {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto px-4 pb-4 custom-scrollbar">
+      <div className={`min-h-0 flex-1 overflow-y-auto px-4 pb-4 custom-scrollbar ${props.embedded ? 'pt-4' : ''}`}>
         {/* Pinned: 个人信息 */}
         <SectionRow label="个人信息">
           <label className="flex items-center gap-1.5 text-xs font-medium text-slate-500 cursor-pointer select-none">

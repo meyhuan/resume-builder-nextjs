@@ -14,7 +14,7 @@ const MAX_MESSAGES = MAX_ROUNDS * 2;
  * POST /next-api/ai/chat
  *
  * Streaming AI chat with resume-aware tools.
- * Resume state is sent from the client; the editor auto-applies tool results.
+ * Resume state is sent from the client; the editor presents tool results for explicit review.
  * One user message consumes one ai:editor-assist quota.
  */
 export async function POST(request: NextRequest): Promise<Response> {

@@ -53,6 +53,7 @@ export function AiChatPanel(props: {
       resumeKey={resumeKey}
       sessionId={activeSessionId}
       initialMessages={activeSession?.messages}
+      initialProposalReviews={activeSession?.proposalReviews}
       sessions={sessions}
       onSaveSession={saveSession}
       onDeleteSession={deleteSession}
@@ -67,20 +68,24 @@ function AiChatSession(props: {
   readonly resumeKey: string;
   readonly sessionId: string;
   readonly initialMessages?: import('ai').UIMessage[];
+  readonly initialProposalReviews?: Record<string, 'applied' | 'dismissed' | 'history'>;
   readonly sessions: Array<{ id: string; title: string; updatedAt: number }>;
   readonly onSaveSession: (session: {
     id: string;
     title: string;
     updatedAt: number;
     messages: import('ai').UIMessage[];
+    proposalReviews?: Record<string, 'applied' | 'dismissed' | 'history'>;
   }) => Promise<void>;
   readonly onDeleteSession: (sessionId: string) => Promise<void>;
   readonly onSelectSession: (sessionId: string) => void;
   readonly onCreateSession: () => string;
   readonly hideTitle?: boolean;
 }): ReactElement {
-  const { messages, input, handleInputChange, handleSubmit, isLoading, error, sendMessage } = useEditorAIChat({
+  const { onSaveSession, sessionId } = props;
+  const { messages, reviewedKeys, reviewProposal, input, handleInputChange, handleSubmit, isLoading, error, sendMessage } = useEditorAIChat({
     initialMessages: props.initialMessages,
+    initialProposalReviews: props.initialProposalReviews,
     sessionId: props.sessionId,
   });
   const pendingAiMessage = useEditorUiStore((state) => state.pendingAiMessage);
@@ -106,21 +111,22 @@ function AiChatSession(props: {
     if (isLoading || messages.length === 0) return;
     const firstUser = messages.find((message) => message.role === 'user');
     const titlePart = firstUser?.parts?.find((part) => part.type === 'text');
-    void props.onSaveSession({
-      id: props.sessionId,
+    void onSaveSession({
+      id: sessionId,
       title: (titlePart && 'text' in titlePart ? titlePart.text : '新对话').slice(0, 40),
       updatedAt: Date.now(),
       messages,
+      proposalReviews: reviewedKeys,
     });
-  }, [isLoading, messages, props.onSaveSession, props.sessionId]);
+  }, [isLoading, messages, reviewedKeys, onSaveSession, sessionId]);
 
   useEffect(() => {
-    if (!pendingAiMessage) return;
+    if (!pendingAiMessage || isLoading) return;
     const text = pendingAiMessage;
     setPendingAiMessage(null);
     void sendMessage({ text });
     isAtBottomRef.current = true;
-  }, [pendingAiMessage, sendMessage, setPendingAiMessage]);
+  }, [pendingAiMessage, isLoading, sendMessage, setPendingAiMessage]);
 
   const submitAndScroll = (event: FormEvent<HTMLFormElement>): void => {
     handleSubmit(event);
@@ -160,7 +166,7 @@ function AiChatSession(props: {
           ) : null}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button type="button" variant="ghost" size="icon" className="h-7 w-7" title="历史对话">
+              <Button type="button" variant="ghost" size="icon" className="h-7 w-7" title="历史对话" disabled={isLoading}>
                 <Clock className="h-3.5 w-3.5" />
               </Button>
             </DropdownMenuTrigger>
@@ -198,6 +204,7 @@ function AiChatSession(props: {
             size="icon"
             className="h-7 w-7"
             title="新对话"
+            disabled={isLoading}
             onClick={() => props.onCreateSession()}
           >
             <Plus className="h-3.5 w-3.5" />
@@ -213,7 +220,7 @@ function AiChatSession(props: {
         {empty && (
           <div className="rounded-2xl border border-violet-100 bg-violet-50/60 px-4 py-5">
             <p className="text-xs leading-relaxed text-slate-500">
-              我可以分析岗位匹配度、改写经历、新增模块、补充技能或翻译简历。涉及内容修改时会直接写入简历。
+              我可以分析岗位匹配度、改写经历、新增模块、补充技能或翻译简历。修改建议会先展示，确认后再应用到简历。
             </p>
             <div className="mt-3 space-y-2">
               {QUICK_PROMPTS.map((prompt) => (
@@ -230,7 +237,7 @@ function AiChatSession(props: {
           </div>
         )}
         {messages.map((message) => (
-          <AiMessage key={message.id} message={message} />
+          <AiMessage key={message.id} message={message} reviewedKeys={reviewedKeys} onReview={reviewProposal} />
         ))}
         {isLoading && (
           <div className="flex items-center gap-2 text-xs text-slate-400">
@@ -246,6 +253,7 @@ function AiChatSession(props: {
           <textarea
             value={input}
             onChange={handleInputChange}
+            aria-label="向 AI 描述修改需求"
             rows={2}
             placeholder="描述目标岗位，或让我改某一段经历…"
             className="w-full resize-none bg-transparent px-3 pt-3 pb-1 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none"
@@ -260,6 +268,7 @@ function AiChatSession(props: {
             <EditorAssistQuotaHint className="min-w-0 flex-1 text-left" />
             <Button
               type="submit"
+              aria-label="发送消息"
               size="sm"
               disabled={isLoading || !input.trim()}
               className="h-8 shrink-0 rounded-full bg-violet-600 px-3 text-white"

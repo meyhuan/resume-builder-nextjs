@@ -21,6 +21,7 @@ import Image from 'next/image'
 import PortfolioManager from '@/components/portfolio/portfolio-manager'
 
 export interface RightSidebarProps {
+  readonly embedded?: boolean
   readonly activePanel: PanelId
   readonly onClose: () => void
   readonly onOpenPortfolio?: () => void
@@ -39,7 +40,8 @@ export interface RightSidebarProps {
 /** Map panel IDs to display titles. */
 const PANEL_TITLES: Record<PanelId, string> = {
   sections: '模块管理',
-  layout: '排版美化',
+  layout: '样式设置',
+  templates: '模板',
   portfolio: '图片作品集',
 }
 
@@ -48,9 +50,9 @@ export default function RightSidebar(props: RightSidebarProps): ReactElement {
   const portfolio = useAppStore((state) => state.resume.portfolio)
 
   return (
-    <div className="flex flex-col h-full bg-transparent">
+    <div className="flex min-h-0 flex-col h-full bg-transparent">
       {/* Panel header */}
-      {activePanel !== 'sections' && (
+      {!props.embedded && activePanel !== 'sections' && (
         <div className="flex items-center justify-between px-5 pt-5 pb-3 shrink-0">
           <h2 className="text-lg font-bold text-slate-800">{PANEL_TITLES[activePanel]}</h2>
           <button
@@ -68,11 +70,13 @@ export default function RightSidebar(props: RightSidebarProps): ReactElement {
       {activePanel === 'sections' && (
         <SectionManager
           onClose={onClose}
+          embedded={props.embedded}
           onOpenPortfolio={props.onOpenPortfolio ?? (() => undefined)}
         />
       )}
-      {activePanel === 'layout' && (
+      {(activePanel === 'layout' || activePanel === 'templates') && (
         <LayoutPanel
+          view={props.embedded ? (activePanel === 'templates' ? 'templates' : 'settings') : undefined}
           theme={theme}
           tpl={tpl}
           templates={templates}
@@ -107,6 +111,7 @@ export default function RightSidebar(props: RightSidebarProps): ReactElement {
 
 /** 排版美化 panel — contains template grid + theme settings as sub-tabs. */
 interface LayoutPanelProps {
+  readonly view?: 'templates' | 'settings'
   readonly theme: ThemeTokens
   readonly tpl: string
   readonly templates: TemplateConfig[]
@@ -133,27 +138,27 @@ function LayoutPanel(props: LayoutPanelProps): ReactElement {
   }
 
   return (
-    <Tabs defaultValue="templates" className="flex-1 flex flex-col overflow-hidden">
-      <div className="px-5 shrink-0">
-        <TabsList className="w-full h-11 rounded-2xl p-1 gap-1 border border-slate-200 bg-slate-50 shadow-sm">
+    <Tabs value={props.view} defaultValue="templates" className="flex-1 flex flex-col overflow-hidden">
+      {!props.view && <div className="px-4 py-3 shrink-0">
+        <TabsList className="w-full h-9 rounded-lg p-0.5 gap-1 bg-slate-100/80">
           <TabsTrigger
             value="templates"
-            className="flex-1 rounded-xl text-sm font-semibold
+            className="flex-1 rounded-md text-xs font-medium
               data-[state=active]:bg-white data-[state=active]:text-slate-800 data-[state=active]:shadow-sm
               text-slate-500 hover:text-slate-700 transition-all"
           >
-            切换模板
+            模板
           </TabsTrigger>
           <TabsTrigger
             value="settings"
-            className="flex-1 rounded-xl text-sm font-semibold
+            className="flex-1 rounded-md text-xs font-medium
               data-[state=active]:bg-white data-[state=active]:text-slate-800 data-[state=active]:shadow-sm
               text-slate-500 hover:text-slate-700 transition-all"
           >
-            排版设置
+            样式设置
           </TabsTrigger>
         </TabsList>
-      </div>
+      </div>}
 
       {/* Templates sub-tab */}
       <TabsContent value="templates" className="flex-1 flex flex-col m-0 p-0 overflow-hidden">

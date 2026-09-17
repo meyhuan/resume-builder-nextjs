@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import type { PanelId } from '@/ui/editor-toolbar';
 
 export type EditorModal =
   | 'jd-analysis'
@@ -10,6 +11,9 @@ export type EditorModal =
   | null;
 
 interface EditorUiStore {
+  activePanel: PanelId | 'ai' | 'polish' | 'generate' | null;
+  setActivePanel: (panel: PanelId | 'ai' | 'polish' | 'generate' | null) => void;
+  sectionAiTarget: string;
   activeModal: EditorModal;
   showAiChat: boolean;
   pendingAiMessage: string | null;
@@ -25,6 +29,9 @@ interface EditorUiStore {
 }
 
 export const useEditorUiStore = create<EditorUiStore>((set) => ({
+  activePanel: null,
+  setActivePanel: (panel) => set({ activePanel: panel, showAiChat: panel === 'ai' }),
+  sectionAiTarget: '',
   activeModal: null,
   showAiChat: false,
   pendingAiMessage: null,
@@ -32,8 +39,8 @@ export const useEditorUiStore = create<EditorUiStore>((set) => ({
 
   openModal: (modal) => set({ activeModal: modal }),
   closeModal: () => set({ activeModal: null }),
-  toggleAiChat: () => set((state) => ({ showAiChat: !state.showAiChat })),
-  setShowAiChat: (show) => set({ showAiChat: show }),
+  toggleAiChat: () => set((state) => ({ showAiChat: !state.showAiChat, activePanel: state.showAiChat ? null : 'ai' })),
+  setShowAiChat: (show) => set((state) => ({ showAiChat: show, activePanel: show ? 'ai' : state.activePanel === 'ai' ? null : state.activePanel })),
   setPendingAiMessage: (message) => set({ pendingAiMessage: message }),
   clearPendingJobDescription: () => set({ pendingJobDescription: null }),
   openInterviewPrep: (jobDescription) => {
@@ -45,7 +52,7 @@ export const useEditorUiStore = create<EditorUiStore>((set) => ({
   handoffToChat: (message) => {
     set({ activeModal: null });
     window.setTimeout(() => {
-      set({ pendingAiMessage: message, showAiChat: true });
+      set({ pendingAiMessage: message, showAiChat: true, activePanel: 'ai' });
     }, 280);
   },
 }));

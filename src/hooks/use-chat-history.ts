@@ -11,6 +11,7 @@ export interface ChatSession {
   title: string;
   updatedAt: number;
   messages: UIMessage[];
+  proposalReviews?: Record<string, 'applied' | 'dismissed' | 'history'>;
 }
 
 function isSession(value: unknown): value is ChatSession {

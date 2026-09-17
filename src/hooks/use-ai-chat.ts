@@ -23,6 +23,7 @@ import {
 interface UseEditorAIChatOptions {
   initialMessages?: UIMessage[];
   sessionId?: string;
+  initialProposalReviews?: Record<string, 'applied' | 'dismissed' | 'history'>;
 }
 
 /** Survives React Strict Mode remounts so addSection / suggestSkills are not applied twice. */
@@ -45,11 +46,14 @@ function canUseEditorAssist(): boolean {
   return false;
 }
 
-export function useEditorAIChat({ initialMessages, sessionId }: UseEditorAIChatOptions) {
+export function useEditorAIChat({ initialMessages, sessionId, initialProposalReviews }: UseEditorAIChatOptions) {
   const [input, setInput] = useState('');
   const sessionKey = sessionId || 'local';
   const appliedKeysRef = useRef(getAppliedKeys(sessionKey));
-  const pendingUndoToastRef = useRef(false);
+  const [reviewedKeys, setReviewedKeys] = useState<Record<string, 'applied' | 'dismissed' | 'history'>>(() => {
+    if (initialProposalReviews) return initialProposalReviews;
+    return Object.fromEntries(extractProposalsFromMessages(initialMessages ?? []).map((item) => [item.key, 'history' as const]));
+  });
   const prevStatusRef = useRef<string>('ready');
   const startedRef = useRef(false);
   const [quotaBlocked, setQuotaBlocked] = useState(false);
@@ -95,23 +99,28 @@ export function useEditorAIChat({ initialMessages, sessionId }: UseEditorAIChatO
     const keys = appliedKeysRef.current;
     if (initialMessages) {
       for (const item of extractProposalsFromMessages(initialMessages)) {
-        keys.add(item.key);
+        const review = initialProposalReviews === undefined ? 'history' : initialProposalReviews[item.key];
+        if (review) {
+          keys.add(item.key);
+        }
       }
       setMessages(initialMessages);
     } else {
       setMessages([]);
     }
-  }, [initialMessages, sessionKey, setMessages]);
+  }, [initialMessages, initialProposalReviews, sessionKey, setMessages]);
 
-  useEffect(() => {
-    const keys = appliedKeysRef.current;
-    const fresh = extractProposalsFromMessages(messages).filter((item) => !keys.has(item.key));
-    if (fresh.length === 0) return;
-    for (const item of fresh) {
-      applyChangeProposal(item.proposal);
-      keys.add(item.key);
+  const reviewProposal = useCallback((key: string, apply: boolean): void => {
+    if (appliedKeysRef.current.has(key)) return;
+    const item = extractProposalsFromMessages(messages).find((entry) => entry.key === key);
+    if (!item) return;
+    if (apply && !applyChangeProposal(item.proposal)) {
+      toast.error('对应内容已不存在，请重新生成建议');
+      return;
     }
-    pendingUndoToastRef.current = true;
+    appliedKeysRef.current.add(key);
+    setReviewedKeys((previous) => ({ ...previous, [key]: apply ? 'applied' : 'dismissed' }));
+    if (apply) toast.success('已应用这一处修改，可用顶栏撤销还原');
   }, [messages]);
 
   const isLoading = status === 'streaming' || status === 'submitted';
@@ -129,10 +138,6 @@ export function useEditorAIChat({ initialMessages, sessionId }: UseEditorAIChatO
         trackAssistSuccess('chat');
         refreshEditorAssistQuota();
       }
-    }
-    if (pendingUndoToastRef.current) {
-      pendingUndoToastRef.current = false;
-      toast.success('已写入简历，可用顶栏撤销还原');
     }
   }, [status, error, quotaBlocked]);
 
@@ -166,6 +171,8 @@ export function useEditorAIChat({ initialMessages, sessionId }: UseEditorAIChatO
 
   return {
     messages,
+    reviewedKeys,
+    reviewProposal,
     input,
     handleInputChange,
     handleSubmit,
