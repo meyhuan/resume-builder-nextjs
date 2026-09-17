@@ -14,3 +14,14 @@ test('rejects local endpoints and secrets in compiled artifacts', () => {
   verifyBundle('const base="https://aijianli.cn"', 'background.js');
   for (const value of ['http://localhost:3000','http://127.0.0.1','postgresql://user:secret@db','-----BEGIN PRIVATE KEY-----']) assert.throws(() => verifyBundle(value, 'background.js'));
 });
+
+test('store identity is separate from manual identity and updates', () => {
+  const store = { ...manifest };
+  delete store.key;
+  assert.equal(verifyManifest(store, identity, '0.5.0', 'store'), null);
+  assert.throws(() => verifyManifest(store, identity, '0.5.0'));
+  assert.throws(() => verifyManifest(manifest, identity, '0.5.0', 'store'));
+  assert.throws(() => verifyManifest({ ...store, update_url: 'https://example.com/update' }, identity, '0.5.0', 'store'));
+  assert.throws(() => verifyManifest(store, identity, '0.5.0', 'unknown'));
+  assert.throws(() => verifyManifest({ ...store, host_permissions: ['http://localhost:3000/*'] }, identity, '0.5.0', 'store'));
+});

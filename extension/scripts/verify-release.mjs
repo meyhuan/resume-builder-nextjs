@@ -4,13 +4,20 @@ import { readFile, readdir } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-export function verifyManifest(manifest, identity, version) {
+export function verifyManifest(manifest, identity, version, distribution = 'manual') {
+  assert.ok(['manual', 'store'].includes(distribution), '未知分发渠道');
   assert.equal(manifest.version, version, '发布版本与package.json不一致');
   assert.equal(manifest.manifest_version, 3);
-  assert.equal(manifest.key, identity.publicKey, '缺少固定的发布ID公钥');
-  const id = [...createHash('sha256').update(Buffer.from(manifest.key, 'base64')).digest('hex').slice(0, 32)]
-    .map(char => String.fromCharCode(97 + parseInt(char, 16))).join('');
-  assert.equal(id, identity.extensionId, '发布公钥和ID不一致');
+  let id = null;
+  if (distribution === 'manual') {
+    assert.equal(manifest.key, identity.publicKey, '缺少固定的发布ID公钥');
+    id = [...createHash('sha256').update(Buffer.from(manifest.key, 'base64')).digest('hex').slice(0, 32)]
+      .map(char => String.fromCharCode(97 + parseInt(char, 16))).join('');
+    assert.equal(id, identity.extensionId, '发布公钥和ID不一致');
+  } else {
+    assert.ok(!('key' in manifest), '商店上传包不得带入手动安装版公钥');
+    assert.ok(!('update_url' in manifest), '商店自行管理更新地址');
+  }
   assert.deepEqual(manifest.host_permissions, ['https://aijianli.cn/*']);
   assert.equal(manifest.minimum_chrome_version, '116');
   assert.ok(manifest.side_panel?.default_path);
@@ -25,13 +32,13 @@ export function verifyBundle(text, name) {
   if (name === 'background.js') assert.ok(text.includes('https://aijianli.cn'), '后台没有生产API地址');
 }
 
-export async function verifyRelease(root) {
+export async function verifyRelease(root, distribution = 'manual') {
   const extensionRoot = resolve(fileURLToPath(new URL('..', import.meta.url)));
   root ||= join(extensionRoot, '.output/release/chrome-mv3');
   const manifest = JSON.parse(await readFile(join(root, 'manifest.json'), 'utf8'));
   const identity = JSON.parse(await readFile(join(extensionRoot, 'release-identity.json'), 'utf8'));
   const { version } = JSON.parse(await readFile(join(extensionRoot, 'package.json'), 'utf8'));
-  const id = verifyManifest(manifest, identity, version);
+  const id = verifyManifest(manifest, identity, version, distribution);
   const files = [];
   async function walk(dir) {
     for (const entry of await readdir(dir, { withFileTypes: true })) {

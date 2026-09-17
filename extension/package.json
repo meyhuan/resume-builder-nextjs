@@ -8,8 +8,10 @@
     "build": "wxt build",
     "zip": "wxt zip",
     "release": "node scripts/release.mjs",
+    "release:chrome": "node scripts/release-store.mjs chrome",
+    "release:edge": "node scripts/release-store.mjs edge",
     "verify:release": "node scripts/verify-release.mjs",
-    "test:release": "node --test scripts/verify-release.node-test.mjs",
+    "test:release": "node --test scripts/verify-release.node-test.mjs scripts/release-store.node-test.mjs",
     "test": "vitest run",
     "typecheck": "wxt prepare && tsc --noEmit",
     "postinstall": "wxt prepare"

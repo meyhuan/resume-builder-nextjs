@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:; form-action 'none'; base-uri 'none'">
+  <link rel="icon" href="data:,">
+  <title>功能测试 · 网申表单演示</title>
+  <style>
+    *{box-sizing:border-box}body{margin:0;background:#f8fafc;color:#0f172a;font:16px/1.7 system-ui,"Microsoft YaHei",sans-serif}main{max-width:900px;margin:32px auto;padding:0 24px}h1{font-size:28px;margin:4px 0 12px}h2{font-size:19px;margin:0 0 18px}.badge{color:#7c3aed;font-weight:600}.notice{padding:16px 20px;background:#f5f3ff;border:1px solid #ddd6fe;border-radius:12px;color:#475569}section{margin:24px 0;padding:24px;background:white;border:1px solid #e2e8f0;border-radius:12px}.fields{display:grid;grid-template-columns:1fr 1fr;gap:18px 24px}label{display:block}input,select,textarea{display:block;width:100%;min-height:44px;margin-top:6px;padding:9px 12px;border:1px solid #cbd5e1;border-radius:8px;background:white;color:#0f172a;font:inherit}input:focus,select:focus,textarea:focus{outline:2px solid #7c3aed;outline-offset:2px}.wide{grid-column:1/-1}a{color:#7c3aed}small{color:#64748b}footer{padding-bottom:24px}@media(max-width:600px){.fields{grid-template-columns:1fr}main{padding:0 16px}section{padding:18px}}
+  </style>
+</head>
+<body>
+<main>
+  <span class="badge">智简网申助手 · 通用控件测试</span>
+  <h1>功能测试：填写后请核对</h1>
+  <p class="notice">仅使用虚构资料。本页面不提交、不自动保存输入，刷新即可清空。正常使用插件仍需登录并授权，填写可能在智简简历创建“待投递”测试记录及填写效果统计。本页面不是招聘申请。</p>
+  <section aria-labelledby="basic-title">
+    <h2 id="basic-title">申请资料</h2>
+    <div class="fields">
+      <label>姓名<input name="name" autocomplete="off" value="已有测试姓名"></label>
+      <label>电子邮箱<input name="email" type="email" autocomplete="off" placeholder="请填写电子邮箱"></label>
+      <label>手机号码<input name="phone" type="tel" autocomplete="off" placeholder="请填写手机号码"></label>
+      <label>性别<select name="gender"><option value="">请选择</option><option>男</option><option>女</option></select></label>
+      <label>毕业院校<input name="school" autocomplete="off"></label>
+      <label>专业<input name="major" autocomplete="off"></label>
+      <label class="wide">自我评价<textarea name="selfEvaluation" rows="3"></textarea></label>
+    </div>
+  </section>
+  <footer><a href="/extension-review.html">重新开始（丢弃本页输入）</a><p><small>预填姓名用于验证“保留已有值”。这里没有提交按钮；不要将填写数量视为投递成功或对所有网站的兼容性保证。</small></p></footer>
+</main>
+</body>
+</html>

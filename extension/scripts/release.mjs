@@ -10,7 +10,7 @@ const root = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const result = spawnSync(process.execPath, [join(root, 'node_modules/wxt/bin/wxt.mjs'), 'zip'], {
   cwd: root,
   stdio: 'inherit',
-  env: { ...process.env, WXT_RELEASE_BUILD: '1', WXT_API_BASE_URL: 'https://aijianli.cn' },
+  env: { ...process.env, WXT_STORE_TARGET: '', WXT_RELEASE_BUILD: '1', WXT_API_BASE_URL: 'https://aijianli.cn' },
 });
 if (result.error || result.status !== 0) throw new Error('发布构建失败', { cause: result.error });
 const verification = await verifyRelease();
