@@ -346,6 +346,24 @@ export default function ElegantTemplate(props: ElegantTemplateProps): ReactEleme
         data-template-padding-probe="true"
         style={{ padding: bodyPadding }}
       >
+        {isJobIntentionVisible ? (
+          <div style={{ marginBottom: `${24 * theme.spacingScale}px` }}>
+            <JobIntentionSection
+              jobIntention={resume.jobIntention ?? null}
+              themeColor={accentColor}
+              styles={ELEGANT_TEMPLATE_STYLES.jobIntention}
+              slots={{
+                field: (label, value) => (
+                  <span className="block min-w-0 break-words text-gray-800">
+                    <span className="text-gray-500">{label}: </span>
+                    {value}
+                  </span>
+                ),
+              }}
+            />
+          </div>
+        ) : null}
+
         <DragDropProvider
           resume={resume}
           theme={theme}
@@ -378,7 +396,7 @@ export default function ElegantTemplate(props: ElegantTemplateProps): ReactEleme
             )
           }}
         >
-          <main className="order-2 relative">
+          <main className="relative">
             {resume.sections.map((section, sectionIndex) => (
               <div key={section.id} style={{ marginBottom: sectionIndex < resume.sections.length - 1 ? `${24 * theme.spacingScale}px` : '0' }}>
                 <SortableSectionWrapper sectionId={section.id}>
@@ -408,24 +426,6 @@ export default function ElegantTemplate(props: ElegantTemplateProps): ReactEleme
             ))}
           </main>
         </DragDropProvider>
-
-        {isJobIntentionVisible ? (
-          <div className="order-1" style={{ marginBottom: `${24 * theme.spacingScale}px` }}>
-            <JobIntentionSection
-              jobIntention={resume.jobIntention ?? null}
-              themeColor={accentColor}
-              styles={ELEGANT_TEMPLATE_STYLES.jobIntention}
-              slots={{
-                field: (label, value) => (
-                  <span className="block min-w-0 break-words text-gray-800">
-                    <span className="text-gray-500">{label}: </span>
-                    {value}
-                  </span>
-                ),
-              }}
-            />
-          </div>
-        ) : null}
       </div>
     </div>
   )
