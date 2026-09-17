@@ -29,7 +29,7 @@ try {
       await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))))
       const metrics = await page.evaluate(() => {
         const root = document.querySelector('.resume-container')
-        const sections = [...root.querySelectorAll('section')].filter((section) => section.querySelector('h2'))
+        const sections = [...root.querySelectorAll('section')].filter((section) => section.querySelector('h2') && section.querySelector('[data-resume-block]'))
         const gaps = sections.slice(1).map((section, index) => section.getBoundingClientRect().top - sections[index].getBoundingClientRect().bottom)
         return {
           gaps,
