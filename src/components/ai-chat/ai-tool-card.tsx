@@ -1,7 +1,7 @@
 'use client';
 
 import type { ReactElement } from 'react';
-import { Check, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import {
   collectProposalsFromOutput,
   describeProposal,
@@ -18,6 +18,9 @@ function getToolName(part: { type?: string }): string {
 
 export function AiToolCard(props: {
   readonly part: Record<string, unknown>;
+  readonly proposalKeyPrefix: string;
+  readonly reviewedKeys: Record<string, string>;
+  readonly onReview: (key: string, apply: boolean) => void;
 }): ReactElement {
   const toolName = getToolName(props.part);
   const state = typeof props.part.state === 'string' ? props.part.state : '';
@@ -44,18 +47,28 @@ export function AiToolCard(props: {
   const proposals = collectProposalsFromOutput(output);
   if (proposals.length > 0) {
     return (
-      <div className="space-y-1.5 rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2">
-        <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-800">
-          <Check className="h-3.5 w-3.5" />
-          已写入简历 · {proposals.length} 处改动
-        </div>
-        {proposals.length <= 4 && (
-          <ul className="space-y-0.5 text-[11px] text-emerald-700">
-            {proposals.map((proposal, index) => (
-              <li key={`${describeProposal(proposal)}-${index}`}>{describeProposal(proposal)}</li>
-            ))}
-          </ul>
-        )}
+      <div className="space-y-3">
+        {proposals.map((proposal, index) => {
+          const key = `${props.proposalKeyPrefix}-${index}`;
+          const status = props.reviewedKeys[key];
+          const content = proposal.action === 'updateBlock' ? proposal.html : proposal.action === 'addSection' ? proposal.contentHtml || '' : proposal.skills.join('、');
+          // Render as text: AI HTML must never execute inside the chat interface.
+          const preview = content.replace(/<\/(?:p|li|div)>/gi, '\n').replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&');
+          return (
+            <div key={key} className="rounded-xl border border-violet-200 bg-white p-3 space-y-2 text-xs">
+              <p className="font-semibold text-slate-800">{describeProposal(proposal)}</p>
+              {proposal.action === 'updateBlock' && proposal.reason && <p className="text-slate-500">{proposal.reason}</p>}
+              <p className="whitespace-pre-wrap break-words leading-relaxed text-slate-700">{preview || '新增空白模块'}</p>
+              {status ? <p role="status" className="text-slate-500">{status === 'applied' ? '已应用，可用顶栏撤销' : status === 'dismissed' ? '已忽略' : '历史建议，仅供查看；如需修改请重新生成'}</p> : <>
+                <p className="text-slate-500">请核对经历、技能和数字是否真实。</p>
+                <div className="flex flex-wrap gap-2">
+                  <button type="button" onClick={() => props.onReview(key, true)} className="rounded-lg bg-violet-600 px-3 py-2 text-white hover:bg-violet-700">应用这一处</button>
+                  <button type="button" onClick={() => props.onReview(key, false)} className="rounded-lg border border-slate-200 px-3 py-2 text-slate-600 hover:bg-slate-50">忽略</button>
+                </div>
+              </>}
+            </div>
+          );
+        })}
       </div>
     );
   }

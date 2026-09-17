@@ -1,5 +1,7 @@
 'use client'
 
+import { usePathname } from 'next/navigation'
+import { useEditorUiStore } from '@/state/editor-ui-store'
 import { useRef, useState, type ChangeEvent, type ReactElement } from 'react'
 import { ImagePlus, MessageCircle, X } from 'lucide-react'
 import { toast } from 'sonner'
@@ -13,6 +15,9 @@ const CONTACT_MAX_CHARS = 120
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024
 
 export function FeedbackWidget(): ReactElement {
+  const pathname = usePathname()
+  const activePanel = useEditorUiStore((state) => state.activePanel)
+  const besideEditor = pathname?.startsWith('/editor') && activePanel !== null
   const [isOpen, setIsOpen] = useState<boolean>(false)
   const [content, setContent] = useState<string>('')
   const [contact, setContact] = useState<string>('')
@@ -103,7 +108,7 @@ export function FeedbackWidget(): ReactElement {
       <button
         type="button"
         onClick={(): void => setIsOpen(true)}
-        className="fixed bottom-6 right-6 z-40 hidden items-center gap-2 rounded-full bg-slate-900 px-4 py-3 text-sm font-medium text-white shadow-lg shadow-slate-900/20 transition hover:-translate-y-0.5 hover:bg-slate-800 lg:inline-flex"
+        className={`fixed bottom-6 z-40 hidden items-center gap-2 rounded-full bg-slate-900 px-4 py-3 text-sm font-medium text-white shadow-lg shadow-slate-900/20 transition hover:-translate-y-0.5 hover:bg-slate-800 ${besideEditor ? 'left-6 xl:inline-flex' : 'right-6 lg:inline-flex'}`}
         aria-label="打开反馈"
       >
         <MessageCircle className="h-4 w-4" />

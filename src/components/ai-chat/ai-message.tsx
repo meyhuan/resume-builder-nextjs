@@ -12,7 +12,7 @@ function isToolPart(part: { type?: string }): boolean {
   return typeof part.type === 'string' && part.type.startsWith('tool-');
 }
 
-export function AiMessage(props: { readonly message: UIMessage }): ReactElement {
+export function AiMessage(props: { readonly message: UIMessage; readonly reviewedKeys: Record<string, string>; readonly onReview: (key: string, apply: boolean) => void }): ReactElement {
   const isUser = props.message.role === 'user';
 
   return (
@@ -27,6 +27,9 @@ export function AiMessage(props: { readonly message: UIMessage }): ReactElement 
               <AiToolCard
                 key={`${props.message.id}-tool-${index}`}
                 part={part as Record<string, unknown>}
+                proposalKeyPrefix={`${props.message.id}-${index}`}
+                reviewedKeys={props.reviewedKeys}
+                onReview={props.onReview}
               />
             );
           }

@@ -11,6 +11,7 @@ import { LayoutList } from 'lucide-react'
 export type PanelId =
   | 'sections'
   | 'layout'
+  | 'templates'
   | 'portfolio'
 
 interface ToolbarAction {
