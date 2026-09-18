@@ -400,9 +400,9 @@ function LayoutPanel({ theme, onUpdate }: { readonly theme: ThemeTokens; readonl
 
       <Row label={`模块间距 · ${theme.spacingScale.toFixed(2)}×`}>
         <Slider
-          min={0.6}
-          max={1.6}
-          step={0.05}
+          min={0}
+          max={3}
+          step={0.1}
           value={[theme.spacingScale]}
           onValueChange={([v]): void => onUpdate({ spacingScale: Number(v.toFixed(2)) })}
         />

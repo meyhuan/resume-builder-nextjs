@@ -145,7 +145,10 @@ cleanup_old_releases() {
   local current_target
   current_target="$(readlink -f "$CURRENT_LINK" 2>/dev/null || true)"
 
-  find "$RELEASE_ROOT" -mindepth 1 -maxdepth 1 -type d ! -name ".incoming" -printf "%T@ %p\n" |
+  find "$RELEASE_ROOT" -mindepth 1 -maxdepth 1 -type d \
+    ! -name ".incoming" \
+    ! -name ".env-backups" \
+    -printf "%T@ %p\n" |
     sort -rn |
     awk -v keep="$KEEP_RELEASES" -v current="$current_target" '
       $2 == current { next }
