@@ -1,3 +1,4 @@
+import type { AssistantTask } from '@/lib/ai/unified/types';
 import { create } from 'zustand';
 import type { PanelId } from '@/ui/editor-toolbar';
 
@@ -16,6 +17,9 @@ interface EditorUiStore {
   sectionAiTarget: string;
   activeModal: EditorModal;
   showAiChat: boolean;
+  assistantResumeId: string | null;
+  assistantTask: AssistantTask | null;
+  assistantBusy: boolean;
   pendingAiMessage: string | null;
   pendingJobDescription: string | null;
   openModal: (modal: Exclude<EditorModal, null>) => void;
@@ -34,6 +38,9 @@ export const useEditorUiStore = create<EditorUiStore>((set) => ({
   sectionAiTarget: '',
   activeModal: null,
   showAiChat: false,
+  assistantResumeId: null,
+  assistantTask: null,
+  assistantBusy: false,
   pendingAiMessage: null,
   pendingJobDescription: null,
 

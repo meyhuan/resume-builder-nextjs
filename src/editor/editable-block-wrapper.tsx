@@ -102,6 +102,7 @@ export default function EditableBlockWrapper(props: EditableBlockWrapperProps): 
     if (!hasContent && emptyMode !== 'placeholder') return <></>
     return (
       <div
+      data-ai-block-id={props.blockId}
         className={`${displayStyles} ${className || ''}`.trim()}
         dangerouslySetInnerHTML={{ __html: hasContent ? content : '' }}
       />
@@ -127,6 +128,7 @@ export default function EditableBlockWrapper(props: EditableBlockWrapperProps): 
   if (!hasContent && emptyMode === 'hover') {
     return (
       <div
+      data-ai-block-id={props.blockId}
         className={`${displayStyles} ${className || ''} hidden cursor-text rounded border border-dashed border-slate-300 px-2 py-1 text-slate-400 transition-colors hover:bg-gray-50 hover:text-slate-700 group-hover/block:block group-hover/section:block group-hover/section-edit:block print:hidden`.trim()}
         onClick={(): void => setIsEditing(true)}
       >
@@ -137,6 +139,7 @@ export default function EditableBlockWrapper(props: EditableBlockWrapperProps): 
 
   return (
     <div
+      data-ai-block-id={props.blockId}
       className={`${displayStyles} ${className || ''}`.trim()}
       onClick={(): void => setIsEditing(true)}
       dangerouslySetInnerHTML={{ __html: content }}

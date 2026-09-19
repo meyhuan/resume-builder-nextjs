@@ -85,6 +85,9 @@ const HISTORY_DEBOUNCE_MS = 500
 
 /** Timestamp of last history push (module-level for debounce). */
 let lastPushTs = 0
+/** AI changes must never merge with adjacent typing in undo history. */
+export function separateAiHistory(): void { lastPushTs = 0 }
+
 
 /**
  * Push the current resume onto the undo stack with debounce.

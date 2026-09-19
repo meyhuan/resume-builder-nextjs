@@ -18,6 +18,11 @@ function applyBlockHtmlChange(blockId: string, html: string): boolean {
           applied = true;
           return;
         }
+        if (block.type === 'list') {
+          block.items = [{ id: crypto.randomUUID(), html }];
+          applied = true;
+          return;
+        }
         if (block.type === 'education') {
           block.courseHtml = html;
           applied = true;
@@ -57,7 +62,9 @@ function mapSectionTitle(type: string, fallback: string): string {
 }
 
 function appendSkillsHtml(existingHtml: string, skills: string[], category: string): string {
-  const items = skills.map((skill) => `<li>${skill}</li>`).join('');
+  const escape = (value: string) => value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  const items = skills.map((skill) => `<li>${escape(skill)}</li>`).join('');
+  category = escape(category);
   const group = category ? `<p><strong>${category}</strong></p><ul>${items}</ul>` : `<ul>${items}</ul>`;
   return `${existingHtml || ''}${group}`;
 }

@@ -216,3 +216,27 @@ model UserQuota {
   quotas    Json     @default("{}") // { "ai:generate-resume": { used: 5, date: "2025-01-15" }, ... }
   updatedAt DateTime @updatedAt
 }
+
+// Server-owned assistant task state; requests are idempotent and user-scoped.
+model AssistantTask {
+  id String @id
+  owner String
+  context Json
+  turns Json @default("[]")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+  requests AssistantRequest[]
+  @@index([owner, updatedAt])
+}
+model AssistantRequest {
+  id String @id
+  taskId String
+  task AssistantTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  digest String
+  status String @default("running")
+  charged Boolean @default(false)
+  feature String?
+  result Json?
+  createdAt DateTime @default(now())
+  @@index([taskId])
+}

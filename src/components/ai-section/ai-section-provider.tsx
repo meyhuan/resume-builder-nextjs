@@ -9,6 +9,8 @@ import { useAppStore } from '@/state/store';
 import type { ResumeBlock } from '@/entities/blocks/resume-block';
 import { extractBlockPrefill } from '@/components/ai-section/block-module-utils';
 import { track } from '@/lib/analytics';
+import { unifiedEnabled, type AssistantTask } from '@/lib/ai/unified/types';
+import { toast } from 'sonner';
 import { toResumeContext } from '@/lib/ai/resume-context';
 import { useEditorUiStore } from '@/state/editor-ui-store';
 
@@ -69,8 +71,26 @@ export default function AiSectionProvider(props: AiSectionProviderProps): ReactE
   const [generateModule, setGenerateModule] = useState<SectionModuleType>('experience');
   const [generatePrefill, setGeneratePrefill] = useState<Record<string, string>>({});
 
+  const openUnified = useCallback((feature: 'polish' | 'generate', blockId: string): boolean => {
+    if (!unifiedEnabled || !window.matchMedia('(min-width: 768px)').matches) return false;
+    if (useEditorUiStore.getState().assistantBusy) {
+      toast.info('请先停止当前任务，再选择其它经历');
+      return true;
+    }
+    const resume = useAppStore.getState().resume;
+    const context = toResumeContext(resume);
+    const section = context.sections.find(s => s.blocks.some(b => b.blockId === blockId));
+    const label = section?.blocks.find(b => b.blockId === blockId)?.label;
+    const task: AssistantTask = { id: crypto.randomUUID(), resumeId: useEditorUiStore.getState().assistantResumeId || resume.id || 'local', feature, blockId, label: [section?.title, label].filter(Boolean).join(' · '), entry: 'module' };
+    try { track('ai_assist_interaction', {action:'entry_open',feature,taskId:task.id,entry:'module'}); } catch { /* Opening the editor must not depend on telemetry. */ }
+    setPolishOpen(false); setGenerateOpen(false);
+    useEditorUiStore.setState({ assistantTask: task, activePanel: 'ai', showAiChat: true });
+    return true;
+  }, []);
+
   const openPolish = useCallback(
     (blockId: string, contentHtml: string, moduleType: SectionModuleType): void => {
+      if (openUnified('polish', blockId)) return;
       if (requireVip && !requireVip()) return;
       const context = toResumeContext(useAppStore.getState().resume);
       const section = context.sections.find((item) => item.blocks.some((block) => block.blockId === blockId));
@@ -83,11 +103,12 @@ export default function AiSectionProvider(props: AiSectionProviderProps): ReactE
       setPolishModule(moduleType);
       setPolishOpen(true);
     },
-    [requireVip],
+    [requireVip, openUnified],
   );
 
   const openGenerate = useCallback(
     (blockId: string, moduleType: SectionModuleType, block?: ResumeBlock): void => {
+      if (openUnified('generate', blockId)) return;
       if (requireVip && !requireVip()) return;
       const context = toResumeContext(useAppStore.getState().resume);
       const section = context.sections.find((item) => item.blocks.some((block) => block.blockId === blockId));
@@ -100,7 +121,7 @@ export default function AiSectionProvider(props: AiSectionProviderProps): ReactE
       setGeneratePrefill(block ? extractBlockPrefill(block) : {});
       setGenerateOpen(true);
     },
-    [requireVip],
+    [requireVip, openUnified],
   );
 
   const handlePolishInsert = useCallback(

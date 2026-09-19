@@ -169,6 +169,7 @@ const EVENT_LABELS: Record<string, string> = {
   ai_generate_success: 'AI 生成成功',
   ai_generate_failed: 'AI 生成失败',
   ai_result_apply: '采用 AI 结果',
+  ai_assist_interaction: 'AI 助手任务交互',
   ai_assist_start: '开始 AI 编辑助手',
   ai_assist_success: 'AI 编辑助手成功',
   ai_assist_failed: 'AI 编辑助手失败',
