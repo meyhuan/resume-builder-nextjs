@@ -184,4 +184,18 @@ export const templateCatalog: readonly TemplateCatalogItem[] = [
     preview: '/thumbnails/template_lanzix.webp',
     tags: ['原创', '蓝紫', '校招', '应届生'],
   },
+  {
+    id: 'moxu',
+    name: '墨序',
+    description: '大姓名页眉、黑白联系卡与单栏时间线，适合英文商务简历和专业履历',
+    preview: '/thumbnails/template_moxu.webp',
+    tags: ['英文', '商务', '单栏', '黑白'],
+  },
+  {
+    id: 'qingning',
+    name: '青柠',
+    description: '浅绿圆形图标、暖金点线与几何角饰，清爽单栏，适合校招和通用求职',
+    preview: '/thumbnails/template_qingning.webp',
+    tags: ['清爽', '单栏', '校招', '通用'],
+  },
 ].filter((template: TemplateCatalogItem) => !HIDDEN_TEMPLATE_IDS.has(template.id));

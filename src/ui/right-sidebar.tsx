@@ -143,6 +143,7 @@ function LayoutPanel(props: LayoutPanelProps): ReactElement {
         <TabsList className="w-full h-9 rounded-lg p-0.5 gap-1 bg-slate-100/80">
           <TabsTrigger
             value="templates"
+            data-layout-tab="templates"
             className="flex-1 rounded-md text-xs font-medium
               data-[state=active]:bg-white data-[state=active]:text-slate-800 data-[state=active]:shadow-sm
               text-slate-500 hover:text-slate-700 transition-all"
@@ -151,6 +152,7 @@ function LayoutPanel(props: LayoutPanelProps): ReactElement {
           </TabsTrigger>
           <TabsTrigger
             value="settings"
+            data-layout-tab="settings"
             className="flex-1 rounded-md text-xs font-medium
               data-[state=active]:bg-white data-[state=active]:text-slate-800 data-[state=active]:shadow-sm
               text-slate-500 hover:text-slate-700 transition-all"

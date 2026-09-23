@@ -1,4 +1,6 @@
 import type { ResumeData } from '@/entities/resume/resume-data'
+import { qingningReferenceResume } from './qingning-reference'
+import { moxuReferenceResume } from './moxu-reference'
 
 export interface ResumeScenario {
   readonly id: string
@@ -484,6 +486,18 @@ export const RESUME_SCENARIOS: readonly ResumeScenario[] = [
     name: '完整产品岗',
     description: '覆盖基础信息、求职意向、教育、实习、项目、校园、技能、自评和自定义模块。',
     resume: productFullResume,
+  },
+  {
+    id: 'moxu-reference',
+    name: '墨序英文排版',
+    description: '英文商务参考内容，验证无头像、长英文和时间线排版。',
+    resume: moxuReferenceResume,
+  },
+  {
+    id: 'qingning-reference',
+    name: '青柠参考排版',
+    description: '使用 Canva 参考稿文字检查青柠版式，头像使用项目示例图。',
+    resume: qingningReferenceResume,
   },
   {
     id: 'long-content',
