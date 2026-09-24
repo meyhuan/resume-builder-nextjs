@@ -25,6 +25,8 @@ export type FetchVipResult =
 export interface VipStatusResult {
   isVip: boolean;
   userId?: string;
+  /** Java ID returned by a successful backend lookup (not a wxId fallback). */
+  javaUserId?: string;
   /** The identity used by Java's unionid/openid lookup. */
   unionid?: string;
   /** Additional free export count from Java backend (for non-VIP users). */
@@ -124,6 +126,7 @@ export async function checkVipStatus(): Promise<VipStatusResult> {
     return {
       isVip: !!result.data?.data?.isVip,
       userId: String(result.data?.data?.userId ?? ''),
+      javaUserId: result.data?.data?.userId ? String(result.data.data.userId) : undefined,
       unionid,
       freeExportCount: result.data?.data?.freeExportCount ?? 0,
     };
@@ -143,6 +146,7 @@ export async function checkVipStatusForWxId(wxId: string): Promise<VipStatusResu
     return {
       isVip: !!result.data?.data?.isVip,
       userId: String(result.data?.data?.userId ?? wxId),
+      javaUserId: result.data?.data?.userId ? String(result.data.data.userId) : undefined,
       unionid: wxId,
       freeExportCount: result.data?.data?.freeExportCount ?? 0,
     };

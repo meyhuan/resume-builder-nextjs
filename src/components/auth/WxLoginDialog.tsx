@@ -144,7 +144,8 @@ export const WxLoginDialog: React.FC<WxLoginDialogProps> = ({ isOpen, onClose, o
       if (status === 'expired') return;
       try {
         const resp = await authApi.exchangeWxToken(sceneStrRef.current);
-        const payload = resp.data || resp;
+        const responsePayload = resp.data || resp;
+        const payload = responsePayload?.data ?? responsePayload;
 
         // Java SSO returns "pending" string or an object with "pending" status
         if (payload === 'pending' || payload.status === 'pending') {
@@ -162,18 +163,26 @@ export const WxLoginDialog: React.FC<WxLoginDialogProps> = ({ isOpen, onClose, o
         
         if (javaUserId) {
           // Prefer unionid (cross-app unique) > openid > numeric uid
-          const identity: string = payload.unionid || payload.openid || String(javaUserId);
+          let identity: string = payload.unionid || payload.openid || String(javaUserId);
           logger.success('WxLogin', `Login successful, identity: ${identity}`);
           // Sync with local database using Server Action
           try {
-            await syncNextUserAction({
+            const syncResult = await syncNextUserAction({
               wxId: identity,
               name: `用户_${javaUserId}`,
               javaUserId: String(javaUserId),
             });
+            if (!syncResult.success || !syncResult.user?.wxId) {
+              throw new Error(syncResult.error || '账号同步失败，请重新扫码登录');
+            }
+            identity = syncResult.user.wxId;
             logger.success('WxLogin', 'User synced to local database via Server Action');
           } catch (syncError) {
             logger.error('WxLogin', 'Failed to sync user to local database', syncError);
+            stopPolling();
+            stopExpireCountdown();
+            setErrorMessage('账号同步失败，请刷新二维码重试；如仍失败请联系客服');
+            return;
           }
 
           setToken(identity);
