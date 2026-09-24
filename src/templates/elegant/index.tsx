@@ -14,7 +14,7 @@ import DeleteSectionDialog from '@/components/sections/delete-section-dialog'
 import BlockWrapper from '@/components/blocks/block-wrapper'
 import SortableSectionWrapper from '@/components/sections/sortable-section-wrapper'
 import { getSectionIcon } from '@/utils/get-section-icon'
-import { isCustomSection } from '@/entities/blocks/block-factory'
+import { getSectionDisplayTitle } from '@/entities/resume/section-display-title'
 import { useAppStore } from '@/state/store'
 import { useAiSection } from '@/components/ai-section/ai-section-provider'
 import { blockTypeToModuleType, extractBlockContentHtml } from '@/components/ai-section/block-module-utils'
@@ -382,7 +382,7 @@ export default function ElegantTemplate(props: ElegantTemplateProps): ReactEleme
               <SectionContainer flush themeColor={accentColor}>
                 <SectionHeader
                   sectionId={section.id}
-                  title={section.title}
+                  title={getSectionDisplayTitle(section)}
                   icon={getSectionIcon(section.title) || undefined}
                   themeColor={accentColor}
                   styles={ELEGANT_TEMPLATE_STYLES.sectionHeader}
@@ -452,7 +452,7 @@ function ElegantSectionView(props: ElegantSectionViewProps): ReactElement {
   const isTextOnly = isTextOnlySection(section)
   const addBlock = useAppStore((s) => s.addBlockByType)
   const deleteSection = useAppStore((s) => s.deleteSection)
-  const updateSectionTitle = useAppStore((s) => s.updateSectionTitle)
+  const updateSectionDisplayTitle = useAppStore((s) => s.updateSectionDisplayTitle)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const { setNodeRef } = useDroppable({ id: `${DndIds.SECTION_DROP_ID_PREFIX}${sectionId}` })
   const icon = getSectionIcon(title)
@@ -466,11 +466,11 @@ function ElegantSectionView(props: ElegantSectionViewProps): ReactElement {
       >
         <SectionHeader
           sectionId={sectionId}
-          title={title}
+          title={getSectionDisplayTitle(section)}
           icon={icon || undefined}
           themeColor={themeColor}
           styles={ELEGANT_TEMPLATE_STYLES.sectionHeader}
-          onTitleChange={isCustomSection(title) ? (newTitle: string) => updateSectionTitle(sectionId, newTitle) : undefined}
+          onTitleChange={(newTitle: string) => updateSectionDisplayTitle(sectionId, newTitle)}
           onAdd={isTextOnly ? undefined : (): void => addBlock(sectionId)}
           onDelete={(): void => setShowDeleteDialog(true)}
           dragHandleAttributes={dragHandleAttributes}
@@ -502,7 +502,7 @@ function ElegantSectionView(props: ElegantSectionViewProps): ReactElement {
 
       <DeleteSectionDialog
         open={showDeleteDialog}
-        sectionTitle={title}
+        sectionTitle={getSectionDisplayTitle(section)}
         onOpenChange={setShowDeleteDialog}
         onConfirm={(): void => { deleteSection(sectionId); setShowDeleteDialog(false) }}
       />

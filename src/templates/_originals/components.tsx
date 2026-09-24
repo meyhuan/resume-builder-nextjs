@@ -1,5 +1,6 @@
 "use client"
 
+import { SectionTitleText } from '@/components/sections/section-title-text'
 import { useState } from 'react'
 import type { CSSProperties, ReactElement } from 'react'
 import { GripVertical, Plus, Trash2 } from 'lucide-react'
@@ -20,7 +21,6 @@ import {
   AvatarSlot,
   BlockList,
   DeleteSectionDialog,
-  EditableText,
   FieldChip,
   SortableSection,
   lightenHex,
@@ -505,6 +505,7 @@ export function ConceptSection(props: {
           ) : null}
           <EditableSectionTitle
             title={editable.title}
+            displayTitle={editable.displayTitle}
             canEditTitle={editable.canEditTitle}
             onCommitTitle={editable.onCommitTitle}
             config={config}
@@ -522,13 +523,14 @@ export function ConceptSection(props: {
         className={section.columns === 2 && !compact ? 'grid grid-cols-2 gap-4' : 'block'}
         rendererStyles={rendererStyles}
       />
-      <DeleteSectionDialog open={editable.isDeleteDialogOpen} sectionTitle={editable.title} onOpenChange={editable.setDeleteDialogOpen} onConfirm={editable.confirmDelete} />
+      <DeleteSectionDialog open={editable.isDeleteDialogOpen} sectionTitle={editable.displayTitle} onOpenChange={editable.setDeleteDialogOpen} onConfirm={editable.confirmDelete} />
     </section>
   )
 }
 
 function EditableSectionTitle(props: {
   readonly title: string
+  readonly displayTitle: string
   readonly canEditTitle: boolean
   readonly onCommitTitle: (value: string) => void
   readonly config: VariantConfig
@@ -536,11 +538,12 @@ function EditableSectionTitle(props: {
   readonly compact?: boolean
   readonly dark?: boolean
 }): ReactElement {
-  const { title, canEditTitle, onCommitTitle, config, titleScale, compact, dark } = props
+  const { title, displayTitle, canEditTitle, onCommitTitle, config, titleScale, compact, dark } = props
+  const renamed = displayTitle !== title
   if (config.id === 'lanying') {
     return (
-      <div style={marketingTitleWrapStyle(config)}>
-        <EditableText as="h2" value={title} onCommit={canEditTitle ? onCommitTitle : undefined} style={marketingTitleLabelStyle(config, titleScale)} />
+      <div style={{ ...marketingTitleWrapStyle(config), ...(renamed ? { height: 'auto', minHeight: 35 } : {}) }}>
+        <SectionTitleText as="h2" value={displayTitle} onCommit={canEditTitle ? onCommitTitle : undefined} style={marketingTitleLabelStyle(config, titleScale)} />
         <span style={marketingTitleEnglishStyle()}>{sectionEnglishTitle(title)}</span>
       </div>
     )
@@ -549,7 +552,7 @@ function EditableSectionTitle(props: {
     return (
       <div style={plannerTitleWrapStyle(config)}>
         <span aria-hidden style={plannerTitleDotStyle(config)} />
-        <EditableText as="h2" value={title} onCommit={canEditTitle ? onCommitTitle : undefined} style={plannerTitleLabelStyle(config, titleScale)} />
+        <SectionTitleText as="h2" value={displayTitle} onCommit={canEditTitle ? onCommitTitle : undefined} style={plannerTitleLabelStyle(config, titleScale)} />
         <span style={plannerTitleEnglishStyle(config)}>{sectionEnglishTitle(title)}</span>
       </div>
     )
@@ -558,7 +561,7 @@ function EditableSectionTitle(props: {
     return (
       <div style={bankTitleWrapStyle(config)}>
         <span aria-hidden style={bankTitleLineStyle(config)} />
-        <EditableText as="h2" value={title} onCommit={canEditTitle ? onCommitTitle : undefined} style={bankTitleLabelStyle(config, titleScale)} />
+        <SectionTitleText as="h2" value={displayTitle} onCommit={canEditTitle ? onCommitTitle : undefined} style={bankTitleLabelStyle(config, titleScale)} />
         <span style={bankTitleEnglishStyle(config)}>{sectionEnglishTitle(title)}</span>
         <span aria-hidden style={bankTitleLineStyle(config)} />
       </div>
@@ -566,8 +569,8 @@ function EditableSectionTitle(props: {
   }
   if (config.id === 'jijian') {
     return (
-      <div className="minimal-info-title">
-        <EditableText as="h2" value={title} onCommit={canEditTitle ? onCommitTitle : undefined} className="minimal-title-label" />
+      <div className="minimal-info-title" style={renamed ? { gridTemplateColumns: 'minmax(0, 1fr) auto' } : undefined}>
+        <SectionTitleText as="h2" value={displayTitle} onCommit={canEditTitle ? onCommitTitle : undefined} className="minimal-title-label" style={renamed ? { height: 'auto', minHeight: 30, padding: '6px 24px', lineHeight: 1.25 } : undefined} />
         <span>{sectionEnglishTitle(title)}</span>
       </div>
     )
@@ -575,7 +578,7 @@ function EditableSectionTitle(props: {
   if (config.id === 'shanglan') {
     return (
       <div style={shanglanTitleWrapStyle(config, dark)}>
-        <EditableText as="h2" value={title} onCommit={canEditTitle ? onCommitTitle : undefined} style={shanglanTitleLabelStyle(config, titleScale, dark)} />
+        <SectionTitleText as="h2" value={displayTitle} onCommit={canEditTitle ? onCommitTitle : undefined} style={shanglanTitleLabelStyle(config, titleScale, dark)} />
         <span style={shanglanTitleEnglishStyle(dark)}>{sectionEnglishTitle(title)}</span>
       </div>
     )
@@ -584,15 +587,26 @@ function EditableSectionTitle(props: {
     return (
       <div style={purpleTitleWrapStyle(config)}>
         <PurpleDoubleChevron color={config.accent} />
-        <EditableText as="h2" value={title} onCommit={canEditTitle ? onCommitTitle : undefined} style={purpleTitleLabelStyle(config, titleScale)} />
+        <SectionTitleText as="h2" value={displayTitle} onCommit={canEditTitle ? onCommitTitle : undefined} style={purpleTitleLabelStyle(config, titleScale)} />
         <span aria-hidden style={purpleTitleLineStyle(config)} />
       </div>
     )
   }
+  if (config.id === 'heijiao' && renamed) {
+    return (
+      <div style={{ marginBottom: 7, borderBottom: `1px solid ${config.accent}` }}>
+        <SectionTitleText as="h2" value={displayTitle} onCommit={canEditTitle ? onCommitTitle : undefined} style={{
+          ...sectionTitleStyle(config, titleScale, compact, dark),
+          display: 'table', height: 'auto', minHeight: 24, margin: 0, padding: '4px 13px',
+          background: config.accent,
+        }} />
+      </div>
+    )
+  }
   return (
-    <EditableText
+    <SectionTitleText
       as="h2"
-      value={title}
+      value={displayTitle}
       onCommit={canEditTitle ? onCommitTitle : undefined}
       className={sectionTitleClassName(config)}
       style={sectionTitleStyle(config, titleScale, compact, dark)}

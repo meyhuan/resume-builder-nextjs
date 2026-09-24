@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { normalizeSectionDisplayTitle } from '@/entities/resume/section-display-title';
 
 export const LANGUAGE_VALUES = ['zh', 'en', 'ja', 'ko', 'fr', 'de', 'es', 'pt', 'ru', 'ar'] as const;
 
@@ -19,5 +20,6 @@ export const translatedSectionSchema = z.object({
   kind: z.literal('section').optional(),
   sectionId: z.string(),
   title: z.string(),
+  displayTitle: z.preprocess(normalizeSectionDisplayTitle, z.string().optional()),
   blocks: z.array(z.unknown()),
 });

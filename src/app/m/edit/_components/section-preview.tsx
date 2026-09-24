@@ -1,5 +1,6 @@
 'use client'
 
+import { getSectionDisplayTitle } from '@/entities/resume/section-display-title'
 import { createElement, type ReactElement } from 'react'
 import { useRouter } from 'next/navigation'
 import { Award, BriefcaseBusiness, ChevronRight, FileText, FolderKanban, GraduationCap, GripVertical, Plus, School, Sparkles, Wrench, type LucideIcon } from 'lucide-react'
@@ -22,7 +23,7 @@ export function SectionPreview(
   { section, module, dragging, dragHandleProps, onAddItem }: SectionPreviewProps,
 ): ReactElement {
   const router = useRouter()
-  const label: string = module?.label ?? section.title
+  const label: string = getSectionDisplayTitle(section, module?.label ?? section.title)
   const baseRoute: string = module?.route ?? '/m/edit/custom'
   const isEmpty: boolean = section.blocks.length === 0 || (
     section.blocks.length === 1 &&
@@ -100,7 +101,7 @@ export function SectionPreview(
           onClick={(): void => router.push(baseRoute)}
           className="min-w-0 text-left"
         >
-          <div className="truncate text-[14px] font-semibold leading-5 text-slate-950">{label}</div>
+          <div className="break-words text-[14px] font-semibold leading-5 text-slate-950" style={{ overflowWrap: 'anywhere' }}>{label}</div>
           <div className="mt-0.5 truncate text-[12px] leading-4 text-slate-500">
             {getModuleSubtitle(section, isEmpty, isDefault)}
           </div>

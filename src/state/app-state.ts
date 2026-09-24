@@ -49,6 +49,8 @@ export interface AppState {
   addSection: (title: string) => void
   /** Rename a section. */
   updateSectionTitle: (sectionId: UUID, title: string) => void
+  /** Update presentation only; undefined restores the original title. */
+  updateSectionDisplayTitle: (sectionId: UUID, value: string | undefined) => void
   /** Delete a section and all its blocks. */
   deleteSection: (sectionId: UUID) => void
   /** Import external resume JSON and replace current resume. */

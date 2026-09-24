@@ -1,5 +1,6 @@
 "use client";
 
+import { SectionTitleText } from '@/components/sections/section-title-text'
 import {
   useState,
   type CSSProperties,
@@ -342,9 +343,9 @@ function QingningSection({
         <span className="qingning-section-icon" aria-hidden>
           {getSectionIcon(section.title)}
         </span>
-        <EditableText
+        <SectionTitleText
           as="h2"
-          value={edit.title}
+          value={edit.displayTitle}
           onCommit={edit.canEditTitle ? edit.onCommitTitle : undefined}
           style={{
             margin: 0,
@@ -396,7 +397,7 @@ function QingningSection({
       />
       <DeleteSectionDialog
         open={edit.isDeleteDialogOpen}
-        sectionTitle={edit.title}
+        sectionTitle={edit.displayTitle}
         onOpenChange={edit.setDeleteDialogOpen}
         onConfirm={edit.confirmDelete}
       />

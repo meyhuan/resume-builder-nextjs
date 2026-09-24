@@ -500,6 +500,19 @@ export const RESUME_SCENARIOS: readonly ResumeScenario[] = [
     resume: qingningReferenceResume,
   },
   {
+    id: 'display-titles',
+    name: '模块显示名称',
+    description: '保留模块身份，检查改名、同名模块和中英文长标题。',
+    resume: {
+      ...productFullResume,
+      id: 'scenario-display-titles',
+      sections: productFullResume.sections.map((section, index) => ({
+        ...section,
+        displayTitle: ['职业履历', '职业履历', '职业履历与项目实践经验'.repeat(4), 'ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMN'][index % 4],
+      })),
+    },
+  },
+  {
     id: 'long-content',
     name: '长内容压力',
     description: '长公司名、长字段、长段落，测试换行、溢出和分页。',

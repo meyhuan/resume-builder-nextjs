@@ -17,9 +17,12 @@ export default function ScenarioLoaderClient(): ReactElement {
   const initialTemplate = searchParams.get('tpl') || DEFAULT_TEMPLATE
   const avatarUrl = searchParams.get('avatar')
   const scenarioId = searchParams.get('scenario') || ''
+  const readOnly = searchParams.get('readonly') === '1'
+  const activePanel = searchParams.get('panel') === 'sections' ? 'sections' : 'layout'
   const [tpl, setTpl] = useState(initialTemplate)
   const resume = useAppStore((s) => s.resume)
   const loadScenarioData = useAppStore((s) => s.loadScenarioData)
+  const setReadOnly = useAppStore((s) => s.setReadOnly)
   const themes = useAppStore((s) => s.themes)
   const getThemeForTemplate = useAppStore((s) => s.getThemeForTemplate)
   const setThemeForTemplate = useAppStore((s) => s.setThemeForTemplate)
@@ -38,6 +41,11 @@ export default function ScenarioLoaderClient(): ReactElement {
       })
     }
   }, [avatarUrl, loadScenarioData, scenarioId])
+
+  useEffect(() => {
+    setReadOnly(readOnly)
+    return () => setReadOnly(false)
+  }, [readOnly, setReadOnly])
 
   function patchTheme(patch: Partial<ThemeTokens>): void {
     setThemeForTemplate(tpl, (draft) => {
@@ -65,7 +73,7 @@ export default function ScenarioLoaderClient(): ReactElement {
 
           <aside className="h-[calc(100vh-96px)] overflow-hidden rounded-lg border border-slate-200 bg-white">
             <RightSidebar
-              activePanel="layout"
+              activePanel={activePanel}
               onClose={() => {}}
               theme={theme}
               tpl={tpl}

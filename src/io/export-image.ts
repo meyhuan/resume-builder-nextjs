@@ -44,6 +44,7 @@ export async function exportImage<T extends HTMLElement>(contentRef: RefObject<T
     pixelRatio: options?.pixelRatio ?? 2,
     cacheBust: true,
     backgroundColor: options?.backgroundColor,
+    filter: (element: HTMLElement) => element.getAttribute?.('data-export-hide') !== 'true',
   }
   const cloneStyle: Record<string, string> = {}
   if (options?.resetTransform) {

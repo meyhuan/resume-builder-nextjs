@@ -1,5 +1,6 @@
 "use client"
 
+import { SectionTitleText } from '@/components/sections/section-title-text'
 import { useState } from 'react'
 import type { CSSProperties, ReactElement, ReactNode } from 'react'
 import { GripVertical, Plus, Trash2 } from 'lucide-react'
@@ -387,9 +388,9 @@ function LanxinSection({ section, dragProps, spacingScale, contentLineHeight, pr
       />
 
       <div className="relative">
-        <EditableText
+        <SectionTitleText
           as="h2"
-          value={editable.title}
+          value={editable.displayTitle}
           onCommit={editable.canEditTitle ? editable.onCommitTitle : undefined}
           style={{
             margin: '0 0 15px',
@@ -429,7 +430,7 @@ function LanxinSection({ section, dragProps, spacingScale, contentLineHeight, pr
 
       <DeleteSectionDialog
         open={editable.isDeleteDialogOpen}
-        sectionTitle={editable.title}
+        sectionTitle={editable.displayTitle}
         onOpenChange={editable.setDeleteDialogOpen}
         onConfirm={editable.confirmDelete}
       />

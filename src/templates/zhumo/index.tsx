@@ -14,6 +14,7 @@
  *
  * 推荐品牌色为朱砂红，可自定义 primaryColor（衍生 deep / light 两档）。
  */
+import { SectionTitleText } from '@/components/sections/section-title-text'
 import { createContext, useContext } from 'react'
 import type { ReactElement, ReactNode } from 'react'
 import { getHeaderJobIntentionText } from '@/entities/resume/header-job-intention'
@@ -484,7 +485,7 @@ function ZhumoSection(props: SectionProps): ReactElement {
   const { section, index, dragRef, dragAttrs, dragListeners, themeColor, spacingScale } = props
   const editable = useEditableSection(section)
   const {
-    title, canEditTitle, onCommitTitle,
+    displayTitle, canEditTitle, onCommitTitle,
     isTextOnly, onAddBlock, onRequestDelete,
     isHovered, setHovered,
     isDeleteDialogOpen, setDeleteDialogOpen, confirmDelete,
@@ -501,7 +502,7 @@ function ZhumoSection(props: SectionProps): ReactElement {
       <ZhumoSectionHeading
         numeral={numeral}
         tag={tag}
-        title={title}
+        title={displayTitle}
         onCommitTitle={canEditTitle ? onCommitTitle : undefined}
       />
 
@@ -521,7 +522,7 @@ function ZhumoSection(props: SectionProps): ReactElement {
 
       <DeleteSectionDialog
         open={isDeleteDialogOpen}
-        sectionTitle={title}
+        sectionTitle={displayTitle}
         onOpenChange={setDeleteDialogOpen}
         onConfirm={confirmDelete}
       />
@@ -577,7 +578,7 @@ function ZhumoSectionHeading(props: HeadingProps): ReactElement {
           letterSpacing: '0.1em',
         }}
       >
-        <EditableText
+        <SectionTitleText
           as="span"
           value={title}
           onCommit={onCommitTitle}

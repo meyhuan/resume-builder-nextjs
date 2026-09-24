@@ -1,5 +1,6 @@
 'use client'
 
+import { getSectionDisplayTitle } from '@/entities/resume/section-display-title'
 import { useState, type ReactElement } from 'react'
 import { useRouter } from 'next/navigation'
 import { Plus, Trash2, ChevronUp, ChevronDown, GripVertical } from 'lucide-react'
@@ -23,7 +24,7 @@ export interface ExperienceListClientProps {
 export function ExperienceListClient(props: ExperienceListClientProps): ReactElement {
   const { title, sectionTitle, baseRoute, subtitle, emptyHint } = props
   const router = useRouter()
-  const { blocks, addBlock, removeBlock, moveBlockUp, moveBlockDown } = useSectionList(sectionTitle)
+  const { section, blocks, addBlock, removeBlock, moveBlockUp, moveBlockDown } = useSectionList(sectionTitle)
   const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null)
 
   const handleAdd = (): void => {
@@ -42,7 +43,7 @@ export function ExperienceListClient(props: ExperienceListClientProps): ReactEle
   }
 
   return (
-    <ModuleEditShell title={title} subtitle={subtitle}>
+    <ModuleEditShell title={section ? getSectionDisplayTitle(section, title) : title} subtitle={subtitle}>
       {blocks.length === 0 ? (
         <div className="text-center py-12">
           <div className="text-5xl mb-3">📭</div>

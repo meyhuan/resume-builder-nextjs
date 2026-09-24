@@ -6,6 +6,7 @@
  * Bottom: "添加模块" — 2-column grid of predefined section types
  *         that are NOT already present in the resume.
  */
+import { SectionNameEditor } from '@/components/sections/section-name-editor'
 import { useMemo } from 'react'
 import type { ReactElement, ReactNode } from 'react'
 import {
@@ -299,6 +300,8 @@ function SortableSectionRow(props: {
   readonly onDelete: () => void
 }): ReactElement {
   const { section, onDelete } = props
+  const updateDisplayTitle = useAppStore((s) => s.updateSectionDisplayTitle)
+  const readOnly = useAppStore((s) => s.readOnly)
   const {
     attributes,
     listeners,
@@ -325,7 +328,7 @@ function SortableSectionRow(props: {
       {...attributes}
       {...listeners}
     >
-      <span className="text-sm font-medium text-slate-700">{section.title}</span>
+      <SectionNameEditor section={section} onChange={updateDisplayTitle} readOnly={readOnly} />
       <button
         type="button"
         className="text-slate-300 hover:text-rose-500 transition-colors"

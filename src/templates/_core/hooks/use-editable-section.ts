@@ -3,7 +3,7 @@ import { useDroppable } from '@dnd-kit/core'
 import type { Section } from '@/entities/resume/section'
 import { useAppStore } from '@/state/store'
 import { DndIds } from '@/dnd/ids'
-import { isCustomSection } from '@/entities/blocks/block-factory'
+import { getSectionDisplayTitle } from '@/entities/resume/section-display-title'
 import { isTextOnlySection } from '@/templates/_kernel/shared'
 
 /**
@@ -14,9 +14,10 @@ import { isTextOnlySection } from '@/templates/_kernel/shared'
 export interface EditableSection {
   readonly section: Section
   readonly title: string
+  readonly displayTitle: string
   /** Is this a text-only section? Some affordances differ (no "add block"). */
   readonly isTextOnly: boolean
-  /** True if the title is user-customizable (i.e. not a known stock section). */
+  /** Presentation titles are editable unless the editor is read-only. */
   readonly canEditTitle: boolean
   /** Commit an edited title. No-op if `canEditTitle` is false or value unchanged. */
   readonly onCommitTitle: (next: string) => void
@@ -39,7 +40,8 @@ export interface EditableSection {
 export function useEditableSection(section: Section): EditableSection {
   const addBlock = useAppStore((s) => s.addBlockByType)
   const deleteSection = useAppStore((s) => s.deleteSection)
-  const updateSectionTitle = useAppStore((s) => s.updateSectionTitle)
+  const updateDisplayTitle = useAppStore((s) => s.updateSectionDisplayTitle)
+  const readOnly = useAppStore((s) => s.readOnly)
 
   const [isHovered, setHovered] = useState(false)
   const [isDeleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -48,13 +50,14 @@ export function useEditableSection(section: Section): EditableSection {
     id: `${DndIds.SECTION_DROP_ID_PREFIX}${section.id}`,
   })
 
-  const canEditTitle: boolean = isCustomSection(section.title)
+  const canEditTitle = !readOnly
+  const displayTitle = getSectionDisplayTitle(section)
   const isTextOnly: boolean = isTextOnlySection(section)
 
   const onCommitTitle = (next: string): void => {
     const t: string = next.trim()
-    if (!canEditTitle || !t || t === section.title) return
-    updateSectionTitle(section.id, t)
+    if (!canEditTitle || t === displayTitle) return
+    updateDisplayTitle(section.id, t)
   }
 
   const confirmDelete = (): void => {
@@ -65,6 +68,7 @@ export function useEditableSection(section: Section): EditableSection {
   return {
     section,
     title: section.title,
+    displayTitle,
     isTextOnly,
     canEditTitle,
     onCommitTitle,

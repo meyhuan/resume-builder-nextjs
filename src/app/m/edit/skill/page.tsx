@@ -1,5 +1,6 @@
 'use client'
 
+import { getSectionDisplayTitle } from '@/entities/resume/section-display-title'
 import { type ReactElement } from 'react'
 import { ModuleEditShell } from '../_components/module-edit-shell'
 import { RichAiTextarea } from '@/features/edit/form-fields/rich-ai-textarea'
@@ -12,9 +13,9 @@ const PLACEHOLDER: string = `• 熟练使用 Figma / Sketch 进行 UI 设计\n�
  * Skills edit page.
  */
 export default function SkillEditPage(): ReactElement {
-  const { html, setHtml, ready } = useSingleTextBlock(MODULE_SECTION_TITLES.skill)
+  const { section, html, setHtml, ready } = useSingleTextBlock(MODULE_SECTION_TITLES.skill)
   return (
-    <ModuleEditShell title="相关技能" subtitle="列出 3-6 条相关核心技能">
+    <ModuleEditShell title={section ? getSectionDisplayTitle(section, '相关技能') : '相关技能'} subtitle="列出 3-6 条相关核心技能">
       {!ready ? (
         <div className="text-center py-12 text-sm text-slate-500">加载中…</div>
       ) : (

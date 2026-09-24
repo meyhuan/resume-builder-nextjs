@@ -1,5 +1,6 @@
+import { SectionTitleText } from './section-title-text';
 import React, { cloneElement, isValidElement } from 'react';
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef } from 'react';
 import type { ReactElement, ReactNode } from 'react';
 import type { UUID } from '@/entities/common/uuid';
 import { Button } from '@/components/ui/button';
@@ -23,6 +24,7 @@ export interface SectionHeaderProps {
   readonly dragHandleListeners?: unknown;
   readonly dragHandleRef?: (element: HTMLElement | null) => void;
   readonly layout?: 'default' | 'ribbon';
+  readonly wrapTitle?: boolean;
 }
 
 export default function SectionHeader(props: SectionHeaderProps): ReactElement {
@@ -44,32 +46,7 @@ export default function SectionHeader(props: SectionHeaderProps): ReactElement {
   const dragHandleRef = effectiveDragHandleRef;
 
   const [isHovered, setIsHovered] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editValue, setEditValue] = useState(title);
-  const inputRef = useRef<HTMLInputElement>(null);
   const hideTimerRef = useRef<NodeJS.Timeout | number | null>(null);
-
-  useEffect(() => {
-    if (isEditing && inputRef.current) {
-      inputRef.current.focus();
-      inputRef.current.select();
-    }
-  }, [isEditing]);
-
-  const commitEdit = useCallback((): void => {
-    const trimmed: string = editValue.trim();
-    if (trimmed && trimmed !== title && onTitleChange) {
-      onTitleChange(trimmed);
-    } else {
-      setEditValue(title);
-    }
-    setIsEditing(false);
-  }, [editValue, title, onTitleChange]);
-
-  const cancelEdit = useCallback((): void => {
-    setEditValue(title);
-    setIsEditing(false);
-  }, [title]);
 
   const hasActions = Boolean(onAdd || onDelete || (dragHandleAttributes && dragHandleListeners && dragHandleRef !== undefined));
 
@@ -134,34 +111,11 @@ export default function SectionHeader(props: SectionHeaderProps): ReactElement {
     </div>
   ) : null;
 
-  const renderTitle = (overrideColor?: string) => {
-    const finalColor = overrideColor || titleColor;
-    if (isEditing && onTitleChange) {
-      return (
-        <input
-          ref={inputRef}
-          className={`font-bold bg-transparent border-b-2 border-violet-400 outline-none px-0 py-0 w-32 ${styles?.className || ''}`}
-          style={{ color: finalColor }}
-          value={editValue}
-          onChange={(e) => setEditValue(e.target.value)}
-          onBlur={commitEdit}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') commitEdit();
-            if (e.key === 'Escape') cancelEdit();
-          }}
-        />
-      );
-    }
-    return (
-      <h2
-        className={`font-bold tracking-widest ${onTitleChange ? 'cursor-text' : ''} ${styles?.className || ''}`}
-        style={{ color: finalColor }}
-        onClick={onTitleChange ? () => { setEditValue(title); setIsEditing(true); } : undefined}
-      >
-        {title}
-      </h2>
-    );
-  };
+  const renderTitle = (overrideColor?: string) => (
+    <SectionTitleText as="h2" value={title} onCommit={onTitleChange}
+      className={`font-bold tracking-widest ${styles?.className || ''}`}
+      style={{ color: overrideColor || titleColor }} />
+  );
 
   if (layout === 'ribbon') {
     return (
@@ -173,9 +127,9 @@ export default function SectionHeader(props: SectionHeaderProps): ReactElement {
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
-        <div className="flex items-center relative h-[32px] drop-shadow-sm">
+        <div className={props.wrapTitle ? 'flex min-w-0 max-w-[calc(100%-24px)] items-center relative min-h-[32px] drop-shadow-sm' : 'flex items-center relative h-[32px] drop-shadow-sm'}>
           {/* Icon part */}
-          <div className="h-full flex items-center justify-center w-[40px] z-20 rounded-l-sm" style={{ backgroundColor: themeColor }}>
+          <div className={props.wrapTitle ? 'self-stretch min-h-[32px] flex shrink-0 items-center justify-center w-[40px] z-20 rounded-l-sm' : 'h-full flex items-center justify-center w-[40px] z-20 rounded-l-sm'} style={{ backgroundColor: themeColor }}>
             {isValidElement(icon) ? (
               <span style={{ color: '#fff' }}>
                 {cloneElement(icon as ReactElement<{ size?: string | number; className?: string }>, {
@@ -187,7 +141,7 @@ export default function SectionHeader(props: SectionHeaderProps): ReactElement {
           </div>
 
           {/* Title part */}
-          <div className="bg-[#f8f8f8] h-full flex items-center pl-3 pr-2 z-10 relative border-y border-[#ddd]">
+          <div className={props.wrapTitle ? 'bg-[#f8f8f8] min-w-0 min-h-[32px] flex items-center pl-3 pr-2 z-10 relative border-y border-[#ddd]' : 'bg-[#f8f8f8] h-full flex items-center pl-3 pr-2 z-10 relative border-y border-[#ddd]'}>
             {renderTitle('#333')}
             
             {/* Arrow right */}
@@ -215,7 +169,7 @@ export default function SectionHeader(props: SectionHeaderProps): ReactElement {
       onMouseLeave={handleMouseLeave}
     >
       {renderedIcon}
-      <div className="flex-1 flex">
+      <div className="min-w-0 flex-1 flex">
         {renderTitle()}
       </div>
       {actionsMenu}

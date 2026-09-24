@@ -1,5 +1,6 @@
 "use client";
 
+import { SectionTitleText } from '@/components/sections/section-title-text'
 import {
   useState,
   type CSSProperties,
@@ -301,9 +302,9 @@ function MoxuSection({
         <span className="moxu-section-icon" aria-hidden>
           {getSectionIcon(section.title)}
         </span>
-        <EditableText
+        <SectionTitleText
           as="h2"
-          value={edit.title}
+          value={edit.displayTitle}
           onCommit={edit.canEditTitle ? edit.onCommitTitle : undefined}
           style={{
             margin: 0,
@@ -355,7 +356,7 @@ function MoxuSection({
       />
       <DeleteSectionDialog
         open={edit.isDeleteDialogOpen}
-        sectionTitle={edit.title}
+        sectionTitle={edit.displayTitle}
         onOpenChange={edit.setDeleteDialogOpen}
         onConfirm={edit.confirmDelete}
       />

@@ -14,6 +14,7 @@
  * 推荐品牌色为天青蓝（locksPrimaryColor 在 theme-panel 中展示推荐文案，
  * 用户仍可在需要时自定义 primaryColor —— 会自动衍生 deep / light 两档）。
  */
+import { SectionTitleText } from '@/components/sections/section-title-text'
 import { createContext, useContext } from 'react'
 import type { ReactElement, ReactNode } from 'react'
 import { getHeaderJobIntentionText } from '@/entities/resume/header-job-intention'
@@ -465,7 +466,7 @@ function QingyunSection(props: SectionProps): ReactElement {
   const { section, dragRef, dragAttrs, dragListeners, themeColor, spacingScale } = props
   const editable = useEditableSection(section)
   const {
-    title, canEditTitle, onCommitTitle,
+    displayTitle, canEditTitle, onCommitTitle,
     isTextOnly, onAddBlock, onRequestDelete,
     isHovered, setHovered,
     isDeleteDialogOpen, setDeleteDialogOpen, confirmDelete,
@@ -505,9 +506,9 @@ function QingyunSection(props: SectionProps): ReactElement {
         >
           {englishTitle}
         </span>
-        <EditableText
+        <SectionTitleText
           as="h2"
-          value={title}
+          value={displayTitle}
           onCommit={canEditTitle ? onCommitTitle : undefined}
           className="font-semibold"
           style={{
@@ -537,7 +538,7 @@ function QingyunSection(props: SectionProps): ReactElement {
 
       <DeleteSectionDialog
         open={isDeleteDialogOpen}
-        sectionTitle={title}
+        sectionTitle={displayTitle}
         onOpenChange={setDeleteDialogOpen}
         onConfirm={confirmDelete}
       />

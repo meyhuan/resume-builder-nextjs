@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionTitleText } from '@/components/sections/section-title-text'
+import { getSectionDisplayTitle } from '@/entities/resume/section-display-title'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { CSSProperties, KeyboardEvent, ReactElement, ReactNode } from 'react'
 import { GripVertical, Plus, Trash2, XCircle } from 'lucide-react'
@@ -124,7 +126,7 @@ function getDisplaySectionTitle(title: string): string {
 }
 
 function getSideDisplaySectionTitle(section: Section): string {
-  return section.title
+  return getSectionDisplayTitle(section)
 }
 
 function stripHtml(html: string): string {
@@ -628,7 +630,7 @@ function LanmuSideSection(props: {
     setDeleteDialogOpen,
     confirmDelete,
   } = editable
-  const displayTitle = getDisplaySectionTitle(title)
+  const displayTitle = getSectionDisplayTitle(section, getDisplaySectionTitle(title))
   const blockIds = section.blocks.map((block) => block.id)
 
   return (
@@ -640,7 +642,7 @@ function LanmuSideSection(props: {
       onMouseLeave={() => setHovered(false)}
     >
       <div className="relative" style={{ marginBottom: 16 * spacingScale }}>
-        <EditableText
+        <SectionTitleText
           as="h3"
           value={displayTitle}
           onCommit={canEditTitle ? onCommitTitle : undefined}
@@ -872,7 +874,7 @@ function LanmuMainSection(props: {
     setDeleteDialogOpen,
     confirmDelete,
   } = editable
-  const displayTitle = getDisplaySectionTitle(title)
+  const displayTitle = getSectionDisplayTitle(section, getDisplaySectionTitle(title))
   const blockIds = section.blocks.map((block) => block.id)
 
   return (
@@ -884,7 +886,7 @@ function LanmuMainSection(props: {
       onMouseLeave={() => setHovered(false)}
     >
       <div className="relative flex items-center gap-4" style={{ marginBottom: 22 * spacingScale }}>
-        <EditableText
+        <SectionTitleText
           as="h2"
           value={displayTitle}
           onCommit={canEditTitle ? onCommitTitle : undefined}

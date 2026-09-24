@@ -1,5 +1,6 @@
 'use client'
 
+import { getSectionDisplayTitle } from '@/entities/resume/section-display-title'
 import { type ReactElement } from 'react'
 import { ModuleEditShell } from '../_components/module-edit-shell'
 import { MobileRichTextarea } from '@/features/edit/form-fields/mobile-rich-textarea'
@@ -13,9 +14,9 @@ const PLACEHOLDER: string = `• 2023 年「XX 全国创业大赛」一等奖\n�
  * Awards / certificates edit page.
  */
 export default function QualificationsEditPage(): ReactElement {
-  const { html, setHtml, ready } = useSingleTextBlock(MODULE_SECTION_TITLES.qualifications)
+  const { section, html, setHtml, ready } = useSingleTextBlock(MODULE_SECTION_TITLES.qualifications)
   return (
-    <ModuleEditShell title="奖项证书" subtitle="一行一条，按重要度排序">
+    <ModuleEditShell title={section ? getSectionDisplayTitle(section, '奖项证书') : '奖项证书'} subtitle="一行一条，按重要度排序">
       {!ready ? (
         <div className="text-center py-12 text-sm text-slate-500">加载中…</div>
       ) : (
