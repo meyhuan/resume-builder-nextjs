@@ -1,5 +1,6 @@
 "use client"
 
+import { SectionTitleText } from '@/components/sections/section-title-text'
 import { useState } from 'react'
 import type { CSSProperties, ReactElement, ReactNode } from 'react'
 import { GripVertical, Plus, Trash2 } from 'lucide-react'
@@ -500,9 +501,9 @@ function TableSectionRow(props: TableSectionRowProps): ReactElement {
       onMouseLeave={() => editable.setHovered(false)}
     >
       <RowLabel palette={palette} titleScale={titleScale}>
-        <EditableText
+        <SectionTitleText
           as="span"
-          value={editable.title}
+          value={editable.displayTitle}
           onCommit={editable.canEditTitle ? editable.onCommitTitle : undefined}
         />
       </RowLabel>
@@ -538,7 +539,7 @@ function TableSectionRow(props: TableSectionRowProps): ReactElement {
 
       <DeleteSectionDialog
         open={editable.isDeleteDialogOpen}
-        sectionTitle={editable.title}
+        sectionTitle={editable.displayTitle}
         onOpenChange={editable.setDeleteDialogOpen}
         onConfirm={editable.confirmDelete}
       />

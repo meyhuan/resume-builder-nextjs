@@ -1,3 +1,4 @@
+import { normalizeSectionDisplayTitle } from '@/entities/resume/section-display-title';
 import { useAppStore } from '@/state/store';
 import { sanitizeResumeHtml } from '@/lib/ai/html-sanitize';
 import type { ResumeBlock } from '@/entities/blocks/resume-block';
@@ -60,12 +61,15 @@ export function applyTranslatedHeader(payload: {
 export function applyTranslatedSection(payload: {
   sectionId: string;
   title?: string;
+  displayTitle?: string;
   blocks?: unknown[];
 }): void {
   useAppStore.getState().setResume((draft) => {
     const section = draft.sections.find((item) => item.id === payload.sectionId);
     if (!section) return;
     if (payload.title) section.title = payload.title;
+    const displayTitle = normalizeSectionDisplayTitle(payload.displayTitle);
+    if (normalizeSectionDisplayTitle(section.displayTitle) && displayTitle) section.displayTitle = displayTitle;
     if (!payload.blocks) return;
     const byId = new Map<string, unknown>();
     for (const item of payload.blocks) {
@@ -83,12 +87,14 @@ export function cloneResumeData(resume: ResumeData): ResumeData {
 
 export function applyTranslatedSectionToClone(
   resume: ResumeData,
-  payload: { sectionId: string; title?: string; blocks?: unknown[] },
+  payload: { sectionId: string; title?: string; displayTitle?: string; blocks?: unknown[] },
 ): ResumeData {
   const next = cloneResumeData(resume);
   const section = next.sections.find((item) => item.id === payload.sectionId);
   if (!section) return next;
   if (payload.title) section.title = payload.title;
+  const displayTitle = normalizeSectionDisplayTitle(payload.displayTitle);
+  if (normalizeSectionDisplayTitle(section.displayTitle) && displayTitle) section.displayTitle = displayTitle;
   if (!payload.blocks) return next;
   const byId = new Map<string, unknown>();
   for (const item of payload.blocks) {

@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { cookies } from 'next/headers'
-import { prisma } from '@/lib/prisma'
+import { syncUserIdentity } from '@/lib/sync-user-identity'
 import { fetchJavaWithLog, parseJsonWithLog } from '@/lib/api/fetch-with-log'
 import { MINI_PROGRAM_CONTEXT_COOKIE, MINI_PROGRAM_VERSION_COOKIE } from '@/lib/mini-program-version-cookie'
 
@@ -41,19 +41,21 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     console.warn('[m/sso] missing token, returning 400')
     return renderErrorPage('缺少登录参数，请返回小程序重新进入', 400)
   }
-  let uid: string
+  let identity: string
   try {
-    uid = await verifyTokenWithJava(token)
-    console.log('[m/sso] token verified, uid =', uid)
+    const verified = await verifyTokenWithJava(token)
+    const user = await syncUserIdentity(verified)
+    if (!user.wxId) throw new Error('账号同步失败，请重新登录')
+    identity = user.wxId
+    console.log('[m/sso] token verified, javaUserId =', verified.javaUserId, 'canonical wxId =', identity)
   } catch (error: unknown) {
     const message: string = error instanceof Error ? error.message : '登录校验失败'
     console.error('[m/sso] verifyTokenWithJava failed:', message)
     return renderErrorPage(message, 401)
   }
-  await ensureUserExists(uid)
   const cookieStore = await cookies()
   const isProd: boolean = process.env.NODE_ENV === 'production'
-  cookieStore.set(AUTH_COOKIE_NAME, uid, {
+  cookieStore.set(AUTH_COOKIE_NAME, identity, {
     path: '/',
     maxAge: AUTH_COOKIE_MAX_AGE_SECONDS,
     sameSite: 'lax',
@@ -113,7 +115,7 @@ function sanitizeMiniVersion(value: string): string {
   return /^[0-9A-Za-z._-]{1,32}$/.test(normalized) ? normalized : ''
 }
 
-async function verifyTokenWithJava(token: string): Promise<string> {
+async function verifyTokenWithJava(token: string): Promise<{ wxId: string; javaUserId: string }> {
   const response: Response = await fetchJavaWithLog('/sso/verify', {
     logPrefix: '[m/sso]',
     method: 'POST',
@@ -128,19 +130,11 @@ async function verifyTokenWithJava(token: string): Promise<string> {
   if (payload.status !== 100 || !payload.data?.uid) {
     throw new Error('登录令牌无效或已过期')
   }
-  // Prefer unionid (cross-app unique) > openid > numeric uid
-  return payload.data.unionid || payload.data.openid || String(payload.data.uid)
-}
-
-async function ensureUserExists(wxId: string): Promise<void> {
-  try {
-    await prisma.user.upsert({
-      where: { wxId },
-      update: {},
-      create: { wxId, name: `用户_${wxId}` },
-    })
-  } catch (error: unknown) {
-    console.error('[m/sso] ensureUserExists failed', error)
+  // Prefer unionid (cross-app unique) > openid > numeric uid for the session,
+  // but always retain the Java ID so an existing account can be recovered.
+  return {
+    wxId: payload.data.unionid || payload.data.openid || String(payload.data.uid),
+    javaUserId: String(payload.data.uid),
   }
 }
 

@@ -275,7 +275,11 @@ async function inferWithAi(html, analysis, args) {
     throw new Error(`Missing environment variable: ${apiKeyEnv}`)
   }
   const model = String(args.model || 'qwen-plus')
-  const baseURL = String(args['base-url'] || 'https://dashscope.aliyuncs.com/compatible-mode/v1')
+  const baseURL = String(
+    args['base-url'] ||
+      process.env.DASHSCOPE_BASE_URL ||
+      'https://llm-wwerfrg4elkhrxzz.cn-beijing.maas.aliyuncs.com/compatible-mode/v1',
+  )
   const client = new OpenAI({ apiKey, baseURL })
   const response = await client.chat.completions.create({
     model,

@@ -1,5 +1,8 @@
 'use client'
 
+import { getSectionDisplayTitle } from '@/entities/resume/section-display-title'
+import { SectionNameEditor } from '@/components/sections/section-name-editor'
+import { useSectionDisplayTitle } from '@/features/edit/draft/use-section-display-title'
 import { useCallback, useMemo, useState, type ReactElement, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import {
@@ -90,7 +93,7 @@ export function ModuleManageSheet({ open, onClose }: ModuleManageSheetProps): Re
     if (!pendingRemove) return
     log.info('remove section', { id: pendingRemove.id, title: pendingRemove.title })
     removeSection(pendingRemove.id)
-    toast.success(`已移除「${pendingRemove.title}」`)
+    toast.success(`已移除「${getSectionDisplayTitle(pendingRemove)}」`)
     setPendingRemove(null)
   }, [pendingRemove, removeSection])
 
@@ -150,7 +153,7 @@ export function ModuleManageSheet({ open, onClose }: ModuleManageSheetProps): Re
 
   const pendingLabel =
     pendingRemove
-      ? (findModuleBySectionTitle(pendingRemove.title)?.label ?? pendingRemove.title)
+      ? getSectionDisplayTitle(pendingRemove, findModuleBySectionTitle(pendingRemove.title)?.label ?? pendingRemove.title)
       : ''
 
   return (
@@ -343,6 +346,7 @@ interface ManageRowProps {
 }
 
 function SortableManageRow({ section, onRequestRemove }: ManageRowProps): ReactElement {
+  const updateDisplayTitle = useSectionDisplayTitle()
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: section.id,
   })
@@ -353,7 +357,7 @@ function SortableManageRow({ section, onRequestRemove }: ManageRowProps): ReactE
   }
 
   const moduleConfig = findModuleBySectionTitle(section.title)
-  const label = moduleConfig?.label ?? section.title
+  const label = getSectionDisplayTitle(section, moduleConfig?.label ?? section.title)
   const isRequired = moduleConfig?.required ?? false
 
   return (
@@ -376,7 +380,7 @@ function SortableManageRow({ section, onRequestRemove }: ManageRowProps): ReactE
 
       {/* Label + subtitle */}
       <div className="min-w-0 flex-1">
-        <div className="truncate text-[14px] font-semibold text-slate-900">{label}</div>
+        <SectionNameEditor section={section} fallback={moduleConfig?.label} onChange={updateDisplayTitle} />
         <div className="mt-0.5 text-[11px] text-slate-400">
           {section.blocks.length > 0 ? `${section.blocks.length} 条内容` : '未填写'}
         </div>

@@ -1,5 +1,6 @@
 'use client'
 
+import { getSectionDisplayTitle } from '@/entities/resume/section-display-title'
 import { useState, type ReactElement } from 'react'
 import { useRouter } from 'next/navigation'
 import { Plus, Trash2, ChevronRight } from 'lucide-react'
@@ -56,7 +57,7 @@ export default function CustomListPage(): ReactElement {
                 className="w-full flex items-center gap-3 px-4 py-3.5 text-left active:bg-slate-50"
               >
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-semibold text-slate-900 truncate">{s.title}</div>
+                  <div className="break-words text-sm font-semibold text-slate-900" style={{ overflowWrap: 'anywhere' }}>{getSectionDisplayTitle(s)}</div>
                   <div className="mt-0.5 text-xs text-slate-500 truncate">
                     {s.blocks.length > 0 ? '已填写内容' : '暂未填写'}
                   </div>

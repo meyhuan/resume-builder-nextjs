@@ -1,3 +1,4 @@
+import { normalizeSectionDisplayTitle } from '@/entities/resume/section-display-title';
 import { NextRequest } from 'next/server';
 import { generateText, type LanguageModel } from 'ai';
 import { extractAIConfig, getJsonProviderOptions, getModel, AIConfigError, type AIConfig } from '@/lib/ai/provider';
@@ -180,13 +181,14 @@ async function translateSection(
   const payload = {
     sectionId: section.id,
     title: section.title,
+    ...(normalizeSectionDisplayTitle(section.displayTitle) ? { displayTitle: normalizeSectionDisplayTitle(section.displayTitle) } : {}),
     blocks: section.blocks,
   };
   const result = await generateText({
     model,
     maxOutputTokens: 4096,
     system: getTranslatePrompt(targetLanguage),
-    prompt: `Translate this resume section. Return JSON with keys: sectionId, title, blocks.\n\n${JSON.stringify(payload)}`,
+    prompt: `Translate this resume section. Return JSON with keys: sectionId, title, blocks. If displayTitle is provided, translate it separately and also return displayTitle.\n\n${JSON.stringify(payload)}`,
     providerOptions: getJsonProviderOptions(aiConfig),
   });
   return extractJson(result.text, translatedSectionSchema);

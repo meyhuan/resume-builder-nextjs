@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { syncUserIdentity } from '@/lib/sync-user-identity';
 import { getQuotaLimit } from '@/lib/quota/membership-benefits';
 import { quotaFeature, type AssistantTask } from './types';
 
@@ -15,15 +16,11 @@ export async function consumeAssistantQuota(
   owner: string,
   isVip: boolean,
   feature: AssistantTask['feature'],
+  javaUserId?: string,
 ) {
   if (isVip) return;
   const key = quotaFeature(feature);
-  const user = await prisma.user.upsert({
-    where: { wxId: owner },
-    update: {},
-    create: { wxId: owner },
-    select: { id: true },
-  });
+  const user = await syncUserIdentity({ wxId: owner, javaUserId });
   await prisma.$transaction(async (tx) => {
     await tx.$executeRaw`INSERT INTO "UserQuota" ("userId","quotas","updatedAt") VALUES (${user.id},'{}'::jsonb,CURRENT_TIMESTAMP) ON CONFLICT ("userId") DO NOTHING`;
     const [row] = await tx.$queryRaw<
@@ -33,7 +30,18 @@ export async function consumeAssistantQuota(
     const date = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     const previous = row.quotas[key];
     const used = previous?.date === date ? previous.used : 0;
-    if (used >= getQuotaLimit(key))
+    // Historical numeric-ID rows are a read-only baseline, never copied into the new counter.
+    const [legacy] =
+      user.javaUserId && user.wxId !== user.javaUserId
+        ? await tx.$queryRaw<
+            { quotas: Record<string, { used: number; date: string }> }[]
+          >`
+          SELECT q."quotas" FROM "UserQuota" q JOIN "User" u ON u."id"=q."userId"
+          WHERE u."wxId"=${user.javaUserId} AND u."javaUserId" IS NULL`
+        : [];
+    const old = legacy?.quotas[key];
+    const legacyUsed = old?.date === date ? old.used : 0;
+    if (used + legacyUsed >= getQuotaLimit(key))
       throw new AssistantError(
         '此功能今日额度已用完，可升级会员后继续',
         429,

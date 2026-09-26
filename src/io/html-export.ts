@@ -17,7 +17,9 @@ export function buildResumeHtml(element: HTMLElement, options?: ResumeHtmlOption
   const title: string = options?.title ?? DEFAULT_TITLE
   const fonts: string = collectFontLinks()
   const styles: string = `${buildResumeFontFaceCss()}\n${collectStyleContent()}`
-  const markup: string = element.outerHTML
+  const exportElement = element.cloneNode(true) as HTMLElement
+  exportElement.querySelectorAll('[data-export-hide="true"]').forEach((node) => node.remove())
+  const markup: string = exportElement.outerHTML
   const isOnePage: boolean = markup.includes('data-one-page="true"')
   const isBleed: boolean = markup.includes('data-bleed="true"')
   const pagePaddingVertical: number = extractPagePaddingVertical(markup)

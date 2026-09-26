@@ -106,20 +106,20 @@ export function ModuleEditShell(props: ModuleEditShellProps): ReactElement {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
       {!inMiniProgram && (
-        <div className="sticky top-0 z-20 flex items-center justify-between px-3 h-12 bg-white/90 backdrop-blur border-b border-slate-200">
+        <div className="sticky top-0 z-20 flex min-h-12 items-center justify-between px-3 py-1 bg-white/90 backdrop-blur border-b border-slate-200">
           <button
             type="button"
-            className="h-9 w-9 rounded-lg flex items-center justify-center text-slate-600 hover:bg-slate-100"
+            className="h-9 w-9 shrink-0 rounded-lg flex items-center justify-center text-slate-600 hover:bg-slate-100"
             onClick={handleBack}
             aria-label="返回"
           >
             <ArrowLeft size={18} />
           </button>
-          <div className="flex flex-col items-center">
-            <div className="text-sm font-semibold text-slate-800">{title}</div>
+          <div className="flex min-w-0 flex-col items-center px-2 text-center">
+            <div className="break-words text-sm font-semibold text-slate-800" style={{ overflowWrap: 'anywhere' }}>{title}</div>
             {subtitle && <div className="text-[10px] text-slate-400">{subtitle}</div>}
           </div>
-          <div className="w-9" />
+          <div className="w-9 shrink-0" />
         </div>
       )}
 

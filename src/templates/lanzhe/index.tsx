@@ -1,5 +1,6 @@
 "use client"
 
+import { SectionTitleText } from '@/components/sections/section-title-text'
 import { useState } from 'react'
 import type { CSSProperties, ReactElement, ReactNode } from 'react'
 import { GripVertical, Plus, Trash2 } from 'lucide-react'
@@ -335,8 +336,8 @@ function LanzheHero(props: {
   )
 }
 
-function FoldTitle(props: { readonly children: ReactNode; readonly titleScale?: number }): ReactElement {
-  const { children, titleScale = 1 } = props
+function FoldTitle(props: { readonly children: ReactNode; readonly titleScale?: number; readonly flexible?: boolean }): ReactElement {
+  const { children, titleScale = 1, flexible = false } = props
   return (
     <h2
       className="lanzhe-section-title relative inline-flex items-center"
@@ -354,9 +355,10 @@ function FoldTitle(props: { readonly children: ReactNode; readonly titleScale?: 
         lineHeight: '32px',
         fontWeight: 700,
         boxShadow: '2px 4px 0 rgba(41, 74, 111, 0.12)',
+        ...(flexible ? { height: 'auto', minHeight: 32, maxWidth: '100%', padding: '4px 24px 4px 22px', lineHeight: 1.5 } : {}),
       }}
     >
-      <span>{children}</span>
+      <span style={flexible ? { minWidth: 0 } : undefined}>{children}</span>
     </h2>
   )
 }
@@ -441,10 +443,10 @@ function LanzheSection(props: LanzheSectionProps): ReactElement {
       style={{ minHeight: 30 }}
     >
       <div className="relative">
-        <FoldTitle titleScale={titleScale}>
-          <EditableText
+        <FoldTitle titleScale={titleScale} flexible={editable.displayTitle !== editable.title}>
+          <SectionTitleText
             as="span"
-            value={editable.title}
+            value={editable.displayTitle}
             onCommit={editable.canEditTitle ? editable.onCommitTitle : undefined}
             style={{ color: '#ffffff', fontWeight: 700 }}
           />
@@ -479,7 +481,7 @@ function LanzheSection(props: LanzheSectionProps): ReactElement {
 
       <DeleteSectionDialog
         open={editable.isDeleteDialogOpen}
-        sectionTitle={editable.title}
+        sectionTitle={editable.displayTitle}
         onOpenChange={editable.setDeleteDialogOpen}
         onConfirm={editable.confirmDelete}
       />

@@ -16,6 +16,7 @@
  *
  * 推荐品牌色为杏黄 amber-700，可自定义。
  */
+import { SectionTitleText } from '@/components/sections/section-title-text'
 import { createContext, useContext } from 'react'
 import type { ReactElement, ReactNode } from 'react'
 import { RESUME_FONT_FAMILY_NAMES, RESUME_FONT_STACKS } from '@/entities/theme/font-stacks'
@@ -449,7 +450,7 @@ function XingtanSection(props: SectionProps): ReactElement {
   const { section, index, dragRef, dragAttrs, dragListeners, themeColor, spacingScale } = props
   const editable = useEditableSection(section)
   const {
-    title, canEditTitle, onCommitTitle,
+    displayTitle, canEditTitle, onCommitTitle,
     isTextOnly, onAddBlock, onRequestDelete,
     isHovered, setHovered,
     isDeleteDialogOpen, setDeleteDialogOpen, confirmDelete,
@@ -466,7 +467,7 @@ function XingtanSection(props: SectionProps): ReactElement {
       <XingtanSectionHeading
         chapter={chapter}
         tag={tag}
-        title={title}
+        title={displayTitle}
         onCommitTitle={canEditTitle ? onCommitTitle : undefined}
       />
 
@@ -486,7 +487,7 @@ function XingtanSection(props: SectionProps): ReactElement {
 
       <DeleteSectionDialog
         open={isDeleteDialogOpen}
-        sectionTitle={title}
+        sectionTitle={displayTitle}
         onOpenChange={setDeleteDialogOpen}
         onConfirm={confirmDelete}
       />
@@ -529,7 +530,7 @@ function XingtanSectionHeading(props: HeadingProps): ReactElement {
       >
         {chapterLabel}
       </div>
-      <EditableText
+      <SectionTitleText
         as="h2"
         value={title}
         onCommit={onCommitTitle}

@@ -16,6 +16,7 @@ import { TEST_RESUME_JSON } from '@/io/default-resume-data'
 import { createDefaultResume } from '@/lib/default-resume'
 import { createDefaultBlock } from '@/entities/blocks/block-factory'
 import { normalizeResumeContent } from '@/entities/resume/normalize-resume-content'
+import { setSectionDisplayTitle, validateSectionDisplayTitle } from '@/entities/resume/section-display-title'
 import { TEMPLATE_REGISTRY } from '@/templates/template-loader'
 import {
   getResumeFontFamily,
@@ -346,6 +347,20 @@ export const useAppStore = create<AppState>()(
           })
         }),
       }), false, 'section/addSection')
+    },
+    updateSectionDisplayTitle: (sectionId, value) => {
+      const state = get()
+      const section = state.resume.sections.find((s) => s.id === sectionId)
+      if (state.readOnly || !section || (value !== undefined && validateSectionDisplayTitle(value))) return
+      if (section.displayTitle === value?.trim()) return
+      set(() => ({
+        pastStates: pushHistory(state.resume, state.pastStates),
+        futureStates: [],
+        resume: produce(state.resume, (draft) => {
+          const target = draft.sections.find((s) => s.id === sectionId)
+          if (target) setSectionDisplayTitle(target, value)
+        }),
+      }), false, 'section/updateSectionDisplayTitle')
     },
     updateSectionTitle: (sectionId, title) => {
       const state = get()

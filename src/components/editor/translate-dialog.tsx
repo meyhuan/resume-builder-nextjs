@@ -152,6 +152,7 @@ export function TranslateDialog(props: {
             const section = {
               sectionId: unit.sectionId,
               title: typeof unit.title === 'string' ? unit.title : undefined,
+              displayTitle: typeof unit.displayTitle === 'string' ? unit.displayTitle : undefined,
               blocks: Array.isArray(unit.blocks) ? unit.blocks : undefined,
             };
             if (mode === 'overwrite') applyTranslatedSection(section);

@@ -1,3 +1,4 @@
+import { getSectionDisplayTitle } from '@/entities/resume/section-display-title'
 import type { ResumeData } from '@/entities/resume/resume-data'
 
 export function exportResumeToMarkdown(resume: ResumeData): string {
@@ -44,7 +45,7 @@ export function exportResumeToMarkdown(resume: ResumeData): string {
   // 3. Sections
   if (resume.sections && resume.sections.length > 0) {
     resume.sections.forEach((section) => {
-      lines.push(`## ${section.title || '自定义模块'}`)
+      lines.push(`## ${getSectionDisplayTitle(section) || '自定义模块'}`)
       lines.push('')
       
       section.blocks.forEach((block) => {

@@ -1,11 +1,12 @@
 'use client'
 
+import { getSectionDisplayTitle } from '@/entities/resume/section-display-title'
+import { SectionNameEditor } from '@/components/sections/section-name-editor'
 import { use, useMemo, type ReactElement } from 'react'
 import { useRouter } from 'next/navigation'
 import { ModuleEditShell } from '../../_components/module-edit-shell'
 import type { ValidationResult } from '../../_components/module-edit-shell'
 import { validateRequired } from '../../_components/validators'
-import { TextField } from '@/features/edit/form-fields/text-field'
 import { MobileRichTextarea } from '@/features/edit/form-fields/mobile-rich-textarea'
 import { useCustomSections } from '@/features/edit/draft/use-custom-sections'
 
@@ -34,22 +35,19 @@ export default function CustomDetailPage({ params }: PageParams): ReactElement {
   }
 
   const validate = (): ValidationResult =>
-    validateRequired([{ label: '模块名称', value: section.title }])
+    validateRequired([{ label: '模块名称', value: getSectionDisplayTitle(section) }])
 
   return (
     <ModuleEditShell
-      title={section.title}
+      title={getSectionDisplayTitle(section)}
       subtitle="自定义内容"
       onBack={(): void => router.replace('/m/edit/custom')}
       validate={validate}
     >
-      <TextField
-        label="模块名称"
-        value={section.title}
-        onValueChange={(v): void => renameSection(section.id, v)}
-        required
-        placeholder="例如：语言能力"
-      />
+      <div className="rounded-xl border border-slate-200 bg-white p-4">
+        <div className="mb-2 text-sm text-slate-500">模块名称</div>
+        <SectionNameEditor section={section} onChange={renameSection} />
+      </div>
       <MobileRichTextarea
         label="模块内容"
         html={getTextHtml(section.id)}

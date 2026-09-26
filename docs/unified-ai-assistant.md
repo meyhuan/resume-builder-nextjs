@@ -1,6 +1,6 @@
 # PC AI 助手统一改写工作流
 
-实现日期：2026-09-19；2026-09-26 调整为不新增表方案。前端与 Java 埋点后端分别位于独立 worktree，同名分支 `codex/unified-ai-assistant`。本次未部署生产环境；本功能无需数据库迁移。
+实现日期：2026-09-19；2026-09-26 调整为不新增表方案，并同步本地主线 f09353e 的模型接口与账号身份修复。前端与 Java 埋点后端分别位于独立 worktree，同名分支 `codex/unified-ai-assistant`。本次未部署生产环境；本功能无需数据库迁移。
 
 ## 用户体验
 
@@ -29,14 +29,14 @@
 
 ## 数据与额度
 
-不新增数据库表、字段、Redis 或其它持久化服务。Prisma schema 与本功能开发前一致，原新增建表迁移和服务端任务账本已删除。
+不新增数据库表、字段、Redis 或其它持久化服务。Prisma schema 与当前主线一致，原新增建表迁移和服务端任务账本已删除。
 
 - 本地 IndexedDB 保存最近 20 个任务及其对话、预览状态和撤销凭据；历史仅在当前浏览器可用，不跨设备同步。服务端不持久化任务对话或生成结果，但每次处理仍需接收相关内容并调用模型。
 - 润色使用 `ai:polish-section`；帮我写使用 `ai:generate-section`；普通问答使用 `ai:editor-assist`。
 - 任务内信息收集不扣生成额度；生成开始计一次，主动重新生成使用新请求ID再计一次。生成失败不自动退款，沿用开始计次口径。
 - 前端发送期间禁止重复提交，不自动重试失败的 HTTP 请求。手动「重新生成（重新计次）」使用新请求 ID、当前简历和当前任务历史；显示上一请求若已开始生成可能已扣次的提示。停止请求也不能保证退回已消费额度。
 - 没有服务端持久化的请求去重或结果重放；即使调用方重复提交相同 ID，也按独立请求处理。单次接口执行内部最多扣次一次，不将这一保障描述为跨请求幂等。
-- 继续使用现有 User / UserQuota 表和原功能额度键。数据库行锁串行化同账号额度更新。旧 AI 接口同一额度行的更新也改为锁内读取、按 JSON 键更新，避免新旧功能并发互相覆盖余额。
+- 继续使用现有 User / UserQuota 表和原功能额度键。登录 unionid 与 Java userId 分开传递，经 syncUserIdentity 统一到已有账号；旧数字 ID 账号的额度只作为只读基线计入上限，不重复拷贝。数据库行锁串行化同账号额度更新。旧 AI 接口同一额度行的更新也改为锁内读取、按 JSON 键更新，避免新旧功能并发互相覆盖余额。
 - 恢复本地历史不自动应用；只有当前活跃请求的完整响应可触发直接修改。客户端同时校验目标快照。
 - 新增 `ai_assist_interaction` 的入口、开始、追问、预览、应用、保留、撤销、推荐问题、冲突、失败等行为统计；不上传简历正文。Java 白名单同时补齐原本缺失的四个 `ai_assist_*` 事件。
 
@@ -57,18 +57,34 @@
 | 检查 | 命令/方式 | 结果与覆盖 |
 |---|---|---|
 | 类型检查 | `node node_modules/typescript/bin/tsc --noEmit --incremental false` | 通过 |
-| 专项自动化 | `node node_modules/vitest/vitest.mjs run --config scripts/vitest.unified-ai.config.ts` | 49 项通过；5 项真实模型用例本次跳过 |
+| 专项自动化 | `node node_modules/vitest/vitest.mjs run --config scripts/vitest.unified-ai.config.ts` | 55 项通过；5 项真实模型用例另行执行 |
 | 原助手回归 | `node node_modules/vitest/vitest.mjs run --config scripts/vitest.editor-ai.config.ts` | 10 项通过；旧聊天应用/忽略/历史、编辑工具状态及旧模块界面 |
-| 真实模型（9月19日原实现验证，本次未重跑） | 设置 `AI_LIVE_EVAL=1` 和模型密钥后运行专项配置中的 `engine.live.test.ts` | 5 项通过；协助职责、缺材料追问、拒绝虚增数字与职责、了解不变精通、明确单次直接替换；仅使用虚构材料，未操作真实账号简历 |
-| PostgreSQL 语义 | 专项测试中的 quota.test.ts 使用临时 PGlite | 只创建模拟的既有 UserQuota 表，验证5次并发上限、不同功能计数不覆盖、跨日重置、用户隔离、会员余额不扣；不是生产数据库验收 |
+| 真实模型（9月26日重跑） | 设置 `AI_LIVE_EVAL=1` 和模型密钥后运行专项配置中的 `engine.live.test.ts` | 5 项通过；协助职责、缺材料追问、拒绝虚增数字与职责、了解不变精通、明确单次直接替换；仅使用虚构材料，未操作真实账号简历 |
+| PostgreSQL 语义 | 专项测试中的 quota.test.ts 使用临时 PGlite | 创建模拟的既有 User / UserQuota 表，验证5次并发上限、不同功能计数不覆盖、跨日重置、用户隔离、会员余额不扣、登录别名与旧计数合并；不是生产数据库验收 |
 | 浏览器 | 启动本地 Next dev 后运行 `node scripts/test-unified-ai-browser.mjs` | Chrome 中模块入口、差异、预览不写入、应用、撤销、后续问题、保留原文、刷新不重放及后续请求携带本地历史通过；1440/1100宽度截图检查；AI响应使用固定测试数据 |
 | 定向 lint | ESLint 检查本次修改的 unified 逻辑、新面板、任务路由和测试文件 | 通过，无错误或规则警告 |
-| Prisma schema | `git diff 1a067f3 -- prisma` | 无差异，本功能没有数据库结构或迁移改动 |
-| Java 埋点（9月19日验证，本次无改动） | 后端 `mvnw.cmd -q -Dtest=AssistantAnalyticsTest test` | 通过；5个助手事件经过真实服务校验并调用模拟持久层 |
+| Prisma schema | `git diff main -- prisma` | 无差异，本功能没有数据库结构或迁移改动 |
+| Java 埋点（9月26日重跑，本次无改动） | 后端 `mvnw.cmd -q -Dtest=AssistantAnalyticsTest test` | 通过；5个助手事件经过真实服务校验并调用模拟持久层 |
 
 浏览器产物位于 `test-artifacts/unified-ai/`：preview.png、history.png、narrow.png、browser-report.json。专项日志为 worktree 根目录的 ai-tests.log、ai-live-tests.log、ai-typecheck.log、ai-lint.log、ai-regression.log、ai-browser.log（均不提交）。
 
-未执行：本次真实模型评测、生产构建与部署、真实登录账号从浏览器到生产库的全链路操作、线上埋点最终入库验收。无需执行本功能的生产迁移。浏览器、服务端路由、SQL及真实模型分别验证，不将这些检查冒充生产端到端测试。
+本次发布检查补充：
+
+| 检查 | 命令/方式 | 结果 |
+|---|---|---|
+| 主线合并 | 同步 main f09353e，解决 quota-checker 冲突 | 保留统一账号识别、旧计数基线和数据库行锁；没有新增迁移 |
+| 账号回归 | `node node_modules/vitest/vitest.mjs run --config scripts/vitest.identity.config.ts` | 18 项通过 |
+| 模块标题回归 | `node node_modules/vitest/vitest.mjs run --config scripts/vitest.display-title.config.ts` | 13 项通过 |
+| 生产构建 | `node node_modules/next/dist/bin/next build`，只临时注入原环境中的 NEXT_PUBLIC 配置 | 通过；415个静态页面生成完成。未把生产数据库凭据交给构建进程 |
+| 真实浏览器链路 | 本地 production server + `node scripts/test-unified-ai-live-browser.mjs`，AI_TEST_ENV_FILE 指向本地受保护环境文件 | 已有自动化测试账号登录，真实 Java 身份检查、真实数据库额度、真实模型、正式编辑器模块入口、差异预览、应用和撤销通过；追问不扣次，非会员生成只扣1次；临时虚构简历已删除 |
+
+真实链路截图与报告：`test-artifacts/unified-ai-release/preview.png`、`final.png`、`report.json`。构建日志 `ai-release-build.log`，真实浏览器日志 `ai-real-browser.log`。不要上传环境文件、账号 Cookie 或服务器日志。
+
+验证过程中发现并修复：测试文件 const lint 错误；模型复核输出格式异常导致请求失败（重试反馈具体结构错误，最终未通过复核时返回确认问题，不返回未经核验的改稿）；后续问题曾建议升级职责，现增加提示约束与过滤，保留安全相关选项。
+
+结论：代码与本地生产构建已通过发布前验收，可以按上述顺序发布。Java 埋点白名单必须随此次上线；构建开启 NEXT_PUBLIC_UNIFIED_AI_ASSISTANT=true。尚未部署线上，也未做线上新增埋点入库验收。生产构建仍有既有 analytics 页 Hook 依赖和浏览器兼容数据库过期提示，不阻止构建。
+
+本次未自行修改合入主线的简历模板实现，因此未重跑全量模板截图矩阵；模块标题回归和正式编辑器中的 AI 改写流程已验证。
 
 事实复核仍依赖模型判断，固定案例通过不能证明永不出错；默认差异预览、明确授权、冲突保护和可撤销操作是持续保留的产品边界。上线后重点观察生成完成率、采用率、撤销率、未闭环请求及额度异常，并按功能和入口区分统计。
 

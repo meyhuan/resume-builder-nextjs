@@ -21,7 +21,8 @@ import EditableFieldWrapper from '@/editor/editable-field-wrapper'
 import SortableSectionWrapper from '@/components/sections/sortable-section-wrapper'
 import DragDropProvider from '@/dnd/drag-drop-provider'
 import { DndIds } from '@/dnd/ids'
-import { isCustomSection } from '@/entities/blocks/block-factory'
+import { getSectionDisplayTitle } from '@/entities/resume/section-display-title'
+import { SectionTitleText } from '@/components/sections/section-title-text'
 import { useAiSection } from '@/components/ai-section/ai-section-provider'
 import { blockTypeToModuleType, extractBlockContentHtml } from '@/components/ai-section/block-module-utils'
 import { useAppStore } from '@/state/store'
@@ -106,7 +107,7 @@ export default function DenseTemplate(props: DenseTemplateProps): ReactElement {
             if (!section) return null
             return (
               <div className="rounded border border-slate-200 bg-white p-3 shadow">
-                <h2 className="text-base font-semibold">{section.title}</h2>
+                <h2 className="text-base font-semibold">{getSectionDisplayTitle(section)}</h2>
               </div>
             )
           }}
@@ -356,7 +357,7 @@ function DenseSection(props: DenseSectionProps): ReactElement {
   const blockIds = section.blocks.map((block) => block.id)
   const addBlock = useAppStore((state) => state.addBlockByType)
   const deleteSection = useAppStore((state) => state.deleteSection)
-  const updateSectionTitle = useAppStore((state) => state.updateSectionTitle)
+  const updateSectionDisplayTitle = useAppStore((state) => state.updateSectionDisplayTitle)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [hovered, setHovered] = useState(false)
   const { setNodeRef } = useDroppable({ id: `${DndIds.SECTION_DROP_ID_PREFIX}${section.id}` })
@@ -375,11 +376,11 @@ function DenseSection(props: DenseSectionProps): ReactElement {
         style={{ left: -40, top: 6, backgroundColor: accent }}
       />
       <div className="relative mb-2 flex items-start justify-between gap-3">
-        <EditableSectionTitle
-          sectionId={section.id}
-          title={section.title}
-          canEdit={isCustomSection(section.title)}
-          onChange={(title) => updateSectionTitle(section.id, title)}
+        <SectionTitleText
+          as="h2"
+          className="m-0 text-[1.28em] font-medium leading-tight text-black"
+          value={getSectionDisplayTitle(section)}
+          onCommit={(title) => updateSectionDisplayTitle(section.id, title)}
         />
         <div
           className="flex items-center gap-1 rounded border border-slate-200 bg-white px-1 py-0.5 shadow-sm transition-opacity print:hidden"
@@ -426,7 +427,7 @@ function DenseSection(props: DenseSectionProps): ReactElement {
 
       <DeleteSectionDialog
         open={showDeleteDialog}
-        sectionTitle={section.title}
+        sectionTitle={getSectionDisplayTitle(section)}
         onOpenChange={setShowDeleteDialog}
         onConfirm={() => {
           deleteSection(section.id)
@@ -434,61 +435,6 @@ function DenseSection(props: DenseSectionProps): ReactElement {
         }}
       />
     </section>
-  )
-}
-
-function EditableSectionTitle(props: {
-  readonly sectionId: string
-  readonly title: string
-  readonly canEdit: boolean
-  readonly onChange: (value: string) => void
-}): ReactElement {
-  const [isEditing, setIsEditing] = useState(false)
-  const [value, setValue] = useState(props.title)
-
-  function commit(): void {
-    const trimmed = value.trim()
-    if (trimmed && trimmed !== props.title) {
-      props.onChange(trimmed)
-    } else {
-      setValue(props.title)
-    }
-    setIsEditing(false)
-  }
-
-  if (!props.canEdit) {
-    return <h2 className="m-0 text-[1.28em] font-medium leading-tight text-black">{props.title}</h2>
-  }
-
-  if (isEditing) {
-    return (
-      <input
-        className="m-0 max-w-[220px] bg-blue-50 text-[1.28em] font-medium leading-tight text-black outline-none ring-1 ring-blue-500"
-        value={value}
-        onChange={(event) => setValue(event.target.value)}
-        onBlur={commit}
-        onKeyDown={(event) => {
-          if (event.key === 'Enter') commit()
-          if (event.key === 'Escape') {
-            setValue(props.title)
-            setIsEditing(false)
-          }
-        }}
-        autoFocus
-      />
-    )
-  }
-
-  return (
-    <h2
-      className="m-0 cursor-text text-[1.28em] font-medium leading-tight text-black hover:bg-slate-50"
-      onClick={() => {
-        setValue(props.title)
-        setIsEditing(true)
-      }}
-    >
-      {props.title}
-    </h2>
   )
 }
 

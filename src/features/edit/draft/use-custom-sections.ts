@@ -1,5 +1,6 @@
 'use client'
 
+import { useSectionDisplayTitle } from './use-section-display-title'
 import { useCallback, useMemo } from 'react'
 import type { Section } from '@/entities/resume/section'
 import type { TextBlock } from '@/entities/blocks/text-block'
@@ -21,7 +22,7 @@ function createId(prefix: string): string {
 export interface CustomSectionsBinding {
   readonly sections: readonly Section[]
   readonly addSection: (title: string) => string
-  readonly renameSection: (sectionId: string, nextTitle: string) => void
+  readonly renameSection: (sectionId: string, nextTitle: string | undefined) => void
   readonly removeSection: (sectionId: string) => void
   readonly getTextHtml: (sectionId: string) => string
   readonly setTextHtml: (sectionId: string, html: string) => void
@@ -60,16 +61,7 @@ export function useCustomSections(): CustomSectionsBinding {
     [updateDraft],
   )
 
-  const renameSection = useCallback(
-    (sectionId: string, nextTitle: string): void => {
-      updateDraft(`sections.custom.${sectionId}.rename`, (d) => {
-        const idx: number = d.sections.findIndex((s) => s.id === sectionId)
-        if (idx < 0) return
-        d.sections[idx] = { ...d.sections[idx], title: nextTitle }
-      })
-    },
-    [updateDraft],
-  )
+  const renameSection = useSectionDisplayTitle()
 
   const removeSection = useCallback(
     (sectionId: string): void => {

@@ -105,7 +105,8 @@ function LoginForm(): React.ReactElement {
     pollTimerRef.current = setInterval(async () => {
       try {
         const resp = await authApi.exchangeWxToken(sceneStrRef.current);
-        const payload = resp.data || resp;
+        const responsePayload = resp.data || resp;
+        const payload = responsePayload?.data ?? responsePayload;
         if (payload === 'pending' || payload.status === 'pending') return;
         if (payload.status === 'expired') {
           stopPolling();
@@ -114,16 +115,24 @@ function LoginForm(): React.ReactElement {
         }
         const javaUserId: string | undefined = payload.javaUserId || payload.uid || (payload.data && (payload.data.javaUserId || payload.data.uid));
         if (javaUserId) {
-          const identity: string = payload.unionid || payload.openid || String(javaUserId);
+          let identity: string = payload.unionid || payload.openid || String(javaUserId);
           logger.success('WxLogin', `Login successful, identity: ${identity}`);
           try {
-            await syncNextUserAction({
+            const syncResult = await syncNextUserAction({
               wxId: identity,
               name: `用户_${javaUserId}`,
               javaUserId: String(javaUserId),
             });
+            if (!syncResult.success || !syncResult.user?.wxId) {
+              throw new Error(syncResult.error || '账号同步失败，请重新扫码登录');
+            }
+            identity = syncResult.user.wxId;
           } catch (syncError) {
             logger.error('WxLogin', 'Failed to sync user', syncError);
+            stopPolling();
+            stopExpireCountdown();
+            setErrorMessage('账号同步失败，请刷新二维码重试；如仍失败请联系客服');
+            return;
           }
           handleLoginSuccess(identity, String(javaUserId));
         }
@@ -131,7 +140,7 @@ function LoginForm(): React.ReactElement {
         // Continue polling
       }
     }, 2000);
-  }, [stopPolling, handleLoginSuccess]);
+  }, [stopPolling, stopExpireCountdown, handleLoginSuccess]);
 
   const getQr = useCallback(async (): Promise<void> => {
     setLoading(true);

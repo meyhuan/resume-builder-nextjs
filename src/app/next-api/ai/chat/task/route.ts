@@ -51,7 +51,8 @@ export async function POST(request: NextRequest) {
       throw new AssistantError('简历或对话内容过长，请精简内容或新建对话', 413);
     const body = bodySchema.parse(JSON.parse(raw));
     const auth = await checkVipStatus();
-    if (!auth.userId) throw new AssistantError('请先登录', 401);
+    if (!auth.userId || !auth.unionid)
+      throw new AssistantError('请先登录', 401);
     if (
       !consumeRateLimit(
         `assistant-task:${auth.userId}`,
@@ -76,9 +77,10 @@ export async function POST(request: NextRequest) {
       charge: (feature) => {
         signal.throwIfAborted();
         return (chargePromise ??= consumeAssistantQuota(
-          auth.userId!,
+          auth.unionid!,
           auth.isVip,
           feature,
+          auth.javaUserId,
         ));
       },
     });

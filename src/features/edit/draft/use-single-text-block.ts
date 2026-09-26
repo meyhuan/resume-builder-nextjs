@@ -12,6 +12,7 @@ function createId(prefix: string): string {
 }
 
 export interface SingleTextBlockBinding {
+  readonly section: Section | undefined
   readonly html: string
   readonly setHtml: (next: string) => void
   readonly ready: boolean
@@ -24,6 +25,8 @@ export interface SingleTextBlockBinding {
 export function useSingleTextBlock(sectionTitle: string): SingleTextBlockBinding {
   const draft = useDraftStore((s) => s.draft)
   const updateDraft = useDraftStore((s) => s.updateDraft)
+
+  const section = draft?.sections.find((s) => s.title.replace(/\s/g, '') === sectionTitle.replace(/\s/g, ''))
 
   const html: string = (() => {
     if (!draft) return ''
@@ -61,5 +64,5 @@ export function useSingleTextBlock(sectionTitle: string): SingleTextBlockBinding
     [sectionTitle, updateDraft],
   )
 
-  return { html, setHtml, ready: Boolean(draft) }
+  return { section, html, setHtml, ready: Boolean(draft) }
 }

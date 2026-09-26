@@ -56,7 +56,14 @@ export function followupsFor(
           '这次具体调整了哪些表达？',
         ]
       : ['我应该先补充哪些真实信息？', '帮我检查简历中哪些表述不够清楚。'];
-  return [...new Set([...draft.followups, ...fallback])].slice(0, 3);
+  // Do not suggest inflating credentials or responsibility, even as a question.
+  const safe = draft.followups.filter(
+    (text) =>
+      !/主导|统筹|独立承担|精通|熟练掌握|夸大|虚构|伪造|编造|提升.{0,10}[%％]/.test(
+        text,
+      ),
+  );
+  return [...new Set([...safe, ...fallback])].slice(0, 3);
 }
 export function taskSystem(task: AssistantTask): string {
   return `你是智简简历的AI助手，为所有行业求职者服务。用用户语言回答，默认中文。
@@ -65,5 +72,5 @@ export function taskSystem(task: AssistantTask): string {
 主动识别缺失信息：事实够就组织表达；不知道怎么写时每轮只问1到3个日常问题，可附简短选项，不预选事实。无数字也可以保守表达；允许不知道、跳过。存在冲突先确认。不得强制填满每个模块。
 少说过程：直接给可核对结果，不说我将为你打造、不重复修改卡片、不声称已应用。普通回复先提建议；执行由客户端根据本次授权决定。
 输出一个JSON对象：{answer:简短说明或分析,questions:[{question,options:[]}],proposals:[{action:"updateBlock",blockId,html,reason}或{action:"addSection",type,title,contentHtml}或{action:"suggestSkills",skills:[],category}],followups:[2到3条相关的下一步问题]}。HTML只允许p/ul/li/strong。技能建议只有用户明确证实会的技能才能放进proposals，岗位要求缺少的技能只能在分析中说明。
-有questions时不要同时输出proposals，也不要在answer中夹带可直接复制的虚构履历。后续问题不要暗示新的事实，不使用泛泛的需要帮助吗，不重复应用/撤销按钮。用户要求写、润色、翻译、补技能时通过proposals输出而非只在正文写改稿。分析JD、面试准备、求职信等可在answer回答，但同样不能编造用户事实。`;
+有questions时不要同时输出proposals，也不要在answer中夹带可直接复制的虚构履历。后续问题用用户第一人称写成可直接发送的需求，只围绕精简表达、核对差异、补充真实信息；不要建议升级职责或能力，例如不得建议把协助换成独立承担，即使附带请确认也不行。不使用泛泛的需要帮助吗，不重复应用/撤销按钮。用户要求写、润色、翻译、补技能时通过proposals输出而非只在正文写改稿。分析JD、面试准备、求职信等可在answer回答，但同样不能编造用户事实。`;
 }

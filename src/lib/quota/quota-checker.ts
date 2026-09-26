@@ -9,6 +9,7 @@
 
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
+import { syncUserIdentity } from '@/lib/sync-user-identity';
 import { checkVipStatus, checkVipStatusForWxId, consumeFreeExportFromJava } from '@/lib/api/vip-api';
 import {
   getQuotaLimit,
@@ -97,7 +98,7 @@ export async function checkQuota(
   }
   const limit = getEffectiveLimit(feature);
   const featureName = getFeatureDisplayName(feature);
-  if (!userId) {
+  if (!userId || !unionid) {
     console.log(`${logPrefix} noUserId`, { feature });
     return createResult({
       allowed: false,
@@ -110,8 +111,9 @@ export async function checkQuota(
     });
   }
   console.log(`${logPrefix} proceedToCore`, { userId, feature });
-  return checkQuotaCore(userId, freeExportCount, feature, skipConsume, limit, featureName, {
-    consumeIdentity: unionid || userId,
+  return checkQuotaCore(unionid, freeExportCount, feature, skipConsume, limit, featureName, {
+    javaUserId: userId,
+    consumeIdentity: unionid,
   });
 }
 
@@ -147,7 +149,7 @@ export async function checkQuotaForUser(
       feature,
     });
   }
-  const { isVip, unionid, freeExportCount = 0 } = await checkVipStatusForWxId(wxId);
+  const { isVip, unionid, javaUserId, freeExportCount = 0 } = await checkVipStatusForWxId(wxId);
   console.log(`${logPrefix} vipStatus`, { wxId, unionid, isVip, freeExportCount });
   if (isVip) {
     console.log(`${logPrefix} vipGranted`, { wxId, feature });
@@ -166,6 +168,7 @@ export async function checkQuotaForUser(
   console.log(`${logPrefix} proceedToCore`, { wxId, limit, featureName });
   return checkQuotaCore(wxId, freeExportCount, feature, skipConsume, limit, featureName, {
     userName: `用户_${wxId}`,
+    javaUserId,
     logPrefix: '[quota:wxid]',
     consumeIdentity: unionid || wxId,
   });
@@ -208,36 +211,19 @@ async function checkQuotaCore(
   skipConsume: boolean,
   limit: number,
   featureName: string,
-  opts?: { userName?: string; logPrefix?: string; consumeIdentity?: string },
+  opts?: { userName?: string; logPrefix?: string; consumeIdentity?: string; javaUserId?: string },
 ): Promise<QuotaCheckResult> {
   const logPrefix = opts?.logPrefix ?? '[quota:core]';
   console.log(`${logPrefix} start`, { wxId, feature, limit, skipConsume });
   const todayKey = getDateKey(Date.now());
   console.log(`${logPrefix} upsertUser`, { wxId });
-  let user;
-  try {
-    user = await prisma.user.upsert({
-      where: { wxId },
-      update: {},
-      create: { wxId, ...(opts?.userName ? { name: opts.userName } : {}) },
-      select: { id: true },
-    });
-  } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-      console.log(`${logPrefix} userRaceConditionP2002`, { wxId });
-      user = await prisma.user.findUnique({
-        where: { wxId },
-        select: { id: true },
-      });
-      if (!user) {
-        throw new Error(`${logPrefix} Failed to fetch User after P2002 for wxId ${wxId}`);
-      }
-      console.log(`${logPrefix} userRecoveredFromRace`, { wxId, userId: user.id });
-    } else {
-      console.error(`${logPrefix} userDbError`, { wxId, error });
-      throw error;
-    }
-  }
+  // Keep the login identity separate from Java's numeric user ID. Only link
+  // Java IDs returned by a successful backend lookup, never by guessing from wxId.
+  const syncedUser = await syncUserIdentity({
+    wxId,
+    javaUserId: opts?.javaUserId,
+  });
+  const user = { id: syncedUser.id };
   console.log(`${logPrefix} userReady`, { userId: user.id });
   let quotaRecord;
   try {
@@ -263,9 +249,22 @@ async function checkQuotaCore(
   const quotas = (quotaRecord.quotas as unknown as QuotasData) || {};
   const featureQuota = quotas[feature];
   const isLifetimeQuota = LIFETIME_QUOTA_FEATURES.includes(feature);
-  const used = isLifetimeQuota
+  const localUsed = isLifetimeQuota
     ? (featureQuota?.used ?? 0)
     : (featureQuota?.date === todayKey ? featureQuota.used : 0);
+  // Old web quota checks stored counters on wxId=Java ID. Retain that usage
+  // as a read-only baseline; all new consumption goes to the canonical row.
+  // Do not copy the baseline into the new counter, which would count it again.
+  const legacyQuota = syncedUser.javaUserId && syncedUser.wxId !== syncedUser.javaUserId
+    ? await prisma.userQuota.findFirst({
+        where: { user: { wxId: syncedUser.javaUserId, javaUserId: null } },
+      })
+    : null;
+  const legacyFeature = (legacyQuota?.quotas as unknown as QuotasData | undefined)?.[feature];
+  const legacyUsed = isLifetimeQuota || legacyFeature?.date === todayKey
+    ? (legacyFeature?.used ?? 0)
+    : 0;
+  const used = localUsed + legacyUsed;
   console.log(`${logPrefix} quotaState`, { userId: user.id, feature, used, isLifetimeQuota, featureDate: featureQuota?.date, todayKey });
 
   if (feature === 'pdf:export') {
@@ -313,7 +312,7 @@ async function checkQuotaCore(
 
       newUsed = used + 1;
       remaining = Math.max(0, consumed.freeExportCount);
-      quotas[feature] = { used: newUsed, date: 'lifetime' };
+      quotas[feature] = { used: localUsed + 1, date: 'lifetime' };
       try {
         const value = JSON.stringify(quotas[feature]);
         await prisma.$executeRaw`UPDATE "UserQuota" SET "quotas"=jsonb_set("quotas",ARRAY[${feature}],${value}::jsonb,true),"updatedAt"=CURRENT_TIMESTAMP WHERE "userId"=${user.id}`;
@@ -368,11 +367,11 @@ async function checkQuotaCore(
       const [row] = await tx.$queryRaw<{ quotas: QuotasData }[]>`SELECT "quotas" FROM "UserQuota" WHERE "userId"=${user.id} FOR UPDATE`;
       const latest = row.quotas[feature];
       const current = isLifetimeQuota ? latest?.used ?? 0 : latest?.date === todayKey ? latest.used : 0;
-      if (current >= limit) return null;
+      if (current + legacyUsed >= limit) return null;
       const next = current + 1;
       const value = JSON.stringify({ used: next, date: isLifetimeQuota ? 'lifetime' : todayKey });
       await tx.$executeRaw`UPDATE "UserQuota" SET "quotas"=jsonb_set("quotas",ARRAY[${feature}],${value}::jsonb,true),"updatedAt"=CURRENT_TIMESTAMP WHERE "userId"=${user.id}`;
-      return next;
+      return next + legacyUsed;
     });
     if (consumed === null) return createResult({ allowed: false, isVip: false, used: limit, limit, remaining: 0, message: `${featureName}次数已达上限`, feature, freeExportCount });
     newUsed = consumed;

@@ -14,7 +14,7 @@ import BlockWrapper from '@/components/blocks/block-wrapper'
 import SortableSectionWrapper from '@/components/sections/sortable-section-wrapper'
 import EditableDateField from '@/editor/editable-date-field'
 import { getSectionIcon } from '@/utils/get-section-icon'
-import { isCustomSection } from '@/entities/blocks/block-factory'
+import { getSectionDisplayTitle } from '@/entities/resume/section-display-title'
 import { useAppStore } from '@/state/store'
 import { useAiSection } from '@/components/ai-section/ai-section-provider'
 import { blockTypeToModuleType, extractBlockContentHtml } from '@/components/ai-section/block-module-utils'
@@ -229,7 +229,7 @@ function SectionView(props: SectionViewProps): ReactElement {
   const isTextOnly = isTextOnlySection(section)
   const addBlock = useAppStore((s) => s.addBlockByType)
   const deleteSection = useAppStore((s) => s.deleteSection)
-  const updateSectionTitle = useAppStore((s) => s.updateSectionTitle)
+  const updateSectionDisplayTitle = useAppStore((s) => s.updateSectionDisplayTitle)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const { setNodeRef } = useDroppable({ id: `${DndIds.SECTION_DROP_ID_PREFIX}${sectionId}` })
   const icon = getSectionIcon(title)
@@ -237,12 +237,13 @@ function SectionView(props: SectionViewProps): ReactElement {
     <SectionContainer flush themeColor={themeColor}>
       <SectionHeader
         sectionId={sectionId}
-        title={title}
+        title={getSectionDisplayTitle(section)}
+        wrapTitle={getSectionDisplayTitle(section) !== title}
         icon={icon || undefined}
         themeColor={themeColor}
         styles={TIMELINE_TEMPLATE_STYLES.sectionHeader}
         layout="ribbon"
-        onTitleChange={isCustomSection(title) ? (newTitle: string) => updateSectionTitle(sectionId, newTitle) : undefined}
+        onTitleChange={(newTitle: string) => updateSectionDisplayTitle(sectionId, newTitle)}
         onAdd={isTextOnly ? undefined : (): void => addBlock(sectionId)}
         onDelete={(): void => setShowDeleteDialog(true)}
         dragHandleAttributes={dragHandleAttributes}
@@ -283,7 +284,7 @@ function SectionView(props: SectionViewProps): ReactElement {
       </SortableContext>
       <DeleteSectionDialog
         open={showDeleteDialog}
-        sectionTitle={title}
+        sectionTitle={getSectionDisplayTitle(section)}
         onOpenChange={setShowDeleteDialog}
         onConfirm={(): void => { deleteSection(sectionId); setShowDeleteDialog(false) }}
       />
@@ -348,7 +349,8 @@ export default function TimelineTemplate(props: TimelineTemplateProps): ReactEle
             <SectionContainer flush themeColor={theme.primaryColor}>
               <SectionHeader
                 sectionId={section.id}
-                title={section.title}
+                title={getSectionDisplayTitle(section)}
+                wrapTitle={getSectionDisplayTitle(section) !== section.title}
                 icon={getSectionIcon(section.title) || undefined}
                 themeColor={theme.primaryColor}
                 styles={TIMELINE_TEMPLATE_STYLES.sectionHeader}

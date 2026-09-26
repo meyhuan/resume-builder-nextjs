@@ -14,6 +14,7 @@
  *
  * 品牌色为代码绿 emerald，主题面板可自定义 primaryColor（会自动衍生 deep/light）。
  */
+import { SectionTitleText } from '@/components/sections/section-title-text'
 import { createContext, useContext } from 'react'
 import type { ReactElement, ReactNode } from 'react'
 import { getHeaderJobIntentionText } from '@/entities/resume/header-job-intention'
@@ -459,7 +460,7 @@ function MashangSection(props: SectionProps): ReactElement {
   const { section, index, dragRef, dragAttrs, dragListeners, themeColor, spacingScale } = props
   const editable = useEditableSection(section)
   const {
-    title, canEditTitle, onCommitTitle,
+    displayTitle, canEditTitle, onCommitTitle,
     isTextOnly, onAddBlock, onRequestDelete,
     isHovered, setHovered,
     isDeleteDialogOpen, setDeleteDialogOpen, confirmDelete,
@@ -488,9 +489,9 @@ function MashangSection(props: SectionProps): ReactElement {
         >
           {idx}/
         </span>
-        <EditableText
+        <SectionTitleText
           as="h2"
-          value={title}
+          value={displayTitle}
           onCommit={canEditTitle ? onCommitTitle : undefined}
           className="font-semibold"
           style={{ margin: 0, fontSize: '1.1em', lineHeight: 1.2, color: palette.codeDeep }}
@@ -532,7 +533,7 @@ function MashangSection(props: SectionProps): ReactElement {
 
       <DeleteSectionDialog
         open={isDeleteDialogOpen}
-        sectionTitle={title}
+        sectionTitle={displayTitle}
         onOpenChange={setDeleteDialogOpen}
         onConfirm={confirmDelete}
       />

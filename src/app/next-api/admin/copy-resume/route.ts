@@ -48,12 +48,21 @@ async function verifyAdminPassword(password: string): Promise<boolean> {
 
 async function resolveUserByIdentifiers(identifiers: readonly (string | null | undefined)[]): Promise<User | null> {
   const ids = [...new Set(identifiers.map((id) => id?.trim()).filter((id): id is string => Boolean(id)))];
-  if (ids.length === 0) return null;
-  return prisma.user.findFirst({
-    where: {
-      OR: ids.flatMap((id) => [{ javaUserId: id }, { wxId: id }, { id }]),
-    },
-  });
+  for (const id of ids) {
+    // A legacy login can leave a user row whose wxId is the numeric Java ID,
+    // while the real account is linked through javaUserId. Resolve Java IDs
+    // first so an empty legacy row cannot shadow the account with resumes.
+    const javaUser = await prisma.user.findUnique({ where: { javaUserId: id } });
+    if (javaUser) return javaUser;
+
+    const wxUser = await prisma.user.findUnique({ where: { wxId: id } });
+    if (wxUser) return wxUser;
+
+    const prismaUser = await prisma.user.findUnique({ where: { id } });
+    if (prismaUser) return prismaUser;
+  }
+
+  return null;
 }
 
 async function resolveUser(identifier: string): Promise<User | null> {

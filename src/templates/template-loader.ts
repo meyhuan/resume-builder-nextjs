@@ -318,6 +318,25 @@ export const TEMPLATE_REGISTRY: Record<string, TemplateConfig> = {
     recommendedPrimaryColor: '#a16207',
     recommendedFontFamilyId: 'serif',
   },
+  moxu: {
+    id: 'moxu',
+    name: '墨序',
+    description: '大姓名页眉、黑白联系卡与单栏时间线，适合英文商务简历和专业履历',
+    preview: '/thumbnails/template_moxu.webp',
+    tags: ['英文', '商务', '单栏', '黑白'],
+    component: lazy(() => import('@/templates/moxu')),
+    recommendedPrimaryColor: '#242424',
+    recommendedFontFamilyId: 'serif',
+  },
+  qingning: {
+    id: 'qingning',
+    name: '青柠',
+    description: '浅绿圆形图标、暖金点线与几何角饰，清爽单栏，适合校招和通用求职',
+    preview: '/thumbnails/template_qingning.webp',
+    tags: ['清爽', '单栏', '校招', '通用'],
+    component: lazy(() => import('@/templates/qingning')),
+    recommendedPrimaryColor: '#c6e1d2',
+  },
 }
 
 /**

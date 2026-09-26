@@ -11,29 +11,33 @@ export interface AiModelConfig {
   readonly apiKeyEnv: string
 }
 
+const DASHSCOPE_BASE_URL =
+  process.env.DASHSCOPE_BASE_URL ??
+  'https://llm-wwerfrg4elkhrxzz.cn-beijing.maas.aliyuncs.com/compatible-mode/v1'
+
 const MODELS: readonly AiModelConfig[] = [
   {
     name: 'qwen-plus',
     displayName: '通义千问 Plus',
-    baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+    baseUrl: DASHSCOPE_BASE_URL,
     apiKeyEnv: 'DASHSCOPE_API_KEY',
   },
   {
     name: 'qwen-max',
     displayName: '通义千问 Max',
-    baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+    baseUrl: DASHSCOPE_BASE_URL,
     apiKeyEnv: 'DASHSCOPE_API_KEY',
   },
   {
     name: 'qwen-vl-plus',
     displayName: '通义千问 VL Plus',
-    baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+    baseUrl: DASHSCOPE_BASE_URL,
     apiKeyEnv: 'DASHSCOPE_API_KEY',
   },
   {
     name: 'qwen3.5-ocr',
     displayName: '通义千问 OCR',
-    baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+    baseUrl: DASHSCOPE_BASE_URL,
     apiKeyEnv: 'DASHSCOPE_API_KEY',
   },
 ] as const

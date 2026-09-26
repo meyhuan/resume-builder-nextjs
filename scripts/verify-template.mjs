@@ -533,7 +533,7 @@ async function checkLocalPage(browser, options) {
     if (pageErrors.length > 0) {
       fail(options.name, `Page errors: ${pageErrors.slice(0, 3).join(' | ')}`)
     } else if (consoleErrors.length > 0) {
-      warn(options.name, `Console errors observed; screenshot saved to ${relative(options.screenshot)}.`)
+      warn(options.name, `Console errors observed: ${consoleErrors.slice(0, 3).join(' | ')}; screenshot saved to ${relative(options.screenshot)}.`)
     } else {
       pass(options.name, `Screenshot saved to ${relative(options.screenshot)}.`)
     }
@@ -1311,7 +1311,7 @@ async function checkLocalInteractions(browser, baseUrl, id, artifactDir) {
     if (pageErrors.length > 0) {
       fail(`Local interaction runtime (${id})`, `Page errors: ${pageErrors.slice(0, 3).join(' | ')}`)
     } else if (consoleErrors.length > 0) {
-      warn(`Local interaction runtime (${id})`, `Console errors observed; screenshot saved to ${relative(screenshot)}.`)
+      warn(`Local interaction runtime (${id})`, `Console errors observed: ${consoleErrors.slice(0, 3).join(' | ')}; screenshot saved to ${relative(screenshot)}.`)
     } else {
       pass(`Local interaction runtime (${id})`, `Screenshot saved to ${relative(screenshot)}.`)
     }
@@ -1428,12 +1428,16 @@ async function checkScenarioDataLoadFlow(page) {
 }
 
 async function openLayoutSettingsTab(page) {
-  await clickButtonByExactText(page, '排版设置')
-  await page.waitForFunction(() => document.body.innerText.includes('文字排版') && document.body.innerText.includes('色彩风格'), { timeout: 5_000 })
+  const tab = await page.$('[data-layout-tab="settings"]')
+  if (tab) await tab.click()
+  else await clickButtonByExactText(page, '排版设置')
+  await page.waitForSelector('button[aria-label="选择主题主色"]', { timeout: 5_000 })
 }
 
 async function openLayoutTemplatesTab(page) {
-  await clickButtonByExactText(page, '切换模板')
+  const tab = await page.$('[data-layout-tab="templates"]')
+  if (tab) await tab.click()
+  else await clickButtonByExactText(page, '切换模板')
   await page.waitForSelector('button[data-template-id]', { timeout: 5_000 })
 }
 
@@ -1887,10 +1891,12 @@ async function checkEditorScenarioLoader(editorUrl) {
       return
     }
 
-    await page.waitForFunction(() => document.body.innerText.includes('排版美化'), { timeout: 20_000 })
-    await clickByTextIfPresent(page, '排版美化', ['button', '[role="tab"]'])
-    await sleep(300)
-    await clickByText(page, '排版设置', ['button', '[role="tab"]'])
+    await page.waitForFunction(() => document.querySelector('[data-layout-tab="settings"]') || document.body.innerText.includes('排版美化'), { timeout: 20_000 })
+    if (!await page.$('[data-layout-tab="settings"]')) {
+      await clickByTextIfPresent(page, '排版美化', ['button', '[role="tab"]'])
+      await sleep(300)
+    }
+    await openLayoutSettingsTab(page)
 
     await page.waitForFunction(() => document.body.innerText.includes('模板测试数据'), { timeout: 10_000 })
 
@@ -2022,7 +2028,8 @@ async function readThemeMetrics(browser, url, screenshot) {
       const paddingTop = Math.max(...paddingTargets.map((node) => parseFloat(getComputedStyle(node).paddingTop) || 0))
       const paddingLeft = Math.max(...paddingTargets.map((node) => parseFloat(getComputedStyle(node).paddingLeft) || 0))
       const pageProbePaddingLeft = parseFloat(getComputedStyle(pageProbe).paddingLeft) || 0
-      const job = root.querySelector('[data-template-job-intention-trigger="true"]')
+      // An inline header subtitle is not a standalone section; measure the actual job section.
+      const job = root.querySelector('[data-template-job-intention-trigger="true"]:not([data-template-job-intention-layout="header"])')
       const visibleSections = Array.from(root.querySelectorAll('[data-template-section="true"]'))
         .filter((node) => {
           const rect = node.getBoundingClientRect()
@@ -2193,7 +2200,7 @@ async function checkPage(browser, options) {
     if (pageErrors.length > 0) {
       fail(options.name, `Page errors: ${pageErrors.slice(0, 3).join(' | ')}`)
     } else if (consoleErrors.length > 0) {
-      warn(options.name, `Console errors observed; screenshot saved to ${relative(options.screenshot)}.`)
+      warn(options.name, `Console errors observed: ${consoleErrors.slice(0, 3).join(' | ')}; screenshot saved to ${relative(options.screenshot)}.`)
     } else {
       pass(options.name, `Screenshot saved to ${relative(options.screenshot)}.`)
     }

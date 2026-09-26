@@ -5,6 +5,7 @@ import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import type { ResumeData } from '@/entities/resume/resume-data'
 import type { ThemeTokens } from '@/entities/theme/theme-tokens'
 import OverlaySection from '@/dnd/overlay-section'
+import { getSectionDisplayTitle } from '@/entities/resume/section-display-title'
 import OverlayBlock from '@/dnd/overlay-block'
 import { DndIds } from '@/dnd/ids'
 import { useAppStore } from '@/state/store'
@@ -116,7 +117,8 @@ export default function DragDropProvider(props: DragDropProviderProps): ReactEle
                 </div>
               )
             }
-            const title: string = props.resume.sections.find((s) => s.id === active.id)?.title ?? ''
+            const section = props.resume.sections.find((s) => s.id === active.id)
+            const title = section ? getSectionDisplayTitle(section) : ''
             return <OverlaySection title={title} themeColor={props.theme.primaryColor} />
           }
           let html: string = '<p>Block</p>'

@@ -1,5 +1,6 @@
 'use client'
 
+import { getSectionDisplayTitle } from '@/entities/resume/section-display-title'
 import { useMemo, type ReactElement } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSectionList } from '@/features/edit/draft/use-section-list'
@@ -37,7 +38,7 @@ export interface ExperienceDetailClientProps {
 export function ExperienceDetailClient(props: ExperienceDetailClientProps): ReactElement {
   const { kind, title, sectionTitle, idx, backRoute } = props
   const router = useRouter()
-  const { blocks, updateBlock } = useSectionList(sectionTitle)
+  const { section, blocks, updateBlock } = useSectionList(sectionTitle)
   const block: ResumeBlock | undefined = blocks[idx]
 
   const handleFieldChange = useMemo(
@@ -50,7 +51,7 @@ export function ExperienceDetailClient(props: ExperienceDetailClientProps): Reac
 
   if (!block) {
     return (
-      <ModuleEditShell title={title} onBack={(): void => router.replace(backRoute)}>
+      <ModuleEditShell title={section ? getSectionDisplayTitle(section, title) : title} onBack={(): void => router.replace(backRoute)}>
         <div className="text-center py-12 text-sm text-slate-500">
           <div className="text-4xl mb-3">🤔</div>
           这条内容不存在或已被删除
@@ -98,7 +99,7 @@ export function ExperienceDetailClient(props: ExperienceDetailClientProps): Reac
   }
 
   return (
-    <ModuleEditShell title={title} onBack={(): void => router.replace(backRoute)} validate={validate}>
+    <ModuleEditShell title={section ? getSectionDisplayTitle(section, title) : title} onBack={(): void => router.replace(backRoute)} validate={validate}>
       {kind === 'work' && <WorkFields block={block as ExperienceBlock} onChange={handleFieldChange} moduleType="experience" />}
       {kind === 'intern' && <WorkFields block={block as ExperienceBlock} onChange={handleFieldChange} moduleType="experience" internship />}
       {kind === 'education' && <EducationFields block={block as EducationBlock} onChange={handleFieldChange} />}

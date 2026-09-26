@@ -49,7 +49,12 @@ const req = (data: unknown = body) =>
   });
 beforeEach(() => {
   vi.clearAllMocks();
-  m.auth.mockResolvedValue({ userId: 'owner', isVip: false });
+  m.auth.mockResolvedValue({
+    userId: 'java-id',
+    javaUserId: 'java-id',
+    unionid: 'login-id',
+    isVip: false,
+  });
   m.run.mockResolvedValue({ requestId: body.requestId, proposals: [] });
   m.charge.mockResolvedValue(undefined);
 });
@@ -103,7 +108,12 @@ it('uses validated local history but never accepts client billing or authorizati
   ).toBe(200);
   expect(m.run.mock.calls[0][0].turns).toEqual([history]);
   expect(m.run.mock.calls[0][0].allowDirect).toBe(false);
-  expect(m.charge).toHaveBeenCalledExactlyOnceWith('owner', false, 'polish');
+  expect(m.charge).toHaveBeenCalledExactlyOnceWith(
+    'login-id',
+    false,
+    'polish',
+    'java-id',
+  );
 });
 it('clarification can return without quota consumption', async () => {
   expect((await POST(req())).status).toBe(200);
@@ -133,4 +143,10 @@ it('does not return usable proposals when generation fails', async () => {
   const r = await POST(req());
   expect(r.status).toBe(503);
   expect((await r.json()).turn).toBeUndefined();
+});
+
+it('rejects a backend account without the authenticated login identity', async () => {
+  m.auth.mockResolvedValue({ userId: 'java-id', isVip: false });
+  expect((await POST(req())).status).toBe(401);
+  expect(m.charge).not.toHaveBeenCalled();
 });

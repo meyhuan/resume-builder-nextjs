@@ -1,5 +1,6 @@
 'use client'
 
+import { getSectionDisplayTitle } from '@/entities/resume/section-display-title'
 import { type ReactElement } from 'react'
 import { ModuleEditShell } from '../_components/module-edit-shell'
 import { RichAiTextarea } from '@/features/edit/form-fields/rich-ai-textarea'
@@ -12,9 +13,9 @@ const PLACEHOLDER: string = `本人性格开朗，积极向上，对工作有极
  * Self-evaluation / summary edit page.
  */
 export default function SummaryEditPage(): ReactElement {
-  const { html, setHtml, ready } = useSingleTextBlock(MODULE_SECTION_TITLES.summary)
+  const { section, html, setHtml, ready } = useSingleTextBlock(MODULE_SECTION_TITLES.summary)
   return (
-    <ModuleEditShell title="自我评价" subtitle="向招聘者做一次 30 秒自我介绍">
+    <ModuleEditShell title={section ? getSectionDisplayTitle(section, '自我评价') : '自我评价'} subtitle="向招聘者做一次 30 秒自我介绍">
       {!ready ? (
         <div className="text-center py-12 text-sm text-slate-500">加载中…</div>
       ) : (

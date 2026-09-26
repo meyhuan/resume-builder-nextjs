@@ -1,6 +1,7 @@
 import type { ResumeBlock } from '@/entities/blocks/resume-block'
 import type { ResumeData } from '@/entities/resume/resume-data'
 import type { Section } from '@/entities/resume/section'
+import { normalizeSectionDisplayTitle } from './section-display-title'
 import type { PortfolioImage, ResumePortfolio } from '@/entities/resume/portfolio'
 import { MAX_PORTFOLIO_IMAGES } from '@/entities/resume/portfolio'
 
@@ -86,6 +87,8 @@ function normalizeSection(
   usedBlockIds: Set<string>,
 ): Section {
   const rawBlocks = Array.isArray(section.blocks) ? section.blocks : []
+  const { displayTitle: rawDisplayTitle, ...rest } = section
+  const displayTitle = normalizeSectionDisplayTitle(rawDisplayTitle)
   const sectionId = makeUniqueId(
     normalizeString(section.id),
     `section-${sectionIndex + 1}`,
@@ -93,7 +96,8 @@ function normalizeSection(
   )
 
   return {
-    ...section,
+    ...rest,
+    ...(displayTitle ? { displayTitle } : {}),
     id: sectionId,
     title: normalizeString(section.title),
     columns: section.columns === 2 ? 2 : 1,

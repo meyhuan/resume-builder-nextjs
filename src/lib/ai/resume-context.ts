@@ -1,3 +1,4 @@
+import { normalizeSectionDisplayTitle } from '@/entities/resume/section-display-title';
 import type { ResumeData } from '@/entities/resume/resume-data';
 import type { ResumeBlock } from '@/entities/blocks/resume-block';
 
@@ -33,6 +34,7 @@ export interface ResumeContextPayload {
   readonly sections: Array<{
     readonly sectionId: string;
     readonly title: string;
+    readonly displayTitle?: string;
     readonly blocks: ResumeContextBlock[];
   }>;
 }
@@ -126,6 +128,7 @@ export function toResumeContext(resume: ResumeData): ResumeContextPayload {
     sections: resume.sections.map((section) => ({
       sectionId: section.id,
       title: section.title,
+      ...(normalizeSectionDisplayTitle(section.displayTitle) ? { displayTitle: normalizeSectionDisplayTitle(section.displayTitle) } : {}),
       blocks: section.blocks.map((block) => ({
         blockId: block.id,
         type: block.type,

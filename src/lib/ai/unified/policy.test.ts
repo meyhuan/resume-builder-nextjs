@@ -62,3 +62,18 @@ it('recognizes an explicit command around quoted replacement content, but not a 
   ).toBe(true);
   expect(explicitlyDirect('“直接修改这段”是什么意思？')).toBe(false);
 });
+
+it('does not offer responsibility inflation as a next-question choice', () => {
+  const followups = followupsFor({
+    questions: [],
+    proposals: [],
+    followups: [
+      '是否需要优化动词力度，例如协助完成改为独立承担？请确认实际程度。',
+      '我能写成精通前端吗？',
+      '哪些真实信息还需要补充？',
+    ],
+  });
+  expect(followups.join('')).not.toMatch(/独立承担|精通/);
+  expect(followups).toContain('哪些真实信息还需要补充？');
+  expect(followups).toHaveLength(3);
+});
