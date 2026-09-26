@@ -283,6 +283,9 @@ export const useAppStore = create<AppState>()(
           const idx: number = section.blocks.findIndex((b) => b.id === blockId)
           if (idx >= 0) {
             section.blocks.splice(idx, 1)
+            if (section.blocks.length === 0) {
+              draft.sections.splice(draft.sections.indexOf(section), 1)
+            }
           }
         }),
       }), false, 'section/deleteBlock')

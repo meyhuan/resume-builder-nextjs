@@ -24,7 +24,7 @@ import type { ModuleConfig } from '@/entities/module/module-config'
 import { findModuleBySectionTitle } from '@/entities/module/module-config'
 import { useDraftStore } from '@/features/edit/draft/draft-store'
 import { useSectionList } from '@/features/edit/draft/use-section-list'
-import { htmlToPlainText } from '@/features/edit/form-fields/html-text'
+import { hasSectionContent } from '@/lib/resume-export-visibility'
 import { SectionPreview } from './section-preview'
 
 interface SectionsListProps {
@@ -43,7 +43,7 @@ export function SectionsList({ sections }: SectionsListProps): ReactElement | nu
     useSensor(TouchSensor, { activationConstraint: { delay: 180, tolerance: 6 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   )
-  const nonEmpty: readonly Section[] = sections.filter((s) => !isSectionEmpty(s))
+  const nonEmpty: readonly Section[] = sections.filter(hasSectionContent)
   if (nonEmpty.length === 0) return null
 
   const handleDragEnd = (event: DragEndEvent): void => {
@@ -94,27 +94,6 @@ export function SectionsList({ sections }: SectionsListProps): ReactElement | nu
       )}
     </div>
   )
-}
-
-function isSectionEmpty(section: Section): boolean {
-  if (section.blocks.length === 0) return true
-  if (section.blocks.length === 1 && section.blocks[0].type === 'text') {
-    return !htmlToPlainText(section.blocks[0].html)
-  }
-  return section.blocks.every((block) => {
-    switch (block.type) {
-      case 'project':
-        return !block.name && !block.role && !block.contentHtml
-      case 'experience':
-        return !block.company && !block.position && !block.contentHtml
-      case 'education':
-        return !block.school && !block.major && !block.degree
-      case 'campus':
-        return !block.organization && !block.position && !block.contentHtml
-      default:
-        return false
-    }
-  })
 }
 
 function SectionPreviewWithAdd(

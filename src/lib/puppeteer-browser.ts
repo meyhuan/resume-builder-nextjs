@@ -62,7 +62,9 @@ function scheduleIdleClose(): void {
 }
 
 async function launchSharedBrowser(): Promise<Browser> {
-  const isLocal = process.env.NODE_ENV === 'development'
+  // Sparticuz bundles a Linux binary; Windows must use the installed browser,
+  // including when validating a production build with `next start`.
+  const isLocal = process.platform === 'win32' || process.env.NODE_ENV === 'development'
   const executablePath = isLocal
     ? 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
     : await chromium.executablePath()
