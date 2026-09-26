@@ -8,6 +8,7 @@ import { useAppStore } from '@/state/store'
 import { CONTENT_DISPLAY_STYLES_XS, CONTENT_EDITING_STYLES_XS } from '@/editor/editor-styles'
 import type { ResumeBlock } from '@/entities/blocks/resume-block'
 import { hasMeaningfulHtml } from '@/lib/resume-placeholders'
+import { useRetainEditingBlock } from './use-retain-editing-block'
 
 interface EditableBlockWrapperProps {
   readonly blockId: string
@@ -38,6 +39,7 @@ interface EditableBlockWrapperProps {
 export default function EditableBlockWrapper(props: EditableBlockWrapperProps): ReactElement {
   const { onEditingChange, className } = props
   const [isEditing, setIsEditing] = useState(false)
+  useRetainEditingBlock(props.blockId, isEditing)
   const setResume = useAppStore((s) => s.setResume)
   const resume = useAppStore((s) => s.resume)
   const readOnly = useAppStore((s) => s.readOnly)
@@ -94,7 +96,7 @@ export default function EditableBlockWrapper(props: EditableBlockWrapperProps): 
   const hasContent = hasMeaningfulHtml(content)
   const editableContent = hasContent ? content : ''
 
-  if (!hasContent && props.children) {
+  if (!hasContent && props.children && !isEditing) {
     return <>{props.children({ isEditing: false, onStartEdit: () => {} })}</>
   }
 
@@ -108,7 +110,7 @@ export default function EditableBlockWrapper(props: EditableBlockWrapperProps): 
     )
   }
 
-  if (!hasContent && emptyMode === 'hidden') return <></>
+  if (!hasContent && emptyMode === 'hidden' && !isEditing) return <></>
 
   if (isEditing) {
     return (

@@ -5,6 +5,7 @@ import { useAppStore } from '@/state/store'
 import type { ResumeData } from '@/entities/resume/resume-data'
 import type { ResumeBlock } from '@/entities/blocks/resume-block'
 import { CONTENT_DISPLAY_STYLES_SM, CONTENT_EDITING_STYLES_SM } from '@/editor/editor-styles'
+import { useRetainEditingBlock } from './use-retain-editing-block'
 
 interface EditableTextBlockProps {
   readonly blockId: string
@@ -28,6 +29,7 @@ export default function EditableTextBlock(props: EditableTextBlockProps): ReactE
   const resume = useAppStore((s) => s.resume)
   const setResume = useAppStore((s) => s.setResume)
   const [isEditing, setIsEditing] = useState(false)
+  useRetainEditingBlock(props.blockId, isEditing)
 
   useEffect(() => {
     onEditingChange?.(isEditing)

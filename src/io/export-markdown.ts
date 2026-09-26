@@ -1,7 +1,9 @@
 import { getSectionDisplayTitle } from '@/entities/resume/section-display-title'
 import type { ResumeData } from '@/entities/resume/resume-data'
+import { prepareResumeForExport } from '@/lib/resume-export-visibility'
 
 export function exportResumeToMarkdown(resume: ResumeData): string {
+  resume = prepareResumeForExport(resume)
   const lines: string[] = []
 
   // 1. Header (Name + Base Info)

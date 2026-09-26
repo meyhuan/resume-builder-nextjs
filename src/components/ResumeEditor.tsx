@@ -1046,7 +1046,8 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
   // 获取当前模板组件
   const templateConfig = getTemplate(tpl)
   const TemplateComponent = templateConfig?.component
-  const renderableResume = useMemo(() => getRenderableResume(resume), [resume])
+  const editingBlockIds = useEditorUiStore((state) => state.editingBlockIds)
+  const renderableResume = useMemo(() => getRenderableResume(resume, editingBlockIds), [resume, editingBlockIds])
 
   return (
     <div className="h-dvh bg-slate-50/50 text-slate-900 flex flex-col overflow-hidden relative">

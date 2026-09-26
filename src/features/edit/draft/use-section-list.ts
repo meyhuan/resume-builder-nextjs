@@ -88,7 +88,10 @@ export function useSectionList(sectionTitle: string): SectionListBinding {
         if (idx < 0) return
         const list = d.sections[idx].blocks as ResumeBlock[]
         const bIdx: number = list.findIndex((b) => b.id === blockId)
-        if (bIdx >= 0) list.splice(bIdx, 1)
+        if (bIdx >= 0) {
+          list.splice(bIdx, 1)
+          if (list.length === 0) d.sections.splice(idx, 1)
+        }
       })
     },
     [sectionTitle, updateDraft],

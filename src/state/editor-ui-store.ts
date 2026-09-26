@@ -11,6 +11,8 @@ export type EditorModal =
   | null;
 
 interface EditorUiStore {
+  editingBlockIds: readonly string[];
+  setBlockEditing: (blockId: string, editing: boolean) => void;
   activePanel: PanelId | 'ai' | 'polish' | 'generate' | null;
   setActivePanel: (panel: PanelId | 'ai' | 'polish' | 'generate' | null) => void;
   sectionAiTarget: string;
@@ -29,6 +31,12 @@ interface EditorUiStore {
 }
 
 export const useEditorUiStore = create<EditorUiStore>((set) => ({
+  editingBlockIds: [],
+  setBlockEditing: (blockId, editing) => set((state) => ({
+    editingBlockIds: editing
+      ? Array.from(new Set([...state.editingBlockIds, blockId]))
+      : state.editingBlockIds.filter((id) => id !== blockId),
+  })),
   activePanel: null,
   setActivePanel: (panel) => set({ activePanel: panel, showAiChat: panel === 'ai' }),
   sectionAiTarget: '',
