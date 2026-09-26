@@ -100,3 +100,7 @@
 - `node scripts/test-unified-ai-browser.mjs`：真实 Chrome 观察器核验可见曝光、隐藏面板不曝光、应用/撤销建议关联、推荐问题曝光/点击/提交关联、历史恢复不重放；同时保留原有编辑流程验证。AI 返回和埋点接口均拦截为测试数据，不写入线上数据。
 - 产物：`test-artifacts/unified-ai/analytics-report.json`、`browser-report.json`；日志 `ai-analytics-tests.log`、`ai-analytics-regression.log`、`ai-analytics-lint.log`、`ai-analytics-browser.log`、`ai-analytics-build.log`。不提交测试产物。
 - 未新增数据库迁移、未部署，生产埋点入库仍需上线后核验。本次不涉及模板实现或模型提示词修改。
+
+### 合入 main 前检查
+
+同步 main 的 60e4674（Windows Chrome 导出修复）及 3f0b99a（空模块处理），自动合并无冲突。合并后助手专项 76 项、空模块及模块标题 32 项、旧助手回归 10 项，共 118 项通过。独立全量 `tsc --noEmit --incremental false` 检查发现曝光测试的观察器模拟数据缺少类型字段，补齐后通过；对应 2 项曝光测试再次通过。本次没有重新运行真实模型测试或生产浏览器链路。

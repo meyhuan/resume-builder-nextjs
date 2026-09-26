@@ -20,7 +20,8 @@ it('waits for foreground visibility, observes late-mounted targets and deduplica
   view.rerender(<Menu open />);
   const entry = screen.getByText('入口');
   const expose = () => act(() => notify([
-    { target: entry, isIntersecting: true, intersectionRatio: 1 } as IntersectionObserverEntry,
+    { target: entry, isIntersecting: true, intersectionRatio: 1,
+      boundingClientRect: entry.getBoundingClientRect(), intersectionRect: entry.getBoundingClientRect(), rootBounds: null, time: 0 },
   ], {} as IntersectionObserver));
   expose();
   expect(visible).not.toHaveBeenCalled();
