@@ -9,6 +9,7 @@ import { useAppStore } from '@/state/store';
 import type { ResumeBlock } from '@/entities/blocks/resume-block';
 import { extractBlockPrefill } from '@/components/ai-section/block-module-utils';
 import { track } from '@/lib/analytics';
+import { trackAssistant } from '@/lib/ai/unified/analytics';
 import { unifiedEnabled, type AssistantTask } from '@/lib/ai/unified/types';
 import { toast } from 'sonner';
 import { toResumeContext } from '@/lib/ai/resume-context';
@@ -82,7 +83,7 @@ export default function AiSectionProvider(props: AiSectionProviderProps): ReactE
     const section = context.sections.find(s => s.blocks.some(b => b.blockId === blockId));
     const label = section?.blocks.find(b => b.blockId === blockId)?.label;
     const task: AssistantTask = { id: crypto.randomUUID(), resumeId: useEditorUiStore.getState().assistantResumeId || resume.id || 'local', feature, blockId, label: [section?.title, label].filter(Boolean).join(' · '), entry: 'module' };
-    try { track('ai_assist_interaction', {action:'entry_open',feature,taskId:task.id,entry:'module'}); } catch { /* Opening the editor must not depend on telemetry. */ }
+    trackAssistant('entry_open', { feature, requestedFeature: feature, taskId: task.id, entry: 'module', surface: 'block' });
     setPolishOpen(false); setGenerateOpen(false);
     useEditorUiStore.setState({ assistantTask: task, activePanel: 'ai', showAiChat: true });
     return true;

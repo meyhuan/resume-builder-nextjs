@@ -40,6 +40,8 @@
 - 恢复本地历史不自动应用；只有当前活跃请求的完整响应可触发直接修改。客户端同时校验目标快照。
 - 新增 `ai_assist_interaction` 的入口、开始、追问、预览、应用、保留、撤销、推荐问题、冲突、失败等行为统计；不上传简历正文。Java 白名单同时补齐原本缺失的四个 `ai_assist_*` 事件。
 
+2026-09-26 埋点进一步升级为 schemaVersion=2：补齐实际可见曝光、逐条建议及推荐问题 ID、批量撤销关联、请求耗时、提交来源与失败分类；额度阻断不重复算失败。字段及使用率/采纳率口径详见 [AI 埋点说明](ai-analytics.md)。仍复用现有埋点表；管理员现有总览不等于 AI 专项漏斗看板。
+
 ## 发布与回退
 
 1. 安装当前分支依赖；新增的 PGlite 仅用于数据库语义测试，不进入生产请求链路。
@@ -89,3 +91,12 @@
 事实复核仍依赖模型判断，固定案例通过不能证明永不出错；默认差异预览、明确授权、冲突保护和可撤销操作是持续保留的产品边界。上线后重点观察生成完成率、采用率、撤销率、未闭环请求及额度异常，并按功能和入口区分统计。
 
 本机 pnpm exec 因依赖状态检查尝试自动安装，随后因无交互终端退出；保留共享 node_modules，改用已安装工具的 node 入口完成验证。
+
+### 埋点增强后的补充验收
+
+- `node node_modules/vitest/vitest.mjs run --config scripts/vitest.unified-ai.config.ts`：76 项通过（包含新增 21 项回归）；5 项真实模型用例本轮未重跑，因为本轮没有调整生成策略。
+- `node node_modules/vitest/vitest.mjs run --config scripts/vitest.editor-ai.config.ts`：10 项旧功能回归通过。
+- 修改文件定向 ESLint 通过；生产 `next build`（包含类型检查）通过，415 个静态页面生成完成，只有上述既有提示。
+- `node scripts/test-unified-ai-browser.mjs`：真实 Chrome 观察器核验可见曝光、隐藏面板不曝光、应用/撤销建议关联、推荐问题曝光/点击/提交关联、历史恢复不重放；同时保留原有编辑流程验证。AI 返回和埋点接口均拦截为测试数据，不写入线上数据。
+- 产物：`test-artifacts/unified-ai/analytics-report.json`、`browser-report.json`；日志 `ai-analytics-tests.log`、`ai-analytics-regression.log`、`ai-analytics-lint.log`、`ai-analytics-browser.log`、`ai-analytics-build.log`。不提交测试产物。
+- 未新增数据库迁移、未部署，生产埋点入库仍需上线后核验。本次不涉及模板实现或模型提示词修改。

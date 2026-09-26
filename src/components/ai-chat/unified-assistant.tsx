@@ -17,7 +17,16 @@ import { useAppStore } from '@/state/store';
 import { useEditorUiStore } from '@/state/editor-ui-store';
 import { useVipStore } from '@/store/use-vip-store';
 import { refreshEditorAssistQuota } from '@/lib/ai/assist-client';
-import { track } from '@/lib/analytics';
+import {
+  trackAssistant,
+  proposalId,
+  optionId,
+  failureForStatus,
+  type AssistantAction,
+  type AssistantAnalytics,
+  type FailureReason,
+} from '@/lib/ai/unified/analytics';
+import { useAiImpression } from '@/lib/ai/unified/use-impression';
 import { plainText } from '@/lib/ai/unified/policy';
 import { MAX_TASK_TURNS, toHistory } from '@/lib/ai/unified/types';
 import type {
@@ -85,6 +94,9 @@ function ChangeCard({
   keep,
   undo,
   disabled,
+  telemetryId,
+  onVisible,
+  visible,
 }: {
   proposal: CheckedProposal;
   status?: ReviewStatus;
@@ -92,11 +104,20 @@ function ChangeCard({
   keep: () => void;
   undo: () => void;
   disabled: boolean;
+  telemetryId: string;
+  onVisible: () => void;
+  visible: boolean;
 }) {
+  const impressionRef = useAiImpression<HTMLElement>(
+    telemetryId,
+    onVisible,
+    visible,
+  );
   const [diff, setDiff] = useState(true);
   const pieces = textDiff(beforeText(proposal), afterText(proposal));
   return (
     <section
+      ref={impressionRef}
       className="space-y-3 rounded-xl border border-violet-200 bg-white p-3"
       aria-label={`修改建议：${proposal.targetLabel}`}
     >
@@ -201,6 +222,40 @@ function ChangeCard({
     </section>
   );
 }
+function FollowupOption({
+  text,
+  telemetryId,
+  onVisible,
+  onClick,
+}: {
+  text: string;
+  telemetryId: string;
+  onVisible: () => void;
+  onClick: () => void;
+}) {
+  const ref = useAiImpression<HTMLButtonElement>(telemetryId, onVisible);
+  return (
+    <button
+      ref={ref}
+      className="flex w-full items-center justify-between gap-2 rounded-xl bg-slate-50 px-3 py-2.5 text-left text-xs leading-5 text-slate-700 hover:bg-violet-50"
+      onClick={onClick}
+    >
+      {text}
+      <ArrowUpRight className="h-3.5 w-3.5 shrink-0" />
+    </button>
+  );
+}
+type Submission = Pick<
+  AssistantAnalytics,
+  'submissionSource' | 'sourceRequestId' | 'sourceOptionId' | 'retryOfRequestId'
+>;
+const resultType = (turn: AssistantTurn): AssistantAnalytics['resultType'] =>
+  turn.questions.length
+    ? 'clarification'
+    : turn.proposals.length
+      ? 'proposals'
+      : 'answer';
+
 export function UnifiedAssistant({
   resumeId,
   onLegacy,
@@ -218,6 +273,7 @@ export function UnifiedAssistant({
   const [retry, setRetry] = useState<{
     text: string;
     fromFollowup: boolean;
+    submission: Submission;
   } | null>(null);
   const actions = useRef<{
     send: (text: string) => void;
@@ -231,10 +287,24 @@ export function UnifiedAssistant({
   const end = useRef<HTMLDivElement>(null);
   const nearBottom = useRef(true);
   const task = useEditorUiStore((s) => s.assistantTask);
+  const panelVisible = useEditorUiStore((s) => s.activePanel === 'ai');
   const externalMessage = useEditorUiStore((s) => s.pendingAiMessage);
   const session = sessions.find((s) => s.task.id === active);
   const quota = useVipStore((s) => s.quota);
   const storageKey = `ai-unified-history:${resumeId}`;
+  const panelRef = useAiImpression<HTMLDivElement>(
+    `panel:${active}`,
+    () => {
+      if (session)
+        trackAssistant('panel_view', {
+          taskId: session.task.id,
+          entry: session.task.entry,
+          feature: session.task.feature,
+          requestedFeature: session.task.feature,
+        });
+    },
+    loaded && panelVisible && !!session && (!task || task.id === active),
+  );
   const persist = useCallback(
     (next: StoredSession[]) => {
       ref.current = next;
@@ -314,21 +384,19 @@ export function UnifiedAssistant({
     }
   }, [externalMessage, busy, loaded, session]);
   const event = (
-    action: string,
+    action: AssistantAction,
     feature = session?.task.feature,
     requestId?: string,
+    details: AssistantAnalytics = {},
   ) => {
-    try {
-      track('ai_assist_interaction', {
-        feature,
-        action,
-        requestId,
-        taskId: session?.task.id,
-        entry: session?.task.entry,
-      });
-    } catch {
-      /* Telemetry cannot interrupt editing. */
-    }
+    trackAssistant(action, {
+      feature,
+      requestedFeature: session?.task.feature,
+      requestId,
+      taskId: session?.task.id,
+      entry: session?.task.entry,
+      ...details,
+    });
   };
   const startNew = () => {
     if (busy) return;
@@ -340,7 +408,11 @@ export function UnifiedAssistant({
     setRetry(null);
     useEditorUiStore.setState({ assistantTask: null });
   };
-  const send = async (text: string, fromFollowup = false) => {
+  const send = async (
+    text: string,
+    fromFollowup = false,
+    submission: Submission = { submissionSource: 'typed' },
+  ) => {
     if (!session || busy || abort.current || !text.trim()) return;
     if (session.turns.length >= MAX_TASK_TURNS) {
       setError('当前任务对话较长，请新建对话后继续');
@@ -359,9 +431,27 @@ export function UnifiedAssistant({
     setError('');
     setPending(body.text);
     setInput('');
-    setRetry({ text: body.text, fromFollowup });
+    setRetry({
+      text: body.text,
+      fromFollowup,
+      submission: {
+        ...submission,
+        submissionSource: 'retry',
+        retryOfRequestId: body.requestId,
+      },
+    });
     nearBottom.current = true;
-    event('start', body.task.feature, body.requestId);
+    const previous = session.turns.at(-1);
+    event('start', body.task.feature, body.requestId, {
+      ...submission,
+      previousRequestId: previous?.requestId,
+      previousResultType: previous ? resultType(previous) : undefined,
+    });
+    const startedAt = performance.now();
+    const elapsed = () =>
+      Math.max(0, Math.round(performance.now() - startedAt));
+    let failureReason: FailureReason = 'network';
+    let statusCode: number | undefined;
     const controller = new AbortController();
     abort.current = controller;
     try {
@@ -371,15 +461,25 @@ export function UnifiedAssistant({
         body: JSON.stringify(body),
         signal: controller.signal,
       });
+      statusCode = response.status;
+      failureReason = response.ok
+        ? 'invalid_response'
+        : failureForStatus(response.status);
       const data = await response.json();
       if (!response.ok) {
+        failureReason = failureForStatus(
+          response.status,
+          data.quotaExceeded === true,
+        );
+        if (data.errorCode === 'timeout') failureReason = 'timeout';
         if (data.quotaExceeded) {
           useVipStore.getState().setShowUpgrade(true, 'ai');
-          event('quota_blocked', body.task.feature, body.requestId);
         }
         throw new Error(data.error || '处理失败，请重试');
       }
-      if (controller.signal.aborted || !mounted.current) return;
+      if (controller.signal.aborted || !mounted.current) {
+        throw new DOMException('已停止', 'AbortError');
+      }
       const turn = data.turn as AssistantTurn;
       if (turn.requestId !== body.requestId)
         throw new Error('返回结果不匹配，请重试');
@@ -409,24 +509,62 @@ export function UnifiedAssistant({
           });
           return { ...s, reviews, receipts };
         });
-        if (receipt) event('direct_apply', turn.feature, turn.requestId);
-        else toast.info('原文已变化，未自动应用，请重新生成');
+        turn.proposals.forEach((_, i) =>
+          event(
+            receipt ? 'direct_apply' : 'conflict',
+            turn.feature,
+            turn.requestId,
+            {
+              proposalId: proposalId(turn.requestId, i),
+              proposalIndex: i,
+              proposalCount: turn.proposals.length,
+              mode: 'direct',
+              operation: 'apply',
+            },
+          ),
+        );
+        if (!receipt) toast.info('原文已变化，未自动应用，请重新生成');
       }
       event(
         turn.questions.length ? 'clarify' : 'success',
         turn.feature,
         turn.requestId,
+        {
+          elapsedMs: elapsed(),
+          statusCode,
+          resultType: resultType(turn),
+          charged: turn.charged,
+          proposalCount: turn.proposals.length,
+          questionCount: turn.questions.length,
+          optionCount: turn.followups.length,
+          mode: turn.direct ? 'direct' : 'preview',
+        },
       );
       if (turn.proposals.length && !turn.direct)
-        event('preview', turn.feature, turn.requestId);
+        event('preview', turn.feature, turn.requestId, {
+          proposalCount: turn.proposals.length,
+          mode: 'preview',
+        });
       setRetry(null);
     } catch (e) {
       if (controller.signal.aborted) {
         setError('已停止，未应用任何新修改。若已开始生成，可能已扣次。');
-        event('cancel', body.task.feature, body.requestId);
+        event('cancel', body.task.feature, body.requestId, {
+          elapsedMs: elapsed(),
+          failureReason: 'cancelled',
+        });
       } else {
         setError(e instanceof Error ? e.message : '处理失败');
-        event('failed', body.task.feature, body.requestId);
+        event(
+          failureReason === 'quota' ? 'quota_blocked' : 'failed',
+          body.task.feature,
+          body.requestId,
+          {
+            elapsedMs: elapsed(),
+            statusCode,
+            failureReason,
+          },
+        );
       }
     } finally {
       if (mounted.current) {
@@ -439,7 +577,7 @@ export function UnifiedAssistant({
   };
   actions.current = {
     send: (text) => {
-      void send(text, true);
+      void send(text, true, { submissionSource: 'handoff' });
     },
     startNew,
   };
@@ -454,6 +592,12 @@ export function UnifiedAssistant({
     if (action === 'undo') {
       const receipt = current.receipts[key];
       if (!receipt || !undoChecked(receipt)) {
+        event('conflict', turn.feature, turn.requestId, {
+          proposalId: proposalId(turn.requestId, index),
+          proposalIndex: index,
+          mode: turn.direct ? 'direct' : 'preview',
+          operation: 'undo',
+        });
         toast.info('这段内容后来又有修改，请使用编辑历史撤销');
         return;
       }
@@ -469,7 +613,21 @@ export function UnifiedAssistant({
           ]),
         ),
       }));
-      event('undo');
+      // One direct application may share an undo receipt across several proposals.
+      turn.proposals.forEach((_, i) => {
+        const k = `${turn.requestId}:${i}`;
+        if (
+          current.reviews[k] === 'applied' &&
+          current.receipts[k] &&
+          JSON.stringify(current.receipts[k]) === JSON.stringify(receipt)
+        ) {
+          event('undo', turn.feature, turn.requestId, {
+            proposalId: proposalId(turn.requestId, i),
+            proposalIndex: i,
+            mode: turn.direct ? 'direct' : 'preview',
+          });
+        }
+      });
       return;
     }
     if (current.reviews[key]) return;
@@ -489,6 +647,12 @@ export function UnifiedAssistant({
       action === 'keep' ? 'keep' : receipt ? 'apply' : 'conflict',
       turn.feature,
       turn.requestId,
+      {
+        proposalId: proposalId(turn.requestId, index),
+        proposalIndex: index,
+        mode: 'preview',
+        operation: action === 'apply' ? 'apply' : undefined,
+      },
     );
   };
   if (!loaded || !session)
@@ -501,6 +665,7 @@ export function UnifiedAssistant({
         : quota.aiEditorAssist;
   return (
     <div
+      ref={panelRef}
       className="flex h-full min-h-0 flex-col bg-white"
       data-testid="unified-assistant"
     >
@@ -593,7 +758,9 @@ export function UnifiedAssistant({
                 <button
                   className={button}
                   key={t}
-                  onClick={() => void send(t, true)}
+                  onClick={() =>
+                    void send(t, true, { submissionSource: 'starter' })
+                  }
                 >
                   {t}
                 </button>
@@ -645,6 +812,16 @@ export function UnifiedAssistant({
               <ChangeCard
                 key={i}
                 proposal={p}
+                telemetryId={proposalId(turn.requestId, i)}
+                visible={panelVisible}
+                onVisible={() =>
+                  event('proposal_view', turn.feature, turn.requestId, {
+                    proposalId: proposalId(turn.requestId, i),
+                    proposalIndex: i,
+                    mode: turn.direct ? 'direct' : 'preview',
+                    proposalCount: turn.proposals.length,
+                  })
+                }
                 status={session.reviews[`${turn.requestId}:${i}`]}
                 disabled={busy}
                 apply={() => review(turn, i, 'apply')}
@@ -652,21 +829,33 @@ export function UnifiedAssistant({
                 undo={() => review(turn, i, 'undo')}
               />
             ))}
-            {ti === session.turns.length - 1 && !busy && (
+            {ti === session.turns.length - 1 && !busy && panelVisible && (
               <div className="space-y-2 pt-1" aria-label="接下来可以">
                 <p className="text-xs text-slate-400">接下来可以</p>
-                {turn.followups.map((t) => (
-                  <button
-                    className="flex w-full items-center justify-between gap-2 rounded-xl bg-slate-50 px-3 py-2.5 text-left text-xs leading-5 text-slate-700 hover:bg-violet-50"
-                    key={t}
+                {turn.followups.map((t, i) => (
+                  <FollowupOption
+                    key={optionId(turn.requestId, i)}
+                    text={t}
+                    telemetryId={optionId(turn.requestId, i)}
+                    onVisible={() =>
+                      event('followup_view', turn.feature, turn.requestId, {
+                        optionId: optionId(turn.requestId, i),
+                        optionIndex: i,
+                        optionCount: turn.followups.length,
+                      })
+                    }
                     onClick={() => {
-                      event('followup_click', turn.feature, turn.requestId);
-                      void send(t, true);
+                      event('followup_click', turn.feature, turn.requestId, {
+                        optionId: optionId(turn.requestId, i),
+                        optionIndex: i,
+                      });
+                      void send(t, true, {
+                        submissionSource: 'followup',
+                        sourceRequestId: turn.requestId,
+                        sourceOptionId: optionId(turn.requestId, i),
+                      });
                     }}
-                  >
-                    {t}
-                    <ArrowUpRight className="h-3.5 w-3.5 shrink-0" />
-                  </button>
+                  />
                 ))}
               </div>
             )}
@@ -695,7 +884,9 @@ export function UnifiedAssistant({
             {retry && (
               <button
                 className={button}
-                onClick={() => void send(retry.text, retry.fromFollowup)}
+                onClick={() =>
+                  void send(retry.text, retry.fromFollowup, retry.submission)
+                }
               >
                 重新生成（重新计次）
               </button>

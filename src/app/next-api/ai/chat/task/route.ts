@@ -102,7 +102,13 @@ export async function POST(request: NextRequest) {
       error instanceof Error ? error.name : 'unknown',
     );
     return NextResponse.json(
-      { error: '这次处理未完成，原文没有改变。请重试或补充具体要求。' },
+      {
+        error: '这次处理未完成，原文没有改变。请重试或补充具体要求。',
+        errorCode:
+          error instanceof Error && error.name === 'TimeoutError'
+            ? 'timeout'
+            : 'server',
+      },
       { status: 503 },
     );
   }

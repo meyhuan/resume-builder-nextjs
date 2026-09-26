@@ -7,6 +7,9 @@ import AiSectionProvider, {
 } from '@/components/ai-section/ai-section-provider';
 import EditableBlockWrapper from '@/editor/editable-block-wrapper';
 import type { ResumeData } from '@/entities/resume/resume-data';
+import BlockActions from '@/components/blocks/block-actions';
+import EditorWorkspaceTabs from '@/ui/editor-workspace-tabs';
+import { useEditorUiStore } from '@/state/editor-ui-store';
 const sample: ResumeData = {
   id: 'assistant-lab',
   name: '演示简历',
@@ -43,18 +46,19 @@ function Content() {
         blockId="campus-activity"
         contentField="contentHtml"
       />
-      <div className="mt-5 flex justify-end gap-4 text-sm text-violet-600">
-        <button onClick={() => ai.openPolish('campus-activity', '', 'campus')}>
-          AI润色
-        </button>
-        <button onClick={() => ai.openGenerate('campus-activity', 'campus')}>
-          AI帮我写
-        </button>
+      <div className="relative mt-5 h-10">
+        <BlockActions
+          blockType="校园经历"
+          onPolish={() => ai.openPolish('campus-activity', '', 'campus')}
+          onGenerate={() => ai.openGenerate('campus-activity', 'campus')}
+        />
       </div>
     </div>
   );
 }
 export default function AssistantLab() {
+  const activePanel = useEditorUiStore((s) => s.activePanel);
+  const setActivePanel = useEditorUiStore((s) => s.setActivePanel);
   useEffect(() => {
     useAppStore.setState({ resume: sample, pastStates: [], futureStates: [] });
   }, []);
@@ -64,8 +68,14 @@ export default function AssistantLab() {
         <section className="min-w-0 flex-1 overflow-auto p-10">
           <Content />
         </section>
-        <aside className="w-[380px] shrink-0 border-l bg-white">
-          <EditorAiPanel />
+        <aside className="flex w-[380px] shrink-0 flex-col border-l bg-white">
+          <EditorWorkspaceTabs
+            activePanel={activePanel}
+            onChange={setActivePanel}
+          />
+          <div className={activePanel === 'ai' ? 'min-h-0 flex-1' : 'hidden'}>
+            <EditorAiPanel />
+          </div>
         </aside>
       </main>
     </AiSectionProvider>

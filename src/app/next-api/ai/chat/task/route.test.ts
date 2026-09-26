@@ -47,6 +47,16 @@ const req = (data: unknown = body) =>
     method: 'POST',
     body: JSON.stringify(data),
   });
+it('reports a safe timeout category without exposing model error details', async () => {
+  m.run.mockRejectedValue(
+    new DOMException('private model detail', 'TimeoutError'),
+  );
+  const response = await POST(req());
+  expect(response.status).toBe(503);
+  const payload = await response.json();
+  expect(payload.errorCode).toBe('timeout');
+  expect(JSON.stringify(payload)).not.toContain('private model detail');
+});
 beforeEach(() => {
   vi.clearAllMocks();
   m.auth.mockResolvedValue({

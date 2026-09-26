@@ -25,6 +25,9 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useEditorUiStore } from '@/state/editor-ui-store';
+import { trackAssistant } from '@/lib/ai/unified/analytics';
+import { unifiedEnabled } from '@/lib/ai/unified/types';
+import { useAiImpression } from '@/lib/ai/unified/use-impression';
 
 export interface EditorHeaderProps {
   readonly title: string;
@@ -50,6 +53,17 @@ export default function EditorHeader(props: EditorHeaderProps): ReactElement {
   const openModal = useEditorUiStore((state) => state.openModal);
   const showAiChat = useEditorUiStore((state) => state.showAiChat);
   const toggleAiChat = useEditorUiStore((state) => state.toggleAiChat);
+  const aiEntryRef = useAiImpression<HTMLButtonElement>('assistant-header', () => {
+    trackAssistant('entry_view', { entry: 'assistant', surface: 'header', feature: 'chat' });
+  }, unifiedEnabled);
+  const menuEntryRef = useAiImpression<HTMLDivElement>('assistant-menu', () => {
+    trackAssistant('entry_view', { entry: 'assistant', surface: 'menu', feature: 'chat' });
+  }, unifiedEnabled);
+  const openAssistant = (surface: 'header' | 'menu') => {
+    if (unifiedEnabled && !showAiChat)
+      trackAssistant('entry_open', { entry: 'assistant', surface, feature: 'chat' });
+    toggleAiChat();
+  };
   const saveLabel = props.isSaving
     ? '保存中'
     : props.hasUnsavedChanges
@@ -184,7 +198,7 @@ export default function EditorHeader(props: EditorHeaderProps): ReactElement {
                 <ClipboardList className="mr-2 h-4 w-4" />
                 面试准备
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={toggleAiChat}>
+              <DropdownMenuItem ref={menuEntryRef} onClick={() => openAssistant('menu')}>
                 <Sparkles className="mr-2 h-4 w-4" />
                 AI 助手
               </DropdownMenuItem>
@@ -199,8 +213,9 @@ export default function EditorHeader(props: EditorHeaderProps): ReactElement {
         <div className="hidden h-6 w-px bg-slate-200 sm:block" />
         <Button
           variant={showAiChat ? 'secondary' : 'ghost'}
+          ref={aiEntryRef}
           size="icon"
-          onClick={toggleAiChat}
+          onClick={() => openAssistant('header')}
           className={`h-8 w-8 cursor-pointer rounded-full sm:w-auto sm:px-3 ${
             showAiChat
               ? 'bg-violet-100 text-violet-700 hover:bg-violet-100'

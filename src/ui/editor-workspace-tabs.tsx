@@ -2,6 +2,9 @@
 
 import { PanelRightClose, Sparkles } from 'lucide-react';
 import type { PanelId } from '@/ui/editor-toolbar';
+import { trackAssistant } from '@/lib/ai/unified/analytics';
+import { unifiedEnabled } from '@/lib/ai/unified/types';
+import { useAiImpression } from '@/lib/ai/unified/use-impression';
 
 const ITEMS = [
   { id: 'ai', label: 'AI 助手' },
@@ -17,6 +20,9 @@ export default function EditorWorkspaceTabs({ activePanel, onChange }: {
   readonly onChange: (panel: WorkspacePanel) => void;
 }) {
   const selected = activePanel === 'polish' || activePanel === 'generate' ? 'ai' : activePanel;
+  const aiRef = useAiImpression<HTMLButtonElement>('assistant-workspace', () => {
+    trackAssistant('entry_view', { entry: 'assistant', surface: 'workspace', feature: 'chat' });
+  }, unifiedEnabled && !!activePanel);
 
   return (
     <div className="flex shrink-0 items-center gap-2 border-b border-slate-100 bg-white px-3 py-3">
@@ -26,9 +32,14 @@ export default function EditorWorkspaceTabs({ activePanel, onChange }: {
           return (
             <button
               key={item.id}
+              ref={item.id === 'ai' ? aiRef : undefined}
               type="button"
               aria-pressed={active}
-              onClick={() => onChange(item.id)}
+              onClick={() => {
+                if (unifiedEnabled && item.id === 'ai' && activePanel !== 'ai')
+                  trackAssistant('entry_open', { entry: 'assistant', surface: 'workspace', feature: 'chat' });
+                onChange(item.id);
+              }}
               className={`relative flex h-9 min-w-0 flex-1 items-center justify-center gap-1 whitespace-nowrap rounded-lg px-1 text-xs font-medium transition-[color,background-color,box-shadow] duration-150 motion-reduce:transition-none focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-500 active:bg-violet-100 ${
                 active
                   ? 'bg-white text-violet-700 shadow-[0_1px_4px_rgba(76,29,149,0.10)] ring-1 ring-violet-200/60'
