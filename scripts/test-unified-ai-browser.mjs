@@ -137,6 +137,10 @@ try {
     () => document.querySelectorAll('article').length === 2,
   );
   assert.equal(requests[1].task.id, requests[0].task.id);
+  assert.equal(requests[1].turns.length, 1);
+  assert.equal(requests[1].turns[0].text, requests[0].text);
+  assert.equal(requests[1].turns[0].proposals[0].factChecked, undefined);
+  assert.equal(requests[1].turns[0].direct, undefined);
   await click('保留原文');
   await page.reload({ waitUntil: 'networkidle0' });
   assert.equal(calls, 2);
@@ -146,6 +150,11 @@ try {
   await page.screenshot({ path: out + '/history.png', fullPage: true });
   await page.setViewport({ width: 1100, height: 800 });
   await page.screenshot({ path: out + '/narrow.png', fullPage: true });
+  assert.ok(await page.evaluate(() => {
+    const send = document.querySelector('[aria-label="发送消息"]');
+    const rect = send.getBoundingClientRect();
+    return send.contains(document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2));
+  }), 'send button must remain unobstructed after restoring history');
   assert.deepEqual(errors, []);
   fs.writeFileSync(
     out + '/browser-report.json',
@@ -159,6 +168,7 @@ try {
           'apply',
           'selective undo',
           'followup same task',
+          'validated local history payload without authority flags',
           'keep original',
           'history no replay',
           '1440 and 1100 layouts',

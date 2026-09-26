@@ -17,7 +17,7 @@ const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024
 export function FeedbackWidget(): ReactElement {
   const pathname = usePathname()
   const activePanel = useEditorUiStore((state) => state.activePanel)
-  const besideEditor = (pathname?.startsWith('/editor') || pathname === '/dev/assistant-lab') && activePanel !== null
+  const besideEditor = (pathname?.startsWith('/editor') && activePanel !== null) || pathname === '/dev/assistant-lab'
   const [isOpen, setIsOpen] = useState<boolean>(false)
   const [content, setContent] = useState<string>('')
   const [contact, setContact] = useState<string>('')

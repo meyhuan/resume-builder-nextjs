@@ -15,6 +15,7 @@ import {
   draftSchema,
   type AssistantTask,
   type AssistantTurn,
+  type HistoryTurn,
   type CheckedProposal,
 } from './types';
 import {
@@ -99,7 +100,7 @@ export function createJsonRunner(
 }
 export async function runAssistant(params: {
   task: AssistantTask;
-  turns: AssistantTurn[];
+  turns: HistoryTurn[];
   text: string;
   requestId: string;
   resume: ResumeData;

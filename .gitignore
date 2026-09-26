@@ -52,5 +52,4 @@ deploy.zip
 *.zip
 !/public/downloads/extension/zhijian-autofill-*.zip
 
-!/prisma/migrations/202609190001_unified_ai_tasks/
 ai-*.log

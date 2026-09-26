@@ -19,6 +19,7 @@ import { useVipStore } from '@/store/use-vip-store';
 import { refreshEditorAssistQuota } from '@/lib/ai/assist-client';
 import { track } from '@/lib/analytics';
 import { plainText } from '@/lib/ai/unified/policy';
+import { MAX_TASK_TURNS, toHistory } from '@/lib/ai/unified/types';
 import type {
   AssistantSession,
   AssistantTask,
@@ -215,11 +216,8 @@ export function UnifiedAssistant({
   const [error, setError] = useState('');
   const [pending, setPending] = useState('');
   const [retry, setRetry] = useState<{
-    task: AssistantTask;
-    requestId: string;
     text: string;
-    fromFollowup?: boolean;
-    resumeData: ReturnType<typeof useAppStore.getState>['resume'];
+    fromFollowup: boolean;
   } | null>(null);
   const actions = useRef<{
     send: (text: string) => void;
@@ -342,14 +340,16 @@ export function UnifiedAssistant({
     setRetry(null);
     useEditorUiStore.setState({ assistantTask: null });
   };
-  const send = async (
-    text: string,
-    retryBody = retry,
-    fromFollowup = false,
-  ) => {
+  const send = async (text: string, fromFollowup = false) => {
     if (!session || busy || abort.current || !text.trim()) return;
-    const body = retryBody || {
+    if (session.turns.length >= MAX_TASK_TURNS) {
+      setError('当前任务对话较长，请新建对话后继续');
+      setRetry(null);
+      return;
+    }
+    const body = {
       task: session.task,
+      turns: toHistory(session.turns),
       requestId: crypto.randomUUID(),
       text: text.trim(),
       fromFollowup,
@@ -359,7 +359,7 @@ export function UnifiedAssistant({
     setError('');
     setPending(body.text);
     setInput('');
-    setRetry(body);
+    setRetry({ text: body.text, fromFollowup });
     nearBottom.current = true;
     event('start', body.task.feature, body.requestId);
     const controller = new AbortController();
@@ -420,12 +420,10 @@ export function UnifiedAssistant({
       if (turn.proposals.length && !turn.direct)
         event('preview', turn.feature, turn.requestId);
       setRetry(null);
-      refreshEditorAssistQuota();
     } catch (e) {
       if (controller.signal.aborted) {
-        setError('已停止，未应用任何新修改。');
+        setError('已停止，未应用任何新修改。若已开始生成，可能已扣次。');
         event('cancel', body.task.feature, body.requestId);
-        setRetry(null);
       } else {
         setError(e instanceof Error ? e.message : '处理失败');
         event('failed', body.task.feature, body.requestId);
@@ -434,13 +432,14 @@ export function UnifiedAssistant({
       if (mounted.current) {
         setBusy(false);
         setPending('');
+        refreshEditorAssistQuota();
       }
       abort.current = null;
     }
   };
   actions.current = {
     send: (text) => {
-      void send(text, null, true);
+      void send(text, true);
     },
     startNew,
   };
@@ -526,6 +525,7 @@ export function UnifiedAssistant({
         </div>
         <select
           aria-label="历史对话"
+          title="历史仅保存在当前浏览器，不跨设备同步"
           className="w-full rounded-lg border border-slate-200 p-1.5 text-xs"
           value={active}
           disabled={busy}
@@ -593,7 +593,7 @@ export function UnifiedAssistant({
                 <button
                   className={button}
                   key={t}
-                  onClick={() => void send(t, null)}
+                  onClick={() => void send(t, true)}
                 >
                   {t}
                 </button>
@@ -661,7 +661,7 @@ export function UnifiedAssistant({
                     key={t}
                     onClick={() => {
                       event('followup_click', turn.feature, turn.requestId);
-                      void send(t, null, true);
+                      void send(t, true);
                     }}
                   >
                     {t}
@@ -689,12 +689,15 @@ export function UnifiedAssistant({
             className="space-y-2 text-xs leading-6 text-red-600"
           >
             <p>{error}</p>
+            <p className="text-slate-500">
+              重新生成会按新请求计次；上一请求若已开始生成，可能已扣次。
+            </p>
             {retry && (
               <button
                 className={button}
-                onClick={() => void send(retry.text, retry)}
+                onClick={() => void send(retry.text, retry.fromFollowup)}
               >
-                重试原请求
+                重新生成（重新计次）
               </button>
             )}
             <button
@@ -715,7 +718,7 @@ export function UnifiedAssistant({
         className="shrink-0 space-y-2 border-t border-slate-100 p-3"
         onSubmit={(e) => {
           e.preventDefault();
-          void send(input, null);
+          void send(input);
         }}
       >
         <textarea
@@ -741,7 +744,7 @@ export function UnifiedAssistant({
             {session.task.feature === 'chat'
               ? '按问答或写作任务计次'
               : `今日剩余 ${remaining.isVip ? '不限' : remaining.remaining} 次`}{' '}
-            · 补充事实不重复扣次
+            · 仅追问不扣次，生成结果计次
           </span>
           {busy ? (
             <button

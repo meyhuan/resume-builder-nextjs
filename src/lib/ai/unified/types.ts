@@ -51,6 +51,14 @@ export const draftSchema = z.object({
   followups: z.array(z.string().min(1).max(100)).max(3).default([]),
 });
 export type DraftAnswer = z.infer<typeof draftSchema>;
+// Browser-owned conversation context, never an authorization or billing record.
+export const historyTurnSchema = draftSchema
+  .pick({ answer: true, questions: true, proposals: true })
+  .extend({ text: z.string().trim().min(1).max(6000) });
+export type HistoryTurn = z.infer<typeof historyTurnSchema>;
+export const MAX_TASK_TURNS = 60;
+export const toHistory = (turns: AssistantTurn[]): HistoryTurn[] =>
+  turns.map((turn) => historyTurnSchema.parse(turn));
 export type CheckedProposal = ChatChangeProposal & {
   before: string;
   targetLabel: string;

@@ -1,21 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createHash } from 'node:crypto';
 import { z } from 'zod';
 import { checkVipStatus } from '@/lib/api/vip-api';
 import { consumeRateLimit } from '@/lib/ai/rate-limiter';
 import { extractAIConfig } from '@/lib/ai/provider';
-import { taskSchema, unifiedEnabled } from '@/lib/ai/unified/types';
 import {
-  AssistantError,
-  reserveRequest,
-  chargeRequest,
-  finishRequest,
-  failRequest,
-} from '@/lib/ai/unified/ledger';
+  taskSchema,
+  unifiedEnabled,
+  historyTurnSchema,
+  MAX_TASK_TURNS,
+} from '@/lib/ai/unified/types';
+import { AssistantError, consumeAssistantQuota } from '@/lib/ai/unified/quota';
 import { createJsonRunner, runAssistant } from '@/lib/ai/unified/engine';
 import type { ResumeData } from '@/entities/resume/resume-data';
 const bodySchema = z.object({
   task: taskSchema,
+  turns: z
+    .array(historyTurnSchema)
+    .max(MAX_TASK_TURNS - 1)
+    .default([]),
   requestId: z.string().uuid(),
   fromFollowup: z.boolean().default(false),
   text: z.string().trim().min(1).max(6000),
@@ -42,11 +44,11 @@ const bodySchema = z.object({
 });
 export const maxDuration = 180;
 export async function POST(request: NextRequest) {
-  let reservedId: string | undefined;
   try {
     if (!unifiedEnabled) throw new AssistantError('新版助手暂未开放', 404);
     const raw = await request.text();
-    if (raw.length > 300000) throw new AssistantError('简历内容过长', 413);
+    if (raw.length > 300000)
+      throw new AssistantError('简历或对话内容过长，请精简内容或新建对话', 413);
     const body = bodySchema.parse(JSON.parse(raw));
     const auth = await checkVipStatus();
     if (!auth.userId) throw new AssistantError('请先登录', 401);
@@ -57,34 +59,15 @@ export async function POST(request: NextRequest) {
       ).allowed
     )
       throw new AssistantError('请求较多，请稍后再试', 429);
-    const digest = createHash('sha256')
-      .update(
-        JSON.stringify({
-          owner: auth.userId,
-          task: body.task,
-          text: body.text,
-          fromFollowup: body.fromFollowup,
-          resume: body.resumeData,
-        }),
-      )
-      .digest('hex');
-    const reserved = await reserveRequest(
-      auth.userId,
-      body.task,
-      body.requestId,
-      digest,
-    );
-    if (reserved.replay) return NextResponse.json({ turn: reserved.replay });
-    reservedId = body.requestId;
-    if (reserved.task.turns.length >= 60)
-      throw new AssistantError('当前任务对话较长，请新建任务后继续');
     const signal = AbortSignal.any([
       request.signal,
       AbortSignal.timeout(150000),
     ]);
+    // One charge per invocation only. Independent HTTP retries are new attempts.
+    let chargePromise: Promise<void> | undefined;
     const turn = await runAssistant({
-      task: reserved.task.context,
-      turns: reserved.task.turns,
+      task: body.task,
+      turns: body.turns,
       text: body.text,
       requestId: body.requestId,
       allowDirect: !body.fromFollowup,
@@ -92,14 +75,16 @@ export async function POST(request: NextRequest) {
       run: createJsonRunner(extractAIConfig(request), signal),
       charge: (feature) => {
         signal.throwIfAborted();
-        return chargeRequest(auth.userId!, auth.isVip, body.requestId, feature);
+        return (chargePromise ??= consumeAssistantQuota(
+          auth.userId!,
+          auth.isVip,
+          feature,
+        ));
       },
     });
     signal.throwIfAborted();
-    await finishRequest(body.task.id, turn);
     return NextResponse.json({ turn });
   } catch (error) {
-    if (reservedId) await failRequest(reservedId).catch(() => {});
     if (error instanceof AssistantError)
       return NextResponse.json(
         { error: error.message, quotaExceeded: error.quotaExceeded },

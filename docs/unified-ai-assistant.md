@@ -1,6 +1,6 @@
 # PC AI 助手统一改写工作流
 
-实现日期：2026-09-19。前端与 Java 埋点后端分别位于独立 worktree，同名分支 `codex/unified-ai-assistant`。本次未部署生产环境，也未在生产数据库执行迁移。
+实现日期：2026-09-19；2026-09-26 调整为不新增表方案。前端与 Java 埋点后端分别位于独立 worktree，同名分支 `codex/unified-ai-assistant`。本次未部署生产环境；本功能无需数据库迁移。
 
 ## 用户体验
 
@@ -15,26 +15,28 @@
 
 ## 实现结构
 
-`src/lib/ai/unified/`：任务、输出协议、事实规则、服务端处理及计费记录。
+`src/lib/ai/unified/`：任务、输出协议、事实规则、服务端处理及现有额度消费。
 
 `src/components/ai-chat/unified-assistant.tsx`：统一交互界面。差异计算与修改事务位于同目录的 unified-changes.ts；沿用现有 Zustand 简历、撤销历史与更新机制。
 
-`POST /next-api/ai/chat/task`：输入包含 task、requestId、text、resumeData 和 fromFollowup。服务端从登录态确定账号、读取自己保存的任务历史，不信任客户端提供的历史或会员标记。返回校验后的追问、建议、后续问题及本次执行方式。新任务使用独立 UUID，目标不可在同一个任务ID下替换。
+`POST /next-api/ai/chat/task`：输入包含 task、requestId、text、resumeData、turns 和 fromFollowup。turns 来自当前浏览器的本地会话，只传用户消息、助手回答、问题及建议正文；不传执行授权、已扣次标记、修改前快照或审核通过标记。接口校验历史结构和长度，并从登录态确定账号及会员状态。任务 ID 仅用于本地分组和埋点，不再代表服务端持久化任务或授权凭据。
 
-处理顺序：验证输入及身份 → 预留幂等请求 → 识别意图和缺失事实 → 需要追问则免费返回问题 → 按功能扣次 → 生成结果 → 事实复核 → 保存完整结果 → 客户端预览或本次明确授权下应用。
+历史是客户端提供的上下文，不是经过服务端认证的记录。历史用户自述与当前简历用于核对事实，历史助手建议不作为事实依据；自动修改授权仍只判断本次用户消息。服务端根据本次目标及模型路由确定额度类别，不信任客户端扣次标记。单个任务最多 60 轮，超限引导新建对话；完整请求限制 300,000 字符，不悄悄截断历史事实。
+
+处理顺序：验证输入及身份 → 读取本次携带的本地历史 → 识别意图和缺失事实 → 需要追问则免费返回问题 → 按功能扣次 → 生成结果 → 事实复核 → 客户端保存结果、预览或在本次明确授权下应用。
 
 新版在完整结果通过校验后一次性展示；等待期间显示状态并支持停止，不逐字展示尚未完成事实核验的改稿。
 
 ## 数据与额度
 
-新增 `AssistantTask` 和 `AssistantRequest` 两张 PostgreSQL 表，用于账号绑定、完整任务历史、请求状态、结果重放与扣次去重。迁移文件：
+不新增数据库表、字段、Redis 或其它持久化服务。Prisma schema 与本功能开发前一致，原新增建表迁移和服务端任务账本已删除。
 
-`prisma/migrations/202609190001_unified_ai_tasks/migration.sql`
-
+- 本地 IndexedDB 保存最近 20 个任务及其对话、预览状态和撤销凭据；历史仅在当前浏览器可用，不跨设备同步。服务端不持久化任务对话或生成结果，但每次处理仍需接收相关内容并调用模型。
 - 润色使用 `ai:polish-section`；帮我写使用 `ai:generate-section`；普通问答使用 `ai:editor-assist`。
 - 任务内信息收集不扣生成额度；生成开始计一次，主动重新生成使用新请求ID再计一次。生成失败不自动退款，沿用开始计次口径。
-- 相同请求ID与相同输入可重取已完成结果，不重复扣次；输入变化、其它账号、其它目标均拒绝重用。
-- 数据库行锁串行化同账号额度更新。旧 AI 接口同一额度行的更新也改为锁内读取、按 JSON 键更新，避免新旧功能并发互相覆盖余额。
+- 前端发送期间禁止重复提交，不自动重试失败的 HTTP 请求。手动「重新生成（重新计次）」使用新请求 ID、当前简历和当前任务历史；显示上一请求若已开始生成可能已扣次的提示。停止请求也不能保证退回已消费额度。
+- 没有服务端持久化的请求去重或结果重放；即使调用方重复提交相同 ID，也按独立请求处理。单次接口执行内部最多扣次一次，不将这一保障描述为跨请求幂等。
+- 继续使用现有 User / UserQuota 表和原功能额度键。数据库行锁串行化同账号额度更新。旧 AI 接口同一额度行的更新也改为锁内读取、按 JSON 键更新，避免新旧功能并发互相覆盖余额。
 - 恢复本地历史不自动应用；只有当前活跃请求的完整响应可触发直接修改。客户端同时校验目标快照。
 - 新增 `ai_assist_interaction` 的入口、开始、追问、预览、应用、保留、撤销、推荐问题、冲突、失败等行为统计；不上传简历正文。Java 白名单同时补齐原本缺失的四个 `ai_assist_*` 事件。
 
@@ -42,28 +44,32 @@
 
 1. 安装当前分支依赖；新增的 PGlite 仅用于数据库语义测试，不进入生产请求链路。
 2. 先发布 Java 后端的助手事件白名单修复。
-3. 按现有数据库迁移流程执行上述新增 SQL，再发布前端。
-4. 在构建环境设置 `NEXT_PUBLIC_UNIFIED_AI_ASSISTANT=true` 后构建发布。默认 false，防止未迁移数据库的环境提前切换。
-5. 回退时设置该开关为 false 并重新构建，恢复旧助手和旧模块界面；保留新增表，不回滚或删除已有简历数据。
+3. 发布前端，无需执行本功能的数据库迁移或重新生成 Prisma 客户端。
+4. 在构建环境设置 `NEXT_PUBLIC_UNIFIED_AI_ASSISTANT=true` 后构建发布。默认 false，便于控制新版助手启用时机。
+5. 回退时设置该开关为 false 并重新构建，恢复旧助手和旧模块界面；不需要数据库回滚。
 
 当前独立 worktree 的本地 `.env.local` 仅打开新界面，不包含生产凭据，不纳入提交。生产登录、数据库、模型配置仍由原部署系统管理。
 
 ## 验证报告
 
+2026-09-26 本次调整的验证：
+
 | 检查 | 命令/方式 | 结果与覆盖 |
 |---|---|---|
-| 类型检查 | `pnpm exec tsc --noEmit --incremental false` | 通过 |
-| 专项自动化 | `pnpm test:ai` | 45 项通过；真实模型用例默认跳过，另行验证 |
-| 原助手回归 | `pnpm exec vitest run --config scripts/vitest.editor-ai.config.ts` | 10 项通过；旧聊天应用/忽略/历史、编辑工具状态及旧模块界面 |
-| 真实模型 | 设置 `AI_LIVE_EVAL=1` 和模型密钥后运行专项配置中的 `engine.live.test.ts` | 5 项通过；协助职责、缺材料追问、拒绝虚增数字与职责、了解不变精通、明确单次直接替换；仅使用虚构材料，未操作真实账号简历 |
-| PostgreSQL 语义 | 专项测试中的 ledger.test.ts 使用临时 PGlite | 迁移 SQL、账号隔离、重试去重、失败结果、5次额度并发上限及会员余额通过；不是生产数据库验收 |
-| 浏览器 | 启动本地 Next dev 后运行 `node scripts/test-unified-ai-browser.mjs` | Chrome 中模块入口、差异、预览不写入、应用、撤销、后续问题、保留原文、刷新不重放通过；1440/1100宽度截图检查；AI响应使用固定测试数据 |
-| 定向 lint | ESLint 检查 unified 逻辑、新面板、任务路由、入口和 EditorAiPanel | 通过，无错误或规则警告 |
-| Prisma schema | `pnpm exec prisma validate` | 通过，未连接生产库 |
-| Java 埋点 | 后端 `mvnw.cmd -q -Dtest=AssistantAnalyticsTest test` | 通过；5个助手事件经过真实服务校验并调用模拟持久层 |
+| 类型检查 | `node node_modules/typescript/bin/tsc --noEmit --incremental false` | 通过 |
+| 专项自动化 | `node node_modules/vitest/vitest.mjs run --config scripts/vitest.unified-ai.config.ts` | 49 项通过；5 项真实模型用例本次跳过 |
+| 原助手回归 | `node node_modules/vitest/vitest.mjs run --config scripts/vitest.editor-ai.config.ts` | 10 项通过；旧聊天应用/忽略/历史、编辑工具状态及旧模块界面 |
+| 真实模型（9月19日原实现验证，本次未重跑） | 设置 `AI_LIVE_EVAL=1` 和模型密钥后运行专项配置中的 `engine.live.test.ts` | 5 项通过；协助职责、缺材料追问、拒绝虚增数字与职责、了解不变精通、明确单次直接替换；仅使用虚构材料，未操作真实账号简历 |
+| PostgreSQL 语义 | 专项测试中的 quota.test.ts 使用临时 PGlite | 只创建模拟的既有 UserQuota 表，验证5次并发上限、不同功能计数不覆盖、跨日重置、用户隔离、会员余额不扣；不是生产数据库验收 |
+| 浏览器 | 启动本地 Next dev 后运行 `node scripts/test-unified-ai-browser.mjs` | Chrome 中模块入口、差异、预览不写入、应用、撤销、后续问题、保留原文、刷新不重放及后续请求携带本地历史通过；1440/1100宽度截图检查；AI响应使用固定测试数据 |
+| 定向 lint | ESLint 检查本次修改的 unified 逻辑、新面板、任务路由和测试文件 | 通过，无错误或规则警告 |
+| Prisma schema | `git diff 1a067f3 -- prisma` | 无差异，本功能没有数据库结构或迁移改动 |
+| Java 埋点（9月19日验证，本次无改动） | 后端 `mvnw.cmd -q -Dtest=AssistantAnalyticsTest test` | 通过；5个助手事件经过真实服务校验并调用模拟持久层 |
 
 浏览器产物位于 `test-artifacts/unified-ai/`：preview.png、history.png、narrow.png、browser-report.json。专项日志为 worktree 根目录的 ai-tests.log、ai-live-tests.log、ai-typecheck.log、ai-lint.log、ai-regression.log、ai-browser.log（均不提交）。
 
-未执行：生产构建与部署、生产迁移、真实登录账号从浏览器到生产库的全链路操作、线上埋点最终入库验收。浏览器、服务端路由、SQL及真实模型分别验证，不将这些检查冒充生产端到端测试。
+未执行：本次真实模型评测、生产构建与部署、真实登录账号从浏览器到生产库的全链路操作、线上埋点最终入库验收。无需执行本功能的生产迁移。浏览器、服务端路由、SQL及真实模型分别验证，不将这些检查冒充生产端到端测试。
 
 事实复核仍依赖模型判断，固定案例通过不能证明永不出错；默认差异预览、明确授权、冲突保护和可撤销操作是持续保留的产品边界。上线后重点观察生成完成率、采用率、撤销率、未闭环请求及额度异常，并按功能和入口区分统计。
+
+本机 pnpm exec 因依赖状态检查尝试自动安装，随后因无交互终端退出；保留共享 node_modules，改用已安装工具的 node 入口完成验证。

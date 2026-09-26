@@ -175,6 +175,12 @@ it('followup uses the same task and does not carry direct authorization', async 
   expect(body.text).toBe('这段还能再精简一点吗？');
   expect(body.direct).toBeUndefined();
   expect(body.fromFollowup).toBe(true);
+  expect(body.turns).toHaveLength(1);
+  expect(body.turns[0].text).toBe('帮我润色');
+  expect(body.turns[0].direct).toBeUndefined();
+  expect(body.turns[0].charged).toBeUndefined();
+  expect(body.turns[0].proposals[0].before).toBeUndefined();
+  expect(body.turns[0].proposals[0].factChecked).toBeUndefined();
 });
 
 it('stopping a pending request never applies a late result', async () => {
@@ -193,9 +199,45 @@ it('stopping a pending request never applies a late result', async () => {
   fireEvent.click(screen.getByLabelText('发送消息'));
   await screen.findByText('停止');
   fireEvent.click(screen.getByText('停止'));
-  await screen.findByText('已停止，未应用任何新修改。');
+  await screen.findByText(
+    '已停止，未应用任何新修改。若已开始生成，可能已扣次。',
+  );
   expect(useAppStore.getState().pastStates).toHaveLength(0);
   expect(targetSnapshot(useAppStore.getState().resume, 'b')).toBe(
     targetSnapshot(resume, 'b'),
   );
+});
+
+it('a manual retry uses a new ID and current resume; failure never auto retries', async () => {
+  mocks.fetch.mockRejectedValue(new TypeError('网络连接中断'));
+  await mount();
+  await send();
+  await screen.findByText('重新生成（重新计次）');
+  expect(mocks.fetch).toHaveBeenCalledTimes(1);
+  expect(screen.getByText(/上一请求若已开始生成/)).toBeTruthy();
+  const first = JSON.parse(mocks.fetch.mock.calls[0][1].body);
+  const updated = structuredClone(resume);
+  updated.name = '编辑后的简历';
+  useAppStore.setState({ resume: updated });
+  reply();
+  fireEvent.click(screen.getByText('重新生成（重新计次）'));
+  await screen.findByText('应用这一处');
+  const second = JSON.parse(mocks.fetch.mock.calls[1][1].body);
+  expect(second.requestId).not.toBe(first.requestId);
+  expect(second.task).toEqual(first.task);
+  expect(second.text).toBe(first.text);
+  expect(second.resumeData.name).toBe('编辑后的简历');
+});
+it('restored browser history is included in the next request without replaying edits', async () => {
+  reply(false, [{ question: '你具体负责什么？', options: ['登记'] }]);
+  await mount();
+  await send('我不知道怎么写');
+  await screen.findByText('登记');
+  cleanup();
+  await mount();
+  await send('我实际协助登记');
+  const body = JSON.parse(mocks.fetch.mock.calls[1][1].body);
+  expect(body.turns[0].text).toBe('我不知道怎么写');
+  expect(body.turns[0].questions[0].question).toBe('你具体负责什么？');
+  expect(useAppStore.getState().pastStates).toHaveLength(0);
 });

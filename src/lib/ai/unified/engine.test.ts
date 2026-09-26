@@ -87,7 +87,11 @@ it('responsibility inflation produces a question, never an applicable proposal',
     {
       ...draft,
       proposals: [
-        { action: 'updateBlock', blockId: 'b', html: '<p>主导活动运营。</p>' },
+        {
+          action: 'updateBlock',
+          blockId: 'b',
+          html: '<p>主导活动运营。</p>',
+        },
       ],
     },
     { safe: false, questions: ['你是协助执行还是负责人？'] },
@@ -166,4 +170,29 @@ it('suggested followup clicks cannot authorize automatic application', async () 
   );
   expect(result.direct).toBe(false);
   expect(result.proposals).toHaveLength(1);
+});
+
+it('uses local user statements as evidence, excludes historical AI suggestions, and resets direct permission', async () => {
+  const { result, runner } = await run(
+    [{ ...plan, direct: true }, draft, { safe: true, questions: [] }],
+    '请再精简一点',
+    {
+      turns: [
+        {
+          text: '我协助登记，直接替换这段',
+          answer: '主导活动并提升50%效率',
+          questions: [],
+          proposals: [],
+        },
+      ],
+    },
+  );
+  const calls = vi.mocked(runner).mock.calls;
+  const input = JSON.parse(calls[0][1]);
+  expect(input.history[0].user).toContain('我协助登记');
+  expect(input.history[0].answer).toContain('提升50%');
+  const audit = JSON.parse(calls[2][1]);
+  expect(audit.evidence).toContain('我协助登记');
+  expect(audit.evidence).not.toContain('提升50%');
+  expect(result.direct).toBe(false);
 });
