@@ -1,3 +1,4 @@
+import { resumeReviewFixture, clickReviewButton, openResumeReview, generateResumeReview } from './resume-review-fixture.mjs';
 import { existsSync } from 'node:fs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -30,7 +31,6 @@ const quotaResponse = {
   aiImportSection: { allowed: true, remaining: 99, isVip: true, limit: 999 },
   aiGenerateSection: { allowed: true, remaining: 99, isVip: true, limit: 999 },
   aiPolishSection: { allowed: true, remaining: 99, isVip: true, limit: 999 },
-  aiOptimizeResume: { allowed: true, remaining: 99, isVip: true, limit: 999 },
   pdfExport: { allowed: true, remaining: 99, isVip: true, limit: 999 },
 };
 
@@ -91,24 +91,9 @@ async function setupRequestMocks(page) {
       });
       return;
     }
-    if (url.includes('/next-api/ai/optimize-resume') && request.method() === 'POST') {
-      let body = {};
-      try {
-        body = JSON.parse(request.postData() || '{}');
-      } catch {
-        body = {};
-      }
-      const result = {};
-      for (const block of Array.isArray(body.blocks) ? body.blocks.slice(0, 3) : []) {
-        const blockId = block.blockId || block.id;
-        if (!blockId) continue;
-        result[blockId] = '<ul><li>围绕目标岗位重写经历表达，突出业务问题、个人动作和可量化结果。</li><li>补充 RAG、AI Agent、模型评测等关键词，让简历更贴合 JD 初筛。</li></ul>';
-      }
-      void request.respond({
-        status: 200,
-        contentType: 'text/event-stream; charset=utf-8',
-        body: `data: ${JSON.stringify({ content: JSON.stringify(result) })}\n\ndata: [DONE]\n\n`,
-      });
+    if (url.includes('/next-api/ai/chat/task') && request.method() === 'POST') {
+      const body = JSON.parse(request.postData() || '{}');
+      void request.respond({ status: 200, contentType: 'application/json', body: JSON.stringify(resumeReviewFixture(body)) });
       return;
     }
     void request.continue();
@@ -256,32 +241,10 @@ async function captureTemplateProcess(page, resumeId) {
 
 async function captureAiOptimizeFinal(page, resumeId) {
   await openEditor(page, resumeId);
-  await page.evaluate(() => {
-    const button = Array.from(document.querySelectorAll('button'))
-      .find((node) => (node.textContent || '').includes('AI一键优化'));
-    if (button instanceof HTMLElement) button.click();
-  });
-  await page.waitForFunction(() => document.body.innerText.includes('目标岗位 JD'), { timeout: 15000 });
-  await page.waitForFunction(() => !document.body.innerText.includes('今日剩余 ...'), { timeout: 8000 }).catch(() => undefined);
-  await page.evaluate((text) => {
-    const textarea = document.querySelector('textarea');
-    if (!(textarea instanceof HTMLTextAreaElement)) return;
-    textarea.focus();
-    textarea.value = text;
-    textarea.dispatchEvent(new Event('input', { bubbles: true }));
-  }, jdText);
-  await sleep(500);
-  await page.evaluate(() => {
-    const button = Array.from(document.querySelectorAll('button'))
-      .find((node) => (node.textContent || '').includes('一键优化简历'));
-    if (button instanceof HTMLElement) button.click();
-  });
-  await page.waitForFunction(() => document.body.innerText.includes('应用选中的'), { timeout: 20000 });
-  await page.evaluate(() => {
-    const button = Array.from(document.querySelectorAll('button'))
-      .find((node) => (node.textContent || '').includes('应用选中的'));
-    if (button instanceof HTMLElement) button.click();
-  });
+  await openResumeReview(page);
+  await generateResumeReview(page);
+  await clickReviewButton(page, '全选待处理建议');
+  await page.evaluate(() => [...document.querySelectorAll('button')].find((node) => node.textContent.includes('应用所选（')).click());
   await sleep(900);
   await closeSidebar(page);
   return capturePage(page, 'screenshots/raw/desktop/editor-process-ai-optimize-final-applied-desktop.png');
@@ -493,9 +456,9 @@ async function main() {
         file: aiOptimizeCard,
         asset_type: 'process-comparison',
         page: 'AI 按 JD 优化三步流程图',
-        summary: '展示 AI 一键优化从粘贴 JD、查看优化预览，到应用后回到排版简历的三步过程，适合说明 AI 不会黑箱改写，用户可以先审核再应用。',
+        summary: '展示 AI 全文优化从粘贴 JD、查看优化预览，到应用后回到排版简历的三步过程，适合说明 AI 不会黑箱改写，用户可以先审核再应用。',
         visible_elements: ['JD 输入', 'AI 优化预览', '原文和优化后对比', '应用后简历成品'],
-        features: ['AI 一键优化', '按 JD 优化', '优化前后预览', '应用到排版简历'],
+        features: ['AI 全文优化', '按 JD 优化', '优化前后预览', '应用到排版简历'],
         scenarios: ['投递前按 JD 改简历', '用户担心 AI 改坏内容', '需要展示 AI 优化完整链路'],
         best_for: ['三步流程图', 'AI 优化卖点图', '小红书过程图'],
         not_for: ['模板选择', '移动端填写'],

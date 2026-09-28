@@ -34,6 +34,8 @@ export type FailureReason =
   | 'timeout'
   | 'cancelled';
 export interface AssistantAnalytics {
+  scope?: 'resume' | 'module' | 'chat';
+  selectedCount?: number;
   feature?: AssistantTask['feature'];
   requestedFeature?: AssistantTask['feature'];
   entry?: AssistantTask['entry'];

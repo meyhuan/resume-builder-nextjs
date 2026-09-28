@@ -2,7 +2,6 @@ import type { ReactElement } from "react";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Sparkles, Wand2, Trash2, ArrowUp, ArrowDown } from "lucide-react";
 import { trackAssistant } from '@/lib/ai/unified/analytics';
-import { unifiedEnabled } from '@/lib/ai/unified/types';
 import { useAiImpression } from '@/lib/ai/unified/use-impression';
 
 /**
@@ -36,8 +35,8 @@ export default function BlockActions(props: BlockActionsProps): ReactElement {
     if (window.matchMedia('(min-width: 768px)').matches)
       trackAssistant('entry_view', { entry: 'module', surface: 'block', feature, requestedFeature: feature });
   };
-  const polishRef = useAiImpression<HTMLButtonElement>('polish', () => report('polish'), unifiedEnabled && !!onPolish);
-  const generateRef = useAiImpression<HTMLButtonElement>('generate', () => report('generate'), unifiedEnabled && !!onGenerate);
+  const polishRef = useAiImpression<HTMLButtonElement>('polish', () => report('polish'), !!onPolish);
+  const generateRef = useAiImpression<HTMLButtonElement>('generate', () => report('generate'), !!onGenerate);
 
   return (
     <div

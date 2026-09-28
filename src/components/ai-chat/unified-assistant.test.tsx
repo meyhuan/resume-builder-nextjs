@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, it, expect, vi } from 'vitest';
+import { StrictMode } from 'react';
 import {
   render,
   screen,
@@ -51,7 +52,24 @@ const task = {
   entry: 'module' as const,
 };
 beforeEach(() => {
-  mocks.saved = undefined;
+  // Existing history should stay idle; fresh module actions are tested separately.
+  mocks.saved = [
+    { task, turns: [], reviews: {}, receipts: {}, updatedAt: 1 },
+    {
+      task: {
+        ...task,
+        id: 'chat-history',
+        blockId: undefined,
+        feature: 'chat',
+        entry: 'assistant',
+        label: '整份简历',
+      },
+      turns: [],
+      reviews: {},
+      receipts: {},
+      updatedAt: 1,
+    },
+  ];
   mocks.fetch.mockReset();
   vi.mocked(track).mockClear();
   vi.stubGlobal('fetch', mocks.fetch);
@@ -105,15 +123,144 @@ function reply(direct = false, questions: unknown[] = [], count = 1) {
 }
 async function mount() {
   render(<UnifiedAssistant resumeId="r" onLegacy={() => {}} />);
-  await screen.findByText('当前对象：校园旧物交换活动');
+  await screen.findByRole('button', {
+    name: '当前任务：校园旧物交换活动，查看详情和历史对话',
+  });
+}
+it('starts a fresh module polish once, previews changes, and never replays restored history', async () => {
+  mocks.saved = undefined;
+  reply(true); // Even an incorrect direct response must not apply a starter request.
+  const view = render(
+    <StrictMode>
+      <UnifiedAssistant resumeId="r" onLegacy={() => {}} />
+    </StrictMode>,
+  );
+  await screen.findByText('应用这一处');
+  expect(mocks.fetch).toHaveBeenCalledTimes(1);
+  const body = JSON.parse(mocks.fetch.mock.calls[0][1].body);
+  expect(body.task).toEqual(task);
+  expect(body.fromFollowup).toBe(true);
+  expect(body.text).toContain('先展示修改建议');
+  expect(useAppStore.getState().pastStates).toHaveLength(0);
+  expect(screen.queryByText('帮我把这段写得更精简')).toBeNull();
+  view.unmount();
+  await mount();
+  await screen.findByText('应用这一处');
+  expect(mocks.fetch).toHaveBeenCalledTimes(1);
+});
+
+it('does not automatically retry a failed module polish, including after reopening', async () => {
+  mocks.saved = undefined;
+  mocks.fetch.mockRejectedValue(new Error('测试请求失败'));
+  await mount();
+  await screen.findByText('测试请求失败');
+  expect(mocks.fetch).toHaveBeenCalledTimes(1);
+  cleanup();
+  await mount();
+  expect(mocks.fetch).toHaveBeenCalledTimes(1);
+});
+
+it('keeps top-level assistant and generate starters idle', async () => {
+  mocks.saved = undefined;
+  useEditorUiStore.setState({ assistantTask: null });
+  render(<UnifiedAssistant resumeId="r" onLegacy={() => {}} />);
+  await screen.findByText('优化整份简历');
+  expect(mocks.fetch).not.toHaveBeenCalled();
+  act(() =>
+    useEditorUiStore.setState({
+      assistantTask: { ...task, feature: 'generate' },
+    }),
+  );
+  await screen.findByText('根据已有信息，帮我写这段经历');
+  expect(mocks.fetch).not.toHaveBeenCalled();
+});
+
+it('does not restart automatic polish after stopping it', async () => {
+  mocks.saved = undefined;
+  mocks.fetch.mockImplementation(
+    (_url, options) =>
+      new Promise((_resolve, reject) => {
+        options.signal.addEventListener('abort', () =>
+          reject(new DOMException('aborted', 'AbortError')),
+        );
+      }),
+  );
+  await mount();
+  fireEvent.click(await screen.findByText('停止'));
+  await screen.findByRole('alert');
+  expect(mocks.fetch).toHaveBeenCalledTimes(1);
+  expect(useAppStore.getState().pastStates).toHaveLength(0);
+});
+function getSubmitButton() {
+  return (
+    screen.queryByLabelText('确认当前回答') || screen.getByLabelText('发送消息')
+  );
 }
 async function send(text = '帮我润色') {
   fireEvent.change(screen.getByLabelText('向 AI 描述修改需求'), {
     target: { value: text },
   });
-  fireEvent.click(screen.getByLabelText('发送消息'));
+  fireEvent.click(getSubmitButton());
   await waitFor(() => expect(screen.queryByText('停止')).toBeNull());
 }
+it('reveals the full task and switches history without sending a request', async () => {
+  await mount();
+  expect(screen.queryByText('当前对象：校园旧物交换活动')).toBeNull();
+  fireEvent.keyDown(screen.getByRole('button', { name: /当前任务/ }), {
+    key: 'ArrowDown',
+  });
+  expect(await screen.findByText('当前对象：校园旧物交换活动')).toBeTruthy();
+  fireEvent.click(screen.getByRole('menuitemradio', { name: /整份简历/ }));
+  await screen.findByRole('button', { name: /当前任务：整份简历/ });
+  expect(screen.queryByRole('menu')).toBeNull();
+  expect(mocks.fetch).not.toHaveBeenCalled();
+});
+
+it('keeps legacy history and exit task available in the more menu', async () => {
+  const onLegacy = vi.fn();
+  render(<UnifiedAssistant resumeId="r" onLegacy={onLegacy} />);
+  await screen.findByRole('button', { name: /当前任务：校园旧物/ });
+  fireEvent.keyDown(screen.getByRole('button', { name: '更多对话操作' }), {
+    key: 'ArrowDown',
+  });
+  fireEvent.click(await screen.findByRole('menuitem', { name: '旧版历史' }));
+  expect(onLegacy).toHaveBeenCalledTimes(1);
+  fireEvent.keyDown(screen.getByRole('button', { name: '更多对话操作' }), {
+    key: 'ArrowDown',
+  });
+  fireEvent.click(await screen.findByRole('menuitem', { name: '退出任务' }));
+  await screen.findByRole('button', { name: /当前任务：整份简历/ });
+  expect(useEditorUiStore.getState().assistantTask).toBeNull();
+});
+
+it('disables task switching while generating but keeps stop available', async () => {
+  mocks.fetch.mockImplementation(
+    (_url, options) =>
+      new Promise((_resolve, reject) =>
+        options.signal.addEventListener('abort', () =>
+          reject(new DOMException('aborted', 'AbortError')),
+        ),
+      ),
+  );
+  await mount();
+  fireEvent.change(screen.getByLabelText('向 AI 描述修改需求'), {
+    target: { value: '润色这段' },
+  });
+  fireEvent.click(getSubmitButton());
+  await screen.findByText('停止');
+  expect(
+    (screen.getByRole('button', { name: '新对话' }) as HTMLButtonElement)
+      .disabled,
+  ).toBe(true);
+  fireEvent.keyDown(screen.getByRole('button', { name: /当前任务/ }), {
+    key: 'ArrowDown',
+  });
+  for (const item of await screen.findAllByRole('menuitemradio'))
+    expect(item.getAttribute('aria-disabled')).toBe('true');
+  fireEvent.keyDown(screen.getByRole('menu'), { key: 'Escape' });
+  fireEvent.click(screen.getByText('停止'));
+  await screen.findByLabelText('发送消息');
+});
 it('keeps original until Apply, renders next questions, and supports selective undo', async () => {
   reply();
   await mount();
@@ -147,7 +294,7 @@ it('auto applies only a live direct response and does not replay restored histor
   fireEvent.change(screen.getByLabelText('向 AI 描述修改需求'), {
     target: { value: '直接替换这段' },
   });
-  fireEvent.click(screen.getByLabelText('发送消息'));
+  fireEvent.click(getSubmitButton());
   await screen.findByText('已应用');
   expect(useAppStore.getState().pastStates).toHaveLength(1);
   cleanup();
@@ -168,6 +315,129 @@ it('question options populate user input without asserting facts automatically',
   expect(mocks.fetch).toHaveBeenCalledTimes(1);
   expect(useAppStore.getState().pastStates).toHaveLength(0);
 });
+it('marks choices selected, replaces an answer and toggles it off without touching other answers', async () => {
+  reply(false, [
+    { question: '你具体负责什么？', options: ['登记', '发放'] },
+    { question: '参与多久？', options: ['两天'] },
+  ]);
+  await mount();
+  await send();
+  let first = await screen.findByRole('button', { name: '登记' });
+  let second = screen.getByRole('button', { name: '发放' });
+  const input = screen.getByLabelText(
+    '向 AI 描述修改需求',
+  ) as HTMLTextAreaElement;
+  fireEvent.change(input, { target: { value: '额外补充：我是志愿者' } });
+  fireEvent.click(first);
+  expect(first.getAttribute('aria-pressed')).toBe('true');
+  expect(screen.queryByRole('button', { name: '两天' })).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: '确认，下一题' }));
+  fireEvent.click(screen.getByRole('button', { name: '两天' }));
+  fireEvent.click(screen.getByRole('button', { name: '修改第 1 题回答' }));
+  first = screen.getByRole('button', { name: '登记' });
+  second = screen.getByRole('button', { name: '发放' });
+  expect(first.getAttribute('aria-pressed')).toBe('true');
+  fireEvent.click(second);
+  expect(first.getAttribute('aria-pressed')).toBe('false');
+  expect(second.getAttribute('aria-pressed')).toBe('true');
+  expect(input.value).toBe(
+    '额外补充：我是志愿者\n你具体负责什么？：发放\n参与多久？：两天',
+  );
+  fireEvent.click(second);
+  expect(second.getAttribute('aria-pressed')).toBe('false');
+  expect(input.value).toBe('额外补充：我是志愿者\n参与多久？：两天');
+  expect(mocks.fetch).toHaveBeenCalledTimes(1);
+});
+
+it('asks one question at a time and submits all confirmed answers in one request', async () => {
+  reply(false, [
+    { question: '负责什么？', options: ['登记'] },
+    { question: '参与多久？', options: ['两天'] },
+    { question: '有什么成果？', options: [] },
+  ]);
+  await mount();
+  await send();
+  await screen.findByText('问题 1 / 3');
+  expect(screen.queryByText('参与多久？')).toBeNull();
+  expect(screen.queryByText('有什么成果？')).toBeNull();
+  expect(
+    (screen.getByRole('button', { name: '确认，下一题' }) as HTMLButtonElement)
+      .disabled,
+  ).toBe(true);
+  fireEvent.click(screen.getByRole('button', { name: '登记' }));
+  // The composer action must not send a partial structured answer either.
+  fireEvent.click(getSubmitButton());
+  await screen.findByText('问题 2 / 3');
+  expect(mocks.fetch).toHaveBeenCalledTimes(1);
+  expect(screen.queryByRole('button', { name: '登记' })).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: '两天' }));
+  fireEvent.click(screen.getByRole('button', { name: '确认，下一题' }));
+  await screen.findByText('问题 3 / 3');
+  fireEvent.click(screen.getByRole('button', { name: '暂不确定' }));
+  expect(mocks.fetch).toHaveBeenCalledTimes(1);
+  fireEvent.click(screen.getByRole('button', { name: '提交回答' }));
+  await waitFor(() => expect(mocks.fetch).toHaveBeenCalledTimes(2));
+  expect(JSON.parse(mocks.fetch.mock.calls[1][1].body).text).toBe(
+    '负责什么？：登记\n参与多久？：两天\n有什么成果？：暂不确定，请保留原有事实，不自行补全',
+  );
+  await screen.findByText('查看此前的 3 个问题');
+  expect(screen.getAllByTestId('question-stepper')).toHaveLength(1);
+});
+
+it('reopens an earlier answer deleted in the composer instead of submitting incomplete answers', async () => {
+  reply(false, [
+    { question: '负责什么？', options: ['登记'] },
+    { question: '参与多久？', options: ['两天'] },
+  ]);
+  await mount();
+  await send();
+  fireEvent.click(await screen.findByRole('button', { name: '登记' }));
+  fireEvent.click(screen.getByRole('button', { name: '确认，下一题' }));
+  fireEvent.click(screen.getByRole('button', { name: '两天' }));
+  fireEvent.change(screen.getByLabelText('向 AI 描述修改需求'), {
+    target: { value: '参与多久？：两天' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: '提交回答' }));
+  await screen.findByText('问题 1 / 2');
+  expect(mocks.fetch).toHaveBeenCalledTimes(1);
+});
+
+it('lets users replace a suggested answer with their own text and sends it only on confirmation', async () => {
+  reply(false, [{ question: '你具体负责什么？', options: ['登记'] }]);
+  await mount();
+  await send();
+  const option = await screen.findByRole('button', { name: '登记' });
+  fireEvent.click(option);
+  fireEvent.click(screen.getByRole('button', { name: '自己填写' }));
+  const input = screen.getByLabelText('你的回答') as HTMLTextAreaElement;
+  await waitFor(() => expect(document.activeElement).toBe(input));
+  expect(input.value).toBe('登记');
+  fireEvent.change(input, {
+    target: {
+      value: '我只负责核对名单\n当天还协助联系负责人',
+    },
+  });
+  expect(option.getAttribute('aria-pressed')).toBe('false');
+  expect(mocks.fetch).toHaveBeenCalledTimes(1);
+  fireEvent.click(getSubmitButton());
+  await waitFor(() => expect(mocks.fetch).toHaveBeenCalledTimes(2));
+  expect(JSON.parse(mocks.fetch.mock.calls[1][1].body).text).toBe(
+    '你具体负责什么？：我只负责核对名单\n当天还协助联系负责人',
+  );
+});
+
+it('opens a blank answer at the caret even for questions without options', async () => {
+  reply(false, [{ question: '你具体负责什么？', options: [] }]);
+  await mount();
+  await send();
+  fireEvent.click(await screen.findByRole('button', { name: '自己填写' }));
+  const input = screen.getByLabelText('你的回答') as HTMLTextAreaElement;
+  await waitFor(() => expect(document.activeElement).toBe(input));
+  expect(input.value).toBe('');
+  expect(input.selectionStart).toBe(input.value.length);
+  expect(mocks.fetch).toHaveBeenCalledTimes(1);
+});
+
 it('followup uses the same task and does not carry direct authorization', async () => {
   reply();
   await mount();
@@ -201,7 +471,7 @@ it('stopping a pending request never applies a late result', async () => {
   fireEvent.change(screen.getByLabelText('向 AI 描述修改需求'), {
     target: { value: '直接替换这段' },
   });
-  fireEvent.click(screen.getByLabelText('发送消息'));
+  fireEvent.click(getSubmitButton());
   await screen.findByText('停止');
   fireEvent.click(screen.getByText('停止'));
   await screen.findByText(
@@ -300,7 +570,7 @@ it('tracks all proposals undone by one batch direct operation and does not repla
   await screen.findAllByText('已应用');
   expect(events('direct_apply')).toHaveLength(2);
   expect(events('preview')).toHaveLength(0);
-  fireEvent.click(screen.getAllByText('撤销这次修改')[0]);
+  fireEvent.click(screen.getAllByText('撤销这组修改')[0]);
   expect(events('undo').map((e) => e.proposalId)).toEqual(
     events('direct_apply').map((e) => e.proposalId),
   );
@@ -464,7 +734,7 @@ it('records one cancellation if an aborted request resolves late', async () => {
   fireEvent.change(screen.getByLabelText('向 AI 描述修改需求'), {
     target: { value: '直接替换' },
   });
-  fireEvent.click(screen.getByLabelText('发送消息'));
+  fireEvent.click(getSubmitButton());
   fireEvent.click(await screen.findByText('停止'));
   await act(async () => {
     finish({ ok: true, status: 200, json: async () => ({}) });
@@ -473,4 +743,88 @@ it('records one cancellation if an aborted request resolves late', async () => {
   expect(events('success')).toHaveLength(0);
   expect(events('failed')).toHaveLength(0);
   expect(useAppStore.getState().pastStates).toHaveLength(0);
+});
+
+it('check entry creates a fresh global task, starts once, and does not reuse module history', async () => {
+  reply(true, [], 2);
+  useEditorUiStore
+    .getState()
+    .startResumeOptimization('r', 'resume_check', '参考检查意见');
+  const view = render(
+    <StrictMode>
+      <UnifiedAssistant resumeId="r" onLegacy={() => {}} />
+    </StrictMode>,
+  );
+  await screen.findAllByText('应用这一处');
+  expect(mocks.fetch).toHaveBeenCalledTimes(1);
+  const body = JSON.parse(mocks.fetch.mock.calls[0][1].body);
+  expect(body.task).toMatchObject({
+    scope: 'resume',
+    entry: 'resume_check',
+    feature: 'chat',
+  });
+  expect(body.task.blockId).toBeUndefined();
+  expect(body.turns).toEqual([]);
+  expect(body.fromFollowup).toBe(true);
+  expect(body.text).not.toContain('参考检查意见');
+  expect(useAppStore.getState().pastStates).toHaveLength(0);
+  view.unmount();
+  render(<UnifiedAssistant resumeId="r" onLegacy={() => {}} />);
+  await screen.findAllByText('应用这一处');
+  expect(mocks.fetch).toHaveBeenCalledTimes(1);
+});
+it('batch selection applies atomically, undo restores both, and telemetry keeps proposal identity', async () => {
+  reply(false, [], 2);
+  await mount();
+  fireEvent.change(screen.getByRole('textbox'), {
+    target: { value: '优化整份简历' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: '发送消息' }));
+  await screen.findAllByText('应用这一处');
+  expect(
+    (screen.getByRole('button', { name: '应用所选（0）' }) as HTMLButtonElement)
+      .disabled,
+  ).toBe(true);
+  fireEvent.click(screen.getByText('全选待处理建议'));
+  fireEvent.click(screen.getByText('应用所选（2）'));
+  expect(useAppStore.getState().pastStates).toHaveLength(1);
+  expect(screen.getAllByText('已应用')).toHaveLength(2);
+  expect(events('apply')).toHaveLength(2);
+  expect(events('apply')[0].selectedCount).toBe(2);
+  fireEvent.click(screen.getAllByText('撤销这组修改')[0]);
+  expect(useAppStore.getState().resume.sections[0].blocks).toEqual(
+    resume.sections[0].blocks,
+  );
+  expect(screen.getAllByText('已撤销')).toHaveLength(2);
+});
+it('batch conflict writes nothing and never reports acceptance', async () => {
+  reply(false, [], 2);
+  await mount();
+  fireEvent.change(screen.getByRole('textbox'), {
+    target: { value: '整理内容' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: '发送消息' }));
+  await screen.findAllByText('应用这一处');
+  useAppStore.setState({
+    resume: {
+      ...resume,
+      sections: [
+        {
+          ...resume.sections[0],
+          blocks: [
+            { id: 'b', type: 'text', html: '<p>手动修改</p>' },
+            resume.sections[0].blocks[1],
+          ],
+        },
+      ],
+    },
+  });
+  fireEvent.click(screen.getByText('全选待处理建议'));
+  fireEvent.click(screen.getByText('应用所选（2）'));
+  expect(useAppStore.getState().resume.sections[0].blocks[1]).toEqual(
+    resume.sections[0].blocks[1],
+  );
+  expect(useAppStore.getState().pastStates).toHaveLength(0);
+  expect(events('apply')).toHaveLength(0);
+  expect(events('conflict')).toHaveLength(2);
 });

@@ -5,7 +5,6 @@ import { consumeRateLimit } from '@/lib/ai/rate-limiter';
 import { extractAIConfig } from '@/lib/ai/provider';
 import {
   taskSchema,
-  unifiedEnabled,
   historyTurnSchema,
   MAX_TASK_TURNS,
 } from '@/lib/ai/unified/types';
@@ -45,7 +44,6 @@ const bodySchema = z.object({
 export const maxDuration = 180;
 export async function POST(request: NextRequest) {
   try {
-    if (!unifiedEnabled) throw new AssistantError('新版助手暂未开放', 404);
     const raw = await request.text();
     if (raw.length > 300000)
       throw new AssistantError('简历或对话内容过长，请精简内容或新建对话', 413);

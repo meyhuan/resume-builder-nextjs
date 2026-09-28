@@ -191,7 +191,6 @@ export async function getAllQuotas(): Promise<QuotaCheckResult[]> {
     'ai:import-section',
     'ai:generate-section',
     'ai:polish-section',
-    'ai:optimize-resume',
     'ai:editor-assist',
     'pdf:export',
   ];

@@ -1,3 +1,4 @@
+import { resumeReviewFixture, clickReviewButton, openResumeReview, generateResumeReview } from './resume-review-fixture.mjs';
 import { existsSync } from 'node:fs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -173,7 +174,6 @@ const quotaResponse = {
   aiImportSection: { allowed: true, remaining: 99, isVip: true, limit: 999 },
   aiGenerateSection: { allowed: true, remaining: 99, isVip: true, limit: 999 },
   aiPolishSection: { allowed: true, remaining: 99, isVip: true, limit: 999 },
-  aiOptimizeResume: { allowed: true, remaining: 99, isVip: true, limit: 999 },
   pdfExport: { allowed: true, remaining: 99, isVip: true, limit: 999 },
 };
 
@@ -342,26 +342,9 @@ async function setupRequestMocks(page) {
       });
       return;
     }
-    if (url.includes('/next-api/ai/optimize-resume') && request.method() === 'POST') {
-      let body = {};
-      try {
-        body = JSON.parse(request.postData() || '{}');
-      } catch {
-        body = {};
-      }
-      const blocks = Array.isArray(body.blocks) ? body.blocks.slice(0, 3) : [];
-      const result = {};
-      for (const block of blocks) {
-        const blockId = block.blockId || block.id;
-        if (!blockId) continue;
-        result[blockId] = '<ul><li>围绕目标岗位重写经历表达，突出业务问题、个人动作和可量化结果。</li><li>补充 RAG、AI Agent、模型评测等关键词，让简历更贴合 JD 初筛。</li></ul>';
-      }
-      const streamPayload = `data: ${JSON.stringify({ content: JSON.stringify(result) })}\n\ndata: [DONE]\n\n`;
-      void request.respond({
-        status: 200,
-        contentType: 'text/event-stream; charset=utf-8',
-        body: streamPayload,
-      });
+    if (url.includes('/next-api/ai/chat/task') && request.method() === 'POST') {
+      const body = JSON.parse(request.postData() || '{}');
+      void request.respond({ status: 200, contentType: 'application/json', body: JSON.stringify(resumeReviewFixture(body)) });
       return;
     }
     void request.continue();
@@ -566,8 +549,8 @@ async function capturePcScenarios(page, resumeId) {
   await openEditor(page, resumeId, { closeSidebar: true });
   entries.push(await captureEntry(page, pcEntry('editor-pc-workbench-overview-desktop', {
     page: 'PC 编辑器完整工作台',
-    summary: '展示 PC 端简历编辑器的主工作台，包含顶部撤销保存导出工具栏、模块管理/排版美化/AI 一键优化入口和简历实时预览画布。',
-    visible_elements: ['顶部工具栏', '模块管理入口', '排版美化入口', 'AI一键优化入口', '简历预览画布', '保存和导出按钮'],
+    summary: '展示 PC 端简历编辑器的主工作台，包含顶部撤销保存导出工具栏、模块管理/排版美化/AI 全文优化入口和简历实时预览画布。',
+    visible_elements: ['顶部工具栏', '模块管理入口', '排版美化入口', 'AI助手入口', '简历预览画布', '保存和导出按钮'],
     features: ['所见即所得编辑', '实时预览', '保存简历', 'PNG/Markdown/PDF 导出入口', 'PC 专业编辑工作台'],
     scenarios: ['想在电脑上精细调整简历', '需要展示完整编辑器', '强调边写边看排版效果'],
     visual_notes: '完整工作台信息清楚，适合作为编辑器功能总览图或产品能力总览图。',
@@ -656,36 +639,22 @@ async function capturePcScenarios(page, resumeId) {
 async function capturePcAiScenarios(page, resumeId) {
   const entries = [];
   await openEditor(page, resumeId);
-  await clickByText(page, 'AI一键优化', { selector: 'button' });
-  await page.waitForFunction(() => document.body.innerText.includes('目标岗位 JD'), { timeout: 15000 });
-  await page.waitForFunction(
-    () => !document.body.innerText.includes('今日剩余 ...'),
-    { timeout: 8000 },
-  ).catch(() => undefined);
-  await page.evaluate((text) => {
-    const textarea = document.querySelector('textarea');
-    if (!(textarea instanceof HTMLTextAreaElement)) return;
-    textarea.focus();
-    textarea.value = text;
-    textarea.dispatchEvent(new Event('input', { bubbles: true }));
-  }, jdText);
-  await sleep(500);
+  await openResumeReview(page);
   entries.push(await captureEntry(page, pcEntry('editor-pc-ai-optimize-input-desktop', {
-    page: 'PC 编辑器 AI 一键优化输入面板',
-    summary: '展示 AI 一键优化简历面板，用户可以选择求职身份、粘贴目标岗位 JD，并看到系统将优化哪些经历模块。',
-    visible_elements: ['求职身份', '目标岗位 JD', '可优化模块列表', '一键优化简历按钮', '剩余次数'],
-    features: ['AI 一键优化简历', '按 JD 优化', '求职身份选择', '模块级优化范围预览'],
+    page: 'PC 编辑器 AI 全文优化输入面板',
+    summary: '展示 AI 全文优化简历面板，用户可以选择简历检查，也可以直接进入全文优化预览。',
+    visible_elements: ['简历检查', '优化整份简历按钮', '剩余次数'],
+    features: ['AI 全文优化简历', '简历检查', '模块级优化范围预览'],
     scenarios: ['不知道怎么按岗位改简历', '投递前想匹配 JD', '需要快速优化经历表达'],
     visual_notes: '输入态功能完整，适合作为 AI 优化流程的第一张功能图。',
-    annotation_suggestions: ['突出 JD 输入框', '标出将优化的模块列表', '指向一键优化按钮'],
+    annotation_suggestions: ['突出简历检查入口', '指向全文优化按钮'],
   }), 'desktop', 'desktop'));
 
-  await clickByText(page, '一键优化简历', { selector: 'button', exact: false, afterWaitMs: 2500 });
-  await page.waitForFunction(() => document.body.innerText.includes('AI 优化了'), { timeout: 15000 });
+  await generateResumeReview(page);
   entries.push(await captureEntry(page, pcEntry('editor-pc-ai-optimize-preview-desktop', {
     page: 'PC 编辑器 AI 优化结果预览',
     summary: '展示 AI 优化完成后的模块级差异预览，用户可以逐条查看原文和优化后内容，并选择是否应用到简历。',
-    visible_elements: ['AI 优化了多个模块', '原文', '优化后', '全部选中', '应用选中的优化', '放弃不做修改'],
+    visible_elements: ['全文检查范围', '查看差异', '全选待处理建议', '应用所选', '保留原文'],
     features: ['AI 优化预览', '原文/优化后对比', '逐项选择应用', '可撤销式编辑流程'],
     scenarios: ['担心 AI 直接改坏简历', '想先审核优化结果', '需要展示 AI 不是黑箱改写'],
     visual_notes: '结果预览可信度高，适合做 AI 卖点的核心截图。',

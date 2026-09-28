@@ -78,3 +78,15 @@ AI 使用后导出可以按用户和时间关联 export_success，反映相关�
 本地验证：专项 Vitest 覆盖多建议采纳与批量撤销、隐藏面板曝光、历史不重放、推荐问题关联、追问继续、失败分类和采集失败不影响编辑。浏览器脚本 scripts/test-unified-ai-browser.mjs 拦截 AI 返回及埋点 HTTP 请求，核验真实观察器曝光、应用/撤销关联、点击/提交关联及不上传正文；不调用真实模型或真实埋点接口。产物位于 test-artifacts/unified-ai/analytics-report.json 和 browser-report.json。
 
 生产上线后还需抽查事件入库与漏斗缺失率。当前管理员总览仍按事件名汇总，查看以上细分指标需要对 properties 做聚合，不能直接把“AI 助手任务交互”总次数当使用次数或采纳次数。
+
+
+## 全文优化迁移后的统计口径
+
+继续使用 ai_assist_interaction（schemaVersion=2），新增可选 scope=resume/module/chat、entry=resume_check/jd_match、批量 selectedCount。
+
+- 自然输入全文优化的 start 和最终结果/应用事件 scope=resume；从检查或岗位匹配进入的新任务也可以按 entry 分组。不要把一次逐段生成计算成多次使用。
+- 使用量按 start 的 requestId 去重；成功生成按 proposalCount>0 的 success 或 clarify 去重（局部追问可以同时有安全建议）。纯追问不算可接受结果。
+- 建议接受率：已 apply/direct_apply 的 proposalId 数 / 实际 proposal_view 的 proposalId 数。查看未曝光的直接应用应单独统计，不能混入预览接受率。
+- 任务接受率：至少应用一项建议的 requestId / 有可应用建议的 requestId；净接受率排除后续 undo 的 proposalId。批量应用仍逐建议发出 apply，共享一次撤销时每项发 undo。
+- 旧 ai_result_apply / ai_optimize_panel / optimize_resume 停止新增，不删除历史记录；新旧漏斗分开查询，切勿直接拼接旧 acceptedCount 与新版事件数量。
+- 不上报简历文本、检查报告、JD 或提示词，只记录任务范围、入口和计数。删除旧额度不删除历史统计数据。

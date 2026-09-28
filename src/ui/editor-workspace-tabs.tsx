@@ -3,7 +3,6 @@
 import { PanelRightClose, Sparkles } from 'lucide-react';
 import type { PanelId } from '@/ui/editor-toolbar';
 import { trackAssistant } from '@/lib/ai/unified/analytics';
-import { unifiedEnabled } from '@/lib/ai/unified/types';
 import { useAiImpression } from '@/lib/ai/unified/use-impression';
 
 const ITEMS = [
@@ -22,10 +21,10 @@ export default function EditorWorkspaceTabs({ activePanel, onChange }: {
   const selected = activePanel === 'polish' || activePanel === 'generate' ? 'ai' : activePanel;
   const aiRef = useAiImpression<HTMLButtonElement>('assistant-workspace', () => {
     trackAssistant('entry_view', { entry: 'assistant', surface: 'workspace', feature: 'chat' });
-  }, unifiedEnabled && !!activePanel);
+  }, !!activePanel);
 
   return (
-    <div className="flex shrink-0 items-center gap-2 border-b border-slate-100 bg-white px-3 py-3">
+    <div className="flex shrink-0 items-center gap-2 border-b border-slate-100 bg-white px-3 py-2">
       <nav aria-label="切换编辑工具" className="flex min-w-0 flex-1 items-center rounded-xl border border-violet-100/70 bg-violet-50/60 p-1">
         {ITEMS.map((item) => {
           const active = selected === item.id;
@@ -36,7 +35,7 @@ export default function EditorWorkspaceTabs({ activePanel, onChange }: {
               type="button"
               aria-pressed={active}
               onClick={() => {
-                if (unifiedEnabled && item.id === 'ai' && activePanel !== 'ai')
+                if (item.id === 'ai' && activePanel !== 'ai')
                   trackAssistant('entry_open', { entry: 'assistant', surface: 'workspace', feature: 'chat' });
                 onChange(item.id);
               }}

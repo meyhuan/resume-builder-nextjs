@@ -6,11 +6,11 @@ export default defineConfig({
   },
   esbuild: { jsx: 'automatic' },
   test: {
-    env: { NEXT_PUBLIC_UNIFIED_AI_ASSISTANT: 'true' },
     environment: 'jsdom',
     include: [
       'src/lib/ai/unified/**/*.test.ts',
       'src/components/ai-chat/unified*.test.tsx',
+      'src/ui/resizable-editor-sidebar.test.tsx',
       'src/app/next-api/ai/chat/task/*.test.ts',
     ],
     testTimeout: 15000,

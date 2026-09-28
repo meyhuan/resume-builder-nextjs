@@ -1,5 +1,8 @@
 'use client';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { get, set } from 'idb-keyval';
+import { GrammarCheckDialog } from '@/components/editor/grammar-check-dialog';
+import { targetSnapshot } from '@/lib/ai/unified/policy';
 import { useAppStore } from '@/state/store';
 import { EditorAiPanel } from '@/components/ai-chat/editor-ai-panel';
 import AiSectionProvider, {
@@ -10,6 +13,7 @@ import type { ResumeData } from '@/entities/resume/resume-data';
 import BlockActions from '@/components/blocks/block-actions';
 import EditorWorkspaceTabs from '@/ui/editor-workspace-tabs';
 import { useEditorUiStore } from '@/state/editor-ui-store';
+import { ResizableEditorSidebar } from '@/ui/resizable-editor-sidebar';
 const sample: ResumeData = {
   id: 'assistant-lab',
   name: '演示简历',
@@ -57,6 +61,95 @@ function Content() {
   );
 }
 export default function AssistantLab() {
+  const [revision, setRevision] = useState(0);
+  const [demo, setDemo] = useState(false);
+  const loadReviewDemo = async () => {
+    const resume: ResumeData = {
+      ...sample,
+      sections: [
+        ...sample.sections,
+        {
+          id: 'skills',
+          title: '相关技能',
+          columns: 1,
+          blocks: [
+            {
+              id: 'skills-text',
+              type: 'text',
+              html: '<p>会使用 Excel 整理报名信息。</p>',
+            },
+          ],
+        },
+      ],
+    };
+    useAppStore.setState({ resume, pastStates: [], futureStates: [] });
+    const task = {
+      id: crypto.randomUUID(),
+      resumeId: sample.id,
+      feature: 'chat',
+      scope: 'resume',
+      entry: 'resume_check',
+      label: '整份简历优化',
+    };
+    const proposals = [
+      {
+        action: 'updateBlock',
+        blockId: 'campus-activity',
+        html: '<p>整理报名物品信息，核对领取时间和联系方式；活动当天协助登记、发放物品；活动结束后整理未领取清单并交给负责人。</p>',
+        targetLabel: '在校经历 · 校园旧物交换活动',
+        factChecked: true,
+        before: targetSnapshot(resume, 'campus-activity'),
+      },
+      {
+        action: 'updateBlock',
+        blockId: 'skills-text',
+        html: '<p>使用 Excel 整理报名信息。</p>',
+        targetLabel: '相关技能',
+        factChecked: true,
+        before: targetSnapshot(resume, 'skills-text'),
+      },
+    ];
+    const turn = {
+      requestId: crypto.randomUUID(),
+      text: '优化整份简历',
+      answer: '演示数据：已整理 2 处修改建议，请核对差异后选择应用。',
+      scope: 'resume',
+      proposals,
+      questions: [],
+      coverage: proposals.map((p) => ({
+        blockId: p.blockId,
+        label: p.targetLabel,
+        status: 'proposed',
+      })),
+      followups: ['这次调整了哪些表达？', '哪些信息需要我核对？'],
+      direct: false,
+      charged: false,
+      feature: 'chat',
+    };
+    const key = `ai-unified-history:${sample.id}`;
+    const saved = await get(key);
+    await set(
+      key,
+      [
+        {
+          task,
+          turns: [turn],
+          reviews: {},
+          receipts: {},
+          updatedAt: Date.now(),
+        },
+        ...(Array.isArray(saved) ? saved : []),
+      ].slice(0, 20),
+    );
+    useEditorUiStore.setState({
+      assistantTask: null,
+      activePanel: 'ai',
+      showAiChat: true,
+      pendingAiMessage: null,
+    });
+    setDemo(true);
+    setRevision((value) => value + 1);
+  };
   const activePanel = useEditorUiStore((s) => s.activePanel);
   const setActivePanel = useEditorUiStore((s) => s.setActivePanel);
   useEffect(() => {
@@ -65,19 +158,38 @@ export default function AssistantLab() {
   return (
     <AiSectionProvider>
       <main className="flex h-screen bg-slate-100">
-        <section className="min-w-0 flex-1 overflow-auto p-10">
+        <section
+          data-editor-canvas
+          className="hidden min-w-0 flex-1 overflow-auto p-10 md:block"
+        >
           <Content />
         </section>
-        <aside className="flex w-[380px] shrink-0 flex-col border-l bg-white">
+        <ResizableEditorSidebar open className="flex flex-col">
+          <div className="flex flex-wrap gap-2 border-b p-2 text-xs text-violet-700">
+            <button
+              onClick={() =>
+                useEditorUiStore.getState().openModal('grammar-check')
+              }
+            >
+              简历检查
+            </button>
+            <button onClick={() => void loadReviewDemo()}>
+              加载全文优化示例（模拟）
+            </button>
+            {demo && (
+              <span className="text-amber-700">当前为模拟结果，不调用模型</span>
+            )}
+          </div>
           <EditorWorkspaceTabs
             activePanel={activePanel}
             onChange={setActivePanel}
           />
           <div className={activePanel === 'ai' ? 'min-h-0 flex-1' : 'hidden'}>
-            <EditorAiPanel />
+            <EditorAiPanel key={revision} />
           </div>
-        </aside>
+        </ResizableEditorSidebar>
       </main>
+      <GrammarCheckDialog resumeId={sample.id} />
     </AiSectionProvider>
   );
 }

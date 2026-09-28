@@ -1,8 +1,6 @@
 import { z } from 'zod';
 import type { ChatChangeProposal } from '@/lib/ai/tools';
 
-export const unifiedEnabled =
-  process.env.NEXT_PUBLIC_UNIFIED_AI_ASSISTANT === 'true';
 export const taskSchema = z
   .object({
     id: z.string().uuid(),
@@ -10,19 +8,26 @@ export const taskSchema = z
     feature: z.enum(['chat', 'polish', 'generate']),
     blockId: z.string().max(100).optional(),
     label: z.string().max(200),
-    entry: z.enum(['assistant', 'module']),
+    entry: z.enum(['assistant', 'module', 'resume_check', 'jd_match']),
+    scope: z.literal('resume').optional(),
+    // Diagnostic suggestions/JD are context, never evidence of personal facts.
+    reviewNotes: z.string().max(6000).optional(),
   })
   .refine(
-    (task) => (task.feature === 'chat' ? !task.blockId : Boolean(task.blockId)),
+    (task) =>
+      (task.feature === 'chat' ? !task.blockId : Boolean(task.blockId)) &&
+      (!task.scope || task.feature === 'chat'),
     '模块任务必须指定目标',
   );
 export type AssistantTask = z.infer<typeof taskSchema>;
 export const questionSchema = z.object({
   question: z.string().min(1).max(300),
+  blockId: z.string().max(100).optional(),
   options: z.array(z.string().max(100)).max(4).default([]),
 });
 export const draftSchema = z.object({
   answer: z.string().max(10000),
+  reviewedBlockIds: z.array(z.string()).max(3200).default([]),
   questions: z.array(questionSchema).max(3).default([]),
   proposals: z
     .array(
@@ -64,7 +69,14 @@ export type CheckedProposal = ChatChangeProposal & {
   targetLabel: string;
   factChecked: true;
 };
+export interface ResumeReviewItem {
+  blockId: string;
+  label: string;
+  status: 'proposed' | 'unchanged' | 'confirmation' | 'unreviewed' | 'empty';
+}
 export interface AssistantTurn {
+  scope?: 'resume';
+  coverage?: ResumeReviewItem[];
   requestId: string;
   text: string;
   answer: string;

@@ -29,7 +29,7 @@ page.on('request', (request) => {
       return request.respond({ status: 200, headers: { 'content-type': 'text/event-stream', 'x-vercel-ai-ui-message-stream': 'v1' }, body: parts.map((part) => `data: ${JSON.stringify(part)}\n\n`).join('') + 'data: [DONE]\n\n' });
     }
     let body = {};
-    if (url.pathname === '/next-api/quota') body = Object.fromEntries(['aiGenerateResume', 'aiImportSection', 'aiGenerateSection', 'aiPolishSection', 'aiOptimizeResume', 'aiEditorAssist', 'pdfExport'].map((key) => [key, { allowed: true, remaining: 20, limit: 20, isVip: false }]));
+    if (url.pathname === '/next-api/quota') body = Object.fromEntries(['aiGenerateResume', 'aiImportSection', 'aiGenerateSection', 'aiPolishSection', 'aiEditorAssist', 'pdfExport'].map((key) => [key, { allowed: true, remaining: 20, limit: 20, isVip: false }]));
     if (url.pathname === '/next-api/vip/poll') body = { data: { isVip: false, vipStatus: 0, vipType: 0, vipExpireTime: null } };
     return request.respond({ status: 200, contentType: 'application/json', body: JSON.stringify(body) });
   }

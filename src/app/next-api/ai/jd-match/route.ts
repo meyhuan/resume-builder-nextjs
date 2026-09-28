@@ -32,7 +32,7 @@ export async function POST(request: NextRequest): Promise<Response> {
       return NextResponse.json({ error: '请先粘贴简历文本' }, { status: 400 });
     }
 
-    return withQuotaCheck('ai:optimize-resume', async () => {
+    return withQuotaCheck('ai:editor-assist', async () => {
       const result = analyzeJdMatch(body);
       return NextResponse.json({
         ...result,

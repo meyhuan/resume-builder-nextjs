@@ -6,13 +6,33 @@ import {
   Loader2,
   SendHorizonal,
   Square,
-  Sparkles,
+  ChevronDown,
+  MoreHorizontal,
   ArrowUpRight,
   Undo2,
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { toast } from 'sonner';
+import {
+  UnifiedQuestions,
+  INITIAL_QUESTION_PROGRESS,
+  type QuestionProgress,
+} from './unified-questions';
+import {
+  questionReplyRange,
+  updateQuestionReply,
+} from './unified-question-reply';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+} from '@/components/ui/dropdown-menu';
 import { useAppStore } from '@/state/store';
 import { useEditorUiStore } from '@/state/editor-ui-store';
 import { useVipStore } from '@/store/use-vip-store';
@@ -27,7 +47,11 @@ import {
   type FailureReason,
 } from '@/lib/ai/unified/analytics';
 import { useAiImpression } from '@/lib/ai/unified/use-impression';
-import { plainText } from '@/lib/ai/unified/policy';
+import {
+  plainText,
+  isResumeOptimization,
+  RESUME_OPTIMIZATION_REQUEST,
+} from '@/lib/ai/unified/policy';
 import { MAX_TASK_TURNS, toHistory } from '@/lib/ai/unified/types';
 import type {
   AssistantSession,
@@ -97,6 +121,7 @@ function ChangeCard({
   telemetryId,
   onVisible,
   visible,
+  groupedUndo,
 }: {
   proposal: CheckedProposal;
   status?: ReviewStatus;
@@ -107,6 +132,7 @@ function ChangeCard({
   telemetryId: string;
   onVisible: () => void;
   visible: boolean;
+  groupedUndo?: boolean;
 }) {
   const impressionRef = useAiImpression<HTMLElement>(
     telemetryId,
@@ -167,7 +193,7 @@ function ChangeCard({
               p.kind === 'remove' ? (
                 <del
                   key={i}
-                  className="bg-rose-50 text-rose-700 decoration-rose-400"
+                  className="bg-rose-50 text-rose-700 line-through decoration-rose-500"
                 >
                   {p.text}
                 </del>
@@ -201,7 +227,7 @@ function ChangeCard({
           {status === 'applied' && (
             <button className={button} disabled={disabled} onClick={undo}>
               <Undo2 className="mr-1 inline h-3 w-3" />
-              撤销这次修改
+              {groupedUndo ? '撤销这组修改' : '撤销这次修改'}
             </button>
           )}
         </div>
@@ -267,6 +293,14 @@ export function UnifiedAssistant({
   const [active, setActive] = useState('');
   const [loaded, setLoaded] = useState(false);
   const [input, setInput] = useState('');
+  const [selected, setSelected] = useState<Record<string, boolean>>({});
+  const [questionProgress, setQuestionProgress] = useState<
+    Record<string, QuestionProgress>
+  >({});
+  useEffect(() => {
+    setQuestionProgress({});
+  }, [active]);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [pending, setPending] = useState('');
@@ -284,6 +318,7 @@ export function UnifiedAssistant({
   const abort = useRef<AbortController | null>(null);
   const mounted = useRef(true);
   const consumed = useRef<string | null>(null);
+  const pendingPolish = useRef<string | null>(null);
   const end = useRef<HTMLDivElement>(null);
   const nearBottom = useRef(true);
   const task = useEditorUiStore((s) => s.assistantTask);
@@ -292,6 +327,29 @@ export function UnifiedAssistant({
   const session = sessions.find((s) => s.task.id === active);
   const quota = useVipStore((s) => s.quota);
   const storageKey = `ai-unified-history:${resumeId}`;
+  // Reflow when the draft changes (including question choices) or the sidebar is resized.
+  useEffect(() => {
+    const element = inputRef.current;
+    if (!element) return;
+    const resize = () => {
+      element.style.height = 'auto';
+      element.style.height = `${element.value ? Math.min(120, Math.max(56, element.scrollHeight)) : 56}px`;
+    };
+    resize();
+    let width = element.getBoundingClientRect().width;
+    const observer =
+      typeof ResizeObserver === 'undefined'
+        ? null
+        : new ResizeObserver(() => {
+            const nextWidth = element.getBoundingClientRect().width;
+            if (nextWidth !== width) {
+              width = nextWidth;
+              resize();
+            }
+          });
+    observer?.observe(element);
+    return () => observer?.disconnect();
+  }, [input, loaded]);
   const panelRef = useAiImpression<HTMLDivElement>(
     `panel:${active}`,
     () => {
@@ -362,6 +420,13 @@ export function UnifiedAssistant({
       return;
     consumed.current = task.id;
     const existing = ref.current.find((s) => s.task.id === task.id);
+    // Only a fresh module action starts work. Restoring history must never replay it.
+    pendingPolish.current =
+      !existing &&
+      ((task.entry === 'module' && task.feature === 'polish' && task.blockId) ||
+        task.scope === 'resume')
+        ? task.id
+        : null;
     if (!existing)
       persist([makeSession(resumeId, task), ...ref.current].slice(0, 20));
     setActive(task.id);
@@ -369,6 +434,20 @@ export function UnifiedAssistant({
     setError('');
     setRetry(null);
   }, [task, loaded, busy, resumeId, persist]);
+  useEffect(() => {
+    if (!session || busy || !panelVisible || externalMessage) return;
+    if (
+      pendingPolish.current !== session.task.id ||
+      task?.id !== session.task.id
+    )
+      return;
+    pendingPolish.current = null;
+    actions.current.send(
+      session.task.scope === 'resume'
+        ? RESUME_OPTIMIZATION_REQUEST
+        : '请润色这段经历，保持事实含义、职责范围和能力描述不变。先展示修改建议；仅在缺失信息影响事实准确性时追问确认。',
+    );
+  }, [session, task, busy, panelVisible, externalMessage]);
   useEffect(() => {
     if (nearBottom.current)
       end.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
@@ -395,6 +474,12 @@ export function UnifiedAssistant({
       requestId,
       taskId: session?.task.id,
       entry: session?.task.entry,
+      scope:
+        ref.current
+          .find((s) => s.task.id === session?.task.id)
+          ?.turns.find((t) => t.requestId === requestId)?.scope ||
+        session?.task.scope ||
+        (session?.task.blockId ? 'module' : 'chat'),
       ...details,
     });
   };
@@ -444,6 +529,10 @@ export function UnifiedAssistant({
     const previous = session.turns.at(-1);
     event('start', body.task.feature, body.requestId, {
       ...submission,
+      scope:
+        !body.task.blockId && isResumeOptimization(text)
+          ? 'resume'
+          : body.task.scope || (body.task.blockId ? 'module' : 'chat'),
       previousRequestId: previous?.requestId,
       previousResultType: previous ? resultType(previous) : undefined,
     });
@@ -655,6 +744,112 @@ export function UnifiedAssistant({
       },
     );
   };
+  const applySelected = (turn: AssistantTurn) => {
+    if (!session || busy) return;
+    const current = ref.current.find((s) => s.task.id === session.task.id)!;
+    const indexes = turn.proposals
+      .map((_, i) => i)
+      .filter(
+        (i) =>
+          selected[`${turn.requestId}:${i}`] &&
+          !current.reviews[`${turn.requestId}:${i}`],
+      );
+    if (!indexes.length) return;
+    const receipt = applyChecked(
+      indexes.map((i) => turn.proposals[i]),
+      session.task.resumeId,
+    );
+    update(session.task.id, (s) => {
+      const reviews = { ...s.reviews },
+        receipts = { ...s.receipts };
+      indexes.forEach((i) => {
+        const key = `${turn.requestId}:${i}`;
+        reviews[key] = receipt ? 'applied' : 'conflict';
+        if (receipt) receipts[key] = receipt;
+      });
+      return { ...s, reviews, receipts };
+    });
+    indexes.forEach((i) =>
+      event(receipt ? 'apply' : 'conflict', turn.feature, turn.requestId, {
+        proposalId: proposalId(turn.requestId, i),
+        proposalIndex: i,
+        proposalCount: turn.proposals.length,
+        selectedCount: indexes.length,
+        operation: 'apply',
+        mode: 'preview',
+      }),
+    );
+    if (!receipt)
+      toast.info('部分原文已变化，本次没有应用任何修改，请重新生成');
+  };
+  const continueQuestions = (turn: AssistantTurn) => {
+    if (busy) return;
+    const progress =
+      questionProgress[turn.requestId] || INITIAL_QUESTION_PROGRESS;
+    const structured = turn.questions.some(
+      (q) => questionReplyRange(input, q.question).start >= 0,
+    );
+    const draft = structured
+      ? input
+      : updateQuestionReply(
+          '',
+          turn.questions[progress.index].question,
+          input.trim(),
+        );
+    if (
+      !questionReplyRange(
+        draft,
+        turn.questions[progress.index].question,
+        turn.questions,
+      ).answer.trim()
+    )
+      return;
+    if (progress.index < turn.questions.length - 1) {
+      setInput(draft);
+      setQuestionProgress((previous) => ({
+        ...previous,
+        [turn.requestId]: {
+          index: progress.index + 1,
+          confirmed: Math.max(progress.confirmed, progress.index + 1),
+        },
+      }));
+    } else {
+      const missing = turn.questions.findIndex(
+        (q) =>
+          !questionReplyRange(draft, q.question, turn.questions).answer.trim(),
+      );
+      if (missing >= 0) {
+        setInput(draft);
+        setQuestionProgress((previous) => ({
+          ...previous,
+          [turn.requestId]: { ...progress, index: missing },
+        }));
+        return;
+      }
+      void send(draft);
+    }
+  };
+  const latestTurn = session?.turns.at(-1);
+  const currentQuestion =
+    latestTurn?.questions[
+      (questionProgress[latestTurn.requestId] || INITIAL_QUESTION_PROGRESS)
+        .index
+    ];
+  const hasStructuredAnswer = latestTurn?.questions.some(
+    (q) => questionReplyRange(input, q.question).start >= 0,
+  );
+  const currentAnswer =
+    currentQuestion && hasStructuredAnswer
+      ? questionReplyRange(
+          input,
+          currentQuestion.question,
+          latestTurn?.questions,
+        ).answer
+      : input;
+  const submitDraft = () => {
+    if (latestTurn?.questions.length) continueQuestions(latestTurn);
+    else void send(input);
+  };
   if (!loaded || !session)
     return <div className="p-4 text-sm text-slate-500">加载对话…</div>;
   const remaining =
@@ -669,69 +864,117 @@ export function UnifiedAssistant({
       className="flex h-full min-h-0 flex-col bg-white"
       data-testid="unified-assistant"
     >
-      <header className="shrink-0 space-y-2 border-b border-slate-100 p-3">
-        <div className="flex items-center justify-between">
-          <h2 className="flex items-center gap-1 text-sm font-semibold text-violet-700">
-            <Sparkles className="h-4 w-4" />
-            AI 助手
-          </h2>
-          <div className="flex gap-2">
+      <header
+        data-testid="assistant-context"
+        className="flex shrink-0 items-center gap-1 border-b border-slate-100 px-3 py-2"
+      >
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
             <button
-              className="text-xs text-slate-400 hover:text-violet-700"
+              type="button"
+              aria-label={`当前任务：${session.task.label}，查看详情和历史对话`}
+              title={session.task.label}
+              className="flex h-9 min-w-0 flex-1 items-center gap-1 rounded-lg px-2 text-xs text-slate-700 hover:bg-violet-50 focus-visible:outline-2 focus-visible:outline-violet-500 active:bg-violet-100"
+            >
+              <span className="shrink-0 font-medium text-violet-700">
+                {session.task.scope === 'resume'
+                  ? '全文优化'
+                  : session.task.feature === 'polish'
+                    ? '润色'
+                    : session.task.feature === 'generate'
+                      ? '帮我写'
+                      : '问答'}
+              </span>
+              <span aria-hidden="true" className="text-slate-300">
+                ·
+              </span>
+              <span className="truncate">{session.task.label}</span>
+              <ChevronDown
+                aria-hidden="true"
+                className="h-3.5 w-3.5 shrink-0 text-slate-400"
+              />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            align="start"
+            className="w-80 max-w-[calc(100vw-24px)] rounded-xl p-2"
+          >
+            <DropdownMenuLabel className="break-words text-xs leading-5">
+              当前对象：{session.task.label}
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel className="text-xs font-normal text-slate-500">
+              历史对话 · 仅保存在当前浏览器
+            </DropdownMenuLabel>
+            <DropdownMenuRadioGroup
+              aria-label="历史对话"
+              value={active}
+              className="max-h-60 overflow-y-auto"
+              onValueChange={(value) => {
+                setActive(value);
+                setInput('');
+                setError('');
+                setRetry(null);
+              }}
+            >
+              {sessions.map((s) => (
+                <DropdownMenuRadioItem
+                  key={s.task.id}
+                  value={s.task.id}
+                  disabled={busy}
+                  className="items-start break-words py-2 text-xs leading-5 focus:bg-violet-50 focus:text-slate-900"
+                >
+                  <span className="min-w-0">
+                    {s.task.label}
+                    <span className="block text-slate-500">
+                      {s.turns[0]?.text.slice(0, 40) || '新任务'}
+                    </span>
+                  </span>
+                </DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        <button
+          type="button"
+          className="h-9 shrink-0 rounded-lg px-2 text-xs text-slate-600 hover:bg-violet-50 hover:text-violet-700 focus-visible:outline-2 focus-visible:outline-violet-500 active:bg-violet-100 disabled:opacity-40"
+          disabled={busy}
+          onClick={startNew}
+        >
+          新对话
+        </button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              aria-label="更多对话操作"
+              className="flex h-9 w-8 shrink-0 items-center justify-center rounded-lg text-slate-500 hover:bg-violet-50 focus-visible:outline-2 focus-visible:outline-violet-500 active:bg-violet-100"
+            >
+              <MoreHorizontal aria-hidden="true" className="h-4 w-4" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="rounded-xl">
+            <DropdownMenuItem
+              className="focus:bg-violet-50 focus:text-slate-900"
               disabled={busy}
-              onClick={onLegacy}
+              onSelect={onLegacy}
             >
               旧版历史
-            </button>
-            <button className={button} disabled={busy} onClick={startNew}>
-              新对话
-            </button>
-          </div>
-        </div>
-        <select
-          aria-label="历史对话"
-          title="历史仅保存在当前浏览器，不跨设备同步"
-          className="w-full rounded-lg border border-slate-200 p-1.5 text-xs"
-          value={active}
-          disabled={busy}
-          onChange={(e) => {
-            setActive(e.target.value);
-            setInput('');
-            setError('');
-            setRetry(null);
-          }}
-        >
-          {sessions.map((s) => (
-            <option key={s.task.id} value={s.task.id}>
-              {s.task.label} · {s.turns[0]?.text.slice(0, 16) || '新任务'}
-            </option>
-          ))}
-        </select>
-        <div className="rounded-lg bg-violet-50 px-2 py-2 text-xs leading-5">
-          <p className="break-words font-medium text-slate-700">
-            当前对象：{session.task.label}
-          </p>
-          <div className="flex items-center justify-between text-slate-500">
-            <span>
-              {session.task.feature === 'polish'
-                ? '润色'
-                : session.task.feature === 'generate'
-                  ? '帮我写'
-                  : '简历问答与修改'}
-            </span>
+            </DropdownMenuItem>
             {session.task.blockId && (
-              <button
+              <DropdownMenuItem
+                className="focus:bg-violet-50 focus:text-slate-900"
                 disabled={busy}
-                onClick={startNew}
-                className="text-violet-700"
+                onSelect={startNew}
               >
                 退出任务
-              </button>
+              </DropdownMenuItem>
             )}
-          </div>
-        </div>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </header>
       <div
+        data-testid="assistant-conversation"
         className="min-h-0 flex-1 space-y-5 overflow-y-auto p-3"
         onScroll={(e) => {
           const el = e.currentTarget;
@@ -750,10 +993,10 @@ export function UnifiedAssistant({
             </p>
             <div className="flex flex-wrap gap-2">
               {(session.task.feature === 'polish'
-                ? ['帮我润色这段，保持事实不变', '帮我把这段写得更精简']
+                ? []
                 : session.task.feature === 'generate'
                   ? ['我不知道怎么写，请引导我', '根据已有信息，帮我写这段经历']
-                  : ['帮我检查哪些表达需要改进', '我不知道怎么写，请引导我']
+                  : ['优化整份简历', '我不知道怎么写，请引导我']
               ).map((t) => (
                 <button
                   className={button}
@@ -766,9 +1009,6 @@ export function UnifiedAssistant({
                 </button>
               ))}
             </div>
-            <button className="text-slate-400 underline" onClick={onLegacy}>
-              查看旧版对话
-            </button>
           </div>
         )}
         {session.turns.map((turn, ti) => (
@@ -783,82 +1023,222 @@ export function UnifiedAssistant({
                 </ReactMarkdown>
               </div>
             )}
-            {turn.questions.map((q, i) => (
-              <div
-                key={i}
-                className="space-y-2 rounded-xl border border-amber-100 bg-amber-50/50 p-3"
-              >
-                <p className="text-sm leading-6 text-slate-800">{q.question}</p>
-                <div className="flex flex-wrap gap-2">
-                  {q.options.map((option) => (
-                    <button
-                      disabled={busy}
-                      className={button}
-                      key={option}
-                      onClick={() =>
-                        setInput(
-                          (previous) =>
-                            `${previous}${previous ? '\n' : ''}${q.question}：${option}`,
-                        )
-                      }
+            {turn.coverage && (
+              <details className="rounded-xl border border-slate-200 p-3 text-xs leading-6">
+                <summary className="cursor-pointer font-medium text-slate-700">
+                  全文检查范围 ·{' '}
+                  {
+                    turn.coverage.filter((item) =>
+                      ['proposed', 'unchanged'].includes(item.status),
+                    ).length
+                  }
+                  /{turn.coverage.length} 段已完成
+                </summary>
+                <p className="text-slate-500">
+                  仅修改段落正文；姓名、联系方式、职位和日期等信息请自行核对。未检查的段落不代表没有问题。
+                </p>
+                <ul>
+                  {turn.coverage.map((item) => (
+                    <li
+                      key={item.blockId}
+                      className="flex items-start justify-between gap-3 py-1"
                     >
-                      {option}
-                    </button>
+                      <span>{item.label}</span>
+                      <span className="shrink-0 text-slate-500">
+                        {
+                          {
+                            proposed: '有修改建议',
+                            unchanged: '建议保留',
+                            confirmation: '待确认',
+                            unreviewed: '尚未检查',
+                            empty: '暂无正文',
+                          }[item.status]
+                        }
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            )}
+            {turn.proposals.length > 1 &&
+              turn.proposals.some(
+                (_, i) => !session.reviews[`${turn.requestId}:${i}`],
+              ) && (
+                <div
+                  className="flex flex-wrap items-center gap-2 rounded-lg bg-violet-50 p-2"
+                  aria-label="批量处理建议"
+                >
+                  <button
+                    className={button}
+                    disabled={busy}
+                    onClick={() =>
+                      setSelected((prev) => ({
+                        ...prev,
+                        ...Object.fromEntries(
+                          turn.proposals.map((_, i) => [
+                            `${turn.requestId}:${i}`,
+                            !session.reviews[`${turn.requestId}:${i}`],
+                          ]),
+                        ),
+                      }))
+                    }
+                  >
+                    全选待处理建议
+                  </button>
+                  <button
+                    className={button}
+                    disabled={busy}
+                    onClick={() =>
+                      setSelected((prev) => ({
+                        ...prev,
+                        ...Object.fromEntries(
+                          turn.proposals.map((_, i) => [
+                            `${turn.requestId}:${i}`,
+                            false,
+                          ]),
+                        ),
+                      }))
+                    }
+                  >
+                    取消选择
+                  </button>
+                  <button
+                    className={button}
+                    disabled={
+                      busy ||
+                      !turn.proposals.some(
+                        (_, i) =>
+                          selected[`${turn.requestId}:${i}`] &&
+                          !session.reviews[`${turn.requestId}:${i}`],
+                      )
+                    }
+                    onClick={() => applySelected(turn)}
+                  >
+                    应用所选（
+                    {
+                      turn.proposals.filter(
+                        (_, i) =>
+                          selected[`${turn.requestId}:${i}`] &&
+                          !session.reviews[`${turn.requestId}:${i}`],
+                      ).length
+                    }
+                    ）
+                  </button>
+                </div>
+              )}
+            {turn.questions.length > 0 &&
+              (ti === session.turns.length - 1 ? (
+                <UnifiedQuestions
+                  turn={turn}
+                  draft={input}
+                  busy={busy}
+                  progress={
+                    questionProgress[turn.requestId] ||
+                    INITIAL_QUESTION_PROGRESS
+                  }
+                  onChange={setInput}
+                  onEdit={(index) =>
+                    setQuestionProgress((previous) => ({
+                      ...previous,
+                      [turn.requestId]: {
+                        ...(previous[turn.requestId] ||
+                          INITIAL_QUESTION_PROGRESS),
+                        index,
+                      },
+                    }))
+                  }
+                  onContinue={() => continueQuestions(turn)}
+                />
+              ) : (
+                <details className="rounded-lg bg-slate-50 px-3 py-2 text-xs leading-5 text-slate-500">
+                  <summary className="cursor-pointer">
+                    查看此前的 {turn.questions.length} 个问题
+                  </summary>
+                  {turn.questions.map((q, i) => (
+                    <p className="mt-2" key={i}>
+                      {i + 1}. {q.question}
+                    </p>
+                  ))}
+                </details>
+              ))}
+            {turn.proposals.map((p, i) => (
+              <div key={i} className="space-y-1">
+                {turn.proposals.length > 1 &&
+                  !session.reviews[`${turn.requestId}:${i}`] && (
+                    <label className="flex items-center gap-2 px-1 text-xs text-slate-600">
+                      <input
+                        type="checkbox"
+                        className="accent-violet-600"
+                        disabled={busy}
+                        checked={!!selected[`${turn.requestId}:${i}`]}
+                        onChange={(e) =>
+                          setSelected((prev) => ({
+                            ...prev,
+                            [`${turn.requestId}:${i}`]: e.target.checked,
+                          }))
+                        }
+                      />
+                      选择建议：{p.targetLabel}
+                    </label>
+                  )}
+                <ChangeCard
+                  key={i}
+                  proposal={p}
+                  telemetryId={proposalId(turn.requestId, i)}
+                  visible={panelVisible}
+                  onVisible={() =>
+                    event('proposal_view', turn.feature, turn.requestId, {
+                      proposalId: proposalId(turn.requestId, i),
+                      proposalIndex: i,
+                      mode: turn.direct ? 'direct' : 'preview',
+                      proposalCount: turn.proposals.length,
+                    })
+                  }
+                  groupedUndo={
+                    (session.receipts[`${turn.requestId}:${i}`]?.targets
+                      .length || 0) > 1
+                  }
+                  status={session.reviews[`${turn.requestId}:${i}`]}
+                  disabled={busy}
+                  apply={() => review(turn, i, 'apply')}
+                  keep={() => review(turn, i, 'keep')}
+                  undo={() => review(turn, i, 'undo')}
+                />
+              </div>
+            ))}
+            {ti === session.turns.length - 1 &&
+              !turn.questions.length &&
+              !busy &&
+              panelVisible && (
+                <div className="space-y-2 pt-1" aria-label="接下来可以">
+                  <p className="text-xs text-slate-400">接下来可以</p>
+                  {turn.followups.map((t, i) => (
+                    <FollowupOption
+                      key={optionId(turn.requestId, i)}
+                      text={t}
+                      telemetryId={optionId(turn.requestId, i)}
+                      onVisible={() =>
+                        event('followup_view', turn.feature, turn.requestId, {
+                          optionId: optionId(turn.requestId, i),
+                          optionIndex: i,
+                          optionCount: turn.followups.length,
+                        })
+                      }
+                      onClick={() => {
+                        event('followup_click', turn.feature, turn.requestId, {
+                          optionId: optionId(turn.requestId, i),
+                          optionIndex: i,
+                        });
+                        void send(t, true, {
+                          submissionSource: 'followup',
+                          sourceRequestId: turn.requestId,
+                          sourceOptionId: optionId(turn.requestId, i),
+                        });
+                      }}
+                    />
                   ))}
                 </div>
-              </div>
-            ))}
-            {turn.proposals.map((p, i) => (
-              <ChangeCard
-                key={i}
-                proposal={p}
-                telemetryId={proposalId(turn.requestId, i)}
-                visible={panelVisible}
-                onVisible={() =>
-                  event('proposal_view', turn.feature, turn.requestId, {
-                    proposalId: proposalId(turn.requestId, i),
-                    proposalIndex: i,
-                    mode: turn.direct ? 'direct' : 'preview',
-                    proposalCount: turn.proposals.length,
-                  })
-                }
-                status={session.reviews[`${turn.requestId}:${i}`]}
-                disabled={busy}
-                apply={() => review(turn, i, 'apply')}
-                keep={() => review(turn, i, 'keep')}
-                undo={() => review(turn, i, 'undo')}
-              />
-            ))}
-            {ti === session.turns.length - 1 && !busy && panelVisible && (
-              <div className="space-y-2 pt-1" aria-label="接下来可以">
-                <p className="text-xs text-slate-400">接下来可以</p>
-                {turn.followups.map((t, i) => (
-                  <FollowupOption
-                    key={optionId(turn.requestId, i)}
-                    text={t}
-                    telemetryId={optionId(turn.requestId, i)}
-                    onVisible={() =>
-                      event('followup_view', turn.feature, turn.requestId, {
-                        optionId: optionId(turn.requestId, i),
-                        optionIndex: i,
-                        optionCount: turn.followups.length,
-                      })
-                    }
-                    onClick={() => {
-                      event('followup_click', turn.feature, turn.requestId, {
-                        optionId: optionId(turn.requestId, i),
-                        optionIndex: i,
-                      });
-                      void send(t, true, {
-                        submissionSource: 'followup',
-                        sourceRequestId: turn.requestId,
-                        sourceOptionId: optionId(turn.requestId, i),
-                      });
-                    }}
-                  />
-                ))}
-              </div>
-            )}
+              )}
           </article>
         ))}
         {busy && (
@@ -906,56 +1286,66 @@ export function UnifiedAssistant({
         <div ref={end} />
       </div>
       <form
-        className="shrink-0 space-y-2 border-t border-slate-100 p-3"
+        data-testid="assistant-composer"
+        className="shrink-0 space-y-1 border-t border-slate-100 px-3 py-2"
         onSubmit={(e) => {
           e.preventDefault();
-          void send(input);
+          submitDraft();
         }}
       >
-        <textarea
-          aria-label="向 AI 描述修改需求"
-          rows={3}
-          className="w-full resize-none rounded-xl border border-slate-200 p-3 text-sm leading-6 outline-none focus:border-violet-400"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="说说真实经历，或告诉我想怎么调整…"
-          onKeyDown={(e) => {
-            if (
-              e.key === 'Enter' &&
-              !e.shiftKey &&
-              !e.nativeEvent.isComposing
-            ) {
-              e.preventDefault();
-              e.currentTarget.form?.requestSubmit();
+        <div className="relative">
+          <textarea
+            ref={inputRef}
+            aria-label="向 AI 描述修改需求"
+            rows={1}
+            className="block max-h-[120px] min-h-14 w-full resize-none overflow-y-auto rounded-xl border border-slate-200 py-3 pl-3 pr-14 text-sm leading-6 outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-400"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder={
+              currentQuestion
+                ? '填写当前问题的答案…'
+                : '说说经历，或你想怎么改…'
             }
-          }}
-        />
-        <div className="flex items-center justify-between gap-2">
-          <span className="text-[11px] leading-5 text-slate-400">
-            {session.task.feature === 'chat'
-              ? '按问答或写作任务计次'
-              : `今日剩余 ${remaining.isVip ? '不限' : remaining.remaining} 次`}{' '}
-            · 仅追问不扣次，生成结果计次
-          </span>
+            onKeyDown={(e) => {
+              if (
+                e.key === 'Enter' &&
+                !e.shiftKey &&
+                !e.nativeEvent.isComposing
+              ) {
+                e.preventDefault();
+                e.currentTarget.form?.requestSubmit();
+              }
+            }}
+          />
           {busy ? (
             <button
               type="button"
-              className={button}
+              title="停止生成"
+              className="absolute right-2 bottom-2 flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200 focus-visible:outline-2 focus-visible:outline-violet-500 active:bg-slate-300"
               onClick={() => abort.current?.abort()}
             >
-              <Square className="mr-1 inline h-3 w-3" />
-              停止
+              <Square aria-hidden="true" className="h-3.5 w-3.5" />
+              <span className="sr-only">停止</span>
             </button>
           ) : (
             <button
-              aria-label="发送消息"
-              disabled={!input.trim()}
-              className="rounded-full bg-violet-600 p-2.5 text-white disabled:opacity-40"
+              aria-label={currentQuestion ? '确认当前回答' : '发送消息'}
+              disabled={!currentAnswer.trim()}
+              title={currentQuestion ? '确认当前回答' : '发送消息'}
+              className="absolute right-2 bottom-2 flex h-9 w-9 items-center justify-center rounded-full bg-violet-600 text-white hover:bg-violet-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-500 active:bg-violet-800 disabled:opacity-40"
             >
-              <SendHorizonal className="h-4 w-4" />
+              <SendHorizonal aria-hidden="true" className="h-4 w-4" />
             </button>
           )}
         </div>
+        <p className="text-[11px] leading-5 text-slate-500">
+          {session.task.feature === 'chat'
+            ? '按问答或写作任务计次'
+            : remaining.isVip
+              ? '今日不限次'
+              : `今日剩余 ${remaining.remaining} 次`}
+          {' · 追问不扣次，生成计次'}
+        </p>
       </form>
     </div>
   );

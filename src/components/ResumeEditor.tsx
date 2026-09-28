@@ -43,8 +43,8 @@ import { TranslateDialog } from '@/components/editor/translate-dialog'
 import { CoverLetterDialog } from '@/components/editor/cover-letter-dialog'
 import { InterviewPrepDialog } from '@/components/editor/interview-prep-dialog'
 import { GrammarCheckDialog } from '@/components/editor/grammar-check-dialog'
-import { OptimizeDialog } from '@/components/editor/optimize-dialog'
 import { MiniProgramDialog } from '@/components/landing/MiniProgramEntry'
+import { ResizableEditorSidebar } from '@/ui/resizable-editor-sidebar'
 
 const AI_CACHE_KEYS: Record<string, string> = {
   ai: 'wizard_pending_resume',
@@ -1123,7 +1123,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
             </div>
           </div>
         </div>
-        <aside aria-label="编辑工具" data-editor-workspace className={`print:hidden min-w-0 w-full md:w-[320px] xl:w-[360px] 2xl:w-[380px] border-l border-slate-200 bg-white shrink-0 h-full overflow-hidden ${activePanel ? 'flex flex-col' : 'hidden'}`}>
+        <ResizableEditorSidebar open={Boolean(activePanel)} className={activePanel ? 'flex flex-col' : 'hidden'}>
           <EditorWorkspaceTabs activePanel={activePanel} onChange={setActivePanel} />
           <div className={activePanel === 'ai' ? 'min-h-0 flex-1' : 'hidden'}><EditorAiPanel resumeId={resumeId} /></div>
           <div id="editor-section-ai" className={activePanel === 'polish' || activePanel === 'generate' ? 'min-h-0 flex-1 flex flex-col' : 'hidden'} />
@@ -1147,7 +1147,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
               )}
             />
           </div>}
-        </aside>
+        </ResizableEditorSidebar>
       </main>
       </AiSectionProvider>
       {/* 离开确认弹窗 */}
@@ -1194,7 +1194,6 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
       <CoverLetterDialog />
       <InterviewPrepDialog resumeId={resumeId} />
       <GrammarCheckDialog resumeId={resumeId} />
-      <OptimizeDialog />
       <MiniProgramDialog
         open={miniProgramDialogOpen}
         onOpenChange={setMiniProgramDialogOpen}

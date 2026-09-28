@@ -10,7 +10,7 @@ import type { ResumeBlock } from '@/entities/blocks/resume-block';
 import { extractBlockPrefill } from '@/components/ai-section/block-module-utils';
 import { track } from '@/lib/analytics';
 import { trackAssistant } from '@/lib/ai/unified/analytics';
-import { unifiedEnabled, type AssistantTask } from '@/lib/ai/unified/types';
+import { type AssistantTask } from '@/lib/ai/unified/types';
 import { toast } from 'sonner';
 import { toResumeContext } from '@/lib/ai/resume-context';
 import { useEditorUiStore } from '@/state/editor-ui-store';
@@ -73,7 +73,7 @@ export default function AiSectionProvider(props: AiSectionProviderProps): ReactE
   const [generatePrefill, setGeneratePrefill] = useState<Record<string, string>>({});
 
   const openUnified = useCallback((feature: 'polish' | 'generate', blockId: string): boolean => {
-    if (!unifiedEnabled || !window.matchMedia('(min-width: 768px)').matches) return false;
+    if (!window.matchMedia('(min-width: 768px)').matches) return false;
     if (useEditorUiStore.getState().assistantBusy) {
       toast.info('请先停止当前任务，再选择其它经历');
       return true;

@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { explicitlyDirect, numericAdditions, followupsFor } from './policy';
+import {
+  explicitlyDirect,
+  numericAdditions,
+  followupsFor,
+  isResumeOptimization,
+} from './policy';
 import { taskSchema } from './types';
 import { textDiff } from '@/components/ai-chat/unified-changes';
 import { vi } from 'vitest';
@@ -77,3 +82,16 @@ it('does not offer responsibility inflation as a next-question choice', () => {
   expect(followups).toContain('哪些真实信息还需要补充？');
   expect(followups).toHaveLength(3);
 });
+
+it.each([
+  '优化整份简历',
+  '优化整份简历，不要改变事实',
+  '不要修改事实，帮我优化整份简历',
+  '整份简历帮我润色一下',
+])('recognizes whole-resume intent: %s', (text) =>
+  expect(isResumeOptimization(text)).toBe(true),
+);
+it.each(['不要优化整份简历', '如何优化整份简历？', '全文简历优化是什么？'])(
+  'does not force a rewrite for %s',
+  (text) => expect(isResumeOptimization(text)).toBe(false),
+);

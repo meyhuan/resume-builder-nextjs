@@ -218,7 +218,7 @@ export function analyzeJdMatch(input: JdMatchRequest): JdMatchResponse {
     nextActions: [
       '先补缺失关键词对应的真实经历，避免虚构项目。',
       '把最匹配的项目放到简历前半部分，并量化结果。',
-      '完成修改后再用 AI 一键优化或选择岗位模板生成投递版本。',
+      '完成修改后再用 AI 助手预览全文优化建议或选择岗位模板生成投递版本。',
     ],
   };
 }

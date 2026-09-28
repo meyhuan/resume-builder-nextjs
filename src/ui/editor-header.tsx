@@ -26,7 +26,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useEditorUiStore } from '@/state/editor-ui-store';
 import { trackAssistant } from '@/lib/ai/unified/analytics';
-import { unifiedEnabled } from '@/lib/ai/unified/types';
 import { useAiImpression } from '@/lib/ai/unified/use-impression';
 
 export interface EditorHeaderProps {
@@ -55,12 +54,12 @@ export default function EditorHeader(props: EditorHeaderProps): ReactElement {
   const toggleAiChat = useEditorUiStore((state) => state.toggleAiChat);
   const aiEntryRef = useAiImpression<HTMLButtonElement>('assistant-header', () => {
     trackAssistant('entry_view', { entry: 'assistant', surface: 'header', feature: 'chat' });
-  }, unifiedEnabled);
+  });
   const menuEntryRef = useAiImpression<HTMLDivElement>('assistant-menu', () => {
     trackAssistant('entry_view', { entry: 'assistant', surface: 'menu', feature: 'chat' });
-  }, unifiedEnabled);
+  });
   const openAssistant = (surface: 'header' | 'menu') => {
-    if (unifiedEnabled && !showAiChat)
+    if (!showAiChat)
       trackAssistant('entry_open', { entry: 'assistant', surface, feature: 'chat' });
     toggleAiChat();
   };
@@ -145,10 +144,10 @@ export default function EditorHeader(props: EditorHeaderProps): ReactElement {
             size="sm"
             onClick={() => openModal('grammar-check')}
             className="h-8"
-            title="语法检查"
+            title="简历检查"
           >
             <SpellCheck className="h-4 w-4" />
-            <span className="ml-1 hidden text-xs sm:inline">语法检查</span>
+            <span className="ml-1 hidden text-xs sm:inline">简历检查</span>
           </Button>
           <Button
             variant="ghost"
@@ -188,7 +187,7 @@ export default function EditorHeader(props: EditorHeaderProps): ReactElement {
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => openModal('grammar-check')}>
                 <SpellCheck className="mr-2 h-4 w-4" />
-                语法检查
+                简历检查
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => openModal('translate')}>
                 <Languages className="mr-2 h-4 w-4" />
