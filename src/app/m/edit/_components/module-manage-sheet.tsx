@@ -367,13 +367,16 @@ function SortableManageRow({ section, onRequestRemove }: ManageRowProps): ReactE
       {...attributes}
       {...listeners}
       className={cn(
-        'relative flex touch-none cursor-grab items-center gap-3 rounded-[14px] border border-[#edf0f5] bg-white px-3 py-3 shadow-[0_2px_8px_rgba(15,23,42,0.04)] transition-shadow active:cursor-grabbing',
+        // Keep vertical panning available for the sheet's scroll container. The
+        // touch sensor cancels its pending drag when movement exceeds tolerance,
+        // so a normal swipe scrolls while a long press still starts dragging.
+        'relative flex touch-pan-y cursor-grab items-center gap-3 rounded-[14px] border border-[#edf0f5] bg-white px-3 py-3 shadow-[0_2px_8px_rgba(15,23,42,0.04)] transition-shadow active:cursor-grabbing',
         isDragging && 'border-violet-200 shadow-[0_12px_28px_rgba(124,58,237,0.18)] ring-2 ring-violet-200',
       )}
     >
       {/* Drag handle */}
       <div
-        className="flex h-8 w-6 shrink-0 items-center justify-center text-slate-300"
+        className="flex h-8 w-6 shrink-0 touch-none items-center justify-center text-slate-300"
       >
         <GripVertical size={17} />
       </div>
