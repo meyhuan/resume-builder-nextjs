@@ -1,28 +1,31 @@
-/* Shared editor affordances; template typography and document geometry stay owned by the template. */
+/* Hallmark · component refinement · modern-minimal · professional · violet accent.
+   Context uses a quiet boundary; the field being edited owns the strong focus ring.
+   Pre-emit critique: Philosophy 5, Hierarchy 5, Execution 4, Specificity 4, Restraint 5, Variety 4. */
 :root {
-  --resume-edit-section-fill: color-mix(in srgb, var(--color-primary) 3%, transparent);
-  --resume-edit-section-line: color-mix(in srgb, var(--color-primary) 28%, transparent);
-  --resume-edit-block-fill: color-mix(in srgb, var(--color-primary) 6%, transparent);
-  --resume-edit-block-line: color-mix(in srgb, var(--color-primary) 55%, transparent);
-  --resume-edit-field-fill: color-mix(in srgb, var(--color-primary) 8%, var(--color-background));
+  --resume-edit-section-line: color-mix(in srgb, var(--color-foreground) 22%, transparent);
+  --resume-edit-block-fill: color-mix(in srgb, var(--color-foreground) 4%, transparent);
+  --resume-edit-field-fill: color-mix(in srgb, var(--color-primary) 5%, var(--color-background));
+  --resume-edit-region-radius: 4px;
+  --resume-edit-field-radius: 4px;
 }
 
 @media screen {
   [data-resume-edit-region]:not(:where([data-resume-exporting], [data-resume-exporting] *)) {
-    outline: 1px solid transparent;
+    outline: none;
     outline-offset: 3px;
-    border-radius: 4px;
+    border-radius: var(--resume-edit-region-radius);
     transition: background-color 120ms ease-out;
   }
 
-  [data-resume-edit-region="section"]:not(:where([data-resume-exporting], [data-resume-exporting] *)):focus-within {
-    outline-color: var(--resume-edit-section-line);
-    background-color: var(--resume-edit-section-fill);
+  [data-resume-edit-field]:not(:where([data-resume-exporting], [data-resume-exporting] *)) {
+    border-radius: var(--resume-edit-field-radius);
   }
 
-  [data-resume-edit-region="block"]:not(:where([data-resume-exporting], [data-resume-exporting] *))[data-resume-edit-state="active"],
-  [data-resume-edit-region="block"]:not(:where([data-resume-exporting], [data-resume-exporting] *))[data-resume-edit-state="editing"] {
-    outline-color: var(--resume-edit-block-line);
+  [data-resume-edit-region="section"]:not(:where([data-resume-exporting], [data-resume-exporting] *)):focus-within:not(:focus-visible) {
+    outline: 1px dashed var(--resume-edit-section-line);
+  }
+
+  [data-resume-edit-region="block"]:not(:where([data-resume-exporting], [data-resume-exporting] *)):focus-within {
     background-color: var(--resume-edit-block-fill);
   }
 
@@ -65,14 +68,12 @@
 }
 
 @media screen and (hover: hover) {
-  [data-resume-edit-region="section"]:not(:where([data-resume-exporting], [data-resume-exporting] *)):hover:not([data-resume-edit-dragging]) {
-    outline-color: var(--resume-edit-section-line);
-    background-color: var(--resume-edit-section-fill);
+  [data-resume-edit-region="section"]:not(:where([data-resume-exporting], [data-resume-exporting] *)):hover:not([data-resume-edit-dragging]):not(:focus-visible) {
+    outline: 1px dashed var(--resume-edit-section-line);
   }
 
-  [data-resume-edit-field]:not(:where([data-resume-exporting], [data-resume-exporting] *)):hover {
-    outline: 1px solid var(--resume-edit-block-line);
-    outline-offset: 1px;
+  [data-resume-edit-region="block"]:not(:where([data-resume-exporting], [data-resume-exporting] *))[data-resume-edit-state="active"] {
+    background-color: var(--resume-edit-block-fill);
   }
 }
 

@@ -1,14 +1,14 @@
 # 简历编辑区域的交互约定
 
-编辑时使用三层反馈，让用户看清模块结构和直接编辑的位置。样式集中在 `src/styles/resume-editor-interactions.css`，模板仍负责正文排版、字号和间距。
+编辑时区分模块范围、条目范围和当前字段，避免三层实线圆角框同时叠加。样式集中在 `src/styles/resume-editor-interactions.css`，模板仍负责正文排版、字号和间距。
 
 | 范围 | 反馈 | 标记 |
 | --- | --- | --- |
-| 完整模块 | 浅紫背景、细边界；显示模块操作 | `data-resume-edit-region="section"` |
-| 一段经历或内容条目 | 更明确的背景和边界；显示条目操作 | `data-resume-edit-region="block"`，状态为 `active` 或 `editing` |
-| 单个字段 | 局部背景和边界；日期打开、键盘聚焦时加强提示 | `data-resume-edit-field` |
+| 完整模块 | 中性弱虚线，不叠加背景；显示模块操作 | `data-resume-edit-region="section"` |
+| 一段经历或内容条目 | 浅中性背景，不画额外边框；显示条目操作 | `data-resume-edit-region="block"`，hover 状态为 `active` |
+| 单个字段 | hover 使用浅紫背景；日期打开、键盘聚焦或实际编辑时才使用强边界 | `data-resume-edit-field`，富文本值为 `rich-text` |
 
-边界使用 `outline`，不会挤压内容或改变 A4 排版。字段背景使用不透明的浅色，并同时设置文字颜色，保证深色侧栏中的内容可读。只读渲染不生成这些标记。
+模块边界使用 `outline`，不会挤压内容或改变 A4 排版。交互圆角独立为 4px，不使用产品卡片的 12px 默认圆角。字段背景使用不透明的浅色，并同时设置文字颜色，保证深色侧栏中的内容可读。Hover 装饰仅用于支持 hover 的设备；键盘 focus 保留独立的强提示。只读渲染不生成这些标记。
 
 ## 操作按钮的归属
 

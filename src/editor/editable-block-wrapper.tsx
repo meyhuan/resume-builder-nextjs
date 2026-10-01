@@ -115,7 +115,7 @@ export default function EditableBlockWrapper(props: EditableBlockWrapperProps): 
 
   if (isEditing) {
     return (
-      <div className={`${editingStyles} ${className || ''}`.trim()} style={props.editingStyle}>
+      <div data-resume-edit-field="rich-text" className={`${editingStyles} ${className || ''}`.trim()} style={props.editingStyle}>
         <InlineEditor
           initialHtml={editableContent}
           onChange={handleContentChange}
@@ -131,7 +131,7 @@ export default function EditableBlockWrapper(props: EditableBlockWrapperProps): 
     return (
       <div
         data-ai-block-id={props.blockId}
-        data-resume-edit-field="true"
+        data-resume-edit-field="rich-text"
         className={`${displayStyles} ${className || ''} hidden cursor-text rounded border border-dashed border-slate-300 px-2 py-1 text-slate-400 transition-colors group-hover/block:block group-focus-within/block:block group-hover/section:block group-hover/section-edit:block print:hidden`.trim()}
         onClick={(): void => setIsEditing(true)}
       >
@@ -143,7 +143,7 @@ export default function EditableBlockWrapper(props: EditableBlockWrapperProps): 
   return (
     <div
       data-ai-block-id={props.blockId}
-      data-resume-edit-field="true"
+      data-resume-edit-field="rich-text"
       className={`${displayStyles} ${className || ''}`.trim()}
       onClick={(): void => setIsEditing(true)}
       dangerouslySetInnerHTML={{ __html: content }}

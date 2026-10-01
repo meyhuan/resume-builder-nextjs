@@ -1411,12 +1411,28 @@ async function checkHoverActionContinuity(page, artifactDir) {
     return {
       fieldOutline: style.outlineStyle,
       fieldFill: style.backgroundColor,
-      blockOutline: getComputedStyle(block).outlineColor,
-      sectionOutline: section ? getComputedStyle(section).outlineColor : null,
+      fieldRadius: style.borderRadius,
+      blockOutline: getComputedStyle(block).outlineStyle,
+      blockFill: getComputedStyle(block).backgroundColor,
+      sectionOutline: section ? getComputedStyle(section).outlineStyle : null,
     }
   })
-  if (metrics.fieldOutline !== 'solid' || !metrics.sectionOutline || metrics.fieldFill === 'rgba(0, 0, 0, 0)' || metrics.fieldFill === 'transparent') {
-    throw new Error(`Missing module/block/field structure: ${JSON.stringify(metrics)}`)
+  if (metrics.fieldOutline !== 'none' || metrics.blockOutline !== 'none' || metrics.sectionOutline !== 'dashed'
+    || metrics.fieldRadius !== '4px' || metrics.fieldFill === 'rgba(0, 0, 0, 0)' || metrics.fieldFill === 'transparent'
+    || metrics.blockFill === 'rgba(0, 0, 0, 0)') {
+    throw new Error(`Missing quiet context / distinct hover target: ${JSON.stringify(metrics)}`)
+  }
+  const richField = await block.$('[data-resume-edit-field="rich-text"]')
+  if (richField) {
+    await richField.hover()
+    const richMetrics = await richField.evaluate((element) => {
+      const style = getComputedStyle(element)
+      return { radius: style.borderRadius, outline: style.outlineStyle }
+    })
+    if (richMetrics.radius !== '4px' || richMetrics.outline !== 'none') {
+      throw new Error(`Rich-text hover must not add a nested rounded outline: ${JSON.stringify(richMetrics)}`)
+    }
+    await field.hover()
   }
   await page.screenshot({ path: path.join(artifactDir, 'hover-field.png') })
   // Image export uses screen styles. Exercise the same root flag while the
@@ -1455,7 +1471,7 @@ async function checkHoverActionContinuity(page, artifactDir) {
   })
   await page.emulateMediaType('screen')
   if (!printClean) throw new Error('Editing decorations leaked into print rendering.')
-  return `Real pointer: content → action, rapid exit/re-entry, action → content; focus retention; module/block/field styling; clean image capture and print. ${JSON.stringify(metrics)}`
+  return `Real pointer: content → action, rapid exit/re-entry, action → content; focus retention; quiet module boundary and field target; clean image capture and print. ${JSON.stringify(metrics)}`
 }
 
 async function runInteractionStep(page, name, action) {
