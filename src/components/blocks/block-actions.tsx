@@ -15,6 +15,9 @@ export interface BlockActionsProps {
   readonly onDelete?: () => void;
   readonly onMoveUp?: () => void;
   readonly onMoveDown?: () => void;
+  readonly docked?: boolean;
+  readonly contextLabel?: string;
+  readonly onReturnFocus?: () => void;
 }
 
 export default function BlockActions(props: BlockActionsProps): ReactElement {
@@ -26,6 +29,9 @@ export default function BlockActions(props: BlockActionsProps): ReactElement {
     onDelete,
     onMoveUp,
     onMoveDown,
+    docked = false,
+    contextLabel,
+    onReturnFocus,
   } = props;
   const report = (feature: 'polish' | 'generate') => {
     if (window.matchMedia('(min-width: 768px)').matches)
@@ -38,19 +44,24 @@ export default function BlockActions(props: BlockActionsProps): ReactElement {
     <div
       data-resume-block-actions="true"
       data-export-hide="true"
-      className="absolute bottom-0 right-0 flex items-center gap-0.5 print:hidden bg-white shadow-md rounded-md px-1 py-0.5 border border-slate-200 z-10"
-      style={{ transform: "translateY(calc(100% - 12px))" }}
+      role="group"
+      aria-label={`${contextLabel || blockType}操作`}
+      className={docked ? 'resume-docked-actions flex items-center gap-1 print:hidden text-slate-900' : 'absolute top-full right-0 mt-1 flex items-center gap-0.5 print:hidden bg-white shadow-md rounded-md px-1 py-0.5 border border-slate-200 z-10'}
+      onKeyDown={(event) => {
+        if (docked && event.key === 'Escape') { event.preventDefault(); onReturnFocus?.(); }
+      }}
     >
+      {docked ? <span className="resume-action-context mr-auto pr-3 text-xs font-medium text-slate-600" title={contextLabel}>{contextLabel}</span> : null}
       {onAdd ? (
         <Button
           variant="ghost"
           size="sm"
           onClick={onAdd}
           className="h-6 px-2 text-[11px] gap-1 text-slate-600 hover:!text-slate-900 hover:!bg-slate-100"
-          title={`添加${blockType}`}
+          title={docked ? '添加条目' : `添加${blockType}`}
         >
           <PlusCircle className="h-3 w-3" />
-          <span>添加{blockType}</span>
+          <span>{docked ? '添加条目' : `添加${blockType}`}</span>
         </Button>
       ) : null}
 
@@ -102,6 +113,7 @@ export default function BlockActions(props: BlockActionsProps): ReactElement {
           disabled={!onMoveUp}
           className="h-6 w-6 px-0 disabled:opacity-50 disabled:cursor-not-allowed hover:!bg-slate-100 hover:!text-slate-900"
           title="上移"
+          aria-label="上移"
         >
           <ArrowUp className="h-3 w-3 text-slate-600" />
         </Button>
@@ -114,6 +126,7 @@ export default function BlockActions(props: BlockActionsProps): ReactElement {
           disabled={!onMoveDown}
           className="h-6 w-6 px-0 disabled:opacity-50 disabled:cursor-not-allowed hover:!bg-slate-100 hover:!text-slate-900"
           title="下移"
+          aria-label="下移"
         >
           <ArrowDown className="h-3 w-3 text-slate-600" />
         </Button>

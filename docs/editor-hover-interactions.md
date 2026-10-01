@@ -5,20 +5,30 @@
 | 范围 | 反馈 | 标记 |
 | --- | --- | --- |
 | 完整模块 | 中性弱虚线，不叠加背景；显示模块操作 | `data-resume-edit-region="section"` |
-| 一段经历或内容条目 | 浅中性背景，不画额外边框；显示条目操作 | `data-resume-edit-region="block"`，hover 状态为 `active` |
+| 一段经历或内容条目 | 浅中性 hover 背景；点击或聚焦选中后，左侧细标记关联画布下方操作栏 | `data-resume-edit-region="block"`，hover 状态为 `active`，选中为 `data-resume-edit-selected` |
 | 单个字段 | hover 使用浅紫背景；日期打开、键盘聚焦或实际编辑时才使用强边界 | `data-resume-edit-field`，富文本值为 `rich-text` |
 
 模块边界使用 `outline`，不会挤压内容或改变 A4 排版。交互圆角独立为 4px，不使用产品卡片的 12px 默认圆角。字段背景使用不透明的浅色，并同时设置文字颜色，保证深色侧栏中的内容可读。Hover 装饰仅用于支持 hover 的设备；键盘 focus 保留独立的强提示。只读渲染不生成这些标记。
 
 ## 操作按钮的归属
 
-`useHoverActions` 是一个区域内所有浮动按钮的唯一状态所有者。父区域与工具栏不要各自建立隐藏定时器。
+桌面编辑器和场景预览使用 `ResumeActionWorkspace`。条目操作位于画布下方的独立区域，始终在纸张与滚动视口之外，不遮挡当前条目或下一条经历，不改变 A4 正文排版。
+
+- 点击条目或将键盘焦点移入条目后选中；操作栏显示模块名称和条目序号。
+- 鼠标经过其他条目不会更换操作对象，防止去找按钮时删除或润色了另一条经历。
+- 点击另一条目或聚焦其字段才切换对象；点击画布空白或删除当前条目后清除选择。
+- 重排后保留当前对象并更新序号；同步更新替换按钮前，使用捕获阶段判断点击归属。
+- React 移动条目时可能临时断开引用；提交完成后确认条目确实卸载，才清除当前对象。
+- Alt+F10 将焦点移入操作栏，Escape 返回所选条目。富文本实际编辑时暂停条目操作。
+- 按钮目标高 32px，窄画布允许换行；操作栏在首次选择前预留空间。
+
+`useHoverActions` 仍是模块浮动按钮和未接入操作栏的独立模板消费者的唯一 hover 状态所有者。父区域与工具栏不要各自建立隐藏定时器。
 
 - 鼠标进入区域或键盘焦点进入区域时显示操作。
 - 在正文与按钮之间、按钮之间移动时保持显示。
 - 鼠标离开整个区域后等待 200ms 再隐藏；返回时取消待执行的隐藏。
 - 区域中仍有键盘焦点时保留操作；编辑状态变化和组件卸载时清理定时器。
-- 工具栏可以换行，避免在窄侧栏中超出可点击范围。
+- 独立模板消费者的浮层放在条目下方，使用 4px 透明过渡区；正式编辑器使用独立操作栏。
 
 结构化字段、姓名和模块标题支持 Enter/Space 进入现有编辑器。富文本保留现有点击入口，不增加不能自动聚焦编辑器的键盘入口。
 
@@ -34,6 +44,7 @@
 
 ```powershell
 corepack pnpm exec vitest run --config scripts/vitest.editor-hover.config.ts
+node scripts/verify-editor-action-dock.mjs http://127.0.0.1:3011
 corepack pnpm template:qa --all --hover-only --base-url http://127.0.0.1:3011 --report
 corepack pnpm template:qa --all --local --jobs 3 --base-url http://127.0.0.1:3011 --scenario-loader-url "http://127.0.0.1:3011/dev/scenario-loader?tpl=qingning" --report
 ```

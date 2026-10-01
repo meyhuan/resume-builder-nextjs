@@ -59,6 +59,42 @@
     flex-wrap: wrap;
   }
 
+  /* Selection is explicit: moving across another row on the way to the dock
+     must not silently change the target of Delete or AI actions. */
+  [data-resume-edit-selected="true"]:not(:where([data-resume-exporting], [data-resume-exporting] *))::before {
+    content: '';
+    position: absolute;
+    left: -3px;
+    top: 3px;
+    bottom: 3px;
+    width: 2px;
+    border-radius: 1px;
+    background: var(--color-primary);
+    pointer-events: none;
+  }
+
+  .resume-action-dock {
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+  }
+  .resume-action-dock:has([data-resume-block-actions]) [data-resume-action-hint] { display: none; }
+  .resume-docked-actions { width: 100%; }
+  .resume-docked-actions button { height: 32px; font-size: 12px; }
+  .resume-docked-actions button:has(svg:only-child) { width: 32px; }
+  .resume-action-context { min-width: 0; flex: 1; overflow-wrap: anywhere; }
+  /* Preserve the tiny hover bridge for standalone template consumers. */
+  [data-resume-block-actions]:not(.resume-docked-actions)::before {
+    content: '';
+    position: absolute;
+    height: 4px;
+    inset: -4px 0 auto;
+  }
+  @media (max-width: 1023px) {
+    .resume-action-dock { min-height: 80px; }
+    .resume-action-context { flex-basis: 100%; }
+  }
+
   /* html-to-image reads styles immediately; do not capture a fading highlight. */
   [data-resume-exporting] [data-resume-edit-region],
   [data-resume-exporting] [data-resume-edit-field] {
@@ -104,7 +140,7 @@
   [data-resume-edit-region], [data-resume-edit-field] {
     outline: none !important;
   }
-  [data-resume-block-actions], [data-resume-section-actions] {
+  [data-resume-block-actions], [data-resume-section-actions], [data-resume-action-dock] {
     display: none !important;
   }
 }

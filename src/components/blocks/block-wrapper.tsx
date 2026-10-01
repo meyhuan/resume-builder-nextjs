@@ -1,8 +1,10 @@
-import type { ReactElement, ReactNode } from 'react';
+import { useEffect, useId, useState, type ReactElement, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { GripHorizontal } from 'lucide-react';
 import BlockActions from './block-actions';
 import { useAppStore } from '@/state/store';
 import { useHoverActions } from '@/hooks/use-hover-actions';
+import { useResumeActionDock } from './resume-action-dock';
 
 /**
  * Wrapper for blocks with hover actions (floating buttons, no layout shift).
@@ -33,9 +35,50 @@ export default function BlockWrapper(props: BlockWrapperProps): ReactElement {
   return <EditableBlockHoverWrapper {...props} />;
 }
 
+function getContextLabel(element: HTMLElement | null, blockType: string): string {
+  const section = element?.closest('[data-resume-edit-region="section"]');
+  const title = section?.querySelector('h2, h3')?.textContent?.trim() || blockType;
+  const siblings = section ? [...section.querySelectorAll('[data-resume-edit-region="block"]')]
+    .filter((block) => block.closest('[data-resume-edit-region="section"]') === section) : [];
+  const index = element ? siblings.indexOf(element) : -1;
+  return index >= 0 ? `${title} · 第 ${index + 1} 条` : `${title}条目`;
+}
+
 function EditableBlockHoverWrapper(props: BlockWrapperProps): ReactElement {
   const { children, blockType, onAdd, onPolish, onGenerate, onDelete, onMoveUp, onMoveDown, dragHandleProps, dragHandleRef, showDragHandle = true, disableHover = false } = props;
   const { ref, isVisible: isHovered, onMouseEnter, onMouseLeave, onFocus, onBlur } = useHoverActions<HTMLDivElement>(disableHover);
+  const dock = useResumeActionDock();
+  const id = useId();
+  const selected = dock?.activeId === id;
+  const clear = dock?.clear;
+  useEffect(() => () => {
+    // React can disconnect and reconnect effects/refs when a keyed row moves.
+    // Clear only after the commit confirms that the owner really disappeared.
+    queueMicrotask(() => { if (!ref.current?.isConnected) clear?.(id); });
+  }, [clear, id, ref]);
+
+  const [contextLabel, setContextLabel] = useState(`${blockType}条目`);
+  useEffect(() => {
+    if (!selected) return;
+    const section = ref.current?.closest('[data-resume-edit-region="section"]');
+    if (!section) return;
+    const update = (): void => {
+      if (ref.current?.isConnected) setContextLabel(getContextLabel(ref.current, blockType));
+    };
+    const observer = new MutationObserver(update);
+    observer.observe(section, { childList: true, characterData: true, subtree: true });
+    queueMicrotask(update);
+    return () => observer.disconnect();
+  }, [selected, ref, blockType]);
+  const selectBlock = (): void => {
+    if (!dock) return;
+    setContextLabel(getContextLabel(ref.current, blockType));
+    dock.select(id);
+  };
+  const actions = <BlockActions blockType={blockType} onAdd={onAdd} onPolish={onPolish}
+    onGenerate={onGenerate} onDelete={onDelete} onMoveUp={onMoveUp} onMoveDown={onMoveDown}
+    docked={Boolean(dock)} contextLabel={contextLabel}
+    onReturnFocus={() => ref.current?.focus()} />;
 
   return (
     <div
@@ -43,13 +86,21 @@ function EditableBlockHoverWrapper(props: BlockWrapperProps): ReactElement {
       className={`group/block relative rounded ${props.flush ? 'flow-root' : 'mb-4 last:mb-0 pb-1'}`}
       data-resume-edit-region="block"
       data-resume-edit-state={disableHover ? 'editing' : isHovered ? 'active' : 'idle'}
+      data-resume-edit-selected={selected || undefined}
       role="group"
       aria-label={`${blockType}条目`}
       tabIndex={0}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
-      onFocus={onFocus}
+      onFocus={() => { onFocus(); selectBlock(); }}
       onBlur={onBlur}
+      onClick={selectBlock}
+      onKeyDown={(event) => {
+        if (event.altKey && event.key === 'F10' && dock?.host) {
+          event.preventDefault();
+          dock.host.querySelector<HTMLButtonElement>('button')?.focus();
+        }
+      }}
     >
       {children}
 
@@ -67,17 +118,7 @@ function EditableBlockHoverWrapper(props: BlockWrapperProps): ReactElement {
         </button>
       ) : null}
 
-      {isHovered ? (
-        <BlockActions
-          blockType={blockType}
-          onAdd={onAdd}
-          onPolish={onPolish}
-          onGenerate={onGenerate}
-          onDelete={onDelete}
-          onMoveUp={onMoveUp}
-          onMoveDown={onMoveDown}
-        />
-      ) : null}
+      {dock ? selected && !disableHover && dock.host ? createPortal(actions, dock.host) : null : isHovered ? actions : null}
     </div>
   );
 }

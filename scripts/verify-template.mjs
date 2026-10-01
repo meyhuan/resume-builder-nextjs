@@ -1377,14 +1377,29 @@ async function checkHoverActionContinuity(page, artifactDir) {
   await new Promise((resolve) => setTimeout(resolve, 250))
   await page.screenshot({ path: path.join(artifactDir, 'hover-idle.png') })
   await block.hover()
-  const action = await block.$('[data-resume-block-actions] button')
-  if (!action) throw new Error('Hover did not expose block actions.')
+  const unselected = await block.evaluate((element) => element.getBoundingClientRect().toJSON())
+  // Select the group itself, without opening a field's editing dialog.
+  await block.focus()
+  const actionSelector = '[data-resume-action-dock] [data-resume-block-actions] button'
+  const action = await page.$(actionSelector)
+  if (!action) throw new Error('Selecting a block did not expose docked actions.')
+  const geometry = await block.evaluate((element) => {
+    const dock = document.querySelector('[data-resume-action-dock]')
+    const paper = element.closest('[data-scenario-preview]')
+    const canvas = document.querySelector('[data-editor-canvas]')
+    const a = dock.getBoundingClientRect()
+    const b = canvas.getBoundingClientRect()
+    return { selected: element.getBoundingClientRect().toJSON(), outsidePaper: !paper.contains(dock), belowCanvas: a.top >= b.bottom - 1 }
+  })
+  if (!geometry.outsidePaper || !geometry.belowCanvas || ['x', 'y', 'width', 'height'].some((key) => Math.abs(geometry.selected[key] - unselected[key]) > 0.5)) {
+    throw new Error(`Action dock overlaps canvas or shifts resume geometry: ${JSON.stringify(geometry)}`)
+  }
   const bounds = await action.boundingBox()
   if (!bounds) throw new Error('Block action has no visible bounds.')
   const x = bounds.x + bounds.width / 2
   const y = bounds.y + bounds.height / 2
   const reachable = async () => {
-    const button = await block.$('[data-resume-block-actions] button')
+    const button = await page.$(actionSelector)
     if (!button) throw new Error('Actions disappeared while navigating inside the region.')
     const hit = await button.evaluate((element, point) => element.contains(document.elementFromPoint(point.x, point.y)), { x, y })
     if (!hit) throw new Error('Another element covers the hovered action.')
@@ -1399,7 +1414,17 @@ async function checkHoverActionContinuity(page, artifactDir) {
   await reachable()
   await block.hover()
   await new Promise((resolve) => setTimeout(resolve, 250))
-  if (!await block.$('[data-resume-block-actions]')) throw new Error('Returning from actions to content hid the actions.')
+  if (!await page.$(actionSelector)) throw new Error('Returning from actions to content hid the actions.')
+  const otherBlocks = await page.$$('[data-scenario-preview="true"] [data-resume-edit-region="block"]')
+  if (otherBlocks.length > 1) {
+    await otherBlocks[1].hover()
+    await new Promise((resolve) => setTimeout(resolve, 300))
+    if (!await block.evaluate((element) => element.getAttribute('data-resume-edit-selected') === 'true')) {
+      throw new Error('Moving across another row silently changed the action target.')
+    }
+  }
+  // Pure hover styling is checked without a focus-visible ring.
+  await page.evaluate(() => document.activeElement?.blur())
   const field = await block.$('[data-resume-edit-field]')
   if (!field) throw new Error('No field-level editing affordance found.')
   await field.hover()
@@ -1455,15 +1480,15 @@ async function checkHoverActionContinuity(page, artifactDir) {
   })
   if (!imageClean) throw new Error('Editing decoration remains in image capture styles.')
   // Focus keeps the toolbar available even when the pointer leaves the module.
-  const focusAction = await block.$('[data-resume-block-actions] button')
+  const focusAction = await page.$(actionSelector)
   await focusAction.focus()
   await page.mouse.move(8, 8)
   await new Promise((resolve) => setTimeout(resolve, 300))
-  if (!await block.$('[data-resume-block-actions]')) throw new Error('Pointer exit hid focused actions.')
+  if (!await page.$(actionSelector)) throw new Error('Pointer exit hid focused actions.')
   await page.emulateMediaType('print')
   const printClean = await block.evaluate((element) => {
     const section = element.closest('[data-resume-edit-region="section"]')
-    const actions = element.querySelector('[data-resume-block-actions]')
+    const actions = document.querySelector('[data-resume-block-actions]')
     return getComputedStyle(element).outlineStyle === 'none'
       && getComputedStyle(element).backgroundColor === 'rgba(0, 0, 0, 0)'
       && (!section || getComputedStyle(section).outlineStyle === 'none')
@@ -1471,7 +1496,7 @@ async function checkHoverActionContinuity(page, artifactDir) {
   })
   await page.emulateMediaType('screen')
   if (!printClean) throw new Error('Editing decorations leaked into print rendering.')
-  return `Real pointer: content → action, rapid exit/re-entry, action → content; focus retention; quiet module boundary and field target; clean image capture and print. ${JSON.stringify(metrics)}`
+  return `Selected block → dock; real pointer transit and rapid exit/re-entry; target preserved across other rows; dock outside paper/canvas; unchanged block geometry; focus retention; quiet hover hierarchy; clean image capture and print. ${JSON.stringify(metrics)}`
 }
 
 async function runInteractionStep(page, name, action) {
