@@ -1,0 +1,109 @@
+/* Shared editor affordances; template typography and document geometry stay owned by the template. */
+:root {
+  --resume-edit-section-fill: color-mix(in srgb, var(--color-primary) 3%, transparent);
+  --resume-edit-section-line: color-mix(in srgb, var(--color-primary) 28%, transparent);
+  --resume-edit-block-fill: color-mix(in srgb, var(--color-primary) 6%, transparent);
+  --resume-edit-block-line: color-mix(in srgb, var(--color-primary) 55%, transparent);
+  --resume-edit-field-fill: color-mix(in srgb, var(--color-primary) 8%, var(--color-background));
+}
+
+@media screen {
+  [data-resume-edit-region]:not(:where([data-resume-exporting], [data-resume-exporting] *)) {
+    outline: 1px solid transparent;
+    outline-offset: 3px;
+    border-radius: 4px;
+    transition: background-color 120ms ease-out;
+  }
+
+  [data-resume-edit-region="section"]:not(:where([data-resume-exporting], [data-resume-exporting] *)):focus-within {
+    outline-color: var(--resume-edit-section-line);
+    background-color: var(--resume-edit-section-fill);
+  }
+
+  [data-resume-edit-region="block"]:not(:where([data-resume-exporting], [data-resume-exporting] *))[data-resume-edit-state="active"],
+  [data-resume-edit-region="block"]:not(:where([data-resume-exporting], [data-resume-exporting] *))[data-resume-edit-state="editing"] {
+    outline-color: var(--resume-edit-block-line);
+    background-color: var(--resume-edit-block-fill);
+  }
+
+  [data-resume-edit-region]:not(:where([data-resume-exporting], [data-resume-exporting] *)):focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 3px;
+  }
+
+  [data-resume-edit-field]:not(:where([data-resume-exporting], [data-resume-exporting] *)):focus-visible,
+  [data-resume-edit-field]:not(:where([data-resume-exporting], [data-resume-exporting] *))[data-state="open"] {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 1px;
+  }
+
+  [data-resume-section-actions] {
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 30;
+  }
+
+  [data-resume-section-actions][data-visible="true"],
+  [data-resume-edit-region="section"]:not(:where([data-resume-exporting], [data-resume-exporting] *)):focus-within [data-resume-section-actions] {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  [data-resume-block-actions] {
+    max-width: 100%;
+    flex-wrap: wrap;
+  }
+
+  /* html-to-image reads styles immediately; do not capture a fading highlight. */
+  [data-resume-exporting] [data-resume-edit-region],
+  [data-resume-exporting] [data-resume-edit-field] {
+    transition: none !important;
+  }
+
+}
+
+@media screen and (hover: hover) {
+  [data-resume-edit-region="section"]:not(:where([data-resume-exporting], [data-resume-exporting] *)):hover:not([data-resume-edit-dragging]) {
+    outline-color: var(--resume-edit-section-line);
+    background-color: var(--resume-edit-section-fill);
+  }
+
+  [data-resume-edit-field]:not(:where([data-resume-exporting], [data-resume-exporting] *)):hover {
+    outline: 1px solid var(--resume-edit-block-line);
+    outline-offset: 1px;
+  }
+}
+
+/* Important component colors outrank legacy important Tailwind utilities.
+   Keep outlines outside the layer so template outline utilities cannot hide them. */
+@layer components {
+  @media screen {
+    [data-resume-edit-field]:not(:where([data-resume-exporting], [data-resume-exporting] *)):focus-visible,
+    [data-resume-edit-field]:not(:where([data-resume-exporting], [data-resume-exporting] *))[data-state="open"],
+    [data-resume-edit-field]:not(:where([data-resume-exporting], [data-resume-exporting] *)):active {
+      background-color: var(--resume-edit-field-fill) !important;
+      color: var(--color-foreground) !important;
+    }
+  }
+  @media screen and (hover: hover) {
+    [data-resume-edit-field]:not(:where([data-resume-exporting], [data-resume-exporting] *)):hover {
+      background-color: var(--resume-edit-field-fill) !important;
+      color: var(--color-foreground) !important;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-resume-edit-region]:not(:where([data-resume-exporting], [data-resume-exporting] *)) { transition: none; }
+}
+
+@media print {
+  [data-resume-edit-region], [data-resume-edit-field] {
+    outline: none !important;
+  }
+  [data-resume-block-actions], [data-resume-section-actions] {
+    display: none !important;
+  }
+}

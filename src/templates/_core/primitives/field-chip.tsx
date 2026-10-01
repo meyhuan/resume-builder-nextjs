@@ -2,6 +2,7 @@ import type { ReactElement, ReactNode, CSSProperties } from 'react'
 import { XCircle } from 'lucide-react'
 import type { BaseInfoFieldDef } from '@/templates/_kernel/shared'
 import type { EditableHeader } from '../hooks/use-editable-header'
+import { useAppStore } from '@/state/store'
 
 /**
  * Unstyled single-field chip with hover-to-delete affordance.
@@ -25,9 +26,11 @@ export function FieldChip(props: FieldChipProps): ReactElement {
   const { field, header, className, style, children, deleteIcon, deleteColor } = props
   const { hoveredField, setHoveredField, deleteField } = header
   const isHovered: boolean = hoveredField === field.key
+  const readOnly = useAppStore((s) => s.readOnly)
   return (
     <span
       data-template-base-info-field="true"
+      data-resume-edit-field={readOnly ? undefined : 'true'}
       data-template-base-info-key={field.key}
       className={`relative inline-flex items-center ${className ?? ''}`}
       style={style}
@@ -38,6 +41,7 @@ export function FieldChip(props: FieldChipProps): ReactElement {
       {isHovered && (
         <button
           type="button"
+          data-export-hide="true"
           className="absolute -right-2 -top-2 bg-white rounded-full print:hidden transition-colors z-10"
           style={{ color: deleteColor ?? '#ef4444' }}
           onClick={(e) => { e.stopPropagation(); deleteField(field.key) }}

@@ -136,13 +136,15 @@ export default function EditableFieldWrapper(props: EditableFieldWrapperProps): 
   if (isEditing) {
     return (
       <input
+        data-resume-edit-field="true"
         ref={inputRef}
         type="text"
         value={tempValue}
         onChange={(e): void => setTempValue(e.target.value)}
         onBlur={saveEdit}
         onKeyDown={handleKeyDown}
-        className={`${props.className || ''} bg-blue-50 text-slate-900 rounded px-1 leading-tight outline-none min-w-[50px] w-full ring-1 ring-blue-500`}
+        aria-label={props.title || placeholder}
+        className={`${props.className || ''} bg-muted text-foreground rounded px-1 leading-tight outline-none min-w-[50px] w-full ring-1 ring-ring`}
         placeholder={placeholder}
       />
     )
@@ -153,8 +155,12 @@ export default function EditableFieldWrapper(props: EditableFieldWrapperProps): 
   if (!hasValue && emptyMode === 'hover') {
     return (
       <span
+        data-resume-edit-field="true"
+        role="button"
+        tabIndex={0}
+        onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); startEditing() } }}
         onClick={startEditing}
-        className={`${props.className || ''} hidden cursor-text rounded border border-dashed border-slate-300 px-1 leading-tight text-slate-400 transition-colors hover:bg-gray-100 hover:!text-slate-900 group-hover/block:inline-flex group-hover/section:inline-flex group-hover/section-edit:inline-flex print:hidden`}
+        className={`${props.className || ''} hidden cursor-text rounded border border-dashed border-slate-300 px-1 leading-tight text-slate-400 transition-colors group-hover/block:inline-flex group-focus-within/block:inline-flex group-hover/section:inline-flex group-hover/section-edit:inline-flex print:hidden`}
         title={props.title || `点击编辑${placeholder}`}
       >
         {placeholder}
@@ -164,8 +170,12 @@ export default function EditableFieldWrapper(props: EditableFieldWrapperProps): 
 
   return (
     <span
+      data-resume-edit-field="true"
+      role="button"
+      tabIndex={0}
+      onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); startEditing() } }}
       onClick={startEditing}
-      className={`${props.className || ''} cursor-text hover:bg-gray-100 hover:!text-slate-900 rounded px-1 leading-tight transition-colors border border-transparent`}
+      className={`${props.className || ''} cursor-text rounded px-1 leading-tight transition-colors border border-transparent`}
       title={props.title || `点击编辑${placeholder}`}
     >
       {displayValue || placeholder}

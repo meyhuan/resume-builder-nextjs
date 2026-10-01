@@ -2,8 +2,7 @@
  * SectionContainer - V2 Reusable Section Wrapper
  * Provides consistent hover effects for all sections
  */
-import { useState } from 'react'
-import type { ReactElement, ReactNode, CSSProperties } from 'react'
+import type { ReactElement, ReactNode } from 'react'
 
 interface SectionContainerProps {
   readonly children: ReactNode
@@ -17,36 +16,18 @@ interface SectionContainerProps {
  * All templates use the same hover behavior for consistency.
  */
 export default function SectionContainer(props: SectionContainerProps): ReactElement {
-  const { children, themeColor, flush = false } = props
-  const [isHovered, setIsHovered] = useState(false)
+  const { children, flush = false } = props
 
   const baseClassName = [
     flush ? 'px-1 flow-root' : 'mb-1 p-1',
     'rounded-lg',
-    'transition-all duration-200 group group/section-edit',
-    isHovered ? 'shadow-sm' : '',
+    'group group/section-edit',
   ].filter(Boolean).join(' ')
-
-  const dynamicStyle: CSSProperties = {
-    border: flush ? undefined : isHovered ? `1px solid ${themeColor}20` : '1px solid transparent',
-    outline: flush && isHovered ? `1px solid ${themeColor}20` : undefined,
-    background: isHovered ? 'rgba(249, 250, 251, 0.5)' : 'transparent',
-  }
-
-  function handleMouseEnter(): void {
-    setIsHovered(true)
-  }
-
-  function handleMouseLeave(): void {
-    setIsHovered(false)
-  }
 
   return (
     <section
       className={baseClassName}
-      style={dynamicStyle}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
+      style={{ border: flush ? undefined : '1px solid transparent' }}
     >
       {children}
     </section>

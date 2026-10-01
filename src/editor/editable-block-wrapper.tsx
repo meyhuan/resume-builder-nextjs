@@ -5,7 +5,7 @@
 import { useState, useEffect, type ReactElement, type ReactNode, type CSSProperties } from 'react'
 import InlineEditor from '@/editor/inline-editor'
 import { useAppStore } from '@/state/store'
-import { CONTENT_DISPLAY_STYLES_XS, CONTENT_EDITING_STYLES_XS } from '@/editor/editor-styles'
+import { CONTENT_BASE_STYLES, CONTENT_EDITING_STYLES_XS, LIST_STYLES } from '@/editor/editor-styles'
 import type { ResumeBlock } from '@/entities/blocks/resume-block'
 import { hasMeaningfulHtml } from '@/lib/resume-placeholders'
 import { useRetainEditingBlock } from './use-retain-editing-block'
@@ -49,7 +49,7 @@ export default function EditableBlockWrapper(props: EditableBlockWrapperProps): 
   }, [isEditing, onEditingChange])
 
   const contentSize = props.contentSize || 'xs'
-  const displayStyles = contentSize === 'xs' ? CONTENT_DISPLAY_STYLES_XS : CONTENT_DISPLAY_STYLES_XS
+  const displayStyles = `${CONTENT_BASE_STYLES} cursor-text rounded p-1 transition-colors ${LIST_STYLES}`
   const editingStyles = contentSize === 'xs' ? CONTENT_EDITING_STYLES_XS : CONTENT_EDITING_STYLES_XS
   const emptyMode = props.emptyMode ?? 'placeholder'
 
@@ -104,8 +104,8 @@ export default function EditableBlockWrapper(props: EditableBlockWrapperProps): 
     if (!hasContent && emptyMode !== 'placeholder') return <></>
     return (
       <div
-      data-ai-block-id={props.blockId}
-        className={`${displayStyles} ${className || ''}`.trim()}
+        data-ai-block-id={props.blockId}
+        className={`${CONTENT_BASE_STYLES} p-1 ${LIST_STYLES} ${className || ''}`.trim()}
         dangerouslySetInnerHTML={{ __html: hasContent ? content : '' }}
       />
     )
@@ -130,8 +130,9 @@ export default function EditableBlockWrapper(props: EditableBlockWrapperProps): 
   if (!hasContent && emptyMode === 'hover') {
     return (
       <div
-      data-ai-block-id={props.blockId}
-        className={`${displayStyles} ${className || ''} hidden cursor-text rounded border border-dashed border-slate-300 px-2 py-1 text-slate-400 transition-colors hover:bg-gray-50 hover:text-slate-700 group-hover/block:block group-hover/section:block group-hover/section-edit:block print:hidden`.trim()}
+        data-ai-block-id={props.blockId}
+        data-resume-edit-field="true"
+        className={`${displayStyles} ${className || ''} hidden cursor-text rounded border border-dashed border-slate-300 px-2 py-1 text-slate-400 transition-colors group-hover/block:block group-focus-within/block:block group-hover/section:block group-hover/section-edit:block print:hidden`.trim()}
         onClick={(): void => setIsEditing(true)}
       >
         {props.placeholder || '点击填写内容'}
@@ -142,6 +143,7 @@ export default function EditableBlockWrapper(props: EditableBlockWrapperProps): 
   return (
     <div
       data-ai-block-id={props.blockId}
+      data-resume-edit-field="true"
       className={`${displayStyles} ${className || ''}`.trim()}
       onClick={(): void => setIsEditing(true)}
       dangerouslySetInnerHTML={{ __html: content }}

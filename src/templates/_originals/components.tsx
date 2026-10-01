@@ -514,7 +514,7 @@ export function ConceptSection(props: {
             dark={dark}
           />
         </div>
-        <SectionActions visible={editable.isHovered} isTextOnly={editable.isTextOnly} onAdd={editable.onAddBlock} onDelete={editable.onRequestDelete} dragProps={dragProps} />
+        {editable.canEditTitle && <SectionActions visible={editable.isHovered} isTextOnly={editable.isTextOnly} onAdd={editable.onAddBlock} onDelete={editable.onRequestDelete} dragProps={dragProps} />}
       </div>
       <BlockList
         section={editable}
@@ -809,7 +809,7 @@ function SectionActions(props: {
   const sortAttributes = dragProps.attributes as Record<string, unknown>
   const sortListeners = dragProps.listeners as Record<string, unknown>
   return (
-    <div className="absolute right-0 top-0 flex items-center gap-1 rounded-md border border-slate-200 bg-white px-1 py-0.5 shadow-sm transition-opacity print:hidden" style={{ opacity: visible ? 1 : 0, pointerEvents: visible ? 'auto' : 'none' }}>
+    <div data-resume-section-actions="true" data-export-hide="true" data-visible={visible || undefined} className="absolute right-0 top-0 flex items-center gap-1 rounded-md border border-slate-200 bg-white px-1 py-0.5 shadow-sm transition-opacity print:hidden">
       <button type="button" ref={attachDragHandle} {...sortAttributes} {...sortListeners} className="flex h-6 w-6 items-center justify-center rounded text-slate-500 hover:bg-slate-100" title="拖动"><GripVertical size={14} /></button>
       {!isTextOnly ? <button type="button" onClick={(e) => { e.stopPropagation(); onAdd() }} className="flex h-6 w-6 items-center justify-center rounded text-slate-500 hover:bg-slate-100" title="添加"><Plus size={14} /></button> : null}
       <button type="button" onClick={(e) => { e.stopPropagation(); onDelete() }} className="flex h-6 w-6 items-center justify-center rounded text-slate-500 hover:bg-red-50 hover:text-red-600" title="删除"><Trash2 size={14} /></button>

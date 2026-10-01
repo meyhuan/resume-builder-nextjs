@@ -1,15 +1,13 @@
 import { SectionTitleText } from './section-title-text';
 import React, { cloneElement, isValidElement } from 'react';
-import { useState, useRef } from 'react';
 import type { ReactElement, ReactNode } from 'react';
 import type { UUID } from '@/entities/common/uuid';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, Trash2, GripVertical } from 'lucide-react';
 import { useAppStore } from '@/state/store';
+import { useHoverActions } from '@/hooks/use-hover-actions';
 
 import type { SectionHeaderStyles } from '@/templates/components/v2/types';
-
-const HOVER_DELAY_MS = 200;
 
 export interface SectionHeaderProps {
   readonly sectionId: UUID;
@@ -45,26 +43,18 @@ export default function SectionHeader(props: SectionHeaderProps): ReactElement {
   const dragHandleListeners = effectiveDragHandleListeners;
   const dragHandleRef = effectiveDragHandleRef;
 
-  const [isHovered, setIsHovered] = useState(false);
-  const hideTimerRef = useRef<NodeJS.Timeout | number | null>(null);
-
   const hasActions = Boolean(onAdd || onDelete || (dragHandleAttributes && dragHandleListeners && dragHandleRef !== undefined));
-
-  function handleMouseEnter(): void {
-    if (!hasActions) return;
-    if (hideTimerRef.current) {
-      clearTimeout(hideTimerRef.current);
-      hideTimerRef.current = null;
-    }
-    setIsHovered(true);
-  }
-
-  function handleMouseLeave(): void {
-    if (!hasActions) return;
-    hideTimerRef.current = setTimeout(() => {
-      setIsHovered(false);
-    }, HOVER_DELAY_MS);
-  }
+  const hover = useHoverActions<HTMLDivElement>(!hasActions);
+  const isHovered = hover.isVisible;
+  const interactionProps = {
+    ref: hover.ref,
+    onMouseEnter: hover.onMouseEnter,
+    onMouseLeave: hover.onMouseLeave,
+    onFocus: hover.onFocus,
+    onBlur: hover.onBlur,
+    tabIndex: hasActions ? 0 : undefined,
+    'data-resume-edit-region': hasActions ? 'header' : undefined,
+  };
 
   const iconColor = styles?.icon?.color || themeColor;
   const titleColor = styles?.color || themeColor;
@@ -78,10 +68,8 @@ export default function SectionHeader(props: SectionHeaderProps): ReactElement {
   ) : icon;
 
   const actionsMenu = isHovered && hasActions ? (
-    <div 
+    <div data-export-hide="true" data-resume-section-actions="true" data-visible="true"
       className="absolute top-1 right-2 flex items-center gap-0.5 print:hidden bg-white shadow-md rounded-md px-1 py-0.5 border border-slate-200 z-10"
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
     >
       {onAdd && (
         <Button variant="ghost" size="sm" onClick={onAdd} className="h-6 px-2 text-[11px] gap-1 text-slate-600 hover:!text-slate-900 hover:!bg-slate-100" title="添加">
@@ -120,12 +108,9 @@ export default function SectionHeader(props: SectionHeaderProps): ReactElement {
   if (layout === 'ribbon') {
     return (
       <div
-        className={`flex items-center w-full relative transition-all duration-200 group/header ${
-          isHovered ? 'bg-gray-50' : ''
-        } ${styles?.containerClassName || 'mb-4 mt-2'}`}
+        className={`flex items-center w-full relative group/header ${styles?.containerClassName || 'mb-4 mt-2'}`}
         style={{ fontSize: styles?.fontSize, fontWeight: styles?.fontWeight, lineHeight: styles?.lineHeight }}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
+        {...interactionProps}
       >
         <div className={props.wrapTitle ? 'flex min-w-0 max-w-[calc(100%-24px)] items-center relative min-h-[32px] drop-shadow-sm' : 'flex items-center relative h-[32px] drop-shadow-sm'}>
           {/* Icon part */}
@@ -161,12 +146,9 @@ export default function SectionHeader(props: SectionHeaderProps): ReactElement {
   // Default Layout
   return (
     <div
-      className={`flex items-center gap-2 relative rounded transition-all duration-200 ${
-        isHovered ? 'bg-gray-50 border border-gray-200' : 'border border-transparent'
-      } ${styles?.containerClassName || 'mb-3'}`}
+      className={`flex items-center gap-2 relative rounded border border-transparent ${styles?.containerClassName || 'mb-3'}`}
       style={{ fontSize: styles?.fontSize, fontWeight: styles?.fontWeight, lineHeight: styles?.lineHeight }}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
+      {...interactionProps}
     >
       {renderedIcon}
       <div className="min-w-0 flex-1 flex">

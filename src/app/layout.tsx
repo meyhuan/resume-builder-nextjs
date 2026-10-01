@@ -3,6 +3,7 @@ import "@/styles/tailwind.css";
 import "@/styles/print.css";
 import "@/styles/base.css";
 import "@/styles/theme-override.css";
+import "@/styles/resume-editor-interactions.css";
 import { Toaster } from "sonner";
 import { BaiduAnalytics } from "@/components/analytics/BaiduAnalytics";
 import { AnalyticsErrorTracking } from "@/components/analytics/AnalyticsErrorTracking";

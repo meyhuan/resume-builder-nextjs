@@ -15,8 +15,6 @@ export interface BlockActionsProps {
   readonly onDelete?: () => void;
   readonly onMoveUp?: () => void;
   readonly onMoveDown?: () => void;
-  readonly onMouseEnter?: () => void;
-  readonly onMouseLeave?: () => void;
 }
 
 export default function BlockActions(props: BlockActionsProps): ReactElement {
@@ -28,8 +26,6 @@ export default function BlockActions(props: BlockActionsProps): ReactElement {
     onDelete,
     onMoveUp,
     onMoveDown,
-    onMouseEnter,
-    onMouseLeave,
   } = props;
   const report = (feature: 'polish' | 'generate') => {
     if (window.matchMedia('(min-width: 768px)').matches)
@@ -40,10 +36,10 @@ export default function BlockActions(props: BlockActionsProps): ReactElement {
 
   return (
     <div
+      data-resume-block-actions="true"
+      data-export-hide="true"
       className="absolute bottom-0 right-0 flex items-center gap-0.5 print:hidden bg-white shadow-md rounded-md px-1 py-0.5 border border-slate-200 z-10"
       style={{ transform: "translateY(calc(100% - 12px))" }}
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
     >
       {onAdd ? (
         <Button

@@ -1,8 +1,8 @@
-import { useState, useRef, useEffect } from 'react';
 import type { ReactElement, ReactNode } from 'react';
 import { GripHorizontal } from 'lucide-react';
 import BlockActions from './block-actions';
 import { useAppStore } from '@/state/store';
+import { useHoverActions } from '@/hooks/use-hover-actions';
 
 /**
  * Wrapper for blocks with hover actions (floating buttons, no layout shift).
@@ -25,9 +25,6 @@ export interface BlockWrapperProps {
   readonly flush?: boolean;
 }
 
-const HOVER_DELAY_MS = 200;
-const HOVER_POLL_MS = 500;
-
 export default function BlockWrapper(props: BlockWrapperProps): ReactElement {
   const readOnly = useAppStore((s) => s.readOnly);
   if (readOnly) {
@@ -38,48 +35,21 @@ export default function BlockWrapper(props: BlockWrapperProps): ReactElement {
 
 function EditableBlockHoverWrapper(props: BlockWrapperProps): ReactElement {
   const { children, blockType, onAdd, onPolish, onGenerate, onDelete, onMoveUp, onMoveDown, dragHandleProps, dragHandleRef, showDragHandle = true, disableHover = false } = props;
-  const [isHovered, setIsHovered] = useState(false);
-  const hideTimerRef = useRef<NodeJS.Timeout | number | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (disableHover && isHovered) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setIsHovered(false);
-    }
-  }, [disableHover, isHovered]);
-
-  useEffect(() => {
-    if (!isHovered || disableHover) return;
-    const pollId = setInterval(() => {
-      if (containerRef.current && !containerRef.current.matches(':hover')) {
-        setIsHovered(false);
-      }
-    }, HOVER_POLL_MS);
-    return (): void => { clearInterval(pollId); };
-  }, [isHovered, disableHover]);
-
-  function handleMouseEnter(): void {
-    if (disableHover) return;
-    if (hideTimerRef.current) {
-      clearTimeout(hideTimerRef.current);
-      hideTimerRef.current = null;
-    }
-    setIsHovered(true);
-  }
-
-  function handleMouseLeave(): void {
-    hideTimerRef.current = setTimeout(() => {
-      setIsHovered(false);
-    }, HOVER_DELAY_MS);
-  }
+  const { ref, isVisible: isHovered, onMouseEnter, onMouseLeave, onFocus, onBlur } = useHoverActions<HTMLDivElement>(disableHover);
 
   return (
     <div
-      ref={containerRef}
+      ref={ref}
       className={`group/block relative rounded ${props.flush ? 'flow-root' : 'mb-4 last:mb-0 pb-1'}`}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
+      data-resume-edit-region="block"
+      data-resume-edit-state={disableHover ? 'editing' : isHovered ? 'active' : 'idle'}
+      role="group"
+      aria-label={`${blockType}条目`}
+      tabIndex={0}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+      onFocus={onFocus}
+      onBlur={onBlur}
     >
       {children}
 
@@ -87,6 +57,7 @@ function EditableBlockHoverWrapper(props: BlockWrapperProps): ReactElement {
       {showDragHandle && dragHandleProps && dragHandleRef && isHovered && !disableHover ? (
         <button
           type="button"
+          data-export-hide="true"
           ref={dragHandleRef}
           {...dragHandleProps}
           className="absolute top-2 right-2 z-20 print:hidden cursor-grab active:cursor-grabbing p-1 h-7 w-7 border rounded bg-white shadow-sm hover:shadow-md flex items-center justify-center transition-all"
@@ -105,8 +76,6 @@ function EditableBlockHoverWrapper(props: BlockWrapperProps): ReactElement {
           onDelete={onDelete}
           onMoveUp={onMoveUp}
           onMoveDown={onMoveDown}
-          onMouseEnter={handleMouseEnter}
-          onMouseLeave={handleMouseLeave}
         />
       ) : null}
     </div>

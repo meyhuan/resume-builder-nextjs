@@ -1,5 +1,6 @@
 import { useState, createElement } from 'react'
 import type { CSSProperties, ReactElement } from 'react'
+import { useAppStore } from '@/state/store'
 
 type TagName = 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'p' | 'span' | 'div'
 
@@ -28,11 +29,13 @@ export function EditableText(props: EditableTextProps): ReactElement {
   } = props
   const [editing, setEditing] = useState<boolean>(false)
   const [draft, setDraft] = useState<string>(value)
-  const isEditable: boolean = Boolean(onCommit)
+  const readOnly = useAppStore((s) => s.readOnly)
+  const isEditable: boolean = Boolean(onCommit) && !readOnly
 
   if (editing && isEditable) {
     return (
       <input
+        data-resume-edit-field="true"
         autoFocus
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
@@ -56,6 +59,16 @@ export function EditableText(props: EditableTextProps): ReactElement {
     as,
     {
       className,
+      'data-resume-edit-field': isEditable ? 'true' : undefined,
+      tabIndex: isEditable ? 0 : undefined,
+      onKeyDown: isEditable ? (event: React.KeyboardEvent) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault()
+          event.stopPropagation()
+          setDraft(value)
+          setEditing(true)
+        }
+      } : undefined,
       style: { ...(isEditable ? { cursor: 'text' } : null), ...style },
       onClick: isEditable
         ? (e: React.MouseEvent<HTMLElement>): void => {

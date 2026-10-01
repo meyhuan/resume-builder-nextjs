@@ -506,7 +506,7 @@ function ZhumoSection(props: SectionProps): ReactElement {
         onCommitTitle={canEditTitle ? onCommitTitle : undefined}
       />
 
-      <ZhumoHoverActions
+      {canEditTitle && <ZhumoHoverActions
         visible={isHovered}
         canAdd={!isTextOnly}
         onAdd={onAddBlock}
@@ -514,7 +514,7 @@ function ZhumoSection(props: SectionProps): ReactElement {
         dragRef={dragRef}
         dragAttrs={dragAttrs}
         dragListeners={dragListeners}
-      />
+      />}
 
       <div style={{ paddingLeft: 28 }}>
         <BlockList section={editable} themeColor={themeColor} spacingScale={spacingScale} />
@@ -636,6 +636,7 @@ function ZhumoHoverActions(props: HoverActionsProps): ReactElement {
   const { visible, canAdd, onAdd, onDelete, dragRef, dragAttrs, dragListeners } = props
   return (
     <div
+      data-resume-section-actions="true" data-export-hide="true" data-visible={visible || undefined}
       className="flex items-center gap-1 print:hidden"
       style={{
         position: 'absolute',
@@ -645,8 +646,6 @@ function ZhumoHoverActions(props: HoverActionsProps): ReactElement {
         border: `1px solid ${palette.red}`,
         borderRadius: 2,
         padding: '2px 4px',
-        opacity: visible ? 1 : 0,
-        pointerEvents: visible ? 'auto' : 'none',
         transition: 'opacity 120ms ease',
         zIndex: 5,
       }}
@@ -680,7 +679,8 @@ function ZhumoIconBtn(p: { label: string; onClick: () => void; danger?: boolean 
         fontSize: 14,
         color: p.danger ? '#dc2626' : palette.red,
       }}
-      title={p.label}
+      title={p.danger ? '删除' : '添加'}
+      aria-label={p.danger ? '删除模块' : '添加条目'}
     >
       {p.label}
     </button>

@@ -19,6 +19,18 @@ export function SectionTitleText({ value, onCommit, as = 'h2', className, style,
     className,
     'data-section-display-title': 'true',
     'data-section-title-editable': canEdit ? 'true' : undefined,
+    'data-resume-edit-field': canEdit ? 'true' : undefined,
+    tabIndex: canEdit && !editing ? 0 : undefined,
+    title: canEdit ? '点击编辑模块名称' : undefined,
+    onKeyDown: canEdit && !editing ? (event: React.KeyboardEvent) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault()
+        event.stopPropagation()
+        setDraft(value)
+        setError(undefined)
+        setEditing(true)
+      }
+    } : undefined,
     onPointerDown: canEdit ? (event: React.PointerEvent) => event.stopPropagation() : undefined,
     onMouseDown: canEdit ? (event: React.MouseEvent) => event.stopPropagation() : undefined,
     onTouchStart: canEdit ? (event: React.TouchEvent) => event.stopPropagation() : undefined,
