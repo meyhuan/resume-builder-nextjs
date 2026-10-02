@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import type { ReactElement } from 'react';
 import type { JobIntention } from '@/entities/user/job-intention';
 import { Button } from '@/components/ui/button';
@@ -20,6 +20,7 @@ export interface JobIntentionModalProps {
   readonly jobIntention: JobIntention | null;
   readonly onClose: () => void;
   readonly onSave: (jobIntention: JobIntention) => void;
+  readonly initialField?: string;
 }
 
 export default function JobIntentionModal(props: JobIntentionModalProps): ReactElement {
@@ -29,7 +30,9 @@ export default function JobIntentionModal(props: JobIntentionModalProps): ReactE
   const [type, setType] = useState(props.jobIntention?.type ?? '');
   const [industry, setIndustry] = useState(props.jobIntention?.industry ?? '');
   const [currentStatus, setCurrentStatus] = useState(props.jobIntention?.currentStatus ?? '');
-  const [showMoreFields, setShowMoreFields] = useState(false);
+  const [showMoreFields, setShowMoreFields] = useState(Boolean(props.initialField &&
+    (['industry', 'currentStatus'].includes(props.initialField) || props.initialField.startsWith('custom_'))));
+  const contentRef = useRef<HTMLDivElement>(null);
   const [customFields, setCustomFields] = useState<CustomField[]>(
     (props.jobIntention?.customFields as CustomField[] | undefined)?.map(f => ({ ...f })) ?? []
   );
@@ -65,7 +68,17 @@ export default function JobIntentionModal(props: JobIntentionModalProps): ReactE
 
   return (
     <Dialog open={true} onOpenChange={(open) => !open && props.onClose()}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent ref={contentRef} className="max-w-2xl max-h-[90vh] overflow-y-auto"
+        onOpenAutoFocus={(event) => {
+          const customIndex = customFields.findIndex((field) => `custom_${field.label}` === props.initialField);
+          const id = customIndex >= 0 ? `job-custom-${customIndex}` : props.initialField;
+          const target = id ? document.getElementById(id) : null;
+          if (target && contentRef.current?.contains(target)) {
+            event.preventDefault();
+            target.focus();
+            if (target instanceof HTMLInputElement) target.select();
+          }
+        }}>
         <DialogHeader>
           <DialogTitle>求职意向</DialogTitle>
         </DialogHeader>
@@ -172,6 +185,7 @@ export default function JobIntentionModal(props: JobIntentionModalProps): ReactE
                       className="w-28 shrink-0"
                     />
                     <Input
+                      id={`job-custom-${index}`}
                       value={field.value}
                       onChange={(e) => updateCustomField(index, 'value', e.target.value)}
                       placeholder="字段值"

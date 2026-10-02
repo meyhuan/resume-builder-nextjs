@@ -280,7 +280,75 @@ it('opens a structured field from keyboard focus and returns after Escape', () =
   fireEvent.keyDown(field, { key: 'Enter' });
   expect(screen.getByRole('textbox', { name: '学校名称' })).toBe(document.activeElement);
   fireEvent.keyDown(document.activeElement!, { key: 'Escape' });
-  expect(screen.getByRole('button', { name: '江城大学' })).not.toBeNull();
+  expect(screen.getByRole('button', { name: '江城大学' })).toBe(document.activeElement);
+});
+
+it('does not submit a structured field while choosing Chinese text, then commits once', () => {
+  store.setResume.mockClear();
+  render(<EditableFieldWrapper blockId="block" fieldName="school" value="江城大学" onUpdate={() => {}} />);
+  fireEvent.click(screen.getByRole('button', { name: '江城大学' }));
+  const input = screen.getByRole('textbox');
+  fireEvent.compositionStart(input);
+  fireEvent.change(input, { target: { value: '北京大学' } });
+  fireEvent.keyDown(input, { key: 'Enter', isComposing: true });
+  expect(input).toBe(document.activeElement);
+  expect(store.setResume).not.toHaveBeenCalled();
+  fireEvent.compositionEnd(input);
+  fireEvent.keyDown(input, { key: 'Enter', keyCode: 229 });
+  expect(store.setResume).not.toHaveBeenCalled();
+  fireEvent.keyDown(input, { key: 'Enter' });
+  expect(store.setResume).toHaveBeenCalledOnce();
+  expect(document.activeElement).toBe(screen.getByRole('button', { name: '江城大学' }));
+});
+
+it('cancels a name draft without committing it and restores the original focus', () => {
+  const onCommit = vi.fn();
+  render(<EditableText value="李小满" onCommit={onCommit} />);
+  fireEvent.click(screen.getByText('李小满'));
+  const input = screen.getByRole('textbox');
+  fireEvent.change(input, { target: { value: '未保存的姓名' } });
+  fireEvent.keyDown(input, { key: 'Escape' });
+  expect(onCommit).not.toHaveBeenCalled();
+  expect(screen.getByText('李小满')).toBe(document.activeElement);
+});
+
+it('keeps a composing name editable and commits Enter once after composition ends', () => {
+  const onCommit = vi.fn();
+  const parentKey = vi.fn();
+  render(<div onKeyDown={parentKey}><EditableText value="李小满" onCommit={onCommit} /></div>);
+  fireEvent.click(screen.getByText('李小满'));
+  const input = screen.getByRole('textbox');
+  fireEvent.compositionStart(input);
+  fireEvent.change(input, { target: { value: '李明' } });
+  fireEvent.keyDown(input, { key: 'Enter' });
+  expect(onCommit).not.toHaveBeenCalled();
+  fireEvent.compositionEnd(input);
+  fireEvent.keyDown(input, { key: 'Enter' });
+  expect(onCommit).toHaveBeenCalledExactlyOnceWith('李明');
+  expect(screen.getByText('李小满')).toBe(document.activeElement);
+  expect(parentKey).not.toHaveBeenCalled();
+});
+
+it('restores a module title after Escape and preserves its uncommitted text', () => {
+  const commit = vi.fn();
+  render(<SectionTitleText value="教育经历" onCommit={commit} />);
+  fireEvent.click(screen.getByRole('heading'));
+  fireEvent.change(screen.getByRole('textbox'), { target: { value: '测试' } });
+  fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Escape' });
+  expect(commit).not.toHaveBeenCalled();
+  expect(screen.getByRole('heading', { name: '教育经历' })).toBe(document.activeElement);
+});
+
+it('identifies a selected project by name and updates it when the title changes', async () => {
+  const draw = (name: string) => <ResumeActionWorkspace><section data-resume-edit-region="section"><h2>项目经历</h2>
+    <BlockWrapper blockType="项目" onDelete={() => {}}><span data-resume-field-name="name">{name}</span></BlockWrapper>
+  </section></ResumeActionWorkspace>;
+  const view = render(draw('校园社交应用'));
+  fireEvent.click(screen.getByText('校园社交应用'));
+  expect(screen.getByText('项目经历 · 校园社交应用')).not.toBeNull();
+  view.rerender(draw('简历优化助手'));
+  await act(async () => { await Promise.resolve(); });
+  expect(screen.getByText('项目经历 · 简历优化助手')).not.toBeNull();
 });
 
 it('opens a template name from the keyboard and commits once', () => {

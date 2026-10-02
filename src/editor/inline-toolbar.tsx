@@ -15,6 +15,7 @@ import { Bold, Italic, Underline, List, ListOrdered, IndentIncrease, IndentDecre
 
 interface InlineToolbarProps {
   readonly className?: string
+  readonly docked?: boolean
 }
 
 /**
@@ -31,7 +32,6 @@ interface ToolbarState {
 
 export default function InlineToolbar(props: InlineToolbarProps): ReactElement {
   const [editor] = useLexicalComposerContext()
-  const isFloating = props.className?.includes('absolute')
 
   const [toolbarState, setToolbarState] = useState<ToolbarState>({
     isBold: false,
@@ -144,14 +144,17 @@ export default function InlineToolbar(props: InlineToolbarProps): ReactElement {
     <div
       className={clsx(
         'flex items-center gap-0.5 print:hidden',
-        isFloating ? 'bg-white shadow-md rounded px-1.5 py-1 border border-gray-200' : 'opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-opacity',
+        props.docked ? 'py-1' : 'bg-white shadow-sm rounded px-1.5 py-1 border border-gray-200',
         props.className
       )}
     >
       <Button 
         variant="ghost" 
         size="icon" 
-        onMouseDown={withFocus(onBold)} 
+        onMouseDown={(event) => event.preventDefault()}
+        onClick={withFocus(onBold)}
+        aria-label="加粗"
+        aria-pressed={toolbarState.isBold}
         className={clsx('h-7 w-7', toolbarState.isBold && 'bg-accent text-accent-foreground')}
         title="加粗 (Ctrl+B)"
       >
@@ -161,7 +164,10 @@ export default function InlineToolbar(props: InlineToolbarProps): ReactElement {
       <Button 
         variant="ghost" 
         size="icon" 
-        onMouseDown={withFocus(onItalic)} 
+        onMouseDown={(event) => event.preventDefault()}
+        onClick={withFocus(onItalic)}
+        aria-label="斜体"
+        aria-pressed={toolbarState.isItalic}
         className={clsx('h-7 w-7', toolbarState.isItalic && 'bg-accent text-accent-foreground')}
         title="斜体 (Ctrl+I)"
       >
@@ -171,7 +177,10 @@ export default function InlineToolbar(props: InlineToolbarProps): ReactElement {
       <Button 
         variant="ghost" 
         size="icon" 
-        onMouseDown={withFocus(onUnderline)} 
+        onMouseDown={(event) => event.preventDefault()}
+        onClick={withFocus(onUnderline)}
+        aria-label="下划线"
+        aria-pressed={toolbarState.isUnderline}
         className={clsx('h-7 w-7', toolbarState.isUnderline && 'bg-accent text-accent-foreground')}
         title="下划线 (Ctrl+U)"
       >
@@ -183,7 +192,10 @@ export default function InlineToolbar(props: InlineToolbarProps): ReactElement {
       <Button 
         variant="ghost" 
         size="icon" 
-        onMouseDown={withFocus(onBulletList)} 
+        onMouseDown={(event) => event.preventDefault()}
+        onClick={withFocus(onBulletList)}
+        aria-label="无序列表"
+        aria-pressed={toolbarState.blockType === 'bullet'}
         className={clsx('h-7 w-7', toolbarState.blockType === 'bullet' && 'bg-accent text-accent-foreground')}
         title="无序列表"
       >
@@ -193,7 +205,10 @@ export default function InlineToolbar(props: InlineToolbarProps): ReactElement {
       <Button 
         variant="ghost" 
         size="icon" 
-        onMouseDown={withFocus(onNumberList)} 
+        onMouseDown={(event) => event.preventDefault()}
+        onClick={withFocus(onNumberList)}
+        aria-label="有序列表"
+        aria-pressed={toolbarState.blockType === 'number'}
         className={clsx('h-7 w-7', toolbarState.blockType === 'number' && 'bg-accent text-accent-foreground')}
         title="有序列表"
       >
@@ -205,7 +220,9 @@ export default function InlineToolbar(props: InlineToolbarProps): ReactElement {
       <Button 
         variant="ghost" 
         size="icon" 
-        onMouseDown={withFocus(onOutdent)} 
+        onMouseDown={(event) => event.preventDefault()}
+        onClick={withFocus(onOutdent)}
+        aria-label="减少缩进"
         className="h-7 w-7"
         title="减少缩进"
       >
@@ -215,7 +232,9 @@ export default function InlineToolbar(props: InlineToolbarProps): ReactElement {
       <Button 
         variant="ghost" 
         size="icon" 
-        onMouseDown={withFocus(onIndent)} 
+        onMouseDown={(event) => event.preventDefault()}
+        onClick={withFocus(onIndent)}
+        aria-label="增加缩进"
         className="h-7 w-7"
         title="增加缩进"
       >
@@ -227,7 +246,9 @@ export default function InlineToolbar(props: InlineToolbarProps): ReactElement {
       <Button 
         variant="ghost" 
         size="icon" 
-        onMouseDown={withFocus(() => editor.dispatchCommand(UNDO_COMMAND, undefined))} 
+        onMouseDown={(event) => event.preventDefault()}
+        onClick={withFocus(() => editor.dispatchCommand(UNDO_COMMAND, undefined))}
+        aria-label="撤销"
         disabled={!toolbarState.canUndo}
         className="h-7 w-7 disabled:opacity-50"
         title="撤销 (Ctrl+Z)"
@@ -237,7 +258,9 @@ export default function InlineToolbar(props: InlineToolbarProps): ReactElement {
       <Button 
         variant="ghost" 
         size="icon" 
-        onMouseDown={withFocus(() => editor.dispatchCommand(REDO_COMMAND, undefined))} 
+        onMouseDown={(event) => event.preventDefault()}
+        onClick={withFocus(() => editor.dispatchCommand(REDO_COMMAND, undefined))}
+        aria-label="重做"
         disabled={!toolbarState.canRedo}
         className="h-7 w-7 disabled:opacity-50"
         title="重做 (Ctrl+Y / Ctrl+Shift+Z)"

@@ -525,8 +525,11 @@ async function checkLocalPage(browser, options) {
       return
     }
 
-    await page.waitForSelector('[data-template-lab="ready"] [data-template-root="true"] .resume-container', { timeout: 20_000 })
+    // The mobile lab initially scales to zero until ResizeObserver measures it.
+    // Attached text alone can pass while a screenshot still contains no paper.
+    await page.waitForSelector('[data-template-lab="ready"] [data-template-root="true"] .resume-container', { timeout: 20_000, visible: true })
     await page.waitForFunction((expected) => document.body.innerText.includes(expected), { timeout: 10_000 }, options.expectedText)
+    await waitForPdfAssets(page)
 
     const bodyTextLength = await page.evaluate(() => document.body.innerText.trim().length)
     if (bodyTextLength < 20) {

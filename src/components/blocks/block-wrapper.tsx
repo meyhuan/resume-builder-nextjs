@@ -41,6 +41,9 @@ function getContextLabel(element: HTMLElement | null, blockType: string): string
   const siblings = section ? [...section.querySelectorAll('[data-resume-edit-region="block"]')]
     .filter((block) => block.closest('[data-resume-edit-region="section"]') === section) : [];
   const index = element ? siblings.indexOf(element) : -1;
+  const nameField = element?.querySelector('[data-resume-field-name="name"], [data-resume-field-name="school"], [data-resume-field-name="company"], [data-resume-field-name="organization"]');
+  const name = nameField instanceof HTMLInputElement ? nameField.value.trim() : nameField?.textContent?.trim();
+  if (name && !['项目名称', '学校名称', '公司名称', '社团 / 活动'].includes(name)) return `${title} · ${name}`;
   return index >= 0 ? `${title} · 第 ${index + 1} 条` : `${title}条目`;
 }
 
@@ -51,6 +54,7 @@ function EditableBlockHoverWrapper(props: BlockWrapperProps): ReactElement {
   const id = useId();
   const selected = dock?.activeId === id;
   const clear = dock?.clear;
+  const select = dock?.select;
   useEffect(() => () => {
     // React can disconnect and reconnect effects/refs when a keyed row moves.
     // Clear only after the commit confirms that the owner really disappeared.
@@ -63,17 +67,22 @@ function EditableBlockHoverWrapper(props: BlockWrapperProps): ReactElement {
     const section = ref.current?.closest('[data-resume-edit-region="section"]');
     if (!section) return;
     const update = (): void => {
-      if (ref.current?.isConnected) setContextLabel(getContextLabel(ref.current, blockType));
+      if (ref.current?.isConnected) {
+        const label = getContextLabel(ref.current, blockType);
+        setContextLabel(label);
+        select?.(id, label);
+      }
     };
     const observer = new MutationObserver(update);
     observer.observe(section, { childList: true, characterData: true, subtree: true });
     queueMicrotask(update);
     return () => observer.disconnect();
-  }, [selected, ref, blockType]);
+  }, [selected, ref, blockType, id, select]);
   const selectBlock = (): void => {
     if (!dock) return;
-    setContextLabel(getContextLabel(ref.current, blockType));
-    dock.select(id);
+    const label = getContextLabel(ref.current, blockType);
+    setContextLabel(label);
+    dock.select(id, label);
   };
   const actions = <BlockActions blockType={blockType} onAdd={onAdd} onPolish={onPolish}
     onGenerate={onGenerate} onDelete={onDelete} onMoveUp={onMoveUp} onMoveDown={onMoveDown}

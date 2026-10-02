@@ -5,8 +5,9 @@ import { useAppStore } from '@/state/store';
 
 interface ActionDockContext {
   readonly activeId: string | null;
+  readonly activeLabel: string;
   readonly host: HTMLDivElement | null;
-  readonly select: (id: string) => void;
+  readonly select: (id: string, label: string) => void;
   readonly clear: (id?: string) => void;
 }
 
@@ -22,13 +23,17 @@ export function ResumeActionWorkspace({ children, className = '' }: {
   readonly className?: string;
 }): ReactElement {
   const readOnly = useAppStore((state) => state.readOnly);
-  const [activeId, setActiveId] = useState<string | null>(null);
+  const [selection, setSelection] = useState<{ id: string; label: string } | null>(null);
+  const activeId = selection?.id ?? null;
+  const activeLabel = selection?.label ?? '';
   const [host, setHost] = useState<HTMLDivElement | null>(null);
-  const select = useCallback((id: string) => setActiveId(id), []);
-  const clear = useCallback((id?: string) => {
-    setActiveId((current) => id === undefined || current === id ? null : current);
+  const select = useCallback((id: string, label: string) => {
+    setSelection((current) => current?.id === id && current.label === label ? current : { id, label });
   }, []);
-  const value = useMemo(() => ({ activeId, host, select, clear }), [activeId, host, select, clear]);
+  const clear = useCallback((id?: string) => {
+    setSelection((current) => id === undefined || current?.id === id ? null : current);
+  }, []);
+  const value = useMemo(() => ({ activeId, activeLabel, host, select, clear }), [activeId, activeLabel, host, select, clear]);
 
   return (
     <Context.Provider value={value}>

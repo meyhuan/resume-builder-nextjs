@@ -4,6 +4,7 @@
 :root {
   --resume-edit-section-line: color-mix(in srgb, var(--color-foreground) 22%, transparent);
   --resume-edit-block-fill: color-mix(in srgb, var(--color-foreground) 4%, transparent);
+  --resume-edit-selected-fill: color-mix(in srgb, var(--color-primary) 3%, transparent);
   --resume-edit-field-fill: color-mix(in srgb, var(--color-primary) 5%, var(--color-background));
   --resume-edit-region-radius: 4px;
   --resume-edit-field-radius: 4px;
@@ -61,6 +62,9 @@
 
   /* Selection is explicit: moving across another row on the way to the dock
      must not silently change the target of Delete or AI actions. */
+  [data-resume-edit-selected="true"]:not(:where([data-resume-exporting], [data-resume-exporting] *)) {
+    background-color: var(--resume-edit-selected-fill);
+  }
   [data-resume-edit-selected="true"]:not(:where([data-resume-exporting], [data-resume-exporting] *))::before {
     content: '';
     position: absolute;
@@ -78,11 +82,13 @@
     display: flex;
     align-items: center;
   }
-  .resume-action-dock:has([data-resume-block-actions]) [data-resume-action-hint] { display: none; }
+  .resume-action-dock:has([data-resume-block-actions], [data-resume-inline-toolbar]) [data-resume-action-hint] { display: none; }
   .resume-docked-actions { width: 100%; }
   .resume-docked-actions button { height: 32px; font-size: 12px; }
   .resume-docked-actions button:has(svg:only-child) { width: 32px; }
   .resume-action-context { min-width: 0; flex: 1; overflow-wrap: anywhere; }
+  .resume-inline-toolbar-docked { display: flex; align-items: center; flex-wrap: wrap; width: 100%; gap: 4px; }
+  .resume-inline-toolbar-buttons { display: flex; flex-wrap: wrap; min-width: 0; }
   /* Preserve the tiny hover bridge for standalone template consumers. */
   [data-resume-block-actions]:not(.resume-docked-actions)::before {
     content: '';

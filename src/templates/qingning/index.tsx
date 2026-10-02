@@ -288,9 +288,20 @@ function JobField({
   field: JobIntentionFieldDef;
   job: EditableJobIntention;
 }): ReactElement {
+  const readOnly = useAppStore((state) => state.readOnly);
   return (
     <span
       className="relative"
+      data-resume-edit-field={readOnly ? undefined : 'true'}
+      data-template-job-intention-key={field.key}
+      role={readOnly ? undefined : 'button'}
+      tabIndex={readOnly ? undefined : 0}
+      onClick={(event) => { if (!readOnly) { event.stopPropagation(); job.openEditModal(field.key); } }}
+      onKeyDown={(event) => {
+        if (!readOnly && (event.key === 'Enter' || event.key === ' ')) {
+          event.preventDefault(); event.stopPropagation(); job.openEditModal(field.key);
+        }
+      }}
       onMouseEnter={() => job.setHoveredField(field.key)}
       onMouseLeave={() => job.setHoveredField(null)}
       style={{ maxWidth: "100%", overflowWrap: "anywhere" }}

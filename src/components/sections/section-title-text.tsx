@@ -1,6 +1,6 @@
 'use client'
 
-import { createElement, useId, useRef, useState, type ReactElement } from 'react'
+import { useId, useRef, useState, useLayoutEffect, type ReactElement } from 'react'
 import type { EditableTextProps } from '@/templates/_core/primitives/editable-text'
 import { validateSectionDisplayTitle } from '@/entities/resume/section-display-title'
 import { useAppStore } from '@/state/store'
@@ -14,15 +14,25 @@ export function SectionTitleText({ value, onCommit, as = 'h2', className, style,
   const composing = useRef(false)
   const cancelled = useRef(false)
   const errorId = useId()
+  const titleRef = useRef<HTMLElement>(null)
+  const returnFocus = useRef(false)
+  useLayoutEffect(() => {
+    if (!editing && returnFocus.current) {
+      returnFocus.current = false
+      titleRef.current?.focus({ preventScroll: true })
+    }
+  }, [editing])
   const canEdit = Boolean(onCommit) && !readOnly
-  const text = createElement(as, {
-    className,
-    'data-section-display-title': 'true',
-    'data-section-title-editable': canEdit ? 'true' : undefined,
-    'data-resume-edit-field': canEdit ? 'true' : undefined,
-    tabIndex: canEdit && !editing ? 0 : undefined,
-    title: canEdit ? '点击编辑模块名称' : undefined,
-    onKeyDown: canEdit && !editing ? (event: React.KeyboardEvent) => {
+  const Tag = as
+  const text = <Tag
+    ref={(node: HTMLElement | null) => { titleRef.current = node }}
+    className={className}
+    data-section-display-title="true"
+    data-section-title-editable={canEdit ? 'true' : undefined}
+    data-resume-edit-field={canEdit ? 'true' : undefined}
+    tabIndex={canEdit && !editing ? 0 : undefined}
+    title={canEdit ? '点击编辑模块名称' : undefined}
+    onKeyDown={canEdit && !editing ? (event: React.KeyboardEvent) => {
       if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault()
         event.stopPropagation()
@@ -30,24 +40,24 @@ export function SectionTitleText({ value, onCommit, as = 'h2', className, style,
         setError(undefined)
         setEditing(true)
       }
-    } : undefined,
-    onPointerDown: canEdit ? (event: React.PointerEvent) => event.stopPropagation() : undefined,
-    onMouseDown: canEdit ? (event: React.MouseEvent) => event.stopPropagation() : undefined,
-    onTouchStart: canEdit ? (event: React.TouchEvent) => event.stopPropagation() : undefined,
-    style: { minWidth: 0, ...(canEdit ? { cursor: 'text' } : {}), ...style, maxWidth: '100%', overflowWrap: 'anywhere', whiteSpace: 'normal' },
-    onClick: canEdit ? (event: React.MouseEvent) => {
+    } : undefined}
+    onPointerDown={canEdit ? (event: React.PointerEvent) => event.stopPropagation() : undefined}
+    onMouseDown={canEdit ? (event: React.MouseEvent) => event.stopPropagation() : undefined}
+    onTouchStart={canEdit ? (event: React.TouchEvent) => event.stopPropagation() : undefined}
+    style={{ minWidth: 0, ...(canEdit ? { cursor: 'text' } : {}), ...style, maxWidth: '100%', overflowWrap: 'anywhere', whiteSpace: 'normal' }}
+    onClick={canEdit ? (event: React.MouseEvent) => {
       event.stopPropagation()
       setDraft(value)
       setError(undefined)
       setEditing(true)
-    } : undefined,
-  }, value)
+    } : undefined}
+  >{value}</Tag>
 
   function commit(): void {
     if (cancelled.current || composing.current) return
     const message = validateSectionDisplayTitle(draft)
     setError(message)
-    if (message) return
+    if (message) { returnFocus.current = false; return }
     if (draft.trim() !== value) onCommit?.(draft.trim())
     setEditing(false)
   }
@@ -78,8 +88,8 @@ export function SectionTitleText({ value, onCommit, as = 'h2', className, style,
         onKeyDown={(event) => {
           event.stopPropagation()
           if (composing.current || event.nativeEvent.isComposing || event.keyCode === 229) return
-          if (event.key === 'Enter') { event.preventDefault(); commit() }
-          if (event.key === 'Escape') { cancelled.current = true; setEditing(false) }
+          if (event.key === 'Enter') { event.preventDefault(); returnFocus.current = true; commit() }
+          if (event.key === 'Escape') { event.preventDefault(); cancelled.current = true; returnFocus.current = true; setEditing(false) }
         }}
         onPointerDown={(event) => event.stopPropagation()}
         onMouseDown={(event) => event.stopPropagation()}

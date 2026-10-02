@@ -37,7 +37,7 @@ try {
   await date.click()
   await page.keyboard.press('Escape')
   await pause()
-  assert.equal(await page.$eval('.resume-action-context', (element) => element.textContent), '项目经历 · 第 1 条')
+  assert.equal(await page.$eval('.resume-action-context', (element) => element.textContent), '项目经历 · 校园社交应用MVP')
   assert.deepEqual(await geometry(), idleGeometry)
   const dockMetrics = await page.$eval('[data-resume-action-dock]', (dock) => {
     const canvas = document.querySelector('[data-editor-canvas]')
@@ -60,7 +60,7 @@ try {
   const second = await page.evaluateHandle(() => [...document.querySelectorAll('[data-resume-edit-region="block"]')].find((element) => element.textContent.includes('负责岗位画像')))
   await second.hover()
   await pause()
-  assert.equal(await page.$eval('.resume-action-context', (element) => element.textContent), '项目经历 · 第 1 条')
+  assert.equal(await page.$eval('.resume-action-context', (element) => element.textContent), '项目经历 · 校园社交应用MVP')
   await page.hover('[data-resume-action-dock] button[title="AI润色"]')
   await pause()
   assert.equal(await block.evaluate((element) => element.getAttribute('data-resume-edit-selected')), 'true')
@@ -71,11 +71,14 @@ try {
   await pause()
   await page.screenshot({ path: path.join(out, 'final-dock.png') })
   await page.click('[data-resume-action-dock] button[title="下移"]')
-  await page.waitForFunction(() => document.querySelector('.resume-action-context')?.textContent === '项目经历 · 第 2 条')
+  await page.waitForFunction(() => [...document.querySelectorAll('[data-resume-edit-region="block"]')]
+    .filter((element) => element.closest('section')?.textContent.includes('项目经历'))[1]?.textContent.includes('校园社交应用MVP'))
+  assert.equal(await page.$eval('.resume-action-context', (element) => element.textContent), '项目经历 · 校园社交应用MVP')
   results.push({ check: 'move-down callback changes the real resume and updates the action context', pass: true })
   // The same selected component remains mounted after reorder.
   await page.click('[data-resume-action-dock] button[title="上移"]')
-  await page.waitForFunction(() => document.querySelector('.resume-action-context')?.textContent === '项目经历 · 第 1 条')
+  await page.waitForFunction(() => [...document.querySelectorAll('[data-resume-edit-region="block"]')]
+    .filter((element) => element.closest('section')?.textContent.includes('项目经历'))[0]?.textContent.includes('校园社交应用MVP'))
 
   for (const width of [1024, 1400]) {
     await page.setViewport({ width, height: 1000 })

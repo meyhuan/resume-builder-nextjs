@@ -2,8 +2,8 @@
  * EditableBlockWrapper - A reusable wrapper that adds editing capabilities to any block component.
  * This separates editing logic from display logic, making it easy to create multiple templates.
  */
-import { useState, useEffect, type ReactElement, type ReactNode, type CSSProperties } from 'react'
-import InlineEditor from '@/editor/inline-editor'
+import { useState, useEffect, useRef, useLayoutEffect, type ReactElement, type ReactNode, type CSSProperties, type MouseEvent } from 'react'
+import InlineEditor, { type InlineFocusPoint } from '@/editor/inline-editor'
 import { useAppStore } from '@/state/store'
 import { CONTENT_BASE_STYLES, CONTENT_EDITING_STYLES_XS, LIST_STYLES } from '@/editor/editor-styles'
 import type { ResumeBlock } from '@/entities/blocks/resume-block'
@@ -39,6 +39,19 @@ interface EditableBlockWrapperProps {
 export default function EditableBlockWrapper(props: EditableBlockWrapperProps): ReactElement {
   const { onEditingChange, className } = props
   const [isEditing, setIsEditing] = useState(false)
+  const displayRef = useRef<HTMLDivElement>(null)
+  const returnFocus = useRef(false)
+  const [focusPoint, setFocusPoint] = useState<InlineFocusPoint | null>(null)
+  useLayoutEffect(() => {
+    if (!isEditing && returnFocus.current) {
+      returnFocus.current = false
+      displayRef.current?.focus({ preventScroll: true })
+    }
+  }, [isEditing])
+  function startEditing(event?: MouseEvent<HTMLDivElement>): void {
+    setFocusPoint(event?.detail ? { x: event.clientX, y: event.clientY } : null)
+    setIsEditing(true)
+  }
   useRetainEditingBlock(props.blockId, isEditing)
   const setResume = useAppStore((s) => s.setResume)
   const resume = useAppStore((s) => s.resume)
@@ -118,8 +131,10 @@ export default function EditableBlockWrapper(props: EditableBlockWrapperProps): 
       <div data-resume-edit-field="rich-text" className={`${editingStyles} ${className || ''}`.trim()} style={props.editingStyle}>
         <InlineEditor
           initialHtml={editableContent}
+          initialFocusPoint={focusPoint}
           onChange={handleContentChange}
           onClickOutside={(): void => setIsEditing(false)}
+          onEscape={() => { returnFocus.current = true; setIsEditing(false) }}
           floatingToolbar={true}
           className="outline-none"
         />
@@ -130,10 +145,18 @@ export default function EditableBlockWrapper(props: EditableBlockWrapperProps): 
   if (!hasContent && emptyMode === 'hover') {
     return (
       <div
+        ref={displayRef}
+        role="button"
+        tabIndex={0}
+        aria-label={props.placeholder || '编辑正文'}
         data-ai-block-id={props.blockId}
         data-resume-edit-field="rich-text"
         className={`${displayStyles} ${className || ''} hidden cursor-text rounded border border-dashed border-slate-300 px-2 py-1 text-slate-400 transition-colors group-hover/block:block group-focus-within/block:block group-hover/section:block group-hover/section-edit:block print:hidden`.trim()}
-        onClick={(): void => setIsEditing(true)}
+        onClick={startEditing}
+        onMouseDown={(event) => { if (event.button === 0) event.preventDefault() }}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); event.stopPropagation(); startEditing() }
+        }}
       >
         {props.placeholder || '点击填写内容'}
       </div>
@@ -142,10 +165,20 @@ export default function EditableBlockWrapper(props: EditableBlockWrapperProps): 
 
   return (
     <div
+      ref={displayRef}
+      role="button"
+      tabIndex={0}
+      aria-label={props.placeholder || '编辑正文'}
       data-ai-block-id={props.blockId}
       data-resume-edit-field="rich-text"
       className={`${displayStyles} ${className || ''}`.trim()}
-      onClick={(): void => setIsEditing(true)}
+      onClick={startEditing}
+      // Focus-driven dock updates can replace the HTML child between down/up,
+      // suppressing its click. The mounted editor takes focus instead.
+      onMouseDown={(event) => { if (event.button === 0) event.preventDefault() }}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); event.stopPropagation(); startEditing() }
+      }}
       dangerouslySetInnerHTML={{ __html: content }}
     />
   )

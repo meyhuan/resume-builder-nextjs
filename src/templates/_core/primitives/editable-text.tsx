@@ -1,4 +1,4 @@
-import { useState, createElement } from 'react'
+import { useState, useRef, useLayoutEffect } from 'react'
 import type { CSSProperties, ReactElement } from 'react'
 import { useAppStore } from '@/state/store'
 
@@ -29,8 +29,33 @@ export function EditableText(props: EditableTextProps): ReactElement {
   } = props
   const [editing, setEditing] = useState<boolean>(false)
   const [draft, setDraft] = useState<string>(value)
+  const fieldRef = useRef<HTMLElement>(null)
+  const composing = useRef(false)
+  const finished = useRef(false)
+  const returnFocus = useRef(false)
   const readOnly = useAppStore((s) => s.readOnly)
   const isEditable: boolean = Boolean(onCommit) && !readOnly
+
+  useLayoutEffect(() => {
+    if (!editing && returnFocus.current) {
+      returnFocus.current = false
+      fieldRef.current?.focus({ preventScroll: true })
+    }
+  }, [editing])
+
+  function startEditing(): void {
+    finished.current = false
+    composing.current = false
+    setDraft(value)
+    setEditing(true)
+  }
+
+  function commit(): void {
+    if (finished.current) return
+    finished.current = true
+    if (draft !== value) onCommit?.(draft)
+    setEditing(false)
+  }
 
   if (editing && isEditable) {
     return (
@@ -39,13 +64,14 @@ export function EditableText(props: EditableTextProps): ReactElement {
         autoFocus
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
-        onBlur={() => {
-          onCommit?.(draft)
-          setEditing(false)
-        }}
+        onBlur={commit}
+        onCompositionStart={() => { composing.current = true }}
+        onCompositionEnd={() => { composing.current = false }}
         onKeyDown={(e) => {
-          if (e.key === 'Enter') (e.target as HTMLInputElement).blur()
-          if (e.key === 'Escape') { setDraft(value); setEditing(false) }
+          e.stopPropagation()
+          if (composing.current || e.nativeEvent.isComposing || e.keyCode === 229) return
+          if (e.key === 'Enter') { e.preventDefault(); returnFocus.current = true; commit() }
+          if (e.key === 'Escape') { e.preventDefault(); finished.current = true; returnFocus.current = true; setDraft(value); setEditing(false) }
         }}
         onClick={(e) => e.stopPropagation()}
         className={editClassName ?? className}
@@ -55,29 +81,25 @@ export function EditableText(props: EditableTextProps): ReactElement {
     )
   }
 
-  return createElement(
-    as,
-    {
-      className,
-      'data-resume-edit-field': isEditable ? 'true' : undefined,
-      tabIndex: isEditable ? 0 : undefined,
-      onKeyDown: isEditable ? (event: React.KeyboardEvent) => {
+  const Tag = as
+  return <Tag
+      className={className}
+      ref={(node: HTMLElement | null) => { fieldRef.current = node }}
+      data-resume-edit-field={isEditable ? 'true' : undefined}
+      tabIndex={isEditable ? 0 : undefined}
+      onKeyDown={isEditable ? (event: React.KeyboardEvent) => {
         if (event.key === 'Enter' || event.key === ' ') {
           event.preventDefault()
           event.stopPropagation()
-          setDraft(value)
-          setEditing(true)
+          startEditing()
         }
-      } : undefined,
-      style: { ...(isEditable ? { cursor: 'text' } : null), ...style },
-      onClick: isEditable
+      } : undefined}
+      style={{ ...(isEditable ? { cursor: 'text' } : null), ...style }}
+      onClick={isEditable
         ? (e: React.MouseEvent<HTMLElement>): void => {
             e.stopPropagation()
-            setDraft(value)
-            setEditing(true)
+            startEditing()
           }
-        : undefined,
-    },
-    value || placeholder || '',
-  )
+        : undefined}
+    >{value || placeholder || ''}</Tag>
 }
