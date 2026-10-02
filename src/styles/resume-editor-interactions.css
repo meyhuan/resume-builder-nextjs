@@ -70,13 +70,16 @@
     display: flex;
     align-items: center;
   }
-  .resume-action-dock:has([data-resume-block-actions], [data-resume-inline-toolbar]) [data-resume-action-hint] { display: none; }
+  .resume-action-dock:has([data-resume-block-actions]) [data-resume-action-hint] { display: none; }
+  .resume-format-dock { min-height: 48px; display: flex; align-items: center; }
+  .resume-format-dock:has([data-resume-inline-toolbar]) [data-resume-format-placeholder] { display: none; }
   .resume-docked-actions { width: 100%; }
   .resume-docked-actions button { height: 32px; font-size: 12px; }
   .resume-docked-actions button:has(svg:only-child) { width: 32px; }
   .resume-action-context { min-width: 0; flex: 1; overflow-wrap: anywhere; }
-  .resume-inline-toolbar-docked { display: flex; align-items: center; flex-wrap: wrap; width: 100%; gap: 4px; }
+  .resume-inline-toolbar-fixed { display: flex; align-items: center; flex-wrap: wrap; width: 100%; gap: 8px; }
   .resume-inline-toolbar-buttons { display: flex; flex-wrap: wrap; min-width: 0; }
+  .resume-format-dock button { height: 32px; width: 32px; }
   /* Preserve the tiny hover bridge for standalone template consumers. */
   [data-resume-block-actions]:not(.resume-docked-actions)::before {
     content: '';
@@ -85,6 +88,7 @@
     inset: -4px 0 auto;
   }
   @media (max-width: 1023px) {
+    .resume-format-hint { display: none; }
     .resume-action-dock { min-height: 80px; }
     .resume-action-context { flex-basis: 100%; }
   }
@@ -134,7 +138,7 @@
   [data-resume-edit-region], [data-resume-edit-field] {
     outline: none !important;
   }
-  [data-resume-block-actions], [data-resume-section-actions], [data-resume-action-dock] {
+  [data-resume-block-actions], [data-resume-section-actions], [data-resume-action-dock], [data-resume-format-dock] {
     display: none !important;
   }
 }

@@ -378,7 +378,9 @@ async function runLocalChecks(templateIds, registries) {
       await checkLocalPage(browser, {
         name: `Local mobile full (${id})`,
         url: labUrl(baseUrl, id, 'full', 'base', 'mobile'),
-        viewport: { width: 390, height: 844, isMobile: true, deviceScaleFactor: 2 },
+        // Match the PC capture scale; Windows headless Chrome can omit scaled
+        // paper layers at deviceScaleFactor 2 despite correct DOM geometry.
+        viewport: { width: 390, height: 844, isMobile: true, deviceScaleFactor: 1 },
         screenshot: path.join(artifactDir, 'local-mobile-full.png'),
         expectedText: '林知夏',
         checkHorizontalOverflow: true,
@@ -530,6 +532,20 @@ async function checkLocalPage(browser, options) {
     await page.waitForSelector('[data-template-lab="ready"] [data-template-root="true"] .resume-container', { timeout: 20_000, visible: true })
     await page.waitForFunction((expected) => document.body.innerText.includes(expected), { timeout: 10_000 }, options.expectedText)
     await waitForPdfAssets(page)
+    await page.bringToFront()
+    // A scaled child can be visible while its overflow-hidden stage still has
+    // zero height. Wait for ResizeObserver's wrapper dimensions as well.
+    await page.waitForFunction(() => {
+      const root = document.querySelector('[data-template-root="true"]')
+      const paper = root?.querySelector('.resume-container')
+      if (!root || !paper) return false
+      const bounds = paper.getBoundingClientRect()
+      if (bounds.width < 100 || bounds.height < 100) return false
+      if (document.querySelector('[data-template-lab]')?.getAttribute('data-viewport') !== 'mobile') return true
+      const stage = root.parentElement?.getBoundingClientRect()
+      const scaled = root.getBoundingClientRect()
+      return stage && stage.height > 100 && Math.abs(stage.height - scaled.height) <= 1
+    }, { timeout: 20_000 })
 
     const bodyTextLength = await page.evaluate(() => document.body.innerText.trim().length)
     if (bodyTextLength < 20) {
@@ -572,6 +588,7 @@ async function checkLocalPage(browser, options) {
       return
     }
 
+    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))))
     await page.screenshot({ path: options.screenshot, fullPage: true })
 
     if (pageErrors.length > 0) {

@@ -2,8 +2,9 @@
  * EditableBlockWrapper - A reusable wrapper that adds editing capabilities to any block component.
  * This separates editing logic from display logic, making it easy to create multiple templates.
  */
-import { useState, useEffect, useRef, useLayoutEffect, type ReactElement, type ReactNode, type CSSProperties, type MouseEvent } from 'react'
+import { useState, useEffect, useRef, useLayoutEffect, useMemo, type ReactElement, type ReactNode, type CSSProperties, type MouseEvent } from 'react'
 import InlineEditor, { type InlineFocusPoint } from '@/editor/inline-editor'
+import { readInlineSelection, type InlineTextSelection } from './inline-selection'
 import { useAppStore } from '@/state/store'
 import { CONTENT_BASE_STYLES, CONTENT_EDITING_STYLES_XS, LIST_STYLES } from '@/editor/editor-styles'
 import type { ResumeBlock } from '@/entities/blocks/resume-block'
@@ -42,6 +43,7 @@ export default function EditableBlockWrapper(props: EditableBlockWrapperProps): 
   const displayRef = useRef<HTMLDivElement>(null)
   const returnFocus = useRef(false)
   const [focusPoint, setFocusPoint] = useState<InlineFocusPoint | null>(null)
+  const [initialSelection, setInitialSelection] = useState<InlineTextSelection | null>(null)
   useLayoutEffect(() => {
     if (!isEditing && returnFocus.current) {
       returnFocus.current = false
@@ -49,8 +51,12 @@ export default function EditableBlockWrapper(props: EditableBlockWrapperProps): 
     }
   }, [isEditing])
   function startEditing(event?: MouseEvent<HTMLDivElement>): void {
+    setInitialSelection(readInlineSelection(displayRef.current))
     setFocusPoint(event?.detail ? { x: event.clientX, y: event.clientY } : null)
     setIsEditing(true)
+  }
+  function finishNativeSelection(event: MouseEvent<HTMLDivElement>): void {
+    if (event.button === 0 && readInlineSelection(displayRef.current)) startEditing(event)
   }
   useRetainEditingBlock(props.blockId, isEditing)
   const setResume = useAppStore((s) => s.setResume)
@@ -108,6 +114,8 @@ export default function EditableBlockWrapper(props: EditableBlockWrapperProps): 
   const content = findBlockContent()
   const hasContent = hasMeaningfulHtml(content)
   const editableContent = hasContent ? content : ''
+  // Keep native text nodes intact when focusing a block updates the action dock.
+  const displayHtml = useMemo(() => ({ __html: content }), [content])
 
   if (!hasContent && props.children && !isEditing) {
     return <>{props.children({ isEditing: false, onStartEdit: () => {} })}</>
@@ -132,6 +140,7 @@ export default function EditableBlockWrapper(props: EditableBlockWrapperProps): 
         <InlineEditor
           initialHtml={editableContent}
           initialFocusPoint={focusPoint}
+          initialSelection={initialSelection}
           onChange={handleContentChange}
           onClickOutside={(): void => setIsEditing(false)}
           onEscape={() => { returnFocus.current = true; setIsEditing(false) }}
@@ -153,7 +162,6 @@ export default function EditableBlockWrapper(props: EditableBlockWrapperProps): 
         data-resume-edit-field="rich-text"
         className={`${displayStyles} ${className || ''} hidden cursor-text rounded border border-dashed border-slate-300 px-2 py-1 text-slate-400 transition-colors group-hover/block:block group-focus-within/block:block group-hover/section:block group-hover/section-edit:block print:hidden`.trim()}
         onClick={startEditing}
-        onMouseDown={(event) => { if (event.button === 0) event.preventDefault() }}
         onKeyDown={(event) => {
           if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); event.stopPropagation(); startEditing() }
         }}
@@ -173,13 +181,11 @@ export default function EditableBlockWrapper(props: EditableBlockWrapperProps): 
       data-resume-edit-field="rich-text"
       className={`${displayStyles} ${className || ''}`.trim()}
       onClick={startEditing}
-      // Focus-driven dock updates can replace the HTML child between down/up,
-      // suppressing its click. The mounted editor takes focus instead.
-      onMouseDown={(event) => { if (event.button === 0) event.preventDefault() }}
+      onMouseUp={finishNativeSelection}
       onKeyDown={(event) => {
         if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); event.stopPropagation(); startEditing() }
       }}
-      dangerouslySetInnerHTML={{ __html: content }}
+      dangerouslySetInnerHTML={displayHtml}
     />
   )
 }

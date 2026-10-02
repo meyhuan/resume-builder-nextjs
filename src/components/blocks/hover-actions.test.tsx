@@ -97,10 +97,13 @@ describe('action dock ownership', () => {
     expect(screen.getByRole('button', { name: '上移' })).not.toBeNull();
   });
 
-  it('suppresses actions while rich text is being edited', () => {
-    const { first } = mount(true);
+  it('keeps independently docked actions while rich text uses the separate format bar', () => {
+    const { first, firstDelete } = mount(true);
     fireEvent.click(first);
-    expect(screen.queryByRole('button', { name: '删除' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: '删除' }));
+    expect(firstDelete).toHaveBeenCalledOnce();
+    expect(document.querySelector('[data-resume-format-dock]')).not.toBeNull();
+    expect(screen.getByRole('button', { name: '加粗' }).hasAttribute('disabled')).toBe(true);
   });
 
   it('has no editing dock in read-only mode', () => {
@@ -108,6 +111,7 @@ describe('action dock ownership', () => {
     const { first } = mount();
     fireEvent.click(first);
     expect(document.querySelector('[data-resume-action-dock]')).toBeNull();
+    expect(document.querySelector('[data-resume-format-dock]')).toBeNull();
   });
 });
 

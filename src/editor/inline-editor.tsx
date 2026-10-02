@@ -11,7 +11,7 @@ import { HistoryPlugin } from '@lexical/react/LexicalHistoryPlugin'
 import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin'
 import { ListPlugin } from '@lexical/react/LexicalListPlugin'
 import { ListNode, ListItemNode } from '@lexical/list'
-import { $getRoot, $isElementNode, $getNearestNodeFromDOMNode, $isTextNode } from 'lexical'
+import { $getRoot, $isElementNode, $getNearestNodeFromDOMNode, $isTextNode, $createRangeSelection, $setSelection } from 'lexical'
 import { $generateHtmlFromNodes, $generateNodesFromDOM } from '@lexical/html'
 import type { InitialConfigType } from '@lexical/react/LexicalComposer'
 import type { EditorState, LexicalEditor } from 'lexical'
@@ -19,8 +19,7 @@ import type { ReactElement, ReactNode } from 'react'
 import React from 'react'
 import InlineToolbar from './inline-toolbar'
 import { useResumeActionDock } from '@/components/blocks/resume-action-dock'
-import { Button } from '@/components/ui/button'
-import { Check } from 'lucide-react'
+import { findInlineTextPosition, type InlineTextSelection } from './inline-selection'
 
 export interface InlineFocusPoint { readonly x: number; readonly y: number }
 
@@ -32,17 +31,33 @@ interface InlineEditorProps {
   readonly onClickOutside?: () => void
   readonly onEscape?: () => void
   readonly initialFocusPoint?: InlineFocusPoint | null
+  readonly initialSelection?: InlineTextSelection | null
 }
 
 /** Resolve the original click against the mounted editor, including formatted text. */
-function InitialFocus({ point }: { readonly point?: InlineFocusPoint | null }): null {
+function InitialFocus({ point, selection }: { readonly point?: InlineFocusPoint | null; readonly selection?: InlineTextSelection | null }): null {
   const [editor] = useLexicalComposerContext()
   useEffect(() => {
     let active = true
     editor.focus(() => {
-      if (!active || !point) return
+      if (!active) return
       const root = editor.getRootElement()
       if (!root) return
+      if (selection) {
+        const anchor = findInlineTextPosition(root, selection.anchor)
+        const focus = findInlineTextPosition(root, selection.focus)
+        if (anchor && focus) editor.update(() => {
+          const anchorNode = $getNearestNodeFromDOMNode(anchor.node)
+          const focusNode = $getNearestNodeFromDOMNode(focus.node)
+          if (!$isTextNode(anchorNode) || !$isTextNode(focusNode)) return
+          const range = $createRangeSelection()
+          range.anchor.set(anchorNode.getKey(), anchor.offset, 'text')
+          range.focus.set(focusNode.getKey(), focus.offset, 'text')
+          $setSelection(range)
+        })
+        return
+      }
+      if (!point) return
       const doc = root.ownerDocument as Document & {
         caretPositionFromPoint?: (x: number, y: number) => { offsetNode: Node; offset: number } | null
         caretRangeFromPoint?: (x: number, y: number) => Range | null
@@ -61,7 +76,7 @@ function InitialFocus({ point }: { readonly point?: InlineFocusPoint | null }): 
       })
     }, { defaultSelection: 'rootStart' })
     return () => { active = false }
-  }, [editor, point])
+  }, [editor, point, selection])
   return null
 }
 
@@ -100,20 +115,22 @@ export default function InlineEditor(props: InlineEditorProps): ReactElement {
   const editorRef = useRef<HTMLDivElement>(null)
   const toolbarRef = useRef<HTMLDivElement>(null)
   const dock = useResumeActionDock()
-  const docked = Boolean(dock?.host && props.floatingToolbar)
+  const docked = Boolean(dock?.formatHost && props.floatingToolbar)
   
   useEffect(() => {
     if (!props.onClickOutside) return
 
-    function handleClickOutside(event: MouseEvent): void {
+    function handleInteractionOutside(event: MouseEvent | FocusEvent): void {
       if (editorRef.current && !editorRef.current.contains(event.target as Node) && !toolbarRef.current?.contains(event.target as Node)) {
         props.onClickOutside?.()
       }
     }
 
-    document.addEventListener('mousedown', handleClickOutside)
+    document.addEventListener('mousedown', handleInteractionOutside)
+    document.addEventListener('focusin', handleInteractionOutside)
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('mousedown', handleInteractionOutside)
+      document.removeEventListener('focusin', handleInteractionOutside)
     }
   }, [props])
 
@@ -162,7 +179,7 @@ export default function InlineEditor(props: InlineEditorProps): ReactElement {
   }
 
   const toolbar = <div ref={toolbarRef} data-resume-inline-toolbar="true" data-export-hide="true"
-    className={docked ? 'resume-inline-toolbar-docked' : 'mt-2 print:hidden'}
+    className={docked ? 'resume-inline-toolbar-fixed' : 'mt-2 print:hidden'}
     onKeyDown={(event) => {
       if (event.key === 'Escape') {
         event.preventDefault()
@@ -170,22 +187,22 @@ export default function InlineEditor(props: InlineEditorProps): ReactElement {
         editorRef.current?.querySelector<HTMLElement>('[contenteditable="true"]')?.focus({ preventScroll: true })
       }
     }}>
-    {docked ? <span className="resume-action-context mr-auto pr-3 text-xs font-medium text-slate-600">
-      {dock?.activeLabel || '正文'} · 编辑中
+    {docked ? <span className="shrink-0 text-xs font-medium text-slate-600">
+      文字格式
     </span> : null}
     <InlineToolbar docked={docked} className="resume-inline-toolbar-buttons" />
-    {props.onEscape || props.onClickOutside ? <Button type="button" variant="ghost" size="sm"
-      className="h-8 gap-1 px-2 text-xs" aria-label="完成正文编辑"
-      onMouseDown={(event) => event.preventDefault()}
-      onClick={() => (props.onEscape ?? props.onClickOutside)?.()}>
-      <Check size={14} />完成
-    </Button> : null}
+    {docked ? <span className="resume-format-hint ml-auto text-xs text-slate-500">选中文字设置格式</span> : null}
   </div>
 
   return (
     <LexicalComposer initialConfig={initialConfig}>
       <div ref={editorRef} className={props.className ?? ''}
         onKeyDown={(event) => {
+          if (event.altKey && event.key === 'F10' && docked) {
+            event.preventDefault()
+            event.stopPropagation()
+            toolbarRef.current?.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus()
+          }
           if (props.onEscape && event.key === 'Escape' && !event.nativeEvent.isComposing && event.keyCode !== 229) {
             event.preventDefault()
             event.stopPropagation()
@@ -202,8 +219,8 @@ export default function InlineEditor(props: InlineEditorProps): ReactElement {
         <HistoryPlugin />
         <ListPlugin />
         <OnChangePlugin onChange={handleChange} />
-        <InitialFocus point={props.initialFocusPoint} />
-        {dock?.host && props.floatingToolbar ? createPortal(toolbar, dock.host) : toolbar}
+        <InitialFocus point={props.initialFocusPoint} selection={props.initialSelection} />
+        {dock?.formatHost && props.floatingToolbar ? createPortal(toolbar, dock.formatHost) : toolbar}
       </div>
     </LexicalComposer>
   )

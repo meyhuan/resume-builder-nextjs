@@ -127,7 +127,7 @@ function EditableBlockHoverWrapper(props: BlockWrapperProps): ReactElement {
         </button>
       ) : null}
 
-      {dock ? selected && !disableHover && dock.host ? createPortal(actions, dock.host) : null : isHovered ? actions : null}
+      {dock ? selected && dock.host ? createPortal(actions, dock.host) : null : isHovered ? actions : null}
     </div>
   );
 }
