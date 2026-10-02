@@ -5,7 +5,7 @@
 | 范围 | 反馈 | 标记 |
 | --- | --- | --- |
 | 完整模块 | 中性弱虚线，不叠加背景；显示模块操作 | `data-resume-edit-region="section"` |
-| 一段经历或内容条目 | 浅中性 hover 背景；选中后保留浅紫背景和左侧细标记，关联画布下方操作栏 | `data-resume-edit-region="block"`，hover 状态为 `active`，选中为 `data-resume-edit-selected` |
+| 一段经历或内容条目 | 浅中性 hover 背景；选中后保留浅紫背景，关联画布下方操作栏，不叠加侧边竖线 | `data-resume-edit-region="block"`，hover 状态为 `active`，选中为 `data-resume-edit-selected` |
 | 单个字段 | hover 使用浅紫背景；日期打开、键盘聚焦或实际编辑时才使用强边界 | `data-resume-edit-field`，富文本值为 `rich-text` |
 
 模块边界使用 `outline`，不会挤压内容或改变 A4 排版。交互圆角独立为 4px，不使用产品卡片的 12px 默认圆角。字段背景使用不透明的浅色，并同时设置文字颜色，保证深色侧栏中的内容可读。Hover 装饰仅用于支持 hover 的设备；键盘 focus 保留独立的强提示。只读渲染不生成这些标记。

@@ -108,9 +108,9 @@ try {
   await page.keyboard.press('Escape')
   await page.mouse.move(5, 5)
   await page.waitForFunction(() => document.querySelector('.resume-action-context')?.textContent === '项目经历 · 校园社交应用MVP')
-  const selected = await page.$eval('[data-resume-edit-selected="true"]', el => ({ background: getComputedStyle(el).backgroundColor, marker: getComputedStyle(el, '::before').width }))
+  const selected = await page.$eval('[data-resume-edit-selected="true"]', el => ({ background: getComputedStyle(el).backgroundColor, markerContent: getComputedStyle(el, '::before').content }))
   assert.notEqual(selected.background, 'rgba(0, 0, 0, 0)')
-  assert.equal(selected.marker, '2px')
+  assert.equal(selected.markerContent, 'none')
   await page.screenshot({ path: path.join(out, 'selected-project.png') })
   for (const width of [1024, 1400]) {
     await page.setViewport({ width, height: 1000 })
