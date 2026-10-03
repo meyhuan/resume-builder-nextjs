@@ -4,6 +4,7 @@ import { useEffect, useId, useRef, useState } from 'react'
 import * as Popover from '@radix-ui/react-popover'
 import { Input } from './input'
 import { cn } from '@/lib/utils'
+import { POPOVER_GAP, useStablePopoverPlacement } from '@/hooks/use-stable-popover-placement'
 
 const EMAIL_DOMAINS = ['qq.com', '163.com', '126.com', 'outlook.com', 'gmail.com', 'foxmail.com', 'yeah.net', 'hotmail.com']
 
@@ -27,6 +28,7 @@ export function EmailInput({ id, value, onValueChange }: {
     ? EMAIL_DOMAINS.filter(option => option.startsWith(domain)).map(option => `${local}@${option}`)
     : []
   const visible = open && !composing && suggestions.length > 0
+  const placement = useStablePopoverPlacement(input, visible, 248)
   const activeIndex = Math.min(active, suggestions.length - 1)
 
   useEffect(() => {
@@ -72,14 +74,15 @@ export function EmailInput({ id, value, onValueChange }: {
         }} />
     </Popover.Anchor>
     <Popover.Portal>
-      <Popover.Content align="start" sideOffset={4} collisionPadding={12}
-        className="z-50 w-[var(--radix-popover-trigger-width)] max-h-[var(--radix-popover-content-available-height)] overflow-y-auto overscroll-contain rounded-md border bg-popover p-1 text-popover-foreground shadow-md"
+      <Popover.Content align="start" side={placement.side} sideOffset={POPOVER_GAP} avoidCollisions={false}
+        style={{ maxHeight: placement.maxHeight }}
+        className="z-50 flex w-[var(--radix-popover-trigger-width)] flex-col overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md"
         onOpenAutoFocus={event => event.preventDefault()}
         onCloseAutoFocus={event => event.preventDefault()}
         onInteractOutside={event => { if (event.detail.originalEvent.target === input.current) event.preventDefault() }}
         onWheel={event => event.stopPropagation()}
         onTouchMove={event => event.stopPropagation()}>
-        <ul ref={list} id={listId} role="listbox" aria-label="常用邮箱后缀" className="max-h-60 overflow-y-auto overscroll-contain">
+        <ul ref={list} id={listId} role="listbox" aria-label="常用邮箱后缀" className="min-h-0 max-h-60 overflow-y-auto overscroll-contain">
           {suggestions.map((address, index) => <li id={`${listId}-${index}`} key={address} role="option" aria-selected={index === activeIndex}
             className={cn('min-h-11 cursor-pointer rounded-sm px-3 py-3 text-sm leading-relaxed [overflow-wrap:anywhere] hover:bg-muted active:bg-muted', index === activeIndex && 'bg-muted')}
             onPointerMove={() => setActive(index)} onPointerDown={event => event.preventDefault()} onClick={() => choose(address)}>

@@ -8,6 +8,9 @@ import { Button } from './button'
 import { Input } from './input'
 import { cn } from '@/lib/utils'
 import * as Popover from '@radix-ui/react-popover'
+import { POPOVER_GAP, useStablePopoverPlacement } from '@/hooks/use-stable-popover-placement'
+
+const PANEL_HEIGHT = 300
 
 interface SearchChoiceProps {
   readonly id: string
@@ -28,6 +31,7 @@ export function SearchChoice({ id, label, value, options, onValueChange, placeho
   const input = useRef<HTMLInputElement>(null)
   const list = useRef<HTMLUListElement>(null)
   const listId = useId()
+  const placement = useStablePopoverPlacement(trigger, open, PANEL_HEIGHT)
   const search = query.trim()
   const available = [...new Set(value ? [value, ...options] : options)]
   const matches = available.filter(option => option.toLocaleLowerCase().includes(search.toLocaleLowerCase()))
@@ -66,13 +70,14 @@ export function SearchChoice({ id, label, value, options, onValueChange, placeho
     </Button>
     </Popover.Trigger>
     <Popover.Portal>
-    <Popover.Content align="start" sideOffset={4} collisionPadding={12}
-      className="z-50 w-[var(--radix-popover-trigger-width)] max-h-[var(--radix-popover-content-available-height)] overflow-y-auto overscroll-contain rounded-md border bg-popover p-1 text-popover-foreground shadow-md"
+    <Popover.Content align="start" side={placement.side} sideOffset={POPOVER_GAP} avoidCollisions={false}
+      style={{ height: Math.min(PANEL_HEIGHT, placement.maxHeight) }}
+      className="z-50 flex w-[var(--radix-popover-trigger-width)] flex-col overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md"
       // Body-portaled options are outside Dialog's scroll-lock boundary; allow their native scrolling.
       onWheel={event => event.stopPropagation()}
       onTouchMove={event => event.stopPropagation()}
       onOpenAutoFocus={event => { event.preventDefault(); input.current?.focus() }}>
-      <div className="relative">
+      <div className="relative shrink-0">
         <Search className="absolute left-3 top-3.5 size-4 text-muted-foreground" aria-hidden="true" />
         <Input ref={input} role="combobox" aria-label={`搜索${label}`} aria-autocomplete="list"
           aria-expanded="true" aria-controls={listId} aria-activedescendant={`${listId}-${activeIndex}`}
@@ -90,14 +95,14 @@ export function SearchChoice({ id, label, value, options, onValueChange, placeho
             }
           }} />
       </div>
-      <ul ref={list} id={listId} role="listbox" aria-label={`${label}选项`} className="mt-1 max-h-52 overflow-y-auto overscroll-contain">
+      <ul ref={list} id={listId} role="listbox" aria-label={`${label}选项`} className="mt-1 min-h-0 flex-1 overflow-y-auto overscroll-contain">
         {items.map((item, index) => <li id={`${listId}-${index}`} key={item.value} role="option" aria-selected={value === item.value}
           className={cn('flex min-h-11 cursor-pointer items-center justify-between gap-2 rounded-sm px-3 py-2 text-sm break-words', index === activeIndex && 'bg-muted')}
           onPointerMove={() => setActive(index)} onPointerDown={event => event.preventDefault()} onClick={() => choose(item.value)}>
           <span>{item.label}</span>{value === item.value && <Check className="size-4 shrink-0 text-primary" aria-hidden="true" />}
         </li>)}
       </ul>
-      <p className="px-3 py-1 text-xs text-muted-foreground">常用选项；其他内容可搜索后直接使用。</p>
+      <p className="shrink-0 px-3 py-1 text-xs text-muted-foreground">常用选项；其他内容可搜索后直接使用。</p>
     </Popover.Content>
     </Popover.Portal>
   </Popover.Root>
