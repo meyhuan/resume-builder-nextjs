@@ -24,11 +24,25 @@ export function useBlockActionPosition(ref: RefObject<HTMLDivElement | null>): C
       const topEdge = Math.max(0, bounds.top) + 4;
       const bottomEdge = Math.min(window.innerHeight, bounds.bottom) - 4;
       const sectionTop = section?.getBoundingClientRect().top;
+      const sectionDrag = [...(section?.querySelectorAll<HTMLButtonElement>('button[title="拖动"]') ?? [])]
+        .find(button => !button.closest('[data-resume-edit-region="block"]'));
+      const sectionToolsTop = sectionDrag?.parentElement?.getBoundingClientRect().top;
       // On the first row, keep an upward-facing toolbar clear of module controls.
       const aboveAnchor = sectionTop !== undefined && sectionTop >= topEdge
-        && section?.querySelector('[data-resume-edit-region="block"]') === owner ? sectionTop : row.top;
+        && section?.querySelector('[data-resume-edit-region="block"]') === owner
+        ? Math.min(sectionTop, sectionToolsTop ?? sectionTop) : row.top;
       const fitsBelow = row.bottom + 4 * scale + height <= bottomEdge;
-      const fitsAbove = aboveAnchor - 4 * scale - height >= topEdge;
+      const aboveBottom = aboveAnchor - 4 * scale;
+      const aboveTop = aboveBottom - height;
+      // Flipping near the paper's bottom must not trap the pointer over a
+      // different row's text. Keep a constrained toolbar in its own row instead.
+      const coversOtherRow = [...canvas.querySelectorAll<HTMLElement>('[data-resume-edit-region="block"]')]
+        .some(block => {
+          if (block === owner) return false;
+          const other = block.getBoundingClientRect();
+          return other.left < right && other.right > left && other.top < aboveBottom && other.bottom > aboveTop;
+        });
+      const fitsAbove = aboveTop >= topEdge && !coversOtherRow;
       const top = fitsBelow ? '100%' : fitsAbove ? 'auto'
         : (Math.max(topEdge, bottomEdge - height) - row.top) / scale;
       const bottom = !fitsBelow && fitsAbove ? '100%' : 'auto';

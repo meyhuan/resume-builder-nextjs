@@ -20,7 +20,7 @@
 - 重排后保留当前对象；名称修改后更新操作栏，序号回退随重排更新；同步更新替换按钮前，使用捕获阶段判断点击归属。
 - React 移动条目时可能临时断开引用；提交完成后确认条目确实卸载，才清除当前对象。
 - 条目上 Alt+F10 将焦点移入自己的工具，Escape 返回该条目。富文本编辑时收起条目操作，显示正文格式和该条目的 AI 润色入口。
-- 窄画布允许工具换行，按纸张缩放计算横向边界。画布底部不足时工具向上展示；首条经历向上展示时避开模块标题操作。没有上下空间的长条目在可见边界内展示工具。
+- 窄画布允许工具换行，按纸张缩放计算横向边界。画布底部不足时工具向上展示，并避开模块标题操作和其他条目的正文。上下都没有空间时，工具限制在当前条目的可见边界内。
 
 `useHoverActions` 是共享模块、条目浮动工具的唯一 hover 状态所有者。父区域与工具栏不要各自建立隐藏定时器。
 
@@ -58,7 +58,7 @@ node scripts/verify-editor-action-dock.mjs http://127.0.0.1:3011
 node scripts/verify-editor-click-interactions.mjs http://127.0.0.1:3011
 node scripts/verify-editor-text-selection.mjs http://127.0.0.1:3011
 node scripts/verify-editor-context-tools.mjs http://127.0.0.1:3011
-corepack pnpm template:qa --all --hover-only --jobs 4 --base-url http://127.0.0.1:3011 --report
+corepack pnpm template:qa --all --hover-only --base-url http://127.0.0.1:3011 --report
 corepack pnpm template:qa --all --local --jobs 3 --base-url http://127.0.0.1:3011 --scenario-loader-url "http://127.0.0.1:3011/dev/scenario-loader?tpl=qingning" --report
 ```
 

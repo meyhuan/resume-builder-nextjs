@@ -57,7 +57,7 @@ async function main() {
     const puppeteer = await import('puppeteer')
     const browser = await launchBrowser(puppeteer)
     try {
-      const verifyHoverTemplate = async (id) => {
+      for (const id of templateIds) {
         const artifactDir = path.join(artifactRoot, id)
         fs.mkdirSync(artifactDir, { recursive: true })
         const page = await browser.newPage()
@@ -74,11 +74,6 @@ async function main() {
           await page.close()
         }
       }
-      const pending = [...templateIds]
-      const jobs = Math.max(1, Math.min(4, Math.floor(Number(args.jobs) || 1)))
-      await Promise.all(Array.from({ length: Math.min(jobs, pending.length) }, async () => {
-        while (pending.length > 0) await verifyHoverTemplate(pending.shift())
-      }))
     } finally {
       await browser.close()
     }
@@ -1487,9 +1482,10 @@ async function checkHoverActionContinuity(page, artifactDir) {
     const canvas = element.closest('[data-editor-canvas]').getBoundingClientRect()
     return { selected: b.toJSON(), owned: element.contains(actions), belowRow: a.top >= b.bottom - 1,
       aboveRow: a.bottom <= b.top + 1, fitsCanvas: a.top >= canvas.top && a.bottom <= canvas.bottom,
+      withinRow: a.top >= b.top && a.bottom <= b.bottom,
       clippedBelow: b.bottom + a.height + 4 > canvas.bottom - 4 }
   })
-  const validPlacement = geometry.belowRow || (geometry.clippedBelow && geometry.aboveRow)
+  const validPlacement = geometry.belowRow || (geometry.clippedBelow && (geometry.aboveRow || geometry.withinRow))
   if (!geometry.owned || !geometry.fitsCanvas || !validPlacement || ['x', 'y', 'width', 'height'].some((key) => Math.abs(geometry.selected[key] - unselected[key]) > 0.5)) {
     throw new Error(`Contextual actions have the wrong owner or shift resume geometry: ${JSON.stringify(geometry)}`)
   }
@@ -1556,7 +1552,12 @@ async function checkHoverActionContinuity(page, artifactDir) {
   if (metrics.fieldOutline !== 'none' || metrics.blockOutline !== 'none' || metrics.sectionOutline !== 'dashed'
     || metrics.fieldRadius !== '4px' || metrics.fieldFill === 'rgba(0, 0, 0, 0)' || metrics.fieldFill === 'transparent'
     || metrics.blockFill === 'rgba(0, 0, 0, 0)') {
-    throw new Error(`Missing quiet context / distinct hover target: ${JSON.stringify(metrics)}`)
+    const hit = await field.evaluate(element => {
+      const rect = element.getBoundingClientRect()
+      return { rect: rect.toJSON(), covering: document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2)?.outerHTML.slice(0, 600) }
+    })
+    await page.screenshot({ path: path.join(artifactDir, 'hover-field-failure.png') })
+    throw new Error(`Missing quiet context / distinct hover target: ${JSON.stringify({ ...metrics, ...hit })}`)
   }
   const richField = await block.$('[data-resume-edit-field="rich-text"]')
   if (richField) {
@@ -2041,9 +2042,10 @@ async function checkSectionActionControls(page) {
     await sleep(250)
     const reachable = await action.evaluate((button) => {
       const rect = button.getBoundingClientRect()
-      return button.isConnected && button.contains(document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2))
+      const target = document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2)
+      return { reachable: button.isConnected && button.contains(target), button: rect.toJSON(), coveringElement: target?.outerHTML.slice(0, 500) ?? null }
     })
-    if (!reachable) throw new Error('Section action disappeared or became covered when the pointer moved onto it.')
+    if (!reachable.reachable) throw new Error(`Section action disappeared or became covered when the pointer moved onto it: ${JSON.stringify(reachable)}`)
   }
 
   const metrics = await menu.evaluate((menu) => {
@@ -2739,7 +2741,7 @@ Options:
   --editor-url <url>          Explicit authenticated editor URL for testing the same loader in the real editor.
   --skip-interactions         Skip local interaction QA when using --local.
   --hover-only                Run real pointer/focus/print hover regression checks (supports --all).
-  --jobs <1-4>                Number of independent templates to verify concurrently with --local or --hover-only.
+  --jobs <1-4>                Number of independent templates to verify concurrently with --local.
   --report                    Write a Markdown QA report under test-artifacts/reports/.
   --reference-image <path>    Reference screenshot to embed next to implementation screenshots in the QA report.
   --print-token-secret <str>  Secret for generated /print token.
