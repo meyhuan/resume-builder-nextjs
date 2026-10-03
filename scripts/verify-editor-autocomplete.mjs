@@ -46,12 +46,23 @@ try {
     passed(`city accepts ${query}, keeps the original input focused, and selects only on explicit confirmation`)
   }
   await type('#city', 'sz')
-  assert.deepEqual(await page.$$eval('[role=option]', els => els.map(el => el.textContent.trim())), ['深圳', '苏州'])
+  assert.deepEqual(await page.$$eval('[role=option]', els => els.slice(0, 2).map(el => el.getAttribute('aria-label'))), ['深圳 广东', '苏州 江苏'])
+  assert.ok(await page.$('[role=option][aria-label="随州 湖北"]'))
   await page.screenshot({ path: path.join(out, 'city-initials.png') })
-  await page.click('[role=option][aria-label="苏州"]')
+  await page.click('[role=option][aria-label="苏州 江苏"]')
   assert.equal(await page.$eval('#city', el => el.value), '苏州')
   assert.equal(await page.$eval('#city', el => document.activeElement === el), true)
   passed('ambiguous city initials remain separate choices; mouse selection preserves focus')
+  for (const [query, label, city] of [['kunshan', '昆山 江苏 · 苏州', '昆山'], ['义乌市', '义乌 浙江 · 金华', '义乌'], ['chongqing', '重庆', '重庆']]) {
+    await type('#city', query)
+    await page.click(`[role=option][aria-label="${label}"]`)
+    assert.equal(await page.$eval('#city', el => el.value), city)
+  }
+  await type('#city', '海外远程')
+  await page.click('[role=option][aria-label="使用“海外远程” 自定义填写"]')
+  assert.equal(await page.$eval('#city', el => el.value), '海外远程')
+  assert.equal(await page.$eval('#city', el => document.activeElement === el), true)
+  passed('county-level cities and polyphonic pinyin are selectable; explicit custom entry preserves focus')
   await textClick('button', '取消')
   await page.click('[data-template-job-intention-key="city"]')
   assert.equal(await page.$eval('#city', el => el.value), originalCity)
@@ -97,6 +108,12 @@ try {
   await page.keyboard.press('Escape')
   assert.equal(await page.$eval(`${fieldSelector('school')}[role=button]`, el => el.textContent), '海外自定义大学')
   passed('custom school names remain writable; ambiguous school aliases show cities; Escape dismisses suggestions then cancels editing')
+
+  await inline('major', '具身智能')
+  await page.click('[role=option][aria-label="具身智能 本科 · 交叉学科"]')
+  await page.keyboard.press('Enter')
+  assert.equal(await page.$eval(`${fieldSelector('major')}[role=button]`, el => el.textContent), '具身智能')
+  passed('a major beyond the previous common list can be selected and saved from the full official catalogue')
 
   await inline('school', '')
   const list = await page.$('[role=listbox]'), rect = await list.boundingBox()

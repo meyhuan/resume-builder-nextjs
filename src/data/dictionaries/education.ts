@@ -1,5 +1,6 @@
 import type { AutocompleteOption } from '@/components/ui/autocomplete-input'
 import schools from './schools.json'
+import majors from './major-suggestions.json'
 
 // Education Ministry's 2026 mainland ordinary higher-education institutions.
 // Source/provenance: education-sources.md. Older and overseas names remain free text.
@@ -20,7 +21,7 @@ export const SCHOOL_OPTIONS: readonly AutocompleteOption[] = schools.map(([name,
   value: name, label: name, description: city, aliases: [...(SCHOOL_ALIASES[name] ?? []), city],
 }))
 
-// Common undergraduate names from the 2026 catalogue; not a restriction on degree/major.
+// Common choices first, followed by the full 2026 undergraduate catalogue.
 const COMMON_MAJORS = [
   '计算机科学与技术', '软件工程', '信息管理与信息系统', '电子信息工程', '人工智能',
   '数据科学与大数据技术', '信息安全', '网络工程', '物联网工程', '数字媒体技术',
@@ -36,4 +37,7 @@ const COMMON_MAJORS = [
   '数学与应用数学', '物理学', '化学', '生物科学', '临床医学', '护理学', '药学',
 ] as const
 
-export const MAJOR_OPTIONS: readonly AutocompleteOption[] = COMMON_MAJORS.map(name => ({ value: name, label: name }))
+const commonOrder = new Map<string, number>(COMMON_MAJORS.map((name, index) => [name, index]))
+export const MAJOR_OPTIONS: readonly AutocompleteOption[] = majors
+  .map(([, name, category]) => ({ value: name, label: name, description: `本科 · ${category}`, aliases: [category] }))
+  .sort((a, b) => (commonOrder.get(a.value) ?? COMMON_MAJORS.length) - (commonOrder.get(b.value) ?? COMMON_MAJORS.length))

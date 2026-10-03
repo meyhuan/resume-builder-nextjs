@@ -156,7 +156,11 @@ it('lets a module title contain spaces and commits Enter without reopening its e
   expect(screen.queryByRole('textbox')).toBeNull();
 });
 
-beforeEach(() => { store.readOnly = false; vi.useFakeTimers(); });
+beforeEach(() => {
+  store.readOnly = false;
+  vi.useFakeTimers();
+  vi.stubGlobal('ResizeObserver', class { observe() {} disconnect() {} });
+});
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
@@ -306,10 +310,13 @@ it('removes actions and clears pending work while inline editing disables them',
   expect(view.container.querySelector('[data-resume-edit-state="editing"]')).not.toBeNull();
 });
 
-it('opens a structured field from keyboard focus and returns after Escape', () => {
+it('opens a structured field from keyboard focus and dismisses suggestions before returning after Escape', () => {
   render(<EditableFieldWrapper blockId="block" fieldName="school" value="江城大学" onUpdate={() => {}} />);
   const field = screen.getByRole('button', { name: '江城大学' });
   fireEvent.keyDown(field, { key: 'Enter' });
+  expect(screen.getByRole('combobox', { name: '学校名称' })).toBe(document.activeElement);
+  fireEvent.keyDown(document.activeElement!, { key: 'Escape' });
+  expect(screen.queryByRole('listbox')).toBeNull();
   expect(screen.getByRole('combobox', { name: '学校名称' })).toBe(document.activeElement);
   fireEvent.keyDown(document.activeElement!, { key: 'Escape' });
   expect(screen.getByRole('button', { name: '江城大学' })).toBe(document.activeElement);

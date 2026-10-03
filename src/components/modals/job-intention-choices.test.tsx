@@ -21,6 +21,25 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.unstubAllGlobals() })
 
 describe('choice-based job intention', () => {
+  it('offers detailed industries, ranks the exact name first and preserves imported/custom choices', async () => {
+    const save = vi.fn()
+    render(<JobIntentionModal jobIntention={{ industry: '独立研究工作室' }} initialField="industry" onSave={save} onClose={() => {}} />)
+    const trigger = screen.getByRole('button', { name: '行业' })
+    expect(trigger.textContent).toContain('独立研究工作室')
+    fireEvent.click(trigger)
+    const search = await screen.findByRole('combobox', { name: '搜索行业' })
+    expect(screen.getByRole('option', { name: '人工智能' })).toBeTruthy()
+    fireEvent.change(search, { target: { value: '互联网' } })
+    expect(screen.getAllByRole('option')[0].textContent).toBe('互联网')
+    fireEvent.keyDown(search, { key: 'Enter' })
+    expect(trigger.textContent).toContain('互联网')
+    fireEvent.click(trigger)
+    fireEvent.change(await screen.findByRole('combobox', { name: '搜索行业' }), { target: { value: '自定义行业' } })
+    fireEvent.click(screen.getByRole('option', { name: '使用“自定义行业”' }))
+    fireEvent.click(screen.getByRole('button', { name: '确定' }))
+    expect(save).toHaveBeenCalledWith(expect.objectContaining({ industry: '自定义行业' }))
+  })
+
   async function selectSalary(value: string) {
     fireEvent.keyDown(screen.getByLabelText('期望薪资'), { key: 'Enter' })
     fireEvent.click(await screen.findByRole('option', { name: value }))

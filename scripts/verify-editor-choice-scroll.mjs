@@ -94,7 +94,8 @@ try {
     const list = document.querySelector('[role=listbox]'), rect = list.getBoundingClientRect()
     return [...list.children].find(el => { const r = el.getBoundingClientRect(); return r.top > rect.top + 4 && r.bottom < rect.bottom - 4 })
   })
-  const value = await option.evaluate(el => el.textContent.trim())
+  // Location descriptions help identify a city; only its name belongs in the saved field.
+  const value = await option.evaluate(el => el.querySelector('span > span').textContent.trim())
   await option.click()
   assert.equal(await page.$('[role=listbox]'), null)
   assert.equal(await page.$eval('#city', el => el.value), value)

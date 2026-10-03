@@ -1,6 +1,7 @@
 import type { AutocompleteOption } from '@/components/ui/autocomplete-input'
+import cities from './city-suggestions.json'
 
-/** Common cities; free input remains available for other cities and overseas locations. */
+/** Display common choices first. Coverage and snapshot limitations: choice-sources.md. */
 export const POPULAR_CITIES: readonly string[] = [
   '北京', '上海', '广州', '深圳', '杭州', '成都', '南京', '武汉', '西安', '苏州',
   '天津', '重庆', '长沙', '郑州', '青岛', '大连', '沈阳', '哈尔滨', '济南', '宁波',
@@ -10,22 +11,11 @@ export const POPULAR_CITIES: readonly string[] = [
   '泉州', '漳州', '桂林', '海口', '三亚', '呼和浩特', '银川', '西宁', '乌鲁木齐', '拉萨',
 ]
 
-const CITY_PINYIN = [
-  ['beijing', 'bj'], ['shanghai', 'sh'], ['guangzhou', 'gz'], ['shenzhen', 'sz'], ['hangzhou', 'hz'],
-  ['chengdu', 'cd'], ['nanjing', 'nj'], ['wuhan', 'wh'], ['xian', 'xa'], ['suzhou', 'sz'],
-  ['tianjin', 'tj'], ['chongqing', 'cq'], ['changsha', 'cs'], ['zhengzhou', 'zz'], ['qingdao', 'qd'],
-  ['dalian', 'dl'], ['shenyang', 'sy'], ['haerbin', 'heb'], ['jinan', 'jn'], ['ningbo', 'nb'],
-  ['xiamen', 'xm'], ['fuzhou', 'fz'], ['hefei', 'hf'], ['nanchang', 'nc'], ['kunming', 'km'],
-  ['guiyang', 'gy'], ['nanning', 'nn'], ['lanzhou', 'lz'], ['taiyuan', 'ty'], ['shijiazhuang', 'sjz'],
-  ['dongguan', 'dg'], ['foshan', 'fs'], ['zhongshan', 'zs'], ['zhuhai', 'zh'], ['huizhou', 'hz'],
-  ['wuxi', 'wx'], ['changzhou', 'cz'], ['wenzhou', 'wz'], ['jinhua', 'jh'], ['shaoxing', 'sx'],
-  ['yantai', 'yt'], ['weifang', 'wf'], ['tangshan', 'ts'], ['baoding', 'bd'], ['langfang', 'lf'],
-  ['xuzhou', 'xz'], ['yancheng', 'yc'], ['nantong', 'nt'], ['yangzhou', 'yz'], ['zhenjiang', 'zj'],
-  ['quanzhou', 'qz'], ['zhangzhou', 'zz'], ['guilin', 'gl'], ['haikou', 'hk'], ['sanya', 'sy'],
-  ['huhehaote', 'hhht'], ['yinchuan', 'yc'], ['xining', 'xn'], ['wulumuqi', 'wlmq'], ['lasa', 'ls'],
-] as const
-
-export const CITY_OPTIONS: readonly AutocompleteOption[] = POPULAR_CITIES.map((city, index) => ({
-  value: city, label: city, aliases: CITY_PINYIN[index],
-}))
+const popularOrder = new Map(POPULAR_CITIES.map((name, index) => [name, index]))
+export const CITY_OPTIONS: readonly AutocompleteOption[] = cities
+  .map(([name, context, pinyin, initials, fullName]) => ({
+    value: name, label: name, description: context || undefined,
+    aliases: [pinyin, initials, fullName, context],
+  }))
+  .sort((a, b) => (popularOrder.get(a.value) ?? POPULAR_CITIES.length) - (popularOrder.get(b.value) ?? POPULAR_CITIES.length))
 export const INTENTION_CITY_OPTIONS: readonly AutocompleteOption[] = [{ value: '不限', label: '不限' }, ...CITY_OPTIONS]

@@ -9,6 +9,7 @@ import { Input } from './input'
 import { cn } from '@/lib/utils'
 import * as Popover from '@radix-ui/react-popover'
 import { POPOVER_GAP, useStablePopoverPlacement } from '@/hooks/use-stable-popover-placement'
+import { rankSuggestions } from '@/lib/suggestion-search'
 
 const PANEL_HEIGHT = 300
 
@@ -34,9 +35,9 @@ export function SearchChoice({ id, label, value, options, onValueChange, placeho
   const placement = useStablePopoverPlacement(trigger, open, PANEL_HEIGHT)
   const search = query.trim()
   const available = [...new Set(value ? [value, ...options] : options)]
-  const matches = available.filter(option => option.toLocaleLowerCase().includes(search.toLocaleLowerCase()))
+  const matches = rankSuggestions(available.map(option => ({ value: option, label: option })), search)
   const items = [
-    ...matches.map(option => ({ value: option, label: option })),
+    ...matches,
     ...(search && !available.includes(search) ? [{ value: search, label: `使用“${search}”` }] : []),
     { value: '', label: '暂不填写' },
   ]
@@ -84,7 +85,7 @@ export function SearchChoice({ id, label, value, options, onValueChange, placeho
           value={query} placeholder={`搜索${label}，也可自定义`} className="h-11 pl-9"
           onChange={event => { setQuery(event.target.value); setActive(0) }}
           onKeyDown={event => {
-            if (event.nativeEvent.isComposing || event.keyCode === 229) return
+            if (event.nativeEvent.isComposing || event.keyCode === 229) { event.stopPropagation(); return }
             if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
               event.preventDefault()
               setActive(current => (Math.min(current, items.length - 1) + (event.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length)
