@@ -184,7 +184,7 @@ export default function QingningTemplate({
               <span
                 style={{
                   display: "flex",
-                  alignItems: "baseline",
+                  alignItems: "center",
                   gap: 6,
                   minWidth: 0,
                 }}
@@ -205,7 +205,7 @@ export default function QingningTemplate({
                   header={header}
                   className="min-w-0 max-w-full"
                   style={{
-                    alignItems: "baseline",
+                    alignItems: "center",
                     gap: 6,
                     overflowWrap: "anywhere",
                   }}

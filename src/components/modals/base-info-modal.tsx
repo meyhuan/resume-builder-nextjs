@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { SearchChoice } from '@/components/ui/search-choice';
 import { POPULAR_CITIES } from '@/data/dictionaries/cities';
 import { Input } from '@/components/ui/input';
+import { EmailInput } from '@/components/ui/email-input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ChevronDown, Plus, Trash2 } from 'lucide-react';
@@ -154,11 +155,10 @@ export default function BaseInfoModal(props: BaseInfoModalProps): ReactElement {
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="email">邮箱</Label>
-              <Input
+              <EmailInput
                 id="email"
-                type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onValueChange={setEmail}
               />
             </div>
             <div className="space-y-2">

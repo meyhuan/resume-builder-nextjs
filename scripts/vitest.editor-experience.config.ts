@@ -7,6 +7,7 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     include: [
+      'src/components/modals/base-info-email.test.tsx',
       'src/components/modals/job-intention-choices.test.tsx',
       'src/components/templates/one-page-readability.test.tsx',
       'src/components/templates/pagination-feedback.test.tsx',
