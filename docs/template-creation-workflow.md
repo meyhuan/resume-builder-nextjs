@@ -8,6 +8,37 @@ Create a new visual template that matches the reference while preserving all exi
 
 Do not copy the reference as static HTML. Implement the template using the project's editable/headless primitives and existing resume data model.
 
+## Public-template basic-controls regression
+
+For the current 50-public-template release, do not infer other templates are working from one representative template.
+After building and restarting the isolated local fixture server, run:
+
+```powershell
+node scripts/verify-template-controls.mjs --base-url http://127.0.0.1:3012 --concurrency 2 --scope all
+node scripts/test-template-header-spacing.mjs http://127.0.0.1:3012 lanjiao lanzhe lanmu ziji qingsui
+node scripts/test-template-spacing.mjs http://127.0.0.1:3012
+```
+
+Each public template gets 24 spacing cases (PC/mobile viewport, job shown/hidden, spacing 0/1/3,
+screen/print) plus six actual one-page-hook cases (PC/mobile viewport, sparse/full/long data).
+The one-page cases use the real sidebar toggle and `useOnePageMode`, verify token restoration on disable,
+build HTML with the actual `buildResumeHtml`, and check PDF page counts and printed character occurrences.
+Automatic one-page fitting must not reduce the theme line-height below 1.4 or font size below 12px;
+check final paragraph/list line boxes as well as tokens, and visually review the rendered PDF pages.
+Content that cannot fit at the readability floor must retain natural pagination, not be cropped.
+For decorative page frames, inspect the first continuation line at original PDF resolution.
+Do not use an inset outline that repeats over text at page breaks; use an in-flow sliced print border.
+These fixture cases are not an authenticated mobile editor or the deployed PDF service; retain those manual gates.
+
+Table rows sharing a border are tested through vertical cell padding instead of external gaps.
+Full-bleed hero gaps are internal spacing, not physical top page margins. Printing may naturally fit
+screen overflow on fewer pages: preserve all printable content and never force a one-page crop unless
+the fitting status is `fit`. Do not require an arbitrary minimum PDF page count for overflow.
+
+Keep timestamped results, source snapshots, screenshots, HTML and PDFs. Failed or interrupted pilots are not
+final sign-off. This regression supplements the fixed template QA below; it does not replace interaction
+testing, visual PDF review or reference comparison.
+
 ## Required Inputs
 
 - Reference image or screenshot.
@@ -79,7 +110,7 @@ For a new template `<id>`:
 
 1. Add `src/templates/<id>/index.tsx`.
 2. Register it in `src/templates/template-loader.ts`.
-3. If public/template gallery data is separate, register it in `src/lib/templates/template-catalog.ts`.
+3. Add shared display metadata and independent taxonomy attributes to `src/lib/templates/template-metadata.ts`; spread that entry into the loader. `src/lib/templates/template-catalog.ts` derives public entries from this source. Set editor/catalog visibility explicitly; adding a template does not automatically authorize public release. See `docs/template-generation-plan.md`.
 4. Add or generate a thumbnail under `public/thumbnails/`.
 5. Use a real rendered resume thumbnail in `.webp` format for new production templates. Do not hand-draw an SVG thumbnail unless it is a temporary placeholder while the template is still being designed.
 6. If the template has a full-bleed header or special top layout, set `exportLayout: 'bleed'` in `src/templates/template-loader.ts` and make sure the template root emits `data-bleed="true"` via `ResumeFrame bleed` or an equivalent root attribute.

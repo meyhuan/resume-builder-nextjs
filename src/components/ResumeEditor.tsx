@@ -8,7 +8,7 @@
 import { useEffect, useRef, useState, Suspense, useCallback, useMemo } from 'react'
 import type { ReactElement } from 'react'
 import { useAppStore } from '@/state/store'
-import { getTemplate, getAllTemplates } from '@/templates/template-loader'
+import { getTemplate, getPublicTemplates } from '@/templates/template-loader'
 import { exportImage } from '@/io/export-image'
 import { buildResumeHtml } from '@/io/html-export'
 import { exportResumeToMarkdown } from '@/io/export-markdown'
@@ -1103,7 +1103,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
                   </div>
                 }
               >
-                <div ref={resumeBodyRef} className="resume-document-main" {...(onePageMode ? { 'data-one-page': 'true' } : {})}>
+                <div ref={resumeBodyRef} className="resume-document-main" {...(onePageMode && onePageStatus === 'fit' ? { 'data-one-page': 'true' } : {})}>
                   {TemplateComponent ? (
                     <TemplateComponent
                       resume={renderableResume}
@@ -1138,7 +1138,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
               onOpenPortfolio={() => setActivePanel('portfolio')}
               theme={theme}
               tpl={tpl}
-              templates={getAllTemplates()}
+              templates={getPublicTemplates()}
               onTplChange={handleTplChange}
               onThemePatch={patchTheme}
               onePage={onePageMode}

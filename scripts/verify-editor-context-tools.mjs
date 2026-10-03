@@ -149,6 +149,8 @@ try {
   assert.equal(await page.$eval('[data-resume-inline-toolbar]', el => getComputedStyle(el).display), 'none')
   assert.ok(await page.$eval('[contenteditable="true"]', el => el.textContent.includes('项目概述')))
   await page.emulateMediaType('screen')
+  // Print layout can change the scroll position when screen styles are restored.
+  await page.$eval('[contenteditable="true"]', el => el.scrollIntoView({ block: 'center' }))
   await nextFrame()
   passed('print hides paragraph formats and AI controls while retaining current text')
   await page.click('[data-resume-inline-toolbar] button[aria-label="AI润色"]')

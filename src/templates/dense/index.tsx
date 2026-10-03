@@ -202,6 +202,7 @@ function DenseHeader(props: { readonly resume: ResumeData; readonly accent: stri
         />
         <button
           type="button"
+          data-template-base-info-trigger="true"
           className="block text-left print:cursor-default"
           onClick={() => setShowModal(true)}
         >
@@ -214,13 +215,13 @@ function DenseHeader(props: { readonly resume: ResumeData; readonly accent: stri
                 <MetaFragment key={String(item)} showDivider={index > 0}>{item}</MetaFragment>
               ))}
               {baseInfo?.phone ? (
-                <span className="inline-flex items-center gap-1">
+                <span data-template-base-info-field="true" data-template-base-info-key="phone" className="inline-flex min-w-0 max-w-full flex-wrap items-center gap-1">
                   <Phone size={12} color="#aab1b8" />
                   {baseInfo.phone}
                 </span>
               ) : null}
               {baseInfo?.email ? (
-                <span className="inline-flex items-center gap-1 break-all">
+                <span data-template-base-info-field="true" data-template-base-info-key="email" className="inline-flex min-w-0 max-w-full flex-wrap items-center gap-1 break-all">
                   <Mail size={12} color="#aab1b8" />
                   {baseInfo.email}
                 </span>
@@ -239,12 +240,13 @@ function DenseHeader(props: { readonly resume: ResumeData; readonly accent: stri
         {isJobIntentionVisible && jobFields.length > 0 ? (
           <button
             type="button"
+            data-template-job-intention-trigger="true"
             className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-left text-[0.86em] print:cursor-default"
             style={{ color: INK, lineHeight }}
             onClick={() => setShowJobModal(true)}
           >
             {jobFields.map((field) => (
-              <span key={`${field.label}-${field.value}`} className="inline-flex max-w-full gap-1">
+              <span key={`${field.label}-${field.value}`} className="inline-flex min-w-0 max-w-full flex-wrap gap-1">
                 <span className="shrink-0">{field.label}：</span>
                 <strong className="break-words font-medium">{field.value}</strong>
               </span>
@@ -260,7 +262,7 @@ function DenseHeader(props: { readonly resume: ResumeData; readonly accent: stri
             onClick={() => setShowModal(true)}
           >
             {visibleCustomFields.map((field) => (
-              <span key={`${field.label}-${field.value}`} className="inline-flex max-w-full gap-1">
+              <span key={`${field.label}-${field.value}`} data-template-base-info-field="true" className="inline-flex min-w-0 max-w-full flex-wrap gap-1">
                 <span className="shrink-0">{field.label}：</span>
                 <span className="break-words">{field.value}</span>
               </span>

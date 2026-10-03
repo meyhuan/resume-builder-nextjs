@@ -69,8 +69,8 @@ export default function LanzheTemplate(props: TemplateProps): ReactElement {
   const titleScale = Math.min(1.18, Math.max(0.88, theme.titleScale ?? 1))
   const contentLineHeight = Math.max(1.25, theme.lineHeight)
   const spacingScale = Math.max(0, theme.spacingScale)
-  const pagePaddingHorizontal = Math.max(34, mmToPx(theme.pagePaddingHorizontal))
-  const pagePaddingVertical = Math.max(36, mmToPx(theme.pagePaddingVertical))
+  const pagePaddingHorizontal = mmToPx(theme.pagePaddingHorizontal)
+  const pagePaddingVertical = mmToPx(theme.pagePaddingVertical)
   const paperLeft = pagePaddingHorizontal
   const rightPad = pagePaddingHorizontal
   const topPad = pagePaddingVertical
@@ -372,6 +372,7 @@ function LanzheJobIntentionSection(props: {
   return (
     <section
       className="relative group/job-intention cursor-pointer"
+      data-template-job-intention-trigger="true"
       onClick={jobIntention.openEditModal}
     >
       <FoldTitle titleScale={titleScale}>{jobIntention.sectionTitle}</FoldTitle>

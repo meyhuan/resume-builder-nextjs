@@ -108,6 +108,7 @@ export default function SectionHeader(props: SectionHeaderProps): ReactElement {
   if (layout === 'ribbon') {
     return (
       <div
+        data-template-section-header={hasActions ? 'true' : undefined}
         className={`flex items-center w-full relative group/header ${styles?.containerClassName || 'mb-4 mt-2'}`}
         style={{ fontSize: styles?.fontSize, fontWeight: styles?.fontWeight, lineHeight: styles?.lineHeight }}
         {...interactionProps}
@@ -146,6 +147,7 @@ export default function SectionHeader(props: SectionHeaderProps): ReactElement {
   // Default Layout
   return (
     <div
+      data-template-section-header={hasActions ? 'true' : undefined}
       className={`flex items-center gap-2 relative rounded border border-transparent ${styles?.containerClassName || 'mb-3'}`}
       style={{ fontSize: styles?.fontSize, fontWeight: styles?.fontWeight, lineHeight: styles?.lineHeight }}
       {...interactionProps}

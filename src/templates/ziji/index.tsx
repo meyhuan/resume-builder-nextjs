@@ -186,10 +186,10 @@ export default function ZijiTemplate(props: TemplateProps): ReactElement {
   const titleScale = Math.min(1.2, Math.max(0.86, theme.titleScale ?? 1))
   const spacingScale = Math.max(0, theme.spacingScale)
   const contentLineHeight = Math.max(1.18, theme.lineHeight)
-  const panelPadX = Math.max(42, mmToPx(theme.pagePaddingHorizontal) * 0.9)
+  const panelPadX = mmToPx(theme.pagePaddingHorizontal) * 0.9
   // The panel follows the hero; its top inset is not another page margin.
   const panelPadTop = 34 * spacingScale
-  const panelPadBottom = Math.max(38, mmToPx(theme.pagePaddingVertical) * 0.58)
+  const panelPadBottom = mmToPx(theme.pagePaddingVertical) * 0.58
   const sideColumnWidth = Math.max(166, 174 + (panelPadX - 51) * 0.25)
   const railColumnWidth = 42
   const sectionIds = useMemo(() => resume.sections.map((section) => section.id), [resume.sections])
@@ -654,11 +654,13 @@ function ZijiSideSection(props: {
   return (
     <section
       className="group/ziji-side-section relative"
+      data-template-section="true"
+      data-template-section-title={displayTitle}
       style={{ marginBottom: 10 * spacingScale }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      <div className="relative" style={{ marginBottom: 16 * spacingScale }}>
+      <div data-template-section-header="true" className="relative" style={{ marginBottom: 16 * spacingScale }}>
         <span
           aria-hidden
           className="absolute rotate-45"
@@ -911,6 +913,8 @@ function ZijiMainSection(props: {
   return (
     <section
       className="group/ziji-section relative"
+      data-template-section="true"
+      data-template-section-title={displayTitle}
       style={{ marginBottom: isSelfSection(section) ? `${32 * spacingScale}px` : `${42 * spacingScale}px` }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
@@ -926,7 +930,7 @@ function ZijiMainSection(props: {
           backgroundColor: primaryColor,
         }}
       />
-      <div className="relative" style={{ marginBottom: 18 * spacingScale }}>
+      <div data-template-section-header="true" className="relative" style={{ marginBottom: 18 * spacingScale }}>
         <SectionTitleText
           as="h2"
           value={displayTitle}
@@ -1043,7 +1047,7 @@ function ZijiBlockShell(props: {
   readonly compact?: boolean
   readonly children: ReactNode
 }): ReactElement {
-  const { block, sectionId, index, total, compact, children } = props
+  const { block, sectionId, index, total, children } = props
   const addBlock = useAppStore((state) => state.addBlockByType)
   const deleteBlock = useAppStore((state) => state.deleteBlock)
   const moveBlockUp = useAppStore((state) => state.moveBlockUp)
@@ -1055,6 +1059,7 @@ function ZijiBlockShell(props: {
 
   return (
     <BlockWrapper
+      flush
       blockType={getBlockTypeLabel(block.type)}
       onAdd={block.type !== 'text' ? (): void => addBlock(sectionId) : undefined}
       onPolish={moduleType ? (): void => openPolish(block.id, content, moduleType) : undefined}
@@ -1065,7 +1070,7 @@ function ZijiBlockShell(props: {
       showDragHandle={false}
       disableHover={isEditing}
     >
-      <div onFocus={() => setIsEditing(true)} onBlur={() => setIsEditing(false)} className={compact ? 'pb-1' : ''}>
+      <div data-resume-block="" onFocus={() => setIsEditing(true)} onBlur={() => setIsEditing(false)}>
         {children}
       </div>
     </BlockWrapper>

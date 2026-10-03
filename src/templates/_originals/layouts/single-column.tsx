@@ -9,7 +9,6 @@ import { useAppStore } from '@/state/store'
 import { EditableText, hexToRgba, lightenHex, mmToPx } from '@/templates/_core'
 import type { EditableHeader, EditableJobIntention } from '@/templates/_core'
 import type { VariantConfig } from '../types'
-import { SERIF } from '../types'
 import {
   AvatarBox,
   CampusHighlightsDialog,
@@ -39,9 +38,8 @@ export function SingleColumn(props: {
   const updateBaseInfo = useAppStore((state) => state.updateBaseInfo)
   const [showMetricEditor, setShowMetricEditor] = useState(false)
   const title = getHeaderJobIntentionText(resume)
-  const summary = resume.sections.find((s) => /自我|评价|优势|summary/i.test(s.title))
   const showAvatar = config.density !== 'ultra' || header.baseInfo?.showAvatar !== false
-  const metrics = config.metrics && config.metrics !== 'none' ? metricItems(config, header) : []
+  const metrics = config.metrics && config.metrics !== 'none' ? metricItems(header) : []
 
   return (
     <div
@@ -60,6 +58,13 @@ export function SingleColumn(props: {
                 : config.id === 'yuanshan' ? '#fbfaf8' : '#fff',
       }}
     >
+      {config.id === 'yuanshan' ? <style>{`
+        .original-executive-section { display: flow-root; border-top: 1px solid ${lightenHex(config.accent, .6)}; padding-top: 14px; }
+        .original-executive-label { float: left; width: 18%; }
+        .original-executive-label h2 { border: 0 !important; padding: 0 !important; margin: 0 !important; }
+        .original-executive-content { margin-left: 23%; min-width: 0; }
+        @media print { .original-executive-section { break-inside: auto !important; } }
+      `}</style> : null}
       <div aria-hidden style={{ height: config.formal ? 4 : 3, marginBottom: config.density === 'ultra' ? 10 : 16, backgroundColor: config.accent }} />
       <header
         className="group relative"
@@ -85,13 +90,11 @@ export function SingleColumn(props: {
               lineHeight: 1.15,
               fontWeight: 700,
               color: config.ink,
-              fontFamily: config.serif ? SERIF : undefined,
             }}
           />
           {title ? <div style={{ marginTop: 8, fontSize: '0.98em', fontWeight: config.id === 'yuanshan' ? 700 : 500, color: config.id === 'yuanshan' ? config.accent : config.muted }}>{title}</div> : null}
           <HeaderFields header={header} color={config.muted} accent={config.accent} formal={config.formal} compact={config.density === 'compact' || config.density === 'ultra'} />
           {config.formal ? <FormalInfoGrid header={header} /> : null}
-          {config.id === 'yuanshan' && summary ? <p style={{ marginTop: 18, color: '#374151', fontSize: '1.03em', lineHeight: Math.max(1.45, theme.lineHeight) }}>长期负责业务增长、渠道运营、商业化和团队管理，擅长建立可复制的目标体系、组织机制和增长模型。</p> : null}
         </div>
         {showAvatar ? (
           <AvatarBox header={header} accent={config.accent} radius={config.formal ? 4 : 16} compact={config.density === 'compact' || config.density === 'ultra'} />
@@ -99,7 +102,7 @@ export function SingleColumn(props: {
       </header>
 
       {showJob && jobIntention.fields.length > 0 ? <JobIntentionBlock jobIntention={jobIntention} config={config} theme={theme} /> : null}
-      {metrics.length > 0 ? (
+      {metrics.some(([value]) => value.trim()) ? (
         <section style={{ marginTop: 20 }}>
           <h2
             style={{
@@ -107,7 +110,6 @@ export function SingleColumn(props: {
               paddingBottom: 6,
               borderBottom: `1px solid ${config.accent}`,
               color: config.accent,
-              fontFamily: config.serif ? SERIF : undefined,
               fontSize: '1.12em',
               fontWeight: 700,
               lineHeight: 1.35,
@@ -146,9 +148,10 @@ export function CampusLayout(props: {
   const { resume, theme, header, jobIntention, showJob, config, padH } = props
   const updateBaseInfo = useAppStore((state) => state.updateBaseInfo)
   const [showHighlightEditor, setShowHighlightEditor] = useState(false)
-  const padV = Math.max(30, mmToPx(theme.pagePaddingVertical))
+  const padV = Math.max(0, mmToPx(theme.pagePaddingVertical))
   const title = getHeaderJobIntentionText(resume)
-  const highlightItems = campusMetricItems(config, header)
+  const highlightItems = campusMetricItems(header)
+  const visibleHighlights = highlightItems.filter(([value]) => value.trim())
 
   return (
     <div className="original-page-content" data-template-padding-probe="true" style={{ padding: `${padV}px ${padH}px 46px`, backgroundColor: '#ffffff' }}>
@@ -173,8 +176,8 @@ export function CampusLayout(props: {
           </div>
           <AvatarBox header={header} accent={config.heroTone === 'soft' ? config.accent : '#ffffff'} radius={16} />
         </div>
-        <div className="grid grid-cols-3 gap-3" style={{ marginTop: 20 }}>
-          {highlightItems.map(([value, text], index) => (
+        {visibleHighlights.length > 0 ? <div className="grid gap-3" style={{ marginTop: 20, gridTemplateColumns: `repeat(${visibleHighlights.length}, minmax(0, 1fr))` }}>
+          {visibleHighlights.map(([value, text], index) => (
             <button
               key={`${index}-${text}`}
               type="button"
@@ -199,7 +202,7 @@ export function CampusLayout(props: {
               <strong>{value}</strong><br />{text}
             </button>
           ))}
-        </div>
+        </div> : null}
       </header>
       {showJob && jobIntention.fields.length > 0 ? <JobIntentionBlock jobIntention={jobIntention} config={config} theme={theme} /> : null}
       <SectionStack sections={resume.sections} theme={theme} config={config} />

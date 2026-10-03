@@ -30,10 +30,11 @@ export default function TemplateLabClient(): ReactElement {
     return hideJobIntention ? { ...fixture, jobIntentionVisible: false } : fixture
   }, [fixtureId, hideJobIntention])
   const theme: ThemeTokens = useMemo(() => {
-    const base = getTemplateLabTheme(themeId)
+    const fixtureTheme = getTemplateLabTheme(themeId)
+    const base = themeId === 'color' ? fixtureTheme : { ...fixtureTheme, primaryColor: TEMPLATE_REGISTRY[templateId]?.recommendedPrimaryColor ?? fixtureTheme.primaryColor }
     const scale = spacingOverride === null ? NaN : Number(spacingOverride)
     return Number.isFinite(scale) && scale >= 0 && scale <= 3 ? { ...base, spacingScale: scale } : base
-  }, [themeId, spacingOverride])
+  }, [themeId, spacingOverride, templateId])
   const Template = TEMPLATE_REGISTRY[templateId]?.component
   const setReadOnly = useAppStore((s) => s.setReadOnly)
   const setResume = useAppStore((s) => s.setResume)

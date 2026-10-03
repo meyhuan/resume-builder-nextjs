@@ -196,6 +196,7 @@ export default function JobIntentionSection(props: JobIntentionSectionProps): Re
   return (
     <>
       <section 
+        data-template-job-intention-trigger="true"
         className={containerClassName}
         onClick={() => !readOnly && setShowModal(true)}
       >
@@ -295,6 +296,7 @@ function renderJobFields(
       <div
         key={field.key}
         className={`${fieldClassName} relative`}
+        style={{ minWidth: 0, overflowWrap: 'anywhere' }}
         onMouseEnter={() => !readOnly && setHoveredField(field.key)}
         onMouseLeave={() => setHoveredField(null)}
       >
@@ -302,7 +304,7 @@ function renderJobFields(
         {slots?.field ? (
           slots.field(field.label, field.value, themeColor)
         ) : (
-          <div style={{ fontSize: fieldFontSize }}>
+          <div style={{ fontSize: fieldFontSize, minWidth: 0, overflowWrap: 'anywhere' }}>
             <span className={labelClassName}>{field.label}: </span>
             <span 
               className={valueClassName}

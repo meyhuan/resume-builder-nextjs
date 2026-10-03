@@ -33,6 +33,7 @@ import TwoColumnDndProvider, {
   isTextOnlySection,
 } from './two-column-dnd-provider'
 import { WARM_TEMPLATE_STYLES, resolveAccent, tintHex, darkenHex } from './styles'
+import { mmToPx } from '@/templates/_core'
 
 interface WarmTemplateProps {
   readonly resume: ResumeData
@@ -156,6 +157,7 @@ function WarmSidebarHeader(props: {
   return (
     <>
       <div
+        data-template-base-info-trigger="true"
         className="relative group cursor-pointer print:cursor-default mb-4"
         onClick={() => setShowModal(true)}
       >
@@ -220,7 +222,9 @@ function WarmSidebarHeader(props: {
           {fields.map((f) => (
             <div
               key={f.key}
-              className="flex items-center gap-3 text-gray-600 relative group/field"
+              data-template-base-info-field="true"
+              data-template-base-info-key={f.key}
+              className="flex min-w-0 items-start gap-3 text-gray-600 relative group/field"
               onMouseEnter={() => setHoveredField(f.key)}
               onMouseLeave={() => setHoveredField(null)}
             >
@@ -233,7 +237,7 @@ function WarmSidebarHeader(props: {
                   className: 'text-white',
                 })}
               </div>
-              <span>{f.label}：{f.value}</span>
+              <span style={{ minWidth: 0, overflowWrap: 'anywhere' }}>{f.label}：{f.value}</span>
               {hoveredField === f.key && (
                 <button
                   type="button"
@@ -267,8 +271,9 @@ function BlockRendererWrapper(props: {
   blockIndex: number
   totalBlocks: number
   themeColor: string
+  spacingScale: number
 }): ReactElement {
-  const { block, sectionId, blockIndex, totalBlocks, themeColor } = props
+  const { block, sectionId, blockIndex, totalBlocks, themeColor, spacingScale } = props
   const addBlock = useAppStore((s) => s.addBlockByType)
   const deleteBlock = useAppStore((s) => s.deleteBlock)
   const moveBlockUp = useAppStore((s) => s.moveBlockUp)
@@ -284,8 +289,9 @@ function BlockRendererWrapper(props: {
   if (block.type === 'campus') blockTypeLabel = '校园经历'
 
   return (
-    <div className="mb-2">
+    <div style={{ marginBottom: blockIndex < totalBlocks - 1 ? 8 * spacingScale : 0 }}>
       <BlockWrapper
+        flush
         blockType={blockTypeLabel}
         onAdd={block.type !== 'text' ? (): void => addBlock(sectionId) : undefined}
         onPolish={moduleType ? (): void => openPolish(block.id, extractBlockContentHtml(block), moduleType) : undefined}
@@ -329,7 +335,7 @@ function WarmSectionView(props: {
   const { setNodeRef } = useDroppable({ id: `${DndIds.SECTION_DROP_ID_PREFIX}${sectionId}` })
 
   return (
-    <div className="mb-0">
+    <div className="mb-0" data-template-section="true" data-template-section-title={section.title}>
       {/* Section header with accent left bar and gradient background */}
       <div
         className="mb-6 w-full"
@@ -390,10 +396,10 @@ export default function WarmTemplate(props: WarmTemplateProps): ReactElement {
   const defaultIds = resume.sections.filter(shouldDefaultToLeft).map((s) => s.id)
 
   // Local sidebar state for uncontrolled mode (no external prop)
-  const [localIds, setLocalIds] = useState<readonly string[]>(defaultIds)
+  const [localIds, setLocalIds] = useState<readonly string[] | null>(null)
 
   // Use external prop when provided, otherwise local state
-  const sidebarIds: readonly string[] = externalIds ?? localIds
+  const sidebarIds: readonly string[] = externalIds ?? localIds ?? defaultIds
 
   // Update both local state and notify parent
   const updateSidebar = useCallback((ids: readonly string[]) => {
@@ -461,12 +467,13 @@ export default function WarmTemplate(props: WarmTemplateProps): ReactElement {
           )
         }}
       >
-        <div className="flex min-h-[297mm]">
+        <div className="warm-column-grid flex min-h-[297mm]">
           {/* Left sidebar */}
-          <ColumnDroppable id={COLUMN_LEFT_ID} className="w-[32%] shrink-0 transition-shadow">
+          <ColumnDroppable id={COLUMN_LEFT_ID} className="warm-left-column w-[32%] min-w-0 shrink-0 transition-shadow">
             <div
-              className="h-full flex flex-col gap-[20px]"
-              style={{ backgroundColor: '#f9f9f9', padding: '50px 30px' }}
+              className="warm-column-panel h-full"
+              data-template-padding-probe="true"
+              style={{ backgroundColor: '#f9f9f9', padding: `${Math.max(0, mmToPx(theme.pagePaddingVertical))}px ${Math.max(0, mmToPx(theme.pagePaddingHorizontal) * .65)}px` }}
             >
               {/* BaseInfo (fixed, not draggable) */}
               <WarmSidebarHeader
@@ -510,7 +517,7 @@ export default function WarmTemplate(props: WarmTemplateProps): ReactElement {
                         type: 'vertical',
                         className: 'flex flex-col gap-2',
                       },
-                      fieldItem: 'mb-2 text-gray-600 leading-relaxed',
+                      fieldItem: 'mb-2 text-gray-600 leading-[inherit]',
                     }}
                   />
                 </div>
@@ -535,6 +542,7 @@ export default function WarmTemplate(props: WarmTemplateProps): ReactElement {
                           blockIndex={index}
                           totalBlocks={section.blocks.length}
                           themeColor={accentColor}
+                          spacingScale={theme.spacingScale}
                         />
                       ))}
                     </WarmSectionView>
@@ -546,8 +554,8 @@ export default function WarmTemplate(props: WarmTemplateProps): ReactElement {
           </ColumnDroppable>
 
           {/* Right main content */}
-          <ColumnDroppable id={COLUMN_RIGHT_ID} className="w-[68%] transition-shadow">
-            <div style={{ minHeight: '100%', padding: '50px 40px', backgroundColor: '#ffffff' }}>
+          <ColumnDroppable id={COLUMN_RIGHT_ID} className="warm-right-column w-[68%] min-w-0 transition-shadow">
+            <div className="warm-column-panel" style={{ minHeight: '100%', padding: `${Math.max(0, mmToPx(theme.pagePaddingVertical))}px ${Math.max(0, mmToPx(theme.pagePaddingHorizontal))}px`, backgroundColor: '#ffffff' }}>
               <main className="relative">
                 {rightSections.map((section, sectionIndex) => (
                   <div key={section.id} style={{ marginBottom: sectionIndex < rightSections.length - 1 ? `${24 * theme.spacingScale}px` : '0' }}>
@@ -568,6 +576,7 @@ export default function WarmTemplate(props: WarmTemplateProps): ReactElement {
                               blockIndex={index}
                               totalBlocks={section.blocks.length}
                               themeColor={accentColor}
+                              spacingScale={theme.spacingScale}
                             />
                           ))}
                         </WarmSectionView>
@@ -581,6 +590,7 @@ export default function WarmTemplate(props: WarmTemplateProps): ReactElement {
           </ColumnDroppable>
         </div>
       </TwoColumnDndProvider>
+      <style>{`@media print { .warm-column-grid { display: block !important; min-height: 0 !important; } .warm-column-grid:after { content: ''; display: block; clear: both; } .warm-left-column { float: left; } .warm-right-column { float: right; } .warm-column-panel { min-height: 0 !important; height: auto !important; padding-top: 0 !important; padding-bottom: 0 !important; } }`}</style>
     </div>
   )
 }

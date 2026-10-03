@@ -12,11 +12,7 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import {
-  isTemplateExclusiveBaseInfoField,
-  isTemplateHighlightField,
-  isTemplateMetricField,
-} from '@/lib/template-exclusive-fields'
+import { isTemplateExclusiveBaseInfoField } from '@/lib/template-exclusive-fields'
 import {
   AvatarSlot,
   BlockList,
@@ -30,6 +26,7 @@ import type { DragHandleProps, EditableHeader, EditableJobIntention } from '@/te
 import { CONFIG } from './configs'
 import type { VariantConfig } from './types'
 import { SERIF } from './types'
+import { readSavedMetrics, writeSavedMetrics } from './saved-metrics'
 
 export function scaledSpacing(base: number, theme?: Pick<ThemeTokens, 'spacingScale'>): number {
   // Zero is an intentional setting. Keep minimum cell/decoration sizes local.
@@ -122,9 +119,11 @@ export function Metrics(props: {
   readonly onEdit?: () => void
 }): ReactElement {
   const { config, items, onEdit } = props
+  const visibleItems = items.filter(([value]) => value.trim())
+  if (visibleItems.length === 0) return <></>
   return (
-    <div className="grid grid-cols-3 gap-3" style={{ marginTop: 12 }}>
-      {items.map(([value, label], index) => (
+    <div className="grid gap-3" style={{ marginTop: 12, gridTemplateColumns: `repeat(${visibleItems.length}, minmax(0, 1fr))` }}>
+      {visibleItems.map(([value, label], index) => (
         <button
           key={`${index}-${label}`}
           type="button"
@@ -144,34 +143,12 @@ export function Metrics(props: {
   )
 }
 
-export function metricItems(config: VariantConfig, header: EditableHeader): string[][] {
-  const defaults = defaultMetricItems(config)
-  const customFields = header.baseInfo?.customFields ?? []
-  return defaults.map((fallback, index) => {
-    const field = customFields.find((item) => item.label === `业绩${index + 1}`)
-    if (!field?.value) return fallback
-    const parts = field.value.split(/[|｜]/).map((part) => part.trim()).filter(Boolean)
-    if (parts.length >= 2) return [parts[0], parts.slice(1).join(' / ')]
-    return [field.value, fallback[1]]
-  })
-}
-
-function defaultMetricItems(config: VariantConfig): string[][] {
-  if (config.metrics === 'executive') return [['3.8亿', '年度 GMV 规模'], ['46%', '渠道获客成本下降'], ['60+', '团队规模']]
-  if (config.metrics === 'media') return [['10万+', '内容累计曝光'], ['28%', '互动率提升'], ['6个', '账号矩阵运营']]
-  return [['32%', '核心漏斗转化提升'], ['120万', '累计服务用户'], ['18人', '跨职能项目协作']]
+export function metricItems(header: EditableHeader): string[][] {
+  return readSavedMetrics(header.baseInfo, '业绩')
 }
 
 export function buildBaseInfoWithMetrics(baseInfo: BaseInfo | null, items: string[][]): BaseInfo {
-  const existing = (baseInfo?.customFields ?? []).filter((field) => !isTemplateMetricField(field.label))
-  const metrics = items.map(([value, text], index) => ({
-    label: `业绩${index + 1}`,
-    value: `${value}｜${text}`,
-  }))
-  return {
-    ...(baseInfo ?? {}),
-    customFields: [...existing, ...metrics],
-  }
+  return writeSavedMetrics(baseInfo, '业绩', items)
 }
 
 export function MetricsDialog(props: {
@@ -236,28 +213,12 @@ export function MetricsDialog(props: {
   )
 }
 
-export function campusMetricItems(config: VariantConfig, header: EditableHeader): string[][] {
-  const defaults = [['Top 10%', '专业排名 / 成绩亮点'], ['3段', '实习与校园经历'], ['10万+', '项目成果与作品']]
-  const customFields = header.baseInfo?.customFields ?? []
-  return defaults.map((fallback, index) => {
-    const field = customFields.find((item) => item.label === `亮点${index + 1}`)
-    if (!field?.value) return fallback
-    const parts = field.value.split(/[|｜]/).map((part) => part.trim()).filter(Boolean)
-    if (parts.length >= 2) return [parts[0], parts.slice(1).join(' / ')]
-    return [field.value, fallback[1]]
-  })
+export function campusMetricItems(header: EditableHeader): string[][] {
+  return readSavedMetrics(header.baseInfo, '亮点')
 }
 
 export function buildBaseInfoWithHighlights(baseInfo: BaseInfo | null, items: string[][]): BaseInfo {
-  const existing = (baseInfo?.customFields ?? []).filter((field) => !isTemplateHighlightField(field.label))
-  const highlights = items.map(([value, text], index) => ({
-    label: `亮点${index + 1}`,
-    value: `${value}｜${text}`,
-  }))
-  return {
-    ...(baseInfo ?? {}),
-    customFields: [...existing, ...highlights],
-  }
+  return writeSavedMetrics(baseInfo, '亮点', items)
 }
 
 export function CampusHighlightsDialog(props: {
@@ -407,7 +368,7 @@ export function SectionStack({ sections, theme, config, topMargin }: { readonly 
 
 export function SidebarSections({ sections, theme, config, dark }: { readonly sections: readonly Section[]; readonly theme: ThemeTokens; readonly config: VariantConfig; readonly dark?: boolean }): ReactElement {
   return (
-    <div className="grid" style={{ gap: scaledSpacing(18, theme), marginTop: scaledSpacing(24, theme), textAlign: 'left' }}>
+    <div className="grid" style={{ gap: scaledSpacing(sectionStackGap(config), theme), marginTop: scaledSpacing(sectionStackGap(config), theme), textAlign: 'left' }}>
       {sections.map((section) => (
         <SortableSection key={section.id} sectionId={section.id}>
           {(dragProps) => <ConceptSection section={section} dragProps={dragProps} theme={theme} config={config} compact dark={dark} />}
@@ -490,13 +451,13 @@ export function ConceptSection(props: {
 
   return (
     <section
-      className="group/section relative"
+      className={`group/section relative ${config.id === 'yuanshan' ? 'original-executive-section' : ''}`}
       data-template-section="true"
       data-template-section-title={section.title}
       onMouseEnter={() => editable.setHovered(true)}
       onMouseLeave={() => editable.setHovered(false)}
     >
-      <div className="relative">
+      <div className={`relative ${config.id === 'yuanshan' ? 'original-executive-label' : ''}`}>
         <div style={{ display: config.sectionStyle === 'numbered' ? 'flex' : 'block', alignItems: 'center', gap: 10, marginBottom: config.sectionStyle === 'numbered' ? 10 : 0 }}>
           {config.sectionStyle === 'numbered' ? (
             <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 26, height: 26, borderRadius: 999, backgroundColor: config.accent, color: '#fff', fontSize: '0.78em', fontWeight: 700 }}>
@@ -520,7 +481,7 @@ export function ConceptSection(props: {
         section={editable}
         themeColor={config.accent}
         spacingScale={(config.density === 'ultra' ? 0.62 : config.density === 'compact' ? 0.78 : 1) * theme.spacingScale}
-        className={section.columns === 2 && !compact ? 'grid grid-cols-2 gap-4' : 'block'}
+        className={`${section.columns === 2 && !compact ? 'grid grid-cols-2 gap-4' : 'block'} ${config.id === 'yuanshan' ? 'original-executive-content' : ''}`}
         rendererStyles={rendererStyles}
       />
       <DeleteSectionDialog open={editable.isDeleteDialogOpen} sectionTitle={editable.displayTitle} onOpenChange={editable.setDeleteDialogOpen} onConfirm={editable.confirmDelete} />
@@ -789,8 +750,8 @@ function sectionTitleStyle(config: VariantConfig, titleScale: number, compact?: 
   if (config.sectionStyle === 'numbered') return { ...base, margin: 0, color: config.ink, borderBottom: `1px solid ${lightenHex(config.accent, 0.68)}`, paddingBottom: 5, flex: 1 }
   if (config.sectionStyle === 'pill') return { ...base, display: 'inline-flex', alignItems: 'center', padding: '5px 12px', borderRadius: 999, backgroundColor: lightenHex(config.accent, 0.88), color: config.accent, borderBottom: 'none' }
   if (config.sectionStyle === 'minimal') return { ...base, color: dark ? config.accent : config.ink, borderBottom: `1px solid ${lightenHex(config.accent, 0.72)}`, paddingBottom: 5 }
-  if (config.id === 'yuanshan') return { ...base, display: 'flex', alignItems: 'center', gap: 10, color: config.accent, fontFamily: SERIF, borderBottom: `1px solid ${config.accent}`, paddingBottom: 6 }
-  if (config.id === 'lifeng') return { ...base, display: 'flex', alignItems: 'center', gap: 10, color: config.accent, borderBottom: dark ? 'none' : `1px solid ${lightenHex(config.accent, 0.45)}`, paddingBottom: dark ? 0 : 5 }
+  if (config.id === 'yuanshan') return { ...base, display: 'flex', alignItems: 'center', gap: 10, color: config.accent, fontFamily: 'inherit', borderBottom: `1px solid ${config.accent}`, paddingBottom: 6 }
+  if (config.id === 'lifeng') return { ...base, display: 'flex', alignItems: 'center', gap: 10, color: dark ? lightenHex(config.accent, 0.6) : config.accent, borderBottom: dark ? 'none' : `1px solid ${lightenHex(config.accent, 0.45)}`, paddingBottom: dark ? 0 : 5 }
   if (config.id === 'qingsui') return { ...base, color: dark ? '#a78bfa' : config.accent }
   return { ...base, color: dark ? '#a78bfa' : config.accent, borderBottom: compact ? 'none' : `1px solid ${lightenHex(config.accent, 0.7)}`, paddingBottom: compact ? 0 : 6 }
 }

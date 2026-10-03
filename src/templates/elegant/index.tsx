@@ -461,6 +461,7 @@ function ElegantSectionView(props: ElegantSectionViewProps): ReactElement {
     <SectionContainer flush themeColor={themeColor}>
       {/* Section header with gold underline */}
       <div
+        data-template-section-header="true"
         className="relative pb-2 mb-3"
         style={{ borderBottom: `2px solid ${themeColor}` }}
       >

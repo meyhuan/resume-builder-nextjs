@@ -30,8 +30,8 @@ export function TwoColumnDark(props: {
   readonly onSidebarSectionIdsChange?: (ids: readonly string[]) => void
 }): ReactElement {
   const { resume, theme, header, jobIntention, showJob, config, sidebarSectionIds: externalIds, onSidebarSectionIdsChange } = props
-  const padV = Math.max(30, mmToPx(theme.pagePaddingVertical))
-  const padH = Math.max(6, mmToPx(theme.pagePaddingHorizontal))
+  const padV = Math.max(0, mmToPx(theme.pagePaddingVertical))
+  const padH = Math.max(0, mmToPx(theme.pagePaddingHorizontal))
   const { leftSections, rightSections, handleMoveToColumn } = useSidebarSplit(resume, /技能|证书|资格|自我|评价|优势/i, externalIds, onSidebarSectionIdsChange)
   const { moveSection, moveBlockInSection, moveBlockToSection } = useDndActions()
   const showAvatar = header.baseInfo?.showAvatar !== false
@@ -51,6 +51,7 @@ export function TwoColumnDark(props: {
       <div className="grid original-page-content" data-template-padding-probe="true" style={{ gridTemplateColumns: '238px 1fr', minHeight: '297mm', padding: `${padV}px ${padH}px`, backgroundColor: '#fff' }}>
         <ColumnDroppable id={COLUMN_LEFT_ID}>
           <aside
+            data-template-dark-sidebar={config.heroTone !== 'gradient' ? 'true' : undefined}
             style={{
               padding: '40px 26px',
               background: config.heroTone === 'gradient'
@@ -88,7 +89,7 @@ export function TwoColumnDark(props: {
               </div>
               <HeaderFields header={header} color="#cbd5e1" accent={config.accent} vertical light />
             </div>
-            {showJob && jobIntention.fields.length > 0 ? <SidebarJob jobIntention={jobIntention} accent={config.accent} /> : null}
+            {showJob && jobIntention.fields.length > 0 ? <SidebarJob jobIntention={jobIntention} accent={lightenHex(config.accent, 0.6)} /> : null}
             <SidebarSections sections={leftSections} theme={theme} config={config} dark />
             <CrossColumnPlaceholder columnId={COLUMN_LEFT_ID} />
           </aside>
@@ -115,8 +116,8 @@ export function TwoColumnSoft(props: {
   readonly onSidebarSectionIdsChange?: (ids: readonly string[]) => void
 }): ReactElement {
   const { resume, theme, header, jobIntention, showJob, config, sidebarSectionIds: externalIds, onSidebarSectionIdsChange } = props
-  const padV = Math.max(30, mmToPx(theme.pagePaddingVertical))
-  const padH = Math.max(6, mmToPx(theme.pagePaddingHorizontal))
+  const padV = Math.max(0, mmToPx(theme.pagePaddingVertical))
+  const padH = Math.max(0, mmToPx(theme.pagePaddingHorizontal))
   const { leftSections, rightSections, handleMoveToColumn } = useSidebarSplit(resume, /技能|证书|资格|作品|自我|评价|优势/i, externalIds, onSidebarSectionIdsChange)
   const { moveSection, moveBlockInSection, moveBlockToSection } = useDndActions()
   return (

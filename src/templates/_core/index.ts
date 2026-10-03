@@ -38,6 +38,7 @@ export type { BlockListProps } from './primitives/block-list'
 export { ResumeFrame, DeleteSectionDialog } from './primitives/resume-frame'
 export type { ResumeFrameProps } from './primitives/resume-frame'
 export { usePagePadding, usePagePaddingHorizontal, mmToPx } from './primitives/page-padding'
+export { contrastingInk } from './contrast'
 
 // Re-export handy shared utilities
 export { lightenHex, darkenHex, hexToRgba } from '@/templates/_kernel/shared'

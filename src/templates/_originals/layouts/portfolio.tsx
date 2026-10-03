@@ -29,11 +29,11 @@ export function PortfolioLayout(props: {
   readonly config: VariantConfig
 }): ReactElement {
   const { resume, theme, header, jobIntention, showJob, config } = props
-  const padV = Math.max(30, mmToPx(theme.pagePaddingVertical))
-  const padH = Math.max(6, mmToPx(theme.pagePaddingHorizontal))
+  const padV = Math.max(0, mmToPx(theme.pagePaddingVertical))
+  const padH = Math.max(0, mmToPx(theme.pagePaddingHorizontal))
   const [portfolioSections, remainingSections] = splitSections(resume.sections, /作品|项目|案例|内容|账号|portfolio/i)
   const [profileSections, mainSections] = splitSections(remainingSections, /技能|证书|资格|自我|评价|优势/i)
-  const metrics = config.metrics && config.metrics !== 'none' ? metricItems(config, header) : []
+  const metrics = config.metrics && config.metrics !== 'none' ? metricItems(header) : []
   return (
     <div className="original-page-content" data-template-padding-probe="true" style={{ minHeight: '297mm', padding: `${padV}px ${padH}px 44px`, background: `linear-gradient(135deg, ${hexToRgba(config.secondary, 0.1)}, transparent 300px), #fff` }}>
       <header
@@ -98,7 +98,7 @@ export function EducationTimelineLayout(props: {
   readonly padH: number
 }): ReactElement {
   const { resume, theme, header, jobIntention, showJob, config, padH } = props
-  const padV = Math.max(30, mmToPx(theme.pagePaddingVertical))
+  const padV = Math.max(0, mmToPx(theme.pagePaddingVertical))
   const [prioritySections, otherSections] = splitSections(resume.sections, /教育|校园|实习|项目|竞赛|获奖|经历/i)
   const timelineSections = prioritySections.length > 0
     ? [...prioritySections].sort((a, b) => educationTimelineRank(a) - educationTimelineRank(b))

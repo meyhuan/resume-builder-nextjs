@@ -31,7 +31,7 @@ if (ids.length === 0) {
   process.exit(0)
 }
 
-await assertServer(baseUrl)
+await assertServer(`${baseUrl}/dev/scenario-loader?tpl=${encodeURIComponent(ids[0])}&readonly=1`)
 
 const browser = await puppeteer.launch({
   headless: 'new',
@@ -80,6 +80,9 @@ async function generateThumbnail(browser, id) {
       }))
     })
     const png = await element.screenshot({ type: 'png' })
+    const artifactDir = path.join(root, 'test-artifacts', 'template-thumbnails')
+    fs.mkdirSync(artifactDir, { recursive: true })
+    await sharp(png).resize({ width: 794 }).png().toFile(path.join(artifactDir, `${id}-full.png`))
     const outputPath = path.join(outputDir, `template_${id}.webp`)
     const normalized = await normalizeToThumbnailRatio(png, width, height)
     await sharp(normalized)
@@ -130,8 +133,9 @@ async function normalizeToThumbnailRatio(png, width, height) {
 }
 
 function getSvgTemplateIds() {
+  const metadataPath = path.join(root, 'src/lib/templates/template-metadata.ts')
   if (!fs.existsSync(templateLoaderPath)) return []
-  const source = fs.readFileSync(templateLoaderPath, 'utf8')
+  const source = fs.readFileSync(fs.existsSync(metadataPath) ? metadataPath : templateLoaderPath, 'utf8')
   const matches = [...source.matchAll(/^\s{2}([a-zA-Z0-9_-]+):\s*\{[\s\S]*?preview:\s*'\/thumbnails\/template_\1\.svg'/gm)]
   return matches.map((match) => match[1])
 }
