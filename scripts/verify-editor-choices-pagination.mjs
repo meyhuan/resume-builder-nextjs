@@ -20,11 +20,16 @@ async function setValue(selector, value) {
   await page.type(selector, value)
 }
 async function choice(id, value) {
+  if (id !== 'industry') {
+    await setValue(`#${id}`, value)
+    await page.keyboard.press('Tab')
+    return
+  }
   await page.click(`#${id}`)
-  await page.waitForSelector('input[role="combobox"]')
-  await page.type('input[role="combobox"]', value)
+  await page.waitForSelector('input[aria-label="搜索行业"]')
+  await page.type('input[aria-label="搜索行业"]', value)
   await page.keyboard.press('Enter')
-  await page.waitForFunction(() => !document.querySelector('input[role="combobox"]'))
+  await page.waitForFunction(() => !document.querySelector('input[aria-label="搜索行业"]'))
 }
 async function salary(value) {
   await page.click('#salary')
@@ -76,7 +81,7 @@ try {
   await textClick('button', '确定')
   await page.waitForFunction(() => document.querySelector('[data-scenario-preview]')?.textContent.includes('200-300元/天'))
   await page.click('[data-template-job-intention-key="city"]')
-  assert.ok((await page.$eval('#city', el => el.textContent)).includes('景德镇'))
+  assert.equal(await page.$eval('#city', el => el.value), '景德镇')
   assert.equal(await page.$eval('#salary-custom', el => el.value), '200-300元/天')
   passed('custom city and daily salary survive save/reopen')
   for (const preset of ['面议', '10-20k', '暂不填写']) {
@@ -100,7 +105,7 @@ try {
   await page.click('#industry')
   await page.waitForFunction(() => document.activeElement?.getAttribute('role') === 'combobox')
   await page.keyboard.press('Escape')
-  await page.waitForFunction(() => !document.querySelector('input[role="combobox"]'))
+  await page.waitForFunction(() => !document.querySelector('input[aria-label="搜索行业"]'))
   assert.ok(await page.$('#industry'))
   await page.waitForFunction(() => document.activeElement?.id === 'industry')
   passed('Escape closes only the search menu and returns focus to the source field')
@@ -108,10 +113,11 @@ try {
   for (const width of [320, 375, 414, 768]) {
     await page.setViewport({ width, height: 900 })
     await page.click('#city')
-    await page.waitForSelector('input[role="combobox"]')
+    await page.keyboard.press('ArrowDown')
+    await page.waitForSelector('[role=listbox]')
     const geometry = await page.evaluate(() => {
       const dialog = document.querySelector('#position').closest('[role="dialog"]')
-      const popup = document.querySelector('input[role="combobox"]').closest('[data-radix-popper-content-wrapper]')
+      const popup = document.querySelector('[role=listbox]').closest('[data-radix-popper-content-wrapper]')
       const d = dialog.getBoundingClientRect(), p = popup.getBoundingClientRect()
       return { dialog: d.toJSON(), popup: p.toJSON(), overflow: dialog.scrollWidth > dialog.clientWidth + 1, reachable: Boolean(document.elementFromPoint(p.x + p.width / 2, p.y + 20)?.closest('[data-radix-popper-content-wrapper]')) }
     })

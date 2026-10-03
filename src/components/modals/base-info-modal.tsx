@@ -3,8 +3,8 @@ import type { ReactElement } from 'react';
 import type { BaseInfo } from '@/entities/user/base-info';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { SearchChoice } from '@/components/ui/search-choice';
-import { POPULAR_CITIES } from '@/data/dictionaries/cities';
+import { AutocompleteInput } from '@/components/ui/autocomplete-input';
+import { CITY_OPTIONS } from '@/data/dictionaries/cities';
 import { Input } from '@/components/ui/input';
 import { EmailInput } from '@/components/ui/email-input';
 import { Label } from '@/components/ui/label';
@@ -218,16 +218,16 @@ export default function BaseInfoModal(props: BaseInfoModalProps): ReactElement {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="household">户籍</Label>
-                  <SearchChoice id="household" label="户籍" value={household} options={POPULAR_CITIES}
-                    onValueChange={setHousehold} />
+                  <AutocompleteInput id="household" listLabel="户籍城市建议" value={household} options={CITY_OPTIONS}
+                    onValueChange={setHousehold} placeholder="输入户籍地、拼音或首字母" className="h-11" />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="currentLocation">现所在地</Label>
-                  <SearchChoice id="currentLocation" label="现所在地" value={currentLocation} options={POPULAR_CITIES}
-                    onValueChange={setCurrentLocation} />
+                  <AutocompleteInput id="currentLocation" listLabel="现所在地建议" value={currentLocation} options={CITY_OPTIONS}
+                    onValueChange={setCurrentLocation} placeholder="输入城市、拼音或首字母" className="h-11" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="workStartTime">开始工作时间</Label>

@@ -6,8 +6,8 @@ const EDGE = 12
 export const POPOVER_GAP = 4
 
 /** Keep placement independent of results; only a viewport resize can choose a new side. */
-export function useStablePopoverPlacement(anchor: RefObject<HTMLElement | null>, open: boolean, preferredHeight: number) {
-  const [placement, setPlacement] = useState<{ side: 'top' | 'bottom'; maxHeight: number }>({ side: 'bottom', maxHeight: preferredHeight })
+export function useStablePopoverPlacement(anchor: RefObject<HTMLElement | null>, open: boolean, preferredHeight: number, minWidth = 0) {
+  const [placement, setPlacement] = useState<{ side: 'top' | 'bottom'; maxHeight: number; alignOffset: number }>({ side: 'bottom', maxHeight: preferredHeight, alignOffset: 0 })
 
   useLayoutEffect(() => {
     if (!open || !anchor.current) return
@@ -22,7 +22,10 @@ export function useStablePopoverPlacement(anchor: RefObject<HTMLElement | null>,
     let side = pickSide(space())
     const update = () => {
       const maxHeight = Math.floor(space()[side])
-      setPlacement(current => current.side === side && current.maxHeight === maxHeight ? current : { side, maxHeight })
+      const rect = anchor.current!.getBoundingClientRect()
+      const width = Math.min(Math.max(rect.width, minWidth), window.innerWidth - EDGE * 2)
+      const alignOffset = Math.min(0, window.innerWidth - EDGE - rect.left - width)
+      setPlacement(current => current.side === side && current.maxHeight === maxHeight && current.alignOffset === alignOffset ? current : { side, maxHeight, alignOffset })
     }
     const resize = () => {
       // A smaller dialog can scroll the source field out of view; keep the open control reachable.
@@ -46,7 +49,7 @@ export function useStablePopoverPlacement(anchor: RefObject<HTMLElement | null>,
       window.visualViewport?.removeEventListener('scroll', update)
       observer.disconnect()
     }
-  }, [anchor, open, preferredHeight])
+  }, [anchor, open, preferredHeight, minWidth])
 
   return placement
 }

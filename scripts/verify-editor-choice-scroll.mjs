@@ -36,7 +36,11 @@ async function open(modal, id, width = 1400) {
     await page.setViewport({ width, height: 900, hasTouch: true })
     if (id === 'industry') await more()
   }
-  await page.click(`#${id}`)
+  if (id === 'industry') await page.click(`#${id}`)
+  else {
+    if (await page.$eval(`#${id}`, el => el.getAttribute('aria-expanded') === 'true')) await page.keyboard.press('Escape')
+    await page.click(`#${id} + button`)
+  }
   await page.waitForSelector('[role=listbox]')
   await settle()
 }
@@ -93,7 +97,7 @@ try {
   const value = await option.evaluate(el => el.textContent.trim())
   await option.click()
   assert.equal(await page.$('[role=listbox]'), null)
-  assert.ok((await page.$eval('#city', el => el.textContent)).includes(value))
+  assert.equal(await page.$eval('#city', el => el.value), value)
   results.push({ check: 'clicking a city reached by wheel scrolling selects it', pass: true, value })
   await page.keyboard.press('Escape')
 

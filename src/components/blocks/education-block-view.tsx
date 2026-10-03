@@ -5,6 +5,8 @@ import { useAppStore } from '@/state/store';
 import type { EducationBlock } from '@/entities/blocks/education-block';
 import { CONTENT_DISPLAY_STYLES_XS, CONTENT_EDITING_STYLES_XS } from '@/editor/editor-styles';
 import EditableDateField from '@/editor/editable-date-field';
+import { AutocompleteInput } from '@/components/ui/autocomplete-input';
+import { SCHOOL_OPTIONS, MAJOR_OPTIONS } from '@/data/dictionaries/education';
 
 /**
  * Renders a single EducationBlock with structured layout and inline editing.
@@ -78,9 +80,13 @@ export default function EducationBlockView(props: EducationBlockViewProps): Reac
   }
 
   function handleKeyDown(e: KeyboardEvent<HTMLInputElement>): void {
+    e.stopPropagation();
+    if (e.nativeEvent.isComposing || e.keyCode === 229) return;
     if (e.key === 'Enter') {
+      e.preventDefault();
       saveField();
     } else if (e.key === 'Escape') {
+      e.preventDefault();
       cancelEditing();
     }
   }
@@ -90,14 +96,15 @@ export default function EducationBlockView(props: EducationBlockViewProps): Reac
       <div className="flex items-baseline justify-between mb-1.5 gap-2">
         <div className="flex items-center gap-1 text-sm font-bold flex-1 min-w-0">
           {editingField === 'school' ? (
-            <input
+            <AutocompleteInput
               ref={inputRef}
               type="text"
               value={tempValue}
-              onChange={(e): void => setTempValue(e.target.value)}
+              onValueChange={setTempValue}
+              options={SCHOOL_OPTIONS} listLabel="学校建议" minPopupWidth={280}
               onBlur={saveField}
               onKeyDown={handleKeyDown}
-              className="px-1 py-0.5 border border-blue-500 rounded outline-none flex-1"
+              className="h-auto px-1 py-0.5 border border-primary rounded outline-none text-[inherit] md:text-[inherit]"
               placeholder="学校名称"
             />
           ) : (
@@ -114,14 +121,15 @@ export default function EducationBlockView(props: EducationBlockViewProps): Reac
             <>
               <span className="text-gray-400">·</span>
               {editingField === 'major' ? (
-                <input
+                <AutocompleteInput
                   ref={inputRef}
                   type="text"
                   value={tempValue}
-                  onChange={(e): void => setTempValue(e.target.value)}
+                  onValueChange={setTempValue}
+                  options={MAJOR_OPTIONS} listLabel="专业建议" minPopupWidth={280}
                   onBlur={saveField}
                   onKeyDown={handleKeyDown}
-                  className="px-1 py-0.5 border border-blue-500 rounded outline-none flex-1"
+                  className="h-auto px-1 py-0.5 border border-primary rounded outline-none text-[inherit] md:text-[inherit]"
                   placeholder="专业"
                 />
               ) : (

@@ -159,6 +159,7 @@ it('lets a module title contain spaces and commits Enter without reopening its e
 beforeEach(() => { store.readOnly = false; vi.useFakeTimers(); });
 afterEach(() => {
   cleanup();
+  vi.unstubAllGlobals();
   vi.clearAllTimers();
   vi.useRealTimers();
 });
@@ -309,16 +310,17 @@ it('opens a structured field from keyboard focus and returns after Escape', () =
   render(<EditableFieldWrapper blockId="block" fieldName="school" value="江城大学" onUpdate={() => {}} />);
   const field = screen.getByRole('button', { name: '江城大学' });
   fireEvent.keyDown(field, { key: 'Enter' });
-  expect(screen.getByRole('textbox', { name: '学校名称' })).toBe(document.activeElement);
+  expect(screen.getByRole('combobox', { name: '学校名称' })).toBe(document.activeElement);
   fireEvent.keyDown(document.activeElement!, { key: 'Escape' });
   expect(screen.getByRole('button', { name: '江城大学' })).toBe(document.activeElement);
 });
 
 it('does not submit a structured field while choosing Chinese text, then commits once', () => {
+  vi.stubGlobal('ResizeObserver', class { observe() {} disconnect() {} });
   store.setResume.mockClear();
   render(<EditableFieldWrapper blockId="block" fieldName="school" value="江城大学" onUpdate={() => {}} />);
   fireEvent.click(screen.getByRole('button', { name: '江城大学' }));
-  const input = screen.getByRole('textbox');
+  const input = screen.getByRole('combobox');
   fireEvent.compositionStart(input);
   fireEvent.change(input, { target: { value: '北京大学' } });
   fireEvent.keyDown(input, { key: 'Enter', isComposing: true });

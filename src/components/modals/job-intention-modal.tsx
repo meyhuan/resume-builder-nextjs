@@ -7,10 +7,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { SearchChoice } from '@/components/ui/search-choice';
+import { AutocompleteInput } from '@/components/ui/autocomplete-input';
 import { ChoiceGroup } from '@/components/ui/choice-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { JOB_TYPE_OPTIONS, RECRUITMENT_TYPE_OPTIONS, SALARY_OPTIONS, CURRENT_STATUS_OPTIONS } from '@/data/dictionaries/base-enums';
-import { POPULAR_CITIES } from '@/data/dictionaries/cities';
+import { INTENTION_CITY_OPTIONS } from '@/data/dictionaries/cities';
 import { INDUSTRY_OPTIONS } from '@/data/dictionaries/industries';
 import { ChevronDown, Plus, Trash2 } from 'lucide-react';
 
@@ -82,7 +83,7 @@ export default function JobIntentionModal(props: JobIntentionModalProps): ReactE
           </div>
           <div className="space-y-2">
             <Label htmlFor="city">意向城市</Label>
-            <SearchChoice id="city" label="城市" value={city} onValueChange={setCity} options={['不限', ...POPULAR_CITIES]} placeholder="搜索或选择城市" />
+            <AutocompleteInput id="city" listLabel="城市建议" value={city} onValueChange={setCity} options={INTENTION_CITY_OPTIONS} placeholder="输入城市、拼音或首字母" className="h-11" />
           </div>
         </div>
         <div className="space-y-2">
