@@ -171,7 +171,9 @@ function LayoutPanel(props: LayoutPanelProps): ReactElement {
       {/* Templates sub-tab */}
       <TabsContent value="templates" className="flex-1 flex flex-col m-0 p-0 overflow-hidden">
         <div className="flex-1 px-4 py-4 overflow-y-auto custom-scrollbar">
-          <TemplateBrowser templates={templates} currentId={tpl} gridClassName="grid grid-cols-2 gap-4 pb-4"
+          {/* Fit columns to the panel, keeping two cards even on narrow mobile screens.
+              auto-fill also keeps filtered cards from stretching into empty columns. */}
+          <TemplateBrowser templates={templates} currentId={tpl} gridClassName="grid grid-cols-[repeat(auto-fill,minmax(min(144px,calc((100%_-_16px)/2)),1fr))] gap-4 pb-4"
             renderTemplate={(template) => (
               <button
                 key={template.id}
@@ -179,7 +181,7 @@ function LayoutPanel(props: LayoutPanelProps): ReactElement {
                 data-template-id={template.id}
                 aria-pressed={tpl === template.id}
                 aria-label={`选择模板 ${template.name}：${template.description}`}
-                className={`group relative cursor-pointer rounded-xl border transition-all duration-200 overflow-hidden ${
+                className={`group relative min-w-0 cursor-pointer rounded-xl border transition-all duration-200 overflow-hidden ${
                   tpl === template.id
                     ? 'border-violet-500 ring-2 ring-violet-100 shadow-sm bg-white'
                     : 'border-slate-200 bg-white shadow-sm hover:border-slate-300 hover:-translate-y-0.5 hover:shadow-md'
@@ -193,7 +195,7 @@ function LayoutPanel(props: LayoutPanelProps): ReactElement {
                       alt={template.name}
                       fill
                       className="object-cover object-top transition-transform duration-300 group-hover:scale-105"
-                      sizes="160px"
+                      sizes="232px"
                     />
                   ) : (
                     <div className="absolute inset-0 flex items-center justify-center text-slate-200">

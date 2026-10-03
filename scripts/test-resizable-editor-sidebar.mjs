@@ -4,6 +4,7 @@ import { mkdir } from 'node:fs/promises';
 import puppeteer from 'puppeteer';
 
 const origin = process.env.SIDEBAR_TEST_ORIGIN || 'http://127.0.0.1:3107';
+assert.ok(['localhost', '127.0.0.1'].includes(new URL(origin).hostname));
 const key = 'resume-editor-sidebar-width-v1';
 const artifacts = 'test-artifacts/resizable-editor-sidebar';
 const browser = await puppeteer.launch({
@@ -65,8 +66,13 @@ try {
     assert.deepEqual(await page.evaluate(() => [document.body.style.cursor, document.body.style.userSelect]), ['', '']);
   };
 
-  await page.setViewport({ width: 1440, height: 900, hasTouch: true });
+  await page.setViewport({ width: 1440, height: 900, hasTouch: true, deviceScaleFactor: 2 });
   await page.goto(origin + '/dev/assistant-lab', { waitUntil: 'networkidle2' });
+  await page.waitForFunction(selector => {
+    const node = document.querySelector(selector);
+    const propsKey = node && Object.keys(node).find(key => key.startsWith('__reactProps$'));
+    return propsKey && typeof node[propsKey].onPointerDown === 'function';
+  }, {}, handle);
   await expectWidth(480);
   await clickText(aside + ' nav button', 'AI 助手');
   await drag(-120);
@@ -131,18 +137,70 @@ try {
     await clickText(aside + ' nav button', label);
     assert.equal(await width(), 540);
   }
+  await clickText(aside + ' nav button', '模板');
+  const cards = aside + ' button[data-template-id]';
+  const selectedId = await page.$eval(cards + '[aria-pressed="true"]', node => node.dataset.templateId);
+  const templateLayout = () => page.$eval(cards, node => ({
+    columns: getComputedStyle(node.parentElement).gridTemplateColumns.split(' ').length,
+    cardWidth: node.getBoundingClientRect().width,
+    overflow: node.parentElement.scrollWidth > node.parentElement.clientWidth,
+  }));
+  for (const [panelWidth, columns] of [[360, 2], [480, 2], [520, 3], [640, 3], [480, 2]]) {
+    await drag(await width() - panelWidth);
+    await expectWidth(panelWidth);
+    const layout = await templateLayout();
+    assert.equal(layout.columns, columns, `Template columns at sidebar width ${panelWidth}`);
+    assert.ok(layout.cardWidth <= 232, `Cards must not enlarge beyond the image sizing hint: ${layout.cardWidth}`);
+    assert.equal(layout.overflow, false);
+    assert.equal(await page.$eval(cards + '[aria-pressed="true"]', node => node.dataset.templateId), selectedId);
+    await page.waitForFunction(selector => {
+      const image = document.querySelector(selector + ' img');
+      return image?.complete && image.naturalWidth > 0;
+    }, {}, cards);
+    const image = await page.$eval(cards + ' img', node => ({
+      requestedWidth: Number(new URL(node.currentSrc).searchParams.get('w')),
+      displayWidth: node.getBoundingClientRect().width,
+      dpr: devicePixelRatio,
+    }));
+    assert.ok(image.requestedWidth >= image.displayWidth * image.dpr, 'Retina cards request adequate image resolution');
+    await page.screenshot({ path: artifacts + `/templates-${panelWidth}-${columns}-columns.png` });
+  }
+  await drag(await width() - 640);
+  await expectWidth(640);
+  const unfilteredCardWidth = (await templateLayout()).cardWidth;
+  await clickText(aside + ' [aria-label="模板快捷分类"] button', '英文简历 (1)');
+  assert.equal(await page.$$(cards).then(nodes => nodes.length), 1);
+  assert.equal((await templateLayout()).columns, 3);
+  assert.ok(Math.abs((await templateLayout()).cardWidth - unfilteredCardWidth) < 1, 'A single filtered result keeps its card size');
+  await page.screenshot({ path: artifacts + '/templates-single-result.png' });
+  await page.click(cards + '[data-template-id="moxu"]');
+  await page.waitForSelector(cards + '[data-template-id="moxu"][aria-pressed="true"]');
+  await clickText(aside + ' [aria-label="模板快捷分类"] button', '全部模板 (50)');
+  await page.click(cards + `[data-template-id="${selectedId}"]`);
+  await page.waitForSelector(cards + `[data-template-id="${selectedId}"][aria-pressed="true"]`);
+  await drag(await width() - 540);
+  await expectWidth(540);
   await page.screenshot({ path: artifacts + '/editor-desktop.png' });
   await page.click('button[aria-label="收起工具，返回简历"]');
   await page.waitForSelector(aside, { hidden: true });
   await page.click('button[title="模块管理"]');
   await expectWidth(540);
+  await clickText(aside + ' nav button', '模板');
   await page.setViewport({ width: 390, height: 844 });
   await expectWidth(390);
   assert.equal(await page.$eval(handle, node => getComputedStyle(node).display), 'none');
-  assert.equal(await page.$eval('[data-editor-canvas]', node => getComputedStyle(node).display), 'none');
+  // The canvas can be hidden by its workspace wrapper rather than its own display rule.
+  await page.waitForFunction(() => document.querySelector('[data-editor-canvas]').getClientRects().length === 0);
   await page.screenshot({ path: artifacts + '/editor-mobile.png' });
+  for (const viewportWidth of [390, 320]) {
+    await page.setViewport({ width: viewportWidth, height: 844, deviceScaleFactor: 2 });
+    await expectWidth(viewportWidth);
+    assert.equal((await templateLayout()).columns, 2, 'Narrow mobile screens retain two template columns');
+    assert.equal((await templateLayout()).overflow, false);
+    await page.screenshot({ path: artifacts + `/templates-mobile-${viewportWidth}.png` });
+  }
   assert.deepEqual(errors, []);
-  console.log('PASS: editor + Assistant Lab; mouse/touch drag, min/max, double-click, keyboard, persisted reload, narrow desktop canvas protection, four panels, close/reopen, mobile 390/320, no hydration errors.');
+  console.log('PASS: editor + Assistant Lab; mouse/touch drag, min/max, double-click, keyboard, persisted reload, narrow desktop canvas protection, four panels, close/reopen, adaptive template columns 2/3, bounded card size, Retina image requests, single filtered result, template selection, mobile 390/320 two columns, no hydration errors.');
 } catch (error) {
   if (currentPage) {
     await currentPage.screenshot({ path: artifacts + '/failure.png' });
