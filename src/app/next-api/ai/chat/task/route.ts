@@ -11,6 +11,10 @@ import {
 import { AssistantError, consumeAssistantQuota } from '@/lib/ai/unified/quota';
 import { createJsonRunner, runAssistant } from '@/lib/ai/unified/engine';
 import type { ResumeData } from '@/entities/resume/resume-data';
+import type {
+  AssistantStage,
+  AssistantStreamEvent,
+} from '@/lib/ai/unified/stream';
 const bodySchema = z.object({
   task: taskSchema,
   turns: z
@@ -42,6 +46,26 @@ const bodySchema = z.object({
     .passthrough(),
 });
 export const maxDuration = 180;
+function failure(error: unknown) {
+  if (error instanceof AssistantError)
+    return {
+      error: error.message,
+      quotaExceeded: error.quotaExceeded,
+      status: error.status,
+    };
+  console.error(
+    '[assistant-task] request failed',
+    error instanceof Error ? error.name : 'unknown',
+  );
+  return {
+    error: '这次处理未完成，原文没有改变。请重试或补充具体要求。',
+    errorCode:
+      error instanceof Error && error.name === 'TimeoutError'
+        ? 'timeout'
+        : 'server',
+    status: 503,
+  };
+}
 export async function POST(request: NextRequest) {
   try {
     const raw = await request.text();
@@ -58,30 +82,82 @@ export async function POST(request: NextRequest) {
       ).allowed
     )
       throw new AssistantError('请求较多，请稍后再试', 429);
+    const cancelled = new AbortController();
     const signal = AbortSignal.any([
       request.signal,
+      cancelled.signal,
       AbortSignal.timeout(150000),
     ]);
     // One charge per invocation only. Independent HTTP retries are new attempts.
     let chargePromise: Promise<void> | undefined;
-    const turn = await runAssistant({
-      task: body.task,
-      turns: body.turns,
-      text: body.text,
-      requestId: body.requestId,
-      allowDirect: !body.fromFollowup,
-      resume: body.resumeData as unknown as ResumeData,
-      run: createJsonRunner(extractAIConfig(request), signal),
-      charge: (feature) => {
-        signal.throwIfAborted();
-        return (chargePromise ??= consumeAssistantQuota(
-          auth.unionid!,
-          auth.isVip,
-          feature,
-          auth.javaUserId,
-        ));
-      },
-    });
+    const execute = (emit?: (event: AssistantStreamEvent) => void) =>
+      runAssistant({
+        task: body.task,
+        turns: body.turns,
+        text: body.text,
+        requestId: body.requestId,
+        allowDirect: !body.fromFollowup,
+        resume: body.resumeData as unknown as ResumeData,
+        run: createJsonRunner(extractAIConfig(request), signal),
+        ...(emit
+          ? {
+              onProgress: (stage: AssistantStage) =>
+                emit({ type: 'progress', requestId: body.requestId, stage }),
+              onPreview: (text: string) =>
+                emit({ type: 'preview', requestId: body.requestId, text }),
+            }
+          : {}),
+        charge: (feature) => {
+          signal.throwIfAborted();
+          return (chargePromise ??= consumeAssistantQuota(
+            auth.unionid!,
+            auth.isVip,
+            feature,
+            auth.javaUserId,
+          ));
+        },
+      });
+    if (request.headers.get('accept')?.includes('application/x-ndjson')) {
+      const encoder = new TextEncoder();
+      let active = true;
+      const stream = new ReadableStream<Uint8Array>({
+        async start(controller) {
+          const emit = (event: AssistantStreamEvent) => {
+            if (active)
+              controller.enqueue(encoder.encode(JSON.stringify(event) + '\n'));
+          };
+          try {
+            const turn = await execute(emit);
+            signal.throwIfAborted();
+            emit({ type: 'result', requestId: body.requestId, turn });
+          } catch (error) {
+            if (active)
+              emit({
+                type: 'error',
+                requestId: body.requestId,
+                ...failure(error),
+              });
+          } finally {
+            if (active) {
+              active = false;
+              controller.close();
+            }
+          }
+        },
+        cancel() {
+          active = false;
+          cancelled.abort();
+        },
+      });
+      return new Response(stream, {
+        headers: {
+          'Content-Type': 'application/x-ndjson; charset=utf-8',
+          'Cache-Control': 'no-cache, no-transform',
+          'X-Accel-Buffering': 'no',
+        },
+      });
+    }
+    const turn = await execute();
     signal.throwIfAborted();
     return NextResponse.json({ turn });
   } catch (error) {
@@ -95,19 +171,7 @@ export async function POST(request: NextRequest) {
         { error: '请求格式不正确，请重新选择任务' },
         { status: 400 },
       );
-    console.error(
-      '[assistant-task] request failed',
-      error instanceof Error ? error.name : 'unknown',
-    );
-    return NextResponse.json(
-      {
-        error: '这次处理未完成，原文没有改变。请重试或补充具体要求。',
-        errorCode:
-          error instanceof Error && error.name === 'TimeoutError'
-            ? 'timeout'
-            : 'server',
-      },
-      { status: 503 },
-    );
+    const { status, ...payload } = failure(error);
+    return NextResponse.json(payload, { status });
   }
 }

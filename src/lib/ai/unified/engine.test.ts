@@ -81,6 +81,50 @@ it('charges original feature and defaults to preview', async () => {
   expect(result.direct).toBe(false);
   expect(result.proposals[0].before).toContain('协助登记');
 });
+it('publishes draft previews and real processing stages while fact checking is still pending', async () => {
+  const onProgress = vi.fn(),
+    onPreview = vi.fn();
+  let finishAudit!: (value: unknown) => void;
+  let calls = 0;
+  const runner: JsonRunner = async (_s, _p, schema, preview) => {
+    calls++;
+    if (calls === 1) return schema.parse(plan);
+    if (calls === 2) {
+      preview?.onPartial(draft);
+      return schema.parse(draft);
+    }
+    return schema.parse(
+      await new Promise((resolve) => {
+        finishAudit = resolve;
+      }),
+    );
+  };
+  let completed = false;
+  const result = runAssistant({
+    task,
+    turns: [],
+    text: '帮我润色',
+    requestId: 'request',
+    resume,
+    run: runner,
+    charge: async () => {},
+    onProgress,
+    onPreview,
+  }).then((turn) => {
+    completed = true;
+    return turn;
+  });
+  await vi.waitFor(() => expect(finishAudit).toBeTypeOf('function'));
+  expect(completed).toBe(false);
+  expect(onProgress.mock.calls.map((call) => call[0])).toEqual([
+    'planning',
+    'generating',
+    'checking',
+  ]);
+  expect(onPreview).toHaveBeenCalledWith('协助完成物品登记与发放。');
+  finishAudit({ safe: false, questions: ['请确认事实'] });
+  expect((await result).proposals).toEqual([]);
+});
 it('responsibility inflation produces a question, never an applicable proposal', async () => {
   const { result } = await run([
     plan,

@@ -1,6 +1,6 @@
 import { getGuidedQuestions } from '@/lib/ai/guided-questions';
 import type { SectionModuleType } from '@/lib/ai/section-types';
-import { generateText } from 'ai';
+import { generateText, streamText, parsePartialJson } from 'ai';
 import { z } from 'zod';
 import type { ResumeData } from '@/entities/resume/resume-data';
 import { toResumeContext } from '@/lib/ai/resume-context';
@@ -27,6 +27,7 @@ import {
   plainText,
   isResumeOptimization,
 } from './policy';
+import { draftPreview, type AssistantStage } from './stream';
 const planSchema = z.object({
   kind: z.enum(['clarify', 'write', 'answer']),
   feature: z
@@ -71,15 +72,17 @@ export type JsonRunner = <T>(
   system: string,
   prompt: string,
   schema: z.ZodType<T>,
+  preview?: { onPartial: (value: unknown) => void; onRetry: () => void },
 ) => Promise<T>;
 export function createJsonRunner(
   config: AIConfig,
   signal: AbortSignal,
 ): JsonRunner {
-  return async (system, prompt, schema) => {
+  return async (system, prompt, schema, preview) => {
     let formatFeedback = '';
     for (let attempt = 0; attempt < 2; attempt++) {
-      const result = await generateText({
+      if (attempt) preview?.onRetry();
+      const options = {
         model: getModel(config),
         system:
           system +
@@ -90,13 +93,38 @@ export function createJsonRunner(
         providerOptions: getJsonProviderOptions(config),
         maxOutputTokens: 10000,
         abortSignal: signal,
-      });
+      };
+      let output: string;
+      if (preview) {
+        output = '';
+        let emittedAt = 0;
+        const result = streamText(options);
+        for await (const part of result.fullStream) {
+          signal.throwIfAborted();
+          if (part.type === 'error') throw part.error;
+          if (part.type !== 'text-delta') continue;
+          output += part.text;
+          if (Date.now() - emittedAt < 80) continue;
+          emittedAt = Date.now();
+          const partial = await parsePartialJson(
+            output
+              .replace(/<think>[\s\S]*?(?:<\/think>|$)/g, '')
+              .replace(/^```(?:json)?\s*/, ''),
+          );
+          preview.onPartial(partial.value);
+        }
+        signal.throwIfAborted();
+      } else {
+        output = (await generateText(options)).text;
+      }
       try {
-        const text = result.text
+        const text = output
           .replace(/<think>[\s\S]*?<\/think>/g, '')
           .replace(/^```(?:json)?\s*|\s*```$/g, '')
           .trim();
-        return schema.parse(JSON.parse(jsonrepair(text)));
+        const parsed = schema.parse(JSON.parse(jsonrepair(text)));
+        preview?.onPartial(parsed);
+        return parsed;
       } catch (error) {
         // Only schema paths/codes are used as feedback; never log resume content.
         formatFeedback =
@@ -119,8 +147,11 @@ export async function runAssistant(params: {
   run: JsonRunner;
   allowDirect?: boolean;
   charge: (feature: AssistantTask['feature']) => Promise<void>;
+  onProgress?: (stage: AssistantStage) => void;
+  onPreview?: (text: string) => void;
 }): Promise<AssistantTurn> {
   const { turns, text, resume, run } = params;
+  params.onProgress?.('planning');
   let wholeResume =
     !params.task.blockId &&
     (params.task.scope === 'resume' ||
@@ -293,11 +324,30 @@ export async function runAssistant(params: {
     };
   }
   await params.charge(plan.kind === 'answer' ? 'chat' : feature);
+  params.onProgress?.('generating');
+  let lastPreview = '';
   const draft = await run(
     taskSystem(wholeResume ? task : { ...task, scope: undefined }),
     input,
     draftSchema,
+    params.onPreview
+      ? {
+          onPartial: (value) => {
+            const preview = draftPreview(value);
+            if (preview !== lastPreview) {
+              lastPreview = preview;
+              params.onPreview?.(preview);
+            }
+          },
+          onRetry: () => {
+            lastPreview = '';
+            params.onPreview?.('');
+            params.onProgress?.('retrying');
+          },
+        }
+      : undefined,
   );
+  params.onProgress?.('checking');
   const checked: CheckedProposal[] = [];
   if (draft.questions.length) {
     if (

@@ -5,6 +5,7 @@ const m = vi.hoisted(() => ({
   auth: vi.fn(),
   charge: vi.fn(),
   run: vi.fn(),
+  runner: vi.fn(),
 }));
 vi.mock('@/lib/api/vip-api', () => ({ checkVipStatus: m.auth }));
 vi.mock('@/lib/ai/rate-limiter', () => ({
@@ -12,7 +13,7 @@ vi.mock('@/lib/ai/rate-limiter', () => ({
 }));
 vi.mock('@/lib/ai/provider', () => ({ extractAIConfig: () => ({}) }));
 vi.mock('@/lib/ai/unified/engine', () => ({
-  createJsonRunner: () => vi.fn(),
+  createJsonRunner: m.runner,
   runAssistant: m.run,
 }));
 vi.mock('@/lib/ai/unified/quota', () => ({
@@ -67,6 +68,7 @@ beforeEach(() => {
   });
   m.run.mockResolvedValue({ requestId: body.requestId, proposals: [] });
   m.charge.mockResolvedValue(undefined);
+  m.runner.mockReturnValue(vi.fn());
 });
 it('requires login before model work or consuming quota', async () => {
   m.auth.mockResolvedValue({ isVip: false });
@@ -159,4 +161,80 @@ it('rejects a backend account without the authenticated login identity', async (
   m.auth.mockResolvedValue({ userId: 'java-id', isVip: false });
   expect((await POST(req())).status).toBe(401);
   expect(m.charge).not.toHaveBeenCalled();
+});
+const streamReq = () =>
+  new NextRequest('http://localhost/next-api/ai/chat/task', {
+    method: 'POST',
+    headers: { Accept: 'application/x-ndjson' },
+    body: JSON.stringify(body),
+  });
+it('returns streaming progress and previews before generation has completed', async () => {
+  let finish!: (value: unknown) => void;
+  m.run.mockImplementation(async (params) => {
+    params.onProgress('planning');
+    params.onPreview('生成中的文字');
+    return await new Promise((resolve) => {
+      finish = resolve;
+    });
+  });
+  const response = await POST(streamReq());
+  expect(response.headers.get('content-type')).toContain(
+    'application/x-ndjson',
+  );
+  expect(response.headers.get('x-accel-buffering')).toBe('no');
+  const reader = response.body!.getReader();
+  const first = new TextDecoder().decode((await reader.read()).value);
+  expect(JSON.parse(first)).toMatchObject({
+    type: 'progress',
+    stage: 'planning',
+  });
+  expect(
+    JSON.parse(new TextDecoder().decode((await reader.read()).value)),
+  ).toMatchObject({ type: 'preview', text: '生成中的文字' });
+  finish({ requestId: body.requestId, proposals: [] });
+  expect(
+    JSON.parse(new TextDecoder().decode((await reader.read()).value)).type,
+  ).toBe('result');
+  expect((await reader.read()).done).toBe(true);
+});
+it('propagates disconnect cancellation into model work', async () => {
+  let modelSignal!: AbortSignal;
+  m.run.mockImplementation(async (params) => {
+    modelSignal = m.runner.mock.calls[0][1];
+    await params.charge('polish');
+    return await new Promise((_resolve, reject) => {
+      if (modelSignal.aborted) reject(modelSignal.reason);
+      else
+        modelSignal.addEventListener(
+          'abort',
+          () => reject(modelSignal.reason),
+          { once: true },
+        );
+    });
+  });
+  const response = await POST(streamReq());
+  await response.body!.cancel();
+  expect(modelSignal.aborted).toBe(true);
+  expect(() => m.run.mock.calls[0][0].charge('polish')).toThrow();
+});
+it('reports safe timeout and quota errors in the stream without returning a final turn', async () => {
+  m.run.mockRejectedValue(
+    new DOMException('private provider detail', 'TimeoutError'),
+  );
+  let response = await POST(streamReq());
+  const timeout = await response.text();
+  expect(JSON.parse(timeout)).toMatchObject({
+    type: 'error',
+    errorCode: 'timeout',
+    status: 503,
+  });
+  expect(timeout).not.toContain('private provider detail');
+  const { AssistantError } = await import('@/lib/ai/unified/quota');
+  m.run.mockRejectedValue(new AssistantError('额度不足', 429, true));
+  response = await POST(streamReq());
+  expect(JSON.parse(await response.text())).toMatchObject({
+    type: 'error',
+    quotaExceeded: true,
+    status: 429,
+  });
 });

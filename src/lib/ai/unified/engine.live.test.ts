@@ -37,6 +37,49 @@ const run = createJsonRunner(
 describe.skipIf(process.env.AI_LIVE_EVAL !== '1')(
   'synthetic live model evaluation',
   () => {
+    it('streams synthetic draft content before returning a fact-checked turn', async () => {
+      const started = performance.now();
+      const previews: { text: string; at: number }[] = [];
+      const stages: string[] = [];
+      let completed = false;
+      const result = await runAssistant({
+        task: { ...task, feature: 'generate' },
+        turns: [],
+        text: '根据简历中这段真实经历，帮我写成清晰的三条简历描述，保留协助执行的职责，不添加数字或新事实。',
+        requestId: crypto.randomUUID(),
+        resume,
+        run,
+        charge: async () => {},
+        onProgress: (stage) => stages.push(stage),
+        onPreview: (text) => {
+          expect(completed).toBe(false);
+          if (text)
+            previews.push({
+              text,
+              at: Math.round(performance.now() - started),
+            });
+        },
+      });
+      completed = true;
+      const elapsed = Math.round(performance.now() - started);
+      expect(stages).toEqual(['planning', 'generating', 'checking']);
+      expect(previews.length).toBeGreaterThan(1);
+      expect(new Set(previews.map((p) => p.text)).size).toBeGreaterThan(1);
+      expect(previews[0].at).toBeLessThan(elapsed);
+      expect(result.proposals.length + result.questions.length).toBeGreaterThan(
+        0,
+      );
+      expect(result.proposals.every((p) => p.factChecked)).toBe(true);
+      console.log(
+        JSON.stringify({
+          streamingModelCheck: true,
+          firstPreviewMs: previews[0].at,
+          totalMs: elapsed,
+          previewUpdates: previews.length,
+          checkedProposals: result.proposals.length,
+        }),
+      );
+    }, 150000);
     it('preserves assisting role while polishing', async () => {
       const result = await runAssistant({
         task,

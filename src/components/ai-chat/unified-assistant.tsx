@@ -53,6 +53,12 @@ import {
   RESUME_OPTIMIZATION_REQUEST,
 } from '@/lib/ai/unified/policy';
 import { MAX_TASK_TURNS, toHistory } from '@/lib/ai/unified/types';
+import {
+  ASSISTANT_STAGES,
+  AssistantStreamError,
+  readAssistantResponse,
+  type AssistantStage,
+} from '@/lib/ai/unified/stream';
 import type {
   AssistantSession,
   AssistantTask,
@@ -304,6 +310,8 @@ export function UnifiedAssistant({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [pending, setPending] = useState('');
+  const [stage, setStage] = useState<AssistantStage>('planning');
+  const [preview, setPreview] = useState('');
   const [retry, setRetry] = useState<{
     text: string;
     fromFollowup: boolean;
@@ -451,7 +459,7 @@ export function UnifiedAssistant({
   useEffect(() => {
     if (nearBottom.current)
       end.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-  }, [sessions, pending, error]);
+  }, [sessions, pending, error, preview, stage]);
   useEffect(() => {
     if (externalMessage && !busy && loaded && session) {
       if (session.task.blockId) {
@@ -515,6 +523,8 @@ export function UnifiedAssistant({
     setBusy(true);
     setError('');
     setPending(body.text);
+    setStage('planning');
+    setPreview('');
     setInput('');
     setRetry({
       text: body.text,
@@ -546,7 +556,10 @@ export function UnifiedAssistant({
     try {
       const response = await fetch('/next-api/ai/chat/task', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/x-ndjson',
+        },
         body: JSON.stringify(body),
         signal: controller.signal,
       });
@@ -554,8 +567,8 @@ export function UnifiedAssistant({
       failureReason = response.ok
         ? 'invalid_response'
         : failureForStatus(response.status);
-      const data = await response.json();
       if (!response.ok) {
+        const data = await response.json();
         failureReason = failureForStatus(
           response.status,
           data.quotaExceeded === true,
@@ -566,10 +579,19 @@ export function UnifiedAssistant({
         }
         throw new Error(data.error || '处理失败，请重试');
       }
+      const turn = await readAssistantResponse(
+        response,
+        body.requestId,
+        controller.signal,
+        (event) => {
+          if (controller.signal.aborted || !mounted.current) return;
+          if (event.type === 'progress') setStage(event.stage);
+          if (event.type === 'preview') setPreview(event.text);
+        },
+      );
       if (controller.signal.aborted || !mounted.current) {
         throw new DOMException('已停止', 'AbortError');
       }
-      const turn = data.turn as AssistantTurn;
       if (turn.requestId !== body.requestId)
         throw new Error('返回结果不匹配，请重试');
       update(body.task.id, (s) =>
@@ -636,6 +658,16 @@ export function UnifiedAssistant({
         });
       setRetry(null);
     } catch (e) {
+      if (e instanceof AssistantStreamError) {
+        statusCode = e.payload.status;
+        failureReason = failureForStatus(
+          e.payload.status,
+          e.payload.quotaExceeded === true,
+        );
+        if (e.payload.errorCode === 'timeout') failureReason = 'timeout';
+        if (e.payload.quotaExceeded)
+          useVipStore.getState().setShowUpgrade(true, 'ai');
+      }
       if (controller.signal.aborted) {
         setError('已停止，未应用任何新修改。若已开始生成，可能已扣次。');
         event('cancel', body.task.feature, body.requestId, {
@@ -659,6 +691,7 @@ export function UnifiedAssistant({
       if (mounted.current) {
         setBusy(false);
         setPending('');
+        setPreview('');
         refreshEditorAssistQuota();
       }
       abort.current = null;
@@ -1242,14 +1275,31 @@ export function UnifiedAssistant({
           </article>
         ))}
         {busy && (
-          <div role="status" className="space-y-3">
+          <div className="space-y-3">
             <p className="ml-8 rounded-xl bg-violet-600 p-3 text-sm text-white">
               {pending}
             </p>
-            <p className="flex items-center gap-2 text-xs text-slate-500">
+            <p
+              role="status"
+              className="flex items-center gap-2 text-xs text-slate-500"
+            >
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              正在核对信息并整理结果…
+              {ASSISTANT_STAGES[stage]}
             </p>
+            {preview && (
+              <div
+                aria-label="生成中的草稿"
+                aria-busy="true"
+                className="space-y-2 rounded-xl border border-violet-100 bg-violet-50/50 p-3"
+              >
+                <p className="text-xs text-violet-700">
+                  草稿预览 · 尚未完成事实核对，请以最终结果为准
+                </p>
+                <p className="whitespace-pre-wrap break-words text-sm leading-7 text-slate-700">
+                  {preview}
+                </p>
+              </div>
+            )}
           </div>
         )}
         {error && (

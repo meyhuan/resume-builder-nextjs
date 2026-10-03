@@ -203,6 +203,189 @@ async function send(text = '帮我润色') {
   fireEvent.click(getSubmitButton());
   await waitFor(() => expect(screen.queryByText('停止')).toBeNull());
 }
+it('reproduces the legacy JSON response waiting until the complete result arrives', async () => {
+  let finish!: (value: unknown) => void;
+  mocks.fetch.mockImplementation(async () => ({
+    ok: true,
+    json: () =>
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+  }));
+  await mount();
+  fireEvent.change(screen.getByLabelText('向 AI 描述修改需求'), {
+    target: { value: '帮我润色' },
+  });
+  fireEvent.click(getSubmitButton());
+  await waitFor(() => expect(finish).toBeTypeOf('function'));
+  expect(screen.queryByText('逐步生成的正文')).toBeNull();
+  expect(screen.queryByText('应用这一处')).toBeNull();
+  const body = JSON.parse(mocks.fetch.mock.calls[0][1].body);
+  await act(async () =>
+    finish({
+      turn: {
+        requestId: body.requestId,
+        text: body.text,
+        answer: '逐步生成的正文',
+        questions: [],
+        proposals: [],
+        followups: [],
+        direct: false,
+        charged: true,
+        feature: 'polish',
+      },
+    }),
+  );
+  expect(await screen.findByText('逐步生成的正文')).toBeTruthy();
+});
+function streamingReply() {
+  let controller!: ReadableStreamDefaultController<Uint8Array>;
+  let body: { requestId: string; text: string };
+  const encoder = new TextEncoder();
+  const cancel = vi.fn();
+  mocks.fetch.mockImplementation(async (_url, options) => {
+    body = JSON.parse(options.body);
+    return new Response(
+      new ReadableStream<Uint8Array>({
+        start(c) {
+          controller = c;
+        },
+        cancel,
+      }),
+      { headers: { 'Content-Type': 'application/x-ndjson' } },
+    );
+  });
+  const emit = (event: Record<string, unknown>) =>
+    controller.enqueue(
+      encoder.encode(
+        JSON.stringify({ requestId: body.requestId, ...event }) + '\n',
+      ),
+    );
+  return {
+    emit,
+    cancel,
+    close: () => controller.close(),
+    finish: (questions: unknown[] = []) => {
+      emit({
+        type: 'result',
+        turn: {
+          ...body,
+          answer: questions.length ? '' : '核对完成',
+          questions,
+          proposals: questions.length
+            ? []
+            : [
+                {
+                  action: 'updateBlock',
+                  blockId: 'b',
+                  html: '<p>协助完成登记</p>',
+                  before: targetSnapshot(resume, 'b'),
+                  targetLabel: task.label,
+                  factChecked: true,
+                },
+              ],
+          followups: [],
+          direct: true,
+          charged: true,
+          feature: 'polish',
+        },
+      });
+      controller.close();
+    },
+  };
+}
+async function startStreaming() {
+  await mount();
+  fireEvent.change(screen.getByLabelText('向 AI 描述修改需求'), {
+    target: { value: '直接替换这段' },
+  });
+  fireEvent.click(getSubmitButton());
+  await waitFor(() => expect(mocks.fetch).toHaveBeenCalledTimes(1));
+}
+it('shows incremental draft text before completion, only applies the checked final turn, and persists no previews', async () => {
+  const stream = streamingReply();
+  await startStreaming();
+  expect(mocks.fetch.mock.calls[0][1].headers.Accept).toBe(
+    'application/x-ndjson',
+  );
+  act(() => stream.emit({ type: 'preview', text: '协助完成' }));
+  expect(await screen.findByText('协助完成')).toBeTruthy();
+  expect(screen.getByText(/尚未完成事实核对/)).toBeTruthy();
+  expect(screen.queryByText('应用这一处')).toBeNull();
+  expect(useAppStore.getState().pastStates).toHaveLength(0);
+  expect(JSON.stringify(mocks.saved)).not.toContain('协助完成');
+  act(() => stream.emit({ type: 'preview', text: '协助完成登记' }));
+  await screen.findByText('协助完成登记');
+  act(() => stream.emit({ type: 'progress', stage: 'checking' }));
+  await screen.findByText('草稿已生成，正在核对事实…');
+  act(() => stream.finish());
+  await screen.findByText('已应用');
+  expect(screen.queryByLabelText('生成中的草稿')).toBeNull();
+  expect(useAppStore.getState().pastStates).toHaveLength(1);
+  expect(JSON.stringify(mocks.saved)).not.toContain('尚未完成');
+});
+it('discards a streamed draft when fact checking requests confirmation', async () => {
+  const stream = streamingReply();
+  await startStreaming();
+  act(() => stream.emit({ type: 'preview', text: '主导活动运营' }));
+  await screen.findByText('主导活动运营');
+  act(() =>
+    stream.finish([{ question: '你是协助执行还是负责人？', options: [] }]),
+  );
+  await screen.findByText('你是协助执行还是负责人？');
+  expect(screen.queryByText('主导活动运营')).toBeNull();
+  expect(screen.queryByText('应用这一处')).toBeNull();
+  expect(useAppStore.getState().pastStates).toHaveLength(0);
+  expect(JSON.stringify(mocks.saved)).not.toContain('主导活动运营');
+});
+it('cancels an open stream promptly and discards the transient draft', async () => {
+  const stream = streamingReply();
+  await startStreaming();
+  act(() => stream.emit({ type: 'preview', text: '未完成的临时草稿' }));
+  await screen.findByText('未完成的临时草稿');
+  fireEvent.click(screen.getByTitle('停止生成'));
+  await screen.findByRole('alert');
+  expect(screen.queryByLabelText('生成中的草稿')).toBeNull();
+  expect(stream.cancel).toHaveBeenCalled();
+  expect(useAppStore.getState().pastStates).toHaveLength(0);
+  expect(JSON.stringify(mocks.saved)).not.toContain('未完成的临时草稿');
+});
+it('handles a stream that closes without a final result without storing or applying the draft', async () => {
+  const stream = streamingReply();
+  await startStreaming();
+  act(() => stream.emit({ type: 'preview', text: '断流草稿' }));
+  await screen.findByText('断流草稿');
+  act(() => stream.close());
+  await screen.findByText('响应中断，请重新生成');
+  expect(screen.queryByLabelText('生成中的草稿')).toBeNull();
+  expect(useAppStore.getState().pastStates).toHaveLength(0);
+  expect(JSON.stringify(mocks.saved)).not.toContain('断流草稿');
+});
+it('classifies quota failures sent inside a successful HTTP stream', async () => {
+  const stream = streamingReply();
+  await startStreaming();
+  act(() =>
+    stream.emit({
+      type: 'error',
+      error: '额度已用完',
+      quotaExceeded: true,
+      status: 429,
+    }),
+  );
+  await screen.findByText('额度已用完');
+  const tracked = vi
+    .mocked(track)
+    .mock.calls.map(
+      (call) => call[1] as { action?: string; failureReason?: string },
+    );
+  expect(
+    tracked.some(
+      (event) =>
+        event.action === 'quota_blocked' && event.failureReason === 'quota',
+    ),
+  ).toBe(true);
+  expect(useAppStore.getState().pastStates).toHaveLength(0);
+});
 it('reveals the full task and switches history without sending a request', async () => {
   await mount();
   expect(screen.queryByText('当前对象：校园旧物交换活动')).toBeNull();
