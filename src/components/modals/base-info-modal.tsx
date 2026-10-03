@@ -185,17 +185,20 @@ export default function BaseInfoModal(props: BaseInfoModalProps): ReactElement {
           <Button
             type="button"
             variant="ghost"
+            aria-expanded={showMoreFields}
+            aria-controls="base-more-fields"
             onClick={() => setShowMoreFields(!showMoreFields)}
-            className="w-full justify-start gap-2"
+            className="min-h-11 w-fit justify-start gap-2 px-2 -ml-2 font-normal text-muted-foreground hover:bg-transparent hover:text-primary active:bg-transparent active:text-primary focus-visible:ring-2 focus-visible:ring-offset-2"
           >
             <span>更多信息（选填）</span>
             <ChevronDown 
-              className={`h-4 w-4 transition-transform ${showMoreFields ? 'rotate-180' : ''}`}
+              aria-hidden="true"
+              className={`h-4 w-4 transition-transform motion-reduce:transition-none ${showMoreFields ? 'rotate-180' : ''}`}
             />
           </Button>
 
           {showMoreFields && (
-            <div className="space-y-4 pt-2 border-t">
+            <div id="base-more-fields" className="space-y-4 pt-2 border-t">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="nation">民族</Label>

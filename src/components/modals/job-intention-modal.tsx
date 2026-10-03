@@ -107,8 +107,8 @@ export default function JobIntentionModal(props: JobIntentionModalProps): ReactE
         <ChoiceGroup id="type" label="工作性质" value={type} onValueChange={setType} options={JOB_TYPE_OPTIONS} />
         <ChoiceGroup id="recruitmentType" label="招聘类型" value={recruitmentType} onValueChange={setRecruitmentType} options={RECRUITMENT_TYPE_OPTIONS} />
         <Button type="button" variant="ghost" aria-expanded={showMoreFields} aria-controls="job-more-fields"
-          onClick={() => setShowMoreFields(!showMoreFields)} className="min-h-11 w-full justify-start gap-2">
-          <span>更多信息（选填）</span><ChevronDown className={`size-4 ${showMoreFields ? 'rotate-180' : ''}`} />
+          onClick={() => setShowMoreFields(!showMoreFields)} className="min-h-11 w-fit justify-start gap-2 px-2 -ml-2 font-normal text-muted-foreground hover:bg-transparent hover:text-primary active:bg-transparent active:text-primary focus-visible:ring-2 focus-visible:ring-offset-2">
+          <span>更多信息（选填）</span><ChevronDown aria-hidden="true" className={`size-4 transition-transform motion-reduce:transition-none ${showMoreFields ? 'rotate-180' : ''}`} />
         </Button>
         {showMoreFields && <div id="job-more-fields" className="space-y-4 border-t pt-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
