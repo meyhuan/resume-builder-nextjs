@@ -3,10 +3,9 @@
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
-import {
-  getAllTemplates,
-  type TemplateConfig,
-} from "@/templates/template-loader";
+import { templateCatalog } from "@/lib/templates/template-catalog";
+import type { TemplateMetadata as TemplateConfig } from "@/lib/templates/template-metadata";
+import { templateLabels } from "@/lib/templates/template-taxonomy";
 import {
   ArrowRight,
   BriefcaseBusiness,
@@ -27,23 +26,23 @@ interface TemplatesSectionProps {
 
 const FEATURED_TEMPLATE_IDS = [
   "qingsui",
-  "mashang",
+  "lifeng",
   "xinghe",
   "hengjian",
   "yuanshan",
   "yiyetong",
-  "zhumo",
+  "ziji",
   "simple",
 ] as const;
 
 const TEMPLATE_SCENES: Record<string, string> = {
   qingsui: "校招 / 应届",
-  mashang: "技术 / 算法",
+  lifeng: "技术 / 工程",
   xinghe: "产品 / 运营",
   hengjian: "国企 / 银行",
   yuanshan: "管理 / 资深",
   yiyetong: "海投 / 一页",
-  zhumo: "内容 / 文案",
+  ziji: "设计 / 内容",
   simple: "通用 / 极简",
 };
 
@@ -78,7 +77,7 @@ function getFeaturedTemplates(
 }
 
 export const LandingTemplates = ({ id }: TemplatesSectionProps) => {
-  const templates = getAllTemplates();
+  const templates = templateCatalog;
   const featuredTemplates = getFeaturedTemplates(templates);
   const railRef = React.useRef<HTMLDivElement>(null);
   const [scrollState, setScrollState] = React.useState({
@@ -268,7 +267,7 @@ export const LandingTemplates = ({ id }: TemplatesSectionProps) => {
                             {TEMPLATE_SCENES[item.id] ?? item.description}
                           </p>
                           <div className="mt-2 flex flex-wrap gap-1.5">
-                            {(item.tags ?? []).slice(0, 2).map((tag) => (
+                            {templateLabels(item).slice(0, 2).map((tag) => (
                               <span
                                 key={tag}
                                 className="rounded-md bg-slate-50 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500"

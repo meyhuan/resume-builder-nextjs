@@ -2,6 +2,7 @@ import type { ReactElement, ReactNode, CSSProperties } from 'react'
 import { User } from 'lucide-react'
 import type { BaseInfo } from '@/entities/user/base-info'
 import type { EditableHeader } from '../hooks/use-editable-header'
+import { useAppStore } from '@/state/store'
 
 /**
  * Unstyled avatar slot.
@@ -32,6 +33,7 @@ export interface AvatarSlotProps {
 }
 
 export function AvatarSlot(props: AvatarSlotProps): ReactElement | null {
+  const readOnly = useAppStore((s) => s.readOnly)
   const {
     header, className, style,
     placeholderSize = 64, placeholderColor, placeholderBg = '#f1f5f9',
@@ -59,7 +61,7 @@ export function AvatarSlot(props: AvatarSlotProps): ReactElement | null {
       </div>
     )
 
-  const uploadOverlay: ReactElement | null = avatarHovered ? (
+  const uploadOverlay: ReactElement | null = !readOnly && avatarHovered ? (
     <div className="absolute inset-0 bg-black/55 flex items-center justify-center print:hidden z-10">
       <button
         type="button"
@@ -72,7 +74,7 @@ export function AvatarSlot(props: AvatarSlotProps): ReactElement | null {
   ) : null
 
   const hoverHandlers = {
-    onMouseEnter: () => setAvatarHovered(true),
+    onMouseEnter: () => !readOnly && setAvatarHovered(true),
     onMouseLeave: () => setAvatarHovered(false),
     onClick: (e: React.MouseEvent): void => e.stopPropagation(),
   }

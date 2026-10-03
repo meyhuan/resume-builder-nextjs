@@ -43,6 +43,7 @@ export default function SectionContainer(props: SectionContainerProps): ReactEle
 
   return (
     <section
+      data-template-section="true"
       className={baseClassName}
       style={dynamicStyle}
       onMouseEnter={handleMouseEnter}

@@ -2,6 +2,7 @@
 
 import { SectionTitleText } from '@/components/sections/section-title-text'
 import { getSectionDisplayTitle } from '@/entities/resume/section-display-title'
+import { hasMeaningfulText } from '@/lib/resume-placeholders'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { CSSProperties, KeyboardEvent, ReactElement, ReactNode } from 'react'
 import { GripVertical, Plus, Trash2, XCircle } from 'lucide-react'
@@ -1003,7 +1004,7 @@ function LanmuBlockShell(props: {
   readonly compact?: boolean
   readonly children: ReactNode
 }): ReactElement {
-  const { block, sectionId, index, total, compact, children } = props
+  const { block, sectionId, index, total, children } = props
   const addBlock = useAppStore((state) => state.addBlockByType)
   const deleteBlock = useAppStore((state) => state.deleteBlock)
   const moveBlockUp = useAppStore((state) => state.moveBlockUp)
@@ -1015,6 +1016,7 @@ function LanmuBlockShell(props: {
 
   return (
     <BlockWrapper
+      flush
       blockType={getBlockTypeLabel(block.type)}
       onAdd={block.type !== 'text' ? (): void => addBlock(sectionId) : undefined}
       onPolish={moduleType ? (): void => openPolish(block.id, content, moduleType) : undefined}
@@ -1025,7 +1027,7 @@ function LanmuBlockShell(props: {
       showDragHandle={false}
       disableHover={isEditing}
     >
-      <div onFocus={() => setIsEditing(true)} onBlur={() => setIsEditing(false)} className={compact ? 'pb-1' : ''}>
+      <div data-resume-block="" onFocus={() => setIsEditing(true)} onBlur={() => setIsEditing(false)}>
         {children}
       </div>
     </BlockWrapper>
@@ -1085,10 +1087,11 @@ function LanmuBlockBody(props: { readonly block: ResumeBlock; readonly lineHeigh
           subtitle={(
             <span className="inline-flex flex-wrap items-baseline gap-3">
               <EditableFieldWrapper blockId={block.id} fieldName="major" value={block.major ?? ''} onUpdate={() => {}} className="!px-0 !leading-[inherit]" />
-              <span aria-hidden className="text-[#bdbdbd]">|</span>
+              {hasMeaningfulText(block.major) && hasMeaningfulText(block.degree) ? <span aria-hidden className="text-[#bdbdbd]">|</span> : null}
               <EditableFieldWrapper blockId={block.id} fieldName="degree" value={block.degree ?? ''} onUpdate={() => {}} className="!px-0 !leading-[inherit]" />
             </span>
           )}
+          hasSubtitle={hasMeaningfulText(block.major) || hasMeaningfulText(block.degree)}
           date={<DateRange blockId={block.id} startDate={block.startDate ?? ''} endDate={block.endDate ?? ''} />}
           lineHeight={lineHeight}
         />
@@ -1117,6 +1120,7 @@ function LanmuBlockBody(props: { readonly block: ResumeBlock; readonly lineHeigh
 function LanmuStructuredHead(props: {
   readonly title: ReactNode
   readonly subtitle: ReactNode
+  readonly hasSubtitle?: boolean
   readonly date: ReactNode
   readonly lineHeight: number
 }): ReactElement {
@@ -1134,7 +1138,7 @@ function LanmuStructuredHead(props: {
         <h4 className="m-0 min-w-0 font-black text-black">
           {props.title}
         </h4>
-        <span aria-hidden className="text-[#bdbdbd]">|</span>
+        {props.hasSubtitle !== false ? <span aria-hidden className="text-[#bdbdbd]">|</span> : null}
         <span className="min-w-0 font-bold text-black">
           {props.subtitle}
         </span>

@@ -18,12 +18,56 @@ import { checkQuota } from '@/lib/quota/quota-checker';
 import { savePdfTemp } from '@/lib/pdf-temp-store';
 import { buildExportContentDisposition, sanitizeExportFileName } from '@/lib/export-file-name';
 import { closeSharedPuppeteerPage, newSharedPuppeteerPage } from '@/lib/puppeteer-browser';
+import { RESUME_FONT_BASE_URL } from '@/entities/theme/font-stacks';
 
 const PDF_RENDER_TIMEOUT_MS = 45_000;
 const ASSET_READY_TIMEOUT_MS = 8_000;
 const PDF_AUTO_OPTIMIZE_THRESHOLD_BYTES = 25 * 1024 * 1024;
 const OSS_EXPORT_IMAGE_WIDTH = 1600;
 const OSS_EXPORT_IMAGE_QUALITY = 75;
+const RESUME_FONT_ORIGIN = new URL(RESUME_FONT_BASE_URL).origin;
+const RESUME_FONT_PATH = /^\/fonts\/v1\/noto-(?:sans|serif)-sc-(?:400|500|600|700)\.woff2$/;
+const resumeFontCache = new Map<string, Promise<Buffer>>();
+
+function loadResumeFont(url: string): Promise<Buffer> {
+  let pending = resumeFontCache.get(url);
+  if (!pending) {
+    pending = fetch(url, { signal: AbortSignal.timeout(ASSET_READY_TIMEOUT_MS) })
+      .then(async (response) => {
+        if (!response.ok) throw new Error(`Resume font request failed: ${response.status}`);
+        return Buffer.from(await response.arrayBuffer());
+      })
+      .catch((error: unknown) => {
+        resumeFontCache.delete(url);
+        throw error;
+      });
+    resumeFontCache.set(url, pending);
+  }
+  return pending;
+}
+
+async function installResumeFontProxy(page: Page): Promise<void> {
+  await page.setRequestInterception(true);
+  page.on('request', async (request) => {
+    const url = new URL(request.url());
+    if (url.origin !== RESUME_FONT_ORIGIN || !RESUME_FONT_PATH.test(url.pathname) || url.search) {
+      await request.continue();
+      return;
+    }
+    try {
+      const font = await loadResumeFont(url.toString());
+      await request.respond({
+        status: 200,
+        contentType: 'font/woff2',
+        headers: { 'access-control-allow-origin': '*' },
+        body: font,
+      });
+    } catch (error) {
+      console.error('[generate-pdf] resume font proxy failed', error);
+      await request.continue();
+    }
+  });
+}
 
 async function waitForDocumentAssets(page: Page): Promise<void> {
   const failedPortfolioImages = await page.evaluate(async (timeoutMs: number): Promise<string[]> => {
@@ -115,6 +159,8 @@ export async function POST(req: Request) {
       const pdfPage = page;
       page.setDefaultNavigationTimeout(PDF_RENDER_TIMEOUT_MS);
       page.setDefaultTimeout(PDF_RENDER_TIMEOUT_MS);
+      // setContent() has an opaque origin, so OSS fonts need a CORS-safe response.
+      await installResumeFontProxy(page);
       
       // Wait for DOM/load first, then tolerate slow fonts/images with a bounded
       // readiness wait. `networkidle0` is too strict for exported HTML and often

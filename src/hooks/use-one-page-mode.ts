@@ -45,7 +45,9 @@ export interface UseOnePageModeReturn {
 
 /** Minimum values the auto-fit algorithm will reduce to. */
 const MIN_SPACING_SCALE = 0
-const MIN_LINE_HEIGHT = 1.0
+// Chinese multiline copy becomes crowded at 1.0, even when all text survives
+// PDF export. Prefer normal pagination over squeezing unreadable text onto A4.
+const MIN_LINE_HEIGHT = 1.4
 const MIN_FONT_SIZE = 12
 const STEP_SPACING = 0.1
 const STEP_LINE_HEIGHT = 0.1
@@ -142,6 +144,16 @@ export function useOnePageMode(opts: UseOnePageModeOptions): UseOnePageModeRetur
     if (!el || !enabled || targetHeightRef.current === 0) return
     if (fittingRef.current) return
     fittingRef.current = true
+
+    if (theme.lineHeight < MIN_LINE_HEIGHT || theme.fontSize < MIN_FONT_SIZE) {
+      setStatus('fitting')
+      patchTheme({
+        lineHeight: Math.max(MIN_LINE_HEIGHT, theme.lineHeight),
+        fontSize: Math.max(MIN_FONT_SIZE, theme.fontSize),
+      })
+      fittingRef.current = false
+      return
+    }
 
     const targetH = targetHeightRef.current
     const contentH = el.scrollHeight

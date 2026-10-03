@@ -34,8 +34,8 @@ export function splitSections(sections: readonly Section[], pattern: RegExp): [S
 
 export function useSidebarSplit(resume: ResumeData, pattern: RegExp, externalIds?: readonly string[], onExternalChange?: (ids: readonly string[]) => void) {
   const defaultIds = resume.sections.filter((s) => pattern.test(s.title)).map((s) => s.id)
-  const [localIds, setLocalIds] = useState<readonly string[]>(defaultIds)
-  const sidebarIds = externalIds ?? localIds
+  const [localIds, setLocalIds] = useState<readonly string[] | null>(null)
+  const sidebarIds = externalIds ?? localIds ?? defaultIds
   const validIds = new Set(resume.sections.map((s) => s.id))
   const normalized = sidebarIds.filter((id) => validIds.has(id))
   const sidebarSet = new Set(normalized)

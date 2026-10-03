@@ -25,8 +25,8 @@ export function StackProjectsLayout(props: {
   readonly config: VariantConfig
 }): ReactElement {
   const { resume, theme, header, jobIntention, showJob, config } = props
-  const padV = Math.max(28, mmToPx(theme.pagePaddingVertical))
-  const padH = Math.max(6, mmToPx(theme.pagePaddingHorizontal))
+  const padV = Math.max(0, mmToPx(theme.pagePaddingVertical))
+  const padH = Math.max(0, mmToPx(theme.pagePaddingHorizontal))
   const [stackSections, restAfterStack] = splitSections(resume.sections, /技能|技术|栈|工具|证书/i)
   const [projectSections, otherSections] = splitSections(restAfterStack, /项目|系统|平台|研发|工程|算法/i)
   return (

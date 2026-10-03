@@ -1,6 +1,7 @@
 export type ResumeFontFamilyId = 'sans' | 'serif'
 
 export const RESUME_FONT_BASE_URL = 'https://aijianli-nextjs.oss-cn-hangzhou.aliyuncs.com/fonts/v1'
+export const RESUME_FONT_APP_BASE_URL = '/resume-fonts/v1'
 
 export const RESUME_FONT_FAMILY_NAMES: Record<ResumeFontFamilyId, string> = {
   sans: 'Resume Noto Sans SC',
@@ -68,7 +69,7 @@ export function normalizeResumeFontTheme<T extends { readonly fontFamily?: strin
   }
 }
 
-export function buildResumeFontFaceCss(baseUrl: string = RESUME_FONT_BASE_URL): string {
+export function buildResumeFontFaceCss(baseUrl: string = RESUME_FONT_APP_BASE_URL): string {
   const normalizedBase = baseUrl.replace(/\/$/, '')
   return (Object.entries(RESUME_FONT_FAMILY_NAMES) as Array<[ResumeFontFamilyId, string]>)
     .flatMap(([id, family]) =>

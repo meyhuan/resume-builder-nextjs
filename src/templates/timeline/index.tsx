@@ -22,6 +22,7 @@ import DragDropProvider from '@/dnd/drag-drop-provider'
 import { DndIds } from '@/dnd/ids'
 import { BaseInfoSection, JobIntentionSection, BlockRenderer, SectionContainer } from '@/templates/components/v2'
 import { TIMELINE_TEMPLATE_STYLES } from './styles'
+import { TimelineEducationMeta } from './education-meta'
 
 import EditableFieldWrapper from '@/editor/editable-field-wrapper'
 
@@ -151,23 +152,7 @@ function TimelineBlockRow(props: TimelineBlockRowProps): ReactElement {
             />
           )}
           {block.type === 'education' && (
-            <>
-              <EditableFieldWrapper
-                blockId={block.id}
-                fieldName="major"
-                value={block.major}
-                onUpdate={(val) => updateBlockField('major', val)}
-                placeholder="专业"
-              />
-              <span className="mx-1">/</span>
-              <EditableFieldWrapper
-                blockId={block.id}
-                fieldName="degree"
-                value={block.degree}
-                onUpdate={(val) => updateBlockField('degree', val)}
-                placeholder="学历"
-              />
-            </>
+            <TimelineEducationMeta blockId={block.id} major={block.major} degree={block.degree} onUpdate={updateBlockField} />
           )}
           {block.type === 'campus' && (
             <EditableFieldWrapper

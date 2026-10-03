@@ -1,3 +1,5 @@
+import { TemplateBrowser } from '@/components/templates/template-browser'
+import { templateLabels } from '@/lib/templates/template-taxonomy'
 /**
  * RightSidebar — Panel-based sidebar driven by the active toolbar action.
  *
@@ -22,6 +24,8 @@ import PortfolioManager from '@/components/portfolio/portfolio-manager'
 
 export interface RightSidebarProps {
   readonly embedded?: boolean
+  /** Only the isolated /dev fixture route opts in in a production build. */
+  readonly enableScenarioData?: boolean
   readonly activePanel: PanelId
   readonly onClose: () => void
   readonly onOpenPortfolio?: () => void
@@ -76,6 +80,7 @@ export default function RightSidebar(props: RightSidebarProps): ReactElement {
       )}
       {(activePanel === 'layout' || activePanel === 'templates') && (
         <LayoutPanel
+          enableScenarioData={props.enableScenarioData}
           view={props.embedded ? (activePanel === 'templates' ? 'templates' : 'settings') : undefined}
           theme={theme}
           tpl={tpl}
@@ -111,6 +116,7 @@ export default function RightSidebar(props: RightSidebarProps): ReactElement {
 
 /** 排版美化 panel — contains template grid + theme settings as sub-tabs. */
 interface LayoutPanelProps {
+  readonly enableScenarioData?: boolean
   readonly view?: 'templates' | 'settings'
   readonly theme: ThemeTokens
   readonly tpl: string
@@ -165,8 +171,8 @@ function LayoutPanel(props: LayoutPanelProps): ReactElement {
       {/* Templates sub-tab */}
       <TabsContent value="templates" className="flex-1 flex flex-col m-0 p-0 overflow-hidden">
         <div className="flex-1 px-4 py-4 overflow-y-auto custom-scrollbar">
-          <div className="grid grid-cols-2 gap-4 pb-4">
-            {templates.map((template) => (
+          <TemplateBrowser templates={templates} currentId={tpl} gridClassName="grid grid-cols-2 gap-4 pb-4"
+            renderTemplate={(template) => (
               <button
                 key={template.id}
                 type="button"
@@ -211,12 +217,11 @@ function LayoutPanel(props: LayoutPanelProps): ReactElement {
                 <div className="px-3 py-3 bg-white text-left">
                   <div className="font-semibold text-[15px] leading-5 text-slate-800 line-clamp-1">{template.name}</div>
                   <div className="text-xs font-medium text-slate-500 mt-1">
-                    {template.tags?.[0] || '通用'}
+                    {tpl === template.id ? '正在使用' : templateLabels(template).slice(0, 2).join(' · ')}
                   </div>
                 </div>
               </button>
-            ))}
-          </div>
+            )} />
         </div>
       </TabsContent>
 
@@ -243,7 +248,7 @@ function LayoutPanel(props: LayoutPanelProps): ReactElement {
               />
             </div>
           </div>
-          {process.env.NODE_ENV === 'development' && (
+          {(process.env.NODE_ENV === 'development' || props.enableScenarioData) && (
             <div className="space-y-3 p-4 border-t border-slate-200 bg-white shrink-0">
               <div className="space-y-1.5">
                 <div className="text-xs font-semibold text-slate-700">模板测试数据</div>

@@ -35,9 +35,9 @@ export function OriginalTemplate({ resume, theme, variant, sidebarSectionIds, on
   const header = useEditableHeader(resume.name, resume.baseInfo ?? null)
   const jobIntention = useEditableJobIntention(resume.jobIntention ?? null)
   const isJobIntentionVisible = resume.jobIntentionVisible ?? jobIntention.fields.length > 0
-  const fontFamily = config.serif ? SERIF : (theme.fontFamily || SANS)
-  const padV = Math.max(30, mmToPx(theme.pagePaddingVertical))
-  const padH = Math.max(6, mmToPx(theme.pagePaddingHorizontal))
+  const fontFamily = theme.fontFamily || (config.serif ? SERIF : SANS)
+  const padV = Math.max(0, mmToPx(theme.pagePaddingVertical))
+  const padH = Math.max(0, mmToPx(theme.pagePaddingHorizontal))
   const rootStyle: CssVars = {
     minHeight: '297mm',
     backgroundColor: variant === 'yuanshan' ? '#fbfaf8' : '#ffffff',

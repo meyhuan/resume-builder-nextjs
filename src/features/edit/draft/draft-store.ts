@@ -6,6 +6,7 @@ import { get as idbGet, set as idbSet, del as idbDel } from 'idb-keyval'
 import type { ResumeData } from '@/entities/resume/resume-data'
 import { withNormalizedJobPosition } from '@/entities/resume/sync-job-position'
 import { normalizeResumeContent } from '@/entities/resume/normalize-resume-content'
+import { embedEditorMeta, extractEditorMeta, type EditorMeta } from '@/entities/editor/editor-meta'
 
 /**
  * Result returned by saveAll().
@@ -46,7 +47,7 @@ export interface DraftState {
    * current draft content. Called from the preview page after the template
    * renders, so the saved cover reflects the real layout.
    */
-  saveThumbnail: (dataUrl: string) => Promise<SaveResult>
+  saveThumbnail: (dataUrl: string, editorMeta: EditorMeta) => Promise<SaveResult>
   markMilestoneCelebrated: (milestone: number) => void
 }
 
@@ -208,17 +209,18 @@ export const useDraftStore = create<DraftState>()(
           return { ok: false, error: msg }
         }
       },
-      saveThumbnail: async (dataUrl): Promise<SaveResult> => {
+      saveThumbnail: async (dataUrl, editorMeta): Promise<SaveResult> => {
         const { resumeId, draft } = get()
         if (!resumeId || !draft) {
           return { ok: false, error: '无可保存的简历' }
         }
         try {
           const normalizedDraft = normalizeResume(draft, resumeId)
+          const { content, meta } = extractEditorMeta(normalizedDraft as unknown as Record<string, unknown>)
           const res = await fetch(`/next-api/resumes/${resumeId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ content: normalizedDraft, thumbnail: dataUrl }),
+            body: JSON.stringify({ content: embedEditorMeta(content, { ...meta, ...editorMeta }), thumbnail: dataUrl }),
           })
           if (!res.ok) {
             const text = await res.text().catch(() => '')

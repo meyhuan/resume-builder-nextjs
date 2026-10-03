@@ -88,13 +88,23 @@ function runStaticChecks(id) {
   }
 
   const source = fs.readFileSync(templateLoaderPath, 'utf8')
-  const entry = extractRegistryEntry(source, id)
+  let entry = extractRegistryEntry(source, id)
   if (!entry) {
     fail('Template registry', `TEMPLATE_REGISTRY does not contain "${id}".`)
     return null
   }
 
   pass('Template registry', `Found ${id}.`)
+
+  // Display metadata is shared with the server-side public catalog.
+  const metadataKey = /\.\.\.TEMPLATE_METADATA\.([a-zA-Z0-9_]+)/.exec(entry)?.[1]
+  if (metadataKey) {
+    if (metadataKey !== id) fail('Metadata key', `Expected ${id}, got ${metadataKey}.`)
+    const metadataSource = fs.readFileSync(path.join(root, 'src/lib/templates/template-metadata.ts'), 'utf8')
+    const metadataEntry = extractRegistryEntry(metadataSource, metadataKey)
+    if (!metadataEntry) fail('Shared metadata', `Missing metadata for ${metadataKey}.`)
+    entry = `${entry}\n${metadataEntry || ''}`
+  }
 
   const idValue = matchStringProp(entry, 'id')
   if (idValue === id) pass('Registry id', `id: "${id}"`)
@@ -209,6 +219,11 @@ function runStaticChecks(id) {
 
 function getTemplateImplementationSource(indexSource) {
   const sources = [indexSource]
+  if (/CanvaAdaptedTemplate/.test(indexSource)) {
+    for (const file of ['shared.tsx', 'designs.ts', 'components.tsx', 'header.tsx', 'styles.tsx', 'saved-facts.tsx']) {
+      sources.push(fs.readFileSync(path.join(root, 'src', 'templates', '_canva', file), 'utf8'))
+    }
+  }
   if (/OriginalTemplate/.test(indexSource)) {
     const sharedSourcePaths = [
       path.join(root, 'src', 'templates', '_originals', 'shared.tsx'),
@@ -399,6 +414,7 @@ async function runLocalChecks(templateIds, registries) {
       await checkThemeControls(browser, baseUrl, id, registry, artifactDir)
       await checkSparsePdfTail(browser, { baseUrl, id, artifactDir, themeId: 'base' })
       await checkSparsePdfTail(browser, { baseUrl, id, artifactDir, themeId: 'relaxed' })
+      await checkSparsePdfTail(browser, { baseUrl, id, artifactDir, themeId: 'compact', fixture: 'long' })
       if (!args['skip-interactions']) {
         await checkLocalInteractions(browser, baseUrl, id, artifactDir)
       } else {
@@ -528,6 +544,10 @@ async function checkLocalPage(browser, options) {
       return
     }
 
+    await page.evaluate(async () => {
+      if (document.fonts) await document.fonts.ready
+      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+    })
     await page.screenshot({ path: options.screenshot, fullPage: true })
 
     if (pageErrors.length > 0) {
@@ -545,16 +565,16 @@ async function checkLocalPage(browser, options) {
 }
 
 async function checkSparsePdfTail(browser, options) {
-  const { baseUrl, id, artifactDir, themeId } = options
-  const name = `PDF sparse tail (${themeId}) (${id})`
-  const pdfPath = path.join(artifactDir, `local-pdf-sparse-${themeId}.pdf`)
-  const lastPagePath = path.join(artifactDir, `local-pdf-sparse-${themeId}-last-page.png`)
+  const { baseUrl, id, artifactDir, themeId, fixture = 'sparse' } = options
+  const name = fixture === 'long' ? `PDF long flow (${themeId}) (${id})` : `PDF sparse tail (${themeId}) (${id})`
+  const pdfPath = path.join(artifactDir, `local-pdf-${fixture}-${themeId}.pdf`)
+  const lastPagePath = path.join(artifactDir, `local-pdf-${fixture}-${themeId}-last-page.png`)
   const page = await browser.newPage()
 
   try {
     await page.bringToFront()
     await page.setViewport({ width: 1280, height: 1400, deviceScaleFactor: 1 })
-    const url = labUrl(baseUrl, id, 'sparse', themeId, 'pc')
+    const url = labUrl(baseUrl, id, fixture, themeId, 'pc')
     const response = await page.goto(url, { waitUntil: 'networkidle2', timeout: 60_000 })
     if (!response || !response.ok()) {
       fail(name, `${url} returned HTTP ${response ? response.status() : 'no response'}.`)
@@ -580,6 +600,9 @@ async function checkSparsePdfTail(browser, options) {
 
     const analysis = await analyzePdfPages(page, pdf)
     if (analysis.lastPagePng) fs.writeFileSync(lastPagePath, Buffer.from(analysis.lastPagePng, 'base64'))
+    for (const rendered of analysis.renderedPages) {
+      fs.writeFileSync(path.join(artifactDir, `local-pdf-${fixture}-${themeId}-page-${rendered.pageNumber}.png`), Buffer.from(rendered.png, 'base64'))
+    }
     const lastPage = analysis.pages.at(-1)
     if (!lastPage) {
       fail(name, `Generated PDF has no pages. PDF saved to ${relative(pdfPath)}.`)
@@ -588,16 +611,26 @@ async function checkSparsePdfTail(browser, options) {
 
     const hasTextOnEarlierPage = analysis.pages.slice(0, -1).some((item) => item.textChars > 0)
     const hasTrailingTextlessPage = analysis.pages.length > 1 && hasTextOnEarlierPage && lastPage.textChars === 0
+    const extracted = analysis.pages.map((item) => item.text).join('').replace(/\s+/g, '')
+    const requiredText = fixture === 'long'
+      ? ['欧阳承远', 'ouyangchengyuan.long.email.address@example-company-domain.com', '上海云启智能科技有限公司', '杭州数桥网络有限公司', '企业智能问答平台', '复旦大学', '学生创新实践中心', 'Figma', '自定义模块', ...Array.from({ length: 4 }, (_, index) => `一家名称非常非常长的科技创新与数字化转型咨询有限公司第${index + 1}事业部`)]
+      : ['陈一', 'chenyi@example.com', '浙江大学']
+    const missingText = requiredText.filter((value) => !extracted.includes(value.replace(/\s+/g, '')))
     const details = [
       `pages=${analysis.pages.length}`,
+      `pageText=${analysis.pages.map((item) => item.textChars).join('/')}`,
       `lastText=${lastPage.textChars}`,
       `lastInk=${lastPage.nonWhiteRatio}`,
       `PDF: ${relative(pdfPath)}`,
       analysis.lastPagePng ? `last page: ${relative(lastPagePath)}` : '',
     ].filter(Boolean).join(', ')
 
-    if (hasTrailingTextlessPage) {
+    if (missingText.length) {
+      fail(name, `PDF lost expected fixture content: ${missingText.join(', ')} (${details}).`)
+    } else if (hasTrailingTextlessPage) {
       fail(name, `Trailing page contains no text (${details}).`)
+    } else if (fixture === 'long' && analysis.pages.length > 1 && analysis.pages[0].textChars < 200) {
+      fail(name, `First page has unusually little text for a long resume, suggesting a pushed section (${details}).`)
     } else {
       pass(name, details)
     }
@@ -702,13 +735,14 @@ async function analyzePdfPages(page, pdf) {
     for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index)
     const handle = await pdfjs.getDocument({ data: bytes }).promise
     const pages = []
+    const renderedPages = []
     let lastPagePng = ''
 
     for (let pageNumber = 1; pageNumber <= handle.numPages; pageNumber += 1) {
       const pdfPage = await handle.getPage(pageNumber)
       const text = await pdfPage.getTextContent()
       const textChars = text.items.reduce((sum, item) => sum + String(item.str || '').trim().length, 0)
-      const viewport = pdfPage.getViewport({ scale: 0.35 })
+      const viewport = pdfPage.getViewport({ scale: 1 })
       const canvas = document.createElement('canvas')
       canvas.width = Math.ceil(viewport.width)
       canvas.height = Math.ceil(viewport.height)
@@ -725,13 +759,16 @@ async function analyzePdfPages(page, pdf) {
       pages.push({
         pageNumber,
         textChars,
+        text: text.items.map((item) => String(item.str || '')).join(''),
         nonWhiteRatio: Number((nonWhite / (canvas.width * canvas.height)).toFixed(6)),
       })
-      if (pageNumber === handle.numPages) lastPagePng = canvas.toDataURL('image/png').split(',')[1] || ''
+      const png = canvas.toDataURL('image/png').split(',')[1] || ''
+      renderedPages.push({ pageNumber, png })
+      if (pageNumber === handle.numPages) lastPagePng = png
     }
 
     await handle.destroy()
-    return { pages, lastPagePng }
+    return { pages, renderedPages, lastPagePng }
   }, pdf.toString('base64'))
 }
 
@@ -1005,6 +1042,29 @@ async function checkGeneralVisualLayout(page, options) {
     const overlapIssue = findTextOverlap(visibleTextNodes)
     if (overlapIssue) return overlapIssue
 
+    // A coloured heading can be present in the DOM yet invisible on its fill.
+    for (const heading of container.querySelectorAll('.canva-heading h2, [data-template-dark-sidebar="true"] h2, [data-template-dark-sidebar="true"] h3')) {
+      const canvas = document.createElement('canvas')
+      canvas.width = canvas.height = 1
+      const ctx = canvas.getContext('2d', { willReadFrequently: true })
+      const luminance = (pixels) => {
+        const values = Array.from(pixels).slice(0, 3).map((value) => value / 255).map((value) => value <= .04045 ? value / 12.92 : ((value + .055) / 1.055) ** 2.4)
+        return .2126 * values[0] + .7152 * values[1] + .0722 * values[2]
+      }
+      ctx.fillStyle = '#ffffff'
+      ctx.fillRect(0, 0, 1, 1)
+      const ancestors = []
+      for (let node = heading; node && container.contains(node); node = node.parentElement) ancestors.unshift(node)
+      for (const node of ancestors) { ctx.fillStyle = getComputedStyle(node).backgroundColor; ctx.fillRect(0, 0, 1, 1) }
+      const background = luminance(ctx.getImageData(0, 0, 1, 1).data)
+      ctx.fillStyle = getComputedStyle(heading).color
+      ctx.fillRect(0, 0, 1, 1)
+      const foreground = luminance(ctx.getImageData(0, 0, 1, 1).data)
+      const contrast = (Math.max(background, foreground) + .05) / (Math.min(background, foreground) + .05)
+      const minimum = heading.closest('[data-template-dark-sidebar="true"]') ? 4.5 : 3
+      if (contrast < minimum) return `Section heading has insufficient contrast (${contrast.toFixed(2)}:1): ${heading.textContent?.trim()}.`
+    }
+
     if (checkOptions.fixture === 'long') {
       const longText = ['ouyangchengyuan.long.email.address@example-company-domain.com', '一家名称非常非常长的科技创新与数字化转型咨询有限公司']
       const pageText = container.textContent || ''
@@ -1038,6 +1098,9 @@ async function checkGeneralVisualLayout(page, options) {
         visible.push({
           node,
           rect,
+          // Inline text may wrap onto several lines: its union box includes
+          // empty space occupied by neighbouring labels. Test line fragments.
+          fragments: Array.from(node.getClientRects()),
           label: text.length > 36 ? `${text.slice(0, 36)}...` : text,
         })
       }
@@ -1072,11 +1135,13 @@ async function checkGeneralVisualLayout(page, options) {
           const b = items[j]
           if (a.node.contains(b.node) || b.node.contains(a.node)) continue
           if (shareInlineTextFlow(a.node, b.node)) continue
-          const overlapX = Math.min(a.rect.right, b.rect.right) - Math.max(a.rect.left, b.rect.left)
-          const overlapY = Math.min(a.rect.bottom, b.rect.bottom) - Math.max(a.rect.top, b.rect.top)
-          const minWidth = Math.min(a.rect.width, b.rect.width)
-          const minHeight = Math.min(a.rect.height, b.rect.height)
-          if (overlapX > Math.min(8, minWidth * 0.35) && overlapY > Math.min(6, minHeight * 0.45)) {
+          if (a.fragments.some((ar) => b.fragments.some((br) => {
+            const overlapX = Math.min(ar.right, br.right) - Math.max(ar.left, br.left)
+            const overlapY = Math.min(ar.bottom, br.bottom) - Math.max(ar.top, br.top)
+            const minWidth = Math.min(ar.width, br.width)
+            const minHeight = Math.min(ar.height, br.height)
+            return overlapX > Math.min(8, minWidth * 0.35) && overlapY > Math.min(6, minHeight * 0.45)
+          }))) {
             return `Visible text overlap detected: ${a.label} / ${b.label}.`
           }
         }
@@ -1107,12 +1172,14 @@ async function checkThemeControls(browser, baseUrl, id, registry, artifactDir) {
     return
   }
 
-  const jobGapChanges = baseMetrics.jobToFirstSectionGap === null
+  // Border-sharing tables intentionally have no external gap. Do not mistake that
+  // or a job block in another column for a broken spacing control.
+  const jobGapChanges = baseMetrics.jobToFirstSectionGap === null || baseMetrics.jobToFirstSectionGap <= 1
     ? true
     : relaxedMetrics.jobToFirstSectionGap > compactMetrics.jobToFirstSectionGap + 1
-  const jobGapMatchesSectionGap = baseMetrics.jobToFirstSectionGap === null || baseMetrics.firstSectionGap === null
+  const sectionGapChanges = baseMetrics.firstSectionGap === null
     ? true
-    : Math.abs(baseMetrics.jobToFirstSectionGap - baseMetrics.firstSectionGap) <= 2
+    : relaxedMetrics.firstSectionGap > compactMetrics.firstSectionGap + 1
   const zeroXIsSmall = zeroXMetrics.pageProbePaddingLeft <= 12
   const changed = [
     relaxedMetrics.fontSize > baseMetrics.fontSize,
@@ -1123,12 +1190,12 @@ async function checkThemeControls(browser, baseUrl, id, registry, artifactDir) {
     relaxedMetrics.headingFontSize > baseMetrics.headingFontSize,
     relaxedMetrics.paragraphIndent > baseMetrics.paragraphIndent,
     jobGapChanges,
-    jobGapMatchesSectionGap,
+    sectionGapChanges,
     zeroXIsSmall,
   ]
 
   if (changed.every(Boolean)) {
-    pass(`Theme settings (${id})`, 'Font size, container/body line height, padding, title scale, paragraph indent, module spacing, job-to-section gap, and zero horizontal padding respond to theme changes.')
+    pass(`Theme settings (${id})`, 'Font size, container/body line height, padding, title scale, paragraph indent, measurable section/job gaps, and zero horizontal padding respond to theme changes. Boundary coverage is reported separately by verify-template-controls.mjs.')
   } else {
     fail(`Theme settings (${id})`, `Theme metrics did not all change as expected: ${JSON.stringify({ baseMetrics, compactMetrics, relaxedMetrics, zeroXMetrics })}`)
   }
@@ -1140,6 +1207,9 @@ async function checkThemeControls(browser, baseUrl, id, registry, artifactDir) {
   }
 
   const locked = Boolean(registry?.locksPrimaryColor)
+  const wrappedLabels = [baseMetrics, compactMetrics, relaxedMetrics, zeroXMetrics, colorMetrics].flatMap((metrics) => metrics.wrappedTableLabels)
+  if (wrappedLabels.length) fail(`Table header labels (${id})`, `Short labels must stay on one line: ${wrappedLabels.join(', ')}`)
+  else if (id === 'tablegrid') pass(`Table header labels (${id})`, 'Short labels remain on one line in all five theme presets.')
   if (locked) {
     if (colorMetrics.hasLabPrimaryColor) {
       fail(`Primary color (${id})`, 'Template is registered as locked but rendered the lab primary color.')
@@ -1260,6 +1330,8 @@ async function checkLocalInteractions(browser, baseUrl, id, artifactDir) {
 
     if (id === 'ziji') {
       await runInteractionStep(page, `Cross-column section drag (${id})`, async () => checkZijiCrossColumnDrag(page))
+    } else if (await page.$('[data-template-column="left"]') && await page.$('[data-template-column="right"]')) {
+      await runInteractionStep(page, `Cross-column section drag (${id})`, async () => checkGenericCrossColumnDrag(page, id))
     }
 
     await runInteractionStep(page, `Hover contrast (${id})`, async () => {
@@ -1431,7 +1503,10 @@ async function openLayoutSettingsTab(page) {
   const tab = await page.$('[data-layout-tab="settings"]')
   if (tab) await tab.click()
   else await clickButtonByExactText(page, '排版设置')
-  await page.waitForSelector('button[aria-label="选择主题主色"]', { timeout: 5_000 })
+  // Flagship templates expose the picker only after the explicit override.
+  await page.waitForFunction(() => document.querySelector('button[aria-label="选择主题主色"]') || Array.from(document.querySelectorAll('button')).some((node) => node.textContent?.includes('仍要自定义主色')), { timeout: 15_000 })
+  await clickByTextIfPresent(page, '仍要自定义主色', ['button'])
+  await page.waitForSelector('button[aria-label="选择主题主色"]', { timeout: 15_000 })
 }
 
 async function openLayoutTemplatesTab(page) {
@@ -1510,6 +1585,46 @@ async function checkZijiCrossColumnDrag(page) {
   await buttonHandle.dispose()
   await sectionHandle.dispose()
   return 'Moved 项目经历 from the right column to the left column.'
+}
+
+async function checkGenericCrossColumnDrag(page, id) {
+  await closeOpenDialogs(page)
+  const sourceColumn = await page.evaluate(() => document.querySelector('[data-template-section-title="相关技能"]')?.closest('[data-template-column]')?.getAttribute('data-template-column'))
+  if (!sourceColumn) throw new Error(`Cannot find the skills column for ${id}.`)
+  const targetColumn = sourceColumn === 'left' ? 'right' : 'left'
+  const sourceSelector = `[data-template-column="${sourceColumn}"]`
+  const targetSelector = `[data-template-column="${targetColumn}"]`
+  await page.waitForSelector(`${sourceSelector} [data-template-section="true"]`, { timeout: 5_000 })
+  const sectionHandle = await page.evaluateHandle((selector) => {
+    return Array.from(document.querySelectorAll(`${selector} [data-template-section="true"]`))
+      .find((node) => node.getAttribute('data-template-section-title') === '相关技能') ?? null
+  }, sourceSelector)
+  const section = sectionHandle.asElement()
+  if (!section) {
+    await sectionHandle.dispose()
+    throw new Error(`Cannot find 相关技能 in the ${sourceColumn} column.`)
+  }
+  await section.hover()
+  const button = await section.$('button[title="拖动"]')
+  const buttonBox = await button?.boundingBox()
+  const targetBox = await page.$eval(targetSelector, (node) => {
+    const rect = node.getBoundingClientRect()
+    return { x: rect.x, y: rect.y, width: rect.width, height: rect.height }
+  })
+  if (!buttonBox) {
+    await sectionHandle.dispose()
+    throw new Error('The 相关技能 drag handle is not visible.')
+  }
+  await page.mouse.move(buttonBox.x + buttonBox.width / 2, buttonBox.y + buttonBox.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(targetBox.x + targetBox.width / 2, targetBox.y + Math.min(targetBox.height - 24, 300), { steps: 30 })
+  await page.mouse.up()
+  await page.waitForFunction((selector) => {
+    return Array.from(document.querySelectorAll(`${selector} [data-template-section="true"]`))
+      .some((node) => node.getAttribute('data-template-section-title') === '相关技能')
+  }, { timeout: 8_000 }, targetSelector)
+  await sectionHandle.dispose()
+  return `Moved 相关技能 from the ${sourceColumn} column to the ${targetColumn} column.`
 }
 
 async function openModalFromPreview(page, labels, modalSelector) {
@@ -1661,6 +1776,10 @@ async function checkSectionActionControls(page) {
   const handle = await page.evaluateHandle(() => {
     const root = document.querySelector('[data-scenario-preview="true"]')
     if (!root) return null
+    const markedHeader = root.querySelector('[data-template-section-header="true"]')
+    if (markedHeader) return markedHeader
+    const editableSection = Array.from(root.querySelectorAll('[data-template-section="true"]')).find((node) => !node.closest('[role="dialog"]') && node.getBoundingClientRect().height > 24)
+    if (editableSection) return editableSection.querySelector('[class*="group/header"]') ?? editableSection
     const sectionsWithActions = Array.from(root.querySelectorAll('section'))
       .filter((section) => {
         if (section.closest('[role="dialog"]')) return false
@@ -1694,15 +1813,18 @@ async function checkSectionActionControls(page) {
   await section.hover()
   await sleep(260)
 
-  const metrics = await page.evaluate(() => {
-    const root = document.querySelector('[data-scenario-preview="true"]')
+  const metrics = await page.evaluate((hoverTarget) => {
+    const root = hoverTarget.closest('[data-template-section="true"], section') ?? hoverTarget
     if (!root) return null
     const requiredTitles = ['拖动', '删除']
     const optionalTitles = ['添加']
     const allTitles = [...requiredTitles, ...optionalTitles]
     const buttons = allTitles.map((title) => {
       const selector = title === '添加' ? 'button[title="添加"], button[title^="添加"]' : `button[title="${title}"]`
-      const candidates = Array.from(root.querySelectorAll(selector))
+      // Block toolbars have their own hover state; inspect the section toolbar only.
+      const candidates = Array.from(root.querySelectorAll(selector)).filter((button) => {
+        return !button.closest('[data-block-id], [data-block-type], [data-resume-block]')
+      })
       const button = candidates.find((candidate) => {
         const rect = candidate.getBoundingClientRect()
         const style = window.getComputedStyle(candidate)
@@ -1726,7 +1848,7 @@ async function checkSectionActionControls(page) {
       previewText: (root.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 80),
       buttons,
     }
-  })
+  }, section)
   await handle.dispose()
   if (!metrics) throw new Error('Cannot inspect section action controls because the preview root is missing.')
 
@@ -1915,7 +2037,10 @@ async function checkEditorScenarioLoader(editorUrl) {
     }
 
     await clickByText(page, '加载场景数据', ['button'])
-    await page.waitForFunction(() => document.body.innerText.includes('欧阳晨曦'), { timeout: 10_000 })
+    await page.waitForFunction(() => {
+      const text = document.querySelector('[data-scenario-preview="true"]')?.textContent || document.body.innerText
+      return ['欧阳晨曦', '高级增长产品经理', '35k-50k', '北京云启未来智能科技股份有限公司商业化增长产品中心', '企业版商业化线索评分与试用转化系统', '期望工作模式'].every((value) => text.includes(value))
+    }, { timeout: 15_000 })
 
     const verification = await page.evaluate(() => {
       const text = document.body.innerText
@@ -2036,8 +2161,11 @@ async function readThemeMetrics(browser, url, screenshot) {
           const style = getComputedStyle(node)
           return rect.width > 1 && rect.height > 1 && style.display !== 'none' && style.visibility !== 'hidden'
         })
+      const sameColumn = (a, b) => Math.abs(a.left - b.left) < 2 && Math.abs(a.width - b.width) < 2
+      const jobRect = job?.getBoundingClientRect()
       const firstSectionAfterJob = job
-        ? visibleSections.find((node) => Boolean(job.compareDocumentPosition(node) & Node.DOCUMENT_POSITION_FOLLOWING))
+        ? visibleSections.find((node) => Boolean(job.compareDocumentPosition(node) & Node.DOCUMENT_POSITION_FOLLOWING)
+          && sameColumn(jobRect, node.getBoundingClientRect()))
         : null
       const jobToFirstSectionGap = job && firstSectionAfterJob
         ? Math.max(0, firstSectionAfterJob.getBoundingClientRect().top - job.getBoundingClientRect().bottom)
@@ -2045,7 +2173,7 @@ async function readThemeMetrics(browser, url, screenshot) {
       const sectionGapPair = visibleSections.find((node, index) => {
         const next = visibleSections[index + 1]
         if (!next) return false
-        return next.getBoundingClientRect().top > node.getBoundingClientRect().bottom
+        return sameColumn(node.getBoundingClientRect(), next.getBoundingClientRect()) && next.getBoundingClientRect().top > node.getBoundingClientRect().bottom
       })
       const sectionGapPairIndex = sectionGapPair ? visibleSections.indexOf(sectionGapPair) : -1
       const firstSectionGap = sectionGapPairIndex >= 0
@@ -2054,7 +2182,8 @@ async function readThemeMetrics(browser, url, screenshot) {
       const baseInfoFieldColors = Array.from(new Set(
         Array.from(root.querySelectorAll('[data-template-base-info-field="true"], [data-template-base-info-field="true"] *'))
           .filter((node) => {
-            if (node.closest('button, svg, [aria-hidden="true"]')) return false
+            const button = node.closest('button')
+            if (node.closest('svg, [aria-hidden="true"]') || (button && !button.matches('[data-template-base-info-trigger="true"]'))) return false
             const text = (node.textContent || '').replace(/\s+/g, ' ').trim()
             if (!text) return false
             const rect = node.getBoundingClientRect()
@@ -2087,6 +2216,13 @@ async function readThemeMetrics(browser, url, screenshot) {
           style.textShadow,
         ].some(matchesLabPrimary)
       })
+      const wrappedTableLabels = Array.from(root.querySelectorAll('[data-tablegrid-header-label="true"]'))
+        .filter((node) => node.textContent.trim().length <= 2)
+        .filter((node) => {
+          const range = document.createRange()
+          range.selectNodeContents(node)
+          return new Set(Array.from(range.getClientRects()).filter((rect) => rect.width > 0).map((rect) => Math.round(rect.top))).size > 1
+        }).map((node) => node.textContent.trim())
       return {
         fontSize: parseFloat(containerStyle.fontSize),
         lineHeight: parseFloat(containerStyle.lineHeight),
@@ -2100,6 +2236,7 @@ async function readThemeMetrics(browser, url, screenshot) {
         headingFontSize: headingStyle ? parseFloat(headingStyle.fontSize) : 0,
         paragraphIndent: paragraphStyle ? parseFloat(paragraphStyle.textIndent) : 0,
         hasLabPrimaryColor,
+        wrappedTableLabels,
       }
     })
     if (screenshot) await page.screenshot({ path: screenshot, fullPage: true })

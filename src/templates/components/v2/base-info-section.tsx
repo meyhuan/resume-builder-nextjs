@@ -105,7 +105,7 @@ export default function BaseInfoSection(props: BaseInfoSectionProps): ReactEleme
 
   return (
     <>
-      <header className={`${styles.container || "mb-5 flex items-start gap-5 relative group print:cursor-default"} ${readOnly ? '' : 'cursor-pointer'}`}>
+      <header data-template-base-info-trigger="true" className={`${styles.container || "mb-5 flex items-start gap-5 relative group print:cursor-default"} ${readOnly ? '' : 'cursor-pointer'}`} onDoubleClick={readOnly ? undefined : () => setShowModal(true)}>
         {/* Edit pencil - top right on hover */}
         {!readOnly && (slots?.editButton ? (
           slots.editButton(() => setShowModal(true))
@@ -237,6 +237,9 @@ function InfoField(props: {
   const { field, isHovered, readOnly, styles, onMouseEnter, onMouseLeave, onDelete } = props
   return (
     <div
+      data-template-base-info-field="true"
+      data-template-base-info-key={field.key}
+      style={{ minWidth: 0, maxWidth: '100%', whiteSpace: 'normal', flexWrap: 'wrap', overflowWrap: 'anywhere' }}
       className={`${styles?.fieldItem || 'flex items-center gap-1.5 text-gray-700 relative rounded px-1.5 py-0.5 transition-all'} ${
         isHovered ? 'border border-gray-300 bg-gray-50' : 'border border-transparent'
       }`}

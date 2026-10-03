@@ -116,7 +116,7 @@ export default function TableGridTemplate(props: TemplateProps): ReactElement {
   const bodyLineHeight = theme.lineHeight
   const palette = buildPalette(theme.primaryColor)
   const titleScale = Math.min(1.25, Math.max(0.85, theme.titleScale ?? 1))
-  const spacingScale = Math.min(1.45, Math.max(0.72, theme.spacingScale))
+  const spacingScale = Math.max(0, theme.spacingScale)
   const paragraphIndent = Math.max(0, theme.paragraphIndent ?? 0)
   const pagePaddingVertical = Math.max(24, mmToPx(theme.pagePaddingVertical))
   const pagePaddingHorizontal = Math.max(6, mmToPx(theme.pagePaddingHorizontal))
@@ -360,6 +360,7 @@ function HeaderLabel({
   return (
     <div
       className="flex items-center justify-center"
+      data-tablegrid-header-label="true"
       style={{
         borderRight: `1px solid ${palette.border}`,
         borderBottom: `1px solid ${palette.border}`,
@@ -368,8 +369,10 @@ function HeaderLabel({
         fontSize: `${titleScale}em`,
         fontWeight: 700,
         lineHeight: 1,
-        letterSpacing: compact ? '0.75em' : 0,
-        paddingLeft: compact ? '0.75em' : 0,
+        // Keep two-character labels on one line in the fixed 90px column.
+        letterSpacing: compact ? 'clamp(0px, calc((86px - 2em) / 3), 0.75em)' : 0,
+        paddingLeft: compact ? 'clamp(0px, calc((86px - 2em) / 3), 0.75em)' : 0,
+        whiteSpace: compact ? 'nowrap' : undefined,
       }}
     >
       {children}
@@ -423,6 +426,7 @@ function JobIntentionRow({
   return (
     <div
       className="grid cursor-pointer"
+      data-template-job-intention-trigger="true"
       style={{
         gridTemplateColumns: '90px 1fr',
         minHeight: Math.round(71 * spacingScale),
@@ -456,6 +460,7 @@ function JobIntentionRow({
               <span style={{ minWidth: 0, color: palette.ink, fontWeight: 600 }}>{field.value}</span>
               <button
                 type="button"
+                data-export-hide="true"
                 className="absolute -right-3 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-white text-[12px] leading-none text-red-500 shadow-sm print:hidden"
                 style={{ opacity: isHovered ? 1 : 0 }}
                 onClick={(event) => {
@@ -492,6 +497,8 @@ function TableSectionRow(props: TableSectionRowProps): ReactElement {
   return (
     <section
       className="group/table-section grid"
+      data-template-section="true"
+      data-template-section-title={section.title}
       style={{
         gridTemplateColumns: '90px 1fr',
         minHeight: Math.round(sectionMinHeight(section) * spacingScale),
@@ -508,7 +515,7 @@ function TableSectionRow(props: TableSectionRowProps): ReactElement {
         />
       </RowLabel>
 
-      <div className="relative" style={{ padding: `${verticalPadding}px ${horizontalPadding}px ${Math.max(10, verticalPadding - 4)}px` }}>
+      <div data-template-section-content="true" className="relative" style={{ padding: `${verticalPadding}px ${horizontalPadding}px ${Math.round(14 * spacingScale)}px` }}>
         <SectionActions
           visible={editable.isHovered}
           isTextOnly={editable.isTextOnly}
@@ -632,6 +639,7 @@ function TableBlock(props: TableBlockProps): ReactElement {
   return (
     <div style={{ marginBottom: index < total - 1 ? `${22 * spacingScale}px` : 0 }}>
       <BlockWrapper
+        flush
         blockType={getBlockTypeLabel(block.type)}
         onAdd={block.type !== 'text' ? (): void => addBlock(sectionId) : undefined}
         onPolish={moduleType ? (): void => openPolish(block.id, extractBlockContentHtml(block), moduleType) : undefined}
@@ -642,7 +650,9 @@ function TableBlock(props: TableBlockProps): ReactElement {
         showDragHandle={false}
         disableHover={isEditing}
       >
-        <BlockBody block={block} bodyLineHeight={bodyLineHeight} titleScale={titleScale} palette={palette} onEditingChange={setIsEditing} />
+        <div data-resume-block="">
+          <BlockBody block={block} bodyLineHeight={bodyLineHeight} titleScale={titleScale} palette={palette} onEditingChange={setIsEditing} />
+        </div>
       </BlockWrapper>
     </div>
   )

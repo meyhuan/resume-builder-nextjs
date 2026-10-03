@@ -18,8 +18,7 @@ try {
     await page.setViewport({ width: 1500, height: 1000 })
     await page.goto(`${baseUrl}/dev/scenario-loader?tpl=${template}`, { waitUntil: 'networkidle2' })
     await page.waitForSelector('.resume-container section h2')
-    const settings = await page.evaluateHandle(() => [...document.querySelectorAll('button')].find((button) => button.textContent.trim() === '排版设置'))
-    await settings.asElement().click()
+    await page.click('[data-layout-tab="settings"]')
     const thumb = await page.waitForSelector('#spacing-scale [role="slider"]')
     for (const scale of [0, 1, 3]) {
       await thumb.focus()

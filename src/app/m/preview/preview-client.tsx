@@ -119,6 +119,8 @@ export default function MobilePreviewClient(): ReactElement {
   const [templateId, setTemplateId] = useState<string>(initialTemplateId)
   const [sheetOpen, setSheetOpen] = useState<boolean>(false)
   const [settingsSaving, setSettingsSaving] = useState<boolean>(false)
+  const [settingsError, setSettingsError] = useState<string | null>(null)
+  const [onePageSnapshot, setOnePageSnapshot] = useState<AdjustableTokens | null>(null)
   const [tab, setTab] = useState<SettingsTab>('template')
   const [containerWidth, setContainerWidth] = useState<number>(MOBILE_PAGE_MAX_WIDTH_PX)
   const [contentHeight, setContentHeight] = useState<number>(0)
@@ -131,6 +133,12 @@ export default function MobilePreviewClient(): ReactElement {
   const pinchStateRef = useRef<{ startDist: number; startZoom: number } | null>(null)
   const lastTapRef = useRef<number>(0)
   const settingsSavingRef = useRef<boolean>(false)
+  const settingsSnapshotRef = useRef<{
+    templateId: string
+    themes: Record<string, ThemeTokens>
+    onePageSnapshot: AdjustableTokens | null
+  } | null>(null)
+  const thumbnailFlightRef = useRef<Promise<unknown> | null>(null)
   const exportInFlightRef = useRef<boolean>(false)
   const syncPreviewStateFlightRef = useRef<SyncPreviewStateFlight | null>(null)
 
@@ -218,12 +226,10 @@ export default function MobilePreviewClient(): ReactElement {
     return (): void => observer.disconnect()
   }, [templateId, resume])
 
-  // Debounced cover-thumbnail capture. Runs whenever the resume, template or
-  // any live theme token changes — the timer is reset on each change, so
-  // rapid template swipes or slider tweaks only persist the *final* cover.
-  // An AbortController drops any in-flight upload if a newer capture starts.
+  // Capture only committed previews, never settings being tried in the sheet.
+  // Pending uploads finish before an explicit save to avoid stale overwrites.
   useEffect(() => {
-    if (!draftResumeId) return
+    if (!draftResumeId || sheetOpen) return
     if (!resume || !resume.sections || resume.sections.length === 0) return
 
     const controller: AbortController = new AbortController()
@@ -242,7 +248,16 @@ export default function MobilePreviewClient(): ReactElement {
           })
           if (controller.signal.aborted) return
           if (typeof dataUrl === 'string') {
-            await saveThumbnail(dataUrl)
+            const currentTheme = useAppStore.getState().getThemeForTemplate(templateId)
+            const flight = saveThumbnail(dataUrl, {
+              themes: { ...themesMap, [templateId]: currentTheme },
+              onePageMode: currentTheme.onePageFit ?? false,
+              onePageSnapshot,
+            })
+            thumbnailFlightRef.current = flight
+            try { await flight } finally {
+              if (thumbnailFlightRef.current === flight) thumbnailFlightRef.current = null
+            }
           }
         } catch {
           // silent — cover is best-effort
@@ -254,7 +269,7 @@ export default function MobilePreviewClient(): ReactElement {
       clearTimeout(timer)
       controller.abort()
     }
-  }, [draftResumeId, resume, templateId, themesMap, saveThumbnail])
+  }, [draftResumeId, resume, templateId, themesMap, onePageSnapshot, sheetOpen, saveThumbnail])
 
   const theme: ThemeTokens = getThemeForTemplate(templateId)
   const defaultTheme: ThemeTokens = getDefaultThemeForTemplate(templateId)
@@ -266,9 +281,29 @@ export default function MobilePreviewClient(): ReactElement {
   const paragraphIndent: number = theme.paragraphIndent ?? 0
   const onePageFit: boolean = theme.onePageFit ?? false
 
-  // Snapshot of user's original spacing/line-height/font-size before auto-fit.
-  // Kept in component state; could later be persisted to editor meta if needed.
-  const [onePageSnapshot, setOnePageSnapshot] = useState<AdjustableTokens | null>(null)
+  const handleOpenSettings = useCallback((): void => {
+    if (settingsSavingRef.current || settingsSnapshotRef.current) return
+    settingsSnapshotRef.current = {
+      templateId,
+      themes: structuredClone(useAppStore.getState().themes),
+      onePageSnapshot: onePageSnapshot ? { ...onePageSnapshot } : null,
+    }
+    setSettingsError(null)
+    setSheetOpen(true)
+  }, [templateId, onePageSnapshot])
+
+  const handleCancelSettings = useCallback((): void => {
+    if (settingsSavingRef.current) return
+    const snapshot = settingsSnapshotRef.current
+    if (snapshot) {
+      useAppStore.setState({ themes: snapshot.themes })
+      setTemplateId(snapshot.templateId)
+      setOnePageSnapshot(snapshot.onePageSnapshot)
+    }
+    settingsSnapshotRef.current = null
+    setSettingsError(null)
+    setSheetOpen(false)
+  }, [])
 
   // A4 at 210mm ≈ 794px @ 96dpi. Scale to fit mobile viewport, then multiply
   // by the user-controlled pinch zoom factor.
@@ -284,6 +319,7 @@ export default function MobilePreviewClient(): ReactElement {
 
   const updateTheme = useCallback(
     (patch: Partial<ThemeTokens>): void => {
+      if (settingsSavingRef.current) return
       setThemeForTemplate(templateId, (draft) => {
         Object.assign(draft, patch)
       })
@@ -305,7 +341,7 @@ export default function MobilePreviewClient(): ReactElement {
   // template's tokens onto another. The next template starts fresh.
   const handleSelectTemplate = useCallback(
     (nextId: string): void => {
-      if (nextId === templateId) return
+      if (settingsSavingRef.current || nextId === templateId) return
       setOnePageSnapshot(null)
       setTemplateId(nextId)
       track('template_select', {
@@ -318,9 +354,10 @@ export default function MobilePreviewClient(): ReactElement {
   )
 
   const handleResetStyle = useCallback((): void => {
+    if (settingsSavingRef.current) return
     setOnePageSnapshot(null)
     resetThemeForTemplate(templateId)
-    toast.success('已恢复默认样式')
+    toast.success('已恢复默认样式，保存后生效')
   }, [resetThemeForTemplate, templateId])
 
   const clampZoom = (z: number): number => Math.min(MAX_USER_ZOOM, Math.max(MIN_USER_ZOOM, z))
@@ -480,6 +517,7 @@ export default function MobilePreviewClient(): ReactElement {
     }
 
     const syncPromise = (async (): Promise<void> => {
+      await thumbnailFlightRef.current
       const sourceResume: ResumeData = draft ?? resume
       const latestStore = useAppStore.getState()
       const latestTheme: ThemeTokens = latestStore.getThemeForTemplate(templateId)
@@ -502,10 +540,10 @@ export default function MobilePreviewClient(): ReactElement {
       // Strip any stale __editorMeta that may be embedded in the resume object
       // (e.g. when resume was loaded from the server GET response which includes
       // the raw content blob). embedEditorMeta will write the fresh meta.
-      const { content: cleanContent } = extractEditorMeta(
+      const { content: cleanContent, meta: previousMeta } = extractEditorMeta(
         sourceResume as unknown as Record<string, unknown>
       )
-      const contentWithMeta = embedEditorMeta(cleanContent, editorMeta)
+      const contentWithMeta = embedEditorMeta(cleanContent, { ...previousMeta, ...editorMeta })
 
       const response = await fetchWithNetworkRetry(`/next-api/resumes/${targetId}`, {
         method: 'PUT',
@@ -521,7 +559,7 @@ export default function MobilePreviewClient(): ReactElement {
         const text = await response.text().catch(() => '')
         const message = text || `HTTP ${response.status}`
         log.warn('failed to sync preview state before export', { status: response.status, message })
-        throw new Error('保存最新简历内容失败，请重试后再导出')
+        throw new Error('保存失败，修改已保留，请重试或取消。')
       }
     })()
 
@@ -539,14 +577,16 @@ export default function MobilePreviewClient(): ReactElement {
     if (settingsSavingRef.current) return
     const targetId: string | null = draftResumeId || searchParams.get('id')
     if (!targetId) {
-      toast.error('无法获取简历 ID，请返回重试')
+      setSettingsError('无法获取简历 ID，请取消后返回重试。')
       return
     }
     settingsSavingRef.current = true
     setSettingsSaving(true)
+    setSettingsError(null)
     try {
       await syncPreviewState(targetId)
       setDraftTemplateId(templateId)
+      settingsSnapshotRef.current = null
       setSheetOpen(false)
       toast.success('样式已保存')
     } catch (err: unknown) {
@@ -554,7 +594,7 @@ export default function MobilePreviewClient(): ReactElement {
         templateId,
         error: err instanceof Error ? err.message : String(err),
       })
-      toast.error(err instanceof Error ? err.message : '样式保存失败，请稍后重试')
+      setSettingsError('保存失败，修改已保留，请重试或取消。')
     } finally {
       settingsSavingRef.current = false
       setSettingsSaving(false)
@@ -702,7 +742,7 @@ export default function MobilePreviewClient(): ReactElement {
                 }}
               >
                 <Suspense fallback={<TemplateFallback />}>
-                  <div ref={resumeBodyRef} className="resume-document-main" data-one-page={onePageFit ? 'true' : 'false'}>
+                  <div ref={resumeBodyRef} className="resume-document-main" data-one-page={onePageFit && onePageStatus === 'fit' ? 'true' : 'false'}>
                     {Template ? <Template resume={renderableResume} theme={theme} /> : null}
                   </div>
                   <PortfolioAppendix portfolio={renderableResume.portfolio} />
@@ -729,7 +769,7 @@ export default function MobilePreviewClient(): ReactElement {
         )}
 
         <BottomActionBar
-          onOpenSettings={(): void => setSheetOpen(true)}
+          onOpenSettings={handleOpenSettings}
           onExportPdf={handleExportPdf}
           onExportImage={handleExportImage}
           onExportMarkdown={handleExportMarkdown}
@@ -745,9 +785,10 @@ export default function MobilePreviewClient(): ReactElement {
           defaultPrimaryColor={defaultTheme.primaryColor}
           locksPrimaryColor={Boolean(templateConfig?.locksPrimaryColor)}
           onePageStatus={onePageStatus}
-          onClose={(): void => setSheetOpen(false)}
+          onClose={handleCancelSettings}
           onConfirm={handleConfirmSettings}
           confirming={settingsSaving}
+          saveError={settingsError}
           onReset={handleResetStyle}
           onTabChange={setTab}
           onSelectTemplate={handleSelectTemplate}

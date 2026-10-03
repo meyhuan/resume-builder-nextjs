@@ -49,6 +49,7 @@ function BlockActionWrapper(props: KernelBlockRowProps): ReactElement {
   const label = getBlockTypeLabel(block.type)
   return (
     <BlockWrapper
+      flush
       blockType={label}
       onAdd={block.type !== 'text' ? (): void => addBlock(sectionId) : undefined}
       onPolish={moduleType ? (): void => openPolish(block.id, extractBlockContentHtml(block), moduleType) : undefined}
@@ -191,7 +192,7 @@ function TimelineLeftDateRow(
         <div className="w-[8px] h-[8px] rounded-full mt-[6px] z-10 shrink-0" style={{ backgroundColor: dotColor }} />
         <div className="flex-1 w-[1.5px]" style={{ backgroundColor: axisColor }} />
       </div>
-      <div className="flex-1 min-w-0 pl-4 pb-1">
+      <div className="flex-1 min-w-0 pl-4">
         <BlockActionWrapper {...props} />
       </div>
     </div>

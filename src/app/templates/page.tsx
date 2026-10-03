@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import type { ReactElement } from 'react';
-import Image from 'next/image';
+import { TemplateGallery } from '@/components/templates/template-gallery';
 import Link from 'next/link';
 import { LandingFooter } from '@/components/landing/LandingFooter';
 import { LandingHeader } from '@/components/landing/LandingHeader';
@@ -92,13 +92,7 @@ export default function TemplatesPage(): ReactElement {
   const totalRoleCount: number = templateRoleData.getAllTemplateRoles().length;
   const breadcrumbSchema: JsonLdNode = createBreadcrumbSchema();
   const collectionSchema: JsonLdNode = createCollectionSchema(totalRoleCount);
-  const templates = templateCatalog.map((template) => ({
-    id: template.id,
-    name: template.name,
-    description: template.description,
-    preview: template.preview,
-    tags: template.tags ?? [],
-  }));
+
   return (
     <div className="min-h-screen flex flex-col bg-[#F8FAFC]">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
@@ -118,32 +112,7 @@ export default function TemplatesPage(): ReactElement {
               。
             </p>
           </section>
-          <section className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {templates.map((template) => (
-              <div key={template.id} className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-                <div className="relative aspect-[3/4] bg-slate-100">
-                  <Image
-                    src={template.preview}
-                    alt={template.name}
-                    fill
-                    className="object-cover object-top"
-                    sizes="(max-width: 768px) 100vw, 25vw"
-                  />
-                </div>
-                <div className="p-5">
-                  <div className="text-sm font-bold text-slate-900">{template.name}</div>
-                  <p className="text-sm text-slate-500 mt-2 leading-relaxed">{template.description}</p>
-                  <div className="flex flex-wrap gap-2 mt-3">
-                    {template.tags.slice(0, 3).map((tag) => (
-                      <span key={tag} className="rounded-md bg-slate-50 px-2 py-0.5 text-xs text-slate-500">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </section>
+          <section aria-label="模板分类筛选"><TemplateGallery templates={templateCatalog} /></section>
           <section className="rounded-xl border border-slate-200 bg-white p-6 md:p-8">
             <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6">
               <div>

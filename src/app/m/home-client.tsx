@@ -1,5 +1,8 @@
 'use client'
 
+import { TemplateBrowser } from '@/components/templates/template-browser'
+import { templateLabels } from '@/lib/templates/template-taxonomy'
+
 import { useCallback, useEffect, useState, type ReactElement } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
@@ -18,7 +21,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { track } from '@/lib/analytics'
-import { getAllTemplates, type TemplateConfig } from '@/templates/template-loader'
+import { getPublicTemplates, type TemplateConfig } from '@/templates/template-loader'
 import { defaultResume } from '@/state/store'
 import {
   renameResume as renameResumeAction,
@@ -80,7 +83,7 @@ export default function MobileHomeClient(props: MobileHomeClientProps = {}): Rea
   const [actionTarget, setActionTarget] = useState<ResumeListItem | null>(null)
   const [renameTarget, setRenameTarget] = useState<ResumeListItem | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<ResumeListItem | null>(null)
-  const templates: readonly TemplateConfig[] = getAllTemplates()
+  const templates: readonly TemplateConfig[] = getPublicTemplates()
 
   // Client-side re-check of the auth cookie. Covers the case where the
   // cookie changed in another tab while this tab stayed mounted.
@@ -668,10 +671,10 @@ function TemplatesSection({
   return (
     <section className="mt-6">
       <SectionHeader title="风格简历模板" />
-      <div className="mt-3 px-4 grid grid-cols-2 gap-3">
-        {templates.map((tpl): ReactElement => (
+      <div className="mt-3 px-4">
+        <TemplateBrowser templates={templates} gridClassName="grid grid-cols-2 gap-3" renderTemplate={(tpl): ReactElement => (
           <TemplateCard key={tpl.id} template={tpl} onClick={(): void => onSelect(tpl.id)} />
-        ))}
+        )} />
       </div>
     </section>
   )
@@ -687,6 +690,7 @@ function TemplateCard({
   return (
     <button
       type="button"
+      data-template-id={template.id}
       onClick={onClick}
       className={cn(
         'relative rounded-2xl overflow-hidden bg-white',
@@ -719,7 +723,7 @@ function TemplateCard({
           {template.name}
         </div>
         <div className="mt-0.5 text-[11px] text-slate-500 line-clamp-1">
-          {template.description}
+          {templateLabels(template).slice(0, 2).join(' · ')}
         </div>
       </div>
     </button>

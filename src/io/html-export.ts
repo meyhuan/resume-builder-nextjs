@@ -1,7 +1,7 @@
 /**
  * Utilities for exporting the rendered resume as standalone HTML.
  */
-import { buildResumeFontFaceCss } from '@/entities/theme/font-stacks'
+import { buildResumeFontFaceCss, RESUME_FONT_BASE_URL } from '@/entities/theme/font-stacks'
 
 const DOCUMENT_DOCTYPE: string = '<!DOCTYPE html>'
 const DEFAULT_TITLE: string = 'Resume'
@@ -16,7 +16,8 @@ export interface ResumeHtmlOptions {
 export function buildResumeHtml(element: HTMLElement, options?: ResumeHtmlOptions): string {
   const title: string = options?.title ?? DEFAULT_TITLE
   const fonts: string = collectFontLinks()
-  const styles: string = `${buildResumeFontFaceCss()}\n${collectStyleContent()}`
+  // The PDF service renders this standalone HTML without an app page URL.
+  const styles: string = `${buildResumeFontFaceCss(RESUME_FONT_BASE_URL)}\n${collectStyleContent()}`
   const exportElement = element.cloneNode(true) as HTMLElement
   exportElement.querySelectorAll('[data-export-hide="true"]').forEach((node) => node.remove())
   const markup: string = exportElement.outerHTML
