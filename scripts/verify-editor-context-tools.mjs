@@ -135,7 +135,7 @@ try {
 
   for (const [key, id] of [['city', 'city'], ['industry', 'industry'], ['currentStatus', 'currentStatus'], ['custom_方向', 'job-custom-0']]) {
     await page.click(`[data-template-job-intention-key="${key}"]`)
-    await page.waitForFunction(id => document.activeElement?.id === id, {}, id)
+    await page.waitForFunction(id => document.activeElement?.id === id || (id === 'currentStatus' && document.activeElement?.closest('fieldset')?.id === id), {}, id)
     await page.keyboard.press('Escape')
     await page.waitForFunction(() => !document.querySelector('[role="dialog"]'))
   }

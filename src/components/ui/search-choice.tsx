@@ -60,9 +60,9 @@ export function SearchChoice({ id, label, value, options, onValueChange, placeho
     <Popover.Trigger asChild>
     <Button ref={trigger} id={id} type="button" variant="outline" disabled={disabled}
       aria-label={label} aria-haspopup="listbox" aria-expanded={open} aria-controls={open ? listId : undefined}
-      className="min-h-11 h-auto w-full justify-between gap-2 px-3 text-left font-normal active:bg-muted">
+      className="min-h-11 h-auto w-full justify-between gap-2 px-3 text-left font-normal hover:bg-muted/50 hover:text-foreground active:bg-muted data-[state=open]:border-primary data-[state=open]:bg-background data-[state=open]:text-foreground focus-visible:ring-2 focus-visible:ring-offset-2">
       <span className={cn('min-w-0 whitespace-normal break-words', !value && 'text-muted-foreground')}>{value || placeholder || `搜索或选择${label}`}</span>
-      <ChevronDown className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+      <ChevronDown className={cn('size-4 shrink-0 text-muted-foreground transition-transform motion-reduce:transition-none', open && 'rotate-180 text-primary')} aria-hidden="true" />
     </Button>
     </Popover.Trigger>
     <Popover.Portal>

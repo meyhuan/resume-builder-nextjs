@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import type { ReactElement } from 'react';
 import type { JobIntention } from '@/entities/user/job-intention';
 import { normalizeJobIntention } from '@/entities/user/job-intention-fields';
@@ -29,21 +29,19 @@ export default function JobIntentionModal(props: JobIntentionModalProps): ReactE
   const [city, setCity] = useState(initial.city ?? '');
   const [salary, setSalary] = useState(initial.salary ?? '');
   const [customSalary, setCustomSalary] = useState(Boolean(initial.salary && !SALARY_OPTIONS.includes(initial.salary)));
+  const [customSalaryDraft, setCustomSalaryDraft] = useState(initial.salary && !SALARY_OPTIONS.includes(initial.salary) ? initial.salary : '');
   const [type, setType] = useState(initial.type ?? '');
   const [recruitmentType, setRecruitmentType] = useState(initial.recruitmentType ?? '');
   const [industry, setIndustry] = useState(initial.industry ?? '');
   const [currentStatus, setCurrentStatus] = useState(initial.currentStatus ?? '');
   const [showMoreFields, setShowMoreFields] = useState(Boolean(props.initialField &&
-    (['industry', 'currentStatus'].includes(props.initialField) || props.initialField.startsWith('custom_'))));
+    (props.initialField === 'industry' || props.initialField.startsWith('custom_'))));
   const contentRef = useRef<HTMLDivElement>(null);
   const salaryRef = useRef<HTMLInputElement>(null);
-  const previousCustomSalary = useRef(customSalary);
+  const focusCustomSalaryOnClose = useRef(false);
   const [customFields, setCustomFields] = useState<CustomField[]>(initial.customFields?.map(field => ({ ...field })) ?? []);
-
-  useEffect(() => {
-    if (customSalary && !previousCustomSalary.current) salaryRef.current?.focus();
-    previousCustomSalary.current = customSalary;
-  }, [customSalary]);
+  const filledCustomCount = customFields.filter(field => field.label.trim() && field.value.trim()).length;
+  const moreInfoSummary = [industry.trim() && `期望行业：${industry.trim()}`, filledCustomCount && `自定义字段 ${filledCustomCount} 项`].filter(Boolean).join(' · ');
 
   function handleSave(): void {
     const validCustomFields = customFields.filter(field => field.label.trim() && field.value.trim());
@@ -51,7 +49,7 @@ export default function JobIntentionModal(props: JobIntentionModalProps): ReactE
       ...initial,
       position: position.trim() || undefined,
       city: city.trim() || undefined,
-      salary: salary.trim() || undefined,
+      salary: (customSalary ? customSalaryDraft : salary).trim() || undefined,
       type: type || undefined,
       recruitmentType: recruitmentType || undefined,
       industry: industry.trim() || undefined,
@@ -90,36 +88,42 @@ export default function JobIntentionModal(props: JobIntentionModalProps): ReactE
         <div className="space-y-2">
           <Label htmlFor="salary">期望薪资</Label>
           <Select value={customSalary ? '__custom' : salary || '__empty'} onValueChange={value => {
+            focusCustomSalaryOnClose.current = value === '__custom';
             setCustomSalary(value === '__custom');
             if (value !== '__custom') setSalary(value === '__empty' ? '' : value);
           }}>
             <SelectTrigger id="salary" className="min-h-11"><SelectValue placeholder="选择薪资范围" /></SelectTrigger>
-            <SelectContent>
+            <SelectContent onCloseAutoFocus={event => {
+              if (focusCustomSalaryOnClose.current) {
+                focusCustomSalaryOnClose.current = false;
+                event.preventDefault();
+                salaryRef.current?.focus();
+              }
+            }}>
               <SelectItem value="__empty">暂不填写</SelectItem>
               {SALARY_OPTIONS.map(option => <SelectItem key={option} value={option}>{option}</SelectItem>)}
               <SelectItem value="__custom">自定义</SelectItem>
             </SelectContent>
           </Select>
           {customSalary && <Input ref={salaryRef} id="salary-custom" aria-label="自定义期望薪资" className="h-11"
-            value={salary} onChange={event => setSalary(event.target.value)} placeholder="例如：12-18k·14薪，或 200-300元/天" />}
+            value={customSalaryDraft} onChange={event => setCustomSalaryDraft(event.target.value)} placeholder="例如：12-18k·14薪，或 200-300元/天" />}
           <p className="text-xs text-muted-foreground">区间按月薪填写；日薪、年薪或薪数可用自定义。</p>
         </div>
         <ChoiceGroup id="type" label="工作性质" value={type} onValueChange={setType} options={JOB_TYPE_OPTIONS} />
         <ChoiceGroup id="recruitmentType" label="招聘类型" value={recruitmentType} onValueChange={setRecruitmentType} options={RECRUITMENT_TYPE_OPTIONS} />
-        <Button type="button" variant="ghost" aria-expanded={showMoreFields} aria-controls="job-more-fields"
-          onClick={() => setShowMoreFields(!showMoreFields)} className="min-h-11 w-fit justify-start gap-2 px-2 -ml-2 font-normal text-muted-foreground hover:bg-transparent hover:text-primary active:bg-transparent active:text-primary focus-visible:ring-2 focus-visible:ring-offset-2">
-          <span>更多信息（选填）</span><ChevronDown aria-hidden="true" className={`size-4 transition-transform motion-reduce:transition-none ${showMoreFields ? 'rotate-180' : ''}`} />
-        </Button>
+        <ChoiceGroup id="currentStatus" label="求职状态" optional layout="grid" value={currentStatus} onValueChange={setCurrentStatus} options={CURRENT_STATUS_OPTIONS} />
+        <div className="space-y-1">
+          <Button type="button" variant="ghost" aria-expanded={showMoreFields} aria-controls="job-more-fields"
+            aria-describedby={!showMoreFields && moreInfoSummary ? 'job-more-summary' : undefined}
+            onClick={() => setShowMoreFields(!showMoreFields)} className="min-h-11 w-fit justify-start gap-2 px-2 -ml-2 font-normal text-muted-foreground hover:bg-transparent hover:text-primary active:bg-transparent active:text-primary focus-visible:ring-2 focus-visible:ring-offset-2">
+            <span>更多信息（选填）</span><ChevronDown aria-hidden="true" className={`size-4 transition-transform motion-reduce:transition-none ${showMoreFields ? 'rotate-180' : ''}`} />
+          </Button>
+          {!showMoreFields && moreInfoSummary && <p id="job-more-summary" className="text-xs leading-relaxed text-muted-foreground break-words">{moreInfoSummary}</p>}
+        </div>
         {showMoreFields && <div id="job-more-fields" className="space-y-4 border-t pt-4">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="industry">期望行业</Label>
-              <SearchChoice id="industry" label="行业" value={industry} onValueChange={setIndustry} options={INDUSTRY_OPTIONS} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="currentStatus">求职状态</Label>
-              <SearchChoice id="currentStatus" label="求职状态" value={currentStatus} onValueChange={setCurrentStatus} options={CURRENT_STATUS_OPTIONS} />
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="industry">期望行业</Label>
+            <SearchChoice id="industry" label="行业" value={industry} onValueChange={setIndustry} options={INDUSTRY_OPTIONS} />
           </div>
           <div className="space-y-3 border-t pt-4">
             <div className="flex items-center justify-between">

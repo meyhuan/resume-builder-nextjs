@@ -38,13 +38,31 @@ try {
   await page.click('[data-template-job-intention-key="city"]')
   await page.waitForSelector('#city')
   await page.waitForFunction(() => document.activeElement?.id === 'city')
+  assert.equal(await page.$('#job-more-fields'), null)
+  assert.equal(await page.$$eval('#currentStatus input[type=radio]', els => els.filter(el => el.checked).length), 1)
+  await page.click('label:has(input[aria-label="求职状态：离职，可快速到岗"])')
+  await page.keyboard.press('ArrowDown')
+  assert.equal(await page.$eval('#currentStatus input:checked', el => el.value), '在职，考虑好的机会')
+  passed('status choices are visible without disclosure, preserve imported status, and use native radio arrow keys')
+  assert.ok((await page.$eval('#job-more-summary', el => el.textContent)).includes('互联网'))
+  await page.hover('#city')
+  await page.waitForFunction(() => {
+    const style = getComputedStyle(document.querySelector('#city'))
+    const reference = document.createElement('span')
+    reference.style.color = style.getPropertyValue('--color-foreground')
+    document.body.appendChild(reference)
+    const foreground = getComputedStyle(reference).color
+    reference.remove()
+    return style.color === foreground && style.backgroundColor !== 'rgb(139, 92, 246)'
+  })
+  passed('city hover uses a light field background and keeps the label readable')
   await choice('city', '杭州')
   await salary('10-20k')
   await page.click('label:has(input[aria-label="工作性质：实习"])')
   await page.click('label:has(input[aria-label="招聘类型：校招"])')
   await textClick('button', '更多信息（选填）')
   await choice('industry', '教育/培训')
-  await choice('currentStatus', '应届，求职中')
+  await page.click('label:has(input[aria-label="求职状态：应届，求职中"])')
   await page.screenshot({ path: path.join(out, 'choice-form-desktop.png') })
   await textClick('button', '确定')
   await page.waitForFunction(() => ['杭州', '10-20k', '工作性质：', '实习', '招聘类型：', '校招', '应届，求职中'].every(text => document.querySelector('[data-scenario-preview]')?.textContent.includes(text)))
@@ -61,6 +79,15 @@ try {
   assert.ok((await page.$eval('#city', el => el.textContent)).includes('景德镇'))
   assert.equal(await page.$eval('#salary-custom', el => el.value), '200-300元/天')
   passed('custom city and daily salary survive save/reopen')
+  for (const preset of ['面议', '10-20k', '暂不填写']) {
+    await salary(preset)
+    assert.equal(await page.$('#salary-custom'), null)
+    await salary('自定义')
+    await page.waitForSelector('#salary-custom')
+    assert.equal(await page.$eval('#salary-custom', el => el.value), '200-300元/天')
+    await page.waitForFunction(() => document.activeElement?.id === 'salary-custom')
+  }
+  passed('custom salary survives preset/negotiable/blank round trips with input focus restored')
   await salary('面议')
   assert.equal(await page.$('#salary-custom'), null)
   await textClick('button', '取消')
@@ -90,6 +117,12 @@ try {
     })
     assert.equal(geometry.overflow, false)
     assert.ok(geometry.dialog.left >= 0 && geometry.dialog.right <= width)
+    const statusGeometry = await page.$$eval('#currentStatus label', els => els.map(el => ({
+      width: el.getBoundingClientRect().width,
+      height: el.getBoundingClientRect().height,
+      overflow: el.scrollWidth > el.clientWidth + 1,
+    })))
+    assert.ok(statusGeometry.every(item => item.height >= 44 && !item.overflow))
     assert.ok(geometry.popup.left >= 0 && geometry.popup.right <= width + 1)
     assert.equal(geometry.reachable, true)
     await page.screenshot({ path: path.join(out, `choice-form-${width}.png`) })

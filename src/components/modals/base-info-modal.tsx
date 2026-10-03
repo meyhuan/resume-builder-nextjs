@@ -49,6 +49,9 @@ export default function BaseInfoModal(props: BaseInfoModalProps): ReactElement {
   const [weight, setWeight] = useState(props.baseInfo?.weight ?? '');
   const [showMoreFields, setShowMoreFields] = useState(false);
   const [customFields, setCustomFields] = useState<CustomField[]>(initialOrdinaryCustomFields);
+  const moreInfoCount = [nation, household, currentLocation, workStartTime, politicalStatus, height, weight].filter(value => value.trim()).length
+    + customFields.filter(field => field.label.trim() && field.value.trim()).length;
+  const moreInfoSummary = [`已填写 ${moreInfoCount} 项`, currentLocation.trim() && `现居${currentLocation.trim()}`, household.trim() && `户籍${household.trim()}`].filter(Boolean).join(' · ');
 
   function addCustomField(): void {
     setCustomFields([...customFields, { label: '', value: '' }]);
@@ -182,20 +185,24 @@ export default function BaseInfoModal(props: BaseInfoModalProps): ReactElement {
             </div>
           </div>
 
-          <Button
-            type="button"
-            variant="ghost"
-            aria-expanded={showMoreFields}
-            aria-controls="base-more-fields"
-            onClick={() => setShowMoreFields(!showMoreFields)}
-            className="min-h-11 w-fit justify-start gap-2 px-2 -ml-2 font-normal text-muted-foreground hover:bg-transparent hover:text-primary active:bg-transparent active:text-primary focus-visible:ring-2 focus-visible:ring-offset-2"
-          >
-            <span>更多信息（选填）</span>
-            <ChevronDown 
-              aria-hidden="true"
-              className={`h-4 w-4 transition-transform motion-reduce:transition-none ${showMoreFields ? 'rotate-180' : ''}`}
-            />
-          </Button>
+          <div className="space-y-1">
+            <Button
+              type="button"
+              variant="ghost"
+              aria-expanded={showMoreFields}
+              aria-controls="base-more-fields"
+              aria-describedby={!showMoreFields && moreInfoCount ? 'base-more-summary' : undefined}
+              onClick={() => setShowMoreFields(!showMoreFields)}
+              className="min-h-11 w-fit justify-start gap-2 px-2 -ml-2 font-normal text-muted-foreground hover:bg-transparent hover:text-primary active:bg-transparent active:text-primary focus-visible:ring-2 focus-visible:ring-offset-2"
+            >
+              <span>更多信息（选填）</span>
+              <ChevronDown
+                aria-hidden="true"
+                className={`h-4 w-4 transition-transform motion-reduce:transition-none ${showMoreFields ? 'rotate-180' : ''}`}
+              />
+            </Button>
+            {!showMoreFields && moreInfoCount > 0 && <p id="base-more-summary" className="text-xs leading-relaxed text-muted-foreground break-words">{moreInfoSummary}</p>}
+          </div>
 
           {showMoreFields && (
             <div id="base-more-fields" className="space-y-4 pt-2 border-t">

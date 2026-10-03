@@ -101,7 +101,7 @@ try {
   for (const [key, expectedId] of [['city', 'city'], ['industry', 'industry'], ['currentStatus', 'currentStatus'], ['custom_方向', 'job-custom-0']]) {
     await page.click(`[data-template-job-intention-key="${key}"]`)
     await page.waitForSelector('[role="dialog"]')
-    await page.waitForFunction(id => document.activeElement?.id === id, {}, expectedId)
+    await page.waitForFunction(id => document.activeElement?.id === id || (id === 'currentStatus' && document.activeElement?.closest('fieldset')?.id === id), {}, expectedId)
     await page.keyboard.press('Escape')
     await page.waitForFunction(() => !document.querySelector('[role="dialog"]'))
     results.push({ check: `click ${key} opens/focuses its own field, including optional/custom fields`, pass: true })

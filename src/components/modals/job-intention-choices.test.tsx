@@ -21,6 +21,53 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.unstubAllGlobals() })
 
 describe('choice-based job intention', () => {
+  async function selectSalary(value: string) {
+    fireEvent.keyDown(screen.getByLabelText('期望薪资'), { key: 'Enter' })
+    fireEvent.click(await screen.findByRole('option', { name: value }))
+  }
+
+  it.each(['面议', '10-20k', '暂不填写'])('preserves the custom salary draft when switching through %s', async preset => {
+    const save = vi.fn()
+    render(<JobIntentionModal jobIntention={{ salary: '8k-12k' }} onSave={save} onClose={() => {}} />)
+    fireEvent.change(screen.getByLabelText('自定义期望薪资'), { target: { value: '200-300元/天' } })
+    await selectSalary(preset)
+    expect(screen.queryByLabelText('自定义期望薪资')).toBeNull()
+    await selectSalary('自定义')
+    expect((screen.getByLabelText('自定义期望薪资') as HTMLInputElement).value).toBe('200-300元/天')
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByLabelText('自定义期望薪资')))
+    fireEvent.click(screen.getByRole('button', { name: '确定' }))
+    expect(save).toHaveBeenCalledWith(expect.objectContaining({ salary: '200-300元/天' }))
+  })
+
+  it('saves the current salary choice rather than a hidden custom draft', async () => {
+    const save = vi.fn()
+    render(<JobIntentionModal jobIntention={{ salary: '200-300元/天' }} onSave={save} onClose={() => {}} />)
+    await selectSalary('面议')
+    fireEvent.click(screen.getByRole('button', { name: '确定' }))
+    expect(save).toHaveBeenCalledWith(expect.objectContaining({ salary: '面议' }))
+  })
+
+  it('starts a fresh custom salary blank when an existing salary is a preset', async () => {
+    const save = vi.fn()
+    render(<JobIntentionModal jobIntention={{ salary: '面议' }} onSave={save} onClose={() => {}} />)
+    await selectSalary('自定义')
+    expect((screen.getByLabelText('自定义期望薪资') as HTMLInputElement).value).toBe('')
+    fireEvent.click(screen.getByRole('button', { name: '确定' }))
+    expect(save).toHaveBeenCalledWith(expect.objectContaining({ salary: undefined }))
+  })
+
+  it('shows status choices without disclosure and focuses a preserved imported status when clicked from the resume', async () => {
+    const save = vi.fn()
+    render(<JobIntentionModal jobIntention={{ currentStatus: '在读，寻找暑期实习' }} initialField="currentStatus" onSave={save} onClose={() => {}} />)
+    const current = screen.getByRole('radio', { name: '求职状态：在读，寻找暑期实习' }) as HTMLInputElement
+    expect(current.checked).toBe(true)
+    expect(screen.queryByLabelText('期望行业')).toBeNull()
+    await waitFor(() => expect(document.activeElement).toBe(current))
+    fireEvent.click(screen.getByRole('radio', { name: '求职状态：应届，求职中' }))
+    fireEvent.click(screen.getByRole('button', { name: '确定' }))
+    expect(save).toHaveBeenCalledWith(expect.objectContaining({ currentStatus: '应届，求职中' }))
+  })
+
   it('does not offer the old blank-resume label as an employment choice', () => {
     expect(normalizeJobIntention({ type: '求职类型' }).type).toBeUndefined()
   })
