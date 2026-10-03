@@ -60,37 +60,39 @@
     flex-wrap: wrap;
   }
 
-  /* Selection is explicit: moving across another row on the way to the dock
-     must not silently change the target of Delete or AI actions. */
+  /* Hovering another row never changes the explicitly selected row. */
   [data-resume-edit-selected="true"]:not(:where([data-resume-exporting], [data-resume-exporting] *)) {
     background-color: var(--resume-edit-selected-fill);
   }
-  .resume-action-dock {
-    min-height: 48px;
+  .resume-context-format-toolbar {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
+    gap: 4px;
+    width: max-content;
+    padding: 2px 4px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--resume-edit-region-radius);
+    background: var(--color-background);
+    box-shadow: 0 2px 8px var(--resume-edit-section-line);
+    z-index: 40;
   }
-  .resume-action-dock:has([data-resume-block-actions]) [data-resume-action-hint] { display: none; }
-  .resume-format-dock { min-height: 48px; display: flex; align-items: center; }
-  .resume-format-dock:has([data-resume-inline-toolbar]) [data-resume-format-placeholder] { display: none; }
-  .resume-docked-actions { width: 100%; }
-  .resume-docked-actions button { height: 32px; font-size: 12px; }
-  .resume-docked-actions button:has(svg:only-child) { width: 32px; }
-  .resume-action-context { min-width: 0; flex: 1; overflow-wrap: anywhere; }
-  .resume-inline-toolbar-fixed { display: flex; align-items: center; flex-wrap: wrap; width: 100%; gap: 8px; }
   .resume-inline-toolbar-buttons { display: flex; flex-wrap: wrap; min-width: 0; }
-  .resume-format-dock button { height: 32px; width: 32px; }
+  .resume-context-ai-button {
+    height: 28px;
+    gap: 4px;
+    padding-inline: 8px;
+    color: var(--color-primary);
+    background: var(--resume-edit-field-fill);
+    white-space: nowrap;
+    font-size: 12px;
+  }
   /* Preserve the tiny hover bridge for standalone template consumers. */
   [data-resume-block-actions]:not(.resume-docked-actions)::before {
     content: '';
     position: absolute;
     height: 4px;
     inset: -4px 0 auto;
-  }
-  @media (max-width: 1023px) {
-    .resume-format-hint { display: none; }
-    .resume-action-dock { min-height: 80px; }
-    .resume-action-context { flex-basis: 100%; }
   }
 
   /* html-to-image reads styles immediately; do not capture a fading highlight. */
@@ -138,7 +140,7 @@
   [data-resume-edit-region], [data-resume-edit-field] {
     outline: none !important;
   }
-  [data-resume-block-actions], [data-resume-section-actions], [data-resume-action-dock], [data-resume-format-dock] {
+  [data-resume-block-actions], [data-resume-section-actions], [data-resume-inline-toolbar] {
     display: none !important;
   }
 }

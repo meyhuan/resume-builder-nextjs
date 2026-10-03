@@ -1,8 +1,9 @@
-import type { ReactElement } from "react";
+import { useRef, type ReactElement } from "react";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Sparkles, Wand2, Trash2, ArrowUp, ArrowDown } from "lucide-react";
 import { trackAssistant } from '@/lib/ai/unified/analytics';
 import { useAiImpression } from '@/lib/ai/unified/use-impression';
+import { useBlockActionPosition } from './use-block-action-position';
 
 /**
  * Actions shown when hovering over a block (floating, no layout shift).
@@ -33,6 +34,8 @@ export default function BlockActions(props: BlockActionsProps): ReactElement {
     contextLabel,
     onReturnFocus,
   } = props;
+  const actionsRef = useRef<HTMLDivElement>(null);
+  const boundedPosition = useBlockActionPosition(actionsRef);
   const report = (feature: 'polish' | 'generate') => {
     if (window.matchMedia('(min-width: 768px)').matches)
       trackAssistant('entry_view', { entry: 'module', surface: 'block', feature, requestedFeature: feature });
@@ -42,13 +45,15 @@ export default function BlockActions(props: BlockActionsProps): ReactElement {
 
   return (
     <div
+      ref={actionsRef}
+      style={docked ? undefined : boundedPosition}
       data-resume-block-actions="true"
       data-export-hide="true"
       role="group"
       aria-label={`${contextLabel || blockType}操作`}
       className={docked ? 'resume-docked-actions flex items-center gap-1 print:hidden text-slate-900' : 'absolute top-full right-0 mt-1 flex items-center gap-0.5 print:hidden bg-white shadow-md rounded-md px-1 py-0.5 border border-slate-200 z-10'}
       onKeyDown={(event) => {
-        if (docked && event.key === 'Escape') { event.preventDefault(); onReturnFocus?.(); }
+        if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); onReturnFocus?.(); }
       }}
     >
       {docked ? <span className="resume-action-context mr-auto pr-3 text-xs font-medium text-slate-600" title={contextLabel}>{contextLabel}</span> : null}

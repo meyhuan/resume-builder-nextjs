@@ -7,6 +7,7 @@ import EditableFieldWrapper from '@/editor/editable-field-wrapper';
 import { EditableText } from '@/templates/_core/primitives/editable-text';
 import { SectionTitleText } from '@/components/sections/section-title-text';
 import { ResumeActionWorkspace } from '@/components/blocks/resume-action-dock';
+import InlineEditor from '@/editor/inline-editor';
 
 const store = vi.hoisted(() => ({ readOnly: false, setResume: vi.fn() }));
 
@@ -18,7 +19,7 @@ vi.mock('@/state/store', () => ({
 vi.mock('@/lib/ai/unified/use-impression', () => ({ useAiImpression: () => () => {} }));
 vi.mock('@/lib/ai/unified/analytics', () => ({ trackAssistant: vi.fn() }));
 
-describe('action dock ownership', () => {
+describe('contextual row actions', () => {
   function mount(disabled = false) {
     const firstDelete = vi.fn();
     const secondDelete = vi.fn();
@@ -31,35 +32,37 @@ describe('action dock ownership', () => {
     return { view, firstDelete, secondDelete, first: screen.getByText('第一条正文'), second: screen.getByText('第二条正文') };
   }
 
-  it('keeps the selected target while crossing other rows on the way to the dock', () => {
-    const { first, second, firstDelete, secondDelete } = mount();
+  it('keeps actions inside their owner and reachable across the hover bridge', () => {
+    const { first, firstDelete, secondDelete } = mount();
+    move(document.body, first);
     fireEvent.click(first);
     const action = screen.getByRole('button', { name: '删除' });
-    expect(first.closest('[data-resume-edit-region="block"]')?.contains(action)).toBe(false);
-    move(first, second);
+    expect(first.closest('[data-resume-edit-region="block"]')?.contains(action)).toBe(true);
+    move(first, action);
     advance(500);
-    move(second, action);
-    advance(500);
-    expect(screen.getByText('项目经历 · 第 1 条')).not.toBeNull();
     fireEvent.click(action);
     expect(firstDelete).toHaveBeenCalledOnce();
     expect(secondDelete).not.toHaveBeenCalled();
   });
 
-  it('switches actions only on explicit selection and clears on a background click', () => {
+  it('shows the hovered row actions and invokes that row callback', () => {
     const { first, second, firstDelete, secondDelete } = mount();
+    move(document.body, first);
     fireEvent.click(first);
+    move(first, second);
     fireEvent.click(second);
+    advance(250);
     expect(screen.getAllByRole('button', { name: '删除' })).toHaveLength(1);
-    expect(screen.getByText('项目经历 · 第 2 条')).not.toBeNull();
+    expect(second.closest('[data-resume-edit-region="block"]')?.contains(screen.getByRole('button', { name: '删除' }))).toBe(true);
     fireEvent.click(screen.getByRole('button', { name: '删除' }));
     expect(firstDelete).not.toHaveBeenCalled();
     expect(secondDelete).toHaveBeenCalledOnce();
-    fireEvent.click(screen.getByRole('heading'));
+    move(second, document.body);
+    advance(250);
     expect(screen.queryByRole('button', { name: '删除' })).toBeNull();
   });
 
-  it('supports Alt+F10 to enter the dock and Escape to return to the selected block', () => {
+  it('supports Alt+F10 to enter local actions and Escape to return to the owner', () => {
     const { first } = mount();
     const block = first.closest('[data-resume-edit-region="block"]') as HTMLElement;
     act(() => block.focus());
@@ -70,14 +73,15 @@ describe('action dock ownership', () => {
     expect(document.activeElement).toBe(block);
   });
 
-  it('removes the old dock actions when the selected block unmounts', () => {
+  it('removes actions when the owner unmounts', () => {
     const { first, view } = mount();
+    move(document.body, first);
     fireEvent.click(first);
     view.rerender(<ResumeActionWorkspace><p>条目已删除</p></ResumeActionWorkspace>);
     expect(screen.queryByRole('button', { name: '删除' })).toBeNull();
   });
 
-  it('retains ownership when a move replaces its own clicked button synchronously', async () => {
+  it('retains local ownership when a keyed row moves', async () => {
     const draw = (reversed: boolean) => <StrictMode><ResumeActionWorkspace>
       <section data-resume-edit-region="section"><h2>项目经历</h2>
         {(reversed ? ['second', 'first'] : ['first', 'second']).map((key) =>
@@ -89,21 +93,22 @@ describe('action dock ownership', () => {
       </section>
     </ResumeActionWorkspace></StrictMode>;
     const view = render(draw(false));
+    move(document.body, screen.getByText('first'));
     fireEvent.click(screen.getByText('first'));
     fireEvent.click(screen.getByRole('button', { name: '下移' }));
     advance(0);
     await act(async () => { await Promise.resolve(); });
-    expect(screen.getByText('项目经历 · 第 2 条')).not.toBeNull();
-    expect(screen.getByRole('button', { name: '上移' })).not.toBeNull();
+    expect(screen.getByText('first').closest('[data-resume-edit-region="block"]')?.contains(screen.getByRole('button', { name: '上移' }))).toBe(true);
   });
 
-  it('keeps independently docked actions while rich text uses the separate format bar', () => {
+  it('hides row actions during rich editing and never reserves fixed bars', () => {
     const { first, firstDelete } = mount(true);
+    move(document.body, first);
     fireEvent.click(first);
-    fireEvent.click(screen.getByRole('button', { name: '删除' }));
-    expect(firstDelete).toHaveBeenCalledOnce();
-    expect(document.querySelector('[data-resume-format-dock]')).not.toBeNull();
-    expect(screen.getByRole('button', { name: '加粗' }).hasAttribute('disabled')).toBe(true);
+    expect(screen.queryByRole('button', { name: '删除' })).toBeNull();
+    expect(firstDelete).not.toHaveBeenCalled();
+    expect(document.querySelector('[data-resume-format-dock]')).toBeNull();
+    expect(document.querySelector('[data-resume-action-dock]')).toBeNull();
   });
 
   it('has no editing dock in read-only mode', () => {
@@ -113,6 +118,28 @@ describe('action dock ownership', () => {
     expect(document.querySelector('[data-resume-action-dock]')).toBeNull();
     expect(document.querySelector('[data-resume-format-dock]')).toBeNull();
   });
+});
+
+it('passes the active paragraph AI action through its owner and exits editing first', () => {
+  vi.stubGlobal('ResizeObserver', class { observe() {} disconnect() {} });
+  const exit = vi.fn();
+  const polish = vi.fn();
+  const generate = vi.fn();
+  const otherPolish = vi.fn();
+  try {
+    render(<ResumeActionWorkspace>
+      <BlockWrapper blockType="项目" onPolish={polish} onGenerate={generate} disableHover>
+        <InlineEditor initialHtml="<p>当前项目正文</p>" floatingToolbar onChange={() => {}} onClickOutside={exit} />
+      </BlockWrapper>
+      <BlockWrapper blockType="项目" onPolish={otherPolish}><p>其他项目正文</p></BlockWrapper>
+    </ResumeActionWorkspace>);
+    fireEvent.click(screen.getByLabelText('AI润色'));
+    expect(exit).toHaveBeenCalledOnce();
+    expect(polish).toHaveBeenCalledOnce();
+    expect(exit.mock.invocationCallOrder[0]).toBeLessThan(polish.mock.invocationCallOrder[0]);
+    expect(generate).not.toHaveBeenCalled();
+    expect(otherPolish).not.toHaveBeenCalled();
+  } finally { cleanup(); vi.unstubAllGlobals(); }
 });
 
 it('lets a module title contain spaces and commits Enter without reopening its editor', () => {
@@ -348,11 +375,12 @@ it('identifies a selected project by name and updates it when the title changes'
     <BlockWrapper blockType="项目" onDelete={() => {}}><span data-resume-field-name="name">{name}</span></BlockWrapper>
   </section></ResumeActionWorkspace>;
   const view = render(draw('校园社交应用'));
+  move(document.body, screen.getByText('校园社交应用'));
   fireEvent.click(screen.getByText('校园社交应用'));
-  expect(screen.getByText('项目经历 · 校园社交应用')).not.toBeNull();
+  expect(screen.getByRole('group', { name: '项目经历 · 校园社交应用操作' })).not.toBeNull();
   view.rerender(draw('简历优化助手'));
   await act(async () => { await Promise.resolve(); });
-  expect(screen.getByText('项目经历 · 简历优化助手')).not.toBeNull();
+  expect(screen.getByRole('group', { name: '项目经历 · 简历优化助手操作' })).not.toBeNull();
 });
 
 it('opens a template name from the keyboard and commits once', () => {

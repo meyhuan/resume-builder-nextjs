@@ -1,10 +1,9 @@
 import { useEffect, useId, useState, type ReactElement, type ReactNode } from 'react';
-import { createPortal } from 'react-dom';
 import { GripHorizontal } from 'lucide-react';
 import BlockActions from './block-actions';
 import { useAppStore } from '@/state/store';
 import { useHoverActions } from '@/hooks/use-hover-actions';
-import { useResumeActionDock } from './resume-action-dock';
+import { BlockEditingProvider, useResumeActionDock } from './resume-action-dock';
 
 /**
  * Wrapper for blocks with hover actions (floating buttons, no layout shift).
@@ -84,9 +83,13 @@ function EditableBlockHoverWrapper(props: BlockWrapperProps): ReactElement {
     setContextLabel(label);
     dock.select(id, label);
   };
+  const moveAndRestoreFocus = (callback?: () => void): (() => void) | undefined => callback ? () => {
+    callback();
+    queueMicrotask(() => { if (ref.current?.isConnected) ref.current.focus({ preventScroll: true }); });
+  } : undefined;
   const actions = <BlockActions blockType={blockType} onAdd={onAdd} onPolish={onPolish}
-    onGenerate={onGenerate} onDelete={onDelete} onMoveUp={onMoveUp} onMoveDown={onMoveDown}
-    docked={Boolean(dock)} contextLabel={contextLabel}
+    onGenerate={onGenerate} onDelete={onDelete} onMoveUp={moveAndRestoreFocus(onMoveUp)} onMoveDown={moveAndRestoreFocus(onMoveDown)}
+    contextLabel={contextLabel}
     onReturnFocus={() => ref.current?.focus()} />;
 
   return (
@@ -105,13 +108,13 @@ function EditableBlockHoverWrapper(props: BlockWrapperProps): ReactElement {
       onBlur={onBlur}
       onClick={selectBlock}
       onKeyDown={(event) => {
-        if (event.altKey && event.key === 'F10' && dock?.host) {
+        if (event.altKey && event.key === 'F10' && !disableHover) {
           event.preventDefault();
-          dock.host.querySelector<HTMLButtonElement>('button')?.focus();
+          ref.current?.querySelector<HTMLButtonElement>('[data-resume-block-actions] button')?.focus();
         }
       }}
     >
-      {children}
+      <BlockEditingProvider value={{ onPolish, onGenerate }}>{children}</BlockEditingProvider>
 
       {/* DnD Drag Handle - top right corner */}
       {showDragHandle && dragHandleProps && dragHandleRef && isHovered && !disableHover ? (
@@ -127,7 +130,7 @@ function EditableBlockHoverWrapper(props: BlockWrapperProps): ReactElement {
         </button>
       ) : null}
 
-      {dock ? selected && dock.host ? createPortal(actions, dock.host) : null : isHovered ? actions : null}
+      {isHovered && !disableHover ? actions : null}
     </div>
   );
 }

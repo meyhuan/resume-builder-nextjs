@@ -15,8 +15,7 @@ try {
   await page.waitForFunction(() => document.querySelector('[data-scenario-active-template]')?.textContent.includes('李小满'))
   await page.evaluate(async () => { await document.fonts.ready })
   const rich = await page.evaluateHandle(() => [...document.querySelectorAll('.qingning-rich')].find(el => el.textContent.includes('GPA')))
-  assert.equal(await page.$eval('[data-resume-format-dock] button[aria-label="加粗"]', el => el.disabled), true)
-  const idleFormatHeight = await page.$eval('[data-resume-format-dock]', el => el.getBoundingClientRect().height)
+  assert.equal(await page.$('[data-resume-format-dock], [data-resume-action-dock], [data-resume-inline-toolbar]'), null)
   await rich.evaluate(el => el.scrollIntoView({ block: 'center' }))
   const before = await rich.evaluate(el => {
     const rect = el.getBoundingClientRect()
@@ -33,28 +32,25 @@ try {
     const editor = document.querySelector('[contenteditable="true"]')
     const toolbar = document.querySelector('[data-resume-inline-toolbar]')
     const dock = toolbar.closest('[data-resume-format-dock]')
-    const canvas = document.querySelector('[data-editor-canvas]')
     const selection = getSelection()
     return { caretText: selection.anchorNode.textContent, caretOffset: selection.anchorOffset, collapsed: selection.isCollapsed,
       paperHeight: editor.closest('.resume-container').getBoundingClientRect().height,
       nextTitleTop: [...document.querySelectorAll('h2')].find(title => title.textContent === '实习经历').getBoundingClientRect().top,
       docked: Boolean(dock), toolbarInPaper: Boolean(toolbar.closest('.resume-container')),
-      toolbarBottom: toolbar.getBoundingClientRect().bottom, canvasTop: canvas.getBoundingClientRect().top,
-      formatHeight: dock.getBoundingClientRect().height }
+      toolbarBottom: toolbar.getBoundingClientRect().bottom, editorTop: editor.getBoundingClientRect().top }
   })
   assert.equal(after.caretText, before.caretText)
   assert.equal(after.caretOffset, before.caretOffset)
   assert.equal(after.collapsed, true)
-  assert.equal(after.docked, true)
+  assert.equal(after.docked, false)
   assert.equal(after.toolbarInPaper, false)
-  assert.ok(after.toolbarBottom <= after.canvasTop + 1)
-  assert.equal(after.formatHeight, idleFormatHeight)
+  assert.ok(after.toolbarBottom <= after.editorTop)
   assert.equal(await page.$('[aria-label="完成正文编辑"]'), null)
-  assert.ok(await page.$('[data-resume-action-dock] [data-resume-block-actions]'))
+  assert.equal(await page.$eval('[contenteditable="true"]', el => el.closest('[data-resume-edit-region="block"]').querySelector('[data-resume-block-actions]')), null)
   assert.ok(Math.abs(after.paperHeight - before.paperHeight) <= 1)
   assert.ok(Math.abs(after.nextTitleTop - before.nextTitleTop) <= 1)
-  results.push({ check: 'one click focuses clicked caret; stable top format bar and separate bottom actions; no Done button or resume shift', pass: true, ...after })
-  await page.screenshot({ path: path.join(out, 'rich-text-dock.png') })
+  results.push({ check: 'one click focuses clicked caret; paragraph formats replace row actions; no Done button or resume shift', pass: true, ...after })
+  await page.screenshot({ path: path.join(out, 'rich-text-context.png') })
 
   await page.hover('[data-resume-inline-toolbar] button[aria-label="加粗"]')
   assert.ok(await page.$('[contenteditable="true"]'))
@@ -79,17 +75,17 @@ try {
   for (const width of [1024, 1400]) {
     await page.setViewport({ width, height: 1000 })
     const layout = await page.$eval('[data-resume-inline-toolbar]', el => {
-      const rect = el.closest('[data-resume-format-dock]').getBoundingClientRect()
+      const rect = el.getBoundingClientRect()
       return { clipped: [...el.querySelectorAll('button')].some(button => { const r = button.getBoundingClientRect(); return r.left < rect.left || r.right > rect.right || r.bottom > rect.bottom }) }
     })
     assert.equal(layout.clipped, false)
   }
-  await page.click('[data-resume-field-name="school"]')
-  await page.waitForSelector('input[data-resume-field-name="school"]')
+  await page.click('[data-resume-field-name="degree"]')
+  await page.waitForSelector('input[data-resume-field-name="degree"]')
   await page.waitForFunction(() => !document.querySelector('[contenteditable="true"]'))
-  assert.equal(await page.$eval('[data-resume-format-dock] button[aria-label="加粗"]', el => el.disabled), true)
+  assert.equal(await page.$('[data-resume-inline-toolbar]'), null)
   await page.keyboard.press('Escape')
-  results.push({ check: 'keyboard opens at the start; clicking another field naturally exits and focuses it; top toolbar fits at 1024/1400', pass: true })
+  results.push({ check: 'keyboard opens at the start; clicking another field naturally exits and focuses it; paragraph formats fit at 1024/1400', pass: true })
 
   const school = '[data-resume-field-name="school"]'
   await page.click(school)
@@ -115,23 +111,26 @@ try {
   await project.click()
   await page.keyboard.press('Escape')
   await page.mouse.move(5, 5)
-  await page.waitForFunction(() => document.querySelector('.resume-action-context')?.textContent === '项目经历 · 校园社交应用MVP')
+  await page.waitForFunction(() => [...document.querySelectorAll('[data-resume-edit-selected="true"]')].some(el => el.textContent.includes('校园社交应用MVP')))
   const selected = await page.$eval('[data-resume-edit-selected="true"]', el => ({ background: getComputedStyle(el).backgroundColor, markerContent: getComputedStyle(el, '::before').content }))
   assert.notEqual(selected.background, 'rgba(0, 0, 0, 0)')
   assert.equal(selected.markerContent, 'none')
   await page.screenshot({ path: path.join(out, 'selected-project.png') })
   for (const width of [1024, 1400]) {
     await page.setViewport({ width, height: 1000 })
-    await page.click('[data-resume-field-name="name"]')
-    await page.keyboard.press('Escape')
-    const layout = await page.$eval('[data-resume-action-dock]', el => {
-      const rect = el.getBoundingClientRect()
-      return { scrollWidth: el.scrollWidth, width: rect.width,
-        clipped: [...el.querySelectorAll('button')].some(button => { const r = button.getBoundingClientRect(); return r.left < rect.left || r.right > rect.right || r.bottom > rect.bottom }) }
+    const selectedProject = await page.evaluateHandle(() => [...document.querySelectorAll('[data-resume-field-name="name"]')].find(el => el.textContent.includes('校园社交应用MVP')))
+    await selectedProject.evaluate(el => el.scrollIntoView({ block: 'center' }))
+    await selectedProject.hover()
+    const row = await selectedProject.evaluateHandle(el => el.closest('[data-resume-edit-region="block"]'))
+    const layout = await row.evaluate(el => {
+      const actions = el.querySelector('[data-resume-block-actions]')
+      const rect = actions.getBoundingClientRect()
+      return { scrollWidth: actions.scrollWidth, width: rect.width,
+        clipped: [...actions.querySelectorAll('button')].some(button => { const r = button.getBoundingClientRect(); return r.left < rect.left || r.right > rect.right || r.bottom > rect.bottom }) }
     })
     assert.equal(layout.clipped, false)
     assert.ok(layout.scrollWidth <= layout.width + 1)
-    results.push({ check: `named action context and persistent selection fit at ${width}`, pass: true, ...layout })
+    results.push({ check: `local row actions and persistent selection fit at ${width}`, pass: true, ...layout })
   }
   await fs.writeFile(path.join(out, 'results.json'), JSON.stringify(results, null, 2))
   console.log(JSON.stringify(results, null, 2))

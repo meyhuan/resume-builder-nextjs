@@ -1,7 +1,7 @@
 /**
  * InlineEditor is a lightweight Lexical rich-text editor for inline editing.
  */
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useLayoutEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { LexicalComposer } from '@lexical/react/LexicalComposer'
@@ -18,7 +18,10 @@ import type { EditorState, LexicalEditor } from 'lexical'
 import type { ReactElement, ReactNode } from 'react'
 import React from 'react'
 import InlineToolbar from './inline-toolbar'
-import { useResumeActionDock } from '@/components/blocks/resume-action-dock'
+import { useBlockEditingActions } from '@/components/blocks/resume-action-dock'
+import { useAnchoredToolbar } from './use-anchored-toolbar'
+import { Button } from '@/components/ui/button'
+import { Sparkles, Wand2 } from 'lucide-react'
 import { findInlineTextPosition, type InlineTextSelection } from './inline-selection'
 
 export interface InlineFocusPoint { readonly x: number; readonly y: number }
@@ -114,8 +117,17 @@ class RichTextErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBou
 export default function InlineEditor(props: InlineEditorProps): ReactElement {
   const editorRef = useRef<HTMLDivElement>(null)
   const toolbarRef = useRef<HTMLDivElement>(null)
-  const dock = useResumeActionDock()
-  const docked = Boolean(dock?.formatHost && props.floatingToolbar)
+  const pendingToolbarFocus = useRef(false)
+  const floating = Boolean(props.floatingToolbar)
+  const toolbarStyle = useAnchoredToolbar(editorRef, toolbarRef, floating)
+  const { onPolish, onGenerate } = useBlockEditingActions()
+
+  useLayoutEffect(() => {
+    if (!pendingToolbarFocus.current || toolbarStyle.visibility !== 'visible') return
+    pendingToolbarFocus.current = false
+    // Wait for the positioning update to commit; hidden buttons cannot receive focus.
+    toolbarRef.current?.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus({ preventScroll: true })
+  }, [toolbarStyle])
   
   useEffect(() => {
     if (!props.onClickOutside) return
@@ -179,7 +191,8 @@ export default function InlineEditor(props: InlineEditorProps): ReactElement {
   }
 
   const toolbar = <div ref={toolbarRef} data-resume-inline-toolbar="true" data-export-hide="true"
-    className={docked ? 'resume-inline-toolbar-fixed' : 'mt-2 print:hidden'}
+    className={floating ? 'resume-context-format-toolbar' : 'mt-2 print:hidden'}
+    style={floating ? toolbarStyle : undefined}
     onKeyDown={(event) => {
       if (event.key === 'Escape') {
         event.preventDefault()
@@ -187,21 +200,30 @@ export default function InlineEditor(props: InlineEditorProps): ReactElement {
         editorRef.current?.querySelector<HTMLElement>('[contenteditable="true"]')?.focus({ preventScroll: true })
       }
     }}>
-    {docked ? <span className="shrink-0 text-xs font-medium text-slate-600">
-      文字格式
-    </span> : null}
-    <InlineToolbar docked={docked} className="resume-inline-toolbar-buttons" />
-    {docked ? <span className="resume-format-hint ml-auto text-xs text-slate-500">选中文字设置格式</span> : null}
+    <InlineToolbar docked={floating} className="resume-inline-toolbar-buttons" />
+    {(onPolish || onGenerate) ? <Button variant="ghost" size="sm"
+      className="resume-context-ai-button" aria-label={onPolish ? 'AI润色' : 'AI帮我写'}
+      onMouseDown={(event) => event.preventDefault()}
+      onClick={() => { props.onClickOutside?.(); (onPolish ?? onGenerate)?.() }}>
+      {onPolish ? <Sparkles className="h-3.5 w-3.5" /> : <Wand2 className="h-3.5 w-3.5" />}
+      {onPolish ? 'AI润色' : 'AI帮我写'}
+    </Button> : null}
   </div>
 
   return (
     <LexicalComposer initialConfig={initialConfig}>
       <div ref={editorRef} className={props.className ?? ''}
         onKeyDown={(event) => {
-          if (event.altKey && event.key === 'F10' && docked) {
+          if (event.altKey && event.key === 'F10' && floating) {
             event.preventDefault()
             event.stopPropagation()
-            toolbarRef.current?.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus()
+            const focusFormats = (): void => {
+              toolbarRef.current?.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus({ preventScroll: true })
+            }
+            if (toolbarRef.current && getComputedStyle(toolbarRef.current).visibility === 'hidden') {
+              pendingToolbarFocus.current = true
+              editorRef.current?.scrollIntoView({ block: 'center' })
+            } else focusFormats()
           }
           if (props.onEscape && event.key === 'Escape' && !event.nativeEvent.isComposing && event.keyCode !== 229) {
             event.preventDefault()
@@ -220,7 +242,7 @@ export default function InlineEditor(props: InlineEditorProps): ReactElement {
         <ListPlugin />
         <OnChangePlugin onChange={handleChange} />
         <InitialFocus point={props.initialFocusPoint} selection={props.initialSelection} />
-        {dock?.formatHost && props.floatingToolbar ? createPortal(toolbar, dock.formatHost) : toolbar}
+        {floating && typeof document !== 'undefined' ? createPortal(toolbar, document.body) : toolbar}
       </div>
     </LexicalComposer>
   )
