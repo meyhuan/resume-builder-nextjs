@@ -5,6 +5,8 @@ import { useAppStore } from '@/state/store';
 import type { ExperienceBlock } from '@/entities/blocks/experience-block';
 import { CONTENT_DISPLAY_STYLES_XS, CONTENT_EDITING_STYLES_XS } from '@/editor/editor-styles';
 import EditableDateField from '@/editor/editable-date-field';
+import { AutocompleteInput } from '@/components/ui/autocomplete-input';
+import { POSITION_SUGGESTIONS, INDUSTRY_SUGGESTIONS } from '@/data/dictionaries/editor-suggestions';
 /**
  * Renders a single ExperienceBlock with inline editing for all fields.
  */
@@ -77,9 +79,13 @@ export default function ExperienceBlockView(props: ExperienceBlockViewProps): Re
   }
 
   function handleKeyDown(e: KeyboardEvent<HTMLInputElement>): void {
+    e.stopPropagation();
+    if (e.nativeEvent.isComposing || e.keyCode === 229) return;
     if (e.key === 'Enter') {
+      e.preventDefault();
       saveField();
     } else if (e.key === 'Escape') {
+      e.preventDefault();
       cancelEditing();
     }
   }
@@ -120,11 +126,11 @@ export default function ExperienceBlockView(props: ExperienceBlockViewProps): Re
 
       <div className="text-gray-600 mb-2 flex items-center gap-1" style={{ fontSize: '0.75em' }}>
         {editingField === 'position' ? (
-          <input
+          <AutocompleteInput
             ref={inputRef}
-            type="text"
             value={tempValue}
-            onChange={(e): void => setTempValue(e.target.value)}
+            onValueChange={setTempValue}
+            options={POSITION_SUGGESTIONS} listLabel="岗位建议" minPopupWidth={280}
             onBlur={saveField}
             onKeyDown={handleKeyDown}
             className="px-1 py-0.5 border border-blue-500 rounded outline-none flex-1"
@@ -144,11 +150,11 @@ export default function ExperienceBlockView(props: ExperienceBlockViewProps): Re
           <>
             <span>|</span>
             {editingField === 'industry' ? (
-              <input
+              <AutocompleteInput
                 ref={inputRef}
-                type="text"
                 value={tempValue}
-                onChange={(e): void => setTempValue(e.target.value)}
+                onValueChange={setTempValue}
+                options={INDUSTRY_SUGGESTIONS} listLabel="行业建议" minPopupWidth={280}
                 onBlur={saveField}
                 onKeyDown={handleKeyDown}
                 className="px-1 py-0.5 border border-blue-500 rounded outline-none flex-1"

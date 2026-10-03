@@ -5,6 +5,8 @@ import { useAppStore } from '@/state/store';
 import type { CampusBlock } from '@/entities/blocks/campus-block';
 import { CONTENT_DISPLAY_STYLES_XS, CONTENT_EDITING_STYLES_XS } from '@/editor/editor-styles';
 import EditableDateField from '@/editor/editable-date-field';
+import { AutocompleteInput } from '@/components/ui/autocomplete-input';
+import { CAMPUS_POSITION_SUGGESTIONS } from '@/data/dictionaries/editor-suggestions';
 
 /**
  * Renders a single CampusBlock with inline editing for all fields.
@@ -76,9 +78,13 @@ export default function CampusBlockView(props: CampusBlockViewProps): ReactEleme
   }
 
   function handleKeyDown(e: KeyboardEvent<HTMLInputElement>): void {
+    e.stopPropagation();
+    if (e.nativeEvent.isComposing || e.keyCode === 229) return;
     if (e.key === 'Enter') {
+      e.preventDefault();
       saveField();
     } else if (e.key === 'Escape') {
+      e.preventDefault();
       cancelEditing();
     }
   }
@@ -118,11 +124,11 @@ export default function CampusBlockView(props: CampusBlockViewProps): ReactEleme
 
       <div className="text-xs text-gray-600 mb-2">
         {editingField === 'position' ? (
-          <input
+          <AutocompleteInput
             ref={inputRef}
-            type="text"
             value={tempValue}
-            onChange={(e): void => setTempValue(e.target.value)}
+            onValueChange={setTempValue}
+            options={CAMPUS_POSITION_SUGGESTIONS} listLabel="校园职务建议" minPopupWidth={280}
             onBlur={saveField}
             onKeyDown={handleKeyDown}
             className="px-1 py-0.5 border border-blue-500 rounded outline-none w-full"

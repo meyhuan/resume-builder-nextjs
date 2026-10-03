@@ -16,6 +16,8 @@ import { TextField } from '@/features/edit/form-fields/text-field'
 import { MonthPickerField } from '@/features/edit/form-fields/month-picker-field'
 import { TagSelectField } from '@/features/edit/form-fields/tag-select-field'
 import { AutocompleteField } from '@/features/edit/form-fields/autocomplete-field'
+import { POSITION_SUGGESTIONS, PROJECT_ROLE_SUGGESTIONS, CAMPUS_POSITION_SUGGESTIONS } from '@/data/dictionaries/editor-suggestions'
+import { SCHOOL_OPTIONS, MAJOR_OPTIONS } from '@/data/dictionaries/education'
 import { RichAiTextarea } from '@/features/edit/form-fields/rich-ai-textarea'
 import { INDUSTRY_OPTIONS } from '@/data/dictionaries/industries'
 import { DEGREE_OPTIONS } from '@/data/dictionaries/base-enums'
@@ -128,8 +130,9 @@ function WorkFields({ block, onChange, moduleType, internship }: WorkFieldsProps
         required
         placeholder="请输入公司全称"
       />
-      <TextField
+      <AutocompleteField
         label={internship ? '实习岗位' : '职位名称'}
+        options={POSITION_SUGGESTIONS}
         value={block.position}
         onValueChange={(v): void => onChange({ position: v })}
         required
@@ -177,15 +180,17 @@ interface EducationFieldsProps {
 function EducationFields({ block, onChange }: EducationFieldsProps): ReactElement {
   return (
     <>
-      <TextField
+      <AutocompleteField
         label="学校名称"
+        options={SCHOOL_OPTIONS}
         value={block.school}
         onValueChange={(v): void => onChange({ school: v })}
         required
         placeholder="请输入学校全称"
       />
-      <TextField
+      <AutocompleteField
         label="所学专业"
+        options={MAJOR_OPTIONS}
         value={block.major ?? ''}
         onValueChange={(v): void => onChange({ major: v })}
         placeholder="例如：计算机科学与技术"
@@ -238,8 +243,9 @@ function ProjectFields({ block, onChange }: ProjectFieldsProps): ReactElement {
         required
         placeholder="请输入项目名称"
       />
-      <TextField
+      <AutocompleteField
         label="项目角色"
+        options={PROJECT_ROLE_SUGGESTIONS}
         value={block.role ?? ''}
         onValueChange={(v): void => onChange({ role: v })}
         placeholder="例如：前端负责人"
@@ -286,8 +292,9 @@ function CampusFields({ block, onChange }: CampusFieldsProps): ReactElement {
         required
         placeholder="例如：校学生会、XX 协会"
       />
-      <TextField
+      <AutocompleteField
         label="担任职务"
+        options={CAMPUS_POSITION_SUGGESTIONS}
         value={block.position}
         onValueChange={(v): void => onChange({ position: v })}
         required

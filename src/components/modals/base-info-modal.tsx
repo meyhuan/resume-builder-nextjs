@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { AutocompleteInput } from '@/components/ui/autocomplete-input';
 import { CITY_OPTIONS } from '@/data/dictionaries/cities';
+import { POSITION_SUGGESTIONS, POLITICAL_STATUS_SUGGESTIONS } from '@/data/dictionaries/editor-suggestions';
 import { Input } from '@/components/ui/input';
 import { EmailInput } from '@/components/ui/email-input';
 import { Label } from '@/components/ui/label';
@@ -96,7 +97,7 @@ export default function BaseInfoModal(props: BaseInfoModalProps): ReactElement {
 
   return (
     <Dialog open={true} onOpenChange={(open) => !open && props.onClose()}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent aria-describedby={undefined} className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>基本信息</DialogTitle>
         </DialogHeader>
@@ -113,11 +114,13 @@ export default function BaseInfoModal(props: BaseInfoModalProps): ReactElement {
             </div>
             <div className="space-y-2">
               <Label htmlFor="title">意向岗位</Label>
-              <Input
+              <AutocompleteInput
                 id="title"
                 value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="移动端开发工程师"
+                onValueChange={setTitle}
+                options={POSITION_SUGGESTIONS}
+                listLabel="岗位建议"
+                placeholder="输入岗位关键词，也可自定义"
               />
             </div>
           </div>
@@ -243,11 +246,13 @@ export default function BaseInfoModal(props: BaseInfoModalProps): ReactElement {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="politicalStatus">政治面貌</Label>
-                  <Input
+                  <AutocompleteInput
                     id="politicalStatus"
                     value={politicalStatus}
-                    onChange={(e) => setPoliticalStatus(e.target.value)}
-                    placeholder="请输入"
+                    onValueChange={setPoliticalStatus}
+                    options={POLITICAL_STATUS_SUGGESTIONS}
+                    listLabel="政治面貌建议"
+                    placeholder="选择或输入政治面貌"
                   />
                 </div>
                 <div className="space-y-2">

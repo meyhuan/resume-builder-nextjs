@@ -7,7 +7,7 @@ import { useAppStore } from '@/state/store'
 import type { ResumeBlock } from '@/entities/blocks/resume-block'
 import { hasMeaningfulText } from '@/lib/resume-placeholders'
 import { AutocompleteInput } from '@/components/ui/autocomplete-input'
-import { SCHOOL_OPTIONS, MAJOR_OPTIONS } from '@/data/dictionaries/education'
+import { getEditorFieldSuggestions } from '@/data/dictionaries/editor-suggestions'
 
 /**
  * Default placeholders derived from the `fieldName` of common resume block fields.
@@ -71,6 +71,7 @@ export default function EditableFieldWrapper(props: EditableFieldWrapperProps): 
   const returnFocus = useRef(false)
   const setResume = useAppStore((s) => s.setResume)
   const readOnly = useAppStore((s) => s.readOnly)
+  const blockType = useAppStore((s) => s.resume?.sections?.find(section => section.blocks.some(block => block.id === props.blockId))?.blocks.find(block => block.id === props.blockId)?.type)
 
   useEffect(() => {
     if (isEditing && inputRef.current) {
@@ -156,13 +157,13 @@ export default function EditableFieldWrapper(props: EditableFieldWrapperProps): 
   }
 
   if (isEditing) {
-    if (props.fieldName === 'school' || props.fieldName === 'major') {
+    const suggestions = getEditorFieldSuggestions(props.fieldName, blockType)
+    if (suggestions) {
       return <AutocompleteInput
         data-resume-edit-field="true" data-resume-field-name={props.fieldName}
         ref={inputRef} value={tempValue} onValueChange={setTempValue}
-        options={props.fieldName === 'school' ? SCHOOL_OPTIONS : MAJOR_OPTIONS}
-        listLabel={props.fieldName === 'school' ? '学校建议' : '专业建议'} minPopupWidth={280}
-        emptyText={props.fieldName === 'school' ? '未找到学校建议，可保留你填写的校名' : '未找到专业建议，可保留你填写的专业'}
+        options={suggestions.options}
+        listLabel={suggestions.listLabel} minPopupWidth={280}
         onBlur={saveEdit} onKeyDown={handleKeyDown}
         onCompositionStart={() => { composing.current = true }}
         onCompositionEnd={() => { composing.current = false }}

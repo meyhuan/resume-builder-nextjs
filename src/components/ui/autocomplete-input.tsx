@@ -23,11 +23,12 @@ interface AutocompleteInputProps extends Omit<React.ComponentPropsWithoutRef<"in
   listLabel?: string;
   minPopupWidth?: number;
   maxResults?: number;
+  allowCustom?: boolean;
 }
 
 /** Suggestions assist typing; only an explicit selection replaces the user's text. */
 export const AutocompleteInput = React.forwardRef<HTMLInputElement, AutocompleteInputProps>(
-  ({ value, onValueChange, options, className, emptyText = "没有匹配建议，可保留当前输入", listLabel = "填写建议", minPopupWidth = 0, maxResults = 80,
+  ({ value, onValueChange, options, className, emptyText = "没有匹配建议，可保留当前输入", listLabel = "填写建议", minPopupWidth = 0, maxResults = 80, allowCustom = true,
     onFocus, onBlur, onKeyDown, onCompositionStart, onCompositionEnd, ...props }, forwardedRef) => {
     const [open, setOpen] = React.useState(false);
     const [browse, setBrowse] = React.useState(false);
@@ -43,7 +44,7 @@ export const AutocompleteInput = React.forwardRef<HTMLInputElement, Autocomplete
       return rankSuggestions(options, query);
     }, [browse, query, options]);
     const matches = allMatches.slice(0, maxResults);
-    const custom = !browse && query && !allMatches.some(option => normalizeSuggestionQuery(option.value) === query)
+    const custom = allowCustom && !browse && query && !allMatches.some(option => normalizeSuggestionQuery(option.value) === query)
       ? { value: value.trim(), label: `使用“${value.trim()}”`, description: "自定义填写" } : undefined;
     const items = custom ? [...matches, custom] : matches;
     const visible = open && !composing;

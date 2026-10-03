@@ -4,7 +4,6 @@ import { type ReactElement } from 'react'
 import { useDraftStore } from '@/features/edit/draft/draft-store'
 import { useJobIntentionField } from '@/features/edit/draft/use-draft-field'
 import { ModuleEditShell } from '../_components/module-edit-shell'
-import { TextField } from '@/features/edit/form-fields/text-field'
 import { TagSelectField } from '@/features/edit/form-fields/tag-select-field'
 import { AutocompleteField } from '@/features/edit/form-fields/autocomplete-field'
 import {
@@ -13,8 +12,9 @@ import {
   SALARY_OPTIONS,
   CURRENT_STATUS_OPTIONS,
 } from '@/data/dictionaries/base-enums'
-import { POPULAR_CITIES } from '@/data/dictionaries/cities'
+import { INTENTION_CITY_OPTIONS } from '@/data/dictionaries/cities'
 import { INDUSTRY_OPTIONS } from '@/data/dictionaries/industries'
+import { POSITION_SUGGESTIONS } from '@/data/dictionaries/editor-suggestions'
 
 /**
  * Mobile edit page for "求职意向".
@@ -39,8 +39,9 @@ export default function JobIntentionEditPage(): ReactElement {
 
   return (
     <ModuleEditShell title="求职意向" subtitle="告诉我们你想要什么">
-      <TextField
+      <AutocompleteField
         label="意向岗位"
+        options={POSITION_SUGGESTIONS}
         value={positionF.value ?? ''}
         onValueChange={positionF.setValue}
         required
@@ -49,7 +50,7 @@ export default function JobIntentionEditPage(): ReactElement {
       />
       <AutocompleteField
         label="意向城市"
-        options={POPULAR_CITIES}
+        options={INTENTION_CITY_OPTIONS}
         value={cityF.value ?? ''}
         onValueChange={cityF.setValue}
         required

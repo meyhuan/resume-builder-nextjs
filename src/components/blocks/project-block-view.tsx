@@ -5,6 +5,8 @@ import { useAppStore } from '@/state/store';
 import type { ProjectBlock } from '@/entities/blocks/project-block';
 import { CONTENT_DISPLAY_STYLES_XS, CONTENT_EDITING_STYLES_XS } from '@/editor/editor-styles';
 import EditableDateField from '@/editor/editable-date-field';
+import { AutocompleteInput } from '@/components/ui/autocomplete-input';
+import { PROJECT_ROLE_SUGGESTIONS } from '@/data/dictionaries/editor-suggestions';
 
 /**
  * Renders a single ProjectBlock with inline editing for all fields.
@@ -76,9 +78,13 @@ export default function ProjectBlockView(props: ProjectBlockViewProps): ReactEle
   }
 
   function handleKeyDown(e: KeyboardEvent<HTMLInputElement>): void {
+    e.stopPropagation();
+    if (e.nativeEvent.isComposing || e.keyCode === 229) return;
     if (e.key === 'Enter') {
+      e.preventDefault();
       saveField();
     } else if (e.key === 'Escape') {
+      e.preventDefault();
       cancelEditing();
     }
   }
@@ -119,11 +125,11 @@ export default function ProjectBlockView(props: ProjectBlockViewProps): ReactEle
       {(block.role || editingField === 'role') ? (
         <div className="text-xs text-gray-600 mb-2">
           {editingField === 'role' ? (
-            <input
+            <AutocompleteInput
               ref={inputRef}
-              type="text"
               value={tempValue}
-              onChange={(e): void => setTempValue(e.target.value)}
+              onValueChange={setTempValue}
+              options={PROJECT_ROLE_SUGGESTIONS} listLabel="项目角色建议" minPopupWidth={280}
               onBlur={saveField}
               onKeyDown={handleKeyDown}
               className="px-1 py-0.5 border border-blue-500 rounded outline-none w-full"

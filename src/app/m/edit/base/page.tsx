@@ -16,7 +16,7 @@ import { NumberField } from '@/features/edit/form-fields/number-field'
 import { TagSelectField } from '@/features/edit/form-fields/tag-select-field'
 import { AutocompleteField } from '@/features/edit/form-fields/autocomplete-field'
 import { GENDER_OPTIONS, POLITICAL_STATUS_OPTIONS } from '@/data/dictionaries/base-enums'
-import { POPULAR_CITIES } from '@/data/dictionaries/cities'
+import { CITY_OPTIONS } from '@/data/dictionaries/cities'
 
 /**
  * Mobile edit page for "基础信息".
@@ -100,7 +100,7 @@ export default function BaseInfoEditPage(): ReactElement {
       />
       <AutocompleteField
         label="所在城市"
-        options={POPULAR_CITIES}
+        options={CITY_OPTIONS}
         value={locationF.value ?? ''}
         onValueChange={locationF.setValue}
         placeholder="输入或选择城市"

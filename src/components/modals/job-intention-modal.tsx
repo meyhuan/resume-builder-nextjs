@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { JOB_TYPE_OPTIONS, RECRUITMENT_TYPE_OPTIONS, SALARY_OPTIONS, CURRENT_STATUS_OPTIONS } from '@/data/dictionaries/base-enums';
 import { INTENTION_CITY_OPTIONS } from '@/data/dictionaries/cities';
 import { INDUSTRY_OPTIONS } from '@/data/dictionaries/industries';
+import { POSITION_SUGGESTIONS } from '@/data/dictionaries/editor-suggestions';
 import { ChevronDown, Plus, Trash2 } from 'lucide-react';
 
 interface CustomField { label: string; value: string }
@@ -79,7 +80,8 @@ export default function JobIntentionModal(props: JobIntentionModalProps): ReactE
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="position">意向岗位</Label>
-            <Input id="position" className="h-11" value={position} onChange={event => setPosition(event.target.value)} placeholder="例如：产品经理" />
+            <AutocompleteInput id="position" className="h-11" listLabel="岗位建议" value={position}
+              onValueChange={setPosition} options={POSITION_SUGGESTIONS} placeholder="输入岗位关键词，也可自定义" />
           </div>
           <div className="space-y-2">
             <Label htmlFor="city">意向城市</Label>
