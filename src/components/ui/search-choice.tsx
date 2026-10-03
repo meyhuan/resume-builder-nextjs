@@ -67,7 +67,10 @@ export function SearchChoice({ id, label, value, options, onValueChange, placeho
     </Popover.Trigger>
     <Popover.Portal>
     <Popover.Content align="start" sideOffset={4} collisionPadding={12}
-      className="z-50 w-[var(--radix-popover-trigger-width)] max-h-[var(--radix-popover-content-available-height)] overflow-y-auto rounded-md border bg-popover p-1 text-popover-foreground shadow-md"
+      className="z-50 w-[var(--radix-popover-trigger-width)] max-h-[var(--radix-popover-content-available-height)] overflow-y-auto overscroll-contain rounded-md border bg-popover p-1 text-popover-foreground shadow-md"
+      // Body-portaled options are outside Dialog's scroll-lock boundary; allow their native scrolling.
+      onWheel={event => event.stopPropagation()}
+      onTouchMove={event => event.stopPropagation()}
       onOpenAutoFocus={event => { event.preventDefault(); input.current?.focus() }}>
       <div className="relative">
         <Search className="absolute left-3 top-3.5 size-4 text-muted-foreground" aria-hidden="true" />
