@@ -56,7 +56,6 @@ async function configurePage(page, viewport) {
           aiImportSection: { allowed: true, remaining: 99, isVip: true },
           aiGenerateSection: { allowed: true, remaining: 99, isVip: true },
           aiPolishSection: { allowed: true, remaining: 99, isVip: true },
-          aiOptimizeResume: { allowed: true, remaining: 99, isVip: true },
           pdfExport: { allowed: true, remaining: 99, isVip: true },
         }),
       })

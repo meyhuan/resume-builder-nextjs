@@ -1,5 +1,5 @@
 export function normalizePlaceholderText(value: string): string {
-  return value.replace(/\s+/g, ' ').trim()
+  return value.replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\s+/g, ' ').trim()
 }
 
 export function hasMeaningfulText(value: unknown): value is string {
@@ -9,7 +9,7 @@ export function hasMeaningfulText(value: unknown): value is string {
 
 export function hasMeaningfulHtml(value: unknown): value is string {
   if (typeof value !== 'string') return false
-  return htmlToPlainText(value).length > 0
+  return /<(?:img|video|audio|iframe|svg)\b/i.test(value) || htmlToPlainText(value).length > 0
 }
 
 export function htmlToPlainText(html: string): string {
@@ -20,7 +20,7 @@ export function htmlToPlainText(html: string): string {
   const stripped = withBreaks.replace(/<[^>]+>/g, '')
   return normalizePlaceholderText(
     stripped
-      .replace(/&nbsp;/g, ' ')
+      .replace(/&(?:nbsp|#0*160|#x0*a0);/gi, ' ')
       .replace(/&lt;/g, '<')
       .replace(/&gt;/g, '>')
       .replace(/&amp;/g, '&')

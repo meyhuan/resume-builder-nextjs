@@ -265,7 +265,7 @@ onShow 触发 → migrateResumesIfNeeded(identity, uid)
 | `/next-api/vip/poll` | GET | 轮询 VIP 状态 | `auth_uid` cookie → Java |
 | `/next-api/ai/generate-resume` | POST | AI 生成简历（SSE 流式） | quota 检查 |
 | `/next-api/ai/generate-section` | POST | AI 生成单个模块 | quota 检查 |
-| `/next-api/ai/optimize-resume` | POST | AI 优化简历 | quota 检查 |
+| `/next-api/ai/chat/task` | POST | 新版助手：全文优化、模块写作、问答 | auth + quota 检查 |
 | `/next-api/ai/polish-section` | POST | AI 润色模块 | quota 检查 |
 | `/next-api/ai/import-resume` | POST | AI 从文本导入简历 | quota 检查 |
 | `/next-api/ai/import-resume-file` | POST | AI 从文件导入简历 | quota 检查 |

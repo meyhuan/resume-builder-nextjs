@@ -1,6 +1,8 @@
 import type { ReactElement } from "react";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Sparkles, Wand2, Trash2, ArrowUp, ArrowDown } from "lucide-react";
+import { trackAssistant } from '@/lib/ai/unified/analytics';
+import { useAiImpression } from '@/lib/ai/unified/use-impression';
 
 /**
  * Actions shown when hovering over a block (floating, no layout shift).
@@ -29,6 +31,12 @@ export default function BlockActions(props: BlockActionsProps): ReactElement {
     onMouseEnter,
     onMouseLeave,
   } = props;
+  const report = (feature: 'polish' | 'generate') => {
+    if (window.matchMedia('(min-width: 768px)').matches)
+      trackAssistant('entry_view', { entry: 'module', surface: 'block', feature, requestedFeature: feature });
+  };
+  const polishRef = useAiImpression<HTMLButtonElement>('polish', () => report('polish'), !!onPolish);
+  const generateRef = useAiImpression<HTMLButtonElement>('generate', () => report('generate'), !!onGenerate);
 
   return (
     <div
@@ -52,6 +60,7 @@ export default function BlockActions(props: BlockActionsProps): ReactElement {
 
       {onPolish ? (
         <Button
+          ref={polishRef}
           variant="ghost"
           size="sm"
           onClick={onPolish}
@@ -65,6 +74,7 @@ export default function BlockActions(props: BlockActionsProps): ReactElement {
 
       {onGenerate ? (
         <Button
+          ref={generateRef}
           variant="ghost"
           size="sm"
           onClick={onGenerate}

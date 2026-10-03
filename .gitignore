@@ -51,3 +51,5 @@ test-artifacts/
 deploy.zip
 *.zip
 !/public/downloads/extension/zhijian-autofill-*.zip
+
+ai-*.log

@@ -34,9 +34,13 @@ export function normalizeResumeContent(
     name: normalizeString(rawResume.name),
     baseInfo: normalizeBaseInfo(rawResume.baseInfo),
     portfolio: normalizePortfolio(rawResume.portfolio),
-    sections: rawSections.map((section, sectionIndex) =>
-      normalizeSection(section as Partial<Section> & RawRecord, sectionIndex, usedSectionIds, usedBlockIds),
-    ),
+    // A zero-block section has no editor item to delete. Drop legacy shells on
+    // load/save, but keep actual blocks (even unfinished ones) editable.
+    sections: rawSections
+      .map((section, sectionIndex) =>
+        normalizeSection(section as Partial<Section> & RawRecord, sectionIndex, usedSectionIds, usedBlockIds),
+      )
+      .filter((section) => section.blocks.length > 0),
   } as ResumeData
 }
 

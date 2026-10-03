@@ -179,30 +179,41 @@ export const useDraftStore = create<DraftState>()(
         set({ draft: server, dirtyPaths: [] })
       },
       saveAll: async (): Promise<SaveResult> => {
-        const { resumeId, draft } = get()
+        if (get().isSaving) return { ok: false, error: '正在保存，请稍后重试' }
+        const { resumeId } = get()
+        let { draft } = get()
         if (!resumeId || !draft) {
           return { ok: false, error: '无草稿可保存' }
         }
         set({ isSaving: true })
         try {
-          const normalizedDraft = normalizeResume(draft, resumeId)
-          const res = await fetch(`/next-api/resumes/${resumeId}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ content: normalizedDraft }),
-          })
-          if (!res.ok) {
-            const text = await res.text().catch(() => '')
-            throw new Error(text || `保存失败 (${res.status})`)
+          while (draft) {
+            const normalizedDraft = normalizeResume(draft, resumeId)
+            const res = await fetch(`/next-api/resumes/${resumeId}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ content: normalizedDraft }),
+            })
+            if (!res.ok) {
+              const text = await res.text().catch(() => '')
+              throw new Error(text || `保存失败 (${res.status})`)
+            }
+            // A slow response must not resurrect deleted modules or clear newer edits.
+            const current = get()
+            if (current.resumeId !== resumeId) {
+              set({ isSaving: false })
+              return { ok: false, error: '简历已切换，请保存当前简历' }
+            }
+            if (current.draft === draft) {
+              set({ draft: normalizedDraft, server: normalizedDraft, dirtyPaths: [], lastSavedAt: Date.now(), isSaving: false })
+              return { ok: true }
+            }
+            // Flush edits made during the request before callers navigate away.
+            set({ server: normalizedDraft, lastSavedAt: Date.now() })
+            draft = current.draft
           }
-          set({
-            draft: normalizedDraft,
-            server: normalizedDraft,
-            dirtyPaths: [],
-            lastSavedAt: Date.now(),
-            isSaving: false,
-          })
-          return { ok: true }
+          set({ isSaving: false })
+          return { ok: false, error: '无草稿可保存' }
         } catch (err: unknown) {
           set({ isSaving: false })
           const msg: string = err instanceof Error ? err.message : '网络错误'

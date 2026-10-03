@@ -28,6 +28,7 @@ export type AnalyticsEventName =
   | 'ai_generate_success'
   | 'ai_generate_failed'
   | 'ai_result_apply'
+  | 'ai_assist_interaction'
   | 'ai_assist_start'
   | 'ai_assist_success'
   | 'ai_assist_failed'

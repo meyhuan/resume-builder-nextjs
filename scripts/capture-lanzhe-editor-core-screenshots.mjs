@@ -16,7 +16,6 @@ const quotaResponse = {
   aiImportSection: { allowed: true, remaining: 99, isVip: true, limit: 999 },
   aiGenerateSection: { allowed: true, remaining: 99, isVip: true, limit: 999 },
   aiPolishSection: { allowed: true, remaining: 99, isVip: true, limit: 999 },
-  aiOptimizeResume: { allowed: true, remaining: 99, isVip: true, limit: 999 },
   pdfExport: { allowed: true, remaining: 99, isVip: true, limit: 999 },
 };
 

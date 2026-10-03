@@ -2,14 +2,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
   sync: vi.fn(), vip: vi.fn(), miniVip: vi.fn(), consume: vi.fn(),
-  upsert: vi.fn(), legacy: vi.fn(), update: vi.fn(),
+  upsert: vi.fn(), legacy: vi.fn(), update: vi.fn(), query: vi.fn(), execute: vi.fn(), transaction: vi.fn(),
 }))
 vi.mock('@/lib/sync-user-identity', () => ({ syncUserIdentity: mocks.sync }))
 vi.mock('@/lib/api/vip-api', () => ({
   checkVipStatus: mocks.vip, checkVipStatusForWxId: mocks.miniVip,
   consumeFreeExportFromJava: mocks.consume,
 }))
-vi.mock('@/lib/prisma', () => ({ prisma: { userQuota: {
+vi.mock('@/lib/prisma', () => ({ prisma: { $executeRaw: mocks.execute, $transaction: mocks.transaction, userQuota: {
   upsert: mocks.upsert, findFirst: mocks.legacy, update: mocks.update,
 } } }))
 
@@ -26,6 +26,7 @@ describe('quota account identity', () => {
     mocks.sync.mockResolvedValue({ id: 'canonical', wxId: 'unionid', javaUserId: '319850' })
     mocks.upsert.mockResolvedValue({ userId: 'canonical', quotas: {} })
     mocks.legacy.mockResolvedValue(null)
+    mocks.transaction.mockImplementation(fn => fn({ $queryRaw: mocks.query, $executeRaw: mocks.execute }))
   })
 
   it('passes wxId and Java ID separately even if no local link exists yet', async () => {
@@ -46,16 +47,17 @@ describe('quota account identity', () => {
   })
 
   it('counts legacy usage without copying it repeatedly into the canonical counter', async () => {
-    let quotas = { 'ai:polish-section': { used: 1, date: '2026-09-24' } }
+    const quotas = { 'ai:polish-section': { used: 1, date: '2026-09-24' } }
     mocks.upsert.mockImplementation(async () => ({ userId: 'canonical', quotas: structuredClone(quotas) }))
-    mocks.update.mockImplementation(async ({ data }) => { quotas = data.quotas; return { quotas } })
+    mocks.query.mockImplementation(async () => [{ quotas: structuredClone(quotas) }])
+    mocks.execute.mockImplementation(async (_sql, feature, value) => { quotas[feature as keyof typeof quotas] = JSON.parse(value); return 1 })
     mocks.legacy.mockResolvedValue({ quotas: { 'ai:polish-section': { used: 2, date: '2026-09-24' } } })
     expect((await checkQuota('ai:polish-section')).used).toBe(4)
     expect(quotas['ai:polish-section'].used).toBe(2)
     expect((await checkQuota('ai:polish-section')).used).toBe(5)
     expect(quotas['ai:polish-section'].used).toBe(3)
     expect((await checkQuota('ai:polish-section')).allowed).toBe(false)
-    expect(mocks.update).toHaveBeenCalledTimes(2)
+    expect(mocks.execute).toHaveBeenCalledTimes(2)
   })
 
   it('ignores expired daily legacy usage', async () => {
@@ -69,9 +71,7 @@ describe('quota account identity', () => {
     const result = await checkQuota('pdf:export')
     expect(result).toMatchObject({ used: 7, remaining: 1 })
     expect(mocks.consume).toHaveBeenCalledWith('unionid', expect.any(String))
-    expect(mocks.update).toHaveBeenCalledWith(expect.objectContaining({
-      data: expect.objectContaining({ quotas: { 'pdf:export': { used: 1, date: 'lifetime' } } }),
-    }))
+    expect(mocks.execute).toHaveBeenCalledWith(expect.anything(), 'pdf:export', JSON.stringify({ used: 1, date: 'lifetime' }), 'canonical')
   })
 
   it('does not create an account when authentication lacks a login identity', async () => {

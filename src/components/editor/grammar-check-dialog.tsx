@@ -1,6 +1,12 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState, type ReactElement } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ReactElement,
+} from 'react';
 import {
   AlertTriangle,
   ChevronLeft,
@@ -29,7 +35,10 @@ import {
   saveAnalysisHistory,
   type AnalysisHistoryItem,
 } from '@/lib/ai/analysis-history';
-import type { GrammarCheckOutput, GrammarIssue } from '@/lib/ai/grammar-check-schema';
+import type {
+  GrammarCheckOutput,
+  GrammarIssue,
+} from '@/lib/ai/grammar-check-schema';
 import { useAppStore } from '@/state/store';
 import { useEditorUiStore } from '@/state/editor-ui-store';
 import { useVipCheck } from '@/hooks/use-vip-check';
@@ -50,7 +59,7 @@ const HISTORY_KIND = 'grammar-check';
 const WAITING_MESSAGES = [
   'AI 正在阅读你的简历…',
   '正在检查语法和拼写…',
-  '正在标出可量化的表述…',
+  '正在检查表达清晰度…',
 ] as const;
 
 const SEVERITY_LABEL: Record<GrammarIssue['severity'], string> = {
@@ -61,9 +70,9 @@ const SEVERITY_LABEL: Record<GrammarIssue['severity'], string> = {
 
 const TYPE_LABEL: Record<GrammarIssue['type'], string> = {
   grammar: '语法',
-  weak_verb: '弱动词',
+  weak_verb: '动词表达',
   vague: '表述空泛',
-  quantify: '缺少量化',
+  quantify: '可补充信息',
   spelling: '拼写',
 };
 
@@ -76,7 +85,9 @@ function formatDate(value: number): string {
   });
 }
 
-function GrammarResultView(props: { readonly result: GrammarCheckOutput }): ReactElement {
+function GrammarResultView(props: {
+  readonly result: GrammarCheckOutput;
+}): ReactElement {
   return (
     <div className="space-y-6 px-6 py-4">
       <div className="flex items-center justify-center rounded-xl border border-slate-100 bg-slate-50/50 py-5">
@@ -84,33 +95,52 @@ function GrammarResultView(props: { readonly result: GrammarCheckOutput }): Reac
       </div>
       <div className="space-y-2">
         <h4 className="text-sm font-semibold text-slate-800">摘要</h4>
-        <p className="text-sm leading-relaxed text-slate-600">{props.result.summary}</p>
+        <p className="text-sm leading-relaxed text-slate-600">
+          {props.result.summary}
+        </p>
       </div>
       {props.result.issues.length > 0 ? (
         <div className="space-y-3">
-          <h4 className="text-sm font-semibold text-slate-800">问题（{props.result.issues.length}）</h4>
+          <h4 className="text-sm font-semibold text-slate-800">
+            问题（{props.result.issues.length}）
+          </h4>
           {props.result.issues.map((issue, index) => (
-            <div key={`${issue.sectionTitle}-${index}`} className="space-y-2 rounded-lg border border-slate-200 bg-white p-3.5">
+            <div
+              key={`${issue.sectionTitle}-${index}`}
+              className="space-y-2 rounded-lg border border-slate-200 bg-white p-3.5"
+            >
               <div className="flex flex-wrap items-center gap-1.5">
-                <Badge variant="secondary" className="text-xs font-medium">{issue.sectionTitle}</Badge>
-                <Badge className={
-                  issue.severity === 'high'
-                    ? 'border-red-200 bg-red-50 text-red-700'
-                    : issue.severity === 'medium'
-                      ? 'border-yellow-200 bg-yellow-50 text-yellow-700'
-                      : 'border-blue-200 bg-blue-50 text-blue-700'
-                }>
+                <Badge variant="secondary" className="text-xs font-medium">
+                  {issue.sectionTitle}
+                </Badge>
+                <Badge
+                  className={
+                    issue.severity === 'high'
+                      ? 'border-red-200 bg-red-50 text-red-700'
+                      : issue.severity === 'medium'
+                        ? 'border-yellow-200 bg-yellow-50 text-yellow-700'
+                        : 'border-blue-200 bg-blue-50 text-blue-700'
+                  }
+                >
                   {SEVERITY_LABEL[issue.severity]}
                 </Badge>
-                <Badge variant="secondary" className="text-xs">{TYPE_LABEL[issue.type]}</Badge>
+                <Badge variant="secondary" className="text-xs">
+                  {TYPE_LABEL[issue.type]}
+                </Badge>
               </div>
               <div>
                 <span className="text-xs font-medium text-slate-400">原文</span>
-                <p className="text-sm text-slate-500 line-through">{issue.original}</p>
+                <p className="text-sm text-slate-500 line-through">
+                  {issue.original}
+                </p>
               </div>
               <div>
-                <span className="text-xs font-medium text-violet-600">建议</span>
-                <p className="text-sm font-medium text-slate-800">{issue.suggestion}</p>
+                <span className="text-xs font-medium text-violet-600">
+                  建议
+                </span>
+                <p className="text-sm font-medium text-slate-800">
+                  {issue.suggestion}
+                </p>
               </div>
             </div>
           ))}
@@ -125,9 +155,14 @@ function GrammarResultView(props: { readonly result: GrammarCheckOutput }): Reac
 export function GrammarCheckDialog(props: {
   readonly resumeId?: string;
 }): ReactElement {
-  const open = useEditorUiStore((state) => state.activeModal === 'grammar-check');
+  const open = useEditorUiStore(
+    (state) => state.activeModal === 'grammar-check',
+  );
   const closeModal = useEditorUiStore((state) => state.closeModal);
-  const handoffToChat = useEditorUiStore((state) => state.handoffToChat);
+  const startResumeOptimization = useEditorUiStore(
+    (state) => state.startResumeOptimization,
+  );
+  const assistantBusy = useEditorUiStore((state) => state.assistantBusy);
   const resume = useAppStore((state) => state.resume);
   const { requireAiFeature } = useVipCheck();
   const historyKey = props.resumeId || resume.id || 'local';
@@ -135,13 +170,18 @@ export function GrammarCheckDialog(props: {
   const [result, setResult] = useState<GrammarCheckOutput | null>(null);
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState('new');
-  const [history, setHistory] = useState<AnalysisHistoryItem<GrammarCheckOutput>[]>([]);
-  const [historyDetail, setHistoryDetail] = useState<AnalysisHistoryItem<GrammarCheckOutput> | null>(null);
+  const [history, setHistory] = useState<
+    AnalysisHistoryItem<GrammarCheckOutput>[]
+  >([]);
+  const [historyDetail, setHistoryDetail] =
+    useState<AnalysisHistoryItem<GrammarCheckOutput> | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
   const loadHistory = useCallback(async () => {
-    setHistory(await listAnalysisHistory<GrammarCheckOutput>(HISTORY_KIND, historyKey));
+    setHistory(
+      await listAnalysisHistory<GrammarCheckOutput>(HISTORY_KIND, historyKey),
+    );
   }, [historyKey]);
 
   useEffect(() => {
@@ -182,16 +222,16 @@ export function GrammarCheckDialog(props: {
         body: JSON.stringify({ resumeData: resume }),
         signal: controller.signal,
       });
-      const data = await response.json() as GrammarCheckOutput & {
+      const data = (await response.json()) as GrammarCheckOutput & {
         error?: string;
         quotaExceeded?: boolean;
       };
       if (!response.ok) {
         const payload = parseAssistErrorPayload(data);
         if (!handleAssistQuotaError('grammar-check', payload)) {
-          trackAssistFailed('grammar-check', data.error || '语法检查失败');
+          trackAssistFailed('grammar-check', data.error || '简历检查失败');
         }
-        throw new Error(data.error || '语法检查失败');
+        throw new Error(data.error || '简历检查失败');
       }
       setResult(data);
       trackAssistSuccess('grammar-check');
@@ -206,41 +246,66 @@ export function GrammarCheckDialog(props: {
       setHistory(saved);
     } catch (err) {
       if (isAbortError(err)) return;
-      setError(err instanceof Error ? err.message : '语法检查失败');
+      setError(err instanceof Error ? err.message : '简历检查失败');
     } finally {
       if (abortRef.current === controller) abortRef.current = null;
       setIsChecking(false);
     }
   };
 
-  const handleFixAll = (): void => {
-    if (!result || result.issues.length === 0) return;
-    const issueList = result.issues
-      .map((issue, index) => `${index + 1}. [${issue.sectionTitle}] "${issue.original}" → "${issue.suggestion}"`)
-      .join('\n');
-    handoffToChat(`请根据以下语法检查结果，逐一修复简历中的问题：\n\n${issueList}\n\n请使用工具直接修改对应的简历模块内容。`);
+  const handleOptimize = (): void => {
+    if (!requireAiFeature('aiEditorAssist')) return;
+    // Keep diagnostics out of user-authored messages: generated suggestions are not facts.
+    startResumeOptimization(
+      historyKey,
+      'resume_check',
+      result ? JSON.stringify(result.issues) : undefined,
+    );
   };
 
   return (
     <>
-      <Dialog open={open} onOpenChange={(next) => { if (!next) handleClose(); }}>
+      <Dialog
+        open={open}
+        onOpenChange={(next) => {
+          if (!next) handleClose();
+        }}
+      >
         <DialogContent className="flex max-h-[85vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
           <DialogHeader className="px-6 pb-0 pt-6">
             <DialogTitle className="flex items-center gap-2">
               <SpellCheck className="h-5 w-5 text-violet-600" />
-              语法检查
+              简历检查
             </DialogTitle>
-            <DialogDescription>检查简历中的语法、拼写和表达问题。</DialogDescription>
+            <DialogDescription>
+              检查语法、拼写和表达，也可以直接优化整份简历。修改建议先预览，再选择应用。
+            </DialogDescription>
           </DialogHeader>
 
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex min-h-0 flex-1 flex-col gap-0">
+          <Tabs
+            value={activeTab}
+            onValueChange={setActiveTab}
+            className="flex min-h-0 flex-1 flex-col gap-0"
+          >
             <div className="px-6 pt-3">
               <TabsList className="w-full">
-                <TabsTrigger value="new" className="flex-1" disabled={isChecking}>新检查</TabsTrigger>
-                <TabsTrigger value="history" className="flex-1 gap-1.5" disabled={isChecking}>
+                <TabsTrigger
+                  value="new"
+                  className="flex-1"
+                  disabled={isChecking}
+                >
+                  新检查
+                </TabsTrigger>
+                <TabsTrigger
+                  value="history"
+                  className="flex-1 gap-1.5"
+                  disabled={isChecking}
+                >
                   历史
                   {history.length > 0 ? (
-                    <Badge className="ml-1 h-5 min-w-5 bg-violet-600 px-1 text-xs text-white">{history.length}</Badge>
+                    <Badge className="ml-1 h-5 min-w-5 bg-violet-600 px-1 text-xs text-white">
+                      {history.length}
+                    </Badge>
                   ) : null}
                 </TabsTrigger>
               </TabsList>
@@ -256,7 +321,9 @@ export function GrammarCheckDialog(props: {
               ) : !result ? (
                 <div className="flex flex-col items-center justify-center px-6 py-12">
                   <SpellCheck className="mb-3 h-12 w-12 text-slate-300" />
-                  <p className="mb-4 text-sm text-slate-500">检查当前简历的写作质量</p>
+                  <p className="mb-4 text-sm text-slate-500">
+                    检查当前简历的写作质量
+                  </p>
                   {error ? (
                     <div className="mb-4 flex items-center gap-2 rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">
                       <AlertTriangle className="h-4 w-4 shrink-0" />
@@ -265,12 +332,24 @@ export function GrammarCheckDialog(props: {
                   ) : null}
                   <div className="flex flex-col items-center gap-2">
                     <div className="flex gap-2">
-                    <Button variant="outline" onClick={handleClose}>关闭</Button>
-                    <Button className="bg-violet-600 text-white hover:bg-violet-700" onClick={() => void handleCheck()}>
-                      开始检查
-                    </Button>
+                      <Button
+                        variant="outline"
+                        disabled={assistantBusy}
+                        onClick={handleOptimize}
+                      >
+                        优化整份简历
+                      </Button>
+                      <Button
+                        className="bg-violet-600 text-white hover:bg-violet-700"
+                        onClick={() => void handleCheck()}
+                      >
+                        开始检查
+                      </Button>
                     </div>
                     <EditorAssistQuotaHint />
+                    <p className="text-xs text-slate-400">
+                      检查和生成优化建议分别计次；预览、应用和撤销不扣次。
+                    </p>
                   </div>
                 </div>
               ) : (
@@ -280,19 +359,35 @@ export function GrammarCheckDialog(props: {
                   </div>
                   <div className="space-y-2 border-t border-slate-100 px-6 py-4">
                     <div className="flex justify-end gap-2">
-                    <Button variant="outline" onClick={handleClose}>关闭</Button>
-                    <Button variant="outline" className="gap-1.5" onClick={() => { setResult(null); void handleCheck(); }}>
-                      <RotateCcw className="h-3.5 w-3.5" />
-                      再检查
-                    </Button>
-                    {result.issues.length > 0 ? (
-                      <Button className="gap-1.5 bg-violet-600 text-white hover:bg-violet-700" onClick={handleFixAll}>
-                        <Wand2 className="h-3.5 w-3.5" />
-                        全部修复
+                      <Button variant="outline" onClick={handleClose}>
+                        关闭
                       </Button>
-                    ) : null}
+                      <Button
+                        variant="outline"
+                        className="gap-1.5"
+                        onClick={() => {
+                          setResult(null);
+                          void handleCheck();
+                        }}
+                      >
+                        <RotateCcw className="h-3.5 w-3.5" />
+                        再检查
+                      </Button>
+                      {
+                        <Button
+                          disabled={assistantBusy}
+                          className="gap-1.5 bg-violet-600 text-white hover:bg-violet-700"
+                          onClick={handleOptimize}
+                        >
+                          <Wand2 className="h-3.5 w-3.5" />
+                          预览全文优化建议
+                        </Button>
+                      }
                     </div>
                     <EditorAssistQuotaHint />
+                    <p className="text-xs text-slate-400">
+                      检查和生成优化建议分别计次；预览、应用和撤销不扣次。
+                    </p>
                   </div>
                 </>
               )}
@@ -302,7 +397,12 @@ export function GrammarCheckDialog(props: {
               {historyDetail ? (
                 <>
                   <div className="px-6 pt-2">
-                    <Button variant="ghost" size="sm" className="-ml-2 gap-1 text-slate-500" onClick={() => setHistoryDetail(null)}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="-ml-2 gap-1 text-slate-500"
+                      onClick={() => setHistoryDetail(null)}
+                    >
                       <ChevronLeft className="h-4 w-4" />
                       历史
                     </Button>
@@ -319,7 +419,10 @@ export function GrammarCheckDialog(props: {
               ) : (
                 <div className="min-h-0 flex-1 space-y-2.5 overflow-y-auto px-6 py-4">
                   {history.map((item, index) => {
-                    const previous = index < history.length - 1 ? history[index + 1].score : undefined;
+                    const previous =
+                      index < history.length - 1
+                        ? history[index + 1].score
+                        : undefined;
                     return (
                       <div
                         key={item.id}
@@ -327,12 +430,23 @@ export function GrammarCheckDialog(props: {
                         onClick={() => setHistoryDetail(item)}
                       >
                         <div className="flex items-center gap-1">
-                          <ScoreCircle score={item.score ?? item.result.score} size="sm" />
-                          <ScoreTrend current={item.score ?? item.result.score} previous={previous} />
+                          <ScoreCircle
+                            score={item.score ?? item.result.score}
+                            size="sm"
+                          />
+                          <ScoreTrend
+                            current={item.score ?? item.result.score}
+                            previous={previous}
+                          />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <span className="text-xs text-slate-400">{formatDate(item.createdAt)}</span>
-                          <p className="mt-0.5 text-sm text-slate-600">{item.issueCount ?? item.result.issues.length} 个问题</p>
+                          <span className="text-xs text-slate-400">
+                            {formatDate(item.createdAt)}
+                          </span>
+                          <p className="mt-0.5 text-sm text-slate-600">
+                            {item.issueCount ?? item.result.issues.length}{' '}
+                            个问题
+                          </p>
                         </div>
                         <button
                           type="button"
@@ -355,14 +469,20 @@ export function GrammarCheckDialog(props: {
       </Dialog>
       <ConfirmDialog
         open={Boolean(deleteId)}
-        onOpenChange={(next) => { if (!next) setDeleteId(null); }}
+        onOpenChange={(next) => {
+          if (!next) setDeleteId(null);
+        }}
         title="删除这条记录？"
         description="删除后无法恢复。"
         confirmText="删除"
         variant="destructive"
         onConfirm={() => {
           if (!deleteId) return;
-          void deleteAnalysisHistory<GrammarCheckOutput>(HISTORY_KIND, historyKey, deleteId).then(setHistory);
+          void deleteAnalysisHistory<GrammarCheckOutput>(
+            HISTORY_KIND,
+            historyKey,
+            deleteId,
+          ).then(setHistory);
           if (historyDetail?.id === deleteId) setHistoryDetail(null);
           setDeleteId(null);
         }}

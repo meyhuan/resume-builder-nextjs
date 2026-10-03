@@ -173,6 +173,13 @@ describe('title editors and exports', () => {
     expect(navigate).toHaveBeenCalledWith(module.route)
   })
 
+  it('mobile manager keeps vertical swipes scrollable while rows remain draggable', () => {
+    render(<ModuleManageSheet open onClose={vi.fn()} />)
+    const row = screen.getByRole('button', { name: '删除个人作品' }).parentElement
+    expect(row?.classList.contains('touch-pan-y')).toBe(true)
+    expect(row?.classList.contains('touch-none')).toBe(false)
+  })
+
   it('inline editing validates, supports IME, cancels and commits exactly once', () => {
     const commit = vi.fn()
     render(<SectionTitleText value="工作经历" onCommit={commit} />)

@@ -1,6 +1,7 @@
 import type { ResumeData } from '@/entities/resume/resume-data'
 import { qingningReferenceResume } from './qingning-reference'
 import { moxuReferenceResume } from './moxu-reference'
+import { emptyProjectFeedbackResume } from './empty-project-feedback'
 
 export interface ResumeScenario {
   readonly id: string
@@ -535,6 +536,12 @@ export const RESUME_SCENARIOS: readonly ResumeScenario[] = [
     name: '模板封面展示',
     description: '用于模板封面截图的品牌化示例数据，不替代 QA 压力测试场景。',
     resume: thumbnailCoverResume,
+  },
+  {
+    id: 'empty-project-feedback',
+    name: '空项目模块反馈回归',
+    description: '脱敏模拟：五个有效模块、三条实习及末尾空项目模块。',
+    resume: emptyProjectFeedbackResume,
   },
   {
     id: 'portfolio',

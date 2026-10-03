@@ -44,15 +44,10 @@ export const AI_FEATURE_QUOTAS: Record<string, FeatureQuota> = {
     displayName: 'AI 润色文本',
     description: '优化语言表达，提升专业性',
   },
-  'ai:optimize-resume': {
-    nonVipLimit: DEFAULT_QUOTA_LIMITS.aiOptimizeResume,
-    displayName: 'AI 一键优化简历',
-    description: '结合岗位JD一键优化全部简历内容',
-  },
   'ai:editor-assist': {
     nonVipLimit: DEFAULT_QUOTA_LIMITS.aiEditorAssist,
     displayName: 'AI 编辑助手',
-    description: '对话、岗位匹配、翻译、面试准备（打招呼 / 题目）和语法检查',
+    description: '对话、岗位匹配、翻译、面试准备（打招呼 / 题目）、简历检查和全文优化',
   },
 } as const;
 

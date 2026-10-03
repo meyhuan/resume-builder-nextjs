@@ -1,9 +1,9 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { MessageSquare, Minus, Sparkles } from 'lucide-react';
+import { MessageSquare, Minus } from 'lucide-react';
 import { useEditorUiStore } from '@/state/editor-ui-store';
-import { AiChatPanel } from '@/components/ai-chat/ai-chat-panel';
+import { EditorAiPanel } from '@/components/ai-chat/editor-ai-panel';
 
 const WIN_W_DESKTOP = 440;
 const WIN_H_DESKTOP = 620;
@@ -12,7 +12,8 @@ const FEEDBACK_CLEARANCE = 88;
 const MOBILE_BREAKPOINT = 640;
 
 function getWinSize(): { w: number; h: number } {
-  if (typeof window === 'undefined') return { w: WIN_W_DESKTOP, h: WIN_H_DESKTOP };
+  if (typeof window === 'undefined')
+    return { w: WIN_W_DESKTOP, h: WIN_H_DESKTOP };
   if (window.innerWidth < MOBILE_BREAKPOINT) {
     return {
       w: Math.min(window.innerWidth - MARGIN * 2, 360),
@@ -22,7 +23,10 @@ function getWinSize(): { w: number; h: number } {
   return { w: WIN_W_DESKTOP, h: WIN_H_DESKTOP };
 }
 
-function defaultWindowPos(winW: number, winH: number): { left: number; top: number } {
+function defaultWindowPos(
+  winW: number,
+  winH: number,
+): { left: number; top: number } {
   if (typeof window === 'undefined') return { left: 100, top: 100 };
   return {
     left: Math.max(MARGIN, window.innerWidth - winW - MARGIN),
@@ -35,10 +39,12 @@ export function AiChatBubble(props: {
 }): React.ReactElement {
   const showAiChat = useEditorUiStore((state) => state.showAiChat);
   const toggleAiChat = useEditorUiStore((state) => state.toggleAiChat);
-  const openModal = useEditorUiStore((state) => state.openModal);
 
   const [winSize, setWinSize] = useState(getWinSize);
-  const [windowPos, setWindowPos] = useState<{ left: number; top: number } | null>(null);
+  const [windowPos, setWindowPos] = useState<{
+    left: number;
+    top: number;
+  } | null>(null);
   const windowDragRef = useRef<{
     startX: number;
     startY: number;
@@ -54,29 +60,36 @@ export function AiChatBubble(props: {
 
   const winPos = windowPos ?? defaultWindowPos(winSize.w, winSize.h);
 
-  const onWindowMouseDown = useCallback((event: React.MouseEvent) => {
-    event.preventDefault();
-    windowDragRef.current = {
-      startX: event.clientX,
-      startY: event.clientY,
-      origLeft: winPos.left,
-      origTop: winPos.top,
-    };
-    const onMouseMove = (ev: MouseEvent): void => {
-      if (!windowDragRef.current) return;
-      setWindowPos({
-        left: windowDragRef.current.origLeft + (ev.clientX - windowDragRef.current.startX),
-        top: windowDragRef.current.origTop + (ev.clientY - windowDragRef.current.startY),
-      });
-    };
-    const onMouseUp = (): void => {
-      windowDragRef.current = null;
-      document.removeEventListener('mousemove', onMouseMove);
-      document.removeEventListener('mouseup', onMouseUp);
-    };
-    document.addEventListener('mousemove', onMouseMove);
-    document.addEventListener('mouseup', onMouseUp);
-  }, [winPos]);
+  const onWindowMouseDown = useCallback(
+    (event: React.MouseEvent) => {
+      event.preventDefault();
+      windowDragRef.current = {
+        startX: event.clientX,
+        startY: event.clientY,
+        origLeft: winPos.left,
+        origTop: winPos.top,
+      };
+      const onMouseMove = (ev: MouseEvent): void => {
+        if (!windowDragRef.current) return;
+        setWindowPos({
+          left:
+            windowDragRef.current.origLeft +
+            (ev.clientX - windowDragRef.current.startX),
+          top:
+            windowDragRef.current.origTop +
+            (ev.clientY - windowDragRef.current.startY),
+        });
+      };
+      const onMouseUp = (): void => {
+        windowDragRef.current = null;
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup', onMouseUp);
+      };
+      document.addEventListener('mousemove', onMouseMove);
+      document.addEventListener('mouseup', onMouseUp);
+    },
+    [winPos],
+  );
 
   return (
     <div
@@ -102,15 +115,6 @@ export function AiChatBubble(props: {
           <button
             type="button"
             className="rounded p-1 text-white/80 hover:bg-white/20 hover:text-white"
-            title="一键优化"
-            onMouseDown={(event) => event.stopPropagation()}
-            onClick={() => openModal('optimize')}
-          >
-            <Sparkles className="h-4 w-4" />
-          </button>
-          <button
-            type="button"
-            className="rounded p-1 text-white/80 hover:bg-white/20 hover:text-white"
             onMouseDown={(event) => event.stopPropagation()}
             onClick={toggleAiChat}
           >
@@ -119,7 +123,7 @@ export function AiChatBubble(props: {
         </div>
       </div>
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-        <AiChatPanel resumeId={props.resumeId} hideTitle />
+        <EditorAiPanel resumeId={props.resumeId} />
       </div>
     </div>
   );

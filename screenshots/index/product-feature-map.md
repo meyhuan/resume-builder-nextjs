@@ -201,7 +201,7 @@
 页面/入口：
 - `/tools/jd-resume-match`
 - API：`/next-api/ai/jd-match`
-- API：`/next-api/ai/optimize-resume`
+- 当前 API：`/next-api/ai/chat/task`。旧版独立优化面板已移除；历史截图不可作为当前 UI，需从「简历检查 → 优化整份简历」重新采集。
 - 首页/功能区提到 JD 智能匹配。
 
 用户可见能力：

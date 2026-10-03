@@ -33,7 +33,8 @@
     "extension:build": "pnpm --dir extension build",
     "extension:test": "pnpm --dir extension test",
     "extension:zip": "pnpm --dir extension zip",
-    "test:application-autofill": "vitest run src/features/application-profile src/features/applications"
+    "test:application-autofill": "vitest run src/features/application-profile src/features/applications",
+    "test:ai": "vitest run --config scripts/vitest.unified-ai.config.ts"
   },
   "dependencies": {
     "@ai-sdk/openai": "^4.0.42",
@@ -125,6 +126,7 @@
     "tailwindcss": "^4.1.13",
     "typescript": "~5.8.3",
     "typescript-eslint": "^8.44.0",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "@electric-sql/pglite": "^0.5.8"
   }
 }

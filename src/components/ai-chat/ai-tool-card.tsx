@@ -17,6 +17,7 @@ function getToolName(part: { type?: string }): string {
 }
 
 export function AiToolCard(props: {
+  readonly readOnly?: boolean;
   readonly part: Record<string, unknown>;
   readonly proposalKeyPrefix: string;
   readonly reviewedKeys: Record<string, string>;
@@ -27,6 +28,8 @@ export function AiToolCard(props: {
   const output = props.part.output;
   const isRunning = state !== 'output-available' && state !== 'output-error';
 
+  if (isRunning && props.readOnly)
+    return <p className="text-xs text-slate-500">这次历史调用未完成</p>;
   if (isRunning) {
     return (
       <div className="flex items-center gap-2 rounded-xl border border-violet-100 bg-violet-50 px-3 py-2 text-xs text-violet-700">
@@ -50,22 +53,64 @@ export function AiToolCard(props: {
       <div className="space-y-3">
         {proposals.map((proposal, index) => {
           const key = `${props.proposalKeyPrefix}-${index}`;
-          const status = props.reviewedKeys[key];
-          const content = proposal.action === 'updateBlock' ? proposal.html : proposal.action === 'addSection' ? proposal.contentHtml || '' : proposal.skills.join('、');
+          const status = props.readOnly ? 'history' : props.reviewedKeys[key];
+          const content =
+            proposal.action === 'updateBlock'
+              ? proposal.html
+              : proposal.action === 'addSection'
+                ? proposal.contentHtml || ''
+                : proposal.skills.join('、');
           // Render as text: AI HTML must never execute inside the chat interface.
-          const preview = content.replace(/<\/(?:p|li|div)>/gi, '\n').replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&');
+          const preview = content
+            .replace(/<\/(?:p|li|div)>/gi, '\n')
+            .replace(/<[^>]*>/g, '')
+            .replace(/&nbsp;/g, ' ')
+            .replace(/&amp;/g, '&');
           return (
-            <div key={key} className="rounded-xl border border-violet-200 bg-white p-3 space-y-2 text-xs">
-              <p className="font-semibold text-slate-800">{describeProposal(proposal)}</p>
-              {proposal.action === 'updateBlock' && proposal.reason && <p className="text-slate-500">{proposal.reason}</p>}
-              <p className="whitespace-pre-wrap break-words leading-relaxed text-slate-700">{preview || '新增空白模块'}</p>
-              {status ? <p role="status" className="text-slate-500">{status === 'applied' ? '已应用，可用顶栏撤销' : status === 'dismissed' ? '已忽略' : '历史建议，仅供查看；如需修改请重新生成'}</p> : <>
-                <p className="text-slate-500">请核对经历、技能和数字是否真实。</p>
-                <div className="flex flex-wrap gap-2">
-                  <button type="button" onClick={() => props.onReview(key, true)} className="rounded-lg bg-violet-600 px-3 py-2 text-white hover:bg-violet-700">应用这一处</button>
-                  <button type="button" onClick={() => props.onReview(key, false)} className="rounded-lg border border-slate-200 px-3 py-2 text-slate-600 hover:bg-slate-50">忽略</button>
-                </div>
-              </>}
+            <div
+              key={key}
+              className="rounded-xl border border-violet-200 bg-white p-3 space-y-2 text-xs"
+            >
+              <p className="font-semibold text-slate-800">
+                {describeProposal(proposal)}
+              </p>
+              {proposal.action === 'updateBlock' && proposal.reason && (
+                <p className="text-slate-500">{proposal.reason}</p>
+              )}
+              <p className="whitespace-pre-wrap break-words leading-relaxed text-slate-700">
+                {preview || '新增空白模块'}
+              </p>
+              {status ? (
+                <p role="status" className="text-slate-500">
+                  {status === 'applied'
+                    ? '已应用，可用顶栏撤销'
+                    : status === 'dismissed'
+                      ? '已忽略'
+                      : '历史建议，仅供查看；如需修改请重新生成'}
+                </p>
+              ) : (
+                <>
+                  <p className="text-slate-500">
+                    请核对经历、技能和数字是否真实。
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => props.onReview(key, true)}
+                      className="rounded-lg bg-violet-600 px-3 py-2 text-white hover:bg-violet-700"
+                    >
+                      应用这一处
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => props.onReview(key, false)}
+                      className="rounded-lg border border-slate-200 px-3 py-2 text-slate-600 hover:bg-slate-50"
+                    >
+                      忽略
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           );
         })}
@@ -73,8 +118,14 @@ export function AiToolCard(props: {
     );
   }
 
-  if (toolName === 'analyzeJdMatch' && isRecord(output) && isRecord(output.analysis)) {
-    return <JdResultCard result={output.analysis as unknown as JdAnalysisOutput} />;
+  if (
+    toolName === 'analyzeJdMatch' &&
+    isRecord(output) &&
+    isRecord(output.analysis)
+  ) {
+    return (
+      <JdResultCard result={output.analysis as unknown as JdAnalysisOutput} />
+    );
   }
 
   return (
@@ -84,7 +135,9 @@ export function AiToolCard(props: {
   );
 }
 
-function JdResultCard(props: { readonly result: JdAnalysisOutput }): ReactElement {
+function JdResultCard(props: {
+  readonly result: JdAnalysisOutput;
+}): ReactElement {
   return (
     <div className="rounded-xl border border-violet-200 bg-white px-3 py-3 space-y-2 text-xs">
       <div className="flex items-center justify-between">
@@ -95,7 +148,9 @@ function JdResultCard(props: { readonly result: JdAnalysisOutput }): ReactElemen
       </div>
       <p className="text-slate-600 leading-relaxed">{props.result.summary}</p>
       {props.result.missingKeywords.length > 0 && (
-        <p className="text-[11px] text-amber-700">缺失关键词：{props.result.missingKeywords.slice(0, 8).join('、')}</p>
+        <p className="text-[11px] text-amber-700">
+          缺失关键词：{props.result.missingKeywords.slice(0, 8).join('、')}
+        </p>
       )}
     </div>
   );

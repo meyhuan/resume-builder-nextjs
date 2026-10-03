@@ -191,7 +191,6 @@ export async function getAllQuotas(): Promise<QuotaCheckResult[]> {
     'ai:import-section',
     'ai:generate-section',
     'ai:polish-section',
-    'ai:optimize-resume',
     'ai:editor-assist',
     'pdf:export',
   ];
@@ -314,10 +313,8 @@ async function checkQuotaCore(
       remaining = Math.max(0, consumed.freeExportCount);
       quotas[feature] = { used: localUsed + 1, date: 'lifetime' };
       try {
-        await prisma.userQuota.update({
-          where: { userId: user.id },
-          data: { quotas: quotas as unknown as Prisma.InputJsonValue, updatedAt: new Date() },
-        });
+        const value = JSON.stringify(quotas[feature]);
+        await prisma.$executeRaw`UPDATE "UserQuota" SET "quotas"=jsonb_set("quotas",ARRAY[${feature}],${value}::jsonb,true),"updatedAt"=CURRENT_TIMESTAMP WHERE "userId"=${user.id}`;
       } catch (error) {
         console.error(`${logPrefix} pdfUsageMirrorFailed`, { userId: user.id, feature, error });
       }
@@ -362,16 +359,23 @@ async function checkQuotaCore(
       freeExportCount,
     });
   }
-  const newUsed = skipConsume ? used : used + 1;
-  const remaining = limit - newUsed;
+  let newUsed = used;
   if (!skipConsume) {
-    console.log(`${logPrefix} consuming`, { userId: user.id, feature, newUsed });
-    quotas[feature] = { used: localUsed + 1, date: isLifetimeQuota ? 'lifetime' : todayKey };
-    await prisma.userQuota.update({
-      where: { userId: user.id },
-      data: { quotas: quotas as unknown as Prisma.InputJsonValue, updatedAt: new Date() },
+    // Share the row lock with task-based AI charging; do not overwrite other features.
+    const consumed = await prisma.$transaction(async tx => {
+      const [row] = await tx.$queryRaw<{ quotas: QuotasData }[]>`SELECT "quotas" FROM "UserQuota" WHERE "userId"=${user.id} FOR UPDATE`;
+      const latest = row.quotas[feature];
+      const current = isLifetimeQuota ? latest?.used ?? 0 : latest?.date === todayKey ? latest.used : 0;
+      if (current + legacyUsed >= limit) return null;
+      const next = current + 1;
+      const value = JSON.stringify({ used: next, date: isLifetimeQuota ? 'lifetime' : todayKey });
+      await tx.$executeRaw`UPDATE "UserQuota" SET "quotas"=jsonb_set("quotas",ARRAY[${feature}],${value}::jsonb,true),"updatedAt"=CURRENT_TIMESTAMP WHERE "userId"=${user.id}`;
+      return next + legacyUsed;
     });
+    if (consumed === null) return createResult({ allowed: false, isVip: false, used: limit, limit, remaining: 0, message: `${featureName}次数已达上限`, feature, freeExportCount });
+    newUsed = consumed;
   }
+  const remaining = limit - newUsed;
   const message = isLifetimeQuota
     ? `剩余${remaining}次${featureName}（非VIP用户免费限${limit}次）`
     : `今日剩余${remaining}次${featureName}（非VIP用户每日${limit}次）`;

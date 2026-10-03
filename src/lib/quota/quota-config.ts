@@ -18,9 +18,7 @@ export const DEFAULT_QUOTA_LIMITS = {
   aiGenerateSection: 5,
   /** AI: Polish and refine text content (per day) */
   aiPolishSection: 5,
-  /** AI: One-click optimize entire resume (per day) */
-  aiOptimizeResume: 2,
-  /** AI: Editor assistant (chat, JD match, translate, interview prep, grammar) (per day) */
+  /** AI: Editor assistant (chat, JD match, translate, interview prep, resume check and full optimization) (per day) */
   aiEditorAssist: 5,
   /** PDF export base limit. Non-VIP PDF exports are governed by Java freeExportCount as remaining balance. */
   pdfExport: 0,

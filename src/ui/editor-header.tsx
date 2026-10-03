@@ -25,6 +25,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useEditorUiStore } from '@/state/editor-ui-store';
+import { trackAssistant } from '@/lib/ai/unified/analytics';
+import { useAiImpression } from '@/lib/ai/unified/use-impression';
 
 export interface EditorHeaderProps {
   readonly title: string;
@@ -50,6 +52,17 @@ export default function EditorHeader(props: EditorHeaderProps): ReactElement {
   const openModal = useEditorUiStore((state) => state.openModal);
   const showAiChat = useEditorUiStore((state) => state.showAiChat);
   const toggleAiChat = useEditorUiStore((state) => state.toggleAiChat);
+  const aiEntryRef = useAiImpression<HTMLButtonElement>('assistant-header', () => {
+    trackAssistant('entry_view', { entry: 'assistant', surface: 'header', feature: 'chat' });
+  });
+  const menuEntryRef = useAiImpression<HTMLDivElement>('assistant-menu', () => {
+    trackAssistant('entry_view', { entry: 'assistant', surface: 'menu', feature: 'chat' });
+  });
+  const openAssistant = (surface: 'header' | 'menu') => {
+    if (!showAiChat)
+      trackAssistant('entry_open', { entry: 'assistant', surface, feature: 'chat' });
+    toggleAiChat();
+  };
   const saveLabel = props.isSaving
     ? '保存中'
     : props.hasUnsavedChanges
@@ -131,10 +144,10 @@ export default function EditorHeader(props: EditorHeaderProps): ReactElement {
             size="sm"
             onClick={() => openModal('grammar-check')}
             className="h-8"
-            title="语法检查"
+            title="简历检查"
           >
             <SpellCheck className="h-4 w-4" />
-            <span className="ml-1 hidden text-xs sm:inline">语法检查</span>
+            <span className="ml-1 hidden text-xs sm:inline">简历检查</span>
           </Button>
           <Button
             variant="ghost"
@@ -174,7 +187,7 @@ export default function EditorHeader(props: EditorHeaderProps): ReactElement {
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => openModal('grammar-check')}>
                 <SpellCheck className="mr-2 h-4 w-4" />
-                语法检查
+                简历检查
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => openModal('translate')}>
                 <Languages className="mr-2 h-4 w-4" />
@@ -184,7 +197,7 @@ export default function EditorHeader(props: EditorHeaderProps): ReactElement {
                 <ClipboardList className="mr-2 h-4 w-4" />
                 面试准备
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={toggleAiChat}>
+              <DropdownMenuItem ref={menuEntryRef} onClick={() => openAssistant('menu')}>
                 <Sparkles className="mr-2 h-4 w-4" />
                 AI 助手
               </DropdownMenuItem>
@@ -199,8 +212,9 @@ export default function EditorHeader(props: EditorHeaderProps): ReactElement {
         <div className="hidden h-6 w-px bg-slate-200 sm:block" />
         <Button
           variant={showAiChat ? 'secondary' : 'ghost'}
+          ref={aiEntryRef}
           size="icon"
-          onClick={toggleAiChat}
+          onClick={() => openAssistant('header')}
           className={`h-8 w-8 cursor-pointer rounded-full sm:w-auto sm:px-3 ${
             showAiChat
               ? 'bg-violet-100 text-violet-700 hover:bg-violet-100'

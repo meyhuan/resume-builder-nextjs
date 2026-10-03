@@ -86,6 +86,9 @@ const HISTORY_DEBOUNCE_MS = 500
 
 /** Timestamp of last history push (module-level for debounce). */
 let lastPushTs = 0
+/** AI changes must never merge with adjacent typing in undo history. */
+export function separateAiHistory(): void { lastPushTs = 0 }
+
 
 /**
  * Push the current resume onto the undo stack with debounce.
@@ -280,6 +283,9 @@ export const useAppStore = create<AppState>()(
           const idx: number = section.blocks.findIndex((b) => b.id === blockId)
           if (idx >= 0) {
             section.blocks.splice(idx, 1)
+            if (section.blocks.length === 0) {
+              draft.sections.splice(draft.sections.indexOf(section), 1)
+            }
           }
         }),
       }), false, 'section/deleteBlock')

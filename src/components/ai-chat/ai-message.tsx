@@ -12,15 +12,28 @@ function isToolPart(part: { type?: string }): boolean {
   return typeof part.type === 'string' && part.type.startsWith('tool-');
 }
 
-export function AiMessage(props: { readonly message: UIMessage; readonly reviewedKeys: Record<string, string>; readonly onReview: (key: string, apply: boolean) => void }): ReactElement {
+export function AiMessage(props: {
+  readonly readOnly?: boolean;
+  readonly message: UIMessage;
+  readonly reviewedKeys: Record<string, string>;
+  readonly onReview: (key: string, apply: boolean) => void;
+}): ReactElement {
   const isUser = props.message.role === 'user';
 
   return (
     <div className={`flex gap-2 ${isUser ? 'flex-row-reverse' : ''}`}>
-      <div className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${isUser ? 'bg-slate-200 text-slate-600' : 'bg-violet-100 text-violet-600'}`}>
-        {isUser ? <User className="h-3.5 w-3.5" /> : <Bot className="h-3.5 w-3.5" />}
+      <div
+        className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${isUser ? 'bg-slate-200 text-slate-600' : 'bg-violet-100 text-violet-600'}`}
+      >
+        {isUser ? (
+          <User className="h-3.5 w-3.5" />
+        ) : (
+          <Bot className="h-3.5 w-3.5" />
+        )}
       </div>
-      <div className={`max-w-[86%] min-w-0 space-y-2 ${isUser ? 'items-end' : ''}`}>
+      <div
+        className={`max-w-[86%] min-w-0 space-y-2 ${isUser ? 'items-end' : ''}`}
+      >
         {props.message.parts?.map((part, index) => {
           if (isToolPart(part as { type?: string })) {
             return (
@@ -30,6 +43,7 @@ export function AiMessage(props: { readonly message: UIMessage; readonly reviewe
                 proposalKeyPrefix={`${props.message.id}-${index}`}
                 reviewedKeys={props.reviewedKeys}
                 onReview={props.onReview}
+                readOnly={props.readOnly}
               />
             );
           }
@@ -51,7 +65,9 @@ export function AiMessage(props: { readonly message: UIMessage; readonly reviewe
               key={`${props.message.id}-text-${index}`}
               className="ai-chat-markdown break-words rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm leading-relaxed text-slate-700"
             >
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>{markdown}</ReactMarkdown>
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {markdown}
+              </ReactMarkdown>
             </div>
           );
         })}
