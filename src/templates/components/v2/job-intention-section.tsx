@@ -13,6 +13,7 @@ import { useState, type ReactElement } from 'react'
 import { Pencil, XCircle } from 'lucide-react'
 import { IconTarget } from '@/components/sections/section-icons'
 import type { JobIntention } from '@/entities/user/job-intention'
+import { normalizeJobIntention } from '@/entities/user/job-intention-fields'
 import JobIntentionModal from '@/components/modals/job-intention-modal'
 import { useAppStore } from '@/state/store'
 import { getJobIntentionFieldLabel, getJobIntentionSectionTitle } from '@/lib/resume-ui-labels'
@@ -40,7 +41,8 @@ export interface JobIntentionSectionProps {
  * V2 求职意向组件 - 样式配置驱动
  */
 export default function JobIntentionSection(props: JobIntentionSectionProps): ReactElement | null {
-  const { jobIntention, themeColor, styles = {}, renderCustom, slots } = props
+  const { themeColor, styles = {}, renderCustom, slots } = props
+  const jobIntention = props.jobIntention ? normalizeJobIntention(props.jobIntention) : null
   const readOnly = useAppStore((s) => s.readOnly)
   const language = useAppStore((s) => s.resume.language)
   const sectionTitle = getJobIntentionSectionTitle(language)
@@ -59,6 +61,7 @@ export default function JobIntentionSection(props: JobIntentionSectionProps): Re
     if (field === 'city') updated.city = undefined
     if (field === 'salary') updated.salary = undefined
     if (field === 'type') updated.type = undefined
+    if (field === 'recruitmentType') updated.recruitmentType = undefined
     if (field === 'industry') updated.industry = undefined
     if (field === 'currentStatus') updated.currentStatus = undefined
     updateJobIntention(updated)
@@ -278,6 +281,7 @@ function renderJobFields(
     { key: 'city', label: getJobIntentionFieldLabel('city', language), value: jobIntention.city },
     { key: 'salary', label: getJobIntentionFieldLabel('salary', language), value: jobIntention.salary },
     { key: 'type', label: getJobIntentionFieldLabel('type', language), value: jobIntention.type },
+    { key: 'recruitmentType', label: getJobIntentionFieldLabel('recruitmentType', language), value: jobIntention.recruitmentType },
     { key: 'industry', label: getJobIntentionFieldLabel('industry', language), value: jobIntention.industry },
     { key: 'currentStatus', label: getJobIntentionFieldLabel('currentStatus', language), value: jobIntention.currentStatus },
   ]

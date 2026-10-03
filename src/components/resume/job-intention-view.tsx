@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { ReactElement } from 'react';
 import { Briefcase, Pencil, XCircle } from 'lucide-react';
 import type { JobIntention } from '@/entities/user/job-intention';
+import { normalizeJobIntention } from '@/entities/user/job-intention-fields'
 import JobIntentionModal from '@/components/modals/job-intention-modal';
 import { useAppStore } from '@/state/store';
 import { getJobIntentionFieldLabel, getJobIntentionSectionTitle } from '@/lib/resume-ui-labels';
@@ -15,7 +16,8 @@ export interface JobIntentionViewProps {
 }
 
 export default function JobIntentionView(props: JobIntentionViewProps): ReactElement | null {
-  const { jobIntention, themeColor } = props;
+  const { themeColor } = props;
+  const jobIntention = props.jobIntention ? normalizeJobIntention(props.jobIntention) : null
   const [showModal, setShowModal] = useState(false);
   const [hoveredField, setHoveredField] = useState<string | null>(null);
   const updateJobIntention = useAppStore((s) => s.updateJobIntention);
@@ -29,7 +31,8 @@ export default function JobIntentionView(props: JobIntentionViewProps): ReactEle
     if (field === 'position') updated.position = undefined;
     if (field === 'city') updated.city = undefined;
     if (field === 'salary') updated.salary = undefined;
-    if (field === 'type') updated.type = undefined;
+    if (field === 'type') updated.type = undefined
+    if (field === 'recruitmentType') updated.recruitmentType = undefined;
     if (field === 'industry') updated.industry = undefined;
     if (field === 'currentStatus') updated.currentStatus = undefined;
     updateJobIntention(updated);
@@ -138,6 +141,28 @@ export default function JobIntentionView(props: JobIntentionViewProps): ReactEle
                   onClick={(e): void => {
                     e.stopPropagation();
                     handleDeleteField('type');
+                  }}
+                >
+                  <XCircle size={14} />
+                </button>
+              ) : null}
+            </div>
+          ) : null}
+          {jobIntention.recruitmentType ? (
+            <div
+              className="hover:bg-gray-50 rounded px-2 py-1 transition-colors relative"
+              onMouseEnter={(): void => setHoveredField('recruitmentType')}
+              onMouseLeave={(): void => setHoveredField(null)}
+            >
+              <span className="text-gray-600">{getJobIntentionFieldLabel('recruitmentType', language)}: </span>
+              <span className="text-gray-900">{jobIntention.recruitmentType}</span>
+              {hoveredField === 'recruitmentType' ? (
+                <button
+                  type="button"
+                  className="ml-2 print:hidden text-red-500 hover:text-red-700"
+                  onClick={(e): void => {
+                    e.stopPropagation();
+                    handleDeleteField('recruitmentType');
                   }}
                 >
                   <XCircle size={14} />

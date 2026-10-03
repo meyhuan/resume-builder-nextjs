@@ -1,3 +1,4 @@
+import type { AdjustableTokens } from '@/entities/editor/editor-meta'
 import { TemplateBrowser } from '@/components/templates/template-browser'
 import { templateLabels } from '@/lib/templates/template-taxonomy'
 /**
@@ -36,6 +37,7 @@ export interface RightSidebarProps {
   readonly onThemePatch: (patch: Partial<ThemeTokens>) => void
   readonly onePage?: boolean
   readonly onePageStatus?: OnePageStatus
+  readonly onePageSnapshot?: AdjustableTokens | null
   readonly onOnePageChange?: (v: boolean) => void
   readonly resumeId?: string
   readonly onRequireResumeId?: () => Promise<string | null>
@@ -89,6 +91,7 @@ export default function RightSidebar(props: RightSidebarProps): ReactElement {
           onThemePatch={props.onThemePatch}
           onePage={props.onePage}
           onePageStatus={props.onePageStatus}
+          onePageSnapshot={props.onePageSnapshot}
           onOnePageChange={props.onOnePageChange}
         />
       )}
@@ -125,6 +128,7 @@ interface LayoutPanelProps {
   readonly onThemePatch: (patch: Partial<ThemeTokens>) => void
   readonly onePage?: boolean
   readonly onePageStatus?: OnePageStatus
+  readonly onePageSnapshot?: AdjustableTokens | null
   readonly onOnePageChange?: (v: boolean) => void
 }
 
@@ -239,6 +243,7 @@ function LayoutPanel(props: LayoutPanelProps): ReactElement {
                 onClose={() => {}}
                 onePage={props.onePage}
                 onePageStatus={props.onePageStatus}
+                onePageSnapshot={props.onePageSnapshot}
                 onOnePageChange={props.onOnePageChange}
                 locksPrimaryColor={templates.find((t) => t.id === tpl)?.locksPrimaryColor}
                 activeTemplateName={templates.find((t) => t.id === tpl)?.name}

@@ -4,6 +4,7 @@ import { useCallback, useRef, useState, type ChangeEvent, type ReactElement, typ
 import { Mail, Phone, PlusCircle, Trash2, GripVertical, Upload } from 'lucide-react'
 import { useDroppable } from '@dnd-kit/core'
 import { SortableContext, rectSortingStrategy } from '@dnd-kit/sortable'
+import { normalizeJobIntention } from '@/entities/user/job-intention-fields'
 import type { ResumeData } from '@/entities/resume/resume-data'
 import { getHeaderJobIntentionText, isHeaderJobIntentionVisible } from '@/entities/resume/header-job-intention'
 import type { ThemeTokens } from '@/entities/theme/theme-tokens'
@@ -138,7 +139,7 @@ export default function DenseTemplate(props: DenseTemplateProps): ReactElement {
 function DenseHeader(props: { readonly resume: ResumeData; readonly accent: string; readonly lineHeight: number }): ReactElement {
   const { resume, accent, lineHeight } = props
   const baseInfo = resume.baseInfo ?? null
-  const jobIntention = resume.jobIntention ?? null
+  const jobIntention = resume.jobIntention ? normalizeJobIntention(resume.jobIntention) : null
   const isJobIntentionVisible = resume.jobIntentionVisible ?? Boolean(jobIntention)
   const showHeaderJobIntention = isHeaderJobIntentionVisible(resume)
   const [showModal, setShowModal] = useState(false)
@@ -152,7 +153,7 @@ function DenseHeader(props: { readonly resume: ResumeData; readonly accent: stri
   const handleCropSave = useCallback((croppedDataUrl: string): void => {
     updateBaseInfo({ ...baseInfo, avatarUrl: croppedDataUrl, showAvatar: true } as BaseInfo, resume.name)
     setCropImageSrc(null)
-  }, [baseInfo, resume.name, updateBaseInfo])
+  }, [baseInfo, resume.name, updateBaseInfo, setCropImageSrc])
 
   const handleFileChange = useCallback((event: ChangeEvent<HTMLInputElement>): void => {
     const file = event.target.files?.[0]
@@ -161,7 +162,7 @@ function DenseHeader(props: { readonly resume: ResumeData; readonly accent: stri
     reader.onload = (): void => setCropImageSrc(reader.result as string)
     reader.readAsDataURL(file)
     event.target.value = ''
-  }, [])
+  }, [setCropImageSrc])
 
   const customFields = baseInfo?.customFields ?? []
   const workYears = customFields.find((field) => field.label.includes('工作') || field.label.includes('经验'))?.value
@@ -176,6 +177,7 @@ function DenseHeader(props: { readonly resume: ResumeData; readonly accent: stri
     jobIntention?.salary ? { label: getJobIntentionFieldLabel('salary', resume.language), value: jobIntention.salary } : null,
     jobIntention?.city ? { label: getJobIntentionFieldLabel('city', resume.language), value: jobIntention.city } : null,
     jobIntention?.type ? { label: getJobIntentionFieldLabel('type', resume.language), value: jobIntention.type } : null,
+    jobIntention?.recruitmentType ? { label: getJobIntentionFieldLabel('recruitmentType', resume.language), value: jobIntention.recruitmentType } : null,
     jobIntention?.industry ? { label: getJobIntentionFieldLabel('industry', resume.language), value: jobIntention.industry } : null,
     jobIntention?.currentStatus ? { label: getJobIntentionFieldLabel('currentStatus', resume.language), value: jobIntention.currentStatus } : null,
     ...(jobIntention?.customFields ?? []),

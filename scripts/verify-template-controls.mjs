@@ -184,7 +184,7 @@ async function verifyOnePage(page, id, directory) {
       if (fixture === 'sparse' && metrics.status !== 'fit') failures.push(`${viewport}/${fixture}: sparse resume could not fit`)
       if (metrics.status === 'fit' && metrics.height > 1123) failures.push(`${viewport}/${fixture}: falsely reports fit (${metrics.height}px)`)
       if (metrics.forcedOnePage !== (metrics.status === 'fit')) failures.push(`${viewport}/${fixture}: overflow/fitting content would be clipped`)
-      if (metrics.theme.fontSize < 12 || metrics.theme.spacingScale < 0 || metrics.theme.lineHeight < 1.4) failures.push(`${viewport}/${fixture}: readability floor violated`)
+      if (metrics.theme.fontSize < 12 || metrics.theme.spacingScale < 0.4 || metrics.theme.lineHeight < 1.4) failures.push(`${viewport}/${fixture}: readability floor violated`)
       metrics.layoutError = await checkLayout(page, {})
       if (metrics.layoutError) failures.push(`${viewport}/${fixture}: ${metrics.layoutError}`)
       metrics.bodyLineIssues = await page.evaluate(() => Array.from(document.querySelectorAll('.resume-container p, .resume-container li'))
@@ -196,6 +196,7 @@ async function verifyOnePage(page, id, directory) {
       await page.click('[data-qa-export="true"]')
       await page.waitForFunction(() => document.querySelector('[data-qa-export-html]').value.length > 1000)
       const html = await page.$eval('[data-qa-export-html]', (node) => node.value)
+      if (html.includes('data-resume-page-guides') || html.includes('data-resume-page-feedback')) failures.push(`${viewport}/${fixture}: editor pagination feedback leaked into export`)
       fs.writeFileSync(path.join(directory, `${viewport}-${fixture}-one-page.html`), html)
       const exportPage = await page.browser().newPage()
       try {

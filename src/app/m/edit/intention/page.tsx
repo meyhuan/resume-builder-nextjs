@@ -9,6 +9,7 @@ import { TagSelectField } from '@/features/edit/form-fields/tag-select-field'
 import { AutocompleteField } from '@/features/edit/form-fields/autocomplete-field'
 import {
   JOB_TYPE_OPTIONS,
+  RECRUITMENT_TYPE_OPTIONS,
   SALARY_OPTIONS,
   CURRENT_STATUS_OPTIONS,
 } from '@/data/dictionaries/base-enums'
@@ -24,6 +25,7 @@ export default function JobIntentionEditPage(): ReactElement {
   const cityF = useJobIntentionField('city')
   const salaryF = useJobIntentionField('salary')
   const typeF = useJobIntentionField('type')
+  const recruitmentF = useJobIntentionField('recruitmentType')
   const industryF = useJobIntentionField('industry')
   const statusF = useJobIntentionField('currentStatus')
 
@@ -61,10 +63,16 @@ export default function JobIntentionEditPage(): ReactElement {
         placeholder="输入或选择薪资范围"
       />
       <TagSelectField
-        label="求职类型"
+        label="工作性质"
         options={JOB_TYPE_OPTIONS}
         value={typeF.value ?? ''}
         onValueChange={typeF.setValue}
+      />
+      <TagSelectField
+        label="招聘类型"
+        options={RECRUITMENT_TYPE_OPTIONS}
+        value={recruitmentF.value ?? ''}
+        onValueChange={recruitmentF.setValue}
       />
       <AutocompleteField
         label="期望行业"

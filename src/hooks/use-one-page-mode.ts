@@ -1,3 +1,4 @@
+import { ONE_PAGE_READABILITY } from '@/lib/resume-page-metrics'
 /**
  * useOnePageMode — auto-adjusts theme settings so the resume fits on one A4 page.
  *
@@ -10,7 +11,7 @@
  *  2. Measures the rendered content height via ResizeObserver.
  *  3. Progressively reduces spacingScale → lineHeight → fontSize until the
  *     content fits within one A4 page (297 mm).
- *  4. Shows sonner toasts to inform the user about auto-adjustments or overflow.
+ *  4. Exposes adjustment status and warns once when readability limits are reached.
  *
  * When disabled it restores from the caller-provided snapshot.
  */
@@ -44,11 +45,11 @@ export interface UseOnePageModeReturn {
 }
 
 /** Minimum values the auto-fit algorithm will reduce to. */
-const MIN_SPACING_SCALE = 0
+const MIN_SPACING_SCALE = ONE_PAGE_READABILITY.spacingScale
 // Chinese multiline copy becomes crowded at 1.0, even when all text survives
 // PDF export. Prefer normal pagination over squeezing unreadable text onto A4.
-const MIN_LINE_HEIGHT = 1.4
-const MIN_FONT_SIZE = 12
+const MIN_LINE_HEIGHT = ONE_PAGE_READABILITY.lineHeight
+const MIN_FONT_SIZE = ONE_PAGE_READABILITY.fontSize
 const STEP_SPACING = 0.1
 const STEP_LINE_HEIGHT = 0.1
 const STEP_FONT_SIZE = 1
@@ -81,8 +82,7 @@ export function useOnePageMode(opts: UseOnePageModeOptions): UseOnePageModeRetur
   // A4 target height in px (computed once and cached).
   const targetHeightRef = useRef<number>(0)
 
-  // Whether the hook has already shown an "adjusted" toast for this session.
-  const adjustedToastShown = useRef(false)
+  const overflowToastShown = useRef(false)
 
   // Debounce timer id.
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -102,7 +102,7 @@ export function useOnePageMode(opts: UseOnePageModeOptions): UseOnePageModeRetur
       })
     }
     if (enabled) {
-      adjustedToastShown.current = false
+      overflowToastShown.current = false
       setStatus('fitting')
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -145,11 +145,12 @@ export function useOnePageMode(opts: UseOnePageModeOptions): UseOnePageModeRetur
     if (fittingRef.current) return
     fittingRef.current = true
 
-    if (theme.lineHeight < MIN_LINE_HEIGHT || theme.fontSize < MIN_FONT_SIZE) {
+    if (theme.lineHeight < MIN_LINE_HEIGHT || theme.fontSize < MIN_FONT_SIZE || theme.spacingScale < MIN_SPACING_SCALE) {
       setStatus('fitting')
       patchTheme({
         lineHeight: Math.max(MIN_LINE_HEIGHT, theme.lineHeight),
         fontSize: Math.max(MIN_FONT_SIZE, theme.fontSize),
+        spacingScale: Math.max(MIN_SPACING_SCALE, theme.spacingScale),
       })
       fittingRef.current = false
       return
@@ -160,10 +161,7 @@ export function useOnePageMode(opts: UseOnePageModeOptions): UseOnePageModeRetur
 
     if (contentH <= targetH) {
       setStatus('fit')
-      if (!adjustedToastShown.current) {
-        toast.success('已开启一页模式')
-        adjustedToastShown.current = true
-      }
+      overflowToastShown.current = false
       fittingRef.current = false
       return
     }
@@ -196,13 +194,12 @@ export function useOnePageMode(opts: UseOnePageModeOptions): UseOnePageModeRetur
     if (adjusted) {
       setStatus('fitting')
       patchTheme({ spacingScale, lineHeight, fontSize })
-      if (!adjustedToastShown.current) {
-        toast.info('正在自动调整间距以适应一页...')
-        adjustedToastShown.current = true
-      }
     } else {
       setStatus('overflow')
-      toast.warning('内容过多，建议精简内容或减少模块以适应一页')
+      if (!overflowToastShown.current) {
+        toast.warning('已达到可读性下限，建议精简内容或保留分页')
+        overflowToastShown.current = true
+      }
     }
 
     fittingRef.current = false

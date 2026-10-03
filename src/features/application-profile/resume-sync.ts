@@ -1,3 +1,4 @@
+import { normalizeJobIntention } from '@/entities/user/job-intention-fields';
 import { randomUUID } from "node:crypto";
 import type { ResumeData } from "@/entities/resume/resume-data";
 import type { ResumeBlock } from "@/entities/blocks/resume-block";
@@ -39,7 +40,7 @@ export function profileFromResume(
   profile.jobPreference.targetRole =
     resume.jobIntention?.position || resume.baseInfo?.title || "";
   profile.jobPreference.targetCity = resume.jobIntention?.city || "";
-  profile.jobPreference.employmentType = resume.jobIntention?.type || "";
+  profile.jobPreference.employmentType = resume.jobIntention ? normalizeJobIntention(resume.jobIntention).type || "" : "";
   profile.jobPreference.expectedSalary = resume.jobIntention?.salary || "";
 
   for (const section of resume.sections || []) {

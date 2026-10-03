@@ -1,5 +1,7 @@
 'use client'
 
+import { normalizeJobIntention } from '@/entities/user/job-intention-fields'
+
 import { useCallback } from 'react'
 import type { ResumeData } from '@/entities/resume/resume-data'
 import { useDraftStore } from './draft-store'
@@ -46,12 +48,12 @@ export function useJobIntentionField<K extends keyof NonNullable<ResumeData['job
 ): FieldBinding<NonNullable<ResumeData['jobIntention']>[K] | undefined> {
   const draft = useDraftStore((s) => s.draft)
   const updateDraft = useDraftStore((s) => s.updateDraft)
-  const value = draft?.jobIntention?.[key]
+  const value = draft?.jobIntention ? normalizeJobIntention(draft.jobIntention)[key] : undefined
   const setValue = useCallback<Setter<NonNullable<ResumeData['jobIntention']>[K] | undefined>>(
     (next) => {
       updateDraft(`jobIntention.${String(key)}`, (d) => {
         const ji = (d.jobIntention ?? {}) as NonNullable<ResumeData['jobIntention']>
-        const mutable = { ...ji } as Record<string, unknown>
+        const mutable = { ...normalizeJobIntention(ji) } as Record<string, unknown>
         const fieldKey = String(key)
         mutable[fieldKey] = next
         ;(d as { jobIntention?: unknown }).jobIntention = mutable as NonNullable<ResumeData['jobIntention']>

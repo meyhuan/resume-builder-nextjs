@@ -8,8 +8,10 @@ export interface JobIntention {
   readonly city?: string;
   /** Expected salary. */
   readonly salary?: string;
-  /** Job type. */
+  /** Employment type, e.g. full-time, part-time or internship. */
   readonly type?: string;
+  /** Recruitment type, e.g. campus or experienced hiring. */
+  readonly recruitmentType?: string;
   /** Expected industry. */
   readonly industry?: string;
   /** Current status. */

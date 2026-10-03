@@ -5,7 +5,8 @@
 
 export const GENDER_OPTIONS: readonly string[] = ['男', '女']
 
-export const JOB_TYPE_OPTIONS: readonly string[] = ['社招', '校招', '实习']
+export const JOB_TYPE_OPTIONS: readonly string[] = ['全职', '兼职', '实习']
+export const RECRUITMENT_TYPE_OPTIONS: readonly string[] = ['校招', '社招']
 
 export const SALARY_OPTIONS: readonly string[] = [
   '面议',

@@ -3,6 +3,8 @@ import type { ReactElement } from 'react';
 import type { BaseInfo } from '@/entities/user/base-info';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { SearchChoice } from '@/components/ui/search-choice';
+import { POPULAR_CITIES } from '@/data/dictionaries/cities';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -206,24 +208,16 @@ export default function BaseInfoModal(props: BaseInfoModalProps): ReactElement {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="household">户籍</Label>
-                  <Input
-                    id="household"
-                    value={household}
-                    onChange={(e) => setHousehold(e.target.value)}
-                    placeholder="请输入"
-                  />
+                  <SearchChoice id="household" label="户籍" value={household} options={POPULAR_CITIES}
+                    onValueChange={setHousehold} />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="currentLocation">现所在地</Label>
-                  <Input
-                    id="currentLocation"
-                    value={currentLocation}
-                    onChange={(e) => setCurrentLocation(e.target.value)}
-                    placeholder="请输入"
-                  />
+                  <SearchChoice id="currentLocation" label="现所在地" value={currentLocation} options={POPULAR_CITIES}
+                    onValueChange={setCurrentLocation} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="workStartTime">开始工作时间</Label>

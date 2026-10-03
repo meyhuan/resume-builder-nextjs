@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { act, cleanup, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { toast } from 'sonner'
 import { useOnePageMode } from '@/hooks/use-one-page-mode'
 import type { ThemeTokens } from '@/entities/theme/theme-tokens'
 import type { AdjustableTokens } from '@/entities/editor/editor-meta'
@@ -23,6 +24,7 @@ function useFixture(height: number, override: Partial<ThemeTokens> = {}) {
 }
 
 beforeEach(() => {
+  vi.clearAllMocks()
   vi.useFakeTimers()
   vi.stubGlobal('ResizeObserver', class { observe() {} disconnect() {} })
   vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockReturnValue(1123)
@@ -39,11 +41,12 @@ describe('automatic one-page readability', () => {
     act(() => result.current.setEnabled(true))
     await tick(30)
     expect(result.current.status).toBe('overflow')
-    expect(result.current.theme).toMatchObject({ lineHeight: 1.4, fontSize: 12, spacingScale: 0 })
+    expect(result.current.theme).toMatchObject({ lineHeight: 1.4, fontSize: 12, spacingScale: 0.4 })
     act(() => result.current.setEnabled(false))
     expect(result.current.status).toBe('idle')
     expect(result.current.theme).toEqual(initialTheme)
     expect(result.current.snapshot).toBeNull()
+    expect(toast.warning).toHaveBeenCalledOnce()
   })
   it('does not compress an already-fitting resume', async () => {
     const { result } = renderHook(() => useFixture(500))
@@ -53,12 +56,12 @@ describe('automatic one-page readability', () => {
     expect(result.current.theme).toEqual(initialTheme)
   })
   it('normalizes pre-existing tiny settings while enabled, without losing them on disable', async () => {
-    const { result } = renderHook(() => useFixture(500, { lineHeight: 1, fontSize: 10 }))
+    const { result } = renderHook(() => useFixture(500, { lineHeight: 1, fontSize: 10, spacingScale: 0 }))
     act(() => result.current.setEnabled(true))
     await tick(3)
     expect(result.current.status).toBe('fit')
-    expect(result.current.theme).toMatchObject({ lineHeight: 1.4, fontSize: 12 })
+    expect(result.current.theme).toMatchObject({ lineHeight: 1.4, fontSize: 12, spacingScale: 0.4 })
     act(() => result.current.setEnabled(false))
-    expect(result.current.theme).toMatchObject({ lineHeight: 1, fontSize: 10 })
+    expect(result.current.theme).toMatchObject({ lineHeight: 1, fontSize: 10, spacingScale: 0 })
   })
 })

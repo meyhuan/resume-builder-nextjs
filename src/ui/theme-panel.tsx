@@ -2,6 +2,9 @@ import { useState } from 'react'
 import type { ChangeEvent, ReactElement } from 'react'
 import type { ThemeTokens } from '@/entities/theme/theme-tokens'
 import type { OnePageStatus } from '@/hooks/use-one-page-mode'
+import type { AdjustableTokens } from '@/entities/editor/editor-meta'
+import { OnePageAdjustments } from '@/components/editor/one-page-adjustments'
+import { ONE_PAGE_READABILITY } from '@/lib/resume-page-metrics'
 import { Slider } from '@/components/ui/slider'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
@@ -32,6 +35,7 @@ export default function ThemePanel(props: {
   readonly onResetPrimaryColor?: () => void
   readonly onePage?: boolean
   readonly onePageStatus?: OnePageStatus
+  readonly onePageSnapshot?: AdjustableTokens | null
   readonly onOnePageChange?: (isOnePage: boolean) => void
   /** If true, the active template owns its palette — disable primary-color UI. */
   readonly locksPrimaryColor?: boolean
@@ -197,7 +201,7 @@ export default function ThemePanel(props: {
               </div>
               <div className="min-w-0">
                 <div className="text-sm font-semibold text-slate-800">一页模式</div>
-                <p className="text-[11px] text-slate-500">自动压缩排版参数，尽量收纳到一页内。</p>
+                <p className="text-[11px] text-slate-500">在可读范围内调整排版，尽量适配一页。</p>
               </div>
             </div>
             <div className="flex items-center gap-2 shrink-0">
@@ -242,6 +246,7 @@ export default function ThemePanel(props: {
               ) : null}
             </div>
           ) : null}
+          {props.onePage && <OnePageAdjustments snapshot={props.onePageSnapshot} current={theme} status={props.onePageStatus} />}
         </div>
         {props.onePage && (
           <p className="text-[11px] text-slate-500">关闭后将恢复为开启前的排版设置。</p>
@@ -254,14 +259,14 @@ export default function ThemePanel(props: {
             </div>
             <Slider
               id="line-height"
-              min={1.0}
+              min={ONE_PAGE_READABILITY.lineHeight}
               max={3.0}
               step={0.1}
               value={[theme.lineHeight]}
               onValueChange={handleLineHeight}
               className="py-1"
             />
-            <p className="text-[11px] text-slate-500">越大越疏朗，但可容纳内容会减少。</p>
+            <p className="text-[11px] text-slate-500">中文正文建议 1.6–1.8；最低保留 1.4。</p>
           </div>
           <div className="space-y-2">
             <div className={sliderLabelClass}>
@@ -270,7 +275,7 @@ export default function ThemePanel(props: {
             </div>
             <Slider
               id="spacing-scale"
-              min={0}
+              min={props.onePage ? ONE_PAGE_READABILITY.spacingScale : 0}
               max={3.0}
               step={0.1}
               value={[theme.spacingScale]}

@@ -1357,10 +1357,15 @@ async function checkLocalInteractions(browser, baseUrl, id, artifactDir) {
 
     await runInteractionStep(page, `Job intention modal (${id})`, async () => {
       await closeOpenDialogs(page)
-      const opened = await openModalFromPreview(page, ['意向岗位：', '期望薪资：', '求职意向', '意向城市：'], 'input#salary')
+      const opened = await openModalFromPreview(page, ['意向岗位：', '期望薪资：', '求职意向', '意向城市：'], 'button#salary')
       if (!opened) throw new Error('Clicking job-intention content did not open the 求职意向 modal.')
       const salary = `13k-18k-${String(Date.now()).slice(-3)}`
-      await replaceInputValue(page, 'input#salary', salary)
+      await page.click('button#salary')
+      await page.waitForSelector('[role=option]')
+      const custom = await page.evaluateHandle(() => [...document.querySelectorAll('[role=option]')].find(option => option.textContent === '自定义'))
+      await custom.click()
+      await page.waitForSelector('input#salary-custom')
+      await replaceInputValue(page, 'input#salary-custom', salary)
       await clickButtonByExactText(page, '确定')
       await page.waitForFunction((nextSalary) => {
         return document.querySelector('[data-scenario-preview="true"]')?.textContent?.includes(nextSalary)

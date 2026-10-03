@@ -1,3 +1,4 @@
+import { readPagePaddingVertical } from '@/lib/resume-page-metrics'
 /**
  * Utilities for exporting the rendered resume as standalone HTML.
  */
@@ -64,13 +65,9 @@ export function createResumeHtmlObjectUrl(element: HTMLElement, options?: Resume
   return URL.createObjectURL(blob)
 }
 
-const DEFAULT_PAGE_PADDING_VERTICAL: number = 22
-
 function extractPagePaddingVertical(markup: string): number {
   const match: RegExpMatchArray | null = markup.match(/data-page-padding-vertical="(\d+(?:\.\d+)?)"/)
-  if (!match) return DEFAULT_PAGE_PADDING_VERTICAL
-  const value: number = parseFloat(match[1])
-  return Number.isFinite(value) ? value : DEFAULT_PAGE_PADDING_VERTICAL
+  return readPagePaddingVertical(match?.[1])
 }
 
 function collectFontLinks(): string {

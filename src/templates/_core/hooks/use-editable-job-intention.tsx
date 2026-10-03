@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { ReactElement, MouseEvent } from 'react'
 import type { JobIntention } from '@/entities/user/job-intention'
+import { JOB_INTENTION_FIELD_KEYS, normalizeJobIntention } from '@/entities/user/job-intention-fields'
 import JobIntentionModal from '@/components/modals/job-intention-modal'
 import { useAppStore } from '@/state/store'
 import { getJobIntentionFieldLabel, getJobIntentionSectionTitle } from '@/lib/resume-ui-labels'
@@ -41,15 +42,6 @@ export interface EditableJobIntention {
   readonly modals: ReactElement | null
 }
 
-const FIELD_KEYS: ReadonlyArray<keyof JobIntention> = [
-  'position',
-  'city',
-  'salary',
-  'type',
-  'industry',
-  'currentStatus',
-]
-
 /**
  * Build a template-agnostic, editable job intention handle.
  */
@@ -62,10 +54,10 @@ export function useEditableJobIntention(
   const [initialField, setInitialField] = useState<string>()
   const readOnly = useAppStore((s) => s.readOnly)
   const [hoveredField, setHoveredField] = useState<string | null>(null)
-  const ji: JobIntention | null = jobIntention ?? null
+  const ji: JobIntention | null = jobIntention ? normalizeJobIntention(jobIntention) : null
   const fields: JobIntentionFieldDef[] = []
   if (ji) {
-    for (const key of FIELD_KEYS) {
+    for (const key of JOB_INTENTION_FIELD_KEYS) {
       const raw: unknown = ji[key]
       if (typeof raw === 'string' && raw.trim().length > 0) {
         fields.push({ key: key as string, label: getJobIntentionFieldLabel(key, language), value: raw })

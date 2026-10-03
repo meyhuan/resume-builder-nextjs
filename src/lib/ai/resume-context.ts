@@ -1,3 +1,4 @@
+import { normalizeJobIntention } from '@/entities/user/job-intention-fields';
 import { normalizeSectionDisplayTitle } from '@/entities/resume/section-display-title';
 import type { ResumeData } from '@/entities/resume/resume-data';
 import type { ResumeBlock } from '@/entities/blocks/resume-block';
@@ -28,6 +29,7 @@ export interface ResumeContextPayload {
     readonly city?: string;
     readonly salary?: string;
     readonly type?: string;
+    readonly recruitmentType?: string;
     readonly industry?: string;
     readonly currentStatus?: string;
   };
@@ -100,6 +102,7 @@ function getBlockMeta(block: ResumeBlock): Record<string, string> | undefined {
  * Only strips avatar / portfolio images (token + privacy).
  */
 export function toResumeContext(resume: ResumeData): ResumeContextPayload {
+  const intention = resume.jobIntention ? normalizeJobIntention(resume.jobIntention) : undefined;
   return {
     name: resume.name,
     baseInfo: resume.baseInfo
@@ -115,14 +118,15 @@ export function toResumeContext(resume: ResumeData): ResumeContextPayload {
           politicalStatus: resume.baseInfo.politicalStatus,
         }
       : undefined,
-    jobIntention: resume.jobIntention
+    jobIntention: intention
       ? {
-          position: resume.jobIntention.position,
-          city: resume.jobIntention.city,
-          salary: resume.jobIntention.salary,
-          type: resume.jobIntention.type,
-          industry: resume.jobIntention.industry,
-          currentStatus: resume.jobIntention.currentStatus,
+          position: intention.position,
+          city: intention.city,
+          salary: intention.salary,
+          type: intention.type,
+          recruitmentType: intention.recruitmentType,
+          industry: intention.industry,
+          currentStatus: intention.currentStatus,
         }
       : undefined,
     sections: resume.sections.map((section) => ({

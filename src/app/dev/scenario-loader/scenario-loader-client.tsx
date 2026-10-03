@@ -10,6 +10,8 @@ import { RESUME_SCENARIOS } from '@/dev/resume-scenarios'
 import type { ThemeTokens } from '@/entities/theme/theme-tokens'
 import { PortfolioAppendix } from '@/components/portfolio/portfolio-appendix'
 import { getTemplateFixture, getTemplateLabTheme } from '@/lib/template-fixtures'
+import { useResumePagination } from '@/hooks/use-resume-pagination'
+import { ResumePageFeedback, ResumePageGuides } from '@/components/editor/resume-page-feedback'
 import { useOnePageMode } from '@/hooks/use-one-page-mode'
 import type { AdjustableTokens } from '@/entities/editor/editor-meta'
 import { buildResumeHtml } from '@/io/html-export'
@@ -46,6 +48,8 @@ export default function ScenarioLoaderClient(): ReactElement {
   const renderableResume = getRenderableResume(resume, readOnly ? undefined : editingBlockIds)
   const previewRef = useRef<HTMLDivElement>(null)
   const [exportStatus, setExportStatus] = useState('')
+  const [pageGuides, setPageGuides] = useState(true)
+  const pages = useResumePagination(previewRef, tpl)
 
   async function exportFixture(format: 'pdf' | 'png'): Promise<void> {
     if (!previewRef.current) return
@@ -129,14 +133,16 @@ export default function ScenarioLoaderClient(): ReactElement {
 
         <div className="mx-auto grid h-[calc(100dvh-112px)] max-w-7xl grid-cols-[minmax(0,1fr)_360px] gap-5">
           <ResumeActionWorkspace className="rounded-lg border border-slate-200">
+          <ResumePageFeedback pages={pages} contentRef={previewRef} guides={pageGuides} onGuidesChange={setPageGuides} onePage={onePage} />
           <section className="min-h-0 flex-1 overflow-auto bg-slate-200 p-6" data-editor-canvas="true">
-            <div ref={previewRef} className="mx-auto w-[794px] bg-white shadow-sm" data-scenario-preview="true">
+            <div ref={previewRef} className="relative mx-auto w-[794px] bg-white shadow-sm" data-scenario-preview="true">
               <div ref={resumeBodyRef} className="resume-document-main" data-one-page={onePage && onePageStatus === 'fit' ? 'true' : 'false'} data-one-page-status={onePageStatus} data-qa-theme={JSON.stringify(theme)}>
               <Suspense fallback={<div className="p-6">Loading template...</div>}>
                 {Template ? <Template resume={renderableResume} theme={theme} /> : null}
                 <PortfolioAppendix portfolio={resume.portfolio} />
               </Suspense>
               </div>
+              <ResumePageGuides pages={pages} visible={pageGuides} />
             </div>
           </section>
           </ResumeActionWorkspace>
@@ -153,6 +159,7 @@ export default function ScenarioLoaderClient(): ReactElement {
               onThemePatch={patchTheme}
               onePage={onePage}
               onePageStatus={onePageStatus}
+              onePageSnapshot={snapshot}
               onOnePageChange={setOnePage}
             />
           </aside>

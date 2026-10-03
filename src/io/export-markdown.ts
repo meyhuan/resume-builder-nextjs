@@ -1,6 +1,7 @@
 import { getSectionDisplayTitle } from '@/entities/resume/section-display-title'
 import type { ResumeData } from '@/entities/resume/resume-data'
 import { prepareResumeForExport } from '@/lib/resume-export-visibility'
+import { normalizeJobIntention } from '@/entities/user/job-intention-fields'
 
 export function exportResumeToMarkdown(resume: ResumeData): string {
   resume = prepareResumeForExport(resume)
@@ -30,12 +31,15 @@ export function exportResumeToMarkdown(resume: ResumeData): string {
   if (resume.jobIntentionVisible && resume.jobIntention) {
     lines.push('## 求职意向')
     lines.push('')
-    const intent = resume.jobIntention
+    const intent = normalizeJobIntention(resume.jobIntention)
     const parts = [
       intent.position ? `意向岗位: ${intent.position}` : '',
       intent.city ? `意向城市: ${intent.city}` : '',
       intent.salary ? `期望薪资: ${intent.salary}` : '',
-      intent.type ? `求职类型: ${intent.type}` : '',
+      intent.type ? `工作性质: ${intent.type}` : '',
+      intent.recruitmentType ? `招聘类型: ${intent.recruitmentType}` : '',
+      intent.industry ? `期望行业: ${intent.industry}` : '',
+      intent.currentStatus ? `求职状态: ${intent.currentStatus}` : '',
     ].filter(Boolean)
     
     if (parts.length > 0) {
