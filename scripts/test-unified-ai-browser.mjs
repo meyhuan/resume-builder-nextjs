@@ -134,13 +134,17 @@ try {
   );
   await click('AI润色');
   await awaitEvent('panel_view');
-  await click('帮我润色这段，保持事实不变');
   await page.waitForFunction(() =>
     document.body.textContent.includes('应用这一处'),
   );
   await page.screenshot({ path: out + '/preview.png', fullPage: true });
   assert.equal(calls, 1);
   assert.equal(requests[0].task.feature, 'polish');
+  assert.equal(
+    requests[0].text,
+    '请润色这段经历，保持事实含义、职责范围和能力描述不变。先展示修改建议；仅在缺失信息影响事实准确性时追问确认。',
+    'a fresh module action starts exactly one fact-preserving request',
+  );
   assert.ok(await page.$('del'));
   assert.ok(await page.$('ins'));
   await page.$eval('[aria-label^="修改建议："]', (el) =>
