@@ -2,10 +2,11 @@
  * EditableBlockWrapper - A reusable wrapper that adds editing capabilities to any block component.
  * This separates editing logic from display logic, making it easy to create multiple templates.
  */
-import { useState, useEffect, type ReactElement, type ReactNode, type CSSProperties } from 'react'
-import InlineEditor from '@/editor/inline-editor'
+import { useState, useEffect, useRef, useLayoutEffect, useMemo, type ReactElement, type ReactNode, type CSSProperties, type MouseEvent } from 'react'
+import InlineEditor, { type InlineFocusPoint } from '@/editor/inline-editor'
+import { readInlineSelection, type InlineTextSelection } from './inline-selection'
 import { useAppStore } from '@/state/store'
-import { CONTENT_DISPLAY_STYLES_XS, CONTENT_EDITING_STYLES_XS } from '@/editor/editor-styles'
+import { CONTENT_BASE_STYLES, CONTENT_EDITING_STYLES_XS, LIST_STYLES } from '@/editor/editor-styles'
 import type { ResumeBlock } from '@/entities/blocks/resume-block'
 import { hasMeaningfulHtml } from '@/lib/resume-placeholders'
 import { useRetainEditingBlock } from './use-retain-editing-block'
@@ -39,6 +40,24 @@ interface EditableBlockWrapperProps {
 export default function EditableBlockWrapper(props: EditableBlockWrapperProps): ReactElement {
   const { onEditingChange, className } = props
   const [isEditing, setIsEditing] = useState(false)
+  const displayRef = useRef<HTMLDivElement>(null)
+  const returnFocus = useRef(false)
+  const [focusPoint, setFocusPoint] = useState<InlineFocusPoint | null>(null)
+  const [initialSelection, setInitialSelection] = useState<InlineTextSelection | null>(null)
+  useLayoutEffect(() => {
+    if (!isEditing && returnFocus.current) {
+      returnFocus.current = false
+      displayRef.current?.focus({ preventScroll: true })
+    }
+  }, [isEditing])
+  function startEditing(event?: MouseEvent<HTMLDivElement>): void {
+    setInitialSelection(readInlineSelection(displayRef.current))
+    setFocusPoint(event?.detail ? { x: event.clientX, y: event.clientY } : null)
+    setIsEditing(true)
+  }
+  function finishNativeSelection(event: MouseEvent<HTMLDivElement>): void {
+    if (event.button === 0 && readInlineSelection(displayRef.current)) startEditing(event)
+  }
   useRetainEditingBlock(props.blockId, isEditing)
   const setResume = useAppStore((s) => s.setResume)
   const resume = useAppStore((s) => s.resume)
@@ -49,7 +68,7 @@ export default function EditableBlockWrapper(props: EditableBlockWrapperProps): 
   }, [isEditing, onEditingChange])
 
   const contentSize = props.contentSize || 'xs'
-  const displayStyles = contentSize === 'xs' ? CONTENT_DISPLAY_STYLES_XS : CONTENT_DISPLAY_STYLES_XS
+  const displayStyles = `${CONTENT_BASE_STYLES} cursor-text rounded p-1 transition-colors ${LIST_STYLES}`
   const editingStyles = contentSize === 'xs' ? CONTENT_EDITING_STYLES_XS : CONTENT_EDITING_STYLES_XS
   const emptyMode = props.emptyMode ?? 'placeholder'
 
@@ -95,6 +114,8 @@ export default function EditableBlockWrapper(props: EditableBlockWrapperProps): 
   const content = findBlockContent()
   const hasContent = hasMeaningfulHtml(content)
   const editableContent = hasContent ? content : ''
+  // Keep native text nodes intact when focusing a block updates the action dock.
+  const displayHtml = useMemo(() => ({ __html: content }), [content])
 
   if (!hasContent && props.children && !isEditing) {
     return <>{props.children({ isEditing: false, onStartEdit: () => {} })}</>
@@ -104,8 +125,8 @@ export default function EditableBlockWrapper(props: EditableBlockWrapperProps): 
     if (!hasContent && emptyMode !== 'placeholder') return <></>
     return (
       <div
-      data-ai-block-id={props.blockId}
-        className={`${displayStyles} ${className || ''}`.trim()}
+        data-ai-block-id={props.blockId}
+        className={`${CONTENT_BASE_STYLES} p-1 ${LIST_STYLES} ${className || ''}`.trim()}
         dangerouslySetInnerHTML={{ __html: hasContent ? content : '' }}
       />
     )
@@ -115,11 +136,14 @@ export default function EditableBlockWrapper(props: EditableBlockWrapperProps): 
 
   if (isEditing) {
     return (
-      <div className={`${editingStyles} ${className || ''}`.trim()} style={props.editingStyle}>
+      <div data-resume-edit-field="rich-text" className={`${editingStyles} ${className || ''}`.trim()} style={props.editingStyle}>
         <InlineEditor
           initialHtml={editableContent}
+          initialFocusPoint={focusPoint}
+          initialSelection={initialSelection}
           onChange={handleContentChange}
           onClickOutside={(): void => setIsEditing(false)}
+          onEscape={() => { returnFocus.current = true; setIsEditing(false) }}
           floatingToolbar={true}
           className="outline-none"
         />
@@ -130,9 +154,17 @@ export default function EditableBlockWrapper(props: EditableBlockWrapperProps): 
   if (!hasContent && emptyMode === 'hover') {
     return (
       <div
-      data-ai-block-id={props.blockId}
-        className={`${displayStyles} ${className || ''} hidden cursor-text rounded border border-dashed border-slate-300 px-2 py-1 text-slate-400 transition-colors hover:bg-gray-50 hover:text-slate-700 group-hover/block:block group-hover/section:block group-hover/section-edit:block print:hidden`.trim()}
-        onClick={(): void => setIsEditing(true)}
+        ref={displayRef}
+        role="button"
+        tabIndex={0}
+        aria-label={props.placeholder || '编辑正文'}
+        data-ai-block-id={props.blockId}
+        data-resume-edit-field="rich-text"
+        className={`${displayStyles} ${className || ''} hidden cursor-text rounded border border-dashed border-slate-300 px-2 py-1 text-slate-400 transition-colors group-hover/block:block group-focus-within/block:block group-hover/section:block group-hover/section-edit:block print:hidden`.trim()}
+        onClick={startEditing}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); event.stopPropagation(); startEditing() }
+        }}
       >
         {props.placeholder || '点击填写内容'}
       </div>
@@ -141,10 +173,19 @@ export default function EditableBlockWrapper(props: EditableBlockWrapperProps): 
 
   return (
     <div
+      ref={displayRef}
+      role="button"
+      tabIndex={0}
+      aria-label={props.placeholder || '编辑正文'}
       data-ai-block-id={props.blockId}
+      data-resume-edit-field="rich-text"
       className={`${displayStyles} ${className || ''}`.trim()}
-      onClick={(): void => setIsEditing(true)}
-      dangerouslySetInnerHTML={{ __html: content }}
+      onClick={startEditing}
+      onMouseUp={finishNativeSelection}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); event.stopPropagation(); startEditing() }
+      }}
+      dangerouslySetInnerHTML={displayHtml}
     />
   )
 }

@@ -16,6 +16,7 @@ import { buildResumeHtml } from '@/io/html-export'
 import { getRenderableResume } from '@/entities/resume/renderable-resume'
 import { useEditorUiStore } from '@/state/editor-ui-store'
 import { exportImage } from '@/io/export-image'
+import { ResumeActionWorkspace } from '@/components/blocks/resume-action-dock'
 
 const DEFAULT_TEMPLATE = 'lanxin'
 
@@ -126,8 +127,9 @@ export default function ScenarioLoaderClient(): ReactElement {
           </div> : null}
         </div>
 
-        <div className="mx-auto grid max-w-7xl grid-cols-[1fr_360px] gap-5">
-          <section className="overflow-auto rounded-lg border border-slate-200 bg-slate-200 p-6">
+        <div className="mx-auto grid h-[calc(100dvh-112px)] max-w-7xl grid-cols-[minmax(0,1fr)_360px] gap-5">
+          <ResumeActionWorkspace className="rounded-lg border border-slate-200">
+          <section className="min-h-0 flex-1 overflow-auto bg-slate-200 p-6" data-editor-canvas="true">
             <div ref={previewRef} className="mx-auto w-[794px] bg-white shadow-sm" data-scenario-preview="true">
               <div ref={resumeBodyRef} className="resume-document-main" data-one-page={onePage && onePageStatus === 'fit' ? 'true' : 'false'} data-one-page-status={onePageStatus} data-qa-theme={JSON.stringify(theme)}>
               <Suspense fallback={<div className="p-6">Loading template...</div>}>
@@ -137,6 +139,7 @@ export default function ScenarioLoaderClient(): ReactElement {
               </div>
             </div>
           </section>
+          </ResumeActionWorkspace>
 
           <aside className="h-[calc(100vh-96px)] overflow-hidden rounded-lg border border-slate-200 bg-white">
             <RightSidebar

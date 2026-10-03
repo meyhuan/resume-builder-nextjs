@@ -315,12 +315,9 @@ function MoxuSection({
         />
         <span className="moxu-rule" aria-hidden />
       </div>
-      <div
+      {edit.canEditTitle && <div
+        data-resume-section-actions="true" data-export-hide="true" data-visible={edit.isHovered || undefined}
         className="absolute right-0 top-0 flex gap-1 rounded border bg-white p-1 shadow-sm print:hidden"
-        style={{
-          opacity: edit.isHovered ? 1 : 0,
-          pointerEvents: edit.isHovered ? "auto" : "none",
-        }}
       >
         <button
           type="button"
@@ -339,7 +336,7 @@ function MoxuSection({
         <button type="button" title="删除" onClick={edit.onRequestDelete}>
           <Trash2 size={16} />
         </button>
-      </div>
+      </div>}
       <BlockList
         section={edit}
         themeColor={theme.primaryColor}

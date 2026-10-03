@@ -53,7 +53,31 @@ async function main() {
     runCommandCheck('Next build', commandCandidates('next', ['build'], ['pnpm', ['build']], ['npm', ['run', 'build']]))
   }
 
-  if (args.local) {
+  if (args['hover-only']) {
+    const puppeteer = await import('puppeteer')
+    const browser = await launchBrowser(puppeteer)
+    try {
+      for (const id of templateIds) {
+        const artifactDir = path.join(artifactRoot, id)
+        fs.mkdirSync(artifactDir, { recursive: true })
+        const page = await browser.newPage()
+        try {
+          await page.setViewport({ width: 1400, height: 1000 })
+          await page.goto(scenarioLoaderUrl(args['base-url'] || 'http://127.0.0.1:3000', id), { waitUntil: 'networkidle2', timeout: 90_000 })
+          await page.waitForSelector('[data-resume-edit-region="block"]', { timeout: 20_000 })
+          await page.waitForFunction(() => document.querySelector('[data-scenario-preview="true"]')?.textContent?.includes('李小满'), { timeout: 20_000 })
+          await runInteractionStep(page, `Section action controls (${id})`, () => checkSectionActionControls(page))
+          await runInteractionStep(page, `Hover continuity and edit affordances (${id})`, () => checkHoverActionContinuity(page, artifactDir))
+        } catch (error) {
+          fail(`Hover continuity and edit affordances (${id})`, error.message)
+        } finally {
+          await page.close()
+        }
+      }
+    } finally {
+      await browser.close()
+    }
+  } else if (args.local) {
     await runLocalChecks(templateIds, registries)
   } else if (args['base-url'] || args['mobile-url'] || args['pc-url'] || args['print-url']) {
     if (args.all) {
@@ -350,7 +374,7 @@ async function runLocalChecks(templateIds, registries) {
   const browser = await launchBrowser(puppeteer)
 
   try {
-    for (const id of templateIds) {
+    const verifyLocalTemplate = async (id) => {
       const registry = registries.get(id)
       const artifactDir = path.join(artifactRoot, id)
       fs.mkdirSync(artifactDir, { recursive: true })
@@ -369,7 +393,9 @@ async function runLocalChecks(templateIds, registries) {
       await checkLocalPage(browser, {
         name: `Local mobile full (${id})`,
         url: labUrl(baseUrl, id, 'full', 'base', 'mobile'),
-        viewport: { width: 390, height: 844, isMobile: true, deviceScaleFactor: 2 },
+        // Match the PC capture scale; Windows headless Chrome can omit scaled
+        // paper layers at deviceScaleFactor 2 despite correct DOM geometry.
+        viewport: { width: 390, height: 844, isMobile: true, deviceScaleFactor: 1 },
         screenshot: path.join(artifactDir, 'local-mobile-full.png'),
         expectedText: '林知夏',
         checkHorizontalOverflow: true,
@@ -411,7 +437,11 @@ async function runLocalChecks(templateIds, registries) {
         fixture: 'rich',
       })
 
-      await checkThemeControls(browser, baseUrl, id, registry, artifactDir)
+      try {
+        await checkThemeControls(browser, baseUrl, id, registry, artifactDir)
+      } catch (error) {
+        fail(`Theme settings (${id})`, error.message)
+      }
       await checkSparsePdfTail(browser, { baseUrl, id, artifactDir, themeId: 'base' })
       await checkSparsePdfTail(browser, { baseUrl, id, artifactDir, themeId: 'relaxed' })
       await checkSparsePdfTail(browser, { baseUrl, id, artifactDir, themeId: 'compact', fixture: 'long' })
@@ -421,7 +451,20 @@ async function runLocalChecks(templateIds, registries) {
         warn(`Local interactions (${id})`, 'Skipped by --skip-interactions.')
       }
       pass(`Local artifacts (${id})`, relative(artifactDir))
+      console.log(`Local QA completed: ${id}`)
     }
+    const pending = [...templateIds]
+    const jobs = Math.max(1, Math.min(4, Math.floor(Number(args.jobs) || 1)))
+    await Promise.all(Array.from({ length: Math.min(jobs, pending.length) }, async () => {
+      while (pending.length > 0) {
+        const id = pending.shift()
+        try {
+          await verifyLocalTemplate(id)
+        } catch (error) {
+          fail(`Local QA (${id})`, error.message)
+        }
+      }
+    }))
   } finally {
     await browser.close()
   }
@@ -500,8 +543,25 @@ async function checkLocalPage(browser, options) {
       return
     }
 
-    await page.waitForSelector('[data-template-lab="ready"] [data-template-root="true"] .resume-container', { timeout: 20_000 })
+    // The mobile lab initially scales to zero until ResizeObserver measures it.
+    // Attached text alone can pass while a screenshot still contains no paper.
+    await page.waitForSelector('[data-template-lab="ready"] [data-template-root="true"] .resume-container', { timeout: 20_000, visible: true })
     await page.waitForFunction((expected) => document.body.innerText.includes(expected), { timeout: 10_000 }, options.expectedText)
+    await waitForPdfAssets(page)
+    await page.bringToFront()
+    // A scaled child can be visible while its overflow-hidden stage still has
+    // zero height. Wait for ResizeObserver's wrapper dimensions as well.
+    await page.waitForFunction(() => {
+      const root = document.querySelector('[data-template-root="true"]')
+      const paper = root?.querySelector('.resume-container')
+      if (!root || !paper) return false
+      const bounds = paper.getBoundingClientRect()
+      if (bounds.width < 100 || bounds.height < 100) return false
+      if (document.querySelector('[data-template-lab]')?.getAttribute('data-viewport') !== 'mobile') return true
+      const stage = root.parentElement?.getBoundingClientRect()
+      const scaled = root.getBoundingClientRect()
+      return stage && stage.height > 100 && Math.abs(stage.height - scaled.height) <= 1
+    }, { timeout: 20_000 })
 
     const bodyTextLength = await page.evaluate(() => document.body.innerText.trim().length)
     if (bodyTextLength < 20) {
@@ -1328,6 +1388,11 @@ async function checkLocalInteractions(browser, baseUrl, id, artifactDir) {
       return checkSectionActionControls(page)
     })
 
+    await runInteractionStep(page, `Hover continuity and edit affordances (${id})`, async () => {
+      await closeOpenDialogs(page)
+      return checkHoverActionContinuity(page, artifactDir)
+    })
+
     if (id === 'ziji') {
       await runInteractionStep(page, `Cross-column section drag (${id})`, async () => checkZijiCrossColumnDrag(page))
     } else if (await page.$('[data-template-column="left"]') && await page.$('[data-template-column="right"]')) {
@@ -1392,6 +1457,158 @@ async function checkLocalInteractions(browser, baseUrl, id, artifactDir) {
   } finally {
     await page.close()
   }
+}
+
+async function checkHoverActionContinuity(page, artifactDir) {
+  await page.evaluate(async () => { await document.fonts.ready })
+  const block = await page.$('[data-scenario-preview="true"] [data-resume-edit-region="block"]')
+  if (!block) throw new Error('No editable block found.')
+  await block.scrollIntoView()
+  await page.mouse.move(8, 8)
+  await new Promise((resolve) => setTimeout(resolve, 250))
+  await page.screenshot({ path: path.join(artifactDir, 'hover-idle.png') })
+  await block.hover()
+  const unselected = await block.evaluate((element) => element.getBoundingClientRect().toJSON())
+  // Select the group itself, without opening a field's editing dialog.
+  await block.focus()
+  const actionSelector = '[data-resume-block-actions] button'
+  const action = await block.$(actionSelector)
+  if (!action) throw new Error('Hovering a block did not expose its contextual actions.')
+  await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))))
+  const geometry = await block.evaluate((element) => {
+    const actions = element.querySelector('[data-resume-block-actions]')
+    const a = actions.getBoundingClientRect()
+    const b = element.getBoundingClientRect()
+    const canvas = element.closest('[data-editor-canvas]').getBoundingClientRect()
+    return { selected: b.toJSON(), owned: element.contains(actions), belowRow: a.top >= b.bottom - 1,
+      aboveRow: a.bottom <= b.top + 1, fitsCanvas: a.top >= canvas.top && a.bottom <= canvas.bottom,
+      withinRow: a.top >= b.top && a.bottom <= b.bottom,
+      clippedBelow: b.bottom + a.height + 4 > canvas.bottom - 4 }
+  })
+  const validPlacement = geometry.belowRow || (geometry.clippedBelow && (geometry.aboveRow || geometry.withinRow))
+  if (!geometry.owned || !geometry.fitsCanvas || !validPlacement || ['x', 'y', 'width', 'height'].some((key) => Math.abs(geometry.selected[key] - unselected[key]) > 0.5)) {
+    throw new Error(`Contextual actions have the wrong owner or shift resume geometry: ${JSON.stringify(geometry)}`)
+  }
+  const bounds = await action.boundingBox()
+  if (!bounds) throw new Error('Block action has no visible bounds.')
+  const x = bounds.x + bounds.width / 2
+  const y = bounds.y + bounds.height / 2
+  const reachable = async () => {
+    const button = await block.$(actionSelector)
+    if (!button) throw new Error('Actions disappeared while navigating inside the region.')
+    const hit = await button.evaluate((element, point) => {
+      const target = document.elementFromPoint(point.x, point.y)
+      return { reachable: element.contains(target), point, button: element.getBoundingClientRect().toJSON(),
+        coveringElement: target?.outerHTML.slice(0, 500) ?? null }
+    }, { x, y })
+    if (!hit.reachable) {
+      await page.screenshot({ path: path.join(artifactDir, 'hover-action-failure.png') })
+      throw new Error(`Another element covers the hovered action: ${JSON.stringify(hit)}`)
+    }
+  }
+  await page.mouse.move(x, y)
+  await new Promise((resolve) => setTimeout(resolve, 250))
+  await reachable()
+  const allReachable = await block.evaluate(element => [...element.querySelectorAll('[data-resume-block-actions] button')].every(button => {
+    const rect = button.getBoundingClientRect()
+    return button.contains(document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2))
+  }))
+  if (!allReachable) throw new Error('A contextual action is clipped or covered at the canvas edge.')
+  await page.mouse.move(8, 8)
+  await new Promise((resolve) => setTimeout(resolve, 70))
+  await page.mouse.move(x, y)
+  await new Promise((resolve) => setTimeout(resolve, 250))
+  await reachable()
+  await block.hover()
+  await new Promise((resolve) => setTimeout(resolve, 250))
+  if (!await block.$(actionSelector)) throw new Error('Returning from actions to content hid the actions.')
+  const otherBlocks = await page.$$('[data-scenario-preview="true"] [data-resume-edit-region="block"]')
+  if (otherBlocks.length > 1) {
+    await otherBlocks[1].hover()
+    await new Promise((resolve) => setTimeout(resolve, 300))
+    if (!await block.evaluate((element) => element.getAttribute('data-resume-edit-selected') === 'true')) {
+      throw new Error('Moving across another row silently changed the action target.')
+    }
+  }
+  // Pure hover styling is checked without a focus-visible ring.
+  await page.evaluate(() => document.activeElement?.blur())
+  const field = await block.$('[data-resume-edit-field]')
+  if (!field) throw new Error('No field-level editing affordance found.')
+  await field.hover()
+  await new Promise((resolve) => setTimeout(resolve, 150))
+  const metrics = await field.evaluate((element) => {
+    const section = element.closest('[data-resume-edit-region="section"]')
+    const block = element.closest('[data-resume-edit-region="block"]')
+    const style = getComputedStyle(element)
+    return {
+      fieldOutline: style.outlineStyle,
+      fieldFill: style.backgroundColor,
+      fieldRadius: style.borderRadius,
+      blockOutline: getComputedStyle(block).outlineStyle,
+      blockFill: getComputedStyle(block).backgroundColor,
+      sectionOutline: section ? getComputedStyle(section).outlineStyle : null,
+    }
+  })
+  if (metrics.fieldOutline !== 'none' || metrics.blockOutline !== 'none' || metrics.sectionOutline !== 'dashed'
+    || metrics.fieldRadius !== '4px' || metrics.fieldFill === 'rgba(0, 0, 0, 0)' || metrics.fieldFill === 'transparent'
+    || metrics.blockFill === 'rgba(0, 0, 0, 0)') {
+    const hit = await field.evaluate(element => {
+      const rect = element.getBoundingClientRect()
+      return { rect: rect.toJSON(), covering: document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2)?.outerHTML.slice(0, 600) }
+    })
+    await page.screenshot({ path: path.join(artifactDir, 'hover-field-failure.png') })
+    throw new Error(`Missing quiet context / distinct hover target: ${JSON.stringify({ ...metrics, ...hit })}`)
+  }
+  const richField = await block.$('[data-resume-edit-field="rich-text"]')
+  if (richField) {
+    await richField.hover()
+    const richMetrics = await richField.evaluate((element) => {
+      const style = getComputedStyle(element)
+      return { radius: style.borderRadius, outline: style.outlineStyle }
+    })
+    if (richMetrics.radius !== '4px' || richMetrics.outline !== 'none') {
+      throw new Error(`Rich-text hover must not add a nested rounded outline: ${JSON.stringify(richMetrics)}`)
+    }
+    await field.hover()
+  }
+  await page.screenshot({ path: path.join(artifactDir, 'hover-field.png') })
+  // Image export uses screen styles. Exercise the same root flag while the
+  // pointer is still over the field so computed styles cannot retain highlights.
+  const imageClean = await field.evaluate((element) => {
+    const root = element.closest('.resume-container')
+    const previous = root.getAttribute('data-resume-exporting')
+    root.setAttribute('data-resume-exporting', 'true')
+    try {
+      const regions = [element, element.closest('[data-resume-edit-region="block"]'), element.closest('[data-resume-edit-region="section"]')].filter(Boolean)
+      return regions.every((region) => {
+        const style = getComputedStyle(region)
+        return style.outlineStyle === 'none' && style.backgroundColor === 'rgba(0, 0, 0, 0)'
+      }) && [...root.querySelectorAll('[data-resume-block-actions], [data-resume-section-actions]')]
+        .every((actions) => actions.getAttribute('data-export-hide') === 'true')
+    } finally {
+      if (previous === null) root.removeAttribute('data-resume-exporting')
+      else root.setAttribute('data-resume-exporting', previous)
+    }
+  })
+  if (!imageClean) throw new Error('Editing decoration remains in image capture styles.')
+  // Focus keeps the toolbar available even when the pointer leaves the module.
+  const focusAction = await block.$(actionSelector)
+  await focusAction.focus()
+  await page.mouse.move(8, 8)
+  await new Promise((resolve) => setTimeout(resolve, 300))
+  if (!await block.$(actionSelector)) throw new Error('Pointer exit hid focused actions.')
+  await page.emulateMediaType('print')
+  const printClean = await block.evaluate((element) => {
+    const section = element.closest('[data-resume-edit-region="section"]')
+    const actions = document.querySelector('[data-resume-block-actions]')
+    return getComputedStyle(element).outlineStyle === 'none'
+      && getComputedStyle(element).backgroundColor === 'rgba(0, 0, 0, 0)'
+      && (!section || getComputedStyle(section).outlineStyle === 'none')
+      && getComputedStyle(actions).display === 'none'
+  })
+  await page.emulateMediaType('screen')
+  if (!printClean) throw new Error('Editing decorations leaked into print rendering.')
+  return `Contextual row actions; real pointer transit and rapid exit/re-entry; explicit selection preserved across other rows; actions belong to their row; unchanged block geometry; focus retention; quiet hover hierarchy; clean image capture and print. ${JSON.stringify(metrics)}`
 }
 
 async function runInteractionStep(page, name, action) {
@@ -1776,6 +1993,8 @@ async function checkSectionActionControls(page) {
   const handle = await page.evaluateHandle(() => {
     const root = document.querySelector('[data-scenario-preview="true"]')
     if (!root) return null
+    const module = root.querySelector('[data-resume-edit-region="section"]')
+    if (module) return module
     const markedHeader = root.querySelector('[data-template-section-header="true"]')
     if (markedHeader) return markedHeader
     const editableSection = Array.from(root.querySelectorAll('[data-template-section="true"]')).find((node) => !node.closest('[role="dialog"]') && node.getBoundingClientRect().height > 24)
@@ -1810,21 +2029,34 @@ async function checkSectionActionControls(page) {
     throw new Error('Cannot find a preview section/header candidate for section action controls.')
   }
 
-  await section.hover()
+  const header = await section.$('[data-resume-edit-region="header"]')
+  await (header ?? section).hover()
   await sleep(260)
 
-  const metrics = await page.evaluate((hoverTarget) => {
-    const root = hoverTarget.closest('[data-template-section="true"], section') ?? hoverTarget
+  const menuHandle = await section.evaluateHandle((node) => node.querySelector('[data-resume-section-actions]')
+    ?? node.querySelector('button[title="拖动"]')?.parentElement)
+  const menu = menuHandle.asElement()
+  if (!menu) throw new Error('Hovered module/header did not expose its section action menu.')
+  for (const action of await menu.$$('button')) {
+    await action.hover()
+    await sleep(250)
+    const reachable = await action.evaluate((button) => {
+      const rect = button.getBoundingClientRect()
+      const target = document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2)
+      return { reachable: button.isConnected && button.contains(target), button: rect.toJSON(), coveringElement: target?.outerHTML.slice(0, 500) ?? null }
+    })
+    if (!reachable.reachable) throw new Error(`Section action disappeared or became covered when the pointer moved onto it: ${JSON.stringify(reachable)}`)
+  }
+
+  const metrics = await menu.evaluate((menu) => {
+    const root = menu.closest('[data-scenario-preview="true"]')
     if (!root) return null
     const requiredTitles = ['拖动', '删除']
     const optionalTitles = ['添加']
     const allTitles = [...requiredTitles, ...optionalTitles]
     const buttons = allTitles.map((title) => {
       const selector = title === '添加' ? 'button[title="添加"], button[title^="添加"]' : `button[title="${title}"]`
-      // Block toolbars have their own hover state; inspect the section toolbar only.
-      const candidates = Array.from(root.querySelectorAll(selector)).filter((button) => {
-        return !button.closest('[data-block-id], [data-block-type], [data-resume-block]')
-      })
+      const candidates = Array.from(menu.querySelectorAll(selector))
       const button = candidates.find((candidate) => {
         const rect = candidate.getBoundingClientRect()
         const style = window.getComputedStyle(candidate)
@@ -1848,7 +2080,8 @@ async function checkSectionActionControls(page) {
       previewText: (root.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 80),
       buttons,
     }
-  }, section)
+  })
+  await menuHandle.dispose()
   await handle.dispose()
   if (!metrics) throw new Error('Cannot inspect section action controls because the preview root is missing.')
 
@@ -1867,7 +2100,7 @@ async function checkSectionActionControls(page) {
   const visibleTitles = metrics.buttons
     .filter((button) => button.exists && button.visible)
     .map((button) => button.title)
-  return `Section actions visible after hover: ${visibleTitles.join(', ')}.`
+  return `Section actions visible and reachable after pointer transfer: ${visibleTitles.join(', ')}.`
 }
 
 async function checkDarkHoverContrast(page) {
@@ -1932,6 +2165,13 @@ async function readHoverCandidateMetrics(handle) {
     function colorLightness(value) {
       const oklch = /^oklch\(([-0-9.]+)/.exec(value)
       if (oklch) return Number(oklch[1])
+      const oklab = /^oklab\(([-0-9.]+)/.exec(value)
+      if (oklab) return Number(oklab[1])
+      const srgb = /^color\(srgb\s+([-0-9.]+)\s+([-0-9.]+)\s+([-0-9.]+)/.exec(value)
+      if (srgb) {
+        const [r, g, b] = srgb.slice(1, 4).map(Number)
+        return 0.2126 * r + 0.7152 * g + 0.0722 * b
+      }
       const rgb = /^rgba?\((\d+),\s*(\d+),\s*(\d+)/.exec(value)
       if (!rgb) return null
       const [r, g, b] = rgb.slice(1, 4).map((part) => Number(part) / 255)
@@ -2500,6 +2740,8 @@ Options:
   --scenario-loader-url <url> Dev scenario-loader URL for testing the one-click data fill UI.
   --editor-url <url>          Explicit authenticated editor URL for testing the same loader in the real editor.
   --skip-interactions         Skip local interaction QA when using --local.
+  --hover-only                Run real pointer/focus/print hover regression checks (supports --all).
+  --jobs <1-4>                Number of independent templates to verify concurrently with --local.
   --report                    Write a Markdown QA report under test-artifacts/reports/.
   --reference-image <path>    Reference screenshot to embed next to implementation screenshots in the QA report.
   --print-token-secret <str>  Secret for generated /print token.

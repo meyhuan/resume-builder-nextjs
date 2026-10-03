@@ -45,6 +45,7 @@ import { InterviewPrepDialog } from '@/components/editor/interview-prep-dialog'
 import { GrammarCheckDialog } from '@/components/editor/grammar-check-dialog'
 import { MiniProgramDialog } from '@/components/landing/MiniProgramEntry'
 import { ResizableEditorSidebar } from '@/ui/resizable-editor-sidebar'
+import { ResumeActionWorkspace } from '@/components/blocks/resume-action-dock'
 
 const AI_CACHE_KEYS: Record<string, string> = {
   ai: 'wizard_pending_resume',
@@ -1083,7 +1084,8 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
 
       <AiSectionProvider requireVip={requireAi}>
       <main className="flex-1 flex overflow-hidden relative z-10">
-        <div data-editor-canvas className={`min-w-0 flex-1 overflow-auto p-3 sm:p-6 xl:p-8 custom-scrollbar bg-slate-50/30 ${activePanel ? 'hidden md:block print:block' : ''}`}>
+        <ResumeActionWorkspace className={activePanel ? 'hidden md:flex print:block' : ''}>
+        <div data-editor-canvas className="min-h-0 min-w-0 flex-1 overflow-auto p-3 sm:p-6 xl:p-8 custom-scrollbar bg-slate-50/30">
           <div className="mx-auto max-w-[210mm] md:w-[210mm] md:max-xl:[zoom:0.8] print:[zoom:1]">
             <div
               ref={printRef}
@@ -1123,6 +1125,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
             </div>
           </div>
         </div>
+        </ResumeActionWorkspace>
         <ResizableEditorSidebar open={Boolean(activePanel)} className={activePanel ? 'flex flex-col' : 'hidden'}>
           <EditorWorkspaceTabs activePanel={activePanel} onChange={setActivePanel} />
           <div className={activePanel === 'ai' ? 'min-h-0 flex-1' : 'hidden'}><EditorAiPanel resumeId={resumeId} /></div>

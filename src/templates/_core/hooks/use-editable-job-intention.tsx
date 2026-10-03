@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { ReactElement } from 'react'
+import type { ReactElement, MouseEvent } from 'react'
 import type { JobIntention } from '@/entities/user/job-intention'
 import JobIntentionModal from '@/components/modals/job-intention-modal'
 import { useAppStore } from '@/state/store'
@@ -33,7 +33,7 @@ export interface EditableJobIntention {
   /** Visible (non-empty) fields in canonical display order, incl. custom fields. */
   readonly fields: readonly JobIntentionFieldDef[]
   readonly sectionTitle: string
-  readonly openEditModal: () => void
+  readonly openEditModal: (field?: string | MouseEvent<HTMLElement>) => void
   readonly deleteField: (key: string) => void
   readonly hoveredField: string | null
   readonly setHoveredField: (key: string | null) => void
@@ -59,6 +59,8 @@ export function useEditableJobIntention(
   const updateJobIntention = useAppStore((s) => s.updateJobIntention)
   const language = useAppStore((s) => s.resume.language)
   const [showModal, setShowModal] = useState<boolean>(false)
+  const [initialField, setInitialField] = useState<string>()
+  const readOnly = useAppStore((s) => s.readOnly)
   const [hoveredField, setHoveredField] = useState<string | null>(null)
   const ji: JobIntention | null = jobIntention ?? null
   const fields: JobIntentionFieldDef[] = []
@@ -91,6 +93,7 @@ export function useEditableJobIntention(
     ? (
       <JobIntentionModal
         jobIntention={ji}
+        initialField={initialField}
         onClose={() => setShowModal(false)}
         onSave={updateJobIntention}
       />
@@ -100,7 +103,12 @@ export function useEditableJobIntention(
     jobIntention: ji,
     fields,
     sectionTitle: getJobIntentionSectionTitle(language),
-    openEditModal: () => setShowModal(true),
+    openEditModal: (field) => {
+      if (readOnly) return
+      // Older templates pass their click event; a hovered field identifies the intent.
+      setInitialField(typeof field === 'string' ? field : hoveredField ?? undefined)
+      setShowModal(true)
+    },
     deleteField,
     hoveredField,
     setHoveredField,

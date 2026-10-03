@@ -5,6 +5,8 @@ import { toPng } from 'html-to-image'
 import type { RefObject } from 'react'
 import { sanitizeExportFileName } from '@/lib/export-file-name'
 
+const imageExportStates = new WeakMap<HTMLElement, { count: number; previous: string | null }>()
+
 interface ExportImageOptions {
   readonly fileName?: string
   readonly pixelRatio?: number
@@ -63,7 +65,23 @@ export async function exportImage<T extends HTMLElement>(contentRef: RefObject<T
   if (Object.keys(cloneStyle).length > 0) {
     toPngOptions.style = cloneStyle
   }
-  const dataUrl: string = await toPng((node as unknown) as HTMLElement, toPngOptions)
+  // html-to-image copies computed screen styles. Suspend editor decoration for
+  // this capture, then restore it even when font/image loading fails.
+  const exportState = imageExportStates.get(node) ?? { count: 0, previous: node.getAttribute('data-resume-exporting') }
+  exportState.count += 1
+  imageExportStates.set(node, exportState)
+  let dataUrl: string
+  node.setAttribute('data-resume-exporting', 'true')
+  try {
+    dataUrl = await toPng((node as unknown) as HTMLElement, toPngOptions)
+  } finally {
+    exportState.count -= 1
+    if (exportState.count === 0) {
+      if (exportState.previous === null) node.removeAttribute('data-resume-exporting')
+      else node.setAttribute('data-resume-exporting', exportState.previous)
+      imageExportStates.delete(node)
+    }
+  }
 
   if (options?.returnBase64) {
     return dataUrl

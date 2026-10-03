@@ -2,7 +2,7 @@
  * EditableFieldWrapper - A reusable wrapper for inline text field editing.
  * Handles field-level editing like company name, position, dates, etc.
  */
-import { useState, useRef, useEffect, type ReactElement, type KeyboardEvent } from 'react'
+import { useState, useRef, useEffect, useLayoutEffect, type ReactElement, type KeyboardEvent } from 'react'
 import { useAppStore } from '@/state/store'
 import type { ResumeBlock } from '@/entities/blocks/resume-block'
 import { hasMeaningfulText } from '@/lib/resume-placeholders'
@@ -63,6 +63,10 @@ export default function EditableFieldWrapper(props: EditableFieldWrapperProps): 
   const [isEditing, setIsEditing] = useState(false)
   const [tempValue, setTempValue] = useState(props.value || '')
   const inputRef = useRef<HTMLInputElement>(null)
+  const fieldRef = useRef<HTMLSpanElement>(null)
+  const composing = useRef(false)
+  const finished = useRef(false)
+  const returnFocus = useRef(false)
   const setResume = useAppStore((s) => s.setResume)
   const readOnly = useAppStore((s) => s.readOnly)
 
@@ -70,6 +74,13 @@ export default function EditableFieldWrapper(props: EditableFieldWrapperProps): 
     if (isEditing && inputRef.current) {
       inputRef.current.focus()
       inputRef.current.select()
+    }
+  }, [isEditing])
+
+  useLayoutEffect(() => {
+    if (!isEditing && returnFocus.current) {
+      returnFocus.current = false
+      fieldRef.current?.focus({ preventScroll: true })
     }
   }, [isEditing])
 
@@ -83,11 +94,15 @@ export default function EditableFieldWrapper(props: EditableFieldWrapperProps): 
   }, [props.value])
 
   function startEditing(): void {
+    finished.current = false
+    composing.current = false
     setTempValue(props.value || '')
     setIsEditing(true)
   }
 
   function saveEdit(): void {
+    if (finished.current) return
+    finished.current = true
     if (tempValue.trim() !== (props.value || '')) {
       setResume((draft) => {
         for (const section of draft.sections) {
@@ -105,16 +120,21 @@ export default function EditableFieldWrapper(props: EditableFieldWrapperProps): 
   }
 
   function cancelEdit(): void {
+    finished.current = true
     setTempValue(props.value || '')
     setIsEditing(false)
   }
 
   function handleKeyDown(e: KeyboardEvent<HTMLInputElement>): void {
+    e.stopPropagation()
+    if (composing.current || e.nativeEvent.isComposing || e.keyCode === 229) return
     if (e.key === 'Enter') {
       e.preventDefault()
+      returnFocus.current = true
       saveEdit()
     } else if (e.key === 'Escape') {
       e.preventDefault()
+      returnFocus.current = true
       cancelEdit()
     }
   }
@@ -136,13 +156,18 @@ export default function EditableFieldWrapper(props: EditableFieldWrapperProps): 
   if (isEditing) {
     return (
       <input
+        data-resume-edit-field="true"
+        data-resume-field-name={props.fieldName}
         ref={inputRef}
         type="text"
         value={tempValue}
         onChange={(e): void => setTempValue(e.target.value)}
         onBlur={saveEdit}
+        onCompositionStart={() => { composing.current = true }}
+        onCompositionEnd={() => { composing.current = false }}
         onKeyDown={handleKeyDown}
-        className={`${props.className || ''} bg-blue-50 text-slate-900 rounded px-1 leading-tight outline-none min-w-[50px] w-full ring-1 ring-blue-500`}
+        aria-label={props.title || placeholder}
+        className={`${props.className || ''} bg-muted text-foreground rounded px-1 leading-tight outline-none min-w-[50px] w-full ring-1 ring-ring`}
         placeholder={placeholder}
       />
     )
@@ -153,8 +178,14 @@ export default function EditableFieldWrapper(props: EditableFieldWrapperProps): 
   if (!hasValue && emptyMode === 'hover') {
     return (
       <span
+        ref={fieldRef}
+        data-resume-edit-field="true"
+        data-resume-field-name={props.fieldName}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); startEditing() } }}
         onClick={startEditing}
-        className={`${props.className || ''} hidden cursor-text rounded border border-dashed border-slate-300 px-1 leading-tight text-slate-400 transition-colors hover:bg-gray-100 hover:!text-slate-900 group-hover/block:inline-flex group-hover/section:inline-flex group-hover/section-edit:inline-flex print:hidden`}
+        className={`${props.className || ''} hidden cursor-text rounded border border-dashed border-slate-300 px-1 leading-tight text-slate-400 transition-colors group-hover/block:inline-flex group-focus-within/block:inline-flex group-hover/section:inline-flex group-hover/section-edit:inline-flex print:hidden`}
         title={props.title || `点击编辑${placeholder}`}
       >
         {placeholder}
@@ -164,8 +195,14 @@ export default function EditableFieldWrapper(props: EditableFieldWrapperProps): 
 
   return (
     <span
+      ref={fieldRef}
+      data-resume-edit-field="true"
+      data-resume-field-name={props.fieldName}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); startEditing() } }}
       onClick={startEditing}
-      className={`${props.className || ''} cursor-text hover:bg-gray-100 hover:!text-slate-900 rounded px-1 leading-tight transition-colors border border-transparent`}
+      className={`${props.className || ''} cursor-text rounded px-1 leading-tight transition-colors border border-transparent`}
       title={props.title || `点击编辑${placeholder}`}
     >
       {displayValue || placeholder}

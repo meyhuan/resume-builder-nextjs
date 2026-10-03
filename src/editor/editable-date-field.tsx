@@ -122,13 +122,14 @@ export default function EditableDateField(props: EditableDateFieldProps): ReactE
       <Popover.Trigger asChild>
         <button
           type="button"
+          data-resume-edit-field="true"
           title={emptyLabel}
           className={cn(
-            'inline-flex items-center gap-1 px-1 rounded hover:bg-gray-100 hover:!text-slate-900 transition-colors',
+            'inline-flex items-center gap-1 px-1 rounded transition-colors',
             !hasValue && emptyMode === 'hover'
               ? open
                 ? 'inline-flex border border-dashed border-slate-300 text-slate-400 print:hidden'
-                : 'hidden border border-dashed border-slate-300 text-slate-400 group-hover/block:inline-flex group-hover/section:inline-flex group-hover/section-edit:inline-flex print:hidden'
+                : 'hidden border border-dashed border-slate-300 text-slate-400 group-hover/block:inline-flex group-focus-within/block:inline-flex group-hover/section:inline-flex group-hover/section-edit:inline-flex print:hidden'
               : '',
             className
           )}

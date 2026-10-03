@@ -471,7 +471,7 @@ function XingtanSection(props: SectionProps): ReactElement {
         onCommitTitle={canEditTitle ? onCommitTitle : undefined}
       />
 
-      <XingtanHoverActions
+      {canEditTitle && <XingtanHoverActions
         visible={isHovered}
         canAdd={!isTextOnly}
         onAdd={onAddBlock}
@@ -479,7 +479,7 @@ function XingtanSection(props: SectionProps): ReactElement {
         dragRef={dragRef}
         dragAttrs={dragAttrs}
         dragListeners={dragListeners}
-      />
+      />}
 
       <div style={{ paddingLeft: 36 }}>
         <BlockList section={editable} themeColor={themeColor} spacingScale={spacingScale} />
@@ -588,6 +588,7 @@ function XingtanHoverActions(props: HoverActionsProps): ReactElement {
   const { visible, canAdd, onAdd, onDelete, dragRef, dragAttrs, dragListeners } = props
   return (
     <div
+      data-resume-section-actions="true" data-export-hide="true" data-visible={visible || undefined}
       className="flex items-center gap-1 print:hidden"
       style={{
         position: 'absolute',
@@ -597,8 +598,6 @@ function XingtanHoverActions(props: HoverActionsProps): ReactElement {
         border: `1px solid ${palette.amber}`,
         borderRadius: 2,
         padding: '2px 4px',
-        opacity: visible ? 1 : 0,
-        pointerEvents: visible ? 'auto' : 'none',
         transition: 'opacity 120ms ease',
         zIndex: 5,
       }}
@@ -632,7 +631,8 @@ function XingtanIconBtn(p: { label: string; onClick: () => void; danger?: boolea
         fontSize: 14,
         color: p.danger ? '#dc2626' : palette.amber,
       }}
-      title={p.label}
+      title={p.danger ? '删除' : '添加'}
+      aria-label={p.danger ? '删除模块' : '添加条目'}
     >
       {p.label}
     </button>

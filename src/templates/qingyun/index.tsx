@@ -521,7 +521,7 @@ function QingyunSection(props: SectionProps): ReactElement {
         <span style={{ flex: 1, height: 1, backgroundColor: palette.rule }} />
       </div>
       {/* Hover actions — absolutely positioned so layout never shifts */}
-      <QingyunHoverActions
+      {canEditTitle && <QingyunHoverActions
         visible={isHovered}
         canAdd={!isTextOnly}
         onAdd={onAddBlock}
@@ -529,7 +529,7 @@ function QingyunSection(props: SectionProps): ReactElement {
         dragRef={dragRef}
         dragAttrs={dragAttrs}
         dragListeners={dragListeners}
-      />
+      />}
 
       {/* Block list */}
       <div style={{ paddingLeft: 14 }}>
@@ -564,6 +564,7 @@ function QingyunHoverActions(props: HoverActionsProps): ReactElement {
   const { visible, canAdd, onAdd, onDelete, dragRef, dragAttrs, dragListeners } = props
   return (
     <div
+      data-resume-section-actions="true" data-export-hide="true" data-visible={visible || undefined}
       className="flex items-center gap-1 print:hidden"
       style={{
         position: 'absolute',
@@ -573,8 +574,6 @@ function QingyunHoverActions(props: HoverActionsProps): ReactElement {
         border: `1px solid ${palette.sky}`,
         borderRadius: 4,
         padding: '2px 4px',
-        opacity: visible ? 1 : 0,
-        pointerEvents: visible ? 'auto' : 'none',
         transition: 'opacity 120ms ease',
         zIndex: 5,
       }}
@@ -608,7 +607,8 @@ function QingyunIconBtn(p: { label: string; onClick: () => void; danger?: boolea
         fontSize: 14,
         color: p.danger ? '#dc2626' : palette.sky,
       }}
-      title={p.label}
+      title={p.danger ? '删除' : '添加'}
+      aria-label={p.danger ? '删除模块' : '添加条目'}
     >
       {p.label}
     </button>

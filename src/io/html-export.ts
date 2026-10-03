@@ -20,6 +20,12 @@ export function buildResumeHtml(element: HTMLElement, options?: ResumeHtmlOption
   const styles: string = `${buildResumeFontFaceCss(RESUME_FONT_BASE_URL)}\n${collectStyleContent()}`
   const exportElement = element.cloneNode(true) as HTMLElement
   exportElement.querySelectorAll('[data-export-hide="true"]').forEach((node) => node.remove())
+  for (const node of [exportElement, ...exportElement.querySelectorAll('[data-resume-edit-region], [data-resume-edit-field]')]) {
+    if (node.hasAttribute('data-resume-edit-region') || node.hasAttribute('data-resume-edit-field')) node.removeAttribute('tabindex')
+    for (const attribute of ['data-resume-edit-region', 'data-resume-edit-field', 'data-resume-edit-state', 'data-resume-edit-dragging']) {
+      node.removeAttribute(attribute)
+    }
+  }
   const markup: string = exportElement.outerHTML
   const isOnePage: boolean = markup.includes('data-one-page="true"')
   const isBleed: boolean = markup.includes('data-bleed="true"')

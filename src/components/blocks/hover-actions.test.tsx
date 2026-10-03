@@ -1,0 +1,405 @@
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { StrictMode } from 'react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import BlockWrapper from '@/components/blocks/block-wrapper';
+import SectionHeader from '@/components/sections/section-header';
+import EditableFieldWrapper from '@/editor/editable-field-wrapper';
+import { EditableText } from '@/templates/_core/primitives/editable-text';
+import { SectionTitleText } from '@/components/sections/section-title-text';
+import { ResumeActionWorkspace } from '@/components/blocks/resume-action-dock';
+import InlineEditor from '@/editor/inline-editor';
+
+const store = vi.hoisted(() => ({ readOnly: false, setResume: vi.fn() }));
+
+// Only external store/telemetry dependencies are replaced. Actual hover owners,
+// action toolbar, buttons, and section-title component run unchanged.
+vi.mock('@/state/store', () => ({
+  useAppStore: (selector: (state: typeof store) => unknown) => selector(store),
+}));
+vi.mock('@/lib/ai/unified/use-impression', () => ({ useAiImpression: () => () => {} }));
+vi.mock('@/lib/ai/unified/analytics', () => ({ trackAssistant: vi.fn() }));
+
+describe('contextual row actions', () => {
+  function mount(disabled = false) {
+    const firstDelete = vi.fn();
+    const secondDelete = vi.fn();
+    const view = render(<ResumeActionWorkspace>
+      <section data-resume-edit-region="section"><h2>项目经历</h2>
+        <BlockWrapper blockType="内容" onDelete={firstDelete} disableHover={disabled}><p>第一条正文</p></BlockWrapper>
+        <BlockWrapper blockType="内容" onDelete={secondDelete}><p>第二条正文</p></BlockWrapper>
+      </section>
+    </ResumeActionWorkspace>);
+    return { view, firstDelete, secondDelete, first: screen.getByText('第一条正文'), second: screen.getByText('第二条正文') };
+  }
+
+  it('keeps actions inside their owner and reachable across the hover bridge', () => {
+    const { first, firstDelete, secondDelete } = mount();
+    move(document.body, first);
+    fireEvent.click(first);
+    const action = screen.getByRole('button', { name: '删除' });
+    expect(first.closest('[data-resume-edit-region="block"]')?.contains(action)).toBe(true);
+    move(first, action);
+    advance(500);
+    fireEvent.click(action);
+    expect(firstDelete).toHaveBeenCalledOnce();
+    expect(secondDelete).not.toHaveBeenCalled();
+  });
+
+  it('shows the hovered row actions and invokes that row callback', () => {
+    const { first, second, firstDelete, secondDelete } = mount();
+    move(document.body, first);
+    fireEvent.click(first);
+    move(first, second);
+    fireEvent.click(second);
+    advance(250);
+    expect(screen.getAllByRole('button', { name: '删除' })).toHaveLength(1);
+    expect(second.closest('[data-resume-edit-region="block"]')?.contains(screen.getByRole('button', { name: '删除' }))).toBe(true);
+    fireEvent.click(screen.getByRole('button', { name: '删除' }));
+    expect(firstDelete).not.toHaveBeenCalled();
+    expect(secondDelete).toHaveBeenCalledOnce();
+    move(second, document.body);
+    advance(250);
+    expect(screen.queryByRole('button', { name: '删除' })).toBeNull();
+  });
+
+  it('supports Alt+F10 to enter local actions and Escape to return to the owner', () => {
+    const { first } = mount();
+    const block = first.closest('[data-resume-edit-region="block"]') as HTMLElement;
+    act(() => block.focus());
+    fireEvent.keyDown(block, { key: 'F10', altKey: true });
+    const action = screen.getByRole('button', { name: '删除' });
+    expect(document.activeElement).toBe(action);
+    fireEvent.keyDown(action, { key: 'Escape' });
+    expect(document.activeElement).toBe(block);
+  });
+
+  it('removes actions when the owner unmounts', () => {
+    const { first, view } = mount();
+    move(document.body, first);
+    fireEvent.click(first);
+    view.rerender(<ResumeActionWorkspace><p>条目已删除</p></ResumeActionWorkspace>);
+    expect(screen.queryByRole('button', { name: '删除' })).toBeNull();
+  });
+
+  it('retains local ownership when a keyed row moves', async () => {
+    const draw = (reversed: boolean) => <StrictMode><ResumeActionWorkspace>
+      <section data-resume-edit-region="section"><h2>项目经历</h2>
+        {(reversed ? ['second', 'first'] : ['first', 'second']).map((key) =>
+          <BlockWrapper key={key} blockType="项目" onDelete={() => {}}
+            onMoveDown={key === 'first' && !reversed ? () => view.rerender(draw(true)) : undefined}
+            onMoveUp={key === 'first' && reversed ? () => {} : undefined}>
+            <p>{key}</p>
+          </BlockWrapper>)}
+      </section>
+    </ResumeActionWorkspace></StrictMode>;
+    const view = render(draw(false));
+    move(document.body, screen.getByText('first'));
+    fireEvent.click(screen.getByText('first'));
+    fireEvent.click(screen.getByRole('button', { name: '下移' }));
+    advance(0);
+    await act(async () => { await Promise.resolve(); });
+    expect(screen.getByText('first').closest('[data-resume-edit-region="block"]')?.contains(screen.getByRole('button', { name: '上移' }))).toBe(true);
+  });
+
+  it('hides row actions during rich editing and never reserves fixed bars', () => {
+    const { first, firstDelete } = mount(true);
+    move(document.body, first);
+    fireEvent.click(first);
+    expect(screen.queryByRole('button', { name: '删除' })).toBeNull();
+    expect(firstDelete).not.toHaveBeenCalled();
+    expect(document.querySelector('[data-resume-format-dock]')).toBeNull();
+    expect(document.querySelector('[data-resume-action-dock]')).toBeNull();
+  });
+
+  it('has no editing dock in read-only mode', () => {
+    store.readOnly = true;
+    const { first } = mount();
+    fireEvent.click(first);
+    expect(document.querySelector('[data-resume-action-dock]')).toBeNull();
+    expect(document.querySelector('[data-resume-format-dock]')).toBeNull();
+  });
+});
+
+it('passes the active paragraph AI action through its owner and exits editing first', () => {
+  vi.stubGlobal('ResizeObserver', class { observe() {} disconnect() {} });
+  const exit = vi.fn();
+  const polish = vi.fn();
+  const generate = vi.fn();
+  const otherPolish = vi.fn();
+  try {
+    render(<ResumeActionWorkspace>
+      <BlockWrapper blockType="项目" onPolish={polish} onGenerate={generate} disableHover>
+        <InlineEditor initialHtml="<p>当前项目正文</p>" floatingToolbar onChange={() => {}} onClickOutside={exit} />
+      </BlockWrapper>
+      <BlockWrapper blockType="项目" onPolish={otherPolish}><p>其他项目正文</p></BlockWrapper>
+    </ResumeActionWorkspace>);
+    fireEvent.click(screen.getByLabelText('AI润色'));
+    expect(exit).toHaveBeenCalledOnce();
+    expect(polish).toHaveBeenCalledOnce();
+    expect(exit.mock.invocationCallOrder[0]).toBeLessThan(polish.mock.invocationCallOrder[0]);
+    expect(generate).not.toHaveBeenCalled();
+    expect(otherPolish).not.toHaveBeenCalled();
+  } finally { cleanup(); vi.unstubAllGlobals(); }
+});
+
+it('lets a module title contain spaces and commits Enter without reopening its editor', () => {
+  const commit = vi.fn();
+  render(<SectionTitleText value="教育经历" onCommit={commit} />);
+  fireEvent.keyDown(screen.getByRole('heading'), { key: 'Enter' });
+  const input = screen.getByRole('textbox');
+  fireEvent.change(input, { target: { value: '教育 与培训' } });
+  fireEvent.keyDown(input, { key: ' ' });
+  expect((input as HTMLInputElement).value).toBe('教育 与培训');
+  fireEvent.keyDown(input, { key: 'Enter' });
+  expect(commit).toHaveBeenCalledOnce();
+  expect(commit).toHaveBeenCalledWith('教育 与培训');
+  expect(screen.queryByRole('textbox')).toBeNull();
+});
+
+beforeEach(() => { store.readOnly = false; vi.useFakeTimers(); });
+afterEach(() => {
+  cleanup();
+  vi.clearAllTimers();
+  vi.useRealTimers();
+});
+
+function advance(milliseconds: number): void {
+  act(() => vi.advanceTimersByTime(milliseconds));
+}
+
+function move(from: Element, to: Element): void {
+  // Native over/out plus relatedTarget exercise React's enter/leave plugin.
+  // JSDOM has no physical pointer or CSS hit testing. Browser QA covers those.
+  fireEvent.mouseOut(from, { relatedTarget: to });
+  fireEvent.mouseOver(to, { relatedTarget: from });
+}
+
+const targets = [
+  {
+    name: 'BlockWrapper (used by current qingning template)',
+    buttonName: '添加教育经历',
+    mount(onAdd: () => void) {
+      const view = render(<BlockWrapper blockType="教育经历" onAdd={onAdd} onDelete={() => {}}>
+        <p data-testid="content">教育经历正文</p>
+      </BlockWrapper>);
+      return { view, content: screen.getByTestId('content') };
+    },
+  },
+  {
+    name: 'SectionHeader (legacy shared component)',
+    buttonName: '添加',
+    mount(onAdd: () => void) {
+      const view = render(<SectionHeader sectionId={'hover-audit' as never} title="教育经历"
+        themeColor="#7c3aed" onAdd={onAdd} onDelete={() => {}} />);
+      return { view, content: screen.getByRole('heading', { name: '教育经历' }) };
+    },
+  },
+];
+
+for (const target of targets) {
+  describe(target.name, () => {
+    function start() {
+      const onAdd = vi.fn();
+      const { content } = target.mount(onAdd);
+      move(document.body, content);
+      const button = screen.getByRole('button', { name: target.buttonName });
+      return { content, button, onAdd };
+    }
+
+    it('shows a reachable action on entry, and clicking it calls the handler once', () => {
+      const { content, button, onAdd } = start();
+      move(content, button);
+      advance(250);
+      fireEvent.click(screen.getByRole('button', { name: target.buttonName }));
+      expect(onAdd).toHaveBeenCalledTimes(1);
+    });
+
+    it('keeps actions when moving between toolbar buttons', () => {
+      const { content, button } = start();
+      move(content, button);
+      move(button, screen.getByRole('button', { name: '删除' }));
+      advance(250);
+      expect(screen.queryByRole('button', { name: target.buttonName })).not.toBeNull();
+    });
+
+    it('hides actions 200 ms after leaving the content for outside', () => {
+      const { content } = start();
+      move(content, document.body);
+      advance(199);
+      expect(screen.queryByRole('button', { name: target.buttonName })).not.toBeNull();
+      advance(1);
+      expect(screen.queryByRole('button', { name: target.buttonName })).toBeNull();
+    });
+
+    it('cancels a single leave timer when returning to content after 100 ms', () => {
+      const { content } = start();
+      move(content, document.body);
+      advance(100);
+      move(document.body, content);
+      advance(150);
+      expect(screen.queryByRole('button', { name: target.buttonName })).not.toBeNull();
+    });
+
+    it('keeps actions after toolbar -> outside -> button within 100 ms', () => {
+      const { content, button } = start();
+      move(content, button);
+      move(button, document.body);
+      advance(100);
+      move(document.body, button);
+      advance(150);
+      expect(screen.queryByRole('button', { name: target.buttonName })).not.toBeNull();
+    });
+
+    it('keeps actions after toolbar -> content without leaving the hover owner', () => {
+      const { content, button } = start();
+      move(content, button);
+      move(button, content);
+      advance(250);
+      expect(screen.queryByRole('button', { name: target.buttonName })).not.toBeNull();
+    });
+
+    it('owns only one pending hide timer when leaving a toolbar descendant', () => {
+      const { content, button } = start();
+      move(content, button);
+      move(button, document.body);
+      expect(vi.getTimerCount()).toBe(1);
+    });
+
+    it('keeps focused actions when the pointer leaves, then hides on focus exit', () => {
+      const { content, button } = start();
+      move(content, button);
+      act(() => button.focus());
+      move(button, document.body);
+      advance(700);
+      expect(screen.queryByRole('button', { name: target.buttonName })).not.toBeNull();
+      fireEvent.blur(button, { relatedTarget: document.body });
+      expect(screen.queryByRole('button', { name: target.buttonName })).toBeNull();
+    });
+
+    it('cancels pending hide timers on unmount', () => {
+      const { content, view } = target.mount(vi.fn());
+      move(document.body, content);
+      move(content, document.body);
+      expect(vi.getTimerCount()).toBe(1);
+      view.unmount();
+      expect(vi.getTimerCount()).toBe(0);
+    });
+
+    it('does not expose actions in a read-only preview', () => {
+      store.readOnly = true;
+      const { content } = target.mount(vi.fn());
+      move(document.body, content);
+      expect(screen.queryByRole('button', { name: target.buttonName })).toBeNull();
+    });
+  });
+}
+
+it('removes actions and clears pending work while inline editing disables them', () => {
+  const view = render(<BlockWrapper blockType="内容" onAdd={() => {}}><p>正文</p></BlockWrapper>);
+  const content = screen.getByText('正文');
+  move(document.body, content);
+  move(content, document.body);
+  view.rerender(<BlockWrapper blockType="内容" onAdd={() => {}} disableHover><p>正文</p></BlockWrapper>);
+  expect(screen.queryByRole('button', { name: '添加内容' })).toBeNull();
+  expect(vi.getTimerCount()).toBe(0);
+  expect(view.container.querySelector('[data-resume-edit-state="editing"]')).not.toBeNull();
+});
+
+it('opens a structured field from keyboard focus and returns after Escape', () => {
+  render(<EditableFieldWrapper blockId="block" fieldName="school" value="江城大学" onUpdate={() => {}} />);
+  const field = screen.getByRole('button', { name: '江城大学' });
+  fireEvent.keyDown(field, { key: 'Enter' });
+  expect(screen.getByRole('textbox', { name: '学校名称' })).toBe(document.activeElement);
+  fireEvent.keyDown(document.activeElement!, { key: 'Escape' });
+  expect(screen.getByRole('button', { name: '江城大学' })).toBe(document.activeElement);
+});
+
+it('does not submit a structured field while choosing Chinese text, then commits once', () => {
+  store.setResume.mockClear();
+  render(<EditableFieldWrapper blockId="block" fieldName="school" value="江城大学" onUpdate={() => {}} />);
+  fireEvent.click(screen.getByRole('button', { name: '江城大学' }));
+  const input = screen.getByRole('textbox');
+  fireEvent.compositionStart(input);
+  fireEvent.change(input, { target: { value: '北京大学' } });
+  fireEvent.keyDown(input, { key: 'Enter', isComposing: true });
+  expect(input).toBe(document.activeElement);
+  expect(store.setResume).not.toHaveBeenCalled();
+  fireEvent.compositionEnd(input);
+  fireEvent.keyDown(input, { key: 'Enter', keyCode: 229 });
+  expect(store.setResume).not.toHaveBeenCalled();
+  fireEvent.keyDown(input, { key: 'Enter' });
+  expect(store.setResume).toHaveBeenCalledOnce();
+  expect(document.activeElement).toBe(screen.getByRole('button', { name: '江城大学' }));
+});
+
+it('cancels a name draft without committing it and restores the original focus', () => {
+  const onCommit = vi.fn();
+  render(<EditableText value="李小满" onCommit={onCommit} />);
+  fireEvent.click(screen.getByText('李小满'));
+  const input = screen.getByRole('textbox');
+  fireEvent.change(input, { target: { value: '未保存的姓名' } });
+  fireEvent.keyDown(input, { key: 'Escape' });
+  expect(onCommit).not.toHaveBeenCalled();
+  expect(screen.getByText('李小满')).toBe(document.activeElement);
+});
+
+it('keeps a composing name editable and commits Enter once after composition ends', () => {
+  const onCommit = vi.fn();
+  const parentKey = vi.fn();
+  render(<div onKeyDown={parentKey}><EditableText value="李小满" onCommit={onCommit} /></div>);
+  fireEvent.click(screen.getByText('李小满'));
+  const input = screen.getByRole('textbox');
+  fireEvent.compositionStart(input);
+  fireEvent.change(input, { target: { value: '李明' } });
+  fireEvent.keyDown(input, { key: 'Enter' });
+  expect(onCommit).not.toHaveBeenCalled();
+  fireEvent.compositionEnd(input);
+  fireEvent.keyDown(input, { key: 'Enter' });
+  expect(onCommit).toHaveBeenCalledExactlyOnceWith('李明');
+  expect(screen.getByText('李小满')).toBe(document.activeElement);
+  expect(parentKey).not.toHaveBeenCalled();
+});
+
+it('restores a module title after Escape and preserves its uncommitted text', () => {
+  const commit = vi.fn();
+  render(<SectionTitleText value="教育经历" onCommit={commit} />);
+  fireEvent.click(screen.getByRole('heading'));
+  fireEvent.change(screen.getByRole('textbox'), { target: { value: '测试' } });
+  fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Escape' });
+  expect(commit).not.toHaveBeenCalled();
+  expect(screen.getByRole('heading', { name: '教育经历' })).toBe(document.activeElement);
+});
+
+it('identifies a selected project by name and updates it when the title changes', async () => {
+  const draw = (name: string) => <ResumeActionWorkspace><section data-resume-edit-region="section"><h2>项目经历</h2>
+    <BlockWrapper blockType="项目" onDelete={() => {}}><span data-resume-field-name="name">{name}</span></BlockWrapper>
+  </section></ResumeActionWorkspace>;
+  const view = render(draw('校园社交应用'));
+  move(document.body, screen.getByText('校园社交应用'));
+  fireEvent.click(screen.getByText('校园社交应用'));
+  expect(screen.getByRole('group', { name: '项目经历 · 校园社交应用操作' })).not.toBeNull();
+  view.rerender(draw('简历优化助手'));
+  await act(async () => { await Promise.resolve(); });
+  expect(screen.getByRole('group', { name: '项目经历 · 简历优化助手操作' })).not.toBeNull();
+});
+
+it('opens a template name from the keyboard and commits once', () => {
+  const onCommit = vi.fn();
+  render(<EditableText value="李小满" onCommit={onCommit} />);
+  fireEvent.keyDown(screen.getByText('李小满'), { key: 'Enter' });
+  const input = screen.getByRole('textbox');
+  expect(input).toBe(document.activeElement);
+  fireEvent.change(input, { target: { value: '李明' } });
+  fireEvent.blur(input);
+  expect(onCommit).toHaveBeenCalledExactlyOnceWith('李明');
+});
+
+it('keeps a read-only template name free of editing affordances', () => {
+  store.readOnly = true;
+  const onCommit = vi.fn();
+  const view = render(<EditableText value="李小满" onCommit={onCommit} />);
+  fireEvent.click(screen.getByText('李小满'));
+  expect(screen.queryByRole('textbox')).toBeNull();
+  expect(view.container.querySelector('[data-resume-edit-field]')).toBeNull();
+  expect(onCommit).not.toHaveBeenCalled();
+});

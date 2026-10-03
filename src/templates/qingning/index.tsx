@@ -288,9 +288,20 @@ function JobField({
   field: JobIntentionFieldDef;
   job: EditableJobIntention;
 }): ReactElement {
+  const readOnly = useAppStore((state) => state.readOnly);
   return (
     <span
       className="relative"
+      data-resume-edit-field={readOnly ? undefined : 'true'}
+      data-template-job-intention-key={field.key}
+      role={readOnly ? undefined : 'button'}
+      tabIndex={readOnly ? undefined : 0}
+      onClick={(event) => { if (!readOnly) { event.stopPropagation(); job.openEditModal(field.key); } }}
+      onKeyDown={(event) => {
+        if (!readOnly && (event.key === 'Enter' || event.key === ' ')) {
+          event.preventDefault(); event.stopPropagation(); job.openEditModal(field.key);
+        }
+      }}
       onMouseEnter={() => job.setHoveredField(field.key)}
       onMouseLeave={() => job.setHoveredField(null)}
       style={{ maxWidth: "100%", overflowWrap: "anywhere" }}
@@ -356,12 +367,11 @@ function QingningSection({
         />
         <span className="qingning-rule" aria-hidden />
       </div>
-      <div
+      {edit.canEditTitle && <div
+        data-resume-section-actions="true"
+        data-export-hide="true"
+        data-visible={edit.isHovered || undefined}
         className="absolute right-0 top-0 flex gap-1 rounded border bg-white p-1 shadow-sm print:hidden"
-        style={{
-          opacity: edit.isHovered ? 1 : 0,
-          pointerEvents: edit.isHovered ? "auto" : "none",
-        }}
       >
         <button
           type="button"
@@ -380,7 +390,7 @@ function QingningSection({
         <button type="button" title="删除" onClick={edit.onRequestDelete}>
           <Trash2 size={16} />
         </button>
-      </div>
+      </div>}
       <BlockList
         section={edit}
         themeColor={theme.primaryColor}

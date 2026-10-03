@@ -50,7 +50,9 @@ function EditableSortableSection(props: SortableSectionWrapperProps): ReactEleme
   };
 
   return (
-    <div ref={setNodeRef} style={style} className="relative">
+    <div ref={setNodeRef} style={style} className="relative"
+      data-resume-edit-region="section" data-resume-edit-dragging={isDragging || undefined}
+      role="group" aria-label="简历模块" tabIndex={0}>
       {isDragging ? (
         <div 
           className="bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center"

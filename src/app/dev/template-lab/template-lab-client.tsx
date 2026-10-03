@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useEffect, useLayoutEffect, useMemo, useState, type ReactElement } from 'react'
+import { Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactElement } from 'react'
 import { useSearchParams } from 'next/navigation'
 import AiSectionProvider from '@/components/ai-section/ai-section-provider'
 import { useAppStore } from '@/state/store'
@@ -43,7 +43,26 @@ export default function TemplateLabClient(): ReactElement {
   const labKey = `${templateId}:${fixtureId}:${themeId}:${viewport}:${spacingOverride}:${hideJobIntention}`
   const [readyKey, setReadyKey] = useState<string | null>(null)
   const ready = readyKey === labKey
-  const mobileScale = 0.46
+  const stageRef = useRef<HTMLDivElement>(null)
+  const contentRef = useRef<HTMLDivElement>(null)
+  const [mobileWidth, setMobileWidth] = useState(0)
+  const [contentHeight, setContentHeight] = useState(0)
+  const mobileScale = mobileWidth / A4_WIDTH_PX
+
+  useLayoutEffect(() => {
+    if (viewport !== 'mobile' || !stageRef.current || !contentRef.current) return
+    const stage = stageRef.current
+    const content = contentRef.current
+    const update = (): void => {
+      setMobileWidth(Math.min(stage.clientWidth, A4_WIDTH_PX * 0.46))
+      setContentHeight(content.offsetHeight)
+    }
+    update()
+    const observer = new ResizeObserver(update)
+    observer.observe(stage)
+    observer.observe(content)
+    return (): void => observer.disconnect()
+  }, [viewport, templateId])
 
   useLayoutEffect(() => {
     setReadOnly(true)
@@ -77,18 +96,21 @@ export default function TemplateLabClient(): ReactElement {
         data-viewport={viewport}
         className={viewport === 'mobile' ? 'min-h-screen bg-slate-100 p-3' : 'min-h-screen bg-slate-100 p-8'}
       >
-        <div className="mx-auto mb-4 flex max-w-5xl items-center justify-between rounded border border-slate-200 bg-white px-3 py-2 text-xs text-slate-600">
+        <div className="mx-auto mb-4 flex max-w-5xl flex-wrap items-center justify-between gap-2 rounded border border-slate-200 bg-white px-3 py-2 text-xs text-slate-600">
           <span>Template Lab</span>
           <span>{templateId} / {fixtureId} / {themeId} / {viewport}</span>
         </div>
 
+        <div ref={stageRef} className={viewport === 'mobile' ? 'w-full overflow-hidden' : undefined}>
         <div
           className="mx-auto"
           style={{
             width: viewport === 'mobile' ? `${A4_WIDTH_PX * mobileScale}px` : `${A4_WIDTH_PX}px`,
+            height: viewport === 'mobile' ? `${contentHeight * mobileScale}px` : undefined,
           }}
         >
           <div
+            ref={contentRef}
             id={`template-lab-scope-${templateId}`}
             data-template-root="true"
             className="overflow-visible bg-white shadow-sm"
@@ -110,6 +132,7 @@ export default function TemplateLabClient(): ReactElement {
               {Template ? <Template resume={resume} theme={theme} /> : <div>Template not found</div>}
             </Suspense>
           </div>
+        </div>
         </div>
       </main>
     </AiSectionProvider>
