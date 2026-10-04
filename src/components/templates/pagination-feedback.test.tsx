@@ -35,6 +35,13 @@ function fixture(scale = 1) {
 }
 
 describe('live pagination feedback', () => {
+  it('keeps measuring PDF content when a modal aria-hides the surrounding editor', () => {
+    const root = fixture(0.45)
+    const before = measureResumePagination(root)
+    root.setAttribute('aria-hidden', 'true')
+    expect(measureResumePagination(root)).toEqual(before)
+    expect(before.pageCount).toBe(2)
+  })
   it('clearly distinguishes estimated boundaries from verified PDF totals, without adding appendix pages twice', () => {
     const root = fixture()
     const pages = { ...measureResumePagination(root), appendixPages: 2 }

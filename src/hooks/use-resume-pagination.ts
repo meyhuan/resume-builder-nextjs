@@ -25,7 +25,11 @@ export function measureResumePagination(root: HTMLElement): ResumePagination {
     if (!node.textContent?.trim()) continue
     const element = node.parentElement
     // Editable field wrappers remain measurable; only export-hidden actions are skipped.
-    if (!element || element.closest(SKIP)) continue
+    if (!element) continue
+    const hidden = element.closest(SKIP)
+    // A modal hides its background from assistive technology, but that does
+    // not remove the resume's content from its eventual PDF.
+    if (hidden && body.contains(hidden)) continue
     const style = getComputedStyle(element)
     if (style.display === 'none' || style.visibility === 'hidden') continue
     const range = document.createRange()
@@ -38,7 +42,8 @@ export function measureResumePagination(root: HTMLElement): ResumePagination {
     ranges.push({ top: (bounds.top - rect.top) / scale, bottom: (bounds.bottom - rect.top) / scale + leading, element })
   }
   for (const element of body.querySelectorAll<HTMLImageElement>('img')) {
-    if (element.closest(SKIP)) continue
+    const hidden = element.closest(SKIP)
+    if (hidden && body.contains(hidden)) continue
     const bounds = element.getBoundingClientRect()
     if (bounds.width > 0 && bounds.height > 0) ranges.push({ top: (bounds.top - rect.top) / scale, bottom: (bounds.bottom - rect.top) / scale, element })
   }

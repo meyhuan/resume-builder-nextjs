@@ -13,7 +13,8 @@ import { ModuleEditShell } from './module-edit-shell'
 import type { ValidationResult } from './module-edit-shell'
 import { validateRequired } from './validators'
 import { TextField } from '@/features/edit/form-fields/text-field'
-import { MonthPickerField } from '@/features/edit/form-fields/month-picker-field'
+import { MonthRangeField } from '@/features/edit/form-fields/month-range-field'
+import { monthRangeError } from '@/lib/resume-month'
 import { TagSelectField } from '@/features/edit/form-fields/tag-select-field'
 import { AutocompleteField } from '@/features/edit/form-fields/autocomplete-field'
 import { POSITION_SUGGESTIONS, PROJECT_ROLE_SUGGESTIONS, CAMPUS_POSITION_SUGGESTIONS } from '@/data/dictionaries/editor-suggestions'
@@ -63,6 +64,10 @@ export function ExperienceDetailClient(props: ExperienceDetailClientProps): Reac
   }
 
   const validate = (): ValidationResult => {
+    if ('startDate' in block && 'endDate' in block) {
+      const error = monthRangeError(block.startDate, block.endDate)
+      if (error) return { ok: false, message: error }
+    }
     switch (kind) {
       case 'work':
       case 'intern': {
@@ -145,20 +150,9 @@ function WorkFields({ block, onChange, moduleType, internship }: WorkFieldsProps
         onValueChange={(v): void => onChange({ industry: v })}
         placeholder="选择或输入行业"
       />
-      <div className="grid grid-cols-2 gap-3">
-        <MonthPickerField
-          label="开始时间"
-          value={block.startDate}
-          onValueChange={(v): void => onChange({ startDate: v })}
-          required
-        />
-        <MonthPickerField
-          label="结束时间"
-          value={block.endDate}
-          onValueChange={(v): void => onChange({ endDate: v })}
-          allowPresent
-        />
-      </div>
+      <MonthRangeField start={block.startDate} end={block.endDate}
+        onStartChange={(v): void => onChange({ startDate: v })}
+        onEndChange={(v): void => onChange({ endDate: v })} />
       <RichAiTextarea
         label="工作描述"
         html={block.contentHtml}
@@ -201,20 +195,9 @@ function EducationFields({ block, onChange }: EducationFieldsProps): ReactElemen
         value={block.degree ?? ''}
         onValueChange={(v): void => onChange({ degree: v })}
       />
-      <div className="grid grid-cols-2 gap-3">
-        <MonthPickerField
-          label="开始时间"
-          value={block.startDate}
-          onValueChange={(v): void => onChange({ startDate: v })}
-          required
-        />
-        <MonthPickerField
-          label="结束时间"
-          value={block.endDate}
-          onValueChange={(v): void => onChange({ endDate: v })}
-          allowPresent
-        />
-      </div>
+      <MonthRangeField start={block.startDate} end={block.endDate}
+        onStartChange={(v): void => onChange({ startDate: v })}
+        onEndChange={(v): void => onChange({ endDate: v })} />
       <RichAiTextarea
         label="在校经历"
         html={block.courseHtml ?? ''}
@@ -250,20 +233,9 @@ function ProjectFields({ block, onChange }: ProjectFieldsProps): ReactElement {
         onValueChange={(v): void => onChange({ role: v })}
         placeholder="例如：前端负责人"
       />
-      <div className="grid grid-cols-2 gap-3">
-        <MonthPickerField
-          label="开始时间"
-          value={block.startDate}
-          onValueChange={(v): void => onChange({ startDate: v })}
-          required
-        />
-        <MonthPickerField
-          label="结束时间"
-          value={block.endDate}
-          onValueChange={(v): void => onChange({ endDate: v })}
-          allowPresent
-        />
-      </div>
+      <MonthRangeField start={block.startDate} end={block.endDate}
+        onStartChange={(v): void => onChange({ startDate: v })}
+        onEndChange={(v): void => onChange({ endDate: v })} />
       <RichAiTextarea
         label="项目描述"
         html={block.contentHtml}
@@ -300,20 +272,9 @@ function CampusFields({ block, onChange }: CampusFieldsProps): ReactElement {
         required
         placeholder="例如：部长、副会长"
       />
-      <div className="grid grid-cols-2 gap-3">
-        <MonthPickerField
-          label="开始时间"
-          value={block.startDate}
-          onValueChange={(v): void => onChange({ startDate: v })}
-          required
-        />
-        <MonthPickerField
-          label="结束时间"
-          value={block.endDate}
-          onValueChange={(v): void => onChange({ endDate: v })}
-          allowPresent
-        />
-      </div>
+      <MonthRangeField start={block.startDate} end={block.endDate}
+        onStartChange={(v): void => onChange({ startDate: v })}
+        onEndChange={(v): void => onChange({ endDate: v })} />
       <RichAiTextarea
         label="主要经历"
         html={block.contentHtml}

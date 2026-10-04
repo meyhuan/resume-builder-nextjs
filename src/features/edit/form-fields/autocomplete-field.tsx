@@ -27,7 +27,7 @@ export function AutocompleteField({ label, value, onValueChange, options, placeh
     <AutocompleteInput id={id} aria-required={required || undefined} aria-describedby={tip ? `${id}-tip` : undefined}
       value={value} onValueChange={onValueChange} options={suggestions} placeholder={placeholder}
       maxResults={maxResults} allowCustom={allowFree} listLabel={`${label}建议`}
-      className="h-auto rounded-xl border-slate-200 bg-white py-3 pl-3.5 text-[15px] shadow-none focus-visible:border-violet-500 focus-visible:ring-4 focus-visible:ring-violet-100" />
+      className="h-auto min-h-12 rounded-xl border-slate-200 bg-white py-3 pl-3.5 text-base shadow-none focus-visible:border-violet-500 focus-visible:ring-4 focus-visible:ring-violet-100" />
     {tip && <div id={`${id}-tip`} className="mt-1 px-1 text-xs text-slate-400">{tip}</div>}
   </div>
 }

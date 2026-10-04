@@ -24,13 +24,14 @@ export function TagSelectField(props: TagSelectFieldProps): ReactElement {
         <span className="text-sm font-medium text-slate-700">{label}</span>
         {required && <span className="text-rose-500 text-xs">*</span>}
       </div>
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2" role="group" aria-label={label}>
         {options.map((opt) => {
           const active: boolean = opt === value
           return (
             <button
               key={opt}
               type="button"
+              aria-pressed={active}
               onClick={(): void => {
                 if (active && allowClear) {
                   onValueChange('')
@@ -39,7 +40,7 @@ export function TagSelectField(props: TagSelectFieldProps): ReactElement {
                 }
               }}
               className={cn(
-                'px-3.5 py-1.5 rounded-full text-sm border transition-all active:scale-95',
+                'min-h-11 px-3.5 py-2 rounded-full text-sm border transition-colors active:scale-95 focus-visible:outline-2 focus-visible:outline-violet-600 focus-visible:outline-offset-2',
                 active
                   ? 'bg-violet-600 text-white border-violet-600 shadow-sm shadow-violet-600/20'
                   : 'bg-white text-slate-700 border-slate-200 hover:border-violet-300',

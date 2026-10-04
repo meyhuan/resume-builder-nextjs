@@ -12,6 +12,8 @@ import type { ValidationResult } from '../_components/module-edit-shell'
 import { CustomBaseFields } from '../_components/custom-base-fields'
 import { MobileAvatarField } from '../_components/mobile-avatar-field'
 import { TextField } from '@/features/edit/form-fields/text-field'
+import { EmailField } from '@/features/edit/form-fields/email-field'
+import { MonthPickerField } from '@/features/edit/form-fields/month-picker-field'
 import { NumberField } from '@/features/edit/form-fields/number-field'
 import { TagSelectField } from '@/features/edit/form-fields/tag-select-field'
 import { AutocompleteField } from '@/features/edit/form-fields/autocomplete-field'
@@ -29,7 +31,8 @@ export default function BaseInfoEditPage(): ReactElement {
   const emailF = useBaseInfoField('email')
   const genderF = useBaseInfoField('gender')
   const ageF = useBaseInfoField('age')
-  const locationF = useBaseInfoField('location')
+  const locationF = useBaseInfoField('currentLocation')
+  const workStartF = useBaseInfoField('workStartTime')
   const politicalF = useBaseInfoField('politicalStatus')
   const avatarF = useBaseInfoField('avatarUrl')
 
@@ -75,14 +78,10 @@ export default function BaseInfoEditPage(): ReactElement {
         inputMode="tel"
         placeholder="11 位手机号"
       />
-      <TextField
-        label="邮箱"
+      <EmailField
         value={emailF.value ?? ''}
         onValueChange={emailF.setValue}
         required
-        type="email"
-        inputMode="email"
-        placeholder="example@mail.com"
       />
       <TagSelectField
         label="性别"
@@ -101,9 +100,14 @@ export default function BaseInfoEditPage(): ReactElement {
       <AutocompleteField
         label="所在城市"
         options={CITY_OPTIONS}
-        value={locationF.value ?? ''}
+        value={locationF.value ?? draft.baseInfo?.location ?? ''}
         onValueChange={locationF.setValue}
         placeholder="输入或选择城市"
+      />
+      <MonthPickerField
+        label="工作开始月份"
+        value={workStartF.value ?? ''}
+        onValueChange={workStartF.setValue}
       />
       <TagSelectField
         label="政治面貌"

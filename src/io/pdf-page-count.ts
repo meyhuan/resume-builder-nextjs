@@ -1,5 +1,20 @@
+export interface PdfRenderTask {
+  readonly promise: Promise<void>
+  cancel(): void
+}
+
+export interface PdfPage {
+  getViewport(options: { readonly scale: number }): { readonly width: number; readonly height: number }
+  render(options: { readonly canvasContext: CanvasRenderingContext2D; readonly viewport: ReturnType<PdfPage['getViewport']> }): PdfRenderTask
+}
+
+export interface PdfDocument {
+  readonly numPages: number
+  getPage(pageNumber: number): Promise<PdfPage>
+}
+
 interface PdfLoadingTask {
-  readonly promise: Promise<{ readonly numPages: number }>
+  readonly promise: Promise<PdfDocument>
   destroy(): Promise<void>
 }
 
@@ -14,7 +29,7 @@ function currentPdfJs(): PdfJs | undefined {
   return (window as Window & { 'pdfjs-dist/build/pdf'?: PdfJs })['pdfjs-dist/build/pdf']
 }
 
-function loadPdfJs(): Promise<PdfJs> {
+export function loadPdfJs(): Promise<PdfJs> {
   const existing = currentPdfJs()
   if (existing) return Promise.resolve(existing)
   if (scriptPromise) return scriptPromise

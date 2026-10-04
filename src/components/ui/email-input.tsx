@@ -9,10 +9,12 @@ import { POPOVER_GAP, useStablePopoverPlacement } from '@/hooks/use-stable-popov
 const EMAIL_DOMAINS = ['qq.com', '163.com', '126.com', 'outlook.com', 'gmail.com', 'foxmail.com', 'yeah.net', 'hotmail.com']
 
 /** Suggest complete addresses without committing a domain until the user chooses it. */
-export function EmailInput({ id, value, onValueChange }: {
+export function EmailInput({ id, value, onValueChange, className, required }: {
   readonly id: string
   readonly value: string
   readonly onValueChange: (value: string) => void
+  readonly className?: string
+  readonly required?: boolean
 }) {
   const [open, setOpen] = useState(false)
   const [composing, setComposing] = useState(false)
@@ -48,7 +50,7 @@ export function EmailInput({ id, value, onValueChange }: {
 
   return <Popover.Root open={visible} onOpenChange={setOpen}>
     <Popover.Anchor asChild>
-      <Input ref={input} id={id} type="email" inputMode="email" autoComplete="off" autoCapitalize="none" spellCheck={false}
+      <Input ref={input} id={id} className={className} aria-required={required || undefined} type="email" inputMode="email" autoComplete="off" autoCapitalize="none" spellCheck={false}
         role="combobox" aria-autocomplete="list" aria-expanded={visible}
         aria-controls={visible ? listId : undefined}
         aria-activedescendant={visible && activeIndex >= 0 ? `${listId}-${activeIndex}` : undefined}

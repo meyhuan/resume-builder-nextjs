@@ -23,7 +23,7 @@ export function BaseInfoPreview({ resume }: BaseInfoPreviewProps): ReactElement 
   const rawTitle: string = (base.title ?? '').trim()
   const rawPhone: string = (base.phone ?? '').trim()
   const rawEmail: string = (base.email ?? '').trim()
-  const rawLocation: string = (base.location ?? '').trim()
+  const rawLocation: string = (base.currentLocation ?? base.location ?? '').trim()
   const rawGender: string = (base.gender ?? '').trim()
   const title: string = isMeaningfulText(rawTitle) ? rawTitle : ''
   const phone: string = isMeaningfulText(rawPhone) ? rawPhone : ''

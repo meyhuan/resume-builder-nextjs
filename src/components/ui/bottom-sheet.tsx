@@ -1,12 +1,10 @@
 'use client'
 
-import { useEffect, type ReactElement, type ReactNode } from 'react'
+import { type ReactElement, type ReactNode } from 'react'
+import * as Dialog from '@radix-ui/react-dialog'
 import { X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-/**
- * Props for the mobile bottom sheet component.
- */
 export interface BottomSheetProps {
   readonly open: boolean
   readonly onClose: () => void
@@ -16,74 +14,25 @@ export interface BottomSheetProps {
   readonly showHandle?: boolean
   readonly showCloseButton?: boolean
   readonly contentClassName?: string
+  readonly onCloseAutoFocus?: (event: Event) => void
 }
 
-/**
- * Reusable mobile bottom sheet with fixed height, scrollable body,
- * backdrop overlay and slide-up animation.
- */
-export function BottomSheet(props: BottomSheetProps): ReactElement {
-  const {
-    open,
-    onClose,
-    title,
-    height = '480px',
-    children,
-    showHandle = true,
-    showCloseButton = true,
-    contentClassName,
-  } = props
-
-  // Lock body scroll while sheet is open to prevent scroll bleed-through.
-  useEffect((): (() => void) => {
-    if (!open) return (): void => {}
-    const prev = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    return (): void => { document.body.style.overflow = prev }
-  }, [open])
-
-  return (
-    <>
-      <div
-        className={cn(
-          'fixed inset-0 z-40 bg-black/30 transition-opacity duration-300',
-          open ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none',
-        )}
-        onClick={onClose}
-        onTouchMove={(e): void => { e.preventDefault() }}
-        aria-hidden="true"
-      />
-      <div
-        className={cn(
-          'fixed inset-x-0 bottom-0 z-50 bg-white rounded-t-2xl shadow-2xl transition-transform duration-300 flex flex-col',
-          open ? 'translate-y-0 pointer-events-auto' : 'translate-y-full pointer-events-none',
-        )}
-        style={{ height }}
-        role="dialog"
-        aria-modal="true"
-      >
-        {showHandle && (
-          <div className="flex justify-center pt-3 pb-1 shrink-0">
-            <div className="h-1 w-10 rounded bg-slate-300" />
-          </div>
-        )}
-        {(title || showCloseButton) && (
-          <div className="flex items-center justify-between px-5 py-2 shrink-0 border-b border-slate-100">
-            <h3 className="text-base font-semibold text-slate-900">{title ?? ''}</h3>
-            {showCloseButton && (
-              <button
-                type="button"
-                onClick={onClose}
-                className="h-8 w-8 rounded-lg flex items-center justify-center text-slate-500 hover:bg-slate-100"
-                aria-label="关闭"
-              >
-                <X size={18} />
-              </button>
-            )}
-          </div>
-        )}
-        <div className={cn('flex-1 overflow-y-auto px-5 py-4', contentClassName)}>{children}</div>
-      </div>
-    </>
-  )
+/** A modal sheet with focus containment, scroll locking and a safe-area footer. */
+export function BottomSheet({ open, onClose, title, height = '480px', children,
+  showHandle = true, showCloseButton = true, contentClassName, onCloseAutoFocus }: BottomSheetProps): ReactElement {
+  return <Dialog.Root open={open} onOpenChange={(next) => { if (!next) onClose() }}>
+    <Dialog.Portal>
+      <Dialog.Overlay className="fixed inset-0 z-40 bg-black/30" />
+      <Dialog.Content aria-describedby={undefined} onCloseAutoFocus={onCloseAutoFocus}
+        className="fixed inset-x-0 bottom-0 z-50 flex flex-col rounded-t-2xl bg-white shadow-2xl"
+        style={{ height, maxHeight: 'calc(100dvh - 24px)', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+        {showHandle && <div aria-hidden="true" className="flex shrink-0 justify-center pb-1 pt-3"><div className="h-1 w-10 rounded bg-slate-300" /></div>}
+        <div className="flex shrink-0 items-center justify-between border-b border-slate-100 px-5 py-2">
+          <Dialog.Title className={cn('text-base font-semibold text-slate-900', !title && 'sr-only')}>{title || '选择'}</Dialog.Title>
+          {showCloseButton && <Dialog.Close aria-label="关闭" className="flex size-11 items-center justify-center rounded-lg text-slate-500 active:bg-slate-100 focus-visible:outline-2 focus-visible:outline-violet-600"><X size={18} /></Dialog.Close>}
+        </div>
+        <div className={cn('min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-4', contentClassName)}>{children}</div>
+      </Dialog.Content>
+    </Dialog.Portal>
+  </Dialog.Root>
 }

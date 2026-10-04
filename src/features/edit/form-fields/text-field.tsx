@@ -38,7 +38,7 @@ export function TextField(props: TextFieldProps): ReactElement {
           value={value}
           onChange={(e): void => onValueChange(e.target.value)}
           className={cn(
-            'flex-1 bg-transparent outline-none text-[15px] text-slate-900 placeholder:text-slate-400',
+            'min-w-0 flex-1 bg-transparent outline-none text-base text-slate-900 placeholder:text-slate-400',
             className,
           )}
         />

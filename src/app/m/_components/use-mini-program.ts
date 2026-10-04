@@ -20,9 +20,9 @@ function getMiniProgram(): WxMiniProgram | null {
  * /m is mini-program-first: only an explicit standalone/web URL hint opts out.
  */
 export function useInMiniProgram(initialHint = true): boolean {
-  const [inMiniProgram, setInMiniProgram] = useState<boolean>(() => (
-    miniProgramRuntime.hasStandaloneHint() ? false : initialHint || miniProgramRuntime.hasMiniProgramHint()
-  ))
+  // URL/session hints are browser-only. Match SSR on the first render, then
+  // resolve them in the effect so standalone mobile pages hydrate cleanly.
+  const [inMiniProgram, setInMiniProgram] = useState<boolean>(initialHint)
 
   useEffect((): (() => void) | void => {
     if (typeof window === 'undefined') return
