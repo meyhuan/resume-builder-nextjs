@@ -38,13 +38,15 @@ export function ResumePageFeedback({ pages, contentRef, guides, onGuidesChange, 
   </div>
 }
 
-export function ResumePageGuides({ pages, visible }: { readonly pages: ResumePagination; readonly visible: boolean }) {
+export function ResumePageGuides({ pages, visible, showLabels = true }: {
+  readonly pages: ResumePagination; readonly visible: boolean; readonly showLabels?: boolean
+}) {
   if (!visible || !pages.ready) return null
   return <div data-resume-page-guides data-export-hide="true" aria-hidden="true" className="pointer-events-none absolute inset-0 z-20 print:hidden">
     {pages.boundaries.map((top, index) => <div key={index} data-resume-page-boundary={index + 1} className="absolute inset-x-0 border-t border-dashed border-slate-400" style={{ top }}>
-      <span className="absolute right-2 -translate-y-1/2 rounded border bg-background px-2 py-1 text-xs text-muted-foreground shadow-sm">
+      {showLabels && <span className="absolute right-2 -translate-y-1/2 rounded border bg-background px-2 py-1 text-xs text-muted-foreground shadow-sm">
         {`第 ${index + 1} 页 / 第 ${index + 2} 页（参考）`}
-      </span>
+      </span>}
     </div>)}
   </div>
 }

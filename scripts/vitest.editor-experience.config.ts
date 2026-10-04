@@ -14,7 +14,6 @@ export default defineConfig({
       'src/app/m/edit/_components/mobile-choice-parity.test.tsx',
       'src/app/m/_components/use-mini-program.test.tsx',
       'src/features/edit/form-fields/month-range-field.test.tsx',
-      'src/app/m/preview/_components/mobile-pdf-preview.test.tsx',
       'src/components/modals/base-info-email.test.tsx',
       'src/components/modals/base-info-month.test.tsx',
       'src/components/modals/job-intention-choices.test.tsx',

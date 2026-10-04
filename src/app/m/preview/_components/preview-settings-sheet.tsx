@@ -20,8 +20,6 @@ import {
 } from '@/entities/theme/font-stacks'
 import { templateCatalog } from '@/lib/templates/template-catalog'
 import type { OnePageStatus } from '@/hooks/use-one-page-mode'
-import type { AdjustableTokens } from '@/entities/editor/editor-meta'
-import { OnePageAdjustments } from '@/components/editor/one-page-adjustments'
 import { cn } from '@/lib/utils'
 
 export type SettingsTab = 'template' | 'appearance' | 'layout' | 'one-page'
@@ -67,7 +65,6 @@ interface PreviewSettingsSheetProps {
   readonly defaultPrimaryColor: string
   readonly locksPrimaryColor: boolean
   readonly onePageStatus: OnePageStatus
-  readonly onePageSnapshot?: AdjustableTokens | null
   readonly onClose: () => void
   readonly onConfirm: () => void | Promise<void>
   readonly confirming: boolean
@@ -87,7 +84,6 @@ export function PreviewSettingsSheet(props: PreviewSettingsSheetProps): ReactEle
     defaultPrimaryColor,
     locksPrimaryColor,
     onePageStatus,
-    onePageSnapshot,
     onClose,
     onConfirm,
     confirming,
@@ -130,7 +126,7 @@ export function PreviewSettingsSheet(props: PreviewSettingsSheetProps): ReactEle
           </TabsContent>
 
           <TabsContent value="one-page" className="mt-0">
-            <OnePagePanel theme={theme} status={onePageStatus} snapshot={onePageSnapshot} onUpdate={onUpdateTheme} />
+            <OnePagePanel theme={theme} status={onePageStatus} onUpdate={onUpdateTheme} />
           </TabsContent>
           {tab !== 'template' && (
             <div className="mt-6 border-t border-slate-100 pt-3">
@@ -465,12 +461,10 @@ function LayoutPanel({ theme, onUpdate }: { readonly theme: ThemeTokens; readonl
 function OnePagePanel({
   theme,
   status,
-  snapshot,
   onUpdate,
 }: {
   readonly theme: ThemeTokens
   readonly status: OnePageStatus
-  readonly snapshot?: AdjustableTokens | null
   readonly onUpdate: ThemePatcher
 }): ReactElement {
   const titleScale: number = theme.titleScale ?? 1
@@ -485,17 +479,16 @@ function OnePagePanel({
           <div>
             <div className="text-base font-semibold text-slate-900">单页模式</div>
             <p className="mt-1 text-xs leading-5 text-slate-600">
-          依次调整模块间距、行高和字号，尽量适配一页 A4。
+              自动压缩字号、行距和间距，尽量适配一页 A4。
             </p>
           </div>
           <Switch checked={onePageFit} onChange={(): void => onUpdate({ onePageFit: !onePageFit })} />
         </div>
-        {onePageFit ? (<>
-          <div className={cn('mt-3 mb-3 inline-flex rounded-full px-2.5 py-1 text-xs font-medium text-white', statusMeta.bg)}>
+        {onePageFit ? (
+          <div className={cn('mt-3 inline-flex rounded-full px-2.5 py-1 text-xs font-medium text-white', statusMeta.bg)}>
             {statusMeta.label}
           </div>
-          <OnePageAdjustments snapshot={snapshot} current={theme} status={status} />
-        </>) : null}
+        ) : null}
       </div>
 
       <Row label={`标题放大倍率 · ${titleScale.toFixed(2)}×`}>

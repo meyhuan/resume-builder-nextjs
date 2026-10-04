@@ -2,7 +2,6 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { createRequire } from 'node:module'
-import { spawnSync } from 'node:child_process'
 import puppeteer from 'puppeteer'
 
 const baseUrl = process.argv[2] || 'http://127.0.0.1:3011'
@@ -84,20 +83,16 @@ try {
   await page.setRequestInterception(true)
   page.on('request', request => {
     const url = new URL(request.url())
-    if (url.pathname === '/next-api/generate-pdf') { requests.push(JSON.parse(request.postData() || '{}')); void request.continue(); return }
+    if (url.pathname === '/next-api/generate-pdf') {
+      requests.push(JSON.parse(request.postData() || '{}'))
+      void request.respond({ status: 500, contentType: 'application/json', body: '{}' })
+      return
+    }
     if (url.pathname.startsWith('/next-api/') || url.pathname.startsWith('/api/')) {
       if (request.method() === 'PUT' && request.postData()) { const body = JSON.parse(request.postData()); if (body.content) savedContent = body.content }
       const body = request.method() === 'GET' && url.pathname.startsWith('/next-api/resumes/') ? { id: currentFixture.id, content: currentFixture, template: 'qingning' } : {}
       void request.respond({ status: 200, contentType: 'application/json', body: JSON.stringify(body) })
     } else void request.continue()
-  })
-  await page.evaluateOnNewDocument(() => {
-    const original = window.fetch
-    window.fetch = async (...args) => {
-      const response = await original(...args)
-      if (String(args[0]).includes('/next-api/generate-pdf') && response.ok) window.__qaPdfBytes = [...new Uint8Array(await response.clone().arrayBuffer())]
-      return response
-    }
   })
   await page.goto(`${baseUrl}/dev/scenario-loader?tpl=qingning`, { waitUntil: 'domcontentloaded', timeout: 90000 })
   await seed(page, full)
@@ -172,57 +167,44 @@ try {
   await seed(page, long)
   await page.setViewport({ width: 414, height: 896, isMobile: true, hasTouch: true, deviceScaleFactor: 2 })
   await page.goto(`${baseUrl}/m/preview?tpl=qingning&source=web&mini=0`, { waitUntil: 'domcontentloaded', timeout: 90000 })
-  await page.waitForFunction(() => document.querySelector('[data-mobile-page-feedback] [role=status]')?.textContent.startsWith('预计 '))
-  const estimated = await page.$eval('[data-mobile-page-feedback] [role=status]', el => Number(el.textContent.match(/\d+/)[0]))
-  assert.ok(estimated > 1)
-  assert.equal(await page.$('script[src="/libs/pdfjs/pdf.min.js"]'), null)
-  await page.tap('[data-mobile-page-feedback] input[type=checkbox]')
   await page.waitForSelector('[data-resume-page-boundary]')
-  await tapText(page, '[data-mobile-page-feedback] button', '定位预计跨页处')
-  await page.waitForFunction(() => document.querySelector('[data-mobile-page-feedback]')?.nextElementSibling.scrollTop > 50)
-  await safeWidth(page)
-  await page.screenshot({ path: path.join(out, 'mobile-pagination-414.png') })
-  pass('414px preview estimates pages and locates scaled reference boundaries without loading PDF.js', { estimated })
-  const pdfResponse = page.waitForResponse(res => res.url().endsWith('/next-api/generate-pdf') && res.request().method() === 'POST', { timeout: 90000 })
-  await tapText(page, '[data-mobile-page-feedback] button', '查看 PDF 分页')
-  assert.equal((await pdfResponse).status(), 200, 'Local PDF generation failed')
-  await page.waitForFunction(() => window.__qaPdfBytes?.length > 0, { timeout: 90000 })
-  await page.waitForFunction(() => document.querySelector('[role=dialog] [role=status]')?.textContent.startsWith('PDF 实际 '), { timeout: 90000 })
-  const file = path.join(out, 'mobile-preview.pdf')
-  await fs.writeFile(file, Buffer.from(await page.evaluate(() => window.__qaPdfBytes)))
-  const python = process.env.PDF_QA_PYTHON || 'C:/Users/62765/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/python.exe'
-  const counted = spawnSync(python, ['-c', 'import sys,pdfplumber; p=pdfplumber.open(sys.argv[1]); print(len(p.pages)); p.close()', file], { encoding: 'utf8' })
-  assert.equal(counted.status, 0, counted.stderr)
-  const actual = Number(counted.stdout.trim())
-  assert.ok(actual > 1)
-  assert.equal(await page.$eval('[role=dialog] [role=status]', el => el.textContent), `PDF 实际 ${actual} 页`)
-  assert.equal(requests.at(-1).preview, true)
-  assert.ok(!requests.at(-1).html.includes('data-resume-page-guides'))
-  assert.ok(requests.at(-1).html.includes('transform: none'))
-  await page.screenshot({ path: path.join(out, 'mobile-pdf-first-page.png') })
-  await tapText(page, '[role=dialog] button', '下一页')
-  await page.waitForFunction(() => document.querySelector('canvas[aria-label="PDF 第 2 页"]')?.style.visibility === 'visible')
-  assert.equal(await page.$$eval('[role=dialog] canvas', nodes => nodes.length), 1)
-  await page.screenshot({ path: path.join(out, 'mobile-pdf-second-page.png') })
-  await tapText(page, '[role=dialog] button', '放大')
-  await page.waitForFunction(() => document.querySelector('[role=dialog] canvas')?.style.width === '200%' && document.querySelector('[role=dialog] canvas')?.style.visibility === 'visible')
-  await page.screenshot({ path: path.join(out, 'mobile-pdf-zoom.png') })
-  await tapText(page, '[role=dialog] button', '适屏')
-  await page.waitForFunction(() => document.querySelector('[role=dialog] canvas')?.style.visibility === 'visible')
-  pass('real PDF canvas preview matches independent PDF page count, supports touch paging, excludes reference lines and phone scaling', { actual, estimated })
-  await page.tap('button[aria-label="关闭 PDF 分页预览"]')
-  await page.waitForSelector('[role=dialog]', { hidden: true })
-  await page.waitForFunction(count => document.querySelector('[data-mobile-page-feedback] [role=status]')?.textContent === `PDF 实际 ${count} 页`, {}, actual)
+  for (const [width, height] of [[414, 896], [320, 568]]) {
+    await page.setViewport({ width, height, isMobile: true, hasTouch: true, deviceScaleFactor: 2 })
+    await page.waitForFunction(() => {
+      const guide = document.querySelector('[data-resume-page-guides]')
+      return guide && guide.getBoundingClientRect().width <= Math.min(innerWidth - 24, 390) + 1
+    })
+    const geometry = await page.$eval('[data-resume-page-boundary]', line => {
+      const root = line.parentElement
+      return { actual: line.getBoundingClientRect().top - root.getBoundingClientRect().top,
+        expected: parseFloat(line.style.top) * root.getBoundingClientRect().width / root.offsetWidth }
+    })
+    assert.ok(Math.abs(geometry.actual - geometry.expected) < 1, 'Reference line must scale with the resume')
+    assert.equal(await page.$eval('[data-resume-page-guides]', el => el.textContent), '')
+    assert.equal(await page.$('[data-mobile-page-feedback], [data-page-count-source]'), null)
+    assert.equal(await page.$('script[src="/libs/pdfjs/pdf.min.js"]'), null)
+    assert.equal(await page.evaluate(() => /查看 PDF 分页|定位预计跨页处|预计 \d+ 页/.test(document.body.textContent)), false)
+    await page.evaluate(() => {
+      const stage = document.querySelector('[data-mobile-preview-stage]')
+      const line = document.querySelector('[data-resume-page-boundary]')
+      stage.scrollTop += line.getBoundingClientRect().top - stage.getBoundingClientRect().top - stage.clientHeight / 2
+    })
+    await safeWidth(page)
+    await page.screenshot({ path: path.join(out, `mobile-pagination-${width}.png`) })
+    pass(`${width}px preview shows only automatically visible, scaled reference lines`)
+  }
   await tapText(page, 'button', '样式')
   await page.waitForSelector('[role=dialog]')
   await tapText(page, '[role=tab]', '单页')
   await page.waitForSelector('[role=tabpanel] button[aria-label="单页模式"]')
   await page.tap('[role=tabpanel] button[aria-label="单页模式"]')
-  await page.waitForSelector('[data-one-page-adjustments]')
-  assert.match(await page.$eval('[data-one-page-adjustments]', el => el.textContent), /1.4.*12px/)
-  await page.waitForFunction(() => document.querySelector('[data-mobile-page-feedback] [role=status]')?.dataset.pageCountSource === 'estimate')
+  await page.waitForFunction(() => document.querySelector('[role=tabpanel] button[aria-label="单页模式"]')?.getAttribute('aria-pressed') === 'true')
+  assert.equal(await page.$('[data-one-page-adjustments]'), null)
   await page.screenshot({ path: path.join(out, 'mobile-one-page-settings.png') })
-  pass('single-page settings explain readability limits; changed layout invalidates actual PDF count')
+  await page.tap('[role=dialog] button[aria-label="取消并关闭"]')
+  await page.waitForSelector('[role=dialog]', { hidden: true })
+  assert.equal(requests.length, 0)
+  pass('existing single-page switch works without adjustment details or PDF generation requests')
   assert.deepEqual(runtimeErrors, [])
   pass('no client runtime exceptions')
 } catch (error) {
@@ -230,6 +212,6 @@ try {
   results.push({ check: 'browser scenario', pass: false, error: String(error) })
   throw error
 } finally {
-  await fs.writeFile(path.join(out, 'results.json'), JSON.stringify({ baseUrl, results, runtimeErrors, previewRequests: requests.length, limitations: ['Chromium mobile emulation; native iOS/Android keyboard and WeChat webview not verified', 'All resume/auth/billing APIs mocked; only local preview PDF generation uses the real route'] }, null, 2))
+  await fs.writeFile(path.join(out, 'results.json'), JSON.stringify({ baseUrl, results, runtimeErrors, previewRequests: requests.length, limitations: ['Chromium mobile emulation; native iOS/Android keyboard and WeChat webview not verified', 'All resume/auth/billing APIs mocked; no real account writes or PDF generation'] }, null, 2))
   await browser.close()
 }

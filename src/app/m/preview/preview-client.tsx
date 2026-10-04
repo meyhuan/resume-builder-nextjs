@@ -26,11 +26,7 @@ import { useMiniProgramCapabilities } from '../_components/use-mini-program-capa
 import { BottomActionBar } from './_components/bottom-action-bar'
 import { PortfolioAppendix } from '@/components/portfolio/portfolio-appendix'
 import { useResumePagination } from '@/hooks/use-resume-pagination'
-import { usePdfPreviewPageCount } from '@/hooks/use-pdf-preview-page-count'
 import { ResumePageGuides } from '@/components/editor/resume-page-feedback'
-import { buildResumeHtml } from '@/io/html-export'
-import { MobilePageFeedback } from './_components/mobile-page-feedback'
-import { MobilePdfPreview } from './_components/mobile-pdf-preview'
 import {
   ONE_PAGE_BADGE_STYLES,
   PreviewSettingsSheet,
@@ -128,10 +124,6 @@ export default function MobilePreviewClient(): ReactElement {
   const [settingsError, setSettingsError] = useState<string | null>(null)
   const [onePageSnapshot, setOnePageSnapshot] = useState<AdjustableTokens | null>(null)
   const [tab, setTab] = useState<SettingsTab>('template')
-  const [pageGuides, setPageGuides] = useState(false)
-  const [previewBlob, setPreviewBlob] = useState<Blob | null>(null)
-  const [generatingPreview, setGeneratingPreview] = useState(false)
-  const previewInFlight = useRef(false)
   const [containerWidth, setContainerWidth] = useState<number>(MOBILE_PAGE_MAX_WIDTH_PX)
   const [contentHeight, setContentHeight] = useState<number>(0)
   // User pinch-zoom factor. Independent of theme/layout so typography changes
@@ -291,43 +283,7 @@ export default function MobilePreviewClient(): ReactElement {
   const paragraphIndent: number = theme.paragraphIndent ?? 0
   const onePageFit: boolean = theme.onePageFit ?? false
   const previewRevision = useMemo(() => JSON.stringify({ renderableResume, templateId, theme }), [renderableResume, templateId, theme])
-  const revisionRef = useRef(previewRevision)
-  useEffect(() => { revisionRef.current = previewRevision }, [previewRevision])
   const pages = useResumePagination(innerRef, previewRevision)
-  const { pdfPageCount, recordPreview } = usePdfPreviewPageCount(previewRevision)
-
-  async function handlePreviewPdf(): Promise<void> {
-    if (!innerRef.current || previewInFlight.current) return
-    const generatedRevision = previewRevision
-    previewInFlight.current = true
-    setGeneratingPreview(true)
-    try {
-      // Export the full-width document, without its phone-only CSS transform.
-      const clone = innerRef.current.cloneNode(true) as HTMLDivElement
-      clone.style.transform = 'none'
-      clone.style.pointerEvents = ''
-      const root = document.createElement('div')
-      root.id = scopedStyleId
-      root.appendChild(clone)
-      const response = await fetch('/next-api/generate-pdf', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ html: buildResumeHtml(root, { title: resume.name || 'Resume' }), preview: true }),
-      })
-      if (!response.ok) throw new Error('PDF 生成失败，请稍后重试')
-      const blob = await response.blob()
-      if (revisionRef.current !== generatedRevision) {
-        toast.message('排版已变化，请重新预览 PDF')
-        return
-      }
-      setPreviewBlob(blob)
-      void recordPreview(blob, generatedRevision)
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'PDF 预览失败，请重试')
-    } finally {
-      previewInFlight.current = false
-      setGeneratingPreview(false)
-    }
-  }
 
   const handleOpenSettings = useCallback((): void => {
     if (settingsSavingRef.current || settingsSnapshotRef.current) return
@@ -737,10 +693,9 @@ export default function MobilePreviewClient(): ReactElement {
       <div className="h-[100dvh] overflow-hidden bg-slate-100 flex flex-col">
         <TopBar />
 
-        <MobilePageFeedback pages={pages} pdfPageCount={pdfPageCount} guides={pageGuides} onGuidesChange={setPageGuides}
-          onPreview={() => { void handlePreviewPdf() }} generating={generatingPreview} contentRef={innerRef} stageRef={stageRef} />
         <div
           ref={stageRef}
+          data-mobile-preview-stage
           className="min-h-0 flex-1 overflow-auto overscroll-contain px-3 pt-4"
           style={{
             touchAction: 'pan-x pan-y',
@@ -798,7 +753,7 @@ export default function MobilePreviewClient(): ReactElement {
                   </div>
                   <PortfolioAppendix portfolio={renderableResume.portfolio} />
                 </Suspense>
-                <ResumePageGuides pages={pages} visible={pageGuides} />
+                <ResumePageGuides pages={pages} visible showLabels={false} />
               </div>
 
               {onePageFit ? <OnePageBadge status={onePageStatus} /> : null}
@@ -837,7 +792,6 @@ export default function MobilePreviewClient(): ReactElement {
           defaultPrimaryColor={defaultTheme.primaryColor}
           locksPrimaryColor={Boolean(templateConfig?.locksPrimaryColor)}
           onePageStatus={onePageStatus}
-          onePageSnapshot={onePageSnapshot}
           onClose={handleCancelSettings}
           onConfirm={handleConfirmSettings}
           confirming={settingsSaving}
@@ -848,7 +802,6 @@ export default function MobilePreviewClient(): ReactElement {
           onUpdateTheme={updateTheme}
         />
 
-        <MobilePdfPreview blob={previewBlob} onClose={() => setPreviewBlob(null)} />
         <VipUpgradeDialog open={showUpgrade} onOpenChange={setShowUpgrade} />
       </div>
     </AiSectionProvider>
