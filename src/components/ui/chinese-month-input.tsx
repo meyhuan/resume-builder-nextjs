@@ -13,6 +13,8 @@ interface ChineseMonthInputProps {
   onValueChange: (value: string) => void;
   className?: string;
   placeholder?: string;
+  valueFormat?: "iso" | "resume";
+  ariaLabel?: string;
 }
 
 interface ChineseDateInputProps {
@@ -38,15 +40,19 @@ export function ChineseMonthInput({
   onValueChange,
   className,
   placeholder = "请选择年月",
+  valueFormat = "iso",
+  ariaLabel,
 }: ChineseMonthInputProps): React.ReactElement {
   const [open, setOpen] = React.useState(false);
   const selectedMonth = parseMonth(value);
   const displayValue = selectedMonth
-    ? formatChineseMonth(selectedMonth)
+    ? valueFormat === "resume"
+      ? formatStoredMonth(selectedMonth, valueFormat)
+      : formatChineseMonth(selectedMonth)
     : value || placeholder;
 
   function selectMonth(month: Date): void {
-    onValueChange(formatStoredMonth(month));
+    onValueChange(formatStoredMonth(month, valueFormat));
     setOpen(false);
   }
 
@@ -60,7 +66,7 @@ export function ChineseMonthInput({
         <button
           id={id}
           type="button"
-          aria-label={`${displayValue}，点击选择年月`}
+          aria-label={ariaLabel ?? `${displayValue}，点击选择年月`}
           className={cn(
             "flex items-center justify-between text-left",
             !value && "text-slate-400",
@@ -77,11 +83,14 @@ export function ChineseMonthInput({
 
       <PopoverPrimitive.Portal>
         <PopoverPrimitive.Content
+          aria-label={ariaLabel ?? "选择年月"}
           side="bottom"
           align="start"
           sideOffset={4}
-          avoidCollisions={false}
-          className="z-50 w-[var(--radix-popover-trigger-width)] min-w-64 rounded-xl border border-slate-200 bg-white p-1.5 text-slate-700 shadow-lg outline-none"
+          collisionPadding={12}
+          onWheel={(event) => event.stopPropagation()}
+          onTouchMove={(event) => event.stopPropagation()}
+          className="z-[60] max-h-[var(--radix-popover-content-available-height)] w-[var(--radix-popover-trigger-width)] min-w-64 max-w-[calc(100vw-24px)] overflow-y-auto overscroll-contain rounded-xl border border-slate-200 bg-white p-1.5 text-slate-700 shadow-lg outline-none"
         >
           <MonthPicker
             selectedMonth={selectedMonth}
@@ -262,16 +271,18 @@ function ChineseDateSelect({
 }
 
 function parseMonth(value: string): Date | undefined {
-  const match = /^(\d{4})-(\d{2})$/.exec(value);
+  const match = /^(\d{4})[-.](\d{1,2})$/.exec(value);
   if (!match) return undefined;
   const year = Number(match[1]);
   const month = Number(match[2]);
   if (!Number.isInteger(year) || month < 1 || month > 12) return undefined;
-  return new Date(year, month - 1, 1);
+  const candidate = new Date(year, month - 1, 1);
+  return candidate.getFullYear() === year ? candidate : undefined;
 }
 
-function formatStoredMonth(value: Date): string {
-  return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, "0")}`;
+function formatStoredMonth(value: Date, format: "iso" | "resume" = "iso"): string {
+  const separator = format === "resume" ? "." : "-";
+  return `${value.getFullYear()}${separator}${String(value.getMonth() + 1).padStart(2, "0")}`;
 }
 
 function formatChineseMonth(value: Date): string {

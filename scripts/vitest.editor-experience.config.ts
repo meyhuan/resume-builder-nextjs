@@ -11,6 +11,7 @@ export default defineConfig({
       'src/editor/field-suggestions.test.tsx',
       'src/app/m/edit/_components/mobile-field-suggestions.test.tsx',
       'src/components/modals/base-info-email.test.tsx',
+      'src/components/modals/base-info-month.test.tsx',
       'src/components/modals/job-intention-choices.test.tsx',
       'src/components/templates/one-page-readability.test.tsx',
       'src/components/templates/pagination-feedback.test.tsx',

@@ -8,6 +8,7 @@ import { CITY_OPTIONS } from '@/data/dictionaries/cities';
 import { POSITION_SUGGESTIONS, POLITICAL_STATUS_SUGGESTIONS } from '@/data/dictionaries/editor-suggestions';
 import { Input } from '@/components/ui/input';
 import { EmailInput } from '@/components/ui/email-input';
+import { ChineseMonthInput } from '@/components/ui/chinese-month-input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ChevronDown, Plus, Trash2 } from 'lucide-react';
@@ -234,11 +235,14 @@ export default function BaseInfoModal(props: BaseInfoModalProps): ReactElement {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="workStartTime">开始工作时间</Label>
-                  <Input
+                  <ChineseMonthInput
                     id="workStartTime"
                     value={workStartTime}
-                    onChange={(e) => setWorkStartTime(e.target.value)}
-                    placeholder="请输入"
+                    onValueChange={setWorkStartTime}
+                    valueFormat="resume"
+                    ariaLabel="开始工作时间"
+                    placeholder="请选择年月"
+                    className="h-11 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-sm transition-colors hover:border-slate-300 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                   />
                 </div>
               </div>
