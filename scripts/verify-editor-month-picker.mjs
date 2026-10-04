@@ -36,6 +36,7 @@ try {
   await page.focus('#workStartTime')
   await page.keyboard.press('Space')
   await page.waitForSelector(popup)
+  await button('选择年份，当前2025年', popup)
   await button('2024年', popup)
   assert.equal(await value(), '2025.07')
   await button('3月', popup)
@@ -46,6 +47,7 @@ try {
   passed('Space opens the calendar; year selection is provisional and cancelling the form retains the original month')
 
   await openMonth()
+  await button('选择年份，当前2025年', popup)
   await button('上一组年份', popup)
   await button('2010年', popup)
   await button('9月', popup)

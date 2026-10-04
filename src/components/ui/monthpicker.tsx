@@ -33,13 +33,13 @@ const MONTHS: ReadonlyArray<{ number: number; name: string }> = [
 const DEFAULT_MIN_YEAR: number = 1980;
 const DEFAULT_MAX_YEAR: number = 2050;
 const YEAR_PAGE_SIZE: number = 12;
-const COMPACT_CONTAINER_PADDING_CLASS: string = "p-2 w-[220px]";
+const COMPACT_CONTAINER_PADDING_CLASS: string = "p-3 w-72 max-w-full";
 const HEADER_SPACING_CLASS: string = "mb-2";
 const YEAR_GRID_GAP_CLASS: string = "gap-1";
 const MONTH_GRID_GAP_CLASS: string = "gap-1";
 const YEAR_RANGE_TEXT_CLASS: string = "text-sm font-medium";
-const YEAR_BUTTON_CLASS: string = "h-7 w-full text-xs font-normal";
-const MONTH_BUTTON_CLASS: string = "h-7 w-full text-xs font-normal";
+const YEAR_BUTTON_CLASS: string = "h-9 w-full px-1 text-sm font-normal";
+const MONTH_BUTTON_CLASS: string = "h-9 w-full text-sm font-normal";
 
 function getYearBounds(
   minDate?: Date,
@@ -85,6 +85,18 @@ export function MonthPicker(props: MonthPickerProps): React.ReactElement {
   }, [selectedMonth, minYear, maxYear]);
 
   const [displayYear, setDisplayYear] = React.useState<number>(initialYear);
+  const [view, setView] = React.useState<'year' | 'month'>('month');
+  const gridRef = React.useRef<HTMLDivElement>(null);
+  const previousView = React.useRef(view);
+  React.useLayoutEffect(() => {
+    if (previousView.current !== view) {
+      const grid = gridRef.current;
+      const target = grid?.querySelector<HTMLButtonElement>('button[aria-pressed="true"]:not([disabled])')
+        ?? grid?.querySelector<HTMLButtonElement>('button:not([disabled])');
+      target?.focus();
+      previousView.current = view;
+    }
+  }, [view]);
   const [yearPageStart, setYearPageStart] = React.useState<number>(() =>
     computePageStart(initialYear, minYear, maxYear),
   );
@@ -103,6 +115,7 @@ export function MonthPicker(props: MonthPickerProps): React.ReactElement {
     const clamped = clampYear(year, minYear, maxYear);
     setDisplayYear(clamped);
     setYearPageStart(computePageStart(clamped, minYear, maxYear));
+    setView('month');
   }
 
   function handleYearPageBackward(): void {
@@ -153,33 +166,39 @@ export function MonthPicker(props: MonthPickerProps): React.ReactElement {
       >
         <Button
           variant="outline"
-          className="h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100"
-          onClick={handleYearPageBackward}
+          className="h-9 w-9 bg-transparent p-0 text-slate-500"
+          onClick={view === 'year' ? handleYearPageBackward : () => setDisplayYear(year => Math.max(minYear, year - 1))}
           type="button"
-          disabled={yearPageStart <= minYear}
-          aria-label="上一组年份"
+          disabled={view === 'year' ? yearPageStart <= minYear : displayYear <= minYear}
+          aria-label={view === 'year' ? '上一组年份' : '上一年'}
         >
           <ChevronLeft className="h-4 w-4" />
         </Button>
-        <div className={YEAR_RANGE_TEXT_CLASS}>
+        {view === 'year' ? <div className={YEAR_RANGE_TEXT_CLASS}>
           {yearPageStart}年至
           {Math.min(yearPageStart + YEAR_PAGE_SIZE - 1, maxYear)}年
-        </div>
+        </div> : <Button
+          type="button"
+          variant="ghost"
+          aria-label={`选择年份，当前${displayYear}年`}
+          className="h-9 px-2 text-sm font-medium"
+          onClick={() => { setYearPageStart(computePageStart(displayYear, minYear, maxYear)); setView('year'); }}
+        >{displayYear}年 <span className="text-xs font-normal text-slate-400">切换年份</span></Button>}
         <Button
           variant="outline"
-          className="h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100"
-          onClick={handleYearPageForward}
+          className="h-9 w-9 bg-transparent p-0 text-slate-500"
+          onClick={view === 'year' ? handleYearPageForward : () => setDisplayYear(year => Math.min(maxYear, year + 1))}
           type="button"
           disabled={
-            yearPageStart >= computePageStart(maxYear, minYear, maxYear)
+            view === 'year' ? yearPageStart >= computePageStart(maxYear, minYear, maxYear) : displayYear >= maxYear
           }
-          aria-label="下一组年份"
+          aria-label={view === 'year' ? '下一组年份' : '下一年'}
         >
           <ChevronRight className="h-4 w-4" />
         </Button>
       </div>
 
-      <div className={cn("grid grid-cols-4", YEAR_GRID_GAP_CLASS, "mb-3")}>
+      {view === 'year' ? <div ref={gridRef} className={cn("grid grid-cols-3", YEAR_GRID_GAP_CLASS)}>
         {Array.from({ length: YEAR_PAGE_SIZE }).map((_, index) => {
           const year = yearPageStart + index;
           if (year > maxYear) return null;
@@ -192,6 +211,7 @@ export function MonthPicker(props: MonthPickerProps): React.ReactElement {
               variant={selected ? "default" : "ghost"}
               onClick={() => handleYearSelect(year)}
               disabled={disabled}
+              aria-pressed={selected}
               type="button"
               className={cn(
                 YEAR_BUTTON_CLASS,
@@ -203,11 +223,13 @@ export function MonthPicker(props: MonthPickerProps): React.ReactElement {
             </Button>
           );
         })}
+      </div> : <>
+
+      <div className="mb-2 text-xs text-slate-500" aria-live="polite">
+        {displayYear}年 · 选择月份
       </div>
 
-      <div className="h-px bg-gray-100 my-3"></div>
-
-      <div className={cn("grid grid-cols-3", MONTH_GRID_GAP_CLASS)}>
+      <div ref={gridRef} className={cn("grid grid-cols-3", MONTH_GRID_GAP_CLASS)}>
         {MONTHS.map((month) => {
           const disabled = isMonthDisabled(month.number);
           const selected = isMonthSelected(month.number);
@@ -218,6 +240,7 @@ export function MonthPicker(props: MonthPickerProps): React.ReactElement {
               variant={selected ? "default" : "ghost"}
               onClick={() => handleMonthClick(month.number)}
               disabled={disabled}
+              aria-pressed={selected}
               type="button"
               className={cn(
                 MONTH_BUTTON_CLASS,
@@ -230,6 +253,7 @@ export function MonthPicker(props: MonthPickerProps): React.ReactElement {
           );
         })}
       </div>
+      </>}
     </div>
   );
 }

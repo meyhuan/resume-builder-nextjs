@@ -9,6 +9,7 @@ export default defineConfig({
     include: [
       'src/components/ui/autocomplete-input.test.tsx',
       'src/editor/field-suggestions.test.tsx',
+      'src/editor/editable-date-field.test.tsx',
       'src/app/m/edit/_components/mobile-field-suggestions.test.tsx',
       'src/components/modals/base-info-email.test.tsx',
       'src/components/modals/base-info-month.test.tsx',

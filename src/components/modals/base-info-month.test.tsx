@@ -36,6 +36,7 @@ describe('month selection for the first working date', () => {
   it('does not commit a year until a month is chosen, and modal cancellation discards the draft', async () => {
     const { trigger, save, close } = form('2025.07')
     fireEvent.click(trigger)
+    fireEvent.click(await screen.findByRole('button', { name: '选择年份，当前2025年' }))
     fireEvent.click(await screen.findByRole('button', { name: '2024年' }))
     expect(trigger.textContent).toContain('2025.07')
     fireEvent.click(screen.getByRole('button', { name: '3月' }))
