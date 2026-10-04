@@ -16,6 +16,8 @@ export default defineConfig({
       'src/components/modals/job-intention-choices.test.tsx',
       'src/components/templates/one-page-readability.test.tsx',
       'src/components/templates/pagination-feedback.test.tsx',
+      'src/hooks/use-pdf-preview-page-count.test.tsx',
+      'src/io/pdf-page-count.test.ts',
       'src/components/blocks/hover-actions.test.tsx',
       'src/io/editor-affordance-export.test.ts',
     ],

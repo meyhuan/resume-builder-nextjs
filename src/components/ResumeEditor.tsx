@@ -22,6 +22,7 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { revalidateDashboard } from '@/app/actions'
 import { useResumePagination } from '@/hooks/use-resume-pagination'
+import { usePdfPreviewPageCount } from '@/hooks/use-pdf-preview-page-count'
 import { ResumePageFeedback, ResumePageGuides } from '@/components/editor/resume-page-feedback'
 import { useOnePageMode } from '@/hooks/use-one-page-mode'
 import { toast } from 'sonner'
@@ -766,6 +767,8 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
     snapshot: onePageSnapshot,
     setSnapshot: setOnePageSnapshot,
   })
+  const previewRevision = `${currentFingerprint}:${onePageStatus}`
+  const { pdfPageCount, recordPreview } = usePdfPreviewPageCount(previewRevision)
 
   const handleExportMarkdown = useCallback(() => {
     if (!requirePdf()) {
@@ -838,6 +841,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
   /** Generate PDF preview WITHOUT consuming quota. */
   async function handlePreviewPdf(): Promise<void> {
     if (!printRef.current || isGenerating) return
+    const generatedRevision = previewRevision
     // Preview is unlimited - no quota check
     setIsGenerating(true)
     try {
@@ -857,6 +861,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
       setPdfBlob(blob)
       setPdfBlobUrl(url)
       setShowPreview(true)
+      void recordPreview(blob, generatedRevision)
       if (autoOptimized) {
         toast.message('作品集图片已自动优化，正在保持导出清晰度与文件大小平衡')
       }
@@ -1089,7 +1094,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
       <AiSectionProvider requireVip={requireAi}>
       <main className="flex-1 flex overflow-hidden relative z-10">
         <ResumeActionWorkspace className={activePanel ? 'hidden md:flex print:block' : ''}>
-        <ResumePageFeedback pages={pages} contentRef={printRef} guides={pageGuides} onGuidesChange={setPageGuides} onePage={onePageMode} />
+        <ResumePageFeedback pages={pages} contentRef={printRef} guides={pageGuides} onGuidesChange={setPageGuides} onePage={onePageMode} pdfPageCount={pdfPageCount} />
         <div data-editor-canvas className="min-h-0 min-w-0 flex-1 overflow-auto p-3 sm:p-6 xl:p-8 custom-scrollbar bg-slate-50/30">
           <div className="relative mx-auto max-w-[210mm] md:w-[210mm] md:max-xl:[zoom:0.8] print:[zoom:1]">
             <div
@@ -1184,6 +1189,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
         open={showPreview}
         onOpenChange={(next: boolean) => { if (!next) handleClosePreview() }}
         pdfUrl={pdfBlobUrl}
+        pdfPageCount={pdfPageCount}
         onConfirmExport={handleConfirmExport}
         onExportPng={() => { void handleExportPng() }}
         onExportMarkdown={handleExportMarkdown}

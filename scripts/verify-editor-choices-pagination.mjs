@@ -160,7 +160,7 @@ try {
   await page.click('[data-resume-page-feedback] input[type=checkbox]')
   assert.equal(await page.$('[data-resume-page-guides]'), null)
   assert.equal(await page.$eval('.resume-document-main', el => el.getBoundingClientRect().height), heightBefore)
-  await textClick('button', '定位跨页内容')
+  await textClick('button', '查看预计跨页位置')
   await page.waitForFunction(() => document.querySelector('[data-editor-canvas]').scrollTop > 100)
   await page.waitForSelector('[data-resume-page-guides]')
   await page.screenshot({ path: path.join(out, 'live-page-boundary.png') })

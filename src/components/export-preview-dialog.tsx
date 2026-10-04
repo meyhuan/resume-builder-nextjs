@@ -16,6 +16,7 @@ interface ExportPreviewDialogProps {
   readonly open: boolean
   readonly onOpenChange: (open: boolean) => void
   readonly pdfUrl: string
+  readonly pdfPageCount?: number | null
   readonly onConfirmExport: () => void
   readonly onExportPng?: () => void
   readonly onExportMarkdown?: () => void
@@ -29,6 +30,7 @@ export default function ExportPreviewDialog({
   open,
   onOpenChange,
   pdfUrl,
+  pdfPageCount,
   onConfirmExport,
   onExportPng,
   onExportMarkdown,
@@ -65,7 +67,7 @@ export default function ExportPreviewDialog({
             <DialogTitle className="text-base">导出效果预览</DialogTitle>
           </div>
           <DialogDescription className="text-xs text-slate-400 mt-1">
-            以下为实际生成的 PDF，确认无误后继续导出
+            {pdfPageCount != null ? `实际 PDF 共 ${pdfPageCount} 页，确认无误后继续导出` : '以下为实际生成的 PDF，确认无误后继续导出'}
           </DialogDescription>
         </DialogHeader>
 

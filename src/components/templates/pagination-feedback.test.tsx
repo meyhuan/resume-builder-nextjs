@@ -1,10 +1,11 @@
 import { useRef } from 'react'
-import { act, cleanup, renderHook } from '@testing-library/react'
+import { act, cleanup, render, renderHook, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { calculateResumePages, CSS_PX_PER_MM, readPagePaddingVertical } from '@/lib/resume-page-metrics'
 import { measureResumePagination, useResumePagination } from '@/hooks/use-resume-pagination'
 import { getOnePageAdjustments } from '@/components/editor/one-page-adjustments'
 import { buildResumeHtml } from '@/io/html-export'
+import { ResumePageFeedback, ResumePageGuides } from '@/components/editor/resume-page-feedback'
 
 beforeEach(() => {
   vi.stubGlobal('ResizeObserver', class { observe() {} disconnect() {} })
@@ -34,6 +35,29 @@ function fixture(scale = 1) {
 }
 
 describe('live pagination feedback', () => {
+  it('clearly distinguishes estimated boundaries from verified PDF totals, without adding appendix pages twice', () => {
+    const root = fixture()
+    const pages = { ...measureResumePagination(root), appendixPages: 2 }
+    const props = { pages, contentRef: { current: root as HTMLDivElement }, guides: true, onGuidesChange: vi.fn(), onePage: false }
+    const { rerender } = render(<ResumePageFeedback {...props} />)
+    expect(screen.getByRole('status').textContent).toContain('预计 4 页')
+    expect(screen.getByRole('checkbox', { name: '显示分页参考线' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: '查看预计跨页位置' })).toBeTruthy()
+    rerender(<ResumePageFeedback {...props} pdfPageCount={3} />)
+    expect(screen.getByRole('status').textContent).toBe('PDF 实际 3 页')
+    expect(screen.getByRole('status').getAttribute('data-page-count-source')).toBe('pdf')
+    expect(screen.getByText('参考线仅供估算，实际分页以 PDF 预览为准')).toBeTruthy()
+    rerender(<ResumePageFeedback {...props} pdfPageCount={null} />)
+    expect(screen.getByRole('status').textContent).toContain('预计 4 页')
+  })
+
+  it('labels on-canvas boundaries as references and keeps them out of exports', () => {
+    const root = fixture()
+    const { container } = render(<ResumePageGuides pages={measureResumePagination(root)} visible />)
+    expect(container.textContent).toContain('第 1 页 / 第 2 页（参考）')
+    expect(buildResumeHtml(container)).not.toContain('（参考）')
+  })
+
   it('matches first/continuation page margins and handles fractional A4 rounding', () => {
     const first = 275 * CSS_PX_PER_MM
     const next = 253 * CSS_PX_PER_MM

@@ -11,6 +11,7 @@ import type { ThemeTokens } from '@/entities/theme/theme-tokens'
 import { PortfolioAppendix } from '@/components/portfolio/portfolio-appendix'
 import { getTemplateFixture, getTemplateLabTheme } from '@/lib/template-fixtures'
 import { useResumePagination } from '@/hooks/use-resume-pagination'
+import { usePdfPreviewPageCount } from '@/hooks/use-pdf-preview-page-count'
 import { ResumePageFeedback, ResumePageGuides } from '@/components/editor/resume-page-feedback'
 import { useOnePageMode } from '@/hooks/use-one-page-mode'
 import type { AdjustableTokens } from '@/entities/editor/editor-meta'
@@ -19,6 +20,7 @@ import { getRenderableResume } from '@/entities/resume/renderable-resume'
 import { useEditorUiStore } from '@/state/editor-ui-store'
 import { exportImage } from '@/io/export-image'
 import { ResumeActionWorkspace } from '@/components/blocks/resume-action-dock'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
 const DEFAULT_TEMPLATE = 'lanxin'
 
@@ -50,9 +52,11 @@ export default function ScenarioLoaderClient(): ReactElement {
   const [exportStatus, setExportStatus] = useState('')
   const [pageGuides, setPageGuides] = useState(true)
   const pages = useResumePagination(previewRef, tpl)
+  const [previewPdfUrl, setPreviewPdfUrl] = useState('')
 
-  async function exportFixture(format: 'pdf' | 'png'): Promise<void> {
+  async function exportFixture(format: 'pdf' | 'png' | 'preview'): Promise<void> {
     if (!previewRef.current) return
+    const generatedRevision = previewRevision
     setExportStatus('导出中')
     try {
       if (format === 'png') {
@@ -63,14 +67,20 @@ export default function ScenarioLoaderClient(): ReactElement {
           body: JSON.stringify({ html: buildResumeHtml(previewRef.current), preview: true }),
         })
         if (!response.ok) throw new Error(`PDF ${response.status}`)
-        const url = URL.createObjectURL(await response.blob())
-        const link = document.createElement('a')
-        link.href = url
-        link.download = 'empty-project-feedback.pdf'
-        link.click()
-        setTimeout(() => URL.revokeObjectURL(url), 30000)
+        const blob = await response.blob()
+        const url = URL.createObjectURL(blob)
+        if (format === 'preview') {
+          setPreviewPdfUrl(url)
+          void recordPreview(blob, generatedRevision)
+        } else {
+          const link = document.createElement('a')
+          link.href = url
+          link.download = 'empty-project-feedback.pdf'
+          link.click()
+          setTimeout(() => URL.revokeObjectURL(url), 30000)
+        }
       }
-      setExportStatus(`${format.toUpperCase()} 导出成功`)
+      setExportStatus(format === 'preview' ? 'PDF 预览已生成' : `${format.toUpperCase()} 导出成功`)
     } catch (error) {
       setExportStatus(error instanceof Error ? error.message : '导出失败')
     }
@@ -108,6 +118,11 @@ export default function ScenarioLoaderClient(): ReactElement {
   const { status: onePageStatus, reset: resetOnePage } = useOnePageMode({
     contentRef: resumeBodyRef, theme, patchTheme, enabled: onePage, snapshot, setSnapshot,
   })
+  const previewRevision = JSON.stringify({ resume, theme, tpl, onePage, onePageStatus })
+  const { pdfPageCount, recordPreview } = usePdfPreviewPageCount(previewRevision)
+  useEffect(() => () => {
+    if (previewPdfUrl) URL.revokeObjectURL(previewPdfUrl)
+  }, [previewPdfUrl])
 
   function changeTemplate(nextTemplate: string): void {
     resetOnePage()
@@ -121,6 +136,9 @@ export default function ScenarioLoaderClient(): ReactElement {
         <div className="mx-auto mb-4 flex max-w-7xl items-center justify-between rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs text-slate-600">
           <span>Scenario Loader QA</span>
           <span data-scenario-active-template={tpl}>{tpl} / {resume.name}</span>
+          <button data-qa-preview-pdf disabled={exportStatus === '导出中'} onClick={() => void exportFixture('preview')}>
+            {exportStatus === '导出中' ? '正在生成 PDF…' : '预览 PDF（QA）'}
+          </button>
           <button data-qa-export="true" onClick={() => {
             if (resumeBodyRef.current) setExportHtml(buildResumeHtml(resumeBodyRef.current))
           }}>生成导出 HTML（QA）</button>
@@ -133,7 +151,7 @@ export default function ScenarioLoaderClient(): ReactElement {
 
         <div className="mx-auto grid h-[calc(100dvh-112px)] max-w-7xl grid-cols-[minmax(0,1fr)_360px] gap-5">
           <ResumeActionWorkspace className="rounded-lg border border-slate-200">
-          <ResumePageFeedback pages={pages} contentRef={previewRef} guides={pageGuides} onGuidesChange={setPageGuides} onePage={onePage} />
+          <ResumePageFeedback pages={pages} contentRef={previewRef} guides={pageGuides} onGuidesChange={setPageGuides} onePage={onePage} pdfPageCount={pdfPageCount} />
           <section className="min-h-0 flex-1 overflow-auto bg-slate-200 p-6" data-editor-canvas="true">
             <div ref={previewRef} className="relative mx-auto w-[794px] bg-white shadow-sm" data-scenario-preview="true">
               <div ref={resumeBodyRef} className="resume-document-main" data-one-page={onePage && onePageStatus === 'fit' ? 'true' : 'false'} data-one-page-status={onePageStatus} data-qa-theme={JSON.stringify(theme)}>
@@ -165,6 +183,15 @@ export default function ScenarioLoaderClient(): ReactElement {
           </aside>
         </div>
         <textarea hidden readOnly data-qa-export-html="true" value={exportHtml} />
+        <Dialog open={Boolean(previewPdfUrl)} onOpenChange={open => { if (!open) setPreviewPdfUrl('') }}>
+          <DialogContent className="flex h-[85vh] w-[900px] max-w-[90vw] flex-col">
+            <DialogHeader>
+              <DialogTitle>PDF 预览（QA）</DialogTitle>
+              <DialogDescription>{pdfPageCount != null ? `实际 PDF 共 ${pdfPageCount} 页` : '以下为实际生成的 PDF'}</DialogDescription>
+            </DialogHeader>
+            {previewPdfUrl && <iframe title="PDF 预览" src={`${previewPdfUrl}#toolbar=0`} className="min-h-0 flex-1 border-0" />}
+          </DialogContent>
+        </Dialog>
       </main>
     </AiSectionProvider>
   )
