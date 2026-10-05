@@ -22,6 +22,7 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { revalidateDashboard } from '@/app/actions'
 import { useResumePagination } from '@/hooks/use-resume-pagination'
+import { useEditorSidebarPreference } from '@/hooks/use-editor-sidebar-preference'
 import { usePdfPreviewPageCount } from '@/hooks/use-pdf-preview-page-count'
 import { ResumePageGuides } from '@/components/editor/resume-page-feedback'
 import { useOnePageMode } from '@/hooks/use-one-page-mode'
@@ -256,9 +257,10 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null)
   const AUTO_SAVE_DELAY = 30000 // 30 seconds
   const [showLeaveDialog, setShowLeaveDialog] = useState(false)
-  const activePanel = useEditorUiStore((state) => state.activePanel)
+  const sidebarReady = useEditorSidebarPreference(initialResumeId || 'local')
+  const storedActivePanel = useEditorUiStore((state) => state.activePanel)
+  const activePanel = sidebarReady ? storedActivePanel : null
   const setActivePanel = useEditorUiStore((state) => state.setActivePanel)
-  useEffect(() => { setActivePanel(null) }, [initialResumeId, setActivePanel])
   const pages = useResumePagination(printRef, tpl)
   const [onePageMode, setOnePageMode] = useState(false)
   const [onePageSnapshot, setOnePageSnapshot] = useState<AdjustableTokens | null>(null)
@@ -1137,7 +1139,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
         </ResumeActionWorkspace>
         <ResizableEditorSidebar open={Boolean(activePanel)} className={activePanel ? 'flex flex-col' : 'hidden'}>
           <EditorWorkspaceTabs activePanel={activePanel} onChange={setActivePanel} />
-          <div className={activePanel === 'ai' ? 'min-h-0 flex-1' : 'hidden'}><EditorAiPanel resumeId={resumeId} /></div>
+          <div className={activePanel === 'ai' ? 'min-h-0 flex-1' : 'hidden'}>{sidebarReady && <EditorAiPanel resumeId={resumeId} />}</div>
           <div id="editor-section-ai" className={activePanel === 'polish' || activePanel === 'generate' ? 'min-h-0 flex-1 flex flex-col' : 'hidden'} />
           {activePanel && activePanel !== 'ai' && activePanel !== 'polish' && activePanel !== 'generate' && <div className="min-h-0 flex-1 overflow-hidden">
             <RightSidebar

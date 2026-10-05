@@ -10,6 +10,7 @@ export default defineConfig({
     environment: 'jsdom',
     include: [
       'src/hooks/use-ai-chat.test.tsx',
+      'src/hooks/use-editor-sidebar-preference.test.tsx',
       'src/state/editor-ui-store.test.ts',
       'src/components/ai-section/*.test.tsx',
       'src/lib/ai/section-client.test.tsx',
