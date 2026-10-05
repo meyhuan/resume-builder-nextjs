@@ -216,6 +216,92 @@ it('suggested followup clicks cannot authorize automatic application', async () 
   expect(result.proposals).toHaveLength(1);
 });
 
+it('blocks numeric examples from clicked recommendations even if the semantic audit approves', async () => {
+  const { result, runner } = await run(
+    [
+      plan,
+      {
+        ...draft,
+        proposals: [
+          {
+            action: 'updateBlock',
+            blockId: 'b',
+            html: '<p>协助登记，累计服务200人次，形成1页TOP3摘要。</p>',
+          },
+        ],
+      },
+      { safe: true, questions: [] },
+    ],
+    '是否形成过摘要（如1页内归纳TOP3问题）？',
+    {
+      messageSource: 'suggestion',
+      turns: [
+        {
+          text: '是否有服务人数（如200人次）？',
+          answer: '',
+          questions: [],
+          proposals: [],
+          messageSource: 'suggestion',
+        },
+      ],
+    },
+  );
+  expect(result.proposals).toEqual([]);
+  expect(result.questions.length).toBeGreaterThan(0);
+  const audit = JSON.parse(vi.mocked(runner).mock.calls[2][1]);
+  expect(audit.newNumbers).toEqual(['200', '1', '3']);
+  expect(JSON.parse(audit.evidence).userStatements).toEqual([]);
+});
+
+it('accepts explicitly provided numbers and limits whole-resume followup facts to the chosen block', async () => {
+  const { result, runner, charge } = await run(
+    [
+      {
+        ...draft,
+        proposals: [
+          {
+            action: 'updateBlock',
+            blockId: 'b',
+            html: '<p>协助登记，服务47人次。</p>',
+          },
+        ],
+      },
+      { safe: true, questions: [] },
+    ],
+    '请根据以下真实信息重新润色：实际服务规模：47人次',
+    {
+      task: { ...task, feature: 'chat', blockId: undefined, scope: 'resume' },
+      followupTargetId: 'b',
+      messageSource: 'user',
+      allowDirect: false,
+      resume: {
+        ...resume,
+        sections: [
+          {
+            ...resume.sections[0],
+            blocks: [
+              ...resume.sections[0].blocks,
+              { id: 'c', type: 'text', html: '<p>整理通知。</p>' },
+            ],
+          },
+        ],
+      },
+    },
+  );
+  expect(result.proposals).toHaveLength(1);
+  expect(result.scope).toBeUndefined();
+  expect(result.feature).toBe('chat');
+  expect(charge).toHaveBeenCalledExactlyOnceWith('chat');
+  expect(JSON.parse(vi.mocked(runner).mock.calls[0][1]).task.blockId).toBe('b');
+  expect(vi.mocked(runner)).toHaveBeenCalledTimes(2);
+});
+
+it('refuses followup facts for a different target within a module task', async () => {
+  await expect(
+    run([], '实际服务47人次', { followupTargetId: 'other' }),
+  ).rejects.toThrow('目标与当前任务不匹配');
+});
+
 it('uses local user statements as evidence, excludes historical AI suggestions, and resets direct permission', async () => {
   const { result, runner } = await run(
     [{ ...plan, direct: true }, draft, { safe: true, questions: [] }],

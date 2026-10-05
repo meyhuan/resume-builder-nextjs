@@ -7,6 +7,7 @@ import {
   taskSchema,
   historyTurnSchema,
   MAX_TASK_TURNS,
+  messageSourceSchema,
 } from '@/lib/ai/unified/types';
 import { AssistantError, consumeAssistantQuota } from '@/lib/ai/unified/quota';
 import { createJsonRunner, runAssistant } from '@/lib/ai/unified/engine';
@@ -23,6 +24,8 @@ const bodySchema = z.object({
     .default([]),
   requestId: z.string().uuid(),
   fromFollowup: z.boolean().default(false),
+  messageSource: messageSourceSchema.optional(),
+  followupTargetId: z.string().min(1).max(100).optional(),
   text: z.string().trim().min(1).max(6000),
   resumeData: z
     .object({
@@ -90,13 +93,17 @@ export async function POST(request: NextRequest) {
     ]);
     // One charge per invocation only. Independent HTTP retries are new attempts.
     let chargePromise: Promise<void> | undefined;
+    const messageSource =
+      body.messageSource || (body.fromFollowup ? 'suggestion' : 'user');
     const execute = (emit?: (event: AssistantStreamEvent) => void) =>
       runAssistant({
         task: body.task,
         turns: body.turns,
         text: body.text,
+        messageSource,
+        followupTargetId: body.followupTargetId,
         requestId: body.requestId,
-        allowDirect: !body.fromFollowup,
+        allowDirect: !body.fromFollowup && messageSource === 'user',
         resume: body.resumeData as unknown as ResumeData,
         run: createJsonRunner(extractAIConfig(request), signal),
         ...(emit
@@ -116,7 +123,7 @@ export async function POST(request: NextRequest) {
             auth.javaUserId,
           ));
         },
-      });
+      }).then((turn) => ({ ...turn, messageSource }));
     if (request.headers.get('accept')?.includes('application/x-ndjson')) {
       const encoder = new TextEncoder();
       let active = true;

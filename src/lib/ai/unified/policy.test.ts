@@ -79,8 +79,8 @@ it('does not offer responsibility inflation as a next-question choice', () => {
     ],
   });
   expect(followups.join('')).not.toMatch(/独立承担|精通/);
-  expect(followups).toContain('哪些真实信息还需要补充？');
-  expect(followups).toHaveLength(3);
+  expect(followups).toContain('说明哪些真实信息有助于完善表达。');
+  expect(followups).toHaveLength(2);
 });
 
 it.each([

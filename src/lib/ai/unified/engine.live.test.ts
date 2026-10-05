@@ -3,7 +3,7 @@ import { describe, it, expect, vi } from 'vitest';
 vi.mock('server-only', () => ({}));
 import { runAssistant, createJsonRunner } from './engine';
 import type { ResumeData } from '@/entities/resume/resume-data';
-import type { AssistantTask } from './types';
+import { toHistory, type AssistantTask } from './types';
 const resume = {
   id: 'synthetic',
   name: '测试简历',
@@ -37,6 +37,78 @@ const run = createJsonRunner(
 describe.skipIf(process.env.AI_LIVE_EVAL !== '1')(
   'synthetic live model evaluation',
   () => {
+    it('executes concise followup requests and uses only submitted facts without asking the same questions again', async () => {
+      const charges: string[] = [];
+      const diagnostics: string[] = [];
+      const observedRun: typeof run = async (
+        system,
+        prompt,
+        schema,
+        preview,
+      ) => {
+        try {
+          return await run(system, prompt, schema, preview);
+        } catch (error) {
+          diagnostics.push(error instanceof Error ? error.message : 'unknown');
+          throw error;
+        }
+      };
+      const first = await runAssistant({
+        task,
+        turns: [],
+        text: '帮我进一步精简表达，保留原有事实。',
+        messageSource: 'suggestion',
+        allowDirect: false,
+        requestId: crypto.randomUUID(),
+        resume,
+        run: observedRun,
+        charge: async (feature) => {
+          charges.push(feature);
+        },
+      });
+      expect(first.questions).toEqual([]);
+      expect(first.proposals).toHaveLength(1);
+      first.messageSource = 'suggestion';
+      const second = await runAssistant({
+        task,
+        turns: toHistory([first]),
+        text: '请根据以下我确认的真实信息，重新润色选中的段落（blockId=b）。先展示修改建议。未填写或不确定的信息请保留原文，不自行补全。\n实际服务规模：47人次\n实际使用的工具和用途：暂不确定，请保留原文\n实际形成的交付物：没有可补充的信息，请保留原文',
+        messageSource: 'user',
+        followupTargetId: 'b',
+        allowDirect: false,
+        requestId: crypto.randomUUID(),
+        resume,
+        run: observedRun,
+        charge: async (feature) => {
+          charges.push(feature);
+        },
+      });
+      expect(second.questions, diagnostics.join('; ')).toEqual([]);
+      expect(second.proposals).toHaveLength(1);
+      const content = second.proposals
+        .map((p) => (p.action === 'updateBlock' ? p.html : ''))
+        .join('');
+      expect(content).toContain('47');
+      expect(content).not.toMatch(/Excel|腾讯文档|200|TOP3|形成.*摘要/);
+      expect(second.direct).toBe(false);
+      expect(charges).toEqual(['polish', 'polish']);
+      const { mkdirSync, writeFileSync } = await import('node:fs');
+      mkdirSync('test-artifacts/unified-ai-followups', { recursive: true });
+      writeFileSync(
+        'test-artifacts/unified-ai-followups/model-report.json',
+        JSON.stringify(
+          {
+            fixture:
+              'Synthetic facts; no database writes or actual quota consumption',
+            first,
+            second,
+            charges,
+          },
+          null,
+          2,
+        ),
+      );
+    }, 150000);
     it('streams synthetic draft content before returning a fact-checked turn', async () => {
       const started = performance.now();
       const previews: { text: string; at: number }[] = [];

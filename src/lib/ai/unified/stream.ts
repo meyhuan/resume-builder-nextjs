@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { plainText } from './policy';
-import { draftSchema, type AssistantTurn } from './types';
+import { draftSchema, messageSourceSchema, type AssistantTurn } from './types';
 
 export const ASSISTANT_STAGES = {
   planning: '正在理解你的要求…',
@@ -12,6 +12,7 @@ export const ASSISTANT_STAGES = {
 const turnSchema = draftSchema.omit({ reviewedBlockIds: true }).extend({
   requestId: z.string(),
   text: z.string(),
+  messageSource: messageSourceSchema.optional(),
   proposals: z
     .array(
       draftSchema.shape.proposals.unwrap().element.and(

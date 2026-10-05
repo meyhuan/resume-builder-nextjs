@@ -56,14 +56,29 @@ export const draftSchema = z.object({
   followups: z.array(z.string().min(1).max(100)).max(3).default([]),
 });
 export type DraftAnswer = z.infer<typeof draftSchema>;
+export const messageSourceSchema = z.enum(['user', 'suggestion']);
+export type MessageSource = z.infer<typeof messageSourceSchema>;
 // Browser-owned conversation context, never an authorization or billing record.
 export const historyTurnSchema = draftSchema
   .pick({ answer: true, questions: true, proposals: true })
-  .extend({ text: z.string().trim().min(1).max(6000) });
+  .extend({
+    text: z.string().trim().min(1).max(6000),
+    messageSource: messageSourceSchema.optional(),
+  });
 export type HistoryTurn = z.infer<typeof historyTurnSchema>;
 export const MAX_TASK_TURNS = 60;
 export const toHistory = (turns: AssistantTurn[]): HistoryTurn[] =>
-  turns.map((turn) => historyTurnSchema.parse(turn));
+  turns.map((turn, index) =>
+    historyTurnSchema.parse({
+      ...turn,
+      // Older saved sessions did not record where a clicked suggestion came from.
+      messageSource:
+        turn.messageSource ||
+        (turns[index - 1]?.followups?.includes(turn.text)
+          ? 'suggestion'
+          : undefined),
+    }),
+  );
 export type CheckedProposal = ChatChangeProposal & {
   before: string;
   targetLabel: string;
@@ -75,6 +90,7 @@ export interface ResumeReviewItem {
   status: 'proposed' | 'unchanged' | 'confirmation' | 'unreviewed' | 'empty';
 }
 export interface AssistantTurn {
+  messageSource?: MessageSource;
   scope?: 'resume';
   coverage?: ResumeReviewItem[];
   requestId: string;

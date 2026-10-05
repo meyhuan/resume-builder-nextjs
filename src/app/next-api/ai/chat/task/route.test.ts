@@ -131,6 +131,29 @@ it('clarification can return without quota consumption', async () => {
   expect((await POST(req())).status).toBe(200);
   expect(m.charge).not.toHaveBeenCalled();
 });
+
+it('retains provenance for legacy suggestion clicks and confirmed followup answers', async () => {
+  let response = await POST(req({ ...body, fromFollowup: true }));
+  expect(m.run.mock.calls[0][0]).toMatchObject({
+    messageSource: 'suggestion',
+    allowDirect: false,
+  });
+  expect((await response.json()).turn.messageSource).toBe('suggestion');
+  response = await POST(
+    req({
+      ...body,
+      fromFollowup: true,
+      messageSource: 'user',
+      followupTargetId: 'b',
+    }),
+  );
+  expect(m.run.mock.calls[1][0]).toMatchObject({
+    messageSource: 'user',
+    allowDirect: false,
+    followupTargetId: 'b',
+  });
+  expect((await response.json()).turn.messageSource).toBe('user');
+});
 it('rejects malformed or overlong local history', async () => {
   expect(
     (await POST(req({ ...body, turns: [{ text: 'x', answer: 123 }] }))).status,

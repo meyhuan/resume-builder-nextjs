@@ -14,6 +14,12 @@ import {
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { toast } from 'sonner';
+import { UnifiedFollowupForm } from './unified-followup-form';
+import {
+  followupFactTopic,
+  followupRequest,
+  type FactTopic,
+} from '@/lib/ai/unified/followups';
 import {
   UnifiedQuestions,
   INITIAL_QUESTION_PROGRESS,
@@ -65,6 +71,7 @@ import type {
   AssistantTurn,
   CheckedProposal,
   ReviewStatus,
+  MessageSource,
 } from '@/lib/ai/unified/types';
 import {
   applyChecked,
@@ -281,6 +288,10 @@ type Submission = Pick<
   AssistantAnalytics,
   'submissionSource' | 'sourceRequestId' | 'sourceOptionId' | 'retryOfRequestId'
 >;
+type MessageIntent = {
+  messageSource: MessageSource;
+  followupTargetId?: string;
+};
 const resultType = (turn: AssistantTurn): AssistantAnalytics['resultType'] =>
   turn.questions.length
     ? 'clarification'
@@ -299,12 +310,18 @@ export function UnifiedAssistant({
   const [active, setActive] = useState('');
   const [loaded, setLoaded] = useState(false);
   const [input, setInput] = useState('');
+  const [factEntry, setFactEntry] = useState<{
+    requestId: string;
+    index: number;
+    topic: FactTopic;
+  } | null>(null);
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [questionProgress, setQuestionProgress] = useState<
     Record<string, QuestionProgress>
   >({});
   useEffect(() => {
     setQuestionProgress({});
+    setFactEntry(null);
   }, [active]);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [busy, setBusy] = useState(false);
@@ -316,6 +333,7 @@ export function UnifiedAssistant({
     text: string;
     fromFollowup: boolean;
     submission: Submission;
+    intent: MessageIntent;
   } | null>(null);
   const actions = useRef<{
     send: (text: string) => void;
@@ -459,7 +477,7 @@ export function UnifiedAssistant({
   useEffect(() => {
     if (nearBottom.current)
       end.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-  }, [sessions, pending, error, preview, stage]);
+  }, [sessions, pending, error, preview, stage, factEntry]);
   useEffect(() => {
     if (externalMessage && !busy && loaded && session) {
       if (session.task.blockId) {
@@ -505,6 +523,10 @@ export function UnifiedAssistant({
     text: string,
     fromFollowup = false,
     submission: Submission = { submissionSource: 'typed' },
+    intent: MessageIntent = {
+      messageSource:
+        submission.submissionSource === 'typed' ? 'user' : 'suggestion',
+    },
   ) => {
     if (!session || busy || abort.current || !text.trim()) return;
     if (session.turns.length >= MAX_TASK_TURNS) {
@@ -518,9 +540,11 @@ export function UnifiedAssistant({
       requestId: crypto.randomUUID(),
       text: text.trim(),
       fromFollowup,
+      ...intent,
       resumeData: structuredClone(useAppStore.getState().resume),
     };
     setBusy(true);
+    setFactEntry(null);
     setError('');
     setPending(body.text);
     setStage('planning');
@@ -529,6 +553,7 @@ export function UnifiedAssistant({
     setRetry({
       text: body.text,
       fromFollowup,
+      intent,
       submission: {
         ...submission,
         submissionSource: 'retry',
@@ -594,6 +619,8 @@ export function UnifiedAssistant({
       }
       if (turn.requestId !== body.requestId)
         throw new Error('返回结果不匹配，请重试');
+      // Retain origin even when talking to an older server without this field.
+      turn.messageSource = body.messageSource;
       update(body.task.id, (s) =>
         s.turns.some((t) => t.requestId === turn.requestId)
           ? s
@@ -1262,7 +1289,17 @@ export function UnifiedAssistant({
                           optionId: optionId(turn.requestId, i),
                           optionIndex: i,
                         });
-                        void send(t, true, {
+                        const topic = followupFactTopic(t);
+                        if (topic) {
+                          setFactEntry({
+                            requestId: turn.requestId,
+                            index: i,
+                            topic,
+                          });
+                          nearBottom.current = true;
+                          return;
+                        }
+                        void send(followupRequest(t), true, {
                           submissionSource: 'followup',
                           sourceRequestId: turn.requestId,
                           sourceOptionId: optionId(turn.requestId, i),
@@ -1270,6 +1307,54 @@ export function UnifiedAssistant({
                       }}
                     />
                   ))}
+                  {factEntry?.requestId === turn.requestId && (
+                    <UnifiedFollowupForm
+                      key={`${turn.requestId}:${factEntry.index}`}
+                      topic={factEntry.topic}
+                      targets={
+                        session.task.blockId
+                          ? [
+                              {
+                                id: session.task.blockId,
+                                label: session.task.label,
+                              },
+                            ]
+                          : [
+                              ...new Map(
+                                turn.proposals.flatMap((proposal) =>
+                                  proposal.action === 'updateBlock'
+                                    ? [
+                                        [
+                                          proposal.blockId,
+                                          {
+                                            id: proposal.blockId,
+                                            label: proposal.targetLabel,
+                                          },
+                                        ] as const,
+                                      ]
+                                    : [],
+                                ),
+                              ).values(),
+                            ]
+                      }
+                      onCancel={() => setFactEntry(null)}
+                      onSubmit={(text, followupTargetId) =>
+                        void send(
+                          text,
+                          true,
+                          {
+                            submissionSource: 'followup',
+                            sourceRequestId: turn.requestId,
+                            sourceOptionId: optionId(
+                              turn.requestId,
+                              factEntry.index,
+                            ),
+                          },
+                          { messageSource: 'user', followupTargetId },
+                        )
+                      }
+                    />
+                  )}
                 </div>
               )}
           </article>
@@ -1315,7 +1400,12 @@ export function UnifiedAssistant({
               <button
                 className={button}
                 onClick={() =>
-                  void send(retry.text, retry.fromFollowup, retry.submission)
+                  void send(
+                    retry.text,
+                    retry.fromFollowup,
+                    retry.submission,
+                    retry.intent,
+                  )
                 }
               >
                 重新生成（重新计次）

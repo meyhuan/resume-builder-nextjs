@@ -91,7 +91,12 @@ afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
 });
-function reply(direct = false, questions: unknown[] = [], count = 1) {
+function reply(
+  direct = false,
+  questions: unknown[] = [],
+  count = 1,
+  followups = ['这段还能再精简一点吗？', '哪些表述需要核对？'],
+) {
   mocks.fetch.mockImplementation(async (_url, options) => {
     const body = JSON.parse(options.body);
     return {
@@ -112,7 +117,7 @@ function reply(direct = false, questions: unknown[] = [], count = 1) {
                 targetLabel: '校园旧物交换活动',
                 factChecked: true,
               })),
-          followups: ['这段还能再精简一点吗？', '哪些表述需要核对？'],
+          followups,
           direct,
           charged: !questions.length,
           feature: 'polish',
@@ -630,7 +635,8 @@ it('followup uses the same task and does not carry direct authorization', async 
   await waitFor(() => expect(mocks.fetch).toHaveBeenCalledTimes(2));
   const body = JSON.parse(mocks.fetch.mock.calls[1][1].body);
   expect(body.task.id).toBe(task.id);
-  expect(body.text).toBe('这段还能再精简一点吗？');
+  expect(body.text).toBe('帮我进一步精简表达，保留原有事实。');
+  expect(body.messageSource).toBe('suggestion');
   expect(body.direct).toBeUndefined();
   expect(body.fromFollowup).toBe(true);
   expect(body.turns).toHaveLength(1);
@@ -639,6 +645,95 @@ it('followup uses the same task and does not carry direct authorization', async 
   expect(body.turns[0].charged).toBeUndefined();
   expect(body.turns[0].proposals[0].before).toBeUndefined();
   expect(body.turns[0].proposals[0].factChecked).toBeUndefined();
+});
+
+it.each([
+  [
+    '这段经历中是否有具体服务人数（如累计服务200+人次）？若有，可自然融入首句。',
+    '实际服务规模',
+  ],
+  [
+    '是否曾使用特定工具提升效率（如用Excel公式去重）？若明确用过，可加括号说明。',
+    '实际使用的工具和用途',
+  ],
+  [
+    '反馈汇总是否形成过简要摘要（如1页内归纳TOP3问题）？若有交付物，可补充。',
+    '实际形成的交付物',
+  ],
+])(
+  'opens a local form and skips without requesting AI: %s',
+  async (question, field) => {
+    reply(false, [], 1, [question]);
+    await mount();
+    await send();
+    fireEvent.change(screen.getByLabelText('向 AI 描述修改需求'), {
+      target: { value: '我的未发送草稿' },
+    });
+    fireEvent.click(await screen.findByRole('button', { name: question }));
+    expect(
+      await screen.findByRole('form', { name: '补充真实信息' }),
+    ).toBeTruthy();
+    expect(screen.getByLabelText(field)).toBeTruthy();
+    expect(document.activeElement).toBe(screen.getByLabelText(field));
+    expect(
+      (
+        screen.getByRole('button', {
+          name: '提交补充并润色',
+        }) as HTMLButtonElement
+      ).disabled,
+    ).toBe(true);
+    expect(mocks.fetch).toHaveBeenCalledTimes(1);
+    expect(events('start')).toHaveLength(1);
+    expect(
+      (screen.getByLabelText('向 AI 描述修改需求') as HTMLTextAreaElement)
+        .value,
+    ).toBe('我的未发送草稿');
+    fireEvent.click(screen.getByRole('button', { name: '暂不补充' }));
+    expect(screen.queryByRole('form', { name: '补充真实信息' })).toBeNull();
+    expect(mocks.fetch).toHaveBeenCalledTimes(1);
+    expect(useAppStore.getState().pastStates).toHaveLength(0);
+  },
+);
+
+it('submits actual facts and uncertainty once, preserving provenance across retry and history', async () => {
+  reply(false, [], 1, ['补充这段经历的真实信息']);
+  await mount();
+  await send();
+  reply(true, [], 1, ['补充这段经历的真实信息']);
+  fireEvent.click(
+    await screen.findByRole('button', { name: '补充这段经历的真实信息' }),
+  );
+  fireEvent.change(screen.getByLabelText('实际服务规模'), {
+    target: { value: '47人次' },
+  });
+  fireEvent.click(screen.getAllByRole('button', { name: '暂不确定' })[1]);
+  fireEvent.click(screen.getAllByRole('button', { name: '没有' })[2]);
+  mocks.fetch.mockRejectedValueOnce(new Error('网络中断'));
+  fireEvent.click(screen.getByRole('button', { name: '提交补充并润色' }));
+  await screen.findByRole('button', { name: '重新生成（重新计次）' });
+  const first = JSON.parse(mocks.fetch.mock.calls[1][1].body);
+  expect(first.text).toContain('实际服务规模：47人次');
+  expect(first.text).toContain('实际使用的工具和用途：暂不确定');
+  expect(first.text).toContain('实际形成的交付物：没有');
+  expect(first.text).not.toMatch(/200|TOP3|Excel/);
+  expect(first).toMatchObject({
+    fromFollowup: true,
+    messageSource: 'user',
+    followupTargetId: 'b',
+  });
+  fireEvent.click(screen.getByRole('button', { name: '重新生成（重新计次）' }));
+  await waitFor(() => expect(mocks.fetch).toHaveBeenCalledTimes(3));
+  await waitFor(() => expect(screen.queryByText('停止')).toBeNull());
+  expect(JSON.parse(mocks.fetch.mock.calls[2][1].body)).toMatchObject({
+    text: first.text,
+    messageSource: 'user',
+    followupTargetId: 'b',
+  });
+  expect(useAppStore.getState().pastStates).toHaveLength(0);
+  expect(
+    (mocks.saved as { turns: { messageSource: string }[] }[])[0].turns.at(-1)
+      ?.messageSource,
+  ).toBe('user');
 });
 
 it('stopping a pending request never applies a late result', async () => {
