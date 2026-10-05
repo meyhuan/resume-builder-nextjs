@@ -151,7 +151,7 @@ export const WizardLayout = ({ children }: { children: React.ReactNode }) => {
         setDraftFromServer(saved.id, resumeData, 'simple');
         router.push(`/m/edit?id=${saved.id}`);
       } else {
-        router.push(`/editor/${saved.id}`);
+        router.push(`/editor/${saved.id}?source=ai`);
       }
     } catch (err) {
       console.error('[AI] Failed to save resume:', err);

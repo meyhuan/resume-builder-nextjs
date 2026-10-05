@@ -38,6 +38,49 @@ it.each([375, 768, 1023])(
   },
 );
 
+it.each([1440, 375])(
+  'opens AI on a first AI entry at %s px without starting a task',
+  (size) => {
+    width(size);
+    renderHook(() => useEditorSidebarPreference('r', 'ai'));
+    expect(useEditorUiStore.getState()).toMatchObject({
+      activePanel: 'ai',
+      showAiChat: true,
+      assistantTask: null,
+      pendingAiMessage: null,
+    });
+    expect(
+      localStorage.getItem(key(size >= 1024 ? 'desktop' : 'narrow')),
+    ).toBeNull();
+  },
+);
+
+it.each([
+  { open: true, panel: 'layout', expected: 'layout' },
+  { open: false, panel: 'sections', expected: null },
+])(
+  'respects a saved preference on AI entry: $open, $panel',
+  ({ open, panel, expected }) => {
+    localStorage.setItem(key(), JSON.stringify({ open, panel }));
+    renderHook(() => useEditorSidebarPreference('r', 'ai'));
+    expect(useEditorUiStore.getState().activePanel).toBe(expected);
+  },
+);
+
+it('uses the new entry default on client navigation without a saved choice', () => {
+  const hook = renderHook(
+    ({ panel }: { panel: 'sections' | 'ai' }) =>
+      useEditorSidebarPreference('local', panel),
+    {
+      initialProps: { panel: 'sections' },
+    },
+  );
+  hook.rerender({ panel: 'ai' });
+  expect(hook.result.current).toBe(true);
+  expect(useEditorUiStore.getState().activePanel).toBe('ai');
+  expect(localStorage.getItem(key())).toBeNull();
+});
+
 it('remembers the selected tool across editor remounts and different resumes', () => {
   const hook = renderHook(() => useEditorSidebarPreference('first'));
   act(() => useEditorUiStore.getState().setActivePanel('templates'));

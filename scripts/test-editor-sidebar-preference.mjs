@@ -17,6 +17,8 @@ const browser = await puppeteer.launch({
 });
 const page = await browser.newPage();
 page.setDefaultTimeout(60000);
+// Navigating away from an imported synthetic draft can show beforeunload.
+page.on('dialog', (dialog) => void dialog.accept());
 const report = { checks: [], errors: [], aiRequests: [] };
 page.on('pageerror', (error) => report.errors.push(error.message));
 page.on('console', (message) => {
@@ -36,6 +38,8 @@ page.on('request', (request) => {
   const url = new URL(request.url());
   if (/^\/(next-api|api)\//.test(url.pathname)) {
     let body = {};
+    if (url.pathname === '/next-api/resumes' && request.method() === 'POST')
+      body = { id: 'sidebar-ai-saved-fixture' };
     if (url.pathname === '/next-api/ai/chat/task') {
       const input = JSON.parse(request.postData());
       report.aiRequests.push({
@@ -223,6 +227,56 @@ try {
   );
   report.checks.push(
     'mobile defaults collapsed, remembers its own choice, and preserves desktop choice',
+  );
+  const enterFromAi = async () => {
+    await page.evaluate(() =>
+      localStorage.setItem(
+        'wizard_pending_resume',
+        JSON.stringify({
+          id: 'sidebar-ai-entry-fixture',
+          name: 'AI入口验收',
+          sections: [],
+        }),
+      ),
+    );
+    await page.goto(base + '/editor/new?source=ai', {
+      waitUntil: 'networkidle0',
+      timeout: 120000,
+    });
+  };
+  await enterFromAi();
+  await expectPanel('样式');
+  await page.click('[aria-label="收起工具，返回简历"]');
+  await enterFromAi();
+  await expectPanel(null);
+  report.checks.push(
+    'AI source respects previously selected styles and explicit collapse',
+  );
+  await page.evaluate(
+    (storageKey) => localStorage.removeItem(storageKey + ':desktop'),
+    key,
+  );
+  await enterFromAi();
+  await expectPanel('AI 助手');
+  await page.screenshot({ path: out + '/desktop-ai-entry.png' });
+  assert.equal(
+    report.aiRequests.length,
+    1,
+    'AI entry opens tools without a new model request',
+  );
+  report.checks.push(
+    'first AI source opens assistant without requesting generation',
+  );
+  await page.keyboard.down('Control');
+  await page.keyboard.press('s');
+  await page.keyboard.up('Control');
+  await page.waitForFunction(
+    () => location.pathname === '/editor/sidebar-ai-saved-fixture',
+  );
+  assert.equal(new URL(page.url()).searchParams.get('source'), 'ai');
+  await expectPanel('AI 助手');
+  report.checks.push(
+    'saving an AI draft preserves its entry marker and active tool',
   );
   assert.deepEqual(report.errors, []);
   console.log('PASS:', report.checks.join('; '));

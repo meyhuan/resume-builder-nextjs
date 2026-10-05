@@ -257,7 +257,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null)
   const AUTO_SAVE_DELAY = 30000 // 30 seconds
   const [showLeaveDialog, setShowLeaveDialog] = useState(false)
-  const sidebarReady = useEditorSidebarPreference(initialResumeId || 'local')
+  const sidebarReady = useEditorSidebarPreference(initialResumeId || 'local', searchParams.get('source') === 'ai' ? 'ai' : 'sections')
   const storedActivePanel = useEditorUiStore((state) => state.activePanel)
   const activePanel = sidebarReady ? storedActivePanel : null
   const setActivePanel = useEditorUiStore((state) => state.setActivePanel)
@@ -588,7 +588,8 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
           entry: 'pc_editor_save',
         })
         // Update browser URL without full navigation
-        window.history.replaceState(null, '', `/editor/${currentId}`)
+        const sourceQuery = searchParams.get('source') === 'ai' ? '?source=ai' : ''
+        window.history.replaceState(null, '', `/editor/${currentId}${sourceQuery}`)
       }
       // 2. Generate thumbnail (Base64). Thumbnail failure must not block content save/export.
       let thumbnail: string | undefined
@@ -675,7 +676,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
     } finally {
       setIsSaving(false)
     }
-  }, [resumeId, resume, tpl, theme, onePageMode, onePageSnapshot, sidebarSectionIds])
+  }, [resumeId, resume, tpl, theme, onePageMode, onePageSnapshot, sidebarSectionIds, searchParams])
 
   /** Auth-gated save — prompts login if user is not authenticated. */
   const handleSave = useCallback(() => {

@@ -35,13 +35,17 @@ function savedPanel(
 }
 
 /** Restore only after hydration and before mounting the assistant for a document. */
-export function useEditorSidebarPreference(documentId: string): boolean {
+export function useEditorSidebarPreference(
+  documentId: string,
+  initialPanel: 'sections' | 'ai' = 'sections',
+): boolean {
   const [initializedFor, setInitializedFor] = useState<string | null>(null);
+  const initializationKey = `${documentId}:${initialPanel}`;
   useEffect(() => {
     const mode = viewport();
     const preference = readPreference(mode) || {
-      open: mode === 'desktop',
-      panel: 'sections',
+      open: mode === 'desktop' || initialPanel === 'ai',
+      panel: initialPanel,
     };
     const state = useEditorUiStore.getState();
     const hasPendingTask =
@@ -62,7 +66,7 @@ export function useEditorSidebarPreference(documentId: string): boolean {
     // Browser preferences are unavailable during SSR. This hydration gate keeps
     // the assistant from mounting with a stale task before restoration completes.
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setInitializedFor(documentId);
+    setInitializedFor(initializationKey);
     const unsubscribe = useEditorUiStore.subscribe((next, previous) => {
       if (next.activePanel === previous.activePanel) return;
       const currentMode = viewport();
@@ -84,6 +88,6 @@ export function useEditorSidebarPreference(documentId: string): boolean {
       }
     });
     return unsubscribe;
-  }, [documentId]);
-  return initializedFor === documentId;
+  }, [documentId, initialPanel, initializationKey]);
+  return initializedFor === initializationKey;
 }
