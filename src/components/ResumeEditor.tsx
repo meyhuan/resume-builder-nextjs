@@ -23,7 +23,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { revalidateDashboard } from '@/app/actions'
 import { useResumePagination } from '@/hooks/use-resume-pagination'
 import { usePdfPreviewPageCount } from '@/hooks/use-pdf-preview-page-count'
-import { ResumePageFeedback, ResumePageGuides } from '@/components/editor/resume-page-feedback'
+import { ResumePageGuides } from '@/components/editor/resume-page-feedback'
 import { useOnePageMode } from '@/hooks/use-one-page-mode'
 import { toast } from 'sonner'
 import type { AdjustableTokens } from '@/entities/editor/editor-meta'
@@ -259,7 +259,6 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
   const activePanel = useEditorUiStore((state) => state.activePanel)
   const setActivePanel = useEditorUiStore((state) => state.setActivePanel)
   useEffect(() => { setActivePanel(null) }, [initialResumeId, setActivePanel])
-  const [pageGuides, setPageGuides] = useState(true)
   const pages = useResumePagination(printRef, tpl)
   const [onePageMode, setOnePageMode] = useState(false)
   const [onePageSnapshot, setOnePageSnapshot] = useState<AdjustableTokens | null>(null)
@@ -1094,7 +1093,6 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
       <AiSectionProvider requireVip={requireAi}>
       <main className="flex-1 flex overflow-hidden relative z-10">
         <ResumeActionWorkspace className={activePanel ? 'hidden md:flex print:block' : ''}>
-        <ResumePageFeedback pages={pages} contentRef={printRef} guides={pageGuides} onGuidesChange={setPageGuides} onePage={onePageMode} pdfPageCount={pdfPageCount} />
         <div data-editor-canvas className="min-h-0 min-w-0 flex-1 overflow-auto p-3 sm:p-6 xl:p-8 custom-scrollbar bg-slate-50/30">
           <div className="relative mx-auto max-w-[210mm] md:w-[210mm] md:max-xl:[zoom:0.8] print:[zoom:1]">
             <div
@@ -1133,7 +1131,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
                 <PortfolioAppendix portfolio={renderableResume.portfolio} />
               </Suspense>
             </div>
-            <ResumePageGuides pages={pages} visible={pageGuides} />
+            <ResumePageGuides pages={pages} visible />
           </div>
         </div>
         </ResumeActionWorkspace>
