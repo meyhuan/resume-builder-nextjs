@@ -4,6 +4,7 @@ import { useRef, useState, type ChangeEvent, type ReactElement } from 'react'
 import { Camera, Trash2, User2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { MobileAvatarCropper } from './mobile-avatar-cropper'
+import { MobileAvatarSizeSheet } from './mobile-avatar-size-sheet'
 
 export interface MobileAvatarFieldProps {
   readonly value: string | undefined
@@ -23,6 +24,7 @@ export function MobileAvatarField(props: MobileAvatarFieldProps): ReactElement {
   const { value, onChange } = props
   const fileRef = useRef<HTMLInputElement>(null)
   const [rawImage, setRawImage] = useState<string | null>(null)
+  const [sizeOpen, setSizeOpen] = useState(false)
 
   const openPicker = (): void => {
     fileRef.current?.click()
@@ -93,6 +95,7 @@ export function MobileAvatarField(props: MobileAvatarFieldProps): ReactElement {
             <Camera size={15} />
             <span>{value ? '更换照片' : '上传照片'}</span>
           </button>
+          {value && <button type="button" onClick={() => setSizeOpen(true)} className="min-h-11 rounded-lg border border-violet-200 bg-violet-50 px-3 text-sm font-medium text-violet-700">调整大小</button>}
           {value && (
             <button
               type="button"
@@ -115,6 +118,7 @@ export function MobileAvatarField(props: MobileAvatarFieldProps): ReactElement {
         className="hidden"
         onChange={handleFile}
       />
+      {sizeOpen && <MobileAvatarSizeSheet onClose={() => setSizeOpen(false)} />}
       {rawImage && (
         <MobileAvatarCropper
           imageSrc={rawImage}

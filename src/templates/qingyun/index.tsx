@@ -112,7 +112,7 @@ function detectFreshGradLabel(
 // ---------------------------------------------------------------------------
 export default function QingyunTemplate(props: TemplateProps): ReactElement {
   const { resume, theme } = props
-  const header = useEditableHeader(resume.name, resume.baseInfo ?? null)
+  const header = useEditableHeader(resume.name, resume.baseInfo ?? null, 'qingyun')
   const objective = useEditableJobIntention(resume.jobIntention ?? null)
   const jobIntentionVisible: boolean = resume.jobIntentionVisible ?? Boolean(resume.jobIntention)
   const pagePad = usePagePadding(theme, 28, 6)
@@ -251,8 +251,8 @@ function QingyunHero({ header, title, horizontalPadding, freshGradLabel }: HeroP
             <div
               className="relative overflow-hidden shrink-0"
               style={{
-                width: 100,
-                height: 140,
+                width: 100 * header.avatarScale,
+                height: 140 * header.avatarScale,
                 borderRadius: 10,
                 border: '3px solid rgba(255,255,255,0.9)',
                 boxShadow: '0 4px 18px rgba(30,64,175,0.35)',

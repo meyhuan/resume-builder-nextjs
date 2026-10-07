@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useRef, useState, type ChangeEvent, type ReactElement, type ReactNode } from 'react'
-import { Mail, Phone, PlusCircle, Trash2, GripVertical, Upload } from 'lucide-react'
+import { Mail, Phone, PlusCircle, Trash2, GripVertical } from 'lucide-react'
 import { useDroppable } from '@dnd-kit/core'
 import { SortableContext, rectSortingStrategy } from '@dnd-kit/sortable'
 import { normalizeJobIntention } from '@/entities/user/job-intention-fields'
@@ -11,6 +11,8 @@ import type { ThemeTokens } from '@/entities/theme/theme-tokens'
 import type { ResumeBlock } from '@/entities/blocks/resume-block'
 import type { Section } from '@/entities/resume/section'
 import type { BaseInfo } from '@/entities/user/base-info'
+import { AvatarActions } from '@/components/avatar/avatar-actions'
+import { getAvatarScale, getAvatarMaxScale } from '@/entities/user/avatar-size'
 import BlockWrapper from '@/components/blocks/block-wrapper'
 import DeleteSectionDialog from '@/components/sections/delete-section-dialog'
 import BaseInfoModal from '@/components/modals/base-info-modal'
@@ -196,7 +198,7 @@ function DenseHeader(props: { readonly resume: ResumeData; readonly accent: stri
 
   return (
     <>
-      <header className="group/header relative min-h-[92px] pr-[126px]">
+      <header className="group/header relative" style={{ minHeight: Math.max(92, 87 * getAvatarScale(baseInfo?.showAvatar === false ? 'default' : baseInfo?.avatarSize)), paddingRight: 39 + 87 * getAvatarScale(baseInfo?.showAvatar === false ? 'default' : baseInfo?.avatarSize) }}>
         <span
           aria-hidden
           className="absolute h-[9px] w-[9px] rounded-full"
@@ -274,7 +276,9 @@ function DenseHeader(props: { readonly resume: ResumeData; readonly accent: stri
 
         {baseInfo?.showAvatar !== false ? (
           <div
-            className="absolute right-0 top-0 h-[87px] w-[87px] overflow-hidden rounded-[9px] bg-slate-100"
+            data-resume-avatar="true"
+            className="absolute right-0 top-0 overflow-hidden rounded-[9px] bg-slate-100"
+            style={{ width: 87 * getAvatarScale(baseInfo?.avatarSize), height: 87 * getAvatarScale(baseInfo?.avatarSize) }}
             onMouseEnter={() => setAvatarHovered(true)}
             onMouseLeave={() => setAvatarHovered(false)}
           >
@@ -283,38 +287,14 @@ function DenseHeader(props: { readonly resume: ResumeData; readonly accent: stri
             ) : (
               <AvatarPlaceholder />
             )}
-            {avatarHovered ? (
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/60 print:hidden">
-                <button
-                  type="button"
-                  className="inline-flex items-center gap-1 rounded bg-white/95 px-2 py-1 text-[11px] font-medium text-slate-800"
-                  onClick={(event) => {
-                    event.stopPropagation()
-                    fileInputRef.current?.click()
-                  }}
-                >
-                  <Upload size={12} />
-                  本地上传
-                </button>
-                <button
-                  type="button"
-                  className="rounded border border-white/70 px-2 py-0.5 text-[11px] text-white"
-                  onClick={(event) => {
-                    event.stopPropagation()
-                    setShowModal(true)
-                  }}
-                >
-                  编辑
-                </button>
-              </div>
-            ) : null}
+            <AvatarActions baseInfo={baseInfo} name={resume.name} onUpload={() => fileInputRef.current?.click()} hovered={avatarHovered} maxScale={getAvatarMaxScale('dense')} />
             <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
           </div>
         ) : null}
       </header>
 
       {showModal ? (
-        <BaseInfoModal baseInfo={baseInfo} name={resume.name} onClose={() => setShowModal(false)} onSave={updateBaseInfo} />
+        <BaseInfoModal avatarMaxScale={getAvatarMaxScale('dense')} baseInfo={baseInfo} name={resume.name} onClose={() => setShowModal(false)} onSave={updateBaseInfo} />
       ) : null}
       {showJobModal ? (
         <JobIntentionModal jobIntention={jobIntention} onClose={() => setShowJobModal(false)} onSave={updateJobIntention} />

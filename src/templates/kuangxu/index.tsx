@@ -14,7 +14,7 @@ import type { DragHandleProps, TemplateProps } from '@/templates/_core'
 
 /** Canva EAF9-DnaqKo 的信息框、顶端胶囊和逐节横框，转换为可伸缩的中文校招模板。 */
 export default function KuangxuTemplate({ resume, theme }: TemplateProps): ReactElement {
-  const header = useEditableHeader(resume.name, resume.baseInfo ?? null)
+  const header = useEditableHeader(resume.name, resume.baseInfo ?? null, 'kuangxu')
   const job = useEditableJobIntention(resume.jobIntention)
   const showJob = resume.jobIntentionVisible ?? job.fields.length > 0
   const accent = theme.primaryColor || '#343434'
@@ -41,7 +41,7 @@ export default function KuangxuTemplate({ resume, theme }: TemplateProps): React
       .kuangxu-fields > *, .kuangxu-job > * { min-width:0; overflow-wrap:anywhere; }
       .kuangxu-job { margin-top:7px; }
       .kuangxu-job > * { position:relative; }
-      .kuangxu-avatar { flex:none; width:92px; height:92px; border-radius:50%; background:#e5e7eb; }
+      .kuangxu-avatar { flex:none; width:${92 * header.avatarScale}px; height:${92 * header.avatarScale}px; border-radius:50%; background:#e5e7eb; }
       .kuangxu-avatar img { border-radius:50%; }
       .kuangxu-sections { border-top:1px solid #888; }
       .kuangxu-section { position:relative; padding:calc(16px * var(--kuangxu-spacing)) 27px calc(17px * var(--kuangxu-spacing)); border-bottom:1px solid #888; break-inside:auto; }

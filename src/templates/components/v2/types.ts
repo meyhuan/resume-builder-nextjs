@@ -14,6 +14,8 @@ import type { ResumeBlock } from '@/entities/blocks/resume-block'
  * 头像样式配置
  */
 export interface AvatarStyles {
+  readonly width?: number
+  readonly height?: number
   readonly size?: string
   readonly shape?: 'square' | 'rounded' | 'circle' | string
   readonly className?: string

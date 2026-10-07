@@ -13,6 +13,7 @@ import {
 } from '@/lib/template-fixtures'
 import type { ResumeData } from '@/entities/resume/resume-data'
 import type { ThemeTokens } from '@/entities/theme/theme-tokens'
+import { normalizeAvatarSize } from '@/entities/user/avatar-size'
 
 const A4_WIDTH_PX = 794
 
@@ -25,10 +26,12 @@ export default function TemplateLabClient(): ReactElement {
   const spacingOverride = searchParams.get('spacing')
   const hideJobIntention = searchParams.get('job') === 'hidden'
   const viewport = searchParams.get('viewport') === 'mobile' ? 'mobile' : 'pc'
+  const avatarSize = normalizeAvatarSize(searchParams.get('avatarSize'))
+  const avatarUrl = searchParams.get('avatar')
   const resume: ResumeData = useMemo(() => {
     const fixture = getTemplateFixture(fixtureId)
-    return hideJobIntention ? { ...fixture, jobIntentionVisible: false } : fixture
-  }, [fixtureId, hideJobIntention])
+    return { ...fixture, ...(hideJobIntention ? { jobIntentionVisible: false } : {}), baseInfo: { ...fixture.baseInfo, avatarSize, ...(avatarUrl ? { avatarUrl, showAvatar: true } : {}) } }
+  }, [fixtureId, hideJobIntention, avatarSize, avatarUrl])
   const theme: ThemeTokens = useMemo(() => {
     const fixtureTheme = getTemplateLabTheme(themeId)
     const base = themeId === 'color' ? fixtureTheme : { ...fixtureTheme, primaryColor: TEMPLATE_REGISTRY[templateId]?.recommendedPrimaryColor ?? fixtureTheme.primaryColor }
@@ -40,7 +43,7 @@ export default function TemplateLabClient(): ReactElement {
   const setResume = useAppStore((s) => s.setResume)
   const titleScale: number = theme.titleScale ?? 1
   const paragraphIndent: number = theme.paragraphIndent ?? 0
-  const labKey = `${templateId}:${fixtureId}:${themeId}:${viewport}:${spacingOverride}:${hideJobIntention}`
+  const labKey = `${templateId}:${fixtureId}:${themeId}:${viewport}:${spacingOverride}:${hideJobIntention}:${avatarSize}:${avatarUrl}`
   const [readyKey, setReadyKey] = useState<string | null>(null)
   const ready = readyKey === labKey
   const stageRef = useRef<HTMLDivElement>(null)

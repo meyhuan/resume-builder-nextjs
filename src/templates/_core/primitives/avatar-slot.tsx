@@ -3,6 +3,7 @@ import { User } from 'lucide-react'
 import type { BaseInfo } from '@/entities/user/base-info'
 import type { EditableHeader } from '../hooks/use-editable-header'
 import { useAppStore } from '@/state/store'
+import { AvatarActions } from '@/components/avatar/avatar-actions'
 
 /**
  * Unstyled avatar slot.
@@ -11,7 +12,7 @@ import { useAppStore } from '@/state/store'
  *  - pass `render={({ image }) => ...}` to take full visual control, or
  *  - pass `className` / `style` / `placeholderSize` for the default styling.
  *
- * Hover shows a "本地上传" overlay that calls the header's `openAvatarUpload`.
+ * Provides upload and size controls, hidden in read-only and printed output.
  * Respects `baseInfo.showAvatar === false` by rendering nothing.
  */
 export interface AvatarRenderArgs {
@@ -61,17 +62,7 @@ export function AvatarSlot(props: AvatarSlotProps): ReactElement | null {
       </div>
     )
 
-  const uploadOverlay: ReactElement | null = !readOnly && avatarHovered ? (
-    <div className="absolute inset-0 bg-black/55 flex items-center justify-center print:hidden z-10">
-      <button
-        type="button"
-        className="px-3 py-1 text-xs font-semibold text-white border border-white/80 rounded hover:bg-white/20 transition-colors"
-        onClick={(e) => { e.stopPropagation(); openAvatarUpload() }}
-      >
-        本地上传
-      </button>
-    </div>
-  ) : null
+  const uploadOverlay = <AvatarActions baseInfo={baseInfo} name={header.name} onUpload={openAvatarUpload} maxScale={header.avatarMaxScale} hovered={avatarHovered} />
 
   const hoverHandlers = {
     onMouseEnter: () => !readOnly && setAvatarHovered(true),
@@ -81,7 +72,7 @@ export function AvatarSlot(props: AvatarSlotProps): ReactElement | null {
 
   if (render) {
     return (
-      <div {...hoverHandlers} className="relative">
+      <div {...hoverHandlers} className="relative shrink-0" data-resume-avatar="true">
         {render({ image, hovered: avatarHovered, uploadOverlay })}
         {fileInput}
       </div>
@@ -91,6 +82,7 @@ export function AvatarSlot(props: AvatarSlotProps): ReactElement | null {
   return (
     <div
       className={`relative overflow-hidden ${className ?? ''}`}
+      data-resume-avatar="true"
       style={style}
       {...hoverHandlers}
     >

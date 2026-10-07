@@ -47,7 +47,7 @@ function getBlockTypeLabel(type: string): string {
 
 export default function LanjiaoTemplate(props: TemplateProps): ReactElement {
   const { resume, theme } = props
-  const header = useEditableHeader(resume.name, resume.baseInfo ?? null)
+  const header = useEditableHeader(resume.name, resume.baseInfo ?? null, 'lanjiao')
   const jobIntention = useEditableJobIntention(resume.jobIntention ?? null)
   const isJobIntentionVisible = resume.jobIntentionVisible ?? jobIntention.fields.length > 0
   const headerTitle = getHeaderJobIntentionText(resume)
@@ -192,12 +192,12 @@ function LanjiaoHero(props: {
         }}
       />
 
-      <div className="relative z-[1] grid items-start" style={{ gridTemplateColumns: '129px minmax(0, 1fr)', columnGap: 77 }}>
-        <div style={{ width: 129, minHeight: 141 }}>
+      <div className="relative z-[1] grid items-start" style={{ gridTemplateColumns: `${129 * header.avatarScale}px minmax(0, 1fr)`, columnGap: 77 }}>
+        <div style={{ width: 129 * header.avatarScale, minHeight: 141 * header.avatarScale }}>
           <AvatarSlot
             header={header}
             render={({ image, uploadOverlay }) => (
-              <div className="relative" style={{ width: 129, height: 141 }}>
+              <div className="relative" style={{ width: 129 * header.avatarScale, height: 141 * header.avatarScale }}>
                 <span
                   aria-hidden
                   style={{

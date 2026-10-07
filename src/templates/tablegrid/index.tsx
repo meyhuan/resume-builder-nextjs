@@ -105,7 +105,7 @@ function sectionMinHeight(section: Section): number {
 
 export default function TableGridTemplate(props: TemplateProps): ReactElement {
   const { resume, theme } = props
-  const header = useEditableHeader(resume.name, resume.baseInfo ?? null)
+  const header = useEditableHeader(resume.name, resume.baseInfo ?? null, 'tablegrid')
   const jobIntention = useEditableJobIntention(resume.jobIntention ?? null)
   const isJobIntentionVisible = resume.jobIntentionVisible ?? jobIntention.fields.length > 0
   const headerInfoField = getTableHeaderInfoField(header)
@@ -266,7 +266,7 @@ function TableHeader({
   const showAvatar = header.baseInfo?.showAvatar !== false
   const showSecondaryColumn = Boolean(showAvatar || infoField || phone)
   const gridTemplateColumns = showSecondaryColumn
-    ? `90px minmax(0, 1fr) 90px minmax(0, 1fr)${showAvatar ? ' 109px' : ''}`
+    ? `90px minmax(0, 1fr) 90px minmax(0, 1fr)${showAvatar ? ` ${109 * header.avatarScale}px` : ''}`
     : '90px minmax(0, 1fr)'
 
   return (
@@ -274,7 +274,7 @@ function TableHeader({
       style={{
         display: 'grid',
         gridTemplateColumns,
-        gridTemplateRows: '72px 72px',
+        gridTemplateRows: `repeat(2, ${72 * (showAvatar ? header.avatarScale : 1)}px)`,
         borderBottom: `1px solid ${palette.border}`,
         cursor: 'pointer',
       }}

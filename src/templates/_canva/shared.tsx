@@ -28,8 +28,8 @@ export function defaultSidebarIds(sections: readonly Section[], design: Referenc
 export function CanvaAdaptedTemplate({ resume, theme, variant, sidebarSectionIds, onSidebarSectionIdsChange }: TemplateProps & { readonly variant: ReferenceDesignId }): ReactElement {
   const baseDesign: ReferenceDesign = REFERENCE_DESIGNS[variant]
   const accent = /^#(?:[a-f\d]{3}|[a-f\d]{6})$/i.test(theme.primaryColor) ? theme.primaryColor : baseDesign.accent
-  const design: ReferenceDesign = { ...baseDesign, accent }
-  const header = useEditableHeader(resume.name, resume.baseInfo ?? null)
+  const header = useEditableHeader(resume.name, resume.baseInfo ?? null, variant)
+  const design: ReferenceDesign = { ...baseDesign, accent, avatar: [baseDesign.avatar[0] * header.avatarScale, baseDesign.avatar[1] * header.avatarScale] }
   const intention = useEditableJobIntention(resume.jobIntention)
   const showJob = isHeaderJobIntentionVisible(resume) && intention.fields.length > 0
   const english = resume.language === 'en'

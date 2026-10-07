@@ -112,7 +112,7 @@ function resolveSectionTag(section: Section): string {
 // ---------------------------------------------------------------------------
 export default function XingtanTemplate(props: TemplateProps): ReactElement {
   const { resume, theme } = props
-  const header = useEditableHeader(resume.name, resume.baseInfo ?? null)
+  const header = useEditableHeader(resume.name, resume.baseInfo ?? null, 'xingtan')
   const objective = useEditableJobIntention(resume.jobIntention ?? null)
   const jobIntentionVisible: boolean = resume.jobIntentionVisible ?? Boolean(resume.jobIntention)
   const pagePad = usePagePadding(theme, 30, 6)
@@ -299,8 +299,8 @@ function XingtanHero({ header, title, horizontalPadding }: HeroProps): ReactElem
             <div
               className="relative overflow-hidden shrink-0"
               style={{
-                width: 100,
-                height: 140,
+                width: 100 * header.avatarScale,
+                height: 140 * header.avatarScale,
                 padding: 5,
                 backgroundColor: palette.paper,
                 border: `1px solid ${palette.amber}`,

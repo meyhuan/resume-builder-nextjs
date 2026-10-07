@@ -25,7 +25,7 @@ import type { DragHandleProps, TemplateProps } from '@/templates/_core'
  * 原稿来源与取舍见 docs/template-reference-campus-fine-lines.md。
  */
 export default function SuxianTemplate({ resume, theme }: TemplateProps): ReactElement {
-  const header = useEditableHeader(resume.name, resume.baseInfo ?? null)
+  const header = useEditableHeader(resume.name, resume.baseInfo ?? null, 'suxian')
   const job = useEditableJobIntention(resume.jobIntention)
   const showJob = resume.jobIntentionVisible ?? job.fields.length > 0
   const verticalName = /^[\p{Script=Han}]{1,3}$/u.test(header.name.trim())
@@ -58,7 +58,7 @@ export default function SuxianTemplate({ resume, theme }: TemplateProps): ReactE
         .suxian-titlestamp { align-self:stretch; display:flex; align-items:center; justify-content:center; gap:4px; padding-left:12px; border-left:1px solid #d1d5db; color:var(--suxian-accent); }
         .suxian-titlestamp strong { writing-mode:vertical-rl; text-orientation:upright; font-size:1.24em; letter-spacing:.2em; line-height:1.1; }
         .suxian-titlestamp small { writing-mode:vertical-rl; font-size:.56em; letter-spacing:.14em; text-transform:uppercase; }
-        .suxian-avatar { width:88px; height:112px; align-self:center; background:#f3f4f6; }
+        .suxian-avatar { width:${88 * header.avatarScale}px; height:${112 * header.avatarScale}px; align-self:center; background:#f3f4f6; }
         .suxian-section { position:relative; margin-top:calc(20px * var(--suxian-spacing)); padding-top:calc(9px * var(--suxian-spacing)); border-top:1px solid #9ca3af; break-inside:auto; }
         .suxian-section.first { border-top:0; padding-top:0; }
         .suxian-section-heading { position:relative; display:flex; align-items:center; gap:8px; margin-bottom:calc(11px * var(--suxian-spacing)); break-after:avoid; }

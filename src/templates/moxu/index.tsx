@@ -48,7 +48,7 @@ export default function MoxuTemplate({
   resume,
   theme,
 }: TemplateProps): ReactElement {
-  const header = useEditableHeader(resume.name, resume.baseInfo ?? null);
+  const header = useEditableHeader(resume.name, resume.baseInfo ?? null, 'moxu');
   const job = useEditableJobIntention(resume.jobIntention);
   const showJob = resume.jobIntentionVisible ?? job.fields.length > 0;
   const subtitle = getHeaderJobIntentionText(resume);
@@ -188,7 +188,7 @@ export default function MoxuTemplate({
           </div>
           <AvatarSlot
             header={header}
-            style={{ flexShrink: 0, width: 88, height: 110 }}
+            style={{ flexShrink: 0, width: 88 * header.avatarScale, height: 110 * header.avatarScale }}
           />
         </header>
         {showJob && extras.length > 0 && (

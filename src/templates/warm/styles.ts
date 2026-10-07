@@ -66,6 +66,8 @@ export const WARM_TEMPLATE_STYLES: TemplateStylesConfig = {
       className: 'flex flex-col items-start gap-1',
     },
     avatar: {
+      width: 130,
+      height: 150,
       size: 'w-[130px] h-[150px]',
       shape: 'rounded-b-[65px]',
       containerClassName: 'w-[130px] h-[150px] rounded-b-[65px] bg-white overflow-hidden',

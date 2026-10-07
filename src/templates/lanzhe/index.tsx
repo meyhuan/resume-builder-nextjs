@@ -58,7 +58,7 @@ function getBlockTypeLabel(type: string): string {
 
 export default function LanzheTemplate(props: TemplateProps): ReactElement {
   const { resume, theme } = props
-  const header = useEditableHeader(resume.name, resume.baseInfo ?? null)
+  const header = useEditableHeader(resume.name, resume.baseInfo ?? null, 'lanzhe')
   const jobIntention = useEditableJobIntention(resume.jobIntention ?? null)
   const isJobIntentionVisible = resume.jobIntentionVisible ?? jobIntention.fields.length > 0
   const headerTitle = getHeaderJobIntentionText(resume)
@@ -236,8 +236,8 @@ function LanzheHero(props: {
   readonly language?: string
 }): ReactElement {
   const { header, title, heroHeight, language } = props
-  const reservedAvatarWidth = heroHeight + 40
-  const avatarSize = heroHeight
+  const reservedAvatarWidth = heroHeight * header.avatarScale + 40
+  const avatarSize = heroHeight * header.avatarScale
   const heroRadius = heroHeight / 2
 
   return (
@@ -245,7 +245,7 @@ function LanzheHero(props: {
       className="lanzhe-header-band relative group"
       onClick={header.openEditModal}
       style={{
-        minHeight: heroHeight,
+        minHeight: avatarSize,
         padding: `20px ${reservedAvatarWidth + 38}px 17px 38px`,
         color: '#ffffff',
         cursor: 'pointer',

@@ -18,6 +18,8 @@ export const SIMPLE_TEMPLATE_STYLES: TemplateStylesConfig = {
       className: 'flex items-baseline gap-4 mb-2',
     },
     avatar: {
+      width: 88,
+      height: 106,
       size: 'w-[88px] h-[106px]',
       shape: 'rounded',
       containerClassName: 'w-[88px] h-[106px] rounded bg-gray-100 overflow-hidden shrink-0',

@@ -53,7 +53,7 @@ async function generateThumbnail(browser, id) {
   const page = await browser.newPage()
   try {
     const avatar = resolveAvatarForTemplate(id)
-    const url = `${baseUrl}/dev/scenario-loader?tpl=${encodeURIComponent(id)}&scenario=${encodeURIComponent(scenario)}${avatar ? `&avatar=${encodeURIComponent(avatar)}` : ''}`
+    const url = `${baseUrl}/dev/scenario-loader?tpl=${encodeURIComponent(id)}&scenario=${encodeURIComponent(scenario)}&readonly=1${avatar ? `&avatar=${encodeURIComponent(avatar)}` : ''}`
     await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 })
     if (scenario === 'cover') {
       await page.waitForFunction(() => {
@@ -68,6 +68,7 @@ async function generateThumbnail(browser, id) {
       }, { timeout: 15000 }, avatar)
     }
     const element = await page.waitForSelector('[data-scenario-preview="true"]', { timeout: 30000 })
+    await page.waitForFunction(() => !document.querySelector('[data-scenario-preview="true"] [data-avatar-actions]'))
     await page.evaluate(async () => {
       if (document.fonts) await document.fonts.ready
       const preview = document.querySelector('[data-scenario-preview="true"]')

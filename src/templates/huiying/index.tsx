@@ -22,7 +22,7 @@ type Variables = CSSProperties & Record<`--${string}`, string | number>
 
 /** Canva EAF_ksaKwqY 灰阶横向介绍与窄边栏的可编辑中文适配。 */
 export default function HuiyingTemplate({ resume, theme, sidebarSectionIds: externalIds, onSidebarSectionIdsChange }: TemplateProps): ReactElement {
-  const header = useEditableHeader(resume.name, resume.baseInfo ?? null)
+  const header = useEditableHeader(resume.name, resume.baseInfo ?? null, 'huiying')
   const job = useEditableJobIntention(resume.jobIntention)
   const moveSection = useAppStore((state) => state.moveSection)
   const moveBlockInSection = useAppStore((state) => state.moveBlockInSection)
@@ -88,7 +88,7 @@ export default function HuiyingTemplate({ resume, theme, sidebarSectionIds: exte
       .huiying-hero.huiying-no-avatar { display:block; min-height:0; padding-top:10px; padding-bottom:13px; }
       .huiying-hero.huiying-no-avatar::before { inset:0; }
       .huiying-no-avatar .huiying-hero-copy { padding-top:0; }
-      .huiying-avatar { width:166px; height:166px; margin:0 auto; border-radius:50%; background:#d7dce0; }
+      .huiying-avatar { width:${166 * header.avatarScale}px; height:${166 * header.avatarScale}px; margin:0 auto; border-radius:50%; background:#d7dce0; }
       .huiying-avatar img { border-radius:50%; }
       .huiying-hero-copy { min-width:0; padding-top:22px; }
       .huiying-job { display:flex; flex-wrap:wrap; align-items:baseline; gap:8px 13px; min-height:49px; cursor:pointer; }

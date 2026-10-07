@@ -21,7 +21,7 @@ import TwoColumnDndProvider, {
 type Variables = CSSProperties & Record<`--${string}`, string | number>
 
 export default function LanqiTemplate({ resume, theme, sidebarSectionIds: externalIds, onSidebarSectionIdsChange }: TemplateProps): ReactElement {
-  const header = useEditableHeader(resume.name, resume.baseInfo ?? null)
+  const header = useEditableHeader(resume.name, resume.baseInfo ?? null, 'lanqi')
   const job = useEditableJobIntention(resume.jobIntention)
   const moveSection = useAppStore((state) => state.moveSection)
   const moveBlockInSection = useAppStore((state) => state.moveBlockInSection)
@@ -99,7 +99,7 @@ export default function LanqiTemplate({ resume, theme, sidebarSectionIds: extern
       .lanqi-rich ul, .lanqi-rich ol { margin:0; padding-left:1.4em; }
       .lanqi-rich li { margin:0; }
       .lanqi-aside { background:#eef1f4; padding:15px 13px 22px; }
-      .lanqi-avatar { width:106px; height:122px; margin:0 auto 10px; background:#d8e0e8; }
+      .lanqi-avatar { width:${106 * header.avatarScale}px; height:${122 * header.avatarScale}px; margin:0 auto 10px; background:#d8e0e8; }
       .lanqi-name { margin:0 0 6px; font-size:1.55em; line-height:1.2; font-weight:780; overflow-wrap:anywhere; }
       .lanqi-name-rule { height:2px; width:35px; margin:0 0 11px; background:var(--lanqi-accent); }
       .lanqi-job { font-size:.72em; line-height:1.58; cursor:pointer; }

@@ -1,6 +1,7 @@
 import type { ReactElement } from 'react'
 import type { BaseInfo } from '@/entities/user/base-info'
 import { useAppStore } from '@/state/store'
+import { getAvatarMaxScale, getAvatarScale } from '@/entities/user/avatar-size'
 import { useHeaderState } from '@/templates/_kernel/use-header-state'
 import type { HeaderState } from '@/templates/_kernel/use-header-state'
 import { buildBaseInfoFields } from '@/templates/_kernel/shared'
@@ -14,6 +15,8 @@ import type { BaseInfoFieldDef } from '@/templates/_kernel/shared'
  * only owns behavior (modals, uploads, field deletion, hover).
  */
 export interface EditableHeader {
+  readonly avatarScale: number
+  readonly avatarMaxScale: number
   readonly name: string
   readonly baseInfo: BaseInfo | null
   /** Pre-computed list of visible base-info fields, in display order. */
@@ -43,8 +46,9 @@ export interface EditableHeader {
 /**
  * Wrap the kernel `useHeaderState` into a template-friendly shape.
  */
-export function useEditableHeader(name: string, baseInfo: BaseInfo | null): EditableHeader {
-  const state: HeaderState = useHeaderState(baseInfo, name)
+export function useEditableHeader(name: string, baseInfo: BaseInfo | null, templateId = ''): EditableHeader {
+  const avatarMaxScale = getAvatarMaxScale(templateId)
+  const state: HeaderState = useHeaderState(baseInfo, name, avatarMaxScale)
   const updateBaseInfo = useAppStore((s) => s.updateBaseInfo)
   const language = useAppStore((s) => s.resume.language)
   const fields: readonly BaseInfoFieldDef[] = buildBaseInfoFields(baseInfo, language)
@@ -56,6 +60,8 @@ export function useEditableHeader(name: string, baseInfo: BaseInfo | null): Edit
   }
 
   return {
+    avatarScale: baseInfo?.showAvatar === false ? 1 : getAvatarScale(baseInfo?.avatarSize, avatarMaxScale),
+    avatarMaxScale,
     name,
     baseInfo,
     fields,

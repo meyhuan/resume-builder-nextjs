@@ -21,7 +21,7 @@ import TwoColumnDndProvider, {
 type Variables = CSSProperties & Record<`--${string}`, string | number>
 
 export default function MixuTemplate({ resume, theme, sidebarSectionIds: externalIds, onSidebarSectionIdsChange }: TemplateProps): ReactElement {
-  const header = useEditableHeader(resume.name, resume.baseInfo ?? null)
+  const header = useEditableHeader(resume.name, resume.baseInfo ?? null, 'mixu')
   const job = useEditableJobIntention(resume.jobIntention)
   const moveSection = useAppStore((state) => state.moveSection)
   const moveBlockInSection = useAppStore((state) => state.moveBlockInSection)
@@ -88,7 +88,7 @@ export default function MixuTemplate({ resume, theme, sidebarSectionIds: externa
       <style>{`
         .mixu-page { box-sizing:border-box; display:grid; grid-template-columns:31% minmax(0,1fr); min-height:297mm; overflow-wrap:anywhere; }
         .mixu-side { min-width:0; background:#eeece8; padding:22px 18px 30px; }
-        .mixu-avatar { width:118px; height:118px; margin:0 auto 18px; border-radius:50%; background:#d8d4ce; }
+        .mixu-avatar { width:${118 * header.avatarScale}px; height:${118 * header.avatarScale}px; margin:0 auto 18px; border-radius:50%; background:#d8d4ce; }
         .mixu-name { margin:0; font-size:1.75em; line-height:1.2; font-weight:760; letter-spacing:.04em; }
         .mixu-title-rule { width:34px; height:2px; margin:12px 0 13px; background:var(--mixu-accent); }
         .mixu-fields { font-size:.77em; line-height:1.6; cursor:pointer; }

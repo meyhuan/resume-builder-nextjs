@@ -48,7 +48,7 @@ function getBlockTypeLabel(type: string): string {
 
 export default function LanxinTemplate(props: TemplateProps): ReactElement {
   const { resume, theme } = props
-  const header = useEditableHeader(resume.name, resume.baseInfo ?? null)
+  const header = useEditableHeader(resume.name, resume.baseInfo ?? null, 'lanxin')
   const jobIntention = useEditableJobIntention(resume.jobIntention ?? null)
   const isJobIntentionVisible = resume.jobIntentionVisible ?? jobIntention.fields.length > 0
   const headerTitle = getHeaderJobIntentionText(resume)
@@ -261,8 +261,8 @@ function LanxinHero(props: {
             <div
               className="relative overflow-hidden"
               style={{
-                width: 100,
-                height: 134,
+                width: 100 * header.avatarScale,
+                height: 134 * header.avatarScale,
                 borderRadius: 10,
                 backgroundColor: lightenHex(primaryColor, 0.82),
               }}

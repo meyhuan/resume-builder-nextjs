@@ -13,6 +13,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ChevronDown, Plus, Trash2 } from 'lucide-react';
 import { splitTemplateExclusiveBaseInfoFields } from '@/lib/template-exclusive-fields';
+import { AvatarSizeControl } from '@/components/avatar/avatar-size-control';
+import { normalizeAvatarSize } from '@/entities/user/avatar-size';
 
 interface CustomField {
   label: string;
@@ -27,6 +29,7 @@ export interface BaseInfoModalProps {
   readonly name: string;
   readonly onClose: () => void;
   readonly onSave: (baseInfo: BaseInfo, name: string) => void;
+  readonly avatarMaxScale?: number;
 }
 
 export default function BaseInfoModal(props: BaseInfoModalProps): ReactElement {
@@ -43,6 +46,7 @@ export default function BaseInfoModal(props: BaseInfoModalProps): ReactElement {
   const [age, setAge] = useState(props.baseInfo?.age?.toString() ?? '');
   const [avatarUrl] = useState(props.baseInfo?.avatarUrl ?? '');
   const [showAvatar, setShowAvatar] = useState(props.baseInfo?.showAvatar !== false);
+  const [avatarSize, setAvatarSize] = useState(normalizeAvatarSize(props.baseInfo?.avatarSize));
   const [nation, setNation] = useState(props.baseInfo?.nation ?? '');
   const [household, setHousehold] = useState(props.baseInfo?.household ?? '');
   const [currentLocation, setCurrentLocation] = useState(props.baseInfo?.currentLocation ?? '');
@@ -76,6 +80,7 @@ export default function BaseInfoModal(props: BaseInfoModalProps): ReactElement {
     const validTemplateExclusiveCustomFields = templateExclusiveCustomFields.filter(f => f.label && f.value);
     const nextCustomFields = [...validOrdinaryCustomFields, ...validTemplateExclusiveCustomFields];
     const updatedBaseInfo: BaseInfo = {
+      ...props.baseInfo,
       title,
       phone: phone || undefined,
       email: email || undefined,
@@ -83,6 +88,7 @@ export default function BaseInfoModal(props: BaseInfoModalProps): ReactElement {
       age: age ? Number(age) : undefined,
       avatarUrl: showAvatar ? (avatarUrl || undefined) : undefined,
       showAvatar,
+      avatarSize,
       nation: nation || undefined,
       household: household || undefined,
       currentLocation: currentLocation || undefined,
@@ -155,6 +161,8 @@ export default function BaseInfoModal(props: BaseInfoModalProps): ReactElement {
               </Select>
             </div>
           </div>
+
+          {showAvatar && avatarUrl && <AvatarSizeControl value={avatarSize} onChange={setAvatarSize} maxScale={props.avatarMaxScale} />}
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">

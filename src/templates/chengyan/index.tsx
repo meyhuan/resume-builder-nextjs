@@ -14,7 +14,7 @@ import type { DragHandleProps, TemplateProps } from '@/templates/_core'
 
 /** 独立改编：不使用 Canva 原稿素材。 */
 export default function ChengyanTemplate({ resume, theme }: TemplateProps): ReactElement {
-  const header = useEditableHeader(resume.name, resume.baseInfo ?? null)
+  const header = useEditableHeader(resume.name, resume.baseInfo ?? null, 'chengyan')
   const job = useEditableJobIntention(resume.jobIntention)
   const showJob = resume.jobIntentionVisible ?? job.fields.length > 0
   const style = {
@@ -36,7 +36,7 @@ export default function ChengyanTemplate({ resume, theme }: TemplateProps): Reac
       .chengyan-fields > *, .chengyan-job > * { min-width:0; max-width:100%; overflow-wrap:anywhere; }
       .chengyan-job { margin-top:9px; padding-top:8px; border-top:1px solid #d9d4ce; }
       .chengyan-job > * { position:relative; }
-      .chengyan-avatar { width:78px; height:93px; background:#e3ded7; }
+      .chengyan-avatar { width:${78 * header.avatarScale}px; height:${93 * header.avatarScale}px; background:#e3ded7; }
       .chengyan-main { padding:15px 21px 27px; }
       .chengyan-section { position:relative; min-height:48px; padding:0 0 calc(22px * var(--chengyan-spacing)) 120px; break-inside:auto; }
       .chengyan-section::before { content:''; position:absolute; left:107px; top:17px; bottom:0; width:1px; background:#d7c7bb; }

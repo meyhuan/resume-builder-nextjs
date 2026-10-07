@@ -71,7 +71,7 @@ export function SingleColumn(props: {
         onClick={header.openEditModal}
         style={{
           display: showAvatar ? 'grid' : 'block',
-          gridTemplateColumns: config.density === 'ultra' ? '1fr 82px' : config.formal ? '1fr 104px' : '1fr 112px',
+          gridTemplateColumns: `minmax(0, 1fr) ${(config.density === 'ultra' ? 82 : config.formal ? 104 : 112) * header.avatarScale}px`,
           gap: 28,
           alignItems: 'start',
           paddingBottom: config.density === 'ultra' ? 14 : config.formal ? 22 : 28,

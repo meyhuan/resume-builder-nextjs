@@ -14,7 +14,7 @@ import type { DragHandleProps, TemplateProps } from '@/templates/_core'
 
 /** 参考 Canva EAF-zxQrtUQ 的边框、顶端深色短带和深浅双色章节条，以可编辑组件重新构建。 */
 export default function ShenkeTemplate({ resume, theme }: TemplateProps): ReactElement {
-  const header = useEditableHeader(resume.name, resume.baseInfo ?? null)
+  const header = useEditableHeader(resume.name, resume.baseInfo ?? null, 'shenke')
   const job = useEditableJobIntention(resume.jobIntention)
   const showJob = resume.jobIntentionVisible ?? job.fields.length > 0
   const accent = theme.primaryColor || '#344052'
@@ -35,7 +35,7 @@ export default function ShenkeTemplate({ resume, theme }: TemplateProps): ReactE
       .shenke-tab::after { content:''; position:absolute; left:50%; top:12px; transform:translateX(-50%); width:58px; height:8px; border-radius:9px; background:#fff; }
       .shenke-header { display:flex; gap:22px; align-items:center; min-height:154px; padding:25px 4px 22px; break-inside:avoid; }
       .shenke-header > div:last-child { flex:1; min-width:0; }
-      .shenke-avatar { flex:none; width:110px; height:140px; border:1px solid var(--shenke-accent); background:#eceff2; }
+      .shenke-avatar { flex:none; width:${110 * header.avatarScale}px; height:${140 * header.avatarScale}px; border:1px solid var(--shenke-accent); background:#eceff2; }
       .shenke-name { margin:0 0 8px; color:var(--shenke-accent); font-size:1.7em; font-weight:790; line-height:1.15; }
       .shenke-fields, .shenke-job { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:4px 13px; font-size:.82em; line-height:1.58; cursor:pointer; }
       .shenke-fields > *, .shenke-job > * { min-width:0; overflow-wrap:anywhere; }

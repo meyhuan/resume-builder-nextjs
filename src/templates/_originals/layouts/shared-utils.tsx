@@ -149,7 +149,7 @@ export function SizedAvatar(props: {
       placeholderBg={backgroundColor}
       placeholderColor={lightenHex(accent, 0.45)}
       render={({ image, uploadOverlay }) => (
-        <div className="relative overflow-hidden" style={{ width, height, borderRadius: radius, border, backgroundColor }}>
+        <div className="relative overflow-hidden" style={{ width: width * header.avatarScale, height: height * header.avatarScale, borderRadius: radius, border, backgroundColor }}>
           {image}
           {uploadOverlay}
         </div>

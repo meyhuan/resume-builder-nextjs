@@ -108,7 +108,7 @@ function resolveSectionTag(section: Section): string {
 // ---------------------------------------------------------------------------
 export default function ZhumoTemplate(props: TemplateProps): ReactElement {
   const { resume, theme } = props
-  const header = useEditableHeader(resume.name, resume.baseInfo ?? null)
+  const header = useEditableHeader(resume.name, resume.baseInfo ?? null, 'zhumo')
   const objective = useEditableJobIntention(resume.jobIntention ?? null)
   const jobIntentionVisible: boolean = resume.jobIntentionVisible ?? Boolean(resume.jobIntention)
   const pagePad = usePagePadding(theme, 30, 6)

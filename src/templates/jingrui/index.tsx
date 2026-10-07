@@ -30,7 +30,7 @@ import type { DragHandleProps, EditableJobIntention, TemplateProps } from '@/tem
  * 数据与交互全部复用简历编辑器的 headless primitives。
  */
 export default function JingruiTemplate({ resume, theme }: TemplateProps): ReactElement {
-  const header = useEditableHeader(resume.name, resume.baseInfo ?? null)
+  const header = useEditableHeader(resume.name, resume.baseInfo ?? null, 'jingrui')
   const readOnly = useAppStore((state) => state.readOnly)
   const job = useEditableJobIntention(resume.jobIntention)
   const showJob = resume.jobIntentionVisible ?? job.fields.length > 0

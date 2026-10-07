@@ -28,7 +28,7 @@ export interface HeaderState {
  * Shared lifecycle for any header variant: edit modal, avatar crop modal,
  * upload input, field delete, hover state.
  */
-export function useHeaderState(baseInfo: BaseInfo | null, name: string): HeaderState {
+export function useHeaderState(baseInfo: BaseInfo | null, name: string, avatarMaxScale = 1.4): HeaderState {
   const [showModal, setShowModal] = useState(false)
   const [hoveredField, setHoveredField] = useState<string | null>(null)
   const [avatarHovered, setAvatarHovered] = useState(false)
@@ -90,6 +90,7 @@ export function useHeaderState(baseInfo: BaseInfo | null, name: string): HeaderS
           name={name}
           onClose={() => setShowModal(false)}
           onSave={updateBaseInfo}
+          avatarMaxScale={avatarMaxScale}
         />
       )}
       {cropImageSrc && (

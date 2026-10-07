@@ -4,6 +4,8 @@
 export interface BaseInfo {
   /** Avatar image URL (optional). */
   readonly avatarUrl?: string;
+  /** Display size within the template's layout limits; missing means template default. */
+  readonly avatarSize?: import('./avatar-size').AvatarSize;
   /** Subtitle or desired position. */
   readonly title?: string;
   /** Phone number. */

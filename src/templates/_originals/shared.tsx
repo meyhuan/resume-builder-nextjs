@@ -32,7 +32,7 @@ type CssVars = CSSProperties & Record<`--${string}`, string | number>
 export function OriginalTemplate({ resume, theme, variant, sidebarSectionIds, onSidebarSectionIdsChange }: OriginalTemplateProps): ReactElement {
   const baseConfig = CONFIG[variant]
   const config = buildThemeAwareConfig(baseConfig, theme.primaryColor)
-  const header = useEditableHeader(resume.name, resume.baseInfo ?? null)
+  const header = useEditableHeader(resume.name, resume.baseInfo ?? null, variant)
   const jobIntention = useEditableJobIntention(resume.jobIntention ?? null)
   const isJobIntentionVisible = resume.jobIntentionVisible ?? jobIntention.fields.length > 0
   const fontFamily = theme.fontFamily || (config.serif ? SERIF : SANS)

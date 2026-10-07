@@ -23,6 +23,8 @@ export const ELEGANT_TEMPLATE_STYLES: TemplateStylesConfig = {
       className: 'flex items-baseline gap-4',
     },
     avatar: {
+      width: 110,
+      height: 130,
       size: 'w-[110px] h-[130px]',
       shape: 'rounded',
       containerClassName: 'w-[110px] h-[130px] rounded bg-gray-200 overflow-hidden shrink-0',

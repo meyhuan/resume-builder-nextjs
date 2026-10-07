@@ -158,7 +158,7 @@ function runClickActionOnKey(event: KeyboardEvent<HTMLElement>, action: () => vo
 
 export default function LanmuTemplate(props: TemplateProps): ReactElement {
   const { resume, theme, sidebarSectionIds: externalIds, onSidebarSectionIdsChange } = props
-  const header = useEditableHeader(resume.name, resume.baseInfo ?? null)
+  const header = useEditableHeader(resume.name, resume.baseInfo ?? null, 'lanmu')
   const jobIntention = useEditableJobIntention(resume.jobIntention ?? null)
   const moveSection = useAppStore((state) => state.moveSection)
   const moveBlockInSection = useAppStore((state) => state.moveBlockInSection)
@@ -394,23 +394,23 @@ function LanmuHero(props: {
     <section
       className="relative overflow-visible"
       style={{
-        minHeight: header.baseInfo?.showAvatar === false ? 192 : 193,
+        minHeight: header.baseInfo?.showAvatar === false ? 192 : 28 + 165 * header.avatarScale,
         display: 'grid',
-        gridTemplateColumns: '240px minmax(0, 1fr)',
+        gridTemplateColumns: `${240 + 165 * (header.avatarScale - 1)}px minmax(0, 1fr)`,
         background: '#fff',
         zIndex: 1,
       }}
     >
       <AvatarSlot
         header={header}
-        render={({ image, hovered }) => (
+        render={({ image, uploadOverlay }) => (
           <div
             className="lanmu-avatar absolute"
             style={{
               left: 37,
               top: 28,
-              width: 165,
-              height: 165,
+              width: 165 * header.avatarScale,
+              height: 165 * header.avatarScale,
               overflow: 'visible',
             }}
           >
@@ -436,17 +436,7 @@ function LanmuHero(props: {
             >
               {image}
             </div>
-            {hovered ? (
-              <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-1.5 overflow-hidden bg-black/65 px-3 text-center text-white print:hidden" style={{ borderRadius: '82px 82px 82px 0' }}>
-                <button
-                  type="button"
-                  className="mt-1 rounded border border-white/80 px-2.5 py-1 text-[10px] font-semibold transition-colors hover:bg-white/20"
-                  onClick={(event) => { event.stopPropagation(); header.openAvatarUpload() }}
-                >
-                  本地上传
-                </button>
-              </div>
-            ) : null}
+            {uploadOverlay}
           </div>
         )}
       />
@@ -483,8 +473,8 @@ function LanmuHero(props: {
           {metaFields.length > 0 ? (
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
               {metaFields.map((field, index) => (
-                <FieldChip key={field.key} field={field} header={header} deleteColor="#ffffff" className="whitespace-nowrap">
-                  <span>{index > 0 ? '|' : ''} {field.label}：{field.value}</span>
+                <FieldChip key={field.key} field={field} header={header} deleteColor="#ffffff" className="min-w-0 max-w-full">
+                  <span style={{ minWidth: 0, overflowWrap: 'anywhere' }}>{index > 0 ? '|' : ''} {field.label}：{field.value}</span>
                 </FieldChip>
               ))}
             </div>
@@ -494,7 +484,7 @@ function LanmuHero(props: {
           {secondLine.length > 0 ? (
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
               {secondLine.map((item, index) => (
-                <span key={`${item}-${index}`} className="whitespace-nowrap">{index > 0 ? '|' : ''} {item}</span>
+                <span key={`${item}-${index}`} className="min-w-0 max-w-full" style={{ overflowWrap: 'anywhere' }}>{index > 0 ? '|' : ''} {item}</span>
               ))}
             </div>
           ) : null}
@@ -1186,5 +1176,4 @@ function LanmuRichText(props: {
     </div>
   )
 }
-
 

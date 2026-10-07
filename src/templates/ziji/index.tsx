@@ -174,7 +174,7 @@ function runClickActionOnKey(event: KeyboardEvent<HTMLElement>, action: () => vo
 
 export default function ZijiTemplate(props: TemplateProps): ReactElement {
   const { resume, theme, sidebarSectionIds: externalIds, onSidebarSectionIdsChange } = props
-  const header = useEditableHeader(resume.name, resume.baseInfo ?? null)
+  const header = useEditableHeader(resume.name, resume.baseInfo ?? null, 'ziji')
   const jobIntention = useEditableJobIntention(resume.jobIntention ?? null)
   const moveSection = useAppStore((state) => state.moveSection)
   const moveBlockInSection = useAppStore((state) => state.moveBlockInSection)
@@ -417,7 +417,7 @@ function ZijiHero(props: {
     <section
       className="relative overflow-visible"
       style={{
-        minHeight: header.baseInfo?.showAvatar === false ? 216 : 228,
+        minHeight: header.baseInfo?.showAvatar === false ? 216 : 54 + 174 * header.avatarScale,
         background: heroGradient,
         zIndex: 1,
       }}
@@ -438,40 +438,30 @@ function ZijiHero(props: {
 
       <AvatarSlot
         header={header}
-        render={({ image, hovered }) => (
+        render={({ image, hovered, uploadOverlay }) => (
           <div
             className="ziji-avatar absolute overflow-visible"
             title="建议上传透明背景 PNG，头图效果更自然"
             style={{
               left: 42,
               top: 54,
-              width: 180,
-              height: 174,
+              width: 180 * header.avatarScale,
+              height: 174 * header.avatarScale,
             }}
           >
             {image}
-            {hovered ? (
-              <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-1.5 bg-black/65 px-3 text-center text-white print:hidden">
-                <div className="text-[11px] font-semibold leading-snug">
-                  请上传透明背景 PNG
-                </div>
-                <div className="text-[9px] leading-snug text-white/85">
-                  普通证件照会露出白底
-                </div>
-                <button
-                  type="button"
-                  className="mt-1 rounded border border-white/80 px-2.5 py-1 text-[10px] font-semibold transition-colors hover:bg-white/20"
-                  onClick={(event) => { event.stopPropagation(); header.openAvatarUpload() }}
-                >
-                  本地上传
-                </button>
+            {hovered && (
+              <div data-export-hide="true" className="pointer-events-none absolute inset-x-0 top-0 z-20 bg-black/65 px-3 py-2 text-center text-white print:hidden">
+                <div className="text-[11px] font-semibold leading-snug">建议上传透明背景 PNG</div>
+                <div className="mt-1 text-[9px] leading-snug text-white/85">普通证件照会露出白底</div>
               </div>
-            ) : null}
+            )}
+            {uploadOverlay}
           </div>
         )}
       />
 
-      <div className="relative text-white" style={{ marginLeft: 252, marginRight: 42, paddingTop: 88, paddingBottom: 12 }}>
+      <div className="relative text-white" style={{ marginLeft: 252 + 180 * (header.avatarScale - 1), marginRight: 42, paddingTop: 88, paddingBottom: 12 }}>
         <div className="font-bold tracking-normal" style={{ fontSize: '2.25em', lineHeight: 1 }}>
           Hello,I'm
         </div>

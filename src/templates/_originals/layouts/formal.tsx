@@ -87,7 +87,7 @@ export function LegalBlueLayout(props: {
         className="group relative"
         data-template-base-info-trigger="true"
         onClick={header.openEditModal}
-        style={{ display: 'grid', gridTemplateColumns: `minmax(0, 1fr) ${refPx(122)}px`, gap: refPx(42), minHeight: refPx(164), margin: `0 ${legalHeaderInset}px`, alignItems: 'start', cursor: 'pointer' }}
+        style={{ display: 'grid', gridTemplateColumns: `minmax(0, 1fr) ${refPx(122) * header.avatarScale}px`, gap: refPx(42), minHeight: refPx(164), margin: `0 ${legalHeaderInset}px`, alignItems: 'start', cursor: 'pointer' }}
       >
         <div style={{ paddingTop: refPx(2) }}>
           <div className="grid" style={{ gridTemplateColumns: `${refPx(168)}px minmax(0, ${refPx(280)}px)`, columnGap: refPx(42), rowGap: refPx(13), fontSize: '0.84em', lineHeight: 1.48, color: config.ink }}>
@@ -165,7 +165,7 @@ export function TeacherBlackLayout(props: {
         className="group relative"
         data-template-base-info-trigger="true"
         onClick={header.openEditModal}
-        style={{ display: 'grid', gridTemplateColumns: `minmax(0, 1fr) ${refPx(112)}px`, gap: refPx(16), alignItems: 'start', paddingBottom: refPx(4), cursor: 'pointer' }}
+        style={{ display: 'grid', gridTemplateColumns: `minmax(0, 1fr) ${refPx(112) * header.avatarScale}px`, gap: refPx(16), alignItems: 'start', paddingBottom: refPx(4), cursor: 'pointer' }}
       >
         <div>
           <EditableText as="h1" value={header.name} onCommit={header.onCommitName} style={{ margin: 0, color: '#111', fontSize: '1.48em', lineHeight: 1.08, fontWeight: 700 }} />
@@ -271,9 +271,9 @@ export function BankGoldLayout(props: {
         className="group relative"
         data-template-base-info-trigger="true"
         onClick={header.openEditModal}
-        style={{ position: 'relative', minHeight: refPx(144), cursor: 'pointer' }}
+        style={{ position: 'relative', minHeight: refPx(144) + refPx(150) * (header.avatarScale - 1), cursor: 'pointer' }}
       >
-        <div style={{ paddingRight: refPx(152) }}>
+        <div style={{ paddingRight: refPx(152) + refPx(112) * (header.avatarScale - 1) }}>
           <EditableText as="h1" value={header.name} onCommit={header.onCommitName} style={{ margin: `0 0 ${refPx(10)}px`, color: '#222', fontSize: '1.98em', lineHeight: 1.08, fontWeight: 700 }} />
           <HeaderFieldGrid header={header} accent={config.accent} labelColor="#8a5a20" valueColor="#4b4035" columns={`${refPx(180)}px ${refPx(230)}px`} gap={`${refPx(5)}px ${refPx(18)}px`} fontSize="0.82em" compact />
         </div>
@@ -327,7 +327,7 @@ export function MinimalBlackLayout(props: {
       </header>
       <section className="group relative" data-template-base-info-trigger="true" onClick={header.openEditModal} style={{ marginTop: 18, cursor: 'pointer' }}>
         <div className="minimal-info-title"><strong>个人信息</strong><span>Personal information</span></div>
-        <div className="grid" style={{ gridTemplateColumns: 'minmax(0, 1fr) 84px', gap: 18, alignItems: 'start' }}>
+        <div className="grid" style={{ gridTemplateColumns: `minmax(0, 1fr) ${84 * header.avatarScale}px`, gap: 18, alignItems: 'start' }}>
           <div>
             <div className="grid" style={{ gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '5px 18px', fontSize: '0.86em', lineHeight: 1.36 }}>
               <span className="inline-flex min-w-0 flex-wrap items-baseline" data-template-base-info-field="true" data-template-base-info-key="name">

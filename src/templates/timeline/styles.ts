@@ -18,6 +18,8 @@ export const TIMELINE_TEMPLATE_STYLES: TemplateStylesConfig = {
       className: 'flex items-baseline gap-4',
     },
     avatar: {
+      width: 100,
+      height: 120,
       size: 'w-[100px] h-[120px]',
       shape: 'rounded',
       containerClassName: 'w-[100px] h-[120px] rounded bg-gray-100 overflow-hidden shrink-0',

@@ -58,10 +58,10 @@ export function MarketingBannerLayout(props: {
         className="group relative"
         onClick={header.openEditModal}
         data-template-base-info-trigger="true"
-        style={{ minHeight: 148, paddingRight: 132, cursor: 'pointer' }}
+        style={{ minHeight: 148 + 116 * (header.avatarScale - 1), paddingRight: 132 + 96 * (header.avatarScale - 1), cursor: 'pointer' }}
       >
         <div style={{ position: 'absolute', right: 8, top: 10 }}>
-          <span aria-hidden style={{ position: 'absolute', right: -7, top: -7, width: 100, height: 116, backgroundColor: config.accent }} />
+          <span aria-hidden style={{ position: 'absolute', right: -7, top: -7, width: 100 * header.avatarScale, height: 116 * header.avatarScale, backgroundColor: config.accent }} />
           <SizedAvatar header={header} width={96} height={116} accent={config.accent} backgroundColor="#f4f6f8" />
         </div>
         <MarketingSectionTitle title="基本信息" en="Basic information" config={config} />
@@ -86,7 +86,7 @@ function RoundAvatar(props: { readonly header: EditableHeader; readonly accent: 
     <AvatarSlot
       header={props.header}
       render={({ image, uploadOverlay }) => (
-        <div className="relative overflow-hidden" style={{ boxSizing: 'border-box', width: refPx(132), height: refPx(132), borderRadius: 999, border: `1.5px solid ${props.accent}`, backgroundColor: lightenHex(props.accent, 0.82) }}>
+        <div className="relative overflow-hidden" style={{ boxSizing: 'border-box', width: refPx(132) * props.header.avatarScale, height: refPx(132) * props.header.avatarScale, borderRadius: 999, border: `1.5px solid ${props.accent}`, backgroundColor: lightenHex(props.accent, 0.82) }}>
           {image}
           {uploadOverlay}
         </div>
@@ -146,7 +146,7 @@ export function PlannerProfileLayout(props: {
           cursor: 'pointer',
         }}
       >
-        <div style={{ display: 'grid', gridTemplateColumns: `${refPx(132)}px minmax(0, 1fr)`, gap: refPx(14), alignItems: 'start', minWidth: 0 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: `${refPx(132) * header.avatarScale}px minmax(0, 1fr)`, gap: refPx(14), alignItems: 'start', minWidth: 0 }}>
           <RoundAvatar header={header} accent={config.accent} />
           <div style={{ minWidth: 0, paddingTop: refPx(22) }}>
             <EditableText as="h1" value={header.name} onCommit={header.onCommitName} style={{ margin: 0, fontSize: '2.25em', lineHeight: 1.15, fontWeight: 500, color: '#222' }} />
@@ -318,8 +318,8 @@ export function PurpleCornerLayout(props: {
         data-template-base-info-trigger="true"
         style={{
           margin: `${refPx(33)}px ${headerRight}px ${refPx(30)}px ${headerLeft}px`,
-          minHeight: refPx(158),
-          padding: `0 ${refPx(178)}px 0 ${refPx(18)}px`,
+          minHeight: refPx(158) + refPx(174) * (header.avatarScale - 1),
+          padding: `0 ${refPx(178) + refPx(126) * (header.avatarScale - 1)}px 0 ${refPx(18)}px`,
           cursor: 'pointer',
         }}
       >

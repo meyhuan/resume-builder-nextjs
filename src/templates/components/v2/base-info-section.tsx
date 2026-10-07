@@ -12,6 +12,8 @@ import { useState, useRef, useCallback, cloneElement, type ReactElement, type Ch
 import { Pencil, XCircle } from 'lucide-react'
 import { IconPhone, IconMail, IconGender, IconAge, IconLocation, IconWorkYear, IconInfo } from '@/components/sections/baseinfo-icons'
 import type { BaseInfo } from '@/entities/user/base-info'
+import { AvatarActions } from '@/components/avatar/avatar-actions'
+import { getAvatarScale } from '@/entities/user/avatar-size'
 import BaseInfoModal from '@/components/modals/base-info-modal'
 import AvatarCropModal from '@/components/modals/avatar-crop-modal'
 import { isUserVisibleBaseInfoCustomField } from '@/lib/template-exclusive-fields'
@@ -123,6 +125,8 @@ export default function BaseInfoSection(props: BaseInfoSectionProps): ReactEleme
         {baseInfo?.showAvatar !== false && (
         <div
           className={`relative ${styles.avatar?.containerClassName || 'w-20 h-24 rounded-lg bg-gray-100'} overflow-hidden shrink-0 border border-gray-200`}
+          data-resume-avatar="true"
+          style={{ width: (styles.avatar?.width ?? 80) * getAvatarScale(baseInfo?.avatarSize), height: (styles.avatar?.height ?? 96) * getAvatarScale(baseInfo?.avatarSize) }}
           onMouseEnter={() => !readOnly && setAvatarHovered(true)}
           onMouseLeave={() => setAvatarHovered(false)}
         >
@@ -131,17 +135,7 @@ export default function BaseInfoSection(props: BaseInfoSectionProps): ReactEleme
           ) : (
             <AvatarPlaceholder />
           )}
-          {!readOnly && avatarHovered && (
-            <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center gap-1.5 print:hidden">
-              <button
-                type="button"
-                className="px-3 py-1 text-xs font-bold text-white border border-white/80 rounded hover:bg-white/20 transition-colors"
-                onClick={(e) => { e.stopPropagation(); handleLocalUpload() }}
-              >
-                本地上传
-              </button>
-            </div>
-          )}
+          <AvatarActions baseInfo={baseInfo} name={name} onUpload={handleLocalUpload} hovered={avatarHovered} />
           {!readOnly && (
             <input
               ref={fileInputRef}

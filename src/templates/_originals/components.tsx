@@ -104,7 +104,7 @@ export function AvatarBox({ header, accent, radius, compact }: { readonly header
     <AvatarSlot
       header={header}
       render={({ image, uploadOverlay }) => (
-        <div className="relative overflow-hidden" style={{ width: compact ? 82 : 96, height: compact ? 98 : 116, borderRadius: radius, border: `2px solid ${lightenHex(accent, 0.55)}`, backgroundColor: '#f8fafc' }}>
+        <div className="relative overflow-hidden" style={{ width: (compact ? 82 : 96) * header.avatarScale, height: (compact ? 98 : 116) * header.avatarScale, borderRadius: radius, border: `2px solid ${lightenHex(accent, 0.55)}`, backgroundColor: '#f8fafc' }}>
           {image}
           {uploadOverlay}
         </div>

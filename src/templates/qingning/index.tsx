@@ -49,7 +49,7 @@ export default function QingningTemplate({
   resume,
   theme,
 }: TemplateProps): ReactElement {
-  const header = useEditableHeader(resume.name, resume.baseInfo ?? null);
+  const header = useEditableHeader(resume.name, resume.baseInfo ?? null, 'qingning');
   const job = useEditableJobIntention(resume.jobIntention);
   const showJob = resume.jobIntentionVisible ?? job.fields.length > 0;
   const subtitle = getHeaderJobIntentionText(resume);
@@ -225,7 +225,7 @@ export default function QingningTemplate({
           </div>
           <AvatarSlot
             header={header}
-            style={{ flexShrink: 0, width: 128, height: 145, marginTop: 5 }}
+            style={{ flexShrink: 0, width: 128 * header.avatarScale, height: 145 * header.avatarScale, marginTop: 5 }}
           />
         </header>
         {showJob && extras.length > 0 && (

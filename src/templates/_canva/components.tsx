@@ -32,8 +32,8 @@ export function Portrait({ header, design, large = false }: { readonly header: E
   const [width, height] = design.avatar
   const circle = design.avatarShape === 'circle'
   const polaroid = design.avatarShape === 'polaroid'
-  return <AvatarSlot header={header} placeholderSize={width * .44} placeholderColor={lightenHex(design.accent, .55)} render={({ image, uploadOverlay }) => <div className={`canva-portrait ${polaroid ? 'canva-polaroid' : ''}`} style={{ width: large ? '100%' : width, maxWidth: '100%', height: large ? 'auto' : height, aspectRatio: large ? `${width}/${height}` : undefined, position: 'relative', borderRadius: circle ? '50%' : design.avatarShape === 'rounded' ? 10 : 0, overflow: polaroid ? 'visible' : 'hidden', border: circle ? '4px solid #fff' : undefined, padding: polaroid ? '8px 8px 25px' : undefined, background: '#fff', boxShadow: polaroid ? '0 3px 8px #0002' : undefined, transform: polaroid ? 'rotate(-4deg)' : undefined }}>
-    <div style={{ width: '100%', height: '100%', overflow: 'hidden', borderRadius: circle ? '50%' : undefined }}>{image}</div>
+  return <AvatarSlot header={header} placeholderSize={width * .44} placeholderColor={lightenHex(design.accent, .55)} render={({ image, uploadOverlay }) => <div className={`canva-portrait ${polaroid ? 'canva-polaroid' : ''}`} style={{ width: large ? '100%' : width, maxWidth: '100%', height: 'auto', aspectRatio: `${width}/${height}`, position: 'relative', borderRadius: circle ? '50%' : design.avatarShape === 'rounded' ? 10 : 0, overflow: polaroid ? 'visible' : 'hidden', border: circle ? '4px solid #fff' : undefined, padding: polaroid ? '8px 8px 25px' : undefined, background: '#fff', boxShadow: polaroid ? '0 3px 8px #0002' : undefined, transform: polaroid ? 'rotate(-4deg)' : undefined }}>
+    <div style={{ position: 'absolute', inset: polaroid ? '8px 8px 25px' : 0, overflow: 'hidden', borderRadius: circle ? '50%' : undefined }}>{image}</div>
     {polaroid ? <span aria-hidden className="canva-photo-tape" /> : null}
     {uploadOverlay}
   </div>} />

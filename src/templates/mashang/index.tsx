@@ -97,7 +97,7 @@ function resolveSectionTag(section: Section): string {
 // ---------------------------------------------------------------------------
 export default function MashangTemplate(props: TemplateProps): ReactElement {
   const { resume, theme } = props
-  const header = useEditableHeader(resume.name, resume.baseInfo ?? null)
+  const header = useEditableHeader(resume.name, resume.baseInfo ?? null, 'mashang')
   const objective = useEditableJobIntention(resume.jobIntention ?? null)
   const jobIntentionVisible: boolean = resume.jobIntentionVisible ?? Boolean(resume.jobIntention)
   const pagePad = usePagePadding(theme, 26, 6)
@@ -287,8 +287,8 @@ function MashangHero({ header, title, horizontalPadding }: HeroProps): ReactElem
             <div
               className="relative overflow-hidden shrink-0"
               style={{
-                width: 92,
-                height: 129,
+                width: 92 * header.avatarScale,
+                height: 129 * header.avatarScale,
                 borderRadius: 8,
                 border: `2px solid ${palette.code}`,
                 boxShadow: `0 0 0 4px ${palette.codeBg}`,

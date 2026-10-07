@@ -27,7 +27,7 @@ import type { DragHandleProps, TemplateProps } from '@/templates/_core'
  * 不包含原稿的头像、字体文件或图形素材。
  */
 export default function ZhangxuTemplate({ resume, theme }: TemplateProps): ReactElement {
-  const header = useEditableHeader(resume.name, resume.baseInfo ?? null)
+  const header = useEditableHeader(resume.name, resume.baseInfo ?? null, 'zhangxu')
   const job = useEditableJobIntention(resume.jobIntention)
   const showJob = resume.jobIntentionVisible ?? job.fields.length > 0
   const accent = theme.primaryColor || '#3a4351'
@@ -59,7 +59,7 @@ export default function ZhangxuTemplate({ resume, theme }: TemplateProps): React
         .zhangxu-fields > * { min-width:0; max-width:100%; overflow-wrap:anywhere; }
         .zhangxu-job { display:flex; flex-wrap:wrap; gap:3px 12px; margin-top:8px; padding-top:7px; border-top:1px solid #e5e7eb; cursor:pointer; font-size:.83em; line-height:1.6; }
         .zhangxu-job > * { position:relative; min-width:0; overflow-wrap:anywhere; }
-        .zhangxu-avatar { width:84px; height:100px; background:#f3f4f6; }
+        .zhangxu-avatar { width:${84 * header.avatarScale}px; height:${100 * header.avatarScale}px; background:#f3f4f6; }
         .zhangxu-main { padding:0 23px 18px; }
         .zhangxu-section { position:relative; margin-top:calc(16px * var(--zhangxu-spacing)); break-inside:auto; }
         .zhangxu-section.first { margin-top:0; }

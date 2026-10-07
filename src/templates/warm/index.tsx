@@ -8,6 +8,8 @@ import type { ResumeData } from '@/entities/resume/resume-data'
 import type { ThemeTokens } from '@/entities/theme/theme-tokens'
 import type { ResumeBlock } from '@/entities/blocks/resume-block'
 import type { BaseInfo } from '@/entities/user/base-info'
+import { AvatarActions } from '@/components/avatar/avatar-actions'
+import { getAvatarScale, getAvatarMaxScale } from '@/entities/user/avatar-size'
 import type { Section } from '@/entities/resume/section'
 import SectionHeader from '@/components/sections/section-header'
 import DeleteSectionDialog from '@/components/sections/delete-section-dialog'
@@ -175,7 +177,8 @@ function WarmSidebarHeader(props: {
         <div className="flex justify-center mb-10">
           <div
             className="relative w-[130px] h-[150px] rounded-b-[65px] overflow-hidden bg-white flex items-center justify-center"
-            style={{ border: `7px solid ${accentColor}` }}
+            data-resume-avatar="true"
+            style={{ border: `7px solid ${accentColor}`, width: 130 * getAvatarScale(baseInfo?.avatarSize, getAvatarMaxScale('warm')), height: 150 * getAvatarScale(baseInfo?.avatarSize, getAvatarMaxScale('warm')) }}
             onMouseEnter={() => setAvatarHovered(true)}
             onMouseLeave={() => setAvatarHovered(false)}
           >
@@ -189,17 +192,7 @@ function WarmSidebarHeader(props: {
                 </svg>
               </div>
             )}
-            {avatarHovered && (
-              <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center gap-1.5 print:hidden">
-                <button
-                  type="button"
-                  className="px-3 py-1 text-xs font-bold text-white border border-white/80 rounded hover:bg-white/20 transition-colors"
-                  onClick={(e) => { e.stopPropagation(); handleLocalUpload() }}
-                >
-                  本地上传
-                </button>
-              </div>
-            )}
+            <AvatarActions baseInfo={baseInfo} name={name} onUpload={handleLocalUpload} hovered={avatarHovered} maxScale={getAvatarMaxScale('warm')} />
             <input
               ref={fileInputRef}
               type="file"
@@ -253,7 +246,7 @@ function WarmSidebarHeader(props: {
       </div>
 
       {showModal && (
-        <BaseInfoModal baseInfo={baseInfo} name={name} onClose={() => setShowModal(false)} onSave={updateBaseInfo} />
+        <BaseInfoModal avatarMaxScale={getAvatarMaxScale('warm')} baseInfo={baseInfo} name={name} onClose={() => setShowModal(false)} onSave={updateBaseInfo} />
       )}
       {cropImageSrc && (
         <AvatarCropModal imageSrc={cropImageSrc} onSave={handleCropSave} onClose={() => setCropImageSrc(null)} />
