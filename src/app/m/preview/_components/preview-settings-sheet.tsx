@@ -519,19 +519,15 @@ function Switch({ checked, onChange }: { readonly checked: boolean; readonly onC
     <button
       type="button"
       onClick={onChange}
-      className={cn(
-        'relative h-11 w-14 rounded-full transition-colors shrink-0',
-        checked ? 'bg-violet-600' : 'bg-slate-300',
-      )}
+      className="inline-flex h-11 w-14 shrink-0 items-center justify-center rounded-full"
       aria-pressed={checked}
       aria-label="单页模式"
     >
-      <span
-        className={cn(
-          'absolute left-1.5 top-2.5 h-6 w-6 rounded-full bg-white shadow transition-transform',
-          checked ? 'translate-x-5' : 'translate-x-0',
-        )}
-      />
+      {/* Keep a 44px touch target around the original 48×28px track. */}
+      <span aria-hidden="true" className={cn('relative h-7 w-12 rounded-full transition-colors', checked ? 'bg-violet-600' : 'bg-slate-300')}>
+        <span className={cn('absolute left-0.5 top-0.5 h-6 w-6 rounded-full bg-white shadow transition-transform',
+          checked ? 'translate-x-5' : 'translate-x-0')} />
+      </span>
     </button>
   )
 }
