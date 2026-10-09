@@ -259,6 +259,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
   }, [isVip, quota.pdfExport.allowed, quota.pdfExport.remaining, resumeId, tpl])
   const [isSaving, setIsSaving] = useState(false)
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
+  const [isManualSave, setIsManualSave] = useState(false)
   const [savedSnapshot, setSavedSnapshot] = useState<string>('')
   const [miniProgramDialogOpen, setMiniProgramDialogOpen] = useState(false)
   const miniProgramExportReminderShownRef = useRef(false)
@@ -271,8 +272,16 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
   const [saveErrorPersistent, setSaveErrorPersistent] = useState(false)
   const MAX_SAVE_RETRIES = 3
   const lastThumbnailUpdateRef = useRef<number>(0)
+  const lastThumbnailContentRef = useRef<string>('')
   const contentVersionRef = useRef(0)
   const THUMBNAIL_UPDATE_INTERVAL = 3 * 60 * 1000 // 3 minutes
+  // Refs for latest state (avoid stale closures in queued saves)
+  const latestResumeRef = useRef(resume)
+  const latestThemeRef = useRef(theme)
+  const latestTplRef = useRef(tpl)
+  const latestOnePageModeRef = useRef(onePageMode)
+  const latestOnePageSnapshotRef = useRef(onePageSnapshot)
+  const latestSidebarSectionIdsRef = useRef(sidebarSectionIds)
   const sidebarReady = useEditorSidebarPreference(initialResumeId || 'local', searchParams.get('source') === 'ai' ? 'ai' : 'sections')
   const storedActivePanel = useEditorUiStore((state) => state.activePanel)
   const activePanel = sidebarReady ? storedActivePanel : null
@@ -404,6 +413,16 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
   const themes = useAppStore((s) => s.themes)
   const theme = themes[tpl] || getThemeForTemplate(tpl)
 
+  // Keep refs in sync with latest state (for queued saves)
+  useEffect(() => {
+    latestResumeRef.current = resume
+    latestThemeRef.current = theme
+    latestTplRef.current = tpl
+    latestOnePageModeRef.current = onePageMode
+    latestOnePageSnapshotRef.current = onePageSnapshot
+    latestSidebarSectionIdsRef.current = sidebarSectionIds
+  }, [resume, theme, tpl, onePageMode, onePageSnapshot, sidebarSectionIds])
+  
   // Check if there are unsaved changes (composite: resume + theme + tpl + one-page state)
   const currentFingerprint = useMemo(() => {
     return JSON.stringify({ resume, theme, tpl, onePageMode, onePageSnapshot, sidebarSectionIds })
@@ -412,6 +431,14 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
     if (!savedSnapshot) return false
     return currentFingerprint !== savedSnapshot
   }, [currentFingerprint, savedSnapshot])
+  
+  // Reset retry count on new edit
+  useEffect(() => {
+    if (hasUnsavedChanges && saveRetryCountRef.current > MAX_SAVE_RETRIES) {
+      saveRetryCountRef.current = 0
+      setSaveErrorPersistent(false)
+    }
+  }, [hasUnsavedChanges])
 
   useEffect(() => {
     if (!isHydrated || editorOpenTracked.current) return
@@ -556,7 +583,16 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
     
     saveInFlightRef.current = true
     setIsSaving(true)
+    setIsManualSave(!isAutoSave)
     setSaveErrorPersistent(false)
+    
+    // Use latest state from refs (avoid stale closures in queued saves)
+    const currentResume = latestResumeRef.current
+    const currentTheme = latestThemeRef.current
+    const currentTpl = latestTplRef.current
+    const currentOnePageMode = latestOnePageModeRef.current
+    const currentOnePageSnapshot = latestOnePageSnapshotRef.current
+    const currentSidebarSectionIds = latestSidebarSectionIdsRef.current
     
     // Increment content version for this save
     const currentVersion = ++contentVersionRef.current
@@ -571,13 +607,13 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
       if (!currentId) {
         createStarted = true
         const editorMeta = {
-          themes: { [tpl]: theme },
-          onePageMode,
-          onePageSnapshot,
-          sidebarSectionIds,
+          themes: { [currentTpl]: currentTheme },
+          onePageMode: currentOnePageMode,
+          onePageSnapshot: currentOnePageSnapshot,
+          sidebarSectionIds: currentSidebarSectionIds,
         }
         const contentWithMeta: Record<string, unknown> = embedEditorMeta(
-          resume as unknown as Record<string, unknown>,
+          currentResume as unknown as Record<string, unknown>,
           editorMeta,
         )
         const createPayload: ResumeSavePayload = {
@@ -623,18 +659,18 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
       
       // 2. Build content with editor metadata (always save content first)
       const editorMeta = {
-        themes: { [tpl]: theme },
-        onePageMode,
-        onePageSnapshot,
-        sidebarSectionIds,
+        themes: { [currentTpl]: currentTheme },
+        onePageMode: currentOnePageMode,
+        onePageSnapshot: currentOnePageSnapshot,
+        sidebarSectionIds: currentSidebarSectionIds,
       }
       const contentWithMeta: Record<string, unknown> = embedEditorMeta(
-        resume as unknown as Record<string, unknown>,
+        currentResume as unknown as Record<string, unknown>,
         editorMeta,
       )
       const savePayload: ResumeSavePayload = {
         content: contentWithMeta,
-        template: tpl,
+        template: currentTpl,
         contentVersion: currentVersion,
       }
       
@@ -644,13 +680,29 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(savePayload),
       })
-      if (!res.ok) throw new Error('Failed to save')
+      if (!res.ok) {
+        if (res.status === 409) {
+          // Version conflict - reload might be needed
+          console.warn('[ResumeEditor] Version conflict detected', await res.json())
+        }
+        throw new Error('Failed to save')
+      }
       
       // 4. Generate and upload thumbnail separately (doesn't block content save)
+      // Only regenerate if content changed since last thumbnail or explicitly requested
+      const currentContentFingerprint = JSON.stringify({ 
+        resume: currentResume, 
+        theme: currentTheme, 
+        tpl: currentTpl,
+        onePageMode: currentOnePageMode,
+        onePageSnapshot: currentOnePageSnapshot 
+      })
+      const contentChangedSinceLastThumbnail = currentContentFingerprint !== lastThumbnailContentRef.current
+      
       const shouldGenerateThumbnail = generateThumbnail !== false && (
-        !isAutoSave || 
-        generateThumbnail === true ||
-        (Date.now() - lastThumbnailUpdateRef.current > THUMBNAIL_UPDATE_INTERVAL)
+        generateThumbnail === true || // Explicitly requested
+        (!isAutoSave && contentChangedSinceLastThumbnail) || // Manual save with changes
+        (isAutoSave && contentChangedSinceLastThumbnail && Date.now() - lastThumbnailUpdateRef.current > THUMBNAIL_UPDATE_INTERVAL)
       )
       
       let thumbnailGenerated = false
@@ -674,15 +726,25 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
             if (thumbnailRes.ok) {
               thumbnailGenerated = true
               lastThumbnailUpdateRef.current = Date.now()
+              lastThumbnailContentRef.current = currentContentFingerprint
+            } else {
+              thumbnailFailureReason = `HTTP ${thumbnailRes.status}`
+              console.error('[ResumeEditor] thumbnail upload failed', {
+                resumeId: currentId,
+                status: thumbnailRes.status,
+                error: await thumbnailRes.text()
+              })
             }
           }
         } catch (error) {
           thumbnailFailureReason = describeUnknownError(error)
-          console.warn('[ResumeEditor] thumbnail generation failed', {
+          console.error('[ResumeEditor] thumbnail generation failed', {
             resumeId: currentId,
             error: thumbnailFailureReason,
           })
         }
+        // Record attempt time even on failure to avoid infinite retries
+        lastThumbnailUpdateRef.current = Date.now()
       }
       
       track('resume_save_success', {
@@ -697,7 +759,14 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
       })
       
       setLastSaved(new Date())
-      setSavedSnapshot(JSON.stringify({ resume, theme, tpl, onePageMode, onePageSnapshot, sidebarSectionIds }))
+      setSavedSnapshot(JSON.stringify({ 
+        resume: currentResume, 
+        theme: currentTheme, 
+        tpl: currentTpl, 
+        onePageMode: currentOnePageMode, 
+        onePageSnapshot: currentOnePageSnapshot, 
+        sidebarSectionIds: currentSidebarSectionIds 
+      }))
       clearEditorDraftBackup()
       saveRetryCountRef.current = 0 // Reset retry count on success
       
@@ -770,7 +839,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
         }, 100)
       }
     }
-  }, [resumeId, resume, tpl, theme, onePageMode, onePageSnapshot, sidebarSectionIds, searchParams, savedSnapshot])
+  }, [resumeId, searchParams, savedSnapshot])
 
   /** Auth-gated save — prompts login if user is not authenticated. */
   const handleSave = useCallback(() => {
@@ -858,7 +927,8 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
   }, [resumeId, doSave])
   
-  // Idle thumbnail regeneration (if not updated in last 3 minutes)
+  // Idle thumbnail regeneration (if content changed and not updated in last 3 minutes)
+  // This does NOT send content PUTs - only thumbnail updates
   useEffect(() => {
     if (!resumeId) return
     
@@ -866,16 +936,45 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
       const now = Date.now()
       const timeSinceLastThumbnail = now - lastThumbnailUpdateRef.current
       
-      // If idle and thumbnail is stale, regenerate it
-      if (!isSaving && !hasUnsavedChanges && timeSinceLastThumbnail > THUMBNAIL_UPDATE_INTERVAL) {
-        doSave({ showSuccessToast: false, isAutoSave: true, generateThumbnail: true }).catch(() => {
+      // Check if content changed since last thumbnail
+      const currentContentFingerprint = JSON.stringify({ 
+        resume: latestResumeRef.current, 
+        theme: latestThemeRef.current, 
+        tpl: latestTplRef.current,
+        onePageMode: latestOnePageModeRef.current,
+        onePageSnapshot: latestOnePageSnapshotRef.current 
+      })
+      const contentChanged = currentContentFingerprint !== lastThumbnailContentRef.current
+      
+      // Only regenerate if: no unsaved changes AND content changed since last thumbnail AND enough time passed
+      if (!isSaving && !hasUnsavedChanges && contentChanged && timeSinceLastThumbnail > THUMBNAIL_UPDATE_INTERVAL) {
+        // Generate and upload thumbnail only (no content save)
+        exportImage(printRef, {
+          pixelRatio: 1,
+          returnBase64: true,
+          backgroundColor: '#ffffff',
+          clipFirstPage: true,
+        }).then((thumbnailResult) => {
+          if (typeof thumbnailResult === 'string' && thumbnailResult && resumeId) {
+            return fetchWithNetworkRetry(`/next-api/resumes/${resumeId}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ thumbnail: thumbnailResult }),
+            }).then((res) => {
+              if (res.ok) {
+                lastThumbnailUpdateRef.current = now
+                lastThumbnailContentRef.current = currentContentFingerprint
+              }
+            })
+          }
+        }).catch(() => {
           // Silent failure for idle thumbnail update
         })
       }
     }, 60000) // Check every minute
     
     return () => clearInterval(idleTimer)
-  }, [resumeId, isSaving, hasUnsavedChanges, doSave, THUMBNAIL_UPDATE_INTERVAL])
+  }, [resumeId, isSaving, hasUnsavedChanges, THUMBNAIL_UPDATE_INTERVAL])
 
   // Determine back destination based on auth state
   const backPath = token ? '/dashboard' : '/'
@@ -1219,6 +1318,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
         isSaving={isSaving}
         hasUnsavedChanges={hasUnsavedChanges}
         lastSaved={lastSaved}
+        isManualSave={isManualSave}
         saveErrorPersistent={saveErrorPersistent}
         onBack={handleBack}
         onSave={handleSave}

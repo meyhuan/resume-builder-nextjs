@@ -33,6 +33,7 @@ export interface EditorHeaderProps {
   readonly isSaving: boolean;
   readonly hasUnsavedChanges: boolean;
   readonly lastSaved: Date | null;
+  readonly isManualSave: boolean;
   readonly saveErrorPersistent: boolean;
   readonly onBack: () => void;
   readonly onSave: () => void;
@@ -71,7 +72,7 @@ export default function EditorHeader(props: EditorHeaderProps): ReactElement {
       : props.hasUnsavedChanges
         ? '未保存'
         : props.lastSaved
-          ? '已自动保存'
+          ? props.isManualSave ? '已保存' : '已自动保存'
           : '';
 
   return (

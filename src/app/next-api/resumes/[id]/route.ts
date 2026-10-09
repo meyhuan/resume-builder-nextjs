@@ -79,29 +79,66 @@ export async function PUT(req: Request, { params }: RouteParams) {
 
     updateStep = 'parse-body'
     const body = await req.json()
-    const { title, content, template, thumbnail } = body
+    const { title, content, template, thumbnail, contentVersion } = body
+    const hasContentField = Object.prototype.hasOwnProperty.call(body, 'content')
     const hasThumbnailField = Object.prototype.hasOwnProperty.call(body, 'thumbnail')
-    const normalizedContent = normalizeResumeContent(
-      content as Partial<ResumeData> & Record<string, unknown>,
-      { fallbackId: resumeId },
-    )
-    updateStep = 'persist-assets'
-    const persistedAssets = await persistResumeAssets({
-      content: normalizedContent as unknown as Record<string, unknown>,
-      thumbnail: hasThumbnailField ? thumbnail : undefined,
-      customPrefix: resumeId,
-    })
+    
+    // Check version if provided (stale-write guard)
+    if (typeof contentVersion === 'number' && hasContentField) {
+      const existingVersion = (existingResume.content as Record<string, unknown>)?._version
+      if (typeof existingVersion === 'number' && contentVersion < existingVersion) {
+        return NextResponse.json({ 
+          error: 'Stale write rejected',
+          code: 'VERSION_CONFLICT',
+          clientVersion: contentVersion,
+          serverVersion: existingVersion
+        }, { status: 409 })
+      }
+    }
     
     updateStep = 'update-database'
-    const data: Prisma.ResumeUpdateInput = {
-      content: persistedAssets.content as Prisma.InputJsonValue,
-      template,
+    const data: Prisma.ResumeUpdateInput = {}
+    
+    // Handle content update (with normalization and asset persistence)
+    if (hasContentField) {
+      const normalizedContent = normalizeResumeContent(
+        content as Partial<ResumeData> & Record<string, unknown>,
+        { fallbackId: resumeId },
+      )
+      updateStep = 'persist-content-assets'
+      const persistedContent = await persistResumeAssets({
+        content: normalizedContent as unknown as Record<string, unknown>,
+        thumbnail: undefined,
+        customPrefix: resumeId,
+      })
+      // Store version in content for next check
+      const contentWithVersion = {
+        ...persistedContent.content,
+        _version: typeof contentVersion === 'number' ? contentVersion : undefined
+      }
+      data.content = contentWithVersion as Prisma.InputJsonValue
+      if (template) {
+        data.template = template
+      }
+      if (typeof title === 'string' && title.trim()) {
+        data.title = title.trim()
+      }
     }
+    
+    // Handle thumbnail-only update
     if (hasThumbnailField) {
-      data.thumbnail = persistedAssets.thumbnail
+      updateStep = 'persist-thumbnail'
+      const persistedThumbnail = await persistResumeAssets({
+        content: {},
+        thumbnail,
+        customPrefix: resumeId,
+      })
+      data.thumbnail = persistedThumbnail.thumbnail
     }
-    if (typeof title === 'string' && title.trim()) {
-      data.title = title.trim()
+    
+    // Require at least one field to update
+    if (Object.keys(data).length === 0) {
+      return NextResponse.json({ error: 'No fields to update' }, { status: 400 })
     }
 
     const resume = await prisma.resume.update({
