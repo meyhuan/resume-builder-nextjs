@@ -30,6 +30,8 @@ model Resume {
   user      User     @relation(fields: [userId], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([userId, updatedAt(sort: Desc)])
 }
 
 model Feedback {

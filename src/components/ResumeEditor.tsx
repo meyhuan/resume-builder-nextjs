@@ -90,8 +90,10 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
   const [savedSnapshot, setSavedSnapshot] = useState<string>('')
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null)
-  const AUTO_SAVE_DELAY = 30000 // 30 seconds
+  const AUTO_SAVE_DELAY = 2000 // 2 seconds for better responsiveness
   const [showLeaveDialog, setShowLeaveDialog] = useState(false)
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'pending' | 'saving' | 'saved' | 'error'>('idle')
+  const saveAbortControllerRef = useRef<AbortController | null>(null)
   const [activePanel, setActivePanel] = useState<PanelId | null>('layout')
   const [onePageMode, setOnePageMode] = useState(false)
   const [onePageSnapshot, setOnePageSnapshot] = useState<AdjustableTokens | null>(null)
@@ -215,9 +217,25 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
   /**
    * Persist resume to DB. In guest mode (no resumeId), creates a new
    * resume first, then saves. Auth is checked before any API call.
+   * @param options.skipThumbnail - Skip thumbnail generation (for auto-save)
+   * @param options.isAutoSave - Whether this is an auto-save (affects UI feedback)
    */
-  const doSave = useCallback(async () => {
+  const doSave = useCallback(async (options?: { skipThumbnail?: boolean; isAutoSave?: boolean }) => {
+    const { skipThumbnail = false, isAutoSave = false } = options || {}
+    
+    // Cancel any in-flight save request
+    if (saveAbortControllerRef.current) {
+      saveAbortControllerRef.current.abort()
+    }
+    
+    const abortController = new AbortController()
+    saveAbortControllerRef.current = abortController
+    
     setIsSaving(true)
+    setSaveStatus('saving')
+    
+    const saveStartTime = performance.now()
+    
     try {
       let currentId = resumeId
       // 1. If no resumeId yet, create the resume first
@@ -241,6 +259,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(createPayload),
+          signal: abortController.signal,
         })
         if (!createRes.ok) throw new Error('Failed to create resume')
         const created: { id: string } = await createRes.json()
@@ -249,14 +268,8 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
         // Update browser URL without full navigation
         window.history.replaceState(null, '', `/editor/${currentId}`)
       }
-      // 2. Generate thumbnail (Base64)
-      const thumbnail: string = await exportImage(printRef, {
-        pixelRatio: 1,
-        returnBase64: true,
-        backgroundColor: '#ffffff',
-        clipFirstPage: true,
-      }) as string
-      // 3. Build content with editor metadata
+      
+      // 2. Build content with editor metadata
       const editorMeta = {
         themes: { [tpl]: theme },
         onePageMode,
@@ -267,45 +280,94 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
         resume as unknown as Record<string, unknown>,
         editorMeta,
       )
+      
+      // 3. Optionally generate thumbnail (skip for auto-save)
+      let thumbnail: string | undefined
+      if (!skipThumbnail) {
+        thumbnail = await exportImage(printRef, {
+          pixelRatio: 1,
+          returnBase64: true,
+          backgroundColor: '#ffffff',
+          clipFirstPage: true,
+        }) as string
+      }
+      
       const savePayload: ResumeSavePayload = {
         title: resume.name || 'Untitled Resume',
         content: contentWithMeta,
         template: tpl,
-        thumbnail,
+        ...(thumbnail && { thumbnail }),
       }
+      
       // 4. Save to DB
       const res = await fetch(`/next-api/resumes/${currentId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(savePayload),
+        signal: abortController.signal,
       })
       if (!res.ok) throw new Error('Failed to save')
+      
+      const saveEndTime = performance.now()
+      const saveDuration = saveEndTime - saveStartTime
+      
       setLastSaved(new Date())
       setSavedSnapshot(JSON.stringify({ resume, theme, tpl, onePageMode, onePageSnapshot, sidebarSectionIds }))
-      await revalidateDashboard()
-      toast.success('Saved successfully')
+      setSaveStatus('saved')
+      
+      // Only revalidate dashboard and show toast for manual saves
+      if (!isAutoSave) {
+        await revalidateDashboard()
+        toast.success('Saved successfully')
+      }
+      
+      // Log performance metrics
+      console.log(`Save completed in ${saveDuration.toFixed(0)}ms (thumbnail: ${!skipThumbnail})`)
     } catch (e) {
+      if (e instanceof Error && e.name === 'AbortError') {
+        console.log('Save aborted (new save initiated)')
+        return
+      }
       console.error(e)
-      toast.error('Save failed, please try again')
+      setSaveStatus('error')
+      if (!isAutoSave) {
+        toast.error('Save failed, please try again')
+      }
     } finally {
       setIsSaving(false)
+      saveAbortControllerRef.current = null
+      
+      // Reset status after a delay
+      setTimeout(() => {
+        setSaveStatus((current) => current === 'saved' || current === 'error' ? 'idle' : current)
+      }, 2000)
     }
   }, [resumeId, resume, tpl, theme, onePageMode, onePageSnapshot, sidebarSectionIds])
 
-  /** Auth-gated save — prompts login if user is not authenticated. */
+  /** Auth-gated manual save — prompts login if user is not authenticated. */
   const handleSave = useCallback(() => {
-    requireAuth(() => { doSave() })
+    requireAuth(() => { 
+      // Manual saves include thumbnail generation
+      doSave({ skipThumbnail: false, isAutoSave: false }) 
+    })
   }, [requireAuth, doSave])
 
   // Auto-save: debounced save after changes (only when resumeId exists — i.e. already persisted)
   useEffect(() => {
     if (!resumeId || !hasUnsavedChanges || isSaving) return
+    
+    // Mark as pending when changes are detected
+    setSaveStatus('pending')
+    
     if (autoSaveTimerRef.current) {
       clearTimeout(autoSaveTimerRef.current)
     }
+    
     autoSaveTimerRef.current = setTimeout(() => {
-      doSave()
+      // Auto-saves skip thumbnail generation for speed
+      doSave({ skipThumbnail: true, isAutoSave: true })
     }, AUTO_SAVE_DELAY)
+    
     return () => {
       if (autoSaveTimerRef.current) {
         clearTimeout(autoSaveTimerRef.current)
@@ -525,8 +587,30 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
             <span className="text-sm font-medium text-slate-700 truncate max-w-[180px]">
               {resume.name || 'Untitled Resume'}
             </span>
-            {hasUnsavedChanges && (
-              <span className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse shrink-0" title="Unsaved changes" />
+            {/* Save status indicator */}
+            {saveStatus === 'pending' && (
+              <span className="text-[10px] text-amber-600 shrink-0 flex items-center gap-1" title="Changes detected, will auto-save">
+                <span className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse" />
+                <span className="hidden sm:inline">Pending</span>
+              </span>
+            )}
+            {saveStatus === 'saving' && (
+              <span className="text-[10px] text-blue-600 shrink-0 flex items-center gap-1" title="Saving changes">
+                <Loader2 className="w-3 h-3 animate-spin" />
+                <span className="hidden sm:inline">Saving...</span>
+              </span>
+            )}
+            {saveStatus === 'saved' && (
+              <span className="text-[10px] text-emerald-600 shrink-0 flex items-center gap-1" title="All changes saved">
+                <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
+                <span className="hidden sm:inline">Saved</span>
+              </span>
+            )}
+            {saveStatus === 'error' && (
+              <span className="text-[10px] text-red-600 shrink-0 flex items-center gap-1" title="Save failed">
+                <span className="w-1.5 h-1.5 bg-red-500 rounded-full" />
+                <span className="hidden sm:inline">Error</span>
+              </span>
             )}
           </div>
 

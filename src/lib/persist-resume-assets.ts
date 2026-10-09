@@ -83,6 +83,11 @@ async function persistAvatarUrl(content: Record<string, unknown>, customPrefix?:
     return content
   }
   
+  // If it's empty or invalid, skip processing
+  if (!avatarUrl || avatarUrl.trim() === '') {
+    return content
+  }
+  
   const parsedDataUrl: ParsedDataUrl | null = parseDataUrl(avatarUrl)
   if (!parsedDataUrl) {
     return content

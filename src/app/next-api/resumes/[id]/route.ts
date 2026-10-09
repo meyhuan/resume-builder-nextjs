@@ -50,12 +50,7 @@ export async function PUT(req: Request, { params }: RouteParams) {
     updateStep = 'parse-body'
     const body = await req.json()
     const { title, content, template, thumbnail } = body
-    updateStep = 'persist-assets'
-    const persistedAssets = await persistResumeAssets({
-      content,
-      thumbnail,
-      customPrefix: resumeId,
-    })
+    
     updateStep = 'verify-ownership'
     const existingResume = await prisma.resume.findUnique({
       where: { id },
@@ -65,15 +60,36 @@ export async function PUT(req: Request, { params }: RouteParams) {
       return NextResponse.json({ error: 'Resume not found' }, { status: 404 })
     }
     
+    updateStep = 'persist-assets'
+    // Only persist assets if content or thumbnail is provided
+    // This allows partial updates (e.g., auto-save without thumbnail)
+    const persistedAssets = await persistResumeAssets({
+      content,
+      thumbnail,
+      customPrefix: resumeId,
+    })
+    
     updateStep = 'update-database'
+    // Build update data object, only including fields that are provided
+    const updateData: {
+      title?: string
+      content?: Prisma.InputJsonValue
+      template?: string
+      thumbnail?: string
+    } = {
+      title,
+      content: persistedAssets.content as Prisma.InputJsonValue,
+      template,
+    }
+    
+    // Only update thumbnail if provided (allows skipping thumbnail on auto-save)
+    if (persistedAssets.thumbnail !== null) {
+      updateData.thumbnail = persistedAssets.thumbnail
+    }
+    
     const resume = await prisma.resume.update({
       where: { id },
-      data: {
-        title,
-        content: persistedAssets.content as Prisma.InputJsonValue,
-        template,
-        thumbnail: persistedAssets.thumbnail
-      }
+      data: updateData
     })
     
     return NextResponse.json(resume)
