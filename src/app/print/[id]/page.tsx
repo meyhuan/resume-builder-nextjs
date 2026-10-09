@@ -74,9 +74,6 @@ export default async function PrintPage(props: PrintPageProps): Promise<ReactEle
   const onePageCss = isOnePage
     ? `
         .resume-document-main[data-one-page="true"] {
-          max-height: 297mm !important;
-          height: 297mm !important;
-          overflow: hidden !important;
           page-break-after: avoid !important;
           break-after: avoid !important;
         }`

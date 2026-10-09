@@ -115,6 +115,15 @@ describe('live pagination feedback', () => {
     expect(html).not.toContain('第 1 页 / 第 2 页')
   })
 
+  it('does not clip overflow when one-page mode cannot fit', () => {
+    const root = document.createElement('div')
+    root.innerHTML = '<div class="resume-document-main" data-one-page="true"><p>超出一页的内容</p></div>'
+    const html = buildResumeHtml(root)
+    expect(html).toContain('data-one-page="true"')
+    expect(html).not.toContain('max-height: 297mm')
+    expect(html).not.toContain('overflow: hidden !important')
+  })
+
   it('explains only changed settings, preserving exact opening values', () => {
     const before = { spacingScale: 1.2, lineHeight: 1.8, fontSize: 15 }
     expect(getOnePageAdjustments(before, before)).toEqual([])

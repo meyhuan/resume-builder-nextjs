@@ -1,4 +1,4 @@
-import type { AdjustableTokens } from '@/entities/editor/editor-meta'
+import type { AdjustableTokens, OnePageStrategy } from '@/entities/editor/editor-meta'
 import { TemplateBrowser } from '@/components/templates/template-browser'
 import { templateLabels } from '@/lib/templates/template-taxonomy'
 /**
@@ -13,6 +13,7 @@ import type { ThemeTokens } from '@/entities/theme/theme-tokens'
 import type { OnePageStatus } from '@/hooks/use-one-page-mode'
 import type { TemplateConfig } from '@/templates/template-loader'
 import type { PanelId } from '@/ui/editor-toolbar'
+import type { ResumePagination } from '@/hooks/use-resume-pagination'
 import ThemePanel from '@/ui/theme-panel'
 import { useAppStore } from '@/state/store'
 import { RESUME_SCENARIOS } from '@/dev/resume-scenarios'
@@ -38,7 +39,10 @@ export interface RightSidebarProps {
   readonly onePage?: boolean
   readonly onePageStatus?: OnePageStatus
   readonly onePageSnapshot?: AdjustableTokens | null
+  readonly onePageStrategy?: OnePageStrategy
+  readonly onePagePages?: ResumePagination
   readonly onOnePageChange?: (v: boolean) => void
+  readonly onOnePageStrategyChange?: (strategy: OnePageStrategy) => void
   readonly resumeId?: string
   readonly onRequireResumeId?: () => Promise<string | null>
 }
@@ -92,7 +96,10 @@ export default function RightSidebar(props: RightSidebarProps): ReactElement {
           onePage={props.onePage}
           onePageStatus={props.onePageStatus}
           onePageSnapshot={props.onePageSnapshot}
+          onePageStrategy={props.onePageStrategy}
+          onePagePages={props.onePagePages}
           onOnePageChange={props.onOnePageChange}
+          onOnePageStrategyChange={props.onOnePageStrategyChange}
         />
       )}
       {activePanel === 'portfolio' && (
@@ -129,7 +136,10 @@ interface LayoutPanelProps {
   readonly onePage?: boolean
   readonly onePageStatus?: OnePageStatus
   readonly onePageSnapshot?: AdjustableTokens | null
+  readonly onePageStrategy?: OnePageStrategy
+  readonly onePagePages?: ResumePagination
   readonly onOnePageChange?: (v: boolean) => void
+  readonly onOnePageStrategyChange?: (strategy: OnePageStrategy) => void
 }
 
 function LayoutPanel(props: LayoutPanelProps): ReactElement {
@@ -244,13 +254,17 @@ function LayoutPanel(props: LayoutPanelProps): ReactElement {
                 onePage={props.onePage}
                 onePageStatus={props.onePageStatus}
                 onePageSnapshot={props.onePageSnapshot}
+                onePageStrategy={props.onePageStrategy}
+                onePagePages={props.onePagePages}
                 onOnePageChange={props.onOnePageChange}
+                onOnePageStrategyChange={props.onOnePageStrategyChange}
                 locksPrimaryColor={templates.find((t) => t.id === tpl)?.locksPrimaryColor}
                 activeTemplateName={templates.find((t) => t.id === tpl)?.name}
                 defaultPrimaryColor={defaultTheme.primaryColor}
                 onResetPrimaryColor={(): void => {
                   resetThemeForTemplate(tpl)
                   props.onOnePageChange?.(false)
+                  props.onOnePageStrategyChange?.('one-page')
                 }}
               />
             </div>

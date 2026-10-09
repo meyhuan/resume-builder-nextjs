@@ -2,9 +2,9 @@ import { useState } from 'react'
 import type { ChangeEvent, ReactElement } from 'react'
 import type { ThemeTokens } from '@/entities/theme/theme-tokens'
 import type { OnePageStatus } from '@/hooks/use-one-page-mode'
-import type { AdjustableTokens } from '@/entities/editor/editor-meta'
+import type { AdjustableTokens, OnePageStrategy } from '@/entities/editor/editor-meta'
+import type { ResumePagination } from '@/hooks/use-resume-pagination'
 import { OnePageAdjustments } from '@/components/editor/one-page-adjustments'
-import { ONE_PAGE_READABILITY } from '@/lib/resume-page-metrics'
 import { Slider } from '@/components/ui/slider'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
@@ -36,7 +36,10 @@ export default function ThemePanel(props: {
   readonly onePage?: boolean
   readonly onePageStatus?: OnePageStatus
   readonly onePageSnapshot?: AdjustableTokens | null
+  readonly onePageStrategy?: OnePageStrategy
+  readonly onePagePages?: ResumePagination
   readonly onOnePageChange?: (isOnePage: boolean) => void
+  readonly onOnePageStrategyChange?: (strategy: OnePageStrategy) => void
   /** If true, the active template owns its palette — disable primary-color UI. */
   readonly locksPrimaryColor?: boolean
   /** Display name of the active template (used in the lock notice). */
@@ -85,6 +88,10 @@ export default function ThemePanel(props: {
   function toggleSinglePage(): void {
     props.onOnePageChange?.(!(props.onePage ?? false))
   }
+
+  const onePageStrategy: OnePageStrategy = props.onePageStrategy ?? 'one-page'
+  const lineHeightMinimum = props.onePage && onePageStrategy === 'readability' ? 1.4 : 1
+  const spacingMinimum = props.onePage && onePageStrategy === 'readability' ? 0.4 : 0
 
   const [primaryPopoverOpen, setPrimaryPopoverOpen] = useState(false)
   const [showPrimaryCustom, setShowPrimaryCustom] = useState(false)
@@ -201,7 +208,7 @@ export default function ThemePanel(props: {
               </div>
               <div className="min-w-0">
                 <div className="text-sm font-semibold text-slate-800">一页模式</div>
-                <p className="text-[11px] text-slate-500">在可读范围内调整排版，尽量适配一页。</p>
+                <p className="text-[11px] text-slate-500">选择排版目标，系统会实时反馈页数，不会裁切内容。</p>
               </div>
             </div>
             <div className="flex items-center gap-2 shrink-0">
@@ -246,7 +253,37 @@ export default function ThemePanel(props: {
               ) : null}
             </div>
           ) : null}
-          {props.onePage && <OnePageAdjustments snapshot={props.onePageSnapshot} current={theme} status={props.onePageStatus} />}
+          {props.onePage ? (
+            <div className="space-y-2 border-t border-slate-200 pt-3">
+              <div className="text-[11px] font-semibold text-slate-500">排版策略</div>
+              <div className="grid grid-cols-3 gap-1.5" role="radiogroup" aria-label="一页排版策略">
+                {([
+                  ['readability', '可读性优先', '保持舒适阅读，允许分页'],
+                  ['one-page', '一页优先', '尽量压缩到一页'],
+                  ['manual', '手动调整', '不自动修改参数'],
+                ] as const).map(([value, label, description]) => {
+                  const selected = onePageStrategy === value
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      role="radio"
+                      aria-checked={selected}
+                      onClick={(): void => props.onOnePageStrategyChange?.(value)}
+                      className={`rounded-lg border px-2 py-2 text-left transition-colors ${selected ? 'border-violet-500 bg-violet-50 text-violet-800' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'}`}
+                    >
+                      <span className="block text-[11px] font-semibold">{label}</span>
+                      <span className="mt-0.5 block text-[10px] leading-4 text-slate-500">{description}</span>
+                    </button>
+                  )
+                })}
+              </div>
+              <p className="text-[11px] leading-4 text-slate-500">
+                {onePageStrategy === 'readability' ? '系统优先保留字号、行高和留白，超出时会自然分页。' : onePageStrategy === 'manual' ? '切换或拖动下方参数时，系统不会自动替你压缩。' : '系统先减少留白，再逐步压缩行高和字号；不会裁切内容。'}
+              </p>
+            </div>
+          ) : null}
+          {props.onePage && <OnePageAdjustments snapshot={props.onePageSnapshot} current={theme} status={props.onePageStatus} pages={props.onePagePages} />}
         </div>
         {props.onePage && (
           <p className="text-[11px] text-slate-500">关闭后将恢复为开启前的排版设置。</p>
@@ -259,14 +296,14 @@ export default function ThemePanel(props: {
             </div>
             <Slider
               id="line-height"
-              min={ONE_PAGE_READABILITY.lineHeight}
+              min={lineHeightMinimum}
               max={3.0}
               step={0.1}
-              value={[theme.lineHeight]}
+              value={[Math.max(lineHeightMinimum, theme.lineHeight)]}
               onValueChange={handleLineHeight}
               className="py-1"
             />
-            <p className="text-[11px] text-slate-500">中文正文建议 1.6–1.8；最低保留 1.4。</p>
+            <p className="text-[11px] text-slate-500">中文正文建议 1.6–1.8；当前策略最低 {lineHeightMinimum.toFixed(1)}。</p>
           </div>
           <div className="space-y-2">
             <div className={sliderLabelClass}>
@@ -275,10 +312,10 @@ export default function ThemePanel(props: {
             </div>
             <Slider
               id="spacing-scale"
-              min={props.onePage ? ONE_PAGE_READABILITY.spacingScale : 0}
+              min={props.onePage ? spacingMinimum : 0}
               max={3.0}
               step={0.1}
-              value={[theme.spacingScale]}
+              value={[Math.max(spacingMinimum, theme.spacingScale)]}
               onValueChange={handleSpacing}
               className="py-1"
             />

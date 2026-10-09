@@ -24,10 +24,10 @@ import { revalidateDashboard } from '@/app/actions'
 import { useResumePagination } from '@/hooks/use-resume-pagination'
 import { useEditorSidebarPreference } from '@/hooks/use-editor-sidebar-preference'
 import { usePdfPreviewPageCount } from '@/hooks/use-pdf-preview-page-count'
-import { ResumePageGuides } from '@/components/editor/resume-page-feedback'
+import { ResumePageFeedback, ResumePageGuides } from '@/components/editor/resume-page-feedback'
 import { useOnePageMode } from '@/hooks/use-one-page-mode'
 import { toast } from 'sonner'
-import type { AdjustableTokens } from '@/entities/editor/editor-meta'
+import { DEFAULT_ONE_PAGE_STRATEGY, type AdjustableTokens, type OnePageStrategy } from '@/entities/editor/editor-meta'
 import { extractEditorMeta, embedEditorMeta } from '@/entities/editor/editor-meta'
 import AiSectionProvider from '@/components/ai-section/ai-section-provider'
 import ExportPreviewDialog from '@/components/export-preview-dialog'
@@ -90,6 +90,7 @@ interface InitialBaselineTarget {
   readonly theme: ThemeTokens
   readonly onePageMode: boolean
   readonly onePageSnapshot: AdjustableTokens | null
+  readonly onePageStrategy: OnePageStrategy
   readonly sidebarSectionIds?: readonly string[]
 }
 
@@ -104,6 +105,7 @@ interface EditorDraftBackup {
   readonly theme: ThemeTokens
   readonly onePageMode: boolean
   readonly onePageSnapshot: AdjustableTokens | null
+  readonly onePageStrategy: OnePageStrategy
   readonly sidebarSectionIds?: readonly string[]
   readonly savedSnapshot: string
 }
@@ -280,6 +282,8 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
   const pages = useResumePagination(printRef, tpl)
   const [onePageMode, setOnePageMode] = useState(false)
   const [onePageSnapshot, setOnePageSnapshot] = useState<AdjustableTokens | null>(null)
+  const [onePageStrategy, setOnePageStrategy] = useState<OnePageStrategy>(DEFAULT_ONE_PAGE_STRATEGY)
+  const [pageGuides, setPageGuides] = useState(true)
   const [sidebarSectionIds, setSidebarSectionIds] = useState<readonly string[] | undefined>(undefined)
   const hasUnsavedRef = useRef(false)
   const [showPreview, setShowPreview] = useState(false)
@@ -301,6 +305,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
     let restoredTheme: ThemeTokens | undefined
     let restoredOnePage = false
     let restoredSnapshot: AdjustableTokens | null = null
+    let restoredStrategy: OnePageStrategy = DEFAULT_ONE_PAGE_STRATEGY
     let restoredSidebarSectionIds: readonly string[] | undefined
     const tplId = initialData.template || 'simple'
     if (initialData.content && typeof initialData.content === 'object' && Object.keys(initialData.content).length > 0) {
@@ -319,8 +324,10 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
       // Restore one-page mode state
       restoredOnePage = meta.onePageMode
       restoredSnapshot = meta.onePageSnapshot
+      restoredStrategy = meta.onePageStrategy ?? DEFAULT_ONE_PAGE_STRATEGY
       setOnePageMode(restoredOnePage)
       setOnePageSnapshot(restoredSnapshot)
+      setOnePageStrategy(restoredStrategy)
       // Restore sidebar section IDs (for two-column templates)
       if (meta.sidebarSectionIds) {
         restoredSidebarSectionIds = meta.sidebarSectionIds as readonly string[]
@@ -329,6 +336,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
     } else {
       setOnePageMode(false)
       setOnePageSnapshot(null)
+      setOnePageStrategy(DEFAULT_ONE_PAGE_STRATEGY)
       setSidebarSectionIds(undefined)
     }
 
@@ -341,6 +349,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
       theme: initialTheme,
       onePageMode: restoredOnePage,
       onePageSnapshot: restoredSnapshot,
+      onePageStrategy: restoredStrategy,
       sidebarSectionIds: restoredSidebarSectionIds,
     }
     // Initialize thumbnail tracking to prevent immediate thumbnail PUT on mount
@@ -405,6 +414,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
       tpl,
       onePageMode: false,
       onePageSnapshot: null,
+      onePageStrategy: DEFAULT_ONE_PAGE_STRATEGY,
       sidebarSectionIds: undefined,
     }))
   }, [initialData, resume, tpl, savedSnapshot, getThemeForTemplate, searchParams, loadTestData])
@@ -419,6 +429,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
   const latestTplRef = useRef(tpl)
   const latestOnePageModeRef = useRef(onePageMode)
   const latestOnePageSnapshotRef = useRef(onePageSnapshot)
+  const latestOnePageStrategyRef = useRef(onePageStrategy)
   const latestSidebarSectionIdsRef = useRef(sidebarSectionIds)
 
   // Keep refs in sync with latest state (for queued saves)
@@ -428,13 +439,14 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
     latestTplRef.current = tpl
     latestOnePageModeRef.current = onePageMode
     latestOnePageSnapshotRef.current = onePageSnapshot
+    latestOnePageStrategyRef.current = onePageStrategy
     latestSidebarSectionIdsRef.current = sidebarSectionIds
-  }, [resume, theme, tpl, onePageMode, onePageSnapshot, sidebarSectionIds])
+  }, [resume, theme, tpl, onePageMode, onePageSnapshot, onePageStrategy, sidebarSectionIds])
   
   // Check if there are unsaved changes (composite: resume + theme + tpl + one-page state)
   const currentFingerprint = useMemo(() => {
-    return JSON.stringify({ resume, theme, tpl, onePageMode, onePageSnapshot, sidebarSectionIds })
-  }, [resume, theme, tpl, onePageMode, onePageSnapshot, sidebarSectionIds])
+    return JSON.stringify({ resume, theme, tpl, onePageMode, onePageSnapshot, onePageStrategy, sidebarSectionIds })
+  }, [resume, theme, tpl, onePageMode, onePageSnapshot, onePageStrategy, sidebarSectionIds])
   const hasUnsavedChanges = useMemo(() => {
     if (!savedSnapshot) return false
     return currentFingerprint !== savedSnapshot
@@ -488,6 +500,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
         theme,
         onePageMode,
         onePageSnapshot,
+        onePageStrategy,
         ...(sidebarSectionIds ? { sidebarSectionIds } : {}),
         savedSnapshot,
       }
@@ -495,7 +508,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
     } catch {
       // If local storage is unavailable, the normal in-memory editor state still remains.
     }
-  }, [onePageMode, onePageSnapshot, resume, resumeId, savedSnapshot, sidebarSectionIds, theme, tpl])
+  }, [onePageMode, onePageSnapshot, onePageStrategy, resume, resumeId, savedSnapshot, sidebarSectionIds, theme, tpl])
 
   useEffect(() => {
     const pending = pendingInitialBaselineRef.current
@@ -504,13 +517,14 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
     if (JSON.stringify(resume) !== pending.resumeFingerprint) return
     if (tpl !== pending.tpl) return
     if (onePageMode !== pending.onePageMode) return
+    if (onePageStrategy !== pending.onePageStrategy) return
     if (!isJsonEqual(theme, pending.theme)) return
     if (!isJsonEqual(onePageSnapshot, pending.onePageSnapshot)) return
     if (!areStringArraysEqual(sidebarSectionIds, pending.sidebarSectionIds)) return
 
     setSavedSnapshot(currentFingerprint)
     pendingInitialBaselineRef.current = null
-  }, [currentFingerprint, initialData?.id, onePageMode, onePageSnapshot, resume, sidebarSectionIds, theme, tpl])
+  }, [currentFingerprint, initialData?.id, onePageMode, onePageSnapshot, onePageStrategy, resume, sidebarSectionIds, theme, tpl])
 
   // Keep ref in sync for beforeunload handler
   useEffect(() => {
@@ -545,6 +559,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
     setThemeForTemplate(backup.tpl, (draft) => { Object.assign(draft, backup.theme) })
     setOnePageMode(backup.onePageMode)
     setOnePageSnapshot(backup.onePageSnapshot)
+    setOnePageStrategy(backup.onePageStrategy ?? DEFAULT_ONE_PAGE_STRATEGY)
     setSidebarSectionIds(backup.sidebarSectionIds)
     setSavedSnapshot(backup.savedSnapshot)
     toast.success('已恢复未保存的简历内容')
@@ -600,6 +615,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
     const currentTpl = latestTplRef.current
     const currentOnePageMode = latestOnePageModeRef.current
     const currentOnePageSnapshot = latestOnePageSnapshotRef.current
+    const currentOnePageStrategy = latestOnePageStrategyRef.current
     const currentSidebarSectionIds = latestSidebarSectionIdsRef.current
     
     let currentId = resumeId
@@ -615,6 +631,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
           themes: { [currentTpl]: currentTheme },
           onePageMode: currentOnePageMode,
           onePageSnapshot: currentOnePageSnapshot,
+          onePageStrategy: currentOnePageStrategy,
           sidebarSectionIds: currentSidebarSectionIds,
         }
         const contentWithMeta: Record<string, unknown> = embedEditorMeta(
@@ -667,6 +684,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
         themes: { [currentTpl]: currentTheme },
         onePageMode: currentOnePageMode,
         onePageSnapshot: currentOnePageSnapshot,
+        onePageStrategy: currentOnePageStrategy,
         sidebarSectionIds: currentSidebarSectionIds,
       }
       const contentWithMeta: Record<string, unknown> = embedEditorMeta(
@@ -695,7 +713,8 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
         theme: currentTheme, 
         tpl: currentTpl,
         onePageMode: currentOnePageMode,
-        onePageSnapshot: currentOnePageSnapshot 
+        onePageSnapshot: currentOnePageSnapshot,
+        onePageStrategy: currentOnePageStrategy,
       })
       const contentChangedSinceLastThumbnail = currentContentFingerprint !== lastThumbnailContentRef.current
       
@@ -764,7 +783,8 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
         theme: currentTheme, 
         tpl: currentTpl, 
         onePageMode: currentOnePageMode, 
-        onePageSnapshot: currentOnePageSnapshot, 
+        onePageSnapshot: currentOnePageSnapshot,
+        onePageStrategy: currentOnePageStrategy,
         sidebarSectionIds: currentSidebarSectionIds 
       }))
       clearEditorDraftBackup()
@@ -942,7 +962,8 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
         theme: latestThemeRef.current, 
         tpl: latestTplRef.current,
         onePageMode: latestOnePageModeRef.current,
-        onePageSnapshot: latestOnePageSnapshotRef.current 
+        onePageSnapshot: latestOnePageSnapshotRef.current,
+        onePageStrategy: latestOnePageStrategyRef.current,
       })
       const contentChanged = currentContentFingerprint !== lastThumbnailContentRef.current
       
@@ -1012,6 +1033,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
     enabled: onePageMode,
     snapshot: onePageSnapshot,
     setSnapshot: setOnePageSnapshot,
+    strategy: onePageStrategy,
   })
   const previewRevision = `${currentFingerprint}:${onePageStatus}`
   const { pdfPageCount, recordPreview } = usePdfPreviewPageCount(previewRevision)
@@ -1342,6 +1364,14 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
       <AiSectionProvider requireVip={requireAi}>
       <main className="flex-1 flex overflow-hidden relative z-10">
         <ResumeActionWorkspace className={activePanel ? 'hidden md:flex print:block' : ''}>
+        <ResumePageFeedback
+          pages={pages}
+          contentRef={printRef}
+          guides={pageGuides}
+          onGuidesChange={setPageGuides}
+          onePage={onePageMode}
+          pdfPageCount={pdfPageCount}
+        />
         <div data-editor-canvas className="min-h-0 min-w-0 flex-1 overflow-auto p-3 sm:p-6 xl:p-8 custom-scrollbar bg-slate-50/30">
           <div className="relative mx-auto max-w-[210mm] md:w-[210mm] md:max-xl:[zoom:0.8] print:[zoom:1]">
             <div
@@ -1380,7 +1410,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
                 <PortfolioAppendix portfolio={renderableResume.portfolio} />
               </Suspense>
             </div>
-            <ResumePageGuides pages={pages} visible />
+            <ResumePageGuides pages={pages} visible={pageGuides} />
           </div>
         </div>
         </ResumeActionWorkspace>
@@ -1402,7 +1432,10 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
               onePage={onePageMode}
               onePageStatus={onePageStatus}
               onePageSnapshot={onePageSnapshot}
+              onePageStrategy={onePageStrategy}
+              onePagePages={pages}
               onOnePageChange={setOnePageMode}
+              onOnePageStrategyChange={setOnePageStrategy}
               resumeId={resumeId}
               onRequireResumeId={async (): Promise<string | null> => (
                 resumeId ?? await doSave({ revalidateDashboard: false }) ?? null

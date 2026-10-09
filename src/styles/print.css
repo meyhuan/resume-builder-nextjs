@@ -78,11 +78,8 @@
     a:after {
       content: none !important;
     }
-    /* One-page mode: enforce single page */
+    /* One-page mode: keep a fitting resume together; allow natural overflow when needed. */
     .resume-document-main[data-one-page="true"] {
-      max-height: 297mm !important;
-      height: 297mm !important;
-      overflow: hidden !important;
       page-break-after: avoid !important;
       break-after: avoid !important;
     }

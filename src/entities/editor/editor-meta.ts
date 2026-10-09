@@ -4,6 +4,11 @@
  */
 import type { ThemeTokens } from '@/entities/theme/theme-tokens'
 
+/** User-facing goal for one-page layout adjustments. */
+export type OnePageStrategy = 'readability' | 'one-page' | 'manual'
+
+export const DEFAULT_ONE_PAGE_STRATEGY: OnePageStrategy = 'one-page'
+
 /** Subset of ThemeTokens that one-page mode may adjust and later restore. */
 export interface AdjustableTokens {
   readonly lineHeight: number
@@ -21,6 +26,8 @@ export interface EditorMeta {
   readonly onePageMode: boolean
   /** Theme values captured right before one-page mode was enabled. */
   readonly onePageSnapshot: AdjustableTokens | null
+  /** Optional for backward compatibility with resumes saved before strategy selection existed. */
+  readonly onePageStrategy?: OnePageStrategy
   /** Section IDs placed in the sidebar column (used by two-column templates like warm). */
   readonly sidebarSectionIds?: readonly string[]
 }
@@ -30,6 +37,7 @@ export const DEFAULT_EDITOR_META: EditorMeta = {
   themes: {},
   onePageMode: false,
   onePageSnapshot: null,
+  onePageStrategy: DEFAULT_ONE_PAGE_STRATEGY,
   sidebarSectionIds: undefined,
 }
 
@@ -62,10 +70,12 @@ export function embedEditorMeta(
 function isEditorMeta(value: unknown): value is EditorMeta {
   if (!value || typeof value !== 'object') return false
   const v = value as Record<string, unknown>
+  const strategy = v.onePageStrategy
   return (
     typeof v.onePageMode === 'boolean' &&
     (v.onePageSnapshot === null || typeof v.onePageSnapshot === 'object') &&
     typeof v.themes === 'object' &&
-    v.themes !== null
+    v.themes !== null &&
+    (strategy === undefined || strategy === 'readability' || strategy === 'one-page' || strategy === 'manual')
   )
 }

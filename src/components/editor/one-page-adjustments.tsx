@@ -1,7 +1,7 @@
 /* Hallmark · component: fit explanation · existing tokens · P5 H4 E4 S5 R5 V4 */
 import type { AdjustableTokens } from '@/entities/editor/editor-meta'
 import type { OnePageStatus } from '@/hooks/use-one-page-mode'
-import { ONE_PAGE_READABILITY } from '@/lib/resume-page-metrics'
+import type { ResumePagination } from '@/hooks/use-resume-pagination'
 
 const SETTINGS = [
   { key: 'spacingScale', label: '模块间距', unit: 'x' },
@@ -15,10 +15,16 @@ export function getOnePageAdjustments(snapshot: AdjustableTokens | null | undefi
     .map(setting => ({ ...setting, before: snapshot[setting.key], after: current[setting.key] }))
 }
 
-export function OnePageAdjustments({ snapshot, current, status }: {
+export function OnePageAdjustments({ snapshot, current, status, pages }: {
   readonly snapshot?: AdjustableTokens | null; readonly current: AdjustableTokens; readonly status?: OnePageStatus
+  readonly pages?: ResumePagination
 }) {
   const changes = getOnePageAdjustments(snapshot, current)
+  const pageMessage = pages?.ready
+    ? pages.pageCount === 1
+      ? '预计只占 1 页。'
+      : `预计 ${pages.pageCount} 页${pages.overflowLabel ? `，超出位置：${pages.overflowLabel}` : '，内容会自然分页'}。`
+    : '正在计算页数…'
   return <div data-one-page-adjustments className="space-y-2 border-t pt-3 text-xs leading-relaxed">
     {changes.length ? <dl className="space-y-1">
       {changes.map(change => <div key={change.key} className="flex items-center justify-between gap-2">
@@ -27,8 +33,8 @@ export function OnePageAdjustments({ snapshot, current, status }: {
       </div>)}
     </dl> : <p className="text-muted-foreground">{status === 'fitting' ? '正在检查当前排版…' : '排版参数未调整。'}</p>}
     <p className="text-muted-foreground">
-      {status === 'overflow' ? '已达到可读性下限，建议精简内容或保留分页。' : '依次调整模块间距、行高和字号；关闭后恢复开启前设置。'}
-      <br />自动适配最低保留行高 {ONE_PAGE_READABILITY.lineHeight}、字号 {ONE_PAGE_READABILITY.fontSize}px、模块间距 {ONE_PAGE_READABILITY.spacingScale}x。
+      <span className={pages?.ready && pages.pageCount > 1 ? 'text-amber-700' : ''}>{pageMessage}</span>
+      <br />{status === 'overflow' ? '当前排版仍有内容超出，系统不会裁切；你可以切换策略或保留分页。' : '调整会实时反映在预览中，关闭一页模式后恢复开启前设置。'}
     </p>
   </div>
 }

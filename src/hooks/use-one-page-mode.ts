@@ -11,7 +11,7 @@ import { ONE_PAGE_READABILITY } from '@/lib/resume-page-metrics'
  *  2. Measures the rendered content height via ResizeObserver.
  *  3. Progressively reduces spacingScale → lineHeight → fontSize until the
  *     content fits within one A4 page (297 mm).
- *  4. Exposes adjustment status and warns once when readability limits are reached.
+ *  4. Exposes adjustment status and warns once when the selected strategy cannot fit.
  *
  * When disabled it restores from the caller-provided snapshot.
  */
@@ -19,7 +19,7 @@ import { useEffect, useRef, useCallback, useState } from 'react'
 import type { RefObject } from 'react'
 import { toast } from 'sonner'
 import type { ThemeTokens } from '@/entities/theme/theme-tokens'
-import type { AdjustableTokens } from '@/entities/editor/editor-meta'
+import { DEFAULT_ONE_PAGE_STRATEGY, type AdjustableTokens, type OnePageStrategy } from '@/entities/editor/editor-meta'
 
 export type OnePageStatus = 'idle' | 'fitting' | 'fit' | 'overflow'
 
@@ -36,6 +36,8 @@ export interface UseOnePageModeOptions {
   snapshot: AdjustableTokens | null
   /** Setter for the externalized snapshot. */
   setSnapshot: (s: AdjustableTokens | null) => void
+  /** User-selected goal for fitting. Defaults to the one-page-first strategy. */
+  strategy?: OnePageStrategy
 }
 
 export interface UseOnePageModeReturn {
@@ -45,11 +47,11 @@ export interface UseOnePageModeReturn {
 }
 
 /** Minimum values the auto-fit algorithm will reduce to. */
-const MIN_SPACING_SCALE = ONE_PAGE_READABILITY.spacingScale
-// Chinese multiline copy becomes crowded at 1.0, even when all text survives
-// PDF export. Prefer normal pagination over squeezing unreadable text onto A4.
-const MIN_LINE_HEIGHT = ONE_PAGE_READABILITY.lineHeight
-const MIN_FONT_SIZE = ONE_PAGE_READABILITY.fontSize
+const ONE_PAGE_LIMITS = {
+  readability: ONE_PAGE_READABILITY,
+  'one-page': { lineHeight: 1, fontSize: 12, spacingScale: 0 },
+  manual: { lineHeight: 1, fontSize: 12, spacingScale: 0 },
+} as const
 const STEP_SPACING = 0.1
 const STEP_LINE_HEIGHT = 0.1
 const STEP_FONT_SIZE = 1
@@ -73,7 +75,7 @@ function mmToPx(mm: number): number {
  * Hook that drives the one-page mode feature.
  */
 export function useOnePageMode(opts: UseOnePageModeOptions): UseOnePageModeReturn {
-  const { contentRef, theme, patchTheme, enabled, snapshot, setSnapshot } = opts
+  const { contentRef, theme, patchTheme, enabled, snapshot, setSnapshot, strategy = DEFAULT_ONE_PAGE_STRATEGY } = opts
   const [status, setStatus] = useState<OnePageStatus>(enabled ? 'fitting' : 'idle')
 
   // Track whether we are currently running the fit algorithm to avoid re-entry.
@@ -105,8 +107,9 @@ export function useOnePageMode(opts: UseOnePageModeOptions): UseOnePageModeRetur
       overflowToastShown.current = false
       setStatus('fitting')
     }
+    // Snapshot capture is intentionally tied to mode/strategy changes, not every theme patch.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enabled])
+  }, [enabled, strategy])
 
   // ── Restore helper (used by toggle-off and by reset) ──────────────────
   const restoreSnapshot = useCallback(() => {
@@ -145,12 +148,24 @@ export function useOnePageMode(opts: UseOnePageModeOptions): UseOnePageModeRetur
     if (fittingRef.current) return
     fittingRef.current = true
 
-    if (theme.lineHeight < MIN_LINE_HEIGHT || theme.fontSize < MIN_FONT_SIZE || theme.spacingScale < MIN_SPACING_SCALE) {
+    const limits = ONE_PAGE_LIMITS[strategy]
+
+    // Manual mode reports the actual fit without changing the user's values.
+    if (strategy === 'manual') {
+      setStatus(el.scrollHeight <= targetHeightRef.current ? 'fit' : 'overflow')
+      fittingRef.current = false
+      return
+    }
+
+    // Readability mode may raise an existing theme to its recommended floor.
+    // One-page-first mode intentionally preserves legacy compact values so
+    // enabling the feature cannot silently reflow an existing resume.
+    if (strategy === 'readability' && (theme.lineHeight < limits.lineHeight || theme.fontSize < limits.fontSize || theme.spacingScale < limits.spacingScale)) {
       setStatus('fitting')
       patchTheme({
-        lineHeight: Math.max(MIN_LINE_HEIGHT, theme.lineHeight),
-        fontSize: Math.max(MIN_FONT_SIZE, theme.fontSize),
-        spacingScale: Math.max(MIN_SPACING_SCALE, theme.spacingScale),
+        lineHeight: Math.max(limits.lineHeight, theme.lineHeight),
+        fontSize: Math.max(limits.fontSize, theme.fontSize),
+        spacingScale: Math.max(limits.spacingScale, theme.spacingScale),
       })
       fittingRef.current = false
       return
@@ -176,18 +191,18 @@ export function useOnePageMode(opts: UseOnePageModeOptions): UseOnePageModeRetur
     let adjusted = false
 
     // Priority 1: reduce spacingScale
-    if (spacingScale > MIN_SPACING_SCALE + STEP_SPACING / 2) {
-      spacingScale = Math.max(MIN_SPACING_SCALE, +(spacingScale - STEP_SPACING).toFixed(1))
+    if (spacingScale > limits.spacingScale + STEP_SPACING / 2) {
+      spacingScale = Math.max(limits.spacingScale, +(spacingScale - STEP_SPACING).toFixed(1))
       adjusted = true
     }
     // Priority 2: reduce lineHeight
-    else if (lineHeight > MIN_LINE_HEIGHT + STEP_LINE_HEIGHT / 2) {
-      lineHeight = Math.max(MIN_LINE_HEIGHT, +(lineHeight - STEP_LINE_HEIGHT).toFixed(1))
+    else if (lineHeight > limits.lineHeight + STEP_LINE_HEIGHT / 2) {
+      lineHeight = Math.max(limits.lineHeight, +(lineHeight - STEP_LINE_HEIGHT).toFixed(1))
       adjusted = true
     }
     // Priority 3: reduce fontSize
-    else if (fontSize > MIN_FONT_SIZE) {
-      fontSize = Math.max(MIN_FONT_SIZE, fontSize - STEP_FONT_SIZE)
+    else if (fontSize > limits.fontSize) {
+      fontSize = Math.max(limits.fontSize, fontSize - STEP_FONT_SIZE)
       adjusted = true
     }
 
@@ -203,7 +218,7 @@ export function useOnePageMode(opts: UseOnePageModeOptions): UseOnePageModeRetur
     }
 
     fittingRef.current = false
-  }, [contentRef, enabled, theme.spacingScale, theme.lineHeight, theme.fontSize, patchTheme])
+  }, [contentRef, enabled, strategy, theme.spacingScale, theme.lineHeight, theme.fontSize, patchTheme])
 
   // ── ResizeObserver: watch content height ──────────────────────────────
   useEffect(() => {
