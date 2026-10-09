@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { PUT } from './route'
-import { NextResponse } from 'next/server'
 
 // Mock dependencies
 vi.mock('@/lib/prisma', () => ({
@@ -22,14 +21,14 @@ vi.mock('next/headers', () => ({
 }))
 
 vi.mock('@/lib/persist-resume-assets', () => ({
-  persistResumeAssets: vi.fn(async ({ content, thumbnail }) => ({
+  persistResumeAssets: vi.fn(async ({ content, thumbnail }: { content?: Record<string, unknown>; thumbnail?: string | null }) => ({
     content: content || {},
     thumbnail: thumbnail || null,
   })),
 }))
 
 vi.mock('@/entities/resume/normalize-resume-content', () => ({
-  normalizeResumeContent: vi.fn((content) => content),
+  normalizeResumeContent: vi.fn((content: Record<string, unknown>) => content),
 }))
 
 vi.mock('@/lib/upload-oss-asset', () => ({
@@ -52,6 +51,7 @@ describe('PUT /next-api/resumes/[id]', () => {
       title: 'Test Resume',
       template: 'simple',
       thumbnail: null,
+      meta: {},
       createdAt: new Date(),
       updatedAt: new Date(),
     })
@@ -63,6 +63,7 @@ describe('PUT /next-api/resumes/[id]', () => {
       title: 'Test Resume',
       template: 'simple',
       thumbnail: 'data:image/png;base64,thumbnail-data',
+      meta: {},
       createdAt: new Date(),
       updatedAt: new Date(),
     })
@@ -86,16 +87,17 @@ describe('PUT /next-api/resumes/[id]', () => {
     )
   })
 
-  it('should handle content update with version', async () => {
+  it('should handle content update', async () => {
     const { prisma } = await import('@/lib/prisma')
     
     vi.mocked(prisma.resume.findFirst).mockResolvedValue({
       id: 'test-id',
       userId: 'test-user-id',
-      content: { sections: [], name: 'Test', _version: 1 },
+      content: { sections: [], name: 'Test' },
       title: 'Test Resume',
       template: 'simple',
       thumbnail: null,
+      meta: {},
       createdAt: new Date(),
       updatedAt: new Date(),
     })
@@ -103,10 +105,11 @@ describe('PUT /next-api/resumes/[id]', () => {
     vi.mocked(prisma.resume.update).mockResolvedValue({
       id: 'test-id',
       userId: 'test-user-id',
-      content: { sections: [], name: 'Updated', _version: 2 },
+      content: { sections: [], name: 'Updated' },
       title: 'Updated Resume',
       template: 'simple',
       thumbnail: null,
+      meta: {},
       createdAt: new Date(),
       updatedAt: new Date(),
     })
@@ -117,49 +120,12 @@ describe('PUT /next-api/resumes/[id]', () => {
       body: JSON.stringify({
         content: { sections: [], name: 'Updated' },
         template: 'simple',
-        contentVersion: 2,
       }),
     })
 
     const response = await PUT(request, { params: Promise.resolve({ id: 'test-id' }) })
     
     expect(response.status).toBe(200)
-  })
-
-  it('should reject stale writes with version conflict', async () => {
-    const { prisma } = await import('@/lib/prisma')
-    
-    // Existing resume has version 5
-    vi.mocked(prisma.resume.findFirst).mockResolvedValue({
-      id: 'test-id',
-      userId: 'test-user-id',
-      content: { sections: [], name: 'Test', _version: 5 },
-      title: 'Test Resume',
-      template: 'simple',
-      thumbnail: null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    })
-
-    // Client tries to write version 3 (stale)
-    const request = new Request('http://localhost/next-api/resumes/test-id', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        content: { sections: [], name: 'Stale Update' },
-        template: 'simple',
-        contentVersion: 3,
-      }),
-    })
-
-    const response = await PUT(request, { params: Promise.resolve({ id: 'test-id' }) })
-    
-    expect(response.status).toBe(409)
-    const data = await response.json()
-    expect(data.code).toBe('VERSION_CONFLICT')
-    expect(data.serverVersion).toBe(5)
-    expect(data.clientVersion).toBe(3)
-    expect(prisma.resume.update).not.toHaveBeenCalled()
   })
 
   it('should return 400 when no fields to update', async () => {
@@ -172,6 +138,7 @@ describe('PUT /next-api/resumes/[id]', () => {
       title: 'Test Resume',
       template: 'simple',
       thumbnail: null,
+      meta: {},
       createdAt: new Date(),
       updatedAt: new Date(),
     })

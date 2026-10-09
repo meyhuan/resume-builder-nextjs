@@ -79,44 +79,27 @@ export async function PUT(req: Request, { params }: RouteParams) {
 
     updateStep = 'parse-body'
     const body = await req.json()
-    const { title, content, template, thumbnail, contentVersion } = body
+    const { title, content, template, thumbnail } = body
     const hasContentField = Object.prototype.hasOwnProperty.call(body, 'content')
     const hasThumbnailField = Object.prototype.hasOwnProperty.call(body, 'thumbnail')
-    
-    // Check version if provided (stale-write guard)
-    if (typeof contentVersion === 'number' && hasContentField) {
-      const existingVersion = (existingResume.content as Record<string, unknown>)?._version
-      if (typeof existingVersion === 'number' && contentVersion < existingVersion) {
-        return NextResponse.json({ 
-          error: 'Stale write rejected',
-          code: 'VERSION_CONFLICT',
-          clientVersion: contentVersion,
-          serverVersion: existingVersion
-        }, { status: 409 })
-      }
-    }
     
     updateStep = 'update-database'
     const data: Prisma.ResumeUpdateInput = {}
     
     // Handle content update (with normalization and asset persistence)
+    let persistedContent: { content: Record<string, unknown>; thumbnail: string | null } | undefined
     if (hasContentField) {
       const normalizedContent = normalizeResumeContent(
         content as Partial<ResumeData> & Record<string, unknown>,
         { fallbackId: resumeId },
       )
       updateStep = 'persist-content-assets'
-      const persistedContent = await persistResumeAssets({
+      persistedContent = await persistResumeAssets({
         content: normalizedContent as unknown as Record<string, unknown>,
         thumbnail: undefined,
         customPrefix: resumeId,
       })
-      // Store version in content for next check
-      const contentWithVersion = {
-        ...persistedContent.content,
-        _version: typeof contentVersion === 'number' ? contentVersion : undefined
-      }
-      data.content = contentWithVersion as Prisma.InputJsonValue
+      data.content = persistedContent.content as Prisma.InputJsonValue
       if (template) {
         data.template = template
       }
@@ -149,22 +132,25 @@ export async function PUT(req: Request, { params }: RouteParams) {
       data,
     })
 
-    const oldKeys = readPortfolioObjectKeys(existingResume.content)
-    const nextKeys = readPortfolioObjectKeys(persistedAssets.content)
-    const expectedPrefix = `portfolio/${existingResume.userId}/${id}/`
-    const removedKeys = [...oldKeys].filter((key) => key.startsWith(expectedPrefix) && !nextKeys.has(key))
-    if (removedKeys.length > 0) {
-      void Promise.allSettled(removedKeys.map((key) => deleteOssAsset(key))).then((results) => {
-        results.forEach((result, index) => {
-          if (result.status === 'rejected') {
-            console.warn('portfolio-image-cleanup-failed', {
-              resumeId: id,
-              objectKey: removedKeys[index],
-              error: result.reason instanceof Error ? result.reason.message : String(result.reason),
-            })
-          }
+    // Clean up deleted portfolio images ONLY if content was updated
+    if (hasContentField && persistedContent && existingResume.content) {
+      const oldKeys = readPortfolioObjectKeys(existingResume.content)
+      const nextKeys = readPortfolioObjectKeys(persistedContent.content)
+      const expectedPrefix = `portfolio/${existingResume.userId}/${id}/`
+      const removedKeys = [...oldKeys].filter((key) => key.startsWith(expectedPrefix) && !nextKeys.has(key))
+      if (removedKeys.length > 0) {
+        void Promise.allSettled(removedKeys.map((key) => deleteOssAsset(key))).then((results) => {
+          results.forEach((result, index) => {
+            if (result.status === 'rejected') {
+              console.warn('portfolio-image-cleanup-failed', {
+                resumeId: id,
+                objectKey: removedKeys[index],
+                error: result.reason instanceof Error ? result.reason.message : String(result.reason),
+              })
+            }
+          })
         })
-      })
+      }
     }
     
     return NextResponse.json(resume)

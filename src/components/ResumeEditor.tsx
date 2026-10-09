@@ -112,6 +112,9 @@ interface EditorDraftBackup {
 const EDITOR_DRAFT_BACKUP_KEY = 'resume_editor_draft_backup_v1'
 const EDITOR_DRAFT_BACKUP_TTL_MS = 24 * 60 * 60 * 1000
 const MINI_PROGRAM_EXPORT_REMINDER_KEY = 'mini_program_export_reminder_v1'
+const THUMBNAIL_UPDATE_INTERVAL = 3 * 60 * 1000 // 3 minutes
+const AUTO_SAVE_DELAY = 2000 // 2 seconds
+const MAX_SAVE_RETRIES = 3
 
 function areStringArraysEqual(
   left: readonly string[] | undefined,
@@ -264,24 +267,13 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
   const [miniProgramDialogOpen, setMiniProgramDialogOpen] = useState(false)
   const miniProgramExportReminderShownRef = useRef(false)
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null)
-  const AUTO_SAVE_DELAY = 2000 // 2 seconds
   const [showLeaveDialog, setShowLeaveDialog] = useState(false)
   const saveInFlightRef = useRef(false)
   const pendingSaveCallbacksRef = useRef<Array<{ resolve: (id?: string) => void; reject: (error: Error) => void; options: SaveOptions }>>([])
   const saveRetryCountRef = useRef(0)
   const [saveErrorPersistent, setSaveErrorPersistent] = useState(false)
-  const MAX_SAVE_RETRIES = 3
   const lastThumbnailUpdateRef = useRef<number>(0)
   const lastThumbnailContentRef = useRef<string>('')
-  const contentVersionRef = useRef(0)
-  const THUMBNAIL_UPDATE_INTERVAL = 3 * 60 * 1000 // 3 minutes
-  // Refs for latest state (avoid stale closures in queued saves)
-  const latestResumeRef = useRef(resume)
-  const latestThemeRef = useRef(theme)
-  const latestTplRef = useRef(tpl)
-  const latestOnePageModeRef = useRef(onePageMode)
-  const latestOnePageSnapshotRef = useRef(onePageSnapshot)
-  const latestSidebarSectionIdsRef = useRef(sidebarSectionIds)
   const sidebarReady = useEditorSidebarPreference(initialResumeId || 'local', searchParams.get('source') === 'ai' ? 'ai' : 'sections')
   const storedActivePanel = useEditorUiStore((state) => state.activePanel)
   const activePanel = sidebarReady ? storedActivePanel : null
@@ -351,6 +343,8 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
       onePageSnapshot: restoredSnapshot,
       sidebarSectionIds: restoredSidebarSectionIds,
     }
+    // Initialize thumbnail tracking to prevent immediate thumbnail PUT on mount
+    lastThumbnailContentRef.current = JSON.stringify(useAppStore.getState().resume)
   }, [initialData, setResume, setThemeForTemplate, getThemeForTemplate])
 
   // Load cached AI / import resume data when opened via /editor/new?source=ai|import
@@ -412,6 +406,14 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
   // Subscribe to theme changes for current template
   const themes = useAppStore((s) => s.themes)
   const theme = themes[tpl] || getThemeForTemplate(tpl)
+
+  // Refs for latest state (avoid stale closures in queued saves)
+  const latestResumeRef = useRef(resume)
+  const latestThemeRef = useRef(theme)
+  const latestTplRef = useRef(tpl)
+  const latestOnePageModeRef = useRef(onePageMode)
+  const latestOnePageSnapshotRef = useRef(onePageSnapshot)
+  const latestSidebarSectionIdsRef = useRef(sidebarSectionIds)
 
   // Keep refs in sync with latest state (for queued saves)
   useEffect(() => {
@@ -594,9 +596,6 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
     const currentOnePageSnapshot = latestOnePageSnapshotRef.current
     const currentSidebarSectionIds = latestSidebarSectionIdsRef.current
     
-    // Increment content version for this save
-    const currentVersion = ++contentVersionRef.current
-    
     let currentId = resumeId
     let createStarted = false
     let createCompleted = false
@@ -617,13 +616,13 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
           editorMeta,
         )
         const createPayload: ResumeSavePayload = {
-          title: resume.name || '未命名简历',
+          title: currentResume.name || '未命名简历',
           content: contentWithMeta,
-          template: tpl,
+          template: currentTpl,
         }
         track('resume_create_start', {
           createMethod: 'manual',
-          templateId: tpl,
+          templateId: currentTpl,
           entry: 'pc_editor_save',
         })
         const createRes = await fetchWithNetworkRetry('/next-api/resumes', {
@@ -635,7 +634,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
           createFailureTracked = true
           track('resume_create_failed', {
             createMethod: 'manual',
-            templateId: tpl,
+            templateId: currentTpl,
             entry: 'pc_editor_save',
             statusCode: createRes.status,
             failureReason: 'create_resume_http_error',
@@ -649,7 +648,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
         track('resume_create_success', {
           resumeId: currentId,
           createMethod: 'manual',
-          templateId: tpl,
+          templateId: currentTpl,
           entry: 'pc_editor_save',
         })
         // Update browser URL without full navigation
@@ -671,7 +670,6 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
       const savePayload: ResumeSavePayload = {
         content: contentWithMeta,
         template: currentTpl,
-        contentVersion: currentVersion,
       }
       
       // 3. Save content to DB first
@@ -681,10 +679,6 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
         body: JSON.stringify(savePayload),
       })
       if (!res.ok) {
-        if (res.status === 409) {
-          // Version conflict - reload might be needed
-          console.warn('[ResumeEditor] Version conflict detected', await res.json())
-        }
         throw new Error('Failed to save')
       }
       
@@ -749,10 +743,10 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
       
       track('resume_save_success', {
         resumeId: currentId,
-        templateId: tpl,
+        templateId: currentTpl,
         entry: createCompleted ? 'pc_editor_create' : 'pc_editor_update',
         createdDuringSave: createCompleted,
-        onePageMode,
+        onePageMode: currentOnePageMode,
         thumbnailGenerated,
         thumbnailFailureReason,
         isAutoSave,
@@ -784,14 +778,14 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
       if (createStarted && !createCompleted && !createFailureTracked) {
         track('resume_create_failed', {
           createMethod: 'manual',
-          templateId: tpl,
+          templateId: currentTpl,
           entry: 'pc_editor_save',
           failureReason: describeUnknownError(e),
         })
       }
       track('resume_save_failed', {
         resumeId: currentId,
-        templateId: tpl,
+        templateId: currentTpl,
         entry: createStarted && !createCompleted ? 'pc_editor_create' : 'pc_editor_update',
         createdDuringSave: createCompleted,
         failureReason: describeUnknownError(e),
@@ -877,7 +871,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
         clearTimeout(autoSaveTimerRef.current)
       }
     }
-  }, [resume, resumeId, hasUnsavedChanges, isSaving, doSave])
+  }, [resume, resumeId, hasUnsavedChanges, isSaving, saveErrorPersistent, doSave])
 
   // Keyboard shortcuts: Ctrl+S save, Ctrl+Z undo, Ctrl+Shift+Z / Ctrl+Y redo
   useEffect(() => {
