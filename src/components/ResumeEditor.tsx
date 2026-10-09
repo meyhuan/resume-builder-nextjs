@@ -112,7 +112,7 @@ const EDITOR_DRAFT_BACKUP_KEY = 'resume_editor_draft_backup_v1'
 const EDITOR_DRAFT_BACKUP_TTL_MS = 24 * 60 * 60 * 1000
 const MINI_PROGRAM_EXPORT_REMINDER_KEY = 'mini_program_export_reminder_v1'
 const THUMBNAIL_UPDATE_INTERVAL = 3 * 60 * 1000 // 3 minutes
-const AUTO_SAVE_DELAY = 2000 // 2 seconds
+const AUTO_SAVE_DELAY = 5000 // 5 seconds
 const MAX_SAVE_RETRIES = 3
 
 function areStringArraysEqual(
