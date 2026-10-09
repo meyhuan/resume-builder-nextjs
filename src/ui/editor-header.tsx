@@ -33,6 +33,7 @@ export interface EditorHeaderProps {
   readonly isSaving: boolean;
   readonly hasUnsavedChanges: boolean;
   readonly lastSaved: Date | null;
+  readonly saveErrorPersistent: boolean;
   readonly onBack: () => void;
   readonly onSave: () => void;
   readonly canUndo: boolean;
@@ -63,13 +64,15 @@ export default function EditorHeader(props: EditorHeaderProps): ReactElement {
       trackAssistant('entry_open', { entry: 'assistant', surface, feature: 'chat' });
     toggleAiChat();
   };
-  const saveLabel = props.isSaving
-    ? '保存中'
-    : props.hasUnsavedChanges
-      ? '未保存'
-      : props.lastSaved
-        ? '已自动保存'
-        : '';
+  const saveLabel = props.saveErrorPersistent
+    ? '保存失败'
+    : props.isSaving
+      ? '保存中'
+      : props.hasUnsavedChanges
+        ? '未保存'
+        : props.lastSaved
+          ? '已自动保存'
+          : '';
 
   return (
     <header className="z-50 flex h-12 shrink-0 items-center justify-between gap-2 border-b border-slate-200 bg-white px-2 sm:px-3 print:hidden">
@@ -88,7 +91,9 @@ export default function EditorHeader(props: EditorHeaderProps): ReactElement {
           {props.title || '未命名简历'}
         </span>
         {saveLabel ? (
-          <span className="hidden text-xs text-slate-400 sm:inline">{saveLabel}</span>
+          <span className={`hidden text-xs sm:inline ${props.saveErrorPersistent ? 'text-red-500' : 'text-slate-400'}`}>
+            {saveLabel}
+          </span>
         ) : null}
         {props.hasUnsavedChanges && !props.isSaving ? (
           <Button
