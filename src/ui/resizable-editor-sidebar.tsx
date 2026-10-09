@@ -18,7 +18,7 @@ function readStoredWidth(): number {
   try {
     const raw = window.localStorage.getItem(EDITOR_SIDEBAR_STORAGE_KEY)
     const value = raw?.trim() ? Number(raw) : NaN
-    if (Number.isFinite(value)) return clampWidth(value)
+    if (Number.isFinite(value) && value >= EDITOR_SIDEBAR_MIN_WIDTH) return clampWidth(value)
   } catch {
     // Storage may be unavailable in private or embedded browsers.
   }
