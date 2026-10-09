@@ -1,10 +1,17 @@
 import type { NextConfig } from "next";
 
 const supabaseUrl: string | undefined = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseRemotePattern: { protocol: 'https'; hostname: string; pathname: '/**' } | null = supabaseUrl
+const parsedSupabaseUrl: URL | null = supabaseUrl ? new URL(supabaseUrl) : null;
+const supabaseRemotePattern: {
+  protocol: 'http' | 'https';
+  hostname: string;
+  port?: string;
+  pathname: '/**';
+} | null = parsedSupabaseUrl
   ? {
-      protocol: 'https',
-      hostname: new URL(supabaseUrl).hostname,
+      protocol: parsedSupabaseUrl.protocol === 'http:' ? 'http' : 'https',
+      hostname: parsedSupabaseUrl.hostname,
+      ...(parsedSupabaseUrl.port ? { port: parsedSupabaseUrl.port } : {}),
       pathname: '/**',
     }
   : null;
