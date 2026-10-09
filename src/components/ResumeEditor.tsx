@@ -255,8 +255,14 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
   const [miniProgramDialogOpen, setMiniProgramDialogOpen] = useState(false)
   const miniProgramExportReminderShownRef = useRef(false)
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null)
-  const AUTO_SAVE_DELAY = 30000 // 30 seconds
+  const AUTO_SAVE_DELAY = 2000 // 2 seconds
   const [showLeaveDialog, setShowLeaveDialog] = useState(false)
+  const saveInFlightRef = useRef(false)
+  const pendingSaveRef = useRef(false)
+  const saveRetryCountRef = useRef(0)
+  const MAX_SAVE_RETRIES = 3
+  const lastThumbnailUpdateRef = useRef<number>(0)
+  const THUMBNAIL_UPDATE_INTERVAL = 3 * 60 * 1000 // 3 minutes
   const sidebarReady = useEditorSidebarPreference(initialResumeId || 'local', searchParams.get('source') === 'ai' ? 'ai' : 'sections')
   const storedActivePanel = useEditorUiStore((state) => state.activePanel)
   const activePanel = sidebarReady ? storedActivePanel : null
@@ -530,13 +536,26 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
     options: {
       readonly revalidateDashboard?: boolean
       readonly showSuccessToast?: boolean
+      readonly isAutoSave?: boolean
     } = {},
   ): Promise<string | undefined> => {
+    const { isAutoSave = false } = options
+    
+    // Single-flight: if a save is in flight, mark that we need another save
+    if (saveInFlightRef.current) {
+      pendingSaveRef.current = true
+      return undefined
+    }
+    
+    saveInFlightRef.current = true
+    pendingSaveRef.current = false
     setIsSaving(true)
+    
     let currentId = resumeId
     let createStarted = false
     let createCompleted = false
     let createFailureTracked = false
+    
     try {
       // 1. If no resumeId yet, create the resume first
       if (!currentId) {
@@ -591,27 +610,38 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
         const sourceQuery = searchParams.get('source') === 'ai' ? '?source=ai' : ''
         window.history.replaceState(null, '', `/editor/${currentId}${sourceQuery}`)
       }
-      // 2. Generate thumbnail (Base64). Thumbnail failure must not block content save/export.
+      
+      // 2. Determine if we should generate thumbnail
+      // - Always generate for manual saves
+      // - For auto-saves, only if enough time has passed since last update
+      const now = Date.now()
+      const shouldGenerateThumbnail = !isAutoSave || (now - lastThumbnailUpdateRef.current > THUMBNAIL_UPDATE_INTERVAL)
+      
       let thumbnail: string | undefined
       let thumbnailFailureReason: string | undefined
-      try {
-        const thumbnailResult = await exportImage(printRef, {
-          pixelRatio: 1,
-          returnBase64: true,
-          backgroundColor: '#ffffff',
-          clipFirstPage: true,
-        })
-        if (typeof thumbnailResult === 'string' && thumbnailResult) {
-          thumbnail = thumbnailResult
+      
+      if (shouldGenerateThumbnail) {
+        try {
+          const thumbnailResult = await exportImage(printRef, {
+            pixelRatio: 1,
+            returnBase64: true,
+            backgroundColor: '#ffffff',
+            clipFirstPage: true,
+          })
+          if (typeof thumbnailResult === 'string' && thumbnailResult) {
+            thumbnail = thumbnailResult
+            lastThumbnailUpdateRef.current = now
+          }
+        } catch (error) {
+          thumbnailFailureReason = describeUnknownError(error)
+          console.warn('[ResumeEditor] thumbnail generation failed; continuing save', {
+            resumeId: currentId,
+            templateId: tpl,
+            error: thumbnailFailureReason,
+          })
         }
-      } catch (error) {
-        thumbnailFailureReason = describeUnknownError(error)
-        console.warn('[ResumeEditor] thumbnail generation failed; continuing save', {
-          resumeId: currentId,
-          templateId: tpl,
-          error: thumbnailFailureReason,
-        })
       }
+      
       // 3. Build content with editor metadata
       const editorMeta = {
         themes: { [tpl]: theme },
@@ -628,6 +658,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
         template: tpl,
         ...(thumbnail ? { thumbnail } : {}),
       }
+      
       // 4. Save to DB
       const res = await fetchWithNetworkRetry(`/next-api/resumes/${currentId}`, {
         method: 'PUT',
@@ -635,6 +666,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
         body: JSON.stringify(savePayload),
       })
       if (!res.ok) throw new Error('Failed to save')
+      
       track('resume_save_success', {
         resumeId: currentId,
         templateId: tpl,
@@ -643,16 +675,21 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
         onePageMode,
         thumbnailGenerated: Boolean(thumbnail),
         thumbnailFailureReason,
+        isAutoSave,
       })
+      
       setLastSaved(new Date())
       setSavedSnapshot(JSON.stringify({ resume, theme, tpl, onePageMode, onePageSnapshot, sidebarSectionIds }))
       clearEditorDraftBackup()
+      saveRetryCountRef.current = 0 // Reset retry count on success
+      
       if (options.revalidateDashboard !== false) {
         await revalidateDashboard()
       }
       if (options.showSuccessToast !== false) {
         toast.success('保存成功')
       }
+      
       return currentId
     } catch (e) {
       console.error(e)
@@ -670,13 +707,42 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
         entry: createStarted && !createCompleted ? 'pc_editor_create' : 'pc_editor_update',
         createdDuringSave: createCompleted,
         failureReason: describeUnknownError(e),
+        isAutoSave,
       })
-      toast.error('保存失败，请重试')
+      
+      // Exponential backoff for auto-save errors
+      if (isAutoSave) {
+        saveRetryCountRef.current++
+        if (saveRetryCountRef.current <= MAX_SAVE_RETRIES) {
+          const backoffDelay = Math.min(1000 * Math.pow(2, saveRetryCountRef.current - 1), 8000)
+          console.warn(`[ResumeEditor] Auto-save failed, retry ${saveRetryCountRef.current}/${MAX_SAVE_RETRIES} in ${backoffDelay}ms`)
+        } else {
+          // Max retries reached, show error
+          toast.error('自动保存失败，请手动保存')
+        }
+      } else {
+        toast.error('保存失败，请重试')
+      }
+      
       return undefined
     } finally {
+      saveInFlightRef.current = false
       setIsSaving(false)
+      
+      // If changes happened during save, trigger another save
+      if (pendingSaveRef.current && resumeId) {
+        pendingSaveRef.current = false
+        // Schedule next save after a short delay
+        setTimeout(() => {
+          // Check if still unsaved by comparing to saved snapshot
+          const currentSnapshot = JSON.stringify({ resume, theme, tpl, onePageMode, onePageSnapshot, sidebarSectionIds })
+          if (savedSnapshot && currentSnapshot !== savedSnapshot) {
+            doSave({ showSuccessToast: false, isAutoSave: true })
+          }
+        }, 500)
+      }
     }
-  }, [resumeId, resume, tpl, theme, onePageMode, onePageSnapshot, sidebarSectionIds, searchParams])
+  }, [resumeId, resume, tpl, theme, onePageMode, onePageSnapshot, sidebarSectionIds, searchParams, savedSnapshot])
 
   /** Auth-gated save — prompts login if user is not authenticated. */
   const handleSave = useCallback(() => {
@@ -690,9 +756,18 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
     if (autoSaveTimerRef.current) {
       clearTimeout(autoSaveTimerRef.current)
     }
+    
+    // Calculate backoff delay if retries are in progress
+    const baseDelay = AUTO_SAVE_DELAY
+    const retryBackoff = saveRetryCountRef.current > 0 
+      ? Math.min(1000 * Math.pow(2, saveRetryCountRef.current), 8000)
+      : 0
+    const totalDelay = baseDelay + retryBackoff
+    
     autoSaveTimerRef.current = setTimeout(() => {
-      doSave({ showSuccessToast: false })
-    }, AUTO_SAVE_DELAY)
+      doSave({ showSuccessToast: false, isAutoSave: true })
+    }, totalDelay)
+    
     return () => {
       if (autoSaveTimerRef.current) {
         clearTimeout(autoSaveTimerRef.current)
@@ -731,6 +806,44 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
     window.addEventListener('beforeunload', handleBeforeUnload)
     return () => window.removeEventListener('beforeunload', handleBeforeUnload)
   }, [])
+  
+  // Flush pending changes on page hide (mobile browsers, tab switches)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden && hasUnsavedRef.current && resumeId && !saveInFlightRef.current) {
+        // Use keepalive fetch for reliable delivery when page is hidden
+        const editorMeta = {
+          themes: { [tpl]: theme },
+          onePageMode,
+          onePageSnapshot,
+          sidebarSectionIds,
+        }
+        const contentWithMeta: Record<string, unknown> = embedEditorMeta(
+          resume as unknown as Record<string, unknown>,
+          editorMeta,
+        )
+        const savePayload: ResumeSavePayload = {
+          content: contentWithMeta,
+          template: tpl,
+        }
+        
+        // keepalive fetch to ensure the request completes even if page is unloaded
+        fetch(`/next-api/resumes/${resumeId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(savePayload),
+          keepalive: true,
+        }).catch((error) => {
+          console.error('[ResumeEditor] Failed to flush changes on page hide:', error)
+        })
+        
+        console.log('[ResumeEditor] Initiated keepalive save on page hide')
+      }
+    }
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
+  }, [resumeId, resume, tpl, theme, onePageMode, onePageSnapshot, sidebarSectionIds])
 
   // Determine back destination based on auth state
   const backPath = token ? '/dashboard' : '/'
