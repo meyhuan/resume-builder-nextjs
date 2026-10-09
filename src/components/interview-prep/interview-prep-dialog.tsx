@@ -56,6 +56,7 @@ import {
   type InterviewPrepOutput,
   type InterviewPrepQuestion,
 } from '@/lib/ai/interview-prep-schema';
+import { createNDJSONParser } from '@/lib/ai/ndjson-parser';
 import { useAppStore } from '@/state/store';
 import { useEditorUiStore } from '@/state/editor-ui-store';
 import { useVipCheck } from '@/hooks/use-vip-check';
@@ -638,35 +639,52 @@ export function InterviewPrepDialog(props: InterviewPrepDialogProps): ReactEleme
         const reader = response.body?.getReader();
         const decoder = new TextDecoder();
         let result: InterviewPrepOutput | undefined;
+        let streamError: string | undefined;
 
         if (!reader) {
           throw new Error('无法读取响应流');
         }
 
+        type StreamEvent =
+          | { type: 'progress' }
+          | { type: 'result'; data: InterviewPrepOutput }
+          | { type: 'error'; error: string };
+
+        const parser = createNDJSONParser<StreamEvent>();
+
         while (true) {
           const { done, value } = await reader.read();
-          if (done) break;
-
-          const chunk = decoder.decode(value, { stream: true });
-          const lines = chunk.split('\n').filter(line => line.trim());
-
-          for (const line of lines) {
-            try {
-              const event = JSON.parse(line) as 
-                | { type: 'progress' }
-                | { type: 'result'; data: InterviewPrepOutput }
-                | { type: 'error'; error: string };
-
+          
+          if (done) {
+            // Process any remaining buffered content
+            const finalEvents = parser.flush();
+            for (const event of finalEvents) {
               if (event.type === 'result') {
                 result = event.data;
               } else if (event.type === 'error') {
-                throw new Error(event.error);
+                streamError = event.error;
               }
-              // 'progress' events are just heartbeats, ignore them
-            } catch (parseErr) {
-              console.error('[interview-prep] Failed to parse NDJSON line:', line, parseErr);
             }
+            break;
           }
+
+          // Decode and parse complete lines
+          const chunk = decoder.decode(value, { stream: true });
+          const events = parser.processChunk(chunk);
+
+          for (const event of events) {
+            if (event.type === 'result') {
+              result = event.data;
+            } else if (event.type === 'error') {
+              streamError = event.error;
+            }
+            // 'progress' events are just heartbeats, ignore them
+          }
+        }
+
+        // Check for error before checking for result
+        if (streamError) {
+          throw new Error(streamError);
         }
 
         if (!result) {
@@ -879,9 +897,19 @@ export function InterviewPrepDialog(props: InterviewPrepDialogProps): ReactEleme
               </div>
             ) : null}
             {error ? (
-              <div className="flex items-center gap-2 rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">
-                <AlertTriangle className="h-4 w-4 shrink-0" />
-                {error}
+              <div className="space-y-2 rounded-md bg-red-50 px-3 py-2.5">
+                <div className="flex items-center gap-2 text-sm text-red-600">
+                  <AlertTriangle className="h-4 w-4 shrink-0" />
+                  {error}
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-xs"
+                  onClick={handleGenerateClick}
+                >
+                  重试
+                </Button>
               </div>
             ) : null}
             <div className="space-y-2">

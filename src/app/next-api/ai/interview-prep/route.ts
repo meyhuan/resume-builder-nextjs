@@ -17,7 +17,7 @@ export const maxDuration = 180;
  */
 export async function POST(request: NextRequest): Promise<Response> {
   try {
-    return withQuotaCheck('ai:editor-assist', async () => {
+    return await withQuotaCheck('ai:editor-assist', async () => {
       const body = await request.json();
       const parsed = interviewPrepInputSchema.safeParse(body);
       if (!parsed.success) {
@@ -40,14 +40,36 @@ export async function POST(request: NextRequest): Promise<Response> {
       const encoder = new TextEncoder();
       const stream = new ReadableStream({
         async start(controller) {
+          // Fixed-interval heartbeat to prevent timeout even when model is slow
+          const HEARTBEAT_INTERVAL_MS = 15000;
+          let lastHeartbeat = Date.now();
+          let heartbeatTimer: NodeJS.Timeout | null = null;
+
+          const sendHeartbeat = () => {
+            const now = Date.now();
+            if (now - lastHeartbeat >= HEARTBEAT_INTERVAL_MS) {
+              controller.enqueue(
+                encoder.encode(JSON.stringify({ type: 'progress' }) + '\n')
+              );
+              lastHeartbeat = now;
+            }
+          };
+
+          // Start fixed-interval heartbeat timer
+          heartbeatTimer = setInterval(sendHeartbeat, HEARTBEAT_INTERVAL_MS);
+
           try {
             const generator = streamInterviewPrep({
               resumeData,
               jobDescription: jobDescription.slice(0, MAX_INTERVIEW_PREP_JD_LENGTH),
               aiConfig,
+              signal: request.signal,
             });
 
             let result;
+            let chunkCount = 0;
+            const THROTTLE_EVERY_N_CHUNKS = 10;
+
             // Stream progress heartbeats to prevent proxy timeout
             // The generator yields string chunks and returns the final InterviewPrepOutput
             while (true) {
@@ -59,10 +81,11 @@ export async function POST(request: NextRequest): Promise<Response> {
                 break;
               }
               
-              // Each yielded chunk is a progress indicator
-              controller.enqueue(
-                encoder.encode(JSON.stringify({ type: 'progress' }) + '\n')
-              );
+              // Throttle progress events - only send every Nth chunk
+              chunkCount++;
+              if (chunkCount % THROTTLE_EVERY_N_CHUNKS === 0) {
+                sendHeartbeat();
+              }
             }
 
             if (!result) {
@@ -79,7 +102,14 @@ export async function POST(request: NextRequest): Promise<Response> {
               encoder.encode(JSON.stringify({ type: 'error', error: message }) + '\n')
             );
             controller.close();
+          } finally {
+            if (heartbeatTimer) {
+              clearInterval(heartbeatTimer);
+            }
           }
+        },
+        cancel() {
+          // Client disconnected - the request signal will abort the generator
         },
       });
 
