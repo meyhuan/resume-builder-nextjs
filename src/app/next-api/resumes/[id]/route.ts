@@ -87,6 +87,7 @@ export async function PUT(req: Request, { params }: RouteParams) {
     const data: Prisma.ResumeUpdateInput = {}
     
     // Handle content update (with normalization and asset persistence)
+    // Note: title and template are only updated when content is present
     let persistedContent: { content: Record<string, unknown>; thumbnail: string | null } | undefined
     if (hasContentField) {
       const normalizedContent = normalizeResumeContent(

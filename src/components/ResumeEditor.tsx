@@ -69,7 +69,6 @@ interface ResumeSavePayload {
   readonly content: Record<string, unknown>
   readonly template: string
   readonly thumbnail?: string
-  readonly contentVersion?: number
 }
 
 interface SaveOptions {
@@ -334,17 +333,24 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
     }
 
     setTpl(tplId)
+    const initialTheme = getThemeForTemplate(tplId)
     pendingInitialBaselineRef.current = {
       resumeId: initialData.id,
       resumeFingerprint: JSON.stringify(useAppStore.getState().resume),
       tpl: tplId,
-      theme: getThemeForTemplate(tplId),
+      theme: initialTheme,
       onePageMode: restoredOnePage,
       onePageSnapshot: restoredSnapshot,
       sidebarSectionIds: restoredSidebarSectionIds,
     }
     // Initialize thumbnail tracking to prevent immediate thumbnail PUT on mount
-    lastThumbnailContentRef.current = JSON.stringify(useAppStore.getState().resume)
+    lastThumbnailContentRef.current = JSON.stringify({
+      resume: useAppStore.getState().resume,
+      theme: initialTheme,
+      tpl: tplId,
+      onePageMode: restoredOnePage,
+      onePageSnapshot: restoredSnapshot
+    })
   }, [initialData, setResume, setThemeForTemplate, getThemeForTemplate])
 
   // Load cached AI / import resume data when opened via /editor/new?source=ai|import
@@ -440,7 +446,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
       saveRetryCountRef.current = 0
       setSaveErrorPersistent(false)
     }
-  }, [hasUnsavedChanges])
+  }, [currentFingerprint, hasUnsavedChanges])
 
   useEffect(() => {
     if (!isHydrated || editorOpenTracked.current) return
@@ -833,7 +839,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
         }, 100)
       }
     }
-  }, [resumeId, searchParams, savedSnapshot])
+  }, [resumeId, searchParams])
 
   /** Auth-gated save — prompts login if user is not authenticated. */
   const handleSave = useCallback(() => {
@@ -968,7 +974,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
     }, 60000) // Check every minute
     
     return () => clearInterval(idleTimer)
-  }, [resumeId, isSaving, hasUnsavedChanges, THUMBNAIL_UPDATE_INTERVAL])
+  }, [resumeId, isSaving, hasUnsavedChanges])
 
   // Determine back destination based on auth state
   const backPath = token ? '/dashboard' : '/'
