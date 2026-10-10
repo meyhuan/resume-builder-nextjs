@@ -1,4 +1,4 @@
-import { generateText } from 'ai';
+import { generateText, streamText } from 'ai';
 import {
   getJsonProviderOptions,
   getModel,
@@ -64,4 +64,36 @@ export async function generateInterviewPrep(params: {
   });
 
   return extractJson(result.text, interviewPrepOutputSchema);
+}
+
+/**
+ * Streaming version that yields text chunks as they arrive.
+ * Used by the API route to prevent proxy timeout on long generations.
+ */
+export async function* streamInterviewPrep(params: {
+  resumeData: ResumeData;
+  jobDescription: string;
+  aiConfig: AIConfig;
+  signal?: AbortSignal;
+}): AsyncGenerator<string, InterviewPrepOutput, void> {
+  const { resumeData, jobDescription, aiConfig, signal } = params;
+  const model = getModel(aiConfig);
+  const resumeContext = serializeResumeContext(resumeData);
+
+  const result = await streamText({
+    model,
+    maxOutputTokens: 8192,
+    system: INTERVIEW_PREP_PROMPT,
+    prompt: `Resume:\n${resumeContext}\n\nJob Description:\n${jobDescription.trim() ? jobDescription : '(not provided — use jobIntention or infer the target role from the resume)'}\n\nRespond with JSON only.`,
+    providerOptions: getJsonProviderOptions(aiConfig),
+    abortSignal: signal,
+  });
+
+  let fullText = '';
+  for await (const chunk of result.textStream) {
+    fullText += chunk;
+    yield chunk;
+  }
+
+  return extractJson(fullText, interviewPrepOutputSchema);
 }

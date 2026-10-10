@@ -56,6 +56,7 @@ import {
   type InterviewPrepOutput,
   type InterviewPrepQuestion,
 } from '@/lib/ai/interview-prep-schema';
+import { createNDJSONParser } from '@/lib/ai/ndjson-parser';
 import { useAppStore } from '@/state/store';
 import { useEditorUiStore } from '@/state/editor-ui-store';
 import { useVipCheck } from '@/hooks/use-vip-check';
@@ -608,34 +609,132 @@ export function InterviewPrepDialog(props: InterviewPrepDialogProps): ReactEleme
         body: JSON.stringify({ resumeData: resolved.resume, jobDescription: jd }),
         signal: controller.signal,
       });
-      const data = await response.json() as InterviewPrepOutput & {
-        error?: string;
-        quotaExceeded?: boolean;
-      };
+
+      // Check response status and content-type before parsing
+      const contentType = response.headers.get('content-type') || '';
+      
       if (!response.ok) {
-        const payload = parseAssistErrorPayload(data);
-        if (!handleAssistQuotaError('interview-prep', payload)) {
-          trackAssistFailed('interview-prep', data.error || '生成失败');
+        // Handle error response
+        if (contentType.includes('application/json')) {
+          const data = await response.json() as { error?: string; quotaExceeded?: boolean };
+          const payload = parseAssistErrorPayload(data);
+          if (!handleAssistQuotaError('interview-prep', payload)) {
+            trackAssistFailed('interview-prep', data.error || '生成失败');
+          }
+          throw new Error(data.error || '生成失败');
+        } else {
+          // Non-JSON error (e.g., Nginx timeout HTML page)
+          let errorMessage = '服务暂时不可用，请稍后重试';
+          if (response.status === 504) {
+            errorMessage = '生成超时，请稍后重试';
+          } else if (response.status >= 500) {
+            errorMessage = `服务器错误（${response.status}），请稍后重试`;
+          }
+          throw new Error(errorMessage);
         }
-        throw new Error(data.error || '生成失败');
       }
-      setResult(data);
-      trackAssistSuccess('interview-prep');
-      refreshEditorAssistQuota();
-      const wxId = resolveInterviewPrepAccountId();
-      if (wxId) {
-        const saved = await saveInterviewPrepHistory(wxId, {
-          id: createInterviewPrepHistoryId(),
-          createdAt: Date.now(),
-          result: data,
-          jobDescription: jd,
-          resumeId: resolved.resumeId,
-          resumeTitle: resolved.resumeTitle,
-        });
-        setHistory(saved);
-        props.onHistoryChange?.();
+
+      // Handle NDJSON streaming response
+      if (contentType.includes('application/x-ndjson')) {
+        const reader = response.body?.getReader();
+        const decoder = new TextDecoder();
+        let result: InterviewPrepOutput | undefined;
+        let streamError: string | undefined;
+
+        if (!reader) {
+          throw new Error('无法读取响应流');
+        }
+
+        type StreamEvent =
+          | { type: 'progress' }
+          | { type: 'result'; data: InterviewPrepOutput }
+          | { type: 'error'; error: string };
+
+        const parser = createNDJSONParser<StreamEvent>();
+
+        while (true) {
+          const { done, value } = await reader.read();
+          
+          if (done) {
+            // Process any remaining buffered content
+            const finalEvents = parser.flush();
+            for (const event of finalEvents) {
+              if (event.type === 'result') {
+                result = event.data;
+              } else if (event.type === 'error') {
+                streamError = event.error;
+              }
+            }
+            break;
+          }
+
+          // Decode and parse complete lines
+          const chunk = decoder.decode(value, { stream: true });
+          const events = parser.processChunk(chunk);
+
+          for (const event of events) {
+            if (event.type === 'result') {
+              result = event.data;
+            } else if (event.type === 'error') {
+              streamError = event.error;
+            }
+            // 'progress' events are just heartbeats, ignore them
+          }
+        }
+
+        // Check for error before checking for result
+        if (streamError) {
+          throw new Error(streamError);
+        }
+
+        if (!result) {
+          throw new Error('未收到生成结果');
+        }
+
+        const data = result;
+        setResult(data);
+        trackAssistSuccess('interview-prep');
+        refreshEditorAssistQuota();
+        const wxId = resolveInterviewPrepAccountId();
+        if (wxId) {
+          const saved = await saveInterviewPrepHistory(wxId, {
+            id: createInterviewPrepHistoryId(),
+            createdAt: Date.now(),
+            result: data,
+            jobDescription: jd,
+            resumeId: resolved.resumeId,
+            resumeTitle: resolved.resumeTitle,
+          });
+          setHistory(saved);
+          props.onHistoryChange?.();
+        }
+        clearInterviewPrepDraft();
+      } else if (contentType.includes('application/json')) {
+        // Fallback: handle non-streaming JSON response (for backward compatibility)
+        const data = await response.json() as InterviewPrepOutput & {
+          error?: string;
+          quotaExceeded?: boolean;
+        };
+        setResult(data);
+        trackAssistSuccess('interview-prep');
+        refreshEditorAssistQuota();
+        const wxId = resolveInterviewPrepAccountId();
+        if (wxId) {
+          const saved = await saveInterviewPrepHistory(wxId, {
+            id: createInterviewPrepHistoryId(),
+            createdAt: Date.now(),
+            result: data,
+            jobDescription: jd,
+            resumeId: resolved.resumeId,
+            resumeTitle: resolved.resumeTitle,
+          });
+          setHistory(saved);
+          props.onHistoryChange?.();
+        }
+        clearInterviewPrepDraft();
+      } else {
+        throw new Error('服务器返回了不支持的响应格式');
       }
-      clearInterviewPrepDraft();
     } catch (err) {
       if (isAbortError(err)) return;
       setError(err instanceof Error ? err.message : '生成失败');
@@ -719,7 +818,7 @@ export function InterviewPrepDialog(props: InterviewPrepDialogProps): ReactEleme
         {isGenerating ? (
           <AiWaitingState
             messages={WAITING_MESSAGES}
-            hint="通常需要 15–30 秒，请稍候"
+            hint="通常需要 30–90 秒，请稍候"
             onCancel={handleCancel}
           />
         ) : !result ? (
@@ -798,9 +897,19 @@ export function InterviewPrepDialog(props: InterviewPrepDialogProps): ReactEleme
               </div>
             ) : null}
             {error ? (
-              <div className="flex items-center gap-2 rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">
-                <AlertTriangle className="h-4 w-4 shrink-0" />
-                {error}
+              <div className="space-y-2 rounded-md bg-red-50 px-3 py-2.5">
+                <div className="flex items-center gap-2 text-sm text-red-600">
+                  <AlertTriangle className="h-4 w-4 shrink-0" />
+                  {error}
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-xs"
+                  onClick={handleGenerateClick}
+                >
+                  重试
+                </Button>
               </div>
             ) : null}
             <div className="space-y-2">
