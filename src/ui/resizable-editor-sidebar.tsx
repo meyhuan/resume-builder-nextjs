@@ -65,19 +65,16 @@ export function ResizableEditorSidebar({
   label = '编辑工具',
   className = '',
 }: ResizableEditorSidebarProps) {
-  // SSR-safe: start with a CSS-based responsive default to avoid hydration flash
+  // SSR-safe: start with null to use CSS clamp, then compute after mount
   const [preferredWidth, setPreferredWidth] = useState<number | null>(null)
   const [maxWidth, setMaxWidth] = useState(RESPONSIVE_DEFAULT_MAX)
+  const [computedDefault, setComputedDefault] = useState<number | null>(null)
   const [isDragging, setIsDragging] = useState(false)
   const sidebarRef = useRef<HTMLElement>(null)
   const cleanupDragRef = useRef<(() => void) | null>(null)
   
-  // Compute actual width: use stored preference if set, otherwise compute from maxWidth
-  const computedWidth = preferredWidth !== null 
-    ? clampWidth(preferredWidth, maxWidth)
-    : typeof window !== 'undefined'
-      ? computeResponsiveDefault(window.innerWidth)
-      : RESPONSIVE_DEFAULT_MIN
+  // Use stored preference if set, otherwise use computed default (or null during SSR)
+  const computedWidth = preferredWidth !== null ? clampWidth(preferredWidth, maxWidth) : computedDefault
 
   const cancelDrag = useCallback((updateState = true) => {
     cleanupDragRef.current?.()
@@ -106,8 +103,10 @@ export function ResizableEditorSidebar({
       if (stored !== null) {
         // User has stored preference, clamp it to current constraints
         setPreferredWidth(clampWidth(stored, nextMax))
+      } else {
+        // No stored preference: compute responsive default and store it separately
+        setComputedDefault(computeResponsiveDefault(available))
       }
-      // If no stored preference, keep preferredWidth null to use responsive default
     }
     
     const frame = window.requestAnimationFrame(measure)
@@ -140,12 +139,11 @@ export function ResizableEditorSidebar({
   }
 
   const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
-    if (!open || window.innerWidth < DESKTOP_BREAKPOINT || event.button !== 0 || cleanupDragRef.current) return
+    if (!open || window.innerWidth < DESKTOP_BREAKPOINT || event.button !== 0 || cleanupDragRef.current || computedWidth === null) return
     event.preventDefault()
     const handle = event.currentTarget
     const pointerId = event.pointerId
     const startX = event.clientX
-    // Use computed width, falling back to current rendered width if not yet measured
     const startWidth = computedWidth
     let latestWidth = computedWidth
     const previousCursor = document.body.style.cursor
@@ -160,6 +158,7 @@ export function ResizableEditorSidebar({
       if (e.pointerId !== pointerId) return
       latestWidth = clampWidth(startWidth + startX - e.clientX, maxWidth)
       setPreferredWidth(latestWidth)
+      setComputedDefault(null) // User has now set a preference, clear the computed default
     }
     const finish = (e: PointerEvent) => {
       if (e.pointerId !== pointerId) return
@@ -187,6 +186,7 @@ export function ResizableEditorSidebar({
   }
 
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (computedWidth === null) return
     const step = event.shiftKey ? 80 : 16
     const next = {
       ArrowLeft: computedWidth + step,
@@ -199,8 +199,10 @@ export function ResizableEditorSidebar({
     commitWidth(next)
   }
 
-  // For SSR and hydration: use CSS clamp for initial render to avoid flash
-  const cssWidth = `clamp(${RESPONSIVE_DEFAULT_MIN}px, ${RESPONSIVE_DEFAULT_PERCENT * 100}%, min(${RESPONSIVE_DEFAULT_MAX}px, calc(100% - ${EDITOR_MIN_WIDTH}px)))`
+  // For SSR and hydration: use CSS clamp until JS computes the actual width
+  const cssWidth = computedWidth !== null 
+    ? `${computedWidth}px` 
+    : `clamp(${RESPONSIVE_DEFAULT_MIN}px, ${RESPONSIVE_DEFAULT_PERCENT * 100}%, min(${RESPONSIVE_DEFAULT_MAX}px, calc(100% - ${EDITOR_MIN_WIDTH}px)))`
 
   return (
     <aside
@@ -210,7 +212,7 @@ export function ResizableEditorSidebar({
       data-sidebar-open={open ? 'true' : 'false'}
       data-sidebar-resizing={isDragging ? 'true' : 'false'}
       className={`print:hidden relative min-w-0 w-full md:w-[360px] lg:w-[var(--editor-sidebar-width)] lg:max-w-[max(360px,calc(100%_-_720px))] border-l border-slate-200 bg-white shrink-0 h-full overflow-hidden ${className}`}
-      style={{ '--editor-sidebar-width': preferredWidth !== null ? `${computedWidth}px` : cssWidth } as CSSProperties}
+      style={{ '--editor-sidebar-width': cssWidth } as CSSProperties}
     >
       <div
         role="separator"
@@ -218,8 +220,8 @@ export function ResizableEditorSidebar({
         aria-orientation="vertical"
         aria-valuemin={EDITOR_SIDEBAR_MIN_WIDTH}
         aria-valuemax={maxWidth}
-        aria-valuenow={computedWidth}
-        aria-valuetext={`${computedWidth} 像素`}
+        aria-valuenow={computedWidth ?? RESPONSIVE_DEFAULT_MIN}
+        aria-valuetext={`${computedWidth ?? RESPONSIVE_DEFAULT_MIN} 像素`}
         tabIndex={open ? 0 : -1}
         title="拖动调整宽度，双击恢复默认宽度"
         data-testid="editor-sidebar-resize-handle"

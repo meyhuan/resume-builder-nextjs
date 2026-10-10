@@ -1,5 +1,4 @@
 import '@testing-library/jest-dom/vitest'
-import * as React from 'react'
 import { act, cleanup, fireEvent, render, waitFor } from '@testing-library/react'
 import { renderToString } from 'react-dom/server'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -143,10 +142,11 @@ describe('ResizableEditorSidebar', () => {
     expect(document.body.style.cursor).toBe('')
   })
 
-  it.each(['unmount', 'close', 'blur'])('restores existing global styles on %s during a drag', (end) => {
+  it.each(['unmount', 'close', 'blur'])('restores existing global styles on %s during a drag', async (end) => {
     document.body.style.cursor = 'crosshair'
     document.body.style.userSelect = 'text'
     const view = render(<ResizableEditorSidebar open>内容</ResizableEditorSidebar>)
+    await act(() => new Promise<void>(resolve => window.requestAnimationFrame(() => resolve())))
     fireEvent.pointerDown(getHandle(view.container), { button: 0, pointerId: 1, clientX: 1000 })
     expect(document.body.style.userSelect).toBe('none')
     if (end === 'unmount') view.unmount()
