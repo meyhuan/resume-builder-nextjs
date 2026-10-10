@@ -13,7 +13,7 @@ const artifactRoot = path.join(root, 'test-artifacts', 'templates')
 const reportRoot = path.join(root, 'test-artifacts', 'reports')
 const pdfjsPath = path.join(root, 'public', 'libs', 'pdfjs', 'pdf.min.js')
 const pdfjsWorkerPath = path.join(root, 'public', 'libs', 'pdfjs', 'pdf.worker.min.js')
-const LOCAL_FIXTURES = ['full', 'sparse', 'long', 'rich']
+const LOCAL_FIXTURES = ['full', 'sparse', 'long', 'rich', 'english']
 
 const args = parseArgs(process.argv.slice(2))
 const templateId = args._[0]
@@ -435,6 +435,17 @@ async function runLocalChecks(templateIds, registries) {
         checkRichText: true,
         templateId: id,
         fixture: 'rich',
+      })
+
+      await checkLocalPage(browser, {
+        name: `Local English data (${id})`,
+        url: labUrl(baseUrl, id, 'english', 'base', 'pc'),
+        viewport: { width: 1280, height: 1200, deviceScaleFactor: 1 },
+        screenshot: path.join(artifactDir, 'local-english.png'),
+        expectedText: 'Alex Chen',
+        checkHorizontalOverflow: true,
+        templateId: id,
+        fixture: 'english',
       })
 
       try {

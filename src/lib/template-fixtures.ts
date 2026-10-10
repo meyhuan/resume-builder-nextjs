@@ -2,10 +2,10 @@ import type { ResumeData } from '@/entities/resume/resume-data'
 import type { ThemeTokens } from '@/entities/theme/theme-tokens'
 import { getResumeFontFamily } from '@/entities/theme/font-stacks'
 
-export type TemplateFixtureId = 'full' | 'sparse' | 'long' | 'rich'
+export type TemplateFixtureId = 'full' | 'sparse' | 'long' | 'rich' | 'english'
 export type TemplateLabThemeId = 'base' | 'color' | 'compact' | 'relaxed' | 'one-page' | 'zero-x'
 
-export const TEMPLATE_FIXTURE_IDS: readonly TemplateFixtureId[] = ['full', 'sparse', 'long', 'rich']
+export const TEMPLATE_FIXTURE_IDS: readonly TemplateFixtureId[] = ['full', 'sparse', 'long', 'rich', 'english']
 
 export const TEMPLATE_LAB_BASE_THEME: ThemeTokens = {
   primaryColor: '#2563eb',
@@ -88,6 +88,7 @@ export function getTemplateFixture(id: string | null | undefined): ResumeData {
   if (fixtureId === 'sparse') return sparseFixture
   if (fixtureId === 'long') return longFixture
   if (fixtureId === 'rich') return richFixture
+  if (fixtureId === 'english') return englishFixture
   return fullFixture
 }
 
@@ -325,6 +326,80 @@ const richFixture: ResumeData = {
           contentHtml: '<ol><li>完成模板渲染稳定性治理。</li><li>沉淀本地验收工具。</li></ol>',
         },
       ],
+    },
+  ],
+}
+
+const englishFixture: ResumeData = {
+  id: 'fixture-english',
+  name: 'Alex Chen',
+  baseInfo: {
+    title: 'Senior Product Manager',
+    phone: '+86 138 0000 5678',
+    email: 'alex.chen@example.com',
+    currentLocation: 'Shanghai, China',
+    showAvatar: false,
+    customFields: [{ label: 'Portfolio', value: 'alexchen.example.com' }],
+  },
+  jobIntention: {
+    position: 'Senior Product Manager',
+    city: 'Shanghai / Remote',
+    type: 'Full-time',
+    industry: 'AI SaaS',
+  },
+  jobIntentionVisible: true,
+  sections: [
+    {
+      id: 'english-experience',
+      title: 'Professional Experience',
+      columns: 1,
+      blocks: [{
+        id: 'english-experience-1',
+        type: 'experience',
+        company: 'Northstar Intelligence',
+        position: 'Senior Product Manager',
+        startDate: '2022.04',
+        endDate: 'Present',
+        contentHtml: '<ul><li>Led an enterprise knowledge product from discovery to launch for more than 120 customers.</li><li>Improved answer accuracy from 71% to 86% through retrieval evaluation and feedback loops.</li></ul>',
+      }],
+    },
+    {
+      id: 'english-projects',
+      title: 'Selected Projects',
+      columns: 1,
+      blocks: [{
+        id: 'english-project-1',
+        type: 'project',
+        name: 'Enterprise Answer Platform',
+        role: 'Product Lead',
+        startDate: '2023.01',
+        endDate: '2023.12',
+        contentHtml: '<p>Designed document ingestion, access control, source citations, and evaluation workflows.</p>',
+      }],
+    },
+    {
+      id: 'english-education',
+      title: 'Education',
+      columns: 1,
+      blocks: [{
+        id: 'english-education-1',
+        type: 'education',
+        school: 'Fudan University',
+        major: 'Information Systems',
+        degree: 'Bachelor of Management',
+        startDate: '2015.09',
+        endDate: '2019.06',
+      }],
+    },
+    {
+      id: 'english-skills',
+      title: 'Skills',
+      columns: 1,
+      blocks: [{
+        id: 'english-skills-1',
+        type: 'text',
+        html: '<p>Product discovery, roadmap planning, SQL, experimentation, and cross-functional delivery.</p>',
+      }],
     },
   ],
 }

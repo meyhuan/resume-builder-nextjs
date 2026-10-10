@@ -10,11 +10,12 @@ lerna-debug.log*
 node_modules
 .next/
 /.next-spacing-backup/
-/outputs/ai-usage-*/
+/outputs/
 out/
 build
 dist
 test-artifacts/
+artifacts/
 .codex-remote-attachments/
 *.tsbuildinfo
 

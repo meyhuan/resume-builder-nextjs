@@ -103,7 +103,7 @@ export function SingleColumn(props: {
 
       {showJob && jobIntention.fields.length > 0 ? <JobIntentionBlock jobIntention={jobIntention} config={config} theme={theme} /> : null}
       {metrics.some(([value]) => value.trim()) ? (
-        <section style={{ marginTop: 20 }}>
+        <section data-template-section="true" data-template-section-title="核心业绩" style={{ marginTop: scaledMetricGap(theme.spacingScale) }}>
           <h2
             style={{
               margin: '0 0 10px',
@@ -134,6 +134,10 @@ export function SingleColumn(props: {
       ) : null}
     </div>
   )
+}
+
+function scaledMetricGap(spacingScale: number): number {
+  return Math.round(20 * Math.max(0, spacingScale) * 10) / 10
 }
 
 export function CampusLayout(props: {
