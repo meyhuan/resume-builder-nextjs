@@ -23,8 +23,8 @@ export function SectionNameEditor({ section, fallback, onChange, readOnly = fals
     onChange(section.id, draft.trim())
     setEditing(false)
   }
-  return <div className="min-w-0 flex-1" onPointerDown={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()} onTouchStart={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
-    {editing && !readOnly ? <div className="print:hidden" data-export-hide="true">
+  return <div className="min-w-0 flex-1">
+    {editing && !readOnly ? <div className="print:hidden" data-export-hide="true" onPointerDown={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()} onTouchStart={(e) => e.stopPropagation()}>
       <input id={id} aria-label="模块名称" aria-invalid={Boolean(error)} aria-describedby={error ? `${id}-error` : undefined} autoFocus value={draft}
         className="w-full min-w-0 rounded-md border border-violet-300 bg-white px-2 py-1 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-violet-200"
         onFocus={(e) => e.currentTarget.select()}
@@ -49,7 +49,7 @@ export function SectionNameEditor({ section, fallback, onChange, readOnly = fals
         <button type="button" className="py-1 text-slate-500" onClick={() => setEditing(false)}>取消</button>
       </div>
     </div> : <span className="block break-words text-sm font-medium text-slate-700" style={{ overflowWrap: 'anywhere' }}>{title}</span>}
-    {!readOnly && !editing && <div className="flex flex-wrap gap-3 text-xs print:hidden" data-export-hide="true">
+    {!readOnly && !editing && <div className="flex flex-wrap gap-3 text-xs print:hidden" data-export-hide="true" onPointerDown={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()} onTouchStart={(e) => e.stopPropagation()}>
       <button type="button" aria-label={`修改${title}名称`} className="py-1 text-violet-700" onClick={() => { setDraft(title); setError(undefined); setEditing(true) }}>修改模块名称</button>
       {section.displayTitle !== undefined && <button type="button" className="py-1 text-slate-500" onClick={() => onChange(section.id, undefined)}>恢复默认名称</button>}
     </div>}

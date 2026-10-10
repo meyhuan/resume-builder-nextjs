@@ -3,7 +3,7 @@
 import { getSectionDisplayTitle } from '@/entities/resume/section-display-title'
 import { SectionNameEditor } from '@/components/sections/section-name-editor'
 import { useSectionDisplayTitle } from '@/features/edit/draft/use-section-display-title'
-import { useCallback, useMemo, useState, type ReactElement, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactElement, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   closestCenter,
@@ -14,6 +14,7 @@ import {
   useSensor,
   useSensors,
   type DragEndEvent,
+  type DragMoveEvent,
 } from '@dnd-kit/core'
 import {
   SortableContext,
@@ -69,16 +70,153 @@ export function ModuleManageSheet({ open, onClose }: ModuleManageSheetProps): Re
   const portfolioImageCount: number = draft?.portfolio?.images.length ?? 0
 
   const [pendingRemove, setPendingRemove] = useState<Section | null>(null)
+  
+  // Custom auto-scroll refs
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null)
+  const scrollBoundsRef = useRef<{ min: number; max: number }>({ min: 0, max: 0 })
+  const edgeDwellStartRef = useRef<number>(0)
+  const lastPointerYRef = useRef<number>(0)
+  const scrollAnimationRef = useRef<number>(0)
+  const isDraggingRef = useRef<boolean>(false)
 
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 180, tolerance: 6 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 120, tolerance: 10 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   )
+
+  // Custom auto-scroll implementation - track real touch position
+  useEffect(() => {
+    const handleTouchMove = (e: TouchEvent): void => {
+      if (!isDraggingRef.current || !e.touches[0]) return
+      lastPointerYRef.current = e.touches[0].clientY
+    }
+
+    const handlePointerMove = (e: PointerEvent): void => {
+      if (!isDraggingRef.current) return
+      lastPointerYRef.current = e.clientY
+    }
+
+    // Passive listeners to track real finger position without affecting scroll
+    window.addEventListener('touchmove', handleTouchMove, { passive: true })
+    window.addEventListener('pointermove', handlePointerMove, { passive: true })
+
+    return () => {
+      window.removeEventListener('touchmove', handleTouchMove)
+      window.removeEventListener('pointermove', handlePointerMove)
+      if (scrollAnimationRef.current) {
+        cancelAnimationFrame(scrollAnimationRef.current)
+      }
+    }
+  }, [])
+
+  const handleDragStart = useCallback((event: DragMoveEvent): void => {
+    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+      navigator.vibrate(10)
+    }
+    
+    isDraggingRef.current = true
+    
+    // Capture initial pointer position
+    const activatorEvent = event.activatorEvent
+    if (activatorEvent instanceof TouchEvent) {
+      lastPointerYRef.current = activatorEvent.touches[0]?.clientY ?? 0
+    } else if (activatorEvent instanceof PointerEvent || activatorEvent instanceof MouseEvent) {
+      lastPointerYRef.current = activatorEvent.clientY
+    }
+    
+    // Capture scroll bounds at drag start
+    const container = scrollContainerRef.current
+    if (container) {
+      scrollBoundsRef.current = {
+        min: 0,
+        max: Math.max(0, container.scrollHeight - container.clientHeight),
+      }
+    }
+  }, [])
+
+  const handleDragMove = useCallback((): void => {
+    const container = scrollContainerRef.current
+    if (!container) return
+
+    // Use real tracked pointer position (updated by passive listeners)
+    const currentPointerY = lastPointerYRef.current
+    const rect = container.getBoundingClientRect()
+    const relativeY = currentPointerY - rect.top
+    const EDGE_ZONE = 40
+
+    const inEdgeZone = relativeY < EDGE_ZONE || relativeY > rect.height - EDGE_ZONE
+
+    if (inEdgeZone) {
+      if (edgeDwellStartRef.current === 0) {
+        edgeDwellStartRef.current = Date.now()
+      }
+      if (!scrollAnimationRef.current) {
+        scrollAnimationRef.current = requestAnimationFrame(function performScroll() {
+          const container = scrollContainerRef.current
+          if (!container || edgeDwellStartRef.current === 0) {
+            scrollAnimationRef.current = 0
+            return
+          }
+
+          const dwellTime = Date.now() - edgeDwellStartRef.current
+          if (dwellTime < 280) {
+            scrollAnimationRef.current = requestAnimationFrame(performScroll)
+            return
+          }
+
+          const rect = container.getBoundingClientRect()
+          const pointerY = lastPointerYRef.current
+          const relativeY = pointerY - rect.top
+          const EDGE_ZONE = 40
+
+          let scrollSpeed = 0
+          if (relativeY < EDGE_ZONE) {
+            const depth = Math.min(1, (EDGE_ZONE - relativeY) / EDGE_ZONE)
+            scrollSpeed = -depth * 300
+          } else if (relativeY > rect.height - EDGE_ZONE) {
+            const depth = Math.min(1, (relativeY - (rect.height - EDGE_ZONE)) / EDGE_ZONE)
+            scrollSpeed = depth * 300
+          }
+
+          if (scrollSpeed !== 0) {
+            const delta = scrollSpeed / 60
+            const newScrollTop = Math.max(
+              scrollBoundsRef.current.min,
+              Math.min(scrollBoundsRef.current.max, container.scrollTop + delta)
+            )
+            container.scrollTop = newScrollTop
+          }
+
+          scrollAnimationRef.current = requestAnimationFrame(performScroll)
+        })
+      }
+    } else {
+      edgeDwellStartRef.current = 0
+      if (scrollAnimationRef.current) {
+        cancelAnimationFrame(scrollAnimationRef.current)
+        scrollAnimationRef.current = 0
+      }
+    }
+  }, [])
+
+  const stopAutoScroll = useCallback((): void => {
+    isDraggingRef.current = false
+    edgeDwellStartRef.current = 0
+    lastPointerYRef.current = 0
+    if (scrollAnimationRef.current) {
+      cancelAnimationFrame(scrollAnimationRef.current)
+      scrollAnimationRef.current = 0
+    }
+  }, [])
 
   const handleDragEnd = useCallback(
     (event: DragEndEvent): void => {
       const { active, over } = event
+      
+      // Stop auto-scroll
+      stopAutoScroll()
+
       if (!over || active.id === over.id) return
       const fromIdx = sections.findIndex((s) => s.id === active.id)
       const toIdx = sections.findIndex((s) => s.id === over.id)
@@ -86,8 +224,13 @@ export function ModuleManageSheet({ open, onClose }: ModuleManageSheetProps): Re
       log.info('reorder', { fromIdx, toIdx })
       reorder(fromIdx, toIdx)
     },
-    [sections, reorder],
+    [sections, reorder, stopAutoScroll],
   )
+
+  const handleDragCancel = useCallback((): void => {
+    // Stop auto-scroll and reset state
+    stopAutoScroll()
+  }, [stopAutoScroll])
 
   const handleConfirmRemove = useCallback((): void => {
     if (!pendingRemove) return
@@ -166,7 +309,7 @@ export function ModuleManageSheet({ open, onClose }: ModuleManageSheetProps): Re
         contentClassName="pb-safe"
       >
         <p className="mb-3 text-[12px] text-slate-400">
-          控制基础展示项；长按拖动调整模块顺序，点击红色按钮移除模块。
+          控制基础展示项；按住 ≡ 拖动排序，点击红色按钮移除模块。
         </p>
 
         <div className="mb-3 flex flex-col gap-2">
@@ -199,9 +342,24 @@ export function ModuleManageSheet({ open, onClose }: ModuleManageSheetProps): Re
             暂无模块，请先在编辑页添加内容
           </div>
         ) : (
-          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <DndContext 
+            sensors={sensors} 
+            collisionDetection={closestCenter}
+            onDragStart={handleDragStart}
+            onDragMove={handleDragMove}
+            onDragEnd={handleDragEnd}
+            onDragCancel={handleDragCancel}
+            autoScroll={false}
+          >
             <SortableContext items={items} strategy={verticalListSortingStrategy}>
-              <div className="flex flex-col gap-2">
+              <div 
+                className="flex flex-col gap-2"
+                ref={(el) => {
+                  if (el?.parentElement) {
+                    scrollContainerRef.current = el.parentElement as HTMLDivElement
+                  }
+                }}
+              >
                 {sections.map((section) => (
                   <SortableManageRow
                     key={section.id}
@@ -347,13 +505,16 @@ interface ManageRowProps {
 
 function SortableManageRow({ section, onRequestRemove }: ManageRowProps): ReactElement {
   const updateDisplayTitle = useSectionDisplayTitle()
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({
     id: section.id,
   })
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
     zIndex: isDragging ? 20 : undefined,
+    opacity: isDragging ? 0.5 : undefined,
+    WebkitUserSelect: 'none',
+    WebkitTouchCallout: 'none',
   }
 
   const moduleConfig = findModuleBySectionTitle(section.title)
@@ -364,22 +525,22 @@ function SortableManageRow({ section, onRequestRemove }: ManageRowProps): ReactE
     <div
       ref={setNodeRef}
       style={style}
-      {...attributes}
-      {...listeners}
       className={cn(
-        // Keep vertical panning available for the sheet's scroll container. The
-        // touch sensor cancels its pending drag when movement exceeds tolerance,
-        // so a normal swipe scrolls while a long press still starts dragging.
-        'relative flex touch-pan-y cursor-grab items-center gap-3 rounded-[14px] border border-[#edf0f5] bg-white px-3 py-3 shadow-[0_2px_8px_rgba(15,23,42,0.04)] transition-shadow active:cursor-grabbing',
-        isDragging && 'border-violet-200 shadow-[0_12px_28px_rgba(124,58,237,0.18)] ring-2 ring-violet-200',
+        'relative flex select-none items-center gap-3 rounded-[14px] border border-[#edf0f5] bg-white px-3 py-3 shadow-[0_2px_8px_rgba(15,23,42,0.04)]',
+        isDragging && 'scale-[1.02] border-violet-200 shadow-[0_12px_28px_rgba(124,58,237,0.18)] ring-2 ring-violet-200',
       )}
     >
-      {/* Drag handle */}
-      <div
-        className="flex h-8 w-6 shrink-0 touch-none items-center justify-center text-slate-300"
+      {/* Drag handle — enlarged to ≥44×44 hit area */}
+      <button
+        ref={setActivatorNodeRef}
+        {...attributes}
+        {...listeners}
+        type="button"
+        aria-label={`拖动排序${label}`}
+        className="flex h-11 w-11 shrink-0 touch-none cursor-grab items-center justify-center text-slate-300 active:cursor-grabbing"
       >
         <GripVertical size={17} />
-      </div>
+      </button>
 
       {/* Label + subtitle */}
       <div className="min-w-0 flex-1">
@@ -396,7 +557,6 @@ function SortableManageRow({ section, onRequestRemove }: ManageRowProps): ReactE
         <button
           type="button"
           onPointerDown={(e): void => { e.stopPropagation() }}
-          onMouseDown={(e): void => { e.stopPropagation() }}
           onTouchStart={(e): void => { e.stopPropagation() }}
           onClick={(e): void => {
             e.stopPropagation()
