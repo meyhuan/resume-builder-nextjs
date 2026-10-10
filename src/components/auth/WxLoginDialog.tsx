@@ -36,16 +36,42 @@ export const WxLoginDialog: React.FC<WxLoginDialogProps> = ({ isOpen, onClose, o
   const [qrcodeUrl, setQrcodeUrl] = useState('');
   const [expireIn, setExpireIn] = useState(0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
   const sceneStrRef = useRef('');
   const pollTimerRef = useRef<NodeJS.Timeout | null>(null);
   const expireTimerRef = useRef<NodeJS.Timeout | null>(null);
   const isOpenRef = useRef(isOpen);
   const [legalOpen, setLegalOpen] = useState<boolean>(false);
+  // On touch devices, closing the legal dialog (a separate Radix layer) can be seen as an
+  // outside interaction by the login dialog and close it too; ignore that for a moment.
+  const legalClosedAtRef = useRef<number>(0);
   const [legalTab, setLegalTab] = useState<LegalTab>('privacy');
 
   useEffect(() => {
     isOpenRef.current = isOpen;
   }, [isOpen]);
+
+  useEffect(() => {
+    // Detect mobile device using media query (width and pointer:coarse)
+    const checkMobile = () => {
+      const mobileWidthQuery = window.matchMedia('(max-width: 767px)');
+      const coarsePointerQuery = window.matchMedia('(pointer: coarse)');
+      setIsMobile(mobileWidthQuery.matches && coarsePointerQuery.matches);
+    };
+    checkMobile();
+    
+    const mobileWidthQuery = window.matchMedia('(max-width: 767px)');
+    const coarsePointerQuery = window.matchMedia('(pointer: coarse)');
+    
+    const handler = () => checkMobile();
+    mobileWidthQuery.addEventListener('change', handler);
+    coarsePointerQuery.addEventListener('change', handler);
+    
+    return () => {
+      mobileWidthQuery.removeEventListener('change', handler);
+      coarsePointerQuery.removeEventListener('change', handler);
+    };
+  }, []);
 
   const openLegal = (tab: LegalTab): void => {
     setLegalTab(tab);
@@ -235,16 +261,23 @@ export const WxLoginDialog: React.FC<WxLoginDialogProps> = ({ isOpen, onClose, o
     onClose();
   };
 
+
   return (
     <>
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open && closeable) onClose(); }}>
       <DialogContent
-        className="sm:max-w-[420px] p-0 border-none overflow-hidden bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl ring-1 ring-white/50"
-        onPointerDownOutside={closeable ? undefined : (e) => e.preventDefault()}
+        className="sm:max-w-[420px] max-h-[90dvh] overflow-y-auto p-0 border-none bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl ring-1 ring-white/50 !z-[1100]"
+        overlayClassName="!z-[1100]"
+        onPointerDownOutside={(e) => {
+          if (!closeable || legalOpen || Date.now() - legalClosedAtRef.current < 500) e.preventDefault();
+        }}
+        onInteractOutside={(e) => {
+          if (legalOpen || Date.now() - legalClosedAtRef.current < 500) e.preventDefault();
+        }}
         onEscapeKeyDown={closeable ? undefined : (e) => e.preventDefault()}
         hideCloseButton={!closeable}
       >
-        <div className="relative p-8">
+        <div className="relative p-8 pb-6">
           {/* Background Glow */}
           <div className="absolute top-0 right-0 w-32 h-32 bg-violet-500/10 rounded-full blur-2xl pointer-events-none" />
           <div className="absolute bottom-0 left-0 w-32 h-32 bg-fuchsia-500/10 rounded-full blur-2xl pointer-events-none" />
@@ -278,7 +311,7 @@ export const WxLoginDialog: React.FC<WxLoginDialogProps> = ({ isOpen, onClose, o
               />
             </div>
           ) : (
-          <div className="bg-white/50 rounded-2xl p-6 border border-white/60 shadow-inner flex flex-col items-center relative z-10 backdrop-blur-sm">
+          <div className="bg-white/50 rounded-2xl p-4 sm:p-6 border border-white/60 shadow-inner flex flex-col items-center relative z-10 backdrop-blur-sm">
             {errorMessage ? (
               <div className="w-64 h-64 bg-rose-50/50 rounded-xl border border-rose-100 p-6 flex flex-col items-center justify-center text-center gap-3">
                 <AlertCircle className="text-rose-500" size={40} />
@@ -291,7 +324,7 @@ export const WxLoginDialog: React.FC<WxLoginDialogProps> = ({ isOpen, onClose, o
                 </button>
               </div>
             ) : (
-              <div className="relative w-64 h-64 bg-white rounded-xl border border-slate-100 p-2 shadow-sm flex items-center justify-center group">
+              <div className={`relative w-64 h-64 ${isMobile ? 'max-w-[min(72vw,16rem)]' : ''} bg-white rounded-xl border border-slate-100 p-2 shadow-sm flex items-center justify-center group`}>
                 {/* Border Gradient Animation */}
                 <div className="absolute -inset-[1px] bg-gradient-to-br from-violet-500 to-fuchsia-500 rounded-xl opacity-0 group-hover:opacity-20 transition-opacity duration-500" />
                 
@@ -307,6 +340,7 @@ export const WxLoginDialog: React.FC<WxLoginDialogProps> = ({ isOpen, onClose, o
                       alt="WeChat Login QR Code" 
                       fill 
                       className={status === 'expired' ? 'opacity-20 grayscale' : 'mix-blend-multiply'}
+                      priority
                     />
                     {status === 'expired' && (
                       <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-white/60 backdrop-blur-[2px]">
@@ -324,9 +358,19 @@ export const WxLoginDialog: React.FC<WxLoginDialogProps> = ({ isOpen, onClose, o
               </div>
             )}
 
-            <div className="mt-6 flex flex-col items-center justify-center gap-1 h-[44px]">
+            {isMobile && qrcodeUrl && status !== 'expired' && !errorMessage && (
+              <div className="mt-4 w-full">
+                <div className="bg-violet-50/60 border border-violet-100 rounded-xl p-3 text-center">
+                  <p className="text-xs text-violet-700 font-medium">
+                    长按保存或截图二维码，打开微信扫一扫从相册识别
+                  </p>
+                </div>
+              </div>
+            )}
+
+            <div className="mt-6 flex flex-col items-center justify-center gap-1 min-h-[44px]">
               <p className="text-sm font-bold bg-gradient-to-r from-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
-                {status === 'pending' && '请使用微信扫描上方二维码'}
+                {status === 'pending' && (isMobile ? '使用其他设备或保存后扫码' : '请使用微信扫描上方二维码')}
                 {status === 'scanned' && '✅ 已扫码，请在手机上确认'}
                 {status === 'confirming' && '正在确认登录信息...'}
                 {status === 'expired' && '二维码已过期，请刷新'}
@@ -336,7 +380,7 @@ export const WxLoginDialog: React.FC<WxLoginDialogProps> = ({ isOpen, onClose, o
                   有效期 {expireIn}s
                 </span>
               ) : (
-                <div className="h-[20px]" /> /* Placeholder to maintain height */
+                <div className="h-[20px]" />
               )}
             </div>
             {automationEnabled && (
@@ -363,7 +407,17 @@ export const WxLoginDialog: React.FC<WxLoginDialogProps> = ({ isOpen, onClose, o
       </DialogContent>
     </Dialog>
 
-    <LegalDialog isOpen={legalOpen} onClose={() => setLegalOpen(false)} initialTab={legalTab} />
+    <LegalDialog
+      isOpen={legalOpen}
+      onClose={() => {
+        legalClosedAtRef.current = Date.now();
+        setLegalOpen(false);
+      }}
+      initialTab={legalTab}
+      // The login dialog is raised to z-1100; keep the legal dialog above it.
+      className="!z-[1110]"
+      overlayClassName="!z-[1110]"
+    />
     </>
   );
 };

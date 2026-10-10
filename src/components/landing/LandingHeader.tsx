@@ -54,7 +54,12 @@ export const LandingHeader = ({ forceSolid = false }: LandingHeaderProps = {}) =
       entry,
       source: 'landing_header',
     });
-    setIsLoginOpen(true);
+    // Close mobile menu first to avoid z-index conflicts
+    setMobileMenuOpen(false);
+    // Delay dialog opening slightly to allow menu to close smoothly
+    setTimeout(() => {
+      setIsLoginOpen(true);
+    }, 100);
   };
 
   const trackLandingCta = (cta: string, target: string, entry: string): void => {

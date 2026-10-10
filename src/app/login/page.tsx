@@ -38,6 +38,7 @@ function LoginForm(): React.ReactElement {
   const [qrcodeUrl, setQrcodeUrl] = useState<string>('');
   const [expireIn, setExpireIn] = useState<number>(0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isMobile, setIsMobile] = useState<boolean>(false);
   const sceneStrRef = useRef<string>('');
   const pollTimerRef = useRef<NodeJS.Timeout | null>(null);
   const expireTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -48,6 +49,28 @@ function LoginForm(): React.ReactElement {
     setLegalTab(tab);
     setLegalOpen(true);
   };
+
+  // Detect mobile device using media query (width and pointer:coarse)
+  useEffect(() => {
+    const checkMobile = () => {
+      const mobileWidthQuery = window.matchMedia('(max-width: 767px)');
+      const coarsePointerQuery = window.matchMedia('(pointer: coarse)');
+      setIsMobile(mobileWidthQuery.matches && coarsePointerQuery.matches);
+    };
+    checkMobile();
+    
+    const mobileWidthQuery = window.matchMedia('(max-width: 767px)');
+    const coarsePointerQuery = window.matchMedia('(pointer: coarse)');
+    
+    const handler = () => checkMobile();
+    mobileWidthQuery.addEventListener('change', handler);
+    coarsePointerQuery.addEventListener('change', handler);
+    
+    return () => {
+      mobileWidthQuery.removeEventListener('change', handler);
+      coarsePointerQuery.removeEventListener('change', handler);
+    };
+  }, []);
 
   // If already logged in, redirect immediately
   useEffect(() => {
@@ -195,6 +218,7 @@ function LoginForm(): React.ReactElement {
     router.push(redirectPath);
   };
 
+
   return (
     <div className="min-h-screen relative flex items-center justify-center p-4 overflow-hidden bg-slate-50">
       {/* Background Ambience */}
@@ -261,7 +285,7 @@ function LoginForm(): React.ReactElement {
                   </button>
                 </div>
               ) : (
-                <div className="relative w-56 h-56 bg-white rounded-xl border border-slate-100 p-2 shadow-sm flex items-center justify-center group">
+                <div className={`relative w-56 h-56 ${isMobile ? 'max-w-[min(72vw,14rem)]' : ''} bg-white rounded-xl border border-slate-100 p-2 shadow-sm flex items-center justify-center group`}>
                   <div className="absolute -inset-[1px] bg-gradient-to-br from-violet-500 to-fuchsia-500 rounded-xl opacity-0 group-hover:opacity-20 transition-opacity duration-500" />
                   {loading ? (
                     <div className="flex flex-col items-center gap-3">
@@ -275,6 +299,7 @@ function LoginForm(): React.ReactElement {
                         alt="WeChat Login QR Code"
                         fill
                         className={status === 'expired' ? 'opacity-20 grayscale' : 'mix-blend-multiply'}
+                        priority
                       />
                       {status === 'expired' && (
                         <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-white/60 backdrop-blur-[2px]">
@@ -292,9 +317,19 @@ function LoginForm(): React.ReactElement {
                 </div>
               )}
 
+              {isMobile && qrcodeUrl && status !== 'expired' && !errorMessage && (
+                <div className="mt-4 w-full">
+                  <div className="bg-violet-50/60 border border-violet-100 rounded-xl p-3 text-center">
+                    <p className="text-xs text-violet-700 font-medium">
+                      长按保存或截图二维码，打开微信扫一扫从相册识别
+                    </p>
+                  </div>
+                </div>
+              )}
+
               <div className="mt-4 flex flex-col items-center gap-1">
                 <p className="text-sm font-bold bg-gradient-to-r from-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
-                  {status === 'pending' && '请使用微信扫描上方二维码'}
+                  {status === 'pending' && (isMobile ? '使用其他设备或保存后扫码' : '请使用微信扫描上方二维码')}
                   {status === 'scanned' && '已扫码，请在手机上确认'}
                   {status === 'confirming' && '正在确认登录信息...'}
                   {status === 'expired' && '二维码已过期，请刷新'}

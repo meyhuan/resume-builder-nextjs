@@ -54,3 +54,8 @@ deploy.zip
 !/public/downloads/extension/zhijian-autofill-*.zip
 
 ai-*.log
+
+# Playwright
+/test-results/
+/playwright-report/
+/playwright/.cache/
