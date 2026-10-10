@@ -6,7 +6,7 @@ import { authApi } from '@/lib/api';
 import { useAuthStore } from '@/store/use-auth-store';
 import { logger } from '@/utils/logger';
 import { syncNextUserAction } from '@/app/actions';
-import { X, Loader2, RefreshCw, AlertCircle, Download } from 'lucide-react';
+import { X, Loader2, RefreshCw, AlertCircle } from 'lucide-react';
 import Image from 'next/image';
 import { setCookie } from 'cookies-next';
 import { LegalDialog } from '@/components/legal/LegalDialog';
@@ -49,13 +49,25 @@ export const WxLoginDialog: React.FC<WxLoginDialogProps> = ({ isOpen, onClose, o
   }, [isOpen]);
 
   useEffect(() => {
-    // Detect mobile device
+    // Detect mobile device using media query (width and pointer:coarse)
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768 || 'ontouchstart' in window);
+      const mobileWidthQuery = window.matchMedia('(max-width: 767px)');
+      const coarsePointerQuery = window.matchMedia('(pointer: coarse)');
+      setIsMobile(mobileWidthQuery.matches && coarsePointerQuery.matches);
     };
     checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    
+    const mobileWidthQuery = window.matchMedia('(max-width: 767px)');
+    const coarsePointerQuery = window.matchMedia('(pointer: coarse)');
+    
+    const handler = () => checkMobile();
+    mobileWidthQuery.addEventListener('change', handler);
+    coarsePointerQuery.addEventListener('change', handler);
+    
+    return () => {
+      mobileWidthQuery.removeEventListener('change', handler);
+      coarsePointerQuery.removeEventListener('change', handler);
+    };
   }, []);
 
   const openLegal = (tab: LegalTab): void => {
@@ -246,40 +258,17 @@ export const WxLoginDialog: React.FC<WxLoginDialogProps> = ({ isOpen, onClose, o
     onClose();
   };
 
-  const handleSaveQrImage = async () => {
-    if (!qrcodeUrl) return;
-    
-    try {
-      const response = await fetch(qrcodeUrl);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'wechat-login-qr.jpg';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
-      
-      track('qr_download', {
-        source: 'wx_login_dialog',
-        isMobile,
-      });
-    } catch (error) {
-      logger.error('WxLogin', 'Failed to download QR code', error);
-    }
-  };
 
   return (
     <>
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open && closeable) onClose(); }}>
       <DialogContent
-        className="sm:max-w-[420px] p-0 border-none overflow-hidden bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl ring-1 ring-white/50"
+        className="sm:max-w-[420px] max-h-[90dvh] overflow-y-auto p-0 border-none bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl ring-1 ring-white/50"
         onPointerDownOutside={closeable ? undefined : (e) => e.preventDefault()}
         onEscapeKeyDown={closeable ? undefined : (e) => e.preventDefault()}
         hideCloseButton={!closeable}
       >
-        <div className="relative p-8">
+        <div className="relative p-8 pb-6">
           {/* Background Glow */}
           <div className="absolute top-0 right-0 w-32 h-32 bg-violet-500/10 rounded-full blur-2xl pointer-events-none" />
           <div className="absolute bottom-0 left-0 w-32 h-32 bg-fuchsia-500/10 rounded-full blur-2xl pointer-events-none" />
@@ -313,9 +302,9 @@ export const WxLoginDialog: React.FC<WxLoginDialogProps> = ({ isOpen, onClose, o
               />
             </div>
           ) : (
-          <div className="bg-white/50 rounded-2xl p-6 border border-white/60 shadow-inner flex flex-col items-center relative z-10 backdrop-blur-sm">
+          <div className="bg-white/50 rounded-2xl p-4 sm:p-6 border border-white/60 shadow-inner flex flex-col items-center relative z-10 backdrop-blur-sm">
             {errorMessage ? (
-              <div className={`${isMobile ? 'w-72 h-72' : 'w-64 h-64'} bg-rose-50/50 rounded-xl border border-rose-100 p-6 flex flex-col items-center justify-center text-center gap-3`}>
+              <div className="w-64 h-64 bg-rose-50/50 rounded-xl border border-rose-100 p-6 flex flex-col items-center justify-center text-center gap-3">
                 <AlertCircle className="text-rose-500" size={40} />
                 <p className="text-sm text-rose-600 font-medium">{errorMessage}</p>
                 <button 
@@ -326,7 +315,7 @@ export const WxLoginDialog: React.FC<WxLoginDialogProps> = ({ isOpen, onClose, o
                 </button>
               </div>
             ) : (
-              <div className={`relative ${isMobile ? 'w-72 h-72' : 'w-64 h-64'} bg-white rounded-xl border border-slate-100 p-2 shadow-sm flex items-center justify-center group`}>
+              <div className={`relative w-64 h-64 ${isMobile ? 'max-w-[min(72vw,16rem)]' : ''} bg-white rounded-xl border border-slate-100 p-2 shadow-sm flex items-center justify-center group`}>
                 {/* Border Gradient Animation */}
                 <div className="absolute -inset-[1px] bg-gradient-to-br from-violet-500 to-fuchsia-500 rounded-xl opacity-0 group-hover:opacity-20 transition-opacity duration-500" />
                 
@@ -363,16 +352,9 @@ export const WxLoginDialog: React.FC<WxLoginDialogProps> = ({ isOpen, onClose, o
             {isMobile && qrcodeUrl && status !== 'expired' && !errorMessage && (
               <div className="mt-4 w-full">
                 <div className="bg-violet-50/60 border border-violet-100 rounded-xl p-3 text-center">
-                  <p className="text-xs text-violet-700 font-medium mb-2">
+                  <p className="text-xs text-violet-700 font-medium">
                     长按保存或截图二维码，打开微信扫一扫从相册识别
                   </p>
-                  <button
-                    onClick={handleSaveQrImage}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-violet-600 text-white text-xs font-semibold rounded-lg hover:bg-violet-700 transition-colors shadow-sm"
-                  >
-                    <Download size={14} />
-                    保存二维码
-                  </button>
                 </div>
               </div>
             )}

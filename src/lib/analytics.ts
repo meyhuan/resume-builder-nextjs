@@ -6,7 +6,6 @@ export type AnalyticsEventName =
   | 'page_view'
   | 'login_success'
   | 'login_prompt_view'
-  | 'qr_download'
   | 'landing_cta_click'
   | 'dashboard_view'
   | 'sidebar_nav_click'

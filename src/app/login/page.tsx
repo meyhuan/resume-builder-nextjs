@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { getCookie, setCookie } from 'cookies-next';
-import { ArrowLeft, Loader2, RefreshCw, AlertCircle, Download } from 'lucide-react';
+import { ArrowLeft, Loader2, RefreshCw, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { authApi } from '@/lib/api';
@@ -50,14 +50,26 @@ function LoginForm(): React.ReactElement {
     setLegalOpen(true);
   };
 
-  // Detect mobile device
+  // Detect mobile device using media query (width and pointer:coarse)
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768 || 'ontouchstart' in window);
+      const mobileWidthQuery = window.matchMedia('(max-width: 767px)');
+      const coarsePointerQuery = window.matchMedia('(pointer: coarse)');
+      setIsMobile(mobileWidthQuery.matches && coarsePointerQuery.matches);
     };
     checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    
+    const mobileWidthQuery = window.matchMedia('(max-width: 767px)');
+    const coarsePointerQuery = window.matchMedia('(pointer: coarse)');
+    
+    const handler = () => checkMobile();
+    mobileWidthQuery.addEventListener('change', handler);
+    coarsePointerQuery.addEventListener('change', handler);
+    
+    return () => {
+      mobileWidthQuery.removeEventListener('change', handler);
+      coarsePointerQuery.removeEventListener('change', handler);
+    };
   }, []);
 
   // If already logged in, redirect immediately
@@ -206,29 +218,6 @@ function LoginForm(): React.ReactElement {
     router.push(redirectPath);
   };
 
-  const handleSaveQrImage = async (): Promise<void> => {
-    if (!qrcodeUrl) return;
-    
-    try {
-      const response = await fetch(qrcodeUrl);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'wechat-login-qr.jpg';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
-      
-      track('qr_download', {
-        source: 'login_page',
-        isMobile,
-      });
-    } catch (error) {
-      logger.error('LoginPage', 'Failed to download QR code', error);
-    }
-  };
 
   return (
     <div className="min-h-screen relative flex items-center justify-center p-4 overflow-hidden bg-slate-50">
@@ -285,7 +274,7 @@ function LoginForm(): React.ReactElement {
           <div className="px-8 pb-6">
             <div className="bg-white/50 rounded-2xl p-6 border border-white/60 shadow-inner flex flex-col items-center backdrop-blur-sm">
               {errorMessage ? (
-                <div className={`${isMobile ? 'w-72 h-72' : 'w-56 h-56'} bg-rose-50/50 rounded-xl border border-rose-100 p-6 flex flex-col items-center justify-center text-center gap-3`}>
+                <div className="w-56 h-56 bg-rose-50/50 rounded-xl border border-rose-100 p-6 flex flex-col items-center justify-center text-center gap-3">
                   <AlertCircle className="text-rose-500" size={40} />
                   <p className="text-sm text-rose-600 font-medium">{errorMessage}</p>
                   <button
@@ -296,7 +285,7 @@ function LoginForm(): React.ReactElement {
                   </button>
                 </div>
               ) : (
-                <div className={`relative ${isMobile ? 'w-72 h-72' : 'w-56 h-56'} bg-white rounded-xl border border-slate-100 p-2 shadow-sm flex items-center justify-center group`}>
+                <div className={`relative w-56 h-56 ${isMobile ? 'max-w-[min(72vw,14rem)]' : ''} bg-white rounded-xl border border-slate-100 p-2 shadow-sm flex items-center justify-center group`}>
                   <div className="absolute -inset-[1px] bg-gradient-to-br from-violet-500 to-fuchsia-500 rounded-xl opacity-0 group-hover:opacity-20 transition-opacity duration-500" />
                   {loading ? (
                     <div className="flex flex-col items-center gap-3">
@@ -331,16 +320,9 @@ function LoginForm(): React.ReactElement {
               {isMobile && qrcodeUrl && status !== 'expired' && !errorMessage && (
                 <div className="mt-4 w-full">
                   <div className="bg-violet-50/60 border border-violet-100 rounded-xl p-3 text-center">
-                    <p className="text-xs text-violet-700 font-medium mb-2">
+                    <p className="text-xs text-violet-700 font-medium">
                       长按保存或截图二维码，打开微信扫一扫从相册识别
                     </p>
-                    <button
-                      onClick={handleSaveQrImage}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-violet-600 text-white text-xs font-semibold rounded-lg hover:bg-violet-700 transition-colors shadow-sm"
-                    >
-                      <Download size={14} />
-                      保存二维码
-                    </button>
                   </div>
                 </div>
               )}
