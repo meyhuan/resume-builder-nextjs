@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { getCookie, setCookie } from 'cookies-next';
-import { ArrowLeft, Loader2, RefreshCw, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Loader2, RefreshCw, AlertCircle, Download } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { authApi } from '@/lib/api';
@@ -38,6 +38,7 @@ function LoginForm(): React.ReactElement {
   const [qrcodeUrl, setQrcodeUrl] = useState<string>('');
   const [expireIn, setExpireIn] = useState<number>(0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isMobile, setIsMobile] = useState<boolean>(false);
   const sceneStrRef = useRef<string>('');
   const pollTimerRef = useRef<NodeJS.Timeout | null>(null);
   const expireTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -48,6 +49,16 @@ function LoginForm(): React.ReactElement {
     setLegalTab(tab);
     setLegalOpen(true);
   };
+
+  // Detect mobile device
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768 || 'ontouchstart' in window);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // If already logged in, redirect immediately
   useEffect(() => {
@@ -195,6 +206,30 @@ function LoginForm(): React.ReactElement {
     router.push(redirectPath);
   };
 
+  const handleSaveQrImage = async (): Promise<void> => {
+    if (!qrcodeUrl) return;
+    
+    try {
+      const response = await fetch(qrcodeUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'wechat-login-qr.jpg';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      
+      track('qr_download', {
+        source: 'login_page',
+        isMobile,
+      });
+    } catch (error) {
+      logger.error('LoginPage', 'Failed to download QR code', error);
+    }
+  };
+
   return (
     <div className="min-h-screen relative flex items-center justify-center p-4 overflow-hidden bg-slate-50">
       {/* Background Ambience */}
@@ -250,7 +285,7 @@ function LoginForm(): React.ReactElement {
           <div className="px-8 pb-6">
             <div className="bg-white/50 rounded-2xl p-6 border border-white/60 shadow-inner flex flex-col items-center backdrop-blur-sm">
               {errorMessage ? (
-                <div className="w-56 h-56 bg-rose-50/50 rounded-xl border border-rose-100 p-6 flex flex-col items-center justify-center text-center gap-3">
+                <div className={`${isMobile ? 'w-72 h-72' : 'w-56 h-56'} bg-rose-50/50 rounded-xl border border-rose-100 p-6 flex flex-col items-center justify-center text-center gap-3`}>
                   <AlertCircle className="text-rose-500" size={40} />
                   <p className="text-sm text-rose-600 font-medium">{errorMessage}</p>
                   <button
@@ -261,7 +296,7 @@ function LoginForm(): React.ReactElement {
                   </button>
                 </div>
               ) : (
-                <div className="relative w-56 h-56 bg-white rounded-xl border border-slate-100 p-2 shadow-sm flex items-center justify-center group">
+                <div className={`relative ${isMobile ? 'w-72 h-72' : 'w-56 h-56'} bg-white rounded-xl border border-slate-100 p-2 shadow-sm flex items-center justify-center group`}>
                   <div className="absolute -inset-[1px] bg-gradient-to-br from-violet-500 to-fuchsia-500 rounded-xl opacity-0 group-hover:opacity-20 transition-opacity duration-500" />
                   {loading ? (
                     <div className="flex flex-col items-center gap-3">
@@ -275,6 +310,7 @@ function LoginForm(): React.ReactElement {
                         alt="WeChat Login QR Code"
                         fill
                         className={status === 'expired' ? 'opacity-20 grayscale' : 'mix-blend-multiply'}
+                        priority
                       />
                       {status === 'expired' && (
                         <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-white/60 backdrop-blur-[2px]">
@@ -292,9 +328,26 @@ function LoginForm(): React.ReactElement {
                 </div>
               )}
 
+              {isMobile && qrcodeUrl && status !== 'expired' && !errorMessage && (
+                <div className="mt-4 w-full">
+                  <div className="bg-violet-50/60 border border-violet-100 rounded-xl p-3 text-center">
+                    <p className="text-xs text-violet-700 font-medium mb-2">
+                      长按保存或截图二维码，打开微信扫一扫从相册识别
+                    </p>
+                    <button
+                      onClick={handleSaveQrImage}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-violet-600 text-white text-xs font-semibold rounded-lg hover:bg-violet-700 transition-colors shadow-sm"
+                    >
+                      <Download size={14} />
+                      保存二维码
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <div className="mt-4 flex flex-col items-center gap-1">
                 <p className="text-sm font-bold bg-gradient-to-r from-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
-                  {status === 'pending' && '请使用微信扫描上方二维码'}
+                  {status === 'pending' && (isMobile ? '使用其他设备或保存后扫码' : '请使用微信扫描上方二维码')}
                   {status === 'scanned' && '已扫码，请在手机上确认'}
                   {status === 'confirming' && '正在确认登录信息...'}
                   {status === 'expired' && '二维码已过期，请刷新'}
