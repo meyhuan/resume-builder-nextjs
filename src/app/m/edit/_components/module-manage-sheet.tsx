@@ -3,7 +3,7 @@
 import { getSectionDisplayTitle } from '@/entities/resume/section-display-title'
 import { SectionNameEditor } from '@/components/sections/section-name-editor'
 import { useSectionDisplayTitle } from '@/features/edit/draft/use-section-display-title'
-import { useCallback, useMemo, useRef, useState, type ReactElement, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactElement, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   closestCenter,
@@ -14,7 +14,7 @@ import {
   useSensor,
   useSensors,
   type DragEndEvent,
-  AutoScrollActivator,
+  type DragMoveEvent,
 } from '@dnd-kit/core'
 import {
   SortableContext,
@@ -70,8 +70,13 @@ export function ModuleManageSheet({ open, onClose }: ModuleManageSheetProps): Re
   const portfolioImageCount: number = draft?.portfolio?.images.length ?? 0
 
   const [pendingRemove, setPendingRemove] = useState<Section | null>(null)
-  const dragStartTimeRef = useRef<number>(0)
+  
+  // Custom auto-scroll refs
   const scrollContainerRef = useRef<HTMLDivElement | null>(null)
+  const scrollBoundsRef = useRef<{ min: number; max: number }>({ min: 0, max: 0 })
+  const edgeDwellStartRef = useRef<number>(0)
+  const lastPointerYRef = useRef<number>(0)
+  const scrollAnimationRef = useRef<number>(0)
 
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
@@ -79,17 +84,111 @@ export function ModuleManageSheet({ open, onClose }: ModuleManageSheetProps): Re
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   )
 
+  // Custom auto-scroll implementation - cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (scrollAnimationRef.current) {
+        cancelAnimationFrame(scrollAnimationRef.current)
+      }
+    }
+  }, [])
+
   const handleDragStart = useCallback((): void => {
-    dragStartTimeRef.current = Date.now()
     if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
       navigator.vibrate(10)
+    }
+    
+    // Capture scroll bounds at drag start
+    const container = scrollContainerRef.current
+    if (container) {
+      scrollBoundsRef.current = {
+        min: 0,
+        max: Math.max(0, container.scrollHeight - container.clientHeight),
+      }
+    }
+  }, [])
+
+  const handleDragMove = useCallback((event: DragMoveEvent): void => {
+    const container = scrollContainerRef.current
+    if (!container) return
+
+    const pointerY = event.activatorEvent instanceof TouchEvent 
+      ? event.activatorEvent.touches[0]?.clientY 
+      : (event.activatorEvent as PointerEvent | MouseEvent)?.clientY
+
+    if (pointerY === undefined) return
+    
+    lastPointerYRef.current = pointerY
+    const rect = container.getBoundingClientRect()
+    const relativeY = pointerY - rect.top
+    const EDGE_ZONE = 40
+
+    const inEdgeZone = relativeY < EDGE_ZONE || relativeY > rect.height - EDGE_ZONE
+
+    if (inEdgeZone) {
+      if (edgeDwellStartRef.current === 0) {
+        edgeDwellStartRef.current = Date.now()
+      }
+      if (!scrollAnimationRef.current) {
+        scrollAnimationRef.current = requestAnimationFrame(function performScroll() {
+          const container = scrollContainerRef.current
+          if (!container || edgeDwellStartRef.current === 0) {
+            scrollAnimationRef.current = 0
+            return
+          }
+
+          const dwellTime = Date.now() - edgeDwellStartRef.current
+          if (dwellTime < 280) {
+            scrollAnimationRef.current = requestAnimationFrame(performScroll)
+            return
+          }
+
+          const rect = container.getBoundingClientRect()
+          const pointerY = lastPointerYRef.current
+          const relativeY = pointerY - rect.top
+          const EDGE_ZONE = 40
+
+          let scrollSpeed = 0
+          if (relativeY < EDGE_ZONE) {
+            const depth = Math.min(1, (EDGE_ZONE - relativeY) / EDGE_ZONE)
+            scrollSpeed = -depth * 300
+          } else if (relativeY > rect.height - EDGE_ZONE) {
+            const depth = Math.min(1, (relativeY - (rect.height - EDGE_ZONE)) / EDGE_ZONE)
+            scrollSpeed = depth * 300
+          }
+
+          if (scrollSpeed !== 0) {
+            const delta = scrollSpeed / 60
+            const newScrollTop = Math.max(
+              scrollBoundsRef.current.min,
+              Math.min(scrollBoundsRef.current.max, container.scrollTop + delta)
+            )
+            container.scrollTop = newScrollTop
+          }
+
+          scrollAnimationRef.current = requestAnimationFrame(performScroll)
+        })
+      }
+    } else {
+      edgeDwellStartRef.current = 0
+      if (scrollAnimationRef.current) {
+        cancelAnimationFrame(scrollAnimationRef.current)
+        scrollAnimationRef.current = 0
+      }
     }
   }, [])
 
   const handleDragEnd = useCallback(
     (event: DragEndEvent): void => {
       const { active, over } = event
-      dragStartTimeRef.current = 0
+      
+      // Stop auto-scroll
+      edgeDwellStartRef.current = 0
+      if (scrollAnimationRef.current) {
+        cancelAnimationFrame(scrollAnimationRef.current)
+        scrollAnimationRef.current = 0
+      }
+
       if (!over || active.id === over.id) return
       const fromIdx = sections.findIndex((s) => s.id === active.id)
       const toIdx = sections.findIndex((s) => s.id === over.id)
@@ -214,30 +313,17 @@ export function ModuleManageSheet({ open, onClose }: ModuleManageSheetProps): Re
             sensors={sensors} 
             collisionDetection={closestCenter}
             onDragStart={handleDragStart}
+            onDragMove={handleDragMove}
             onDragEnd={handleDragEnd}
-            autoScroll={{
-              threshold: { x: 0.15, y: 0.15 },
-              acceleration: 4,
-              activator: AutoScrollActivator.Pointer,
-              interval: 5,
-              canScroll(element) {
-                // Only start scrolling after holding in edge zone for 200ms
-                const elapsed = Date.now() - dragStartTimeRef.current
-                if (elapsed < 200) return false
-                // Clamp scroll to prevent scrolling beyond content
-                if (element === scrollContainerRef.current && element) {
-                  const { scrollTop, scrollHeight, clientHeight } = element
-                  if (scrollTop >= scrollHeight - clientHeight) return false
-                }
-                return true
-              },
-            }}
+            autoScroll={false}
           >
             <SortableContext items={items} strategy={verticalListSortingStrategy}>
               <div 
                 className="flex flex-col gap-2"
                 ref={(el) => {
-                  if (el) scrollContainerRef.current = el.parentElement as HTMLDivElement
+                  if (el?.parentElement) {
+                    scrollContainerRef.current = el.parentElement as HTMLDivElement
+                  }
                 }}
               >
                 {sections.map((section) => (
