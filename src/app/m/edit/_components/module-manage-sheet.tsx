@@ -3,7 +3,7 @@
 import { getSectionDisplayTitle } from '@/entities/resume/section-display-title'
 import { SectionNameEditor } from '@/components/sections/section-name-editor'
 import { useSectionDisplayTitle } from '@/features/edit/draft/use-section-display-title'
-import { useCallback, useMemo, useState, type ReactElement, type ReactNode } from 'react'
+import { useCallback, useMemo, useRef, useState, type ReactElement, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   closestCenter,
@@ -14,6 +14,7 @@ import {
   useSensor,
   useSensors,
   type DragEndEvent,
+  AutoScrollActivator,
 } from '@dnd-kit/core'
 import {
   SortableContext,
@@ -69,6 +70,8 @@ export function ModuleManageSheet({ open, onClose }: ModuleManageSheetProps): Re
   const portfolioImageCount: number = draft?.portfolio?.images.length ?? 0
 
   const [pendingRemove, setPendingRemove] = useState<Section | null>(null)
+  const dragStartTimeRef = useRef<number>(0)
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null)
 
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
@@ -76,9 +79,17 @@ export function ModuleManageSheet({ open, onClose }: ModuleManageSheetProps): Re
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   )
 
+  const handleDragStart = useCallback((): void => {
+    dragStartTimeRef.current = Date.now()
+    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+      navigator.vibrate(10)
+    }
+  }, [])
+
   const handleDragEnd = useCallback(
     (event: DragEndEvent): void => {
       const { active, over } = event
+      dragStartTimeRef.current = 0
       if (!over || active.id === over.id) return
       const fromIdx = sections.findIndex((s) => s.id === active.id)
       const toIdx = sections.findIndex((s) => s.id === over.id)
@@ -201,15 +212,34 @@ export function ModuleManageSheet({ open, onClose }: ModuleManageSheetProps): Re
         ) : (
           <DndContext 
             sensors={sensors} 
-            collisionDetection={closestCenter} 
+            collisionDetection={closestCenter}
+            onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
             autoScroll={{
-              threshold: { x: 0.05, y: 0.05 },
-              acceleration: 3,
+              threshold: { x: 0.15, y: 0.15 },
+              acceleration: 4,
+              activator: AutoScrollActivator.Pointer,
+              interval: 5,
+              canScroll(element) {
+                // Only start scrolling after holding in edge zone for 200ms
+                const elapsed = Date.now() - dragStartTimeRef.current
+                if (elapsed < 200) return false
+                // Clamp scroll to prevent scrolling beyond content
+                if (element === scrollContainerRef.current && element) {
+                  const { scrollTop, scrollHeight, clientHeight } = element
+                  if (scrollTop >= scrollHeight - clientHeight) return false
+                }
+                return true
+              },
             }}
           >
             <SortableContext items={items} strategy={verticalListSortingStrategy}>
-              <div className="flex flex-col gap-2">
+              <div 
+                className="flex flex-col gap-2"
+                ref={(el) => {
+                  if (el) scrollContainerRef.current = el.parentElement as HTMLDivElement
+                }}
+              >
                 {sections.map((section) => (
                   <SortableManageRow
                     key={section.id}
@@ -388,12 +418,6 @@ function SortableManageRow({ section, onRequestRemove }: ManageRowProps): ReactE
         type="button"
         aria-label={`拖动排序${label}`}
         className="flex h-11 w-11 shrink-0 touch-none cursor-grab items-center justify-center text-slate-300 active:cursor-grabbing"
-        onTouchStart={(e): void => {
-          listeners?.onTouchStart?.(e)
-          if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-            navigator.vibrate(10)
-          }
-        }}
       >
         <GripVertical size={17} />
       </button>
