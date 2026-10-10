@@ -76,6 +76,14 @@ export default async function PrintPage(props: PrintPageProps): Promise<ReactEle
         .resume-document-main[data-one-page="true"] {
           page-break-after: avoid !important;
           break-after: avoid !important;
+        }
+        [data-one-page-print-frame="true"] {
+          width: 210mm;
+          max-width: 210mm;
+          margin: 0 auto;
+          overflow: hidden;
+          break-inside: avoid !important;
+          page-break-after: avoid !important;
         }`
     : ''
   const bleedPageCss = isBleedTemplate && !isOnePage
@@ -106,7 +114,7 @@ export default async function PrintPage(props: PrintPageProps): Promise<ReactEle
         ${bleedPageCss}
       `}</style>
       <div className="page" id="print-root">
-        <PrintRenderer resume={resumeData} templateId={templateId} savedTheme={savedTheme} onePage={isOnePage} />
+        <PrintRenderer resume={resumeData} templateId={templateId} savedTheme={savedTheme} onePage={isOnePage} onePageStrategy={meta.onePageStrategy ?? 'one-page'} />
       </div>
     </div>
   )

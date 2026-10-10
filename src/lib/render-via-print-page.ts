@@ -171,7 +171,10 @@ export async function renderViaPrintPage(opts: RenderViaPrintPageOpts): Promise<
     page = await newSharedPuppeteerPage()
     page.setDefaultNavigationTimeout(PRINT_PAGE_NAVIGATION_TIMEOUT_MS)
     page.setDefaultTimeout(PRINT_PAGE_NAVIGATION_TIMEOUT_MS)
-    await page.setViewport({ width: 794, height: 1123, deviceScaleFactor: 2 })
+    // Use the desktop breakpoint for responsive templates while the print
+    // stage keeps the actual A4 width. This matches the editor's page layout.
+    await page.setViewport({ width: 1280, height: 1123, deviceScaleFactor: 2 })
+    await page.emulateMediaType('print')
     await page.goto(printUrl, { waitUntil: ['domcontentloaded', 'load'], timeout: PRINT_PAGE_NAVIGATION_TIMEOUT_MS })
     await waitForDocumentAssets(page)
 

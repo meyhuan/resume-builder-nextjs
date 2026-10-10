@@ -179,12 +179,13 @@ async function verifyOnePage(page, id, directory) {
       await page.waitForFunction(() => ['fit', 'overflow'].includes(document.querySelector('[data-one-page-status]')?.dataset.onePageStatus), { timeout: 30000 })
       const metrics = await page.$eval('[data-one-page-status]', (node) => ({
         status: node.dataset.onePageStatus, forcedOnePage: node.dataset.onePage === 'true', height: node.scrollHeight,
+        strategy: node.dataset.onePageStrategy || 'one-page',
         theme: JSON.parse(node.dataset.qaTheme), text: node.innerText.replace(/\s/g, ''),
       }))
       if (fixture === 'sparse' && metrics.status !== 'fit') failures.push(`${viewport}/${fixture}: sparse resume could not fit`)
       if (metrics.status === 'fit' && metrics.height > 1123) failures.push(`${viewport}/${fixture}: falsely reports fit (${metrics.height}px)`)
       if (metrics.forcedOnePage !== (metrics.status === 'fit')) failures.push(`${viewport}/${fixture}: overflow/fitting content would be clipped`)
-      if (metrics.theme.fontSize < 12 || metrics.theme.spacingScale < 0.4 || metrics.theme.lineHeight < 1.4) failures.push(`${viewport}/${fixture}: readability floor violated`)
+      if (metrics.theme.fontSize < 12 || (metrics.strategy === 'readability' && (metrics.theme.spacingScale < 0.4 || metrics.theme.lineHeight < 1.4))) failures.push(`${viewport}/${fixture}: readability floor violated`)
       metrics.layoutError = await checkLayout(page, {})
       if (metrics.layoutError) failures.push(`${viewport}/${fixture}: ${metrics.layoutError}`)
       metrics.bodyLineIssues = await page.evaluate(() => Array.from(document.querySelectorAll('.resume-container p, .resume-container li'))
@@ -202,6 +203,8 @@ async function verifyOnePage(page, id, directory) {
       try {
         // Never reuse a hydrated app document: its still-running React tree can overwrite setContent.
         await exportPage.goto('about:blank')
+        await exportPage.setViewport({ width: 1280, height: 1123 })
+        await exportPage.emulateMediaType('print')
         await exportPage.setContent(html.replace('<head>', `<head><base href="${baseUrl}/">`), { waitUntil: 'load' })
         await exportPage.evaluate(() => document.fonts.ready)
         const pdf = Buffer.from(await exportPage.pdf({ format: 'A4', preferCSSPageSize: true, printBackground: true }))

@@ -8,12 +8,15 @@ import { getResumeFontFamily, normalizeResumeFontTheme } from '@/entities/theme/
 import { TEMPLATE_REGISTRY } from '@/templates/template-loader'
 import { useAppStore } from '@/state/store'
 import { PortfolioAppendix } from '@/components/portfolio/portfolio-appendix'
+import { compactOnePageLayout, fitOnePagePrintFrame } from '@/lib/one-page-layout'
+import type { OnePageStrategy } from '@/entities/editor/editor-meta'
 
 interface PrintRendererProps {
   readonly resume: ResumeData
   readonly templateId: string
   readonly savedTheme?: ThemeTokens
   readonly onePage?: boolean
+  readonly onePageStrategy?: OnePageStrategy
 }
 
 const DEFAULT_THEME: ThemeTokens = {
@@ -40,7 +43,7 @@ function resolveTheme(templateId: string): ThemeTokens {
  * Client-side renderer for the print page.
  * Sets data-print-ready="1" after fonts load so puppeteer can capture.
  */
-export default function PrintRenderer({ resume, templateId, savedTheme, onePage = false }: PrintRendererProps): ReactElement {
+export default function PrintRenderer({ resume, templateId, savedTheme, onePage = false, onePageStrategy = 'one-page' }: PrintRendererProps): ReactElement {
   const config = TEMPLATE_REGISTRY[templateId] || TEMPLATE_REGISTRY['simple']
   const defaultTheme: ThemeTokens = useMemo(() => resolveTheme(config?.id ?? 'simple'), [config])
   const renderableResume = useMemo(() => getRenderableResume(resume), [resume])
@@ -76,11 +79,21 @@ export default function PrintRenderer({ resume, templateId, savedTheme, onePage 
       (document as unknown as { fonts?: { ready?: Promise<unknown> } }).fonts?.ready ?? Promise.resolve()
     void fontsPromise.finally((): void => {
       requestAnimationFrame((): void => {
-        requestAnimationFrame(markReady)
+        requestAnimationFrame(() => {
+          if (onePage) {
+            const root = document.querySelector<HTMLElement>('[data-print-template] .resume-document-main')
+            const frame = document.querySelector<HTMLElement>('[data-one-page-print-frame]')
+            if (root) {
+              compactOnePageLayout(root, onePageStrategy)
+              if (frame) fitOnePagePrintFrame(frame, root)
+            }
+          }
+          markReady()
+        })
       })
     })
     return () => { cancelled = true }
-  }, [])
+  }, [onePage, onePageStrategy])
 
   if (!config) {
     console.error('[print-renderer] no template config', { templateId })
@@ -103,8 +116,10 @@ export default function PrintRenderer({ resume, templateId, savedTheme, onePage 
         }
       `}</style>
       <Suspense fallback={<div data-print-loading="1" />}>
-        <div className="resume-document-main" data-one-page={onePage ? 'true' : 'false'}>
-          <TemplateComponent resume={renderableResume} theme={theme} />
+        <div data-one-page-print-frame={onePage ? 'true' : undefined}>
+          <div className="resume-document-main" data-one-page={onePage ? 'true' : 'false'} data-one-page-mode={onePage ? 'true' : 'false'} data-one-page-strategy={onePageStrategy} data-one-page-status={onePage ? 'fit' : 'idle'}>
+            <TemplateComponent resume={renderableResume} theme={theme} />
+          </div>
         </div>
         <PortfolioAppendix portfolio={renderableResume.portfolio} />
       </Suspense>

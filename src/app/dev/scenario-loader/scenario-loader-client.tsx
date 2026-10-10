@@ -154,7 +154,7 @@ export default function ScenarioLoaderClient(): ReactElement {
           <ResumePageFeedback pages={pages} contentRef={previewRef} guides={pageGuides} onGuidesChange={setPageGuides} onePage={onePage} pdfPageCount={pdfPageCount} />
           <section className="min-h-0 flex-1 overflow-auto bg-slate-200 p-6" data-editor-canvas="true">
             <div ref={previewRef} className="relative mx-auto w-[794px] bg-white shadow-sm" data-scenario-preview="true">
-              <div ref={resumeBodyRef} className="resume-document-main" data-one-page={onePage && onePageStatus === 'fit' ? 'true' : 'false'} data-one-page-status={onePageStatus} data-qa-theme={JSON.stringify(theme)}>
+              <div ref={resumeBodyRef} className="resume-document-main" data-one-page={onePage && onePageStatus === 'fit' ? 'true' : 'false'} data-one-page-mode={onePage ? 'true' : 'false'} data-one-page-strategy="one-page" data-one-page-status={onePageStatus} data-qa-theme={JSON.stringify(theme)}>
               <Suspense fallback={<div className="p-6">Loading template...</div>}>
                 {Template ? <Template resume={renderableResume} theme={theme} /> : null}
                 <PortfolioAppendix portfolio={resume.portfolio} />

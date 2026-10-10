@@ -159,6 +159,10 @@ export async function POST(req: Request) {
       const pdfPage = page;
       page.setDefaultNavigationTimeout(PDF_RENDER_TIMEOUT_MS);
       page.setDefaultTimeout(PDF_RENDER_TIMEOUT_MS);
+      // Keep responsive template breakpoints in their desktop/A4 layout while
+      // still letting the CSS page size control the physical PDF dimensions.
+      await page.setViewport({ width: 1280, height: 1123, deviceScaleFactor: 1 });
+      await page.emulateMediaType('print');
       // setContent() has an opaque origin, so OSS fonts need a CORS-safe response.
       await installResumeFontProxy(page);
       

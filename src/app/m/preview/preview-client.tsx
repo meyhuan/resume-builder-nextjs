@@ -748,7 +748,7 @@ export default function MobilePreviewClient(): ReactElement {
                 }}
               >
                 <Suspense fallback={<TemplateFallback />}>
-                  <div ref={resumeBodyRef} className="resume-document-main" data-one-page={onePageFit && onePageStatus === 'fit' ? 'true' : 'false'}>
+                  <div ref={resumeBodyRef} className="resume-document-main" data-one-page={onePageFit && onePageStatus === 'fit' ? 'true' : 'false'} data-one-page-mode={onePageFit ? 'true' : 'false'} data-one-page-strategy="one-page" data-one-page-status={onePageStatus}>
                     {Template ? <Template resume={renderableResume} theme={theme} /> : null}
                   </div>
                   <PortfolioAppendix portfolio={renderableResume.portfolio} />

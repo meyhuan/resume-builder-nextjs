@@ -90,7 +90,9 @@ export default function ThemePanel(props: {
   }
 
   const onePageStrategy: OnePageStrategy = props.onePageStrategy ?? 'one-page'
-  const lineHeightMinimum = props.onePage && onePageStrategy === 'readability' ? 1.4 : 1
+  const lineHeightMinimum = props.onePage
+    ? onePageStrategy === 'readability' ? 1.4 : onePageStrategy === 'one-page' ? 1.2 : 1
+    : 1
   const spacingMinimum = props.onePage && onePageStrategy === 'readability' ? 0.4 : 0
 
   const [primaryPopoverOpen, setPrimaryPopoverOpen] = useState(false)

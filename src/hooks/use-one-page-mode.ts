@@ -20,6 +20,7 @@ import type { RefObject } from 'react'
 import { toast } from 'sonner'
 import type { ThemeTokens } from '@/entities/theme/theme-tokens'
 import { DEFAULT_ONE_PAGE_STRATEGY, type AdjustableTokens, type OnePageStrategy } from '@/entities/editor/editor-meta'
+import { compactOnePageLayout, measureOnePageContentHeight } from '@/lib/one-page-layout'
 
 export type OnePageStatus = 'idle' | 'fitting' | 'fit' | 'overflow'
 
@@ -49,12 +50,20 @@ export interface UseOnePageModeReturn {
 /** Minimum values the auto-fit algorithm will reduce to. */
 const ONE_PAGE_LIMITS = {
   readability: ONE_PAGE_READABILITY,
-  'one-page': { lineHeight: 1, fontSize: 12, spacingScale: 0 },
+  // Keep body copy at a minimum 1.2× line box even in the compact strategy;
+  // reclaim template whitespace before making text itself unreadably tight.
+  'one-page': { lineHeight: 1.2, fontSize: 12, spacingScale: 0 },
   manual: { lineHeight: 1, fontSize: 12, spacingScale: 0 },
 } as const
 const STEP_SPACING = 0.1
 const STEP_LINE_HEIGHT = 0.1
 const STEP_FONT_SIZE = 1
+const STEP_PAGE_PADDING = 2
+// The dedicated one-page strategy is allowed to reclaim the paper-edge
+// whitespace as well. Four millimetres still keeps content away from the
+// printable edge while leaving enough room for dense resumes that otherwise
+// spill onto a nearly-empty second PDF page.
+const PAGE_PADDING_FLOOR = { readability: 12, 'one-page': 4, manual: 0 } as const
 const DEBOUNCE_MS = 200
 
 /**
@@ -101,6 +110,7 @@ export function useOnePageMode(opts: UseOnePageModeOptions): UseOnePageModeRetur
         lineHeight: theme.lineHeight,
         spacingScale: theme.spacingScale,
         fontSize: theme.fontSize,
+        pagePaddingVertical: theme.pagePaddingVertical,
       })
     }
     if (enabled) {
@@ -118,6 +128,9 @@ export function useOnePageMode(opts: UseOnePageModeOptions): UseOnePageModeRetur
       lineHeight: snapshot.lineHeight,
       spacingScale: snapshot.spacingScale,
       fontSize: snapshot.fontSize,
+      ...(typeof snapshot.pagePaddingVertical === 'number'
+        ? { pagePaddingVertical: snapshot.pagePaddingVertical }
+        : {}),
     })
     setSnapshot(null)
     setStatus('idle')
@@ -141,6 +154,35 @@ export function useOnePageMode(opts: UseOnePageModeOptions): UseOnePageModeRetur
     setStatus('idle')
   }, [snapshot, restoreSnapshot])
 
+  // Templates contain many vertical values that are intentionally local to a
+  // component (card padding, heading margins, grid row gaps, and small
+  // minimum heights). Apply one-page compaction to those values as a
+  // reversible stylesheet so they are included in both measurement and
+  // export, while leaving manual mode entirely untouched.
+  useEffect(() => {
+    const el = contentRef.current
+    if (!el || !enabled || strategy === 'manual') return
+
+    let cleanup = compactOnePageLayout(el, strategy)
+    let queued = false
+    const recompact = () => {
+      if (queued) return
+      queued = true
+      queueMicrotask(() => {
+        queued = false
+        cleanup()
+        cleanup = compactOnePageLayout(el, strategy)
+      })
+    }
+    const mutationObserver = new MutationObserver(recompact)
+    mutationObserver.observe(el, { subtree: true, childList: true, characterData: true })
+
+    return () => {
+      mutationObserver.disconnect()
+      cleanup()
+    }
+  }, [contentRef, enabled, strategy, theme.fontSize, theme.lineHeight, theme.spacingScale, theme.pagePaddingVertical])
+
   // ── Auto-fit algorithm ────────────────────────────────────────────────
   const runFit = useCallback(() => {
     const el = contentRef.current
@@ -152,7 +194,7 @@ export function useOnePageMode(opts: UseOnePageModeOptions): UseOnePageModeRetur
 
     // Manual mode reports the actual fit without changing the user's values.
     if (strategy === 'manual') {
-      setStatus(el.scrollHeight <= targetHeightRef.current ? 'fit' : 'overflow')
+      setStatus(measureOnePageContentHeight(el) <= targetHeightRef.current ? 'fit' : 'overflow')
       fittingRef.current = false
       return
     }
@@ -160,19 +202,20 @@ export function useOnePageMode(opts: UseOnePageModeOptions): UseOnePageModeRetur
     // Readability mode may raise an existing theme to its recommended floor.
     // One-page-first mode intentionally preserves legacy compact values so
     // enabling the feature cannot silently reflow an existing resume.
-    if (strategy === 'readability' && (theme.lineHeight < limits.lineHeight || theme.fontSize < limits.fontSize || theme.spacingScale < limits.spacingScale)) {
+    if (strategy === 'readability' && (theme.lineHeight < limits.lineHeight || theme.fontSize < limits.fontSize || theme.spacingScale < limits.spacingScale || theme.pagePaddingVertical < PAGE_PADDING_FLOOR.readability)) {
       setStatus('fitting')
       patchTheme({
         lineHeight: Math.max(limits.lineHeight, theme.lineHeight),
         fontSize: Math.max(limits.fontSize, theme.fontSize),
         spacingScale: Math.max(limits.spacingScale, theme.spacingScale),
+        pagePaddingVertical: Math.max(PAGE_PADDING_FLOOR.readability, theme.pagePaddingVertical),
       })
       fittingRef.current = false
       return
     }
 
     const targetH = targetHeightRef.current
-    const contentH = el.scrollHeight
+    const contentH = measureOnePageContentHeight(el)
 
     if (contentH <= targetH) {
       setStatus('fit')
@@ -182,25 +225,31 @@ export function useOnePageMode(opts: UseOnePageModeOptions): UseOnePageModeRetur
     }
 
     // Content overflows — try reducing settings.
-    let { spacingScale, lineHeight, fontSize } = {
+    let { spacingScale, lineHeight, fontSize, pagePaddingVertical } = {
       spacingScale: theme.spacingScale,
       lineHeight: theme.lineHeight,
       fontSize: theme.fontSize,
+      pagePaddingVertical: theme.pagePaddingVertical,
     }
 
     let adjusted = false
 
-    // Priority 1: reduce spacingScale
-    if (spacingScale > limits.spacingScale + STEP_SPACING / 2) {
+    // Priority 1: reclaim page-edge whitespace before touching text rhythm.
+    if (pagePaddingVertical > PAGE_PADDING_FLOOR[strategy] + STEP_PAGE_PADDING / 2) {
+      pagePaddingVertical = Math.max(PAGE_PADDING_FLOOR[strategy], pagePaddingVertical - STEP_PAGE_PADDING)
+      adjusted = true
+    }
+    // Priority 2: reduce the template-level spacing token.
+    else if (spacingScale > limits.spacingScale + STEP_SPACING / 2) {
       spacingScale = Math.max(limits.spacingScale, +(spacingScale - STEP_SPACING).toFixed(1))
       adjusted = true
     }
-    // Priority 2: reduce lineHeight
+    // Priority 3: reduce lineHeight.
     else if (lineHeight > limits.lineHeight + STEP_LINE_HEIGHT / 2) {
       lineHeight = Math.max(limits.lineHeight, +(lineHeight - STEP_LINE_HEIGHT).toFixed(1))
       adjusted = true
     }
-    // Priority 3: reduce fontSize
+    // Priority 4: reduce fontSize.
     else if (fontSize > limits.fontSize) {
       fontSize = Math.max(limits.fontSize, fontSize - STEP_FONT_SIZE)
       adjusted = true
@@ -208,7 +257,7 @@ export function useOnePageMode(opts: UseOnePageModeOptions): UseOnePageModeRetur
 
     if (adjusted) {
       setStatus('fitting')
-      patchTheme({ spacingScale, lineHeight, fontSize })
+      patchTheme({ spacingScale, lineHeight, fontSize, pagePaddingVertical })
     } else {
       setStatus('overflow')
       if (!overflowToastShown.current) {
@@ -218,7 +267,7 @@ export function useOnePageMode(opts: UseOnePageModeOptions): UseOnePageModeRetur
     }
 
     fittingRef.current = false
-  }, [contentRef, enabled, strategy, theme.spacingScale, theme.lineHeight, theme.fontSize, patchTheme])
+  }, [contentRef, enabled, strategy, theme.spacingScale, theme.lineHeight, theme.fontSize, theme.pagePaddingVertical, patchTheme])
 
   // ── ResizeObserver: watch content height ──────────────────────────────
   useEffect(() => {

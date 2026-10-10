@@ -41,7 +41,7 @@ describe('automatic one-page readability', () => {
     act(() => result.current.setEnabled(true))
     await tick(30)
     expect(result.current.status).toBe('overflow')
-    expect(result.current.theme).toMatchObject({ lineHeight: 1, fontSize: 12, spacingScale: 0 })
+    expect(result.current.theme).toMatchObject({ lineHeight: 1.2, fontSize: 12, spacingScale: 0 })
     act(() => result.current.setEnabled(false))
     expect(result.current.status).toBe('idle')
     expect(result.current.theme).toEqual(initialTheme)

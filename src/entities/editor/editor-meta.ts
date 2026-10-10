@@ -14,6 +14,8 @@ export interface AdjustableTokens {
   readonly lineHeight: number
   readonly spacingScale: number
   readonly fontSize: number
+  /** Vertical page padding captured before one-page mode starts compacting. */
+  readonly pagePaddingVertical?: number
 }
 
 /**

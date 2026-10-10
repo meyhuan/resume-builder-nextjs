@@ -1390,7 +1390,14 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
                   </div>
                 }
               >
-                <div ref={resumeBodyRef} className="resume-document-main" {...(onePageMode && onePageStatus === 'fit' ? { 'data-one-page': 'true' } : {})}>
+                <div
+                  ref={resumeBodyRef}
+                  className="resume-document-main"
+                  data-one-page={onePageMode && onePageStatus === 'fit' ? 'true' : 'false'}
+                  data-one-page-mode={onePageMode ? 'true' : 'false'}
+                  data-one-page-strategy={onePageStrategy}
+                  data-one-page-status={onePageStatus}
+                >
                   {TemplateComponent ? (
                     <TemplateComponent
                       resume={renderableResume}
