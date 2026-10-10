@@ -76,6 +76,7 @@ export function ModuleManageSheet({ open, onClose }: ModuleManageSheetProps): Re
   const scrollBoundsRef = useRef<{ min: number; max: number }>({ min: 0, max: 0 })
   const edgeDwellStartRef = useRef<number>(0)
   const lastPointerYRef = useRef<number>(0)
+  const initialPointerYRef = useRef<number>(0)
   const scrollAnimationRef = useRef<number>(0)
 
   const sensors = useSensors(
@@ -93,9 +94,19 @@ export function ModuleManageSheet({ open, onClose }: ModuleManageSheetProps): Re
     }
   }, [])
 
-  const handleDragStart = useCallback((): void => {
+  const handleDragStart = useCallback((event: DragMoveEvent): void => {
     if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
       navigator.vibrate(10)
+    }
+    
+    // Capture initial pointer position
+    const activatorEvent = event.activatorEvent
+    if (activatorEvent instanceof TouchEvent) {
+      initialPointerYRef.current = activatorEvent.touches[0]?.clientY ?? 0
+      lastPointerYRef.current = initialPointerYRef.current
+    } else if (activatorEvent instanceof PointerEvent || activatorEvent instanceof MouseEvent) {
+      initialPointerYRef.current = activatorEvent.clientY
+      lastPointerYRef.current = initialPointerYRef.current
     }
     
     // Capture scroll bounds at drag start
@@ -112,15 +123,11 @@ export function ModuleManageSheet({ open, onClose }: ModuleManageSheetProps): Re
     const container = scrollContainerRef.current
     if (!container) return
 
-    const pointerY = event.activatorEvent instanceof TouchEvent 
-      ? event.activatorEvent.touches[0]?.clientY 
-      : (event.activatorEvent as PointerEvent | MouseEvent)?.clientY
-
-    if (pointerY === undefined) return
-    
-    lastPointerYRef.current = pointerY
+    // Calculate current pointer position: initial + delta
+    const currentPointerY = initialPointerYRef.current + event.delta.y
+    lastPointerYRef.current = currentPointerY
     const rect = container.getBoundingClientRect()
-    const relativeY = pointerY - rect.top
+    const relativeY = currentPointerY - rect.top
     const EDGE_ZONE = 40
 
     const inEdgeZone = relativeY < EDGE_ZONE || relativeY > rect.height - EDGE_ZONE
@@ -178,16 +185,22 @@ export function ModuleManageSheet({ open, onClose }: ModuleManageSheetProps): Re
     }
   }, [])
 
+  const stopAutoScroll = useCallback((): void => {
+    edgeDwellStartRef.current = 0
+    initialPointerYRef.current = 0
+    lastPointerYRef.current = 0
+    if (scrollAnimationRef.current) {
+      cancelAnimationFrame(scrollAnimationRef.current)
+      scrollAnimationRef.current = 0
+    }
+  }, [])
+
   const handleDragEnd = useCallback(
     (event: DragEndEvent): void => {
       const { active, over } = event
       
       // Stop auto-scroll
-      edgeDwellStartRef.current = 0
-      if (scrollAnimationRef.current) {
-        cancelAnimationFrame(scrollAnimationRef.current)
-        scrollAnimationRef.current = 0
-      }
+      stopAutoScroll()
 
       if (!over || active.id === over.id) return
       const fromIdx = sections.findIndex((s) => s.id === active.id)
@@ -196,8 +209,13 @@ export function ModuleManageSheet({ open, onClose }: ModuleManageSheetProps): Re
       log.info('reorder', { fromIdx, toIdx })
       reorder(fromIdx, toIdx)
     },
-    [sections, reorder],
+    [sections, reorder, stopAutoScroll],
   )
+
+  const handleDragCancel = useCallback((): void => {
+    // Stop auto-scroll and reset state
+    stopAutoScroll()
+  }, [stopAutoScroll])
 
   const handleConfirmRemove = useCallback((): void => {
     if (!pendingRemove) return
@@ -315,6 +333,7 @@ export function ModuleManageSheet({ open, onClose }: ModuleManageSheetProps): Re
             onDragStart={handleDragStart}
             onDragMove={handleDragMove}
             onDragEnd={handleDragEnd}
+            onDragCancel={handleDragCancel}
             autoScroll={false}
           >
             <SortableContext items={items} strategy={verticalListSortingStrategy}>
