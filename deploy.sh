@@ -6,6 +6,7 @@ LEGACY_DIR="${LEGACY_DIR:-/home/webapp/aijianli-nextjs/resume-builder-nextjs}"
 RELEASE_ROOT="${RELEASE_ROOT:-/home/releases/aijianli-nextjs}"
 RELEASE_ID="${RELEASE_ID:-$(date +%Y%m%d-%H%M%S)}"
 PACKAGE_PATH="${PACKAGE_PATH:-$RELEASE_ROOT/.incoming/$RELEASE_ID.zip}"
+PACKAGE_SHA256="${PACKAGE_SHA256:-}"
 CURRENT_LINK="$RELEASE_ROOT/current"
 RELEASE_DIR="$RELEASE_ROOT/$RELEASE_ID"
 HEALTH_URL="${HEALTH_URL:-http://127.0.0.1:3000/}"
@@ -29,6 +30,25 @@ deploy_paths=(
 fail() {
   echo "ERROR: $*" >&2
   exit 1
+}
+
+run_stage() {
+  local name="$1"
+  shift
+  local started="$SECONDS"
+  echo "[$name] starting"
+  "$@"
+  echo "DEPLOY_TIMING stage=$name seconds=$((SECONDS - started))"
+}
+
+verify_package() {
+  if [ -n "$PACKAGE_SHA256" ]; then
+    [[ "$PACKAGE_SHA256" =~ ^[a-fA-F0-9]{64}$ ]] || fail "invalid package SHA256"
+    local actual
+    actual="$(sha256sum "$PACKAGE_PATH")"
+    actual="${actual%% *}"
+    [ "${actual,,}" = "${PACKAGE_SHA256,,}" ] || fail "package SHA256 mismatch"
+  fi
 }
 
 extract_zip() {
@@ -166,28 +186,32 @@ mkdir -p "$RELEASE_ROOT" "$(dirname "$PACKAGE_PATH")"
 [ -f "$PACKAGE_PATH" ] || fail "missing package: $PACKAGE_PATH"
 
 echo "Deploying $APP_NAME release $RELEASE_ID"
+run_stage package-verify verify_package
 capture_legacy_baseline
 PREV_TARGET="$(readlink -f "$CURRENT_LINK" 2>/dev/null || true)"
 
 rm -rf "$RELEASE_DIR"
 mkdir -p "$RELEASE_DIR"
-extract_zip "$PACKAGE_PATH" "$RELEASE_DIR"
+run_stage extract extract_zip "$PACKAGE_PATH" "$RELEASE_DIR"
 copy_runtime_env
 
 cd "$RELEASE_DIR"
-pnpm install --frozen-lockfile --ignore-scripts
-pnpm exec prisma generate
+run_stage install pnpm install --frozen-lockfile --ignore-scripts
+run_stage prisma pnpm exec prisma generate
 
 ln -sfn "$RELEASE_DIR" "$CURRENT_LINK"
 point_legacy_dir_to_current
 
-restart_app
+run_stage restart restart_app
 
+# Keep the check outside run_stage so Bash does not suppress errexit in other stages.
+health_started="$SECONDS"
 if ! health_check "$HEALTH_URL" 20 2; then
   rollback
 fi
+echo "DEPLOY_TIMING stage=health seconds=$((SECONDS - health_started))"
 
 rm -f "$PACKAGE_PATH"
-cleanup_old_releases
+run_stage cleanup cleanup_old_releases
 
 echo "Deploy completed: $RELEASE_DIR"

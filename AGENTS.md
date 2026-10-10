@@ -1,5 +1,9 @@
 # Project Context for AI Assistant
 
+## Deployment Operations
+
+For release commands, cache behavior, timing reports, and deployment optimization status, read `docs/nextjs-deployment-optimization.md` and the workspace-level `../RELEASE_GUIDE.md`. Do not upload or restart production without an explicit deployment request. Preserve user changes and deploy an approved commit from an isolated worktree.
+
 ## Project Overview
 
 **AI简历构建器（aijianli.cn）** — An AI-powered online resume builder targeting Chinese job seekers.
