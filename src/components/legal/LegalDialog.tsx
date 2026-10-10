@@ -11,6 +11,10 @@ interface LegalDialogProps {
   readonly isOpen: boolean;
   readonly onClose: () => void;
   readonly initialTab?: LegalTab;
+  /** Extra classes for the dialog content (e.g. a higher z-index when opened above another raised dialog). */
+  readonly className?: string;
+  /** Extra classes for the dialog overlay. */
+  readonly overlayClassName?: string;
 }
 
 /**
@@ -21,6 +25,8 @@ export const LegalDialog: React.FC<LegalDialogProps> = ({
   isOpen,
   onClose,
   initialTab = 'privacy',
+  className,
+  overlayClassName,
 }) => {
   const [activeTab, setActiveTab] = useState<LegalTab>(initialTab);
 
@@ -33,7 +39,13 @@ export const LegalDialog: React.FC<LegalDialogProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[680px] max-h-[85vh] p-0 border-none overflow-hidden bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl ring-1 ring-white/50">
+      <DialogContent
+        className={cn(
+          'sm:max-w-[680px] max-h-[85vh] p-0 border-none overflow-hidden bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl ring-1 ring-white/50',
+          className,
+        )}
+        overlayClassName={overlayClassName}
+      >
         <div className="relative flex flex-col max-h-[85vh]">
           {/* Close button */}
           <button

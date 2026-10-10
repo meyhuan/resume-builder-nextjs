@@ -42,6 +42,9 @@ export const WxLoginDialog: React.FC<WxLoginDialogProps> = ({ isOpen, onClose, o
   const expireTimerRef = useRef<NodeJS.Timeout | null>(null);
   const isOpenRef = useRef(isOpen);
   const [legalOpen, setLegalOpen] = useState<boolean>(false);
+  // On touch devices, closing the legal dialog (a separate Radix layer) can be seen as an
+  // outside interaction by the login dialog and close it too; ignore that for a moment.
+  const legalClosedAtRef = useRef<number>(0);
   const [legalTab, setLegalTab] = useState<LegalTab>('privacy');
 
   useEffect(() => {
@@ -265,7 +268,12 @@ export const WxLoginDialog: React.FC<WxLoginDialogProps> = ({ isOpen, onClose, o
       <DialogContent
         className="sm:max-w-[420px] max-h-[90dvh] overflow-y-auto p-0 border-none bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl ring-1 ring-white/50 !z-[1100]"
         overlayClassName="!z-[1100]"
-        onPointerDownOutside={closeable ? undefined : (e) => e.preventDefault()}
+        onPointerDownOutside={(e) => {
+          if (!closeable || legalOpen || Date.now() - legalClosedAtRef.current < 500) e.preventDefault();
+        }}
+        onInteractOutside={(e) => {
+          if (legalOpen || Date.now() - legalClosedAtRef.current < 500) e.preventDefault();
+        }}
         onEscapeKeyDown={closeable ? undefined : (e) => e.preventDefault()}
         hideCloseButton={!closeable}
       >
@@ -399,7 +407,17 @@ export const WxLoginDialog: React.FC<WxLoginDialogProps> = ({ isOpen, onClose, o
       </DialogContent>
     </Dialog>
 
-    <LegalDialog isOpen={legalOpen} onClose={() => setLegalOpen(false)} initialTab={legalTab} />
+    <LegalDialog
+      isOpen={legalOpen}
+      onClose={() => {
+        legalClosedAtRef.current = Date.now();
+        setLegalOpen(false);
+      }}
+      initialTab={legalTab}
+      // The login dialog is raised to z-1100; keep the legal dialog above it.
+      className="!z-[1110]"
+      overlayClassName="!z-[1110]"
+    />
     </>
   );
 };
