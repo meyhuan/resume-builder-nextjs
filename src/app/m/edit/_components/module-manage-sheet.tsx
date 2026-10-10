@@ -72,7 +72,7 @@ export function ModuleManageSheet({ open, onClose }: ModuleManageSheetProps): Re
 
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 180, tolerance: 6 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 10 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   )
 
@@ -166,7 +166,7 @@ export function ModuleManageSheet({ open, onClose }: ModuleManageSheetProps): Re
         contentClassName="pb-safe"
       >
         <p className="mb-3 text-[12px] text-slate-400">
-          控制基础展示项；长按拖动调整模块顺序，点击红色按钮移除模块。
+          控制基础展示项；按住 ≡ 拖动排序，点击红色按钮移除模块。
         </p>
 
         <div className="mb-3 flex flex-col gap-2">
@@ -199,7 +199,15 @@ export function ModuleManageSheet({ open, onClose }: ModuleManageSheetProps): Re
             暂无模块，请先在编辑页添加内容
           </div>
         ) : (
-          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <DndContext 
+            sensors={sensors} 
+            collisionDetection={closestCenter} 
+            onDragEnd={handleDragEnd}
+            autoScroll={{
+              threshold: { x: 0.1, y: 0.1 },
+              acceleration: 5,
+            }}
+          >
             <SortableContext items={items} strategy={verticalListSortingStrategy}>
               <div className="flex flex-col gap-2">
                 {sections.map((section) => (
@@ -347,13 +355,16 @@ interface ManageRowProps {
 
 function SortableManageRow({ section, onRequestRemove }: ManageRowProps): ReactElement {
   const updateDisplayTitle = useSectionDisplayTitle()
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({
     id: section.id,
   })
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
     zIndex: isDragging ? 20 : undefined,
+    opacity: isDragging ? 0.5 : undefined,
+    WebkitUserSelect: 'none',
+    WebkitTouchCallout: 'none',
   }
 
   const moduleConfig = findModuleBySectionTitle(section.title)
@@ -365,21 +376,26 @@ function SortableManageRow({ section, onRequestRemove }: ManageRowProps): ReactE
       ref={setNodeRef}
       style={style}
       {...attributes}
-      {...listeners}
       className={cn(
-        // Keep vertical panning available for the sheet's scroll container. The
-        // touch sensor cancels its pending drag when movement exceeds tolerance,
-        // so a normal swipe scrolls while a long press still starts dragging.
-        'relative flex touch-pan-y cursor-grab items-center gap-3 rounded-[14px] border border-[#edf0f5] bg-white px-3 py-3 shadow-[0_2px_8px_rgba(15,23,42,0.04)] transition-shadow active:cursor-grabbing',
-        isDragging && 'border-violet-200 shadow-[0_12px_28px_rgba(124,58,237,0.18)] ring-2 ring-violet-200',
+        'relative flex select-none items-center gap-3 rounded-[14px] border border-[#edf0f5] bg-white px-3 py-3 shadow-[0_2px_8px_rgba(15,23,42,0.04)]',
+        isDragging && 'scale-[1.02] border-violet-200 shadow-[0_12px_28px_rgba(124,58,237,0.18)] ring-2 ring-violet-200',
       )}
     >
-      {/* Drag handle */}
-      <div
-        className="flex h-8 w-6 shrink-0 touch-none items-center justify-center text-slate-300"
+      {/* Drag handle — enlarged to ≥44×44 hit area */}
+      <button
+        ref={setActivatorNodeRef}
+        {...listeners}
+        type="button"
+        aria-label={`拖动排序${label}`}
+        className="flex h-11 w-11 shrink-0 touch-none cursor-grab items-center justify-center text-slate-300 active:cursor-grabbing"
+        onTouchStart={(): void => {
+          if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+            navigator.vibrate(10)
+          }
+        }}
       >
         <GripVertical size={17} />
-      </div>
+      </button>
 
       {/* Label + subtitle */}
       <div className="min-w-0 flex-1">
@@ -395,9 +411,6 @@ function SortableManageRow({ section, onRequestRemove }: ManageRowProps): ReactE
       ) : (
         <button
           type="button"
-          onPointerDown={(e): void => { e.stopPropagation() }}
-          onMouseDown={(e): void => { e.stopPropagation() }}
-          onTouchStart={(e): void => { e.stopPropagation() }}
           onClick={(e): void => {
             e.stopPropagation()
             onRequestRemove(section)
