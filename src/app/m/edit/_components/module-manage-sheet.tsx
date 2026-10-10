@@ -72,7 +72,7 @@ export function ModuleManageSheet({ open, onClose }: ModuleManageSheetProps): Re
 
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 10 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 120, tolerance: 10 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   )
 
@@ -204,8 +204,8 @@ export function ModuleManageSheet({ open, onClose }: ModuleManageSheetProps): Re
             collisionDetection={closestCenter} 
             onDragEnd={handleDragEnd}
             autoScroll={{
-              threshold: { x: 0.1, y: 0.1 },
-              acceleration: 5,
+              threshold: { x: 0.05, y: 0.05 },
+              acceleration: 3,
             }}
           >
             <SortableContext items={items} strategy={verticalListSortingStrategy}>
@@ -375,7 +375,6 @@ function SortableManageRow({ section, onRequestRemove }: ManageRowProps): ReactE
     <div
       ref={setNodeRef}
       style={style}
-      {...attributes}
       className={cn(
         'relative flex select-none items-center gap-3 rounded-[14px] border border-[#edf0f5] bg-white px-3 py-3 shadow-[0_2px_8px_rgba(15,23,42,0.04)]',
         isDragging && 'scale-[1.02] border-violet-200 shadow-[0_12px_28px_rgba(124,58,237,0.18)] ring-2 ring-violet-200',
@@ -384,11 +383,13 @@ function SortableManageRow({ section, onRequestRemove }: ManageRowProps): ReactE
       {/* Drag handle — enlarged to ≥44×44 hit area */}
       <button
         ref={setActivatorNodeRef}
+        {...attributes}
         {...listeners}
         type="button"
         aria-label={`拖动排序${label}`}
         className="flex h-11 w-11 shrink-0 touch-none cursor-grab items-center justify-center text-slate-300 active:cursor-grabbing"
-        onTouchStart={(): void => {
+        onTouchStart={(e): void => {
+          listeners?.onTouchStart?.(e)
           if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
             navigator.vibrate(10)
           }
@@ -411,6 +412,8 @@ function SortableManageRow({ section, onRequestRemove }: ManageRowProps): ReactE
       ) : (
         <button
           type="button"
+          onPointerDown={(e): void => { e.stopPropagation() }}
+          onTouchStart={(e): void => { e.stopPropagation() }}
           onClick={(e): void => {
             e.stopPropagation()
             onRequestRemove(section)

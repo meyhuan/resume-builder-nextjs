@@ -173,11 +173,23 @@ describe('title editors and exports', () => {
     expect(navigate).toHaveBeenCalledWith(module.route)
   })
 
-  it('mobile manager keeps vertical swipes scrollable while rows remain draggable', () => {
+  it('mobile manager has handle-only drag activation while rows remain scrollable', () => {
     render(<ModuleManageSheet open onClose={vi.fn()} />)
-    const row = screen.getByRole('button', { name: '删除个人作品' }).parentElement
-    expect(row?.classList.contains('touch-pan-y')).toBe(true)
+    const handles = screen.getAllByRole('button', { name: /拖动排序/ })
+    expect(handles).toHaveLength(3)
+    const handle = handles[0]
+    const row = handle.parentElement
+    expect(handle.classList.contains('touch-none')).toBe(true)
     expect(row?.classList.contains('touch-none')).toBe(false)
+    expect(row?.classList.contains('select-none')).toBe(true)
+  })
+
+  it('drag handle has dnd-kit attributes and aria label for accessibility', () => {
+    render(<ModuleManageSheet open onClose={vi.fn()} />)
+    const handle = screen.getByRole('button', { name: '拖动排序工作经历' })
+    expect(handle.getAttribute('aria-label')).toBe('拖动排序工作经历')
+    expect(handle.classList.contains('cursor-grab')).toBe(true)
+    expect(handle.tagName).toBe('BUTTON')
   })
 
   it('inline editing validates, supports IME, cancels and commits exactly once', () => {
