@@ -76,8 +76,8 @@ export function ModuleManageSheet({ open, onClose }: ModuleManageSheetProps): Re
   const scrollBoundsRef = useRef<{ min: number; max: number }>({ min: 0, max: 0 })
   const edgeDwellStartRef = useRef<number>(0)
   const lastPointerYRef = useRef<number>(0)
-  const initialPointerYRef = useRef<number>(0)
   const scrollAnimationRef = useRef<number>(0)
+  const isDraggingRef = useRef<boolean>(false)
 
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
@@ -85,9 +85,25 @@ export function ModuleManageSheet({ open, onClose }: ModuleManageSheetProps): Re
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   )
 
-  // Custom auto-scroll implementation - cleanup on unmount
+  // Custom auto-scroll implementation - track real touch position
   useEffect(() => {
+    const handleTouchMove = (e: TouchEvent): void => {
+      if (!isDraggingRef.current || !e.touches[0]) return
+      lastPointerYRef.current = e.touches[0].clientY
+    }
+
+    const handlePointerMove = (e: PointerEvent): void => {
+      if (!isDraggingRef.current) return
+      lastPointerYRef.current = e.clientY
+    }
+
+    // Passive listeners to track real finger position without affecting scroll
+    window.addEventListener('touchmove', handleTouchMove, { passive: true })
+    window.addEventListener('pointermove', handlePointerMove, { passive: true })
+
     return () => {
+      window.removeEventListener('touchmove', handleTouchMove)
+      window.removeEventListener('pointermove', handlePointerMove)
       if (scrollAnimationRef.current) {
         cancelAnimationFrame(scrollAnimationRef.current)
       }
@@ -99,14 +115,14 @@ export function ModuleManageSheet({ open, onClose }: ModuleManageSheetProps): Re
       navigator.vibrate(10)
     }
     
+    isDraggingRef.current = true
+    
     // Capture initial pointer position
     const activatorEvent = event.activatorEvent
     if (activatorEvent instanceof TouchEvent) {
-      initialPointerYRef.current = activatorEvent.touches[0]?.clientY ?? 0
-      lastPointerYRef.current = initialPointerYRef.current
+      lastPointerYRef.current = activatorEvent.touches[0]?.clientY ?? 0
     } else if (activatorEvent instanceof PointerEvent || activatorEvent instanceof MouseEvent) {
-      initialPointerYRef.current = activatorEvent.clientY
-      lastPointerYRef.current = initialPointerYRef.current
+      lastPointerYRef.current = activatorEvent.clientY
     }
     
     // Capture scroll bounds at drag start
@@ -119,13 +135,12 @@ export function ModuleManageSheet({ open, onClose }: ModuleManageSheetProps): Re
     }
   }, [])
 
-  const handleDragMove = useCallback((event: DragMoveEvent): void => {
+  const handleDragMove = useCallback((): void => {
     const container = scrollContainerRef.current
     if (!container) return
 
-    // Calculate current pointer position: initial + delta
-    const currentPointerY = initialPointerYRef.current + event.delta.y
-    lastPointerYRef.current = currentPointerY
+    // Use real tracked pointer position (updated by passive listeners)
+    const currentPointerY = lastPointerYRef.current
     const rect = container.getBoundingClientRect()
     const relativeY = currentPointerY - rect.top
     const EDGE_ZONE = 40
@@ -186,8 +201,8 @@ export function ModuleManageSheet({ open, onClose }: ModuleManageSheetProps): Re
   }, [])
 
   const stopAutoScroll = useCallback((): void => {
+    isDraggingRef.current = false
     edgeDwellStartRef.current = 0
-    initialPointerYRef.current = 0
     lastPointerYRef.current = 0
     if (scrollAnimationRef.current) {
       cancelAnimationFrame(scrollAnimationRef.current)
