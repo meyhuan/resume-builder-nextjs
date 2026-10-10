@@ -3,12 +3,27 @@ import { act, cleanup, fireEvent, render, waitFor } from '@testing-library/react
 import { renderToString } from 'react-dom/server'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
-  EDITOR_SIDEBAR_DEFAULT_WIDTH,
-  EDITOR_SIDEBAR_MAX_WIDTH,
   EDITOR_SIDEBAR_MIN_WIDTH,
   EDITOR_SIDEBAR_STORAGE_KEY,
   ResizableEditorSidebar,
 } from './resizable-editor-sidebar'
+
+// Constants matching the implementation
+const EDITOR_MIN_WIDTH = 720
+const RESPONSIVE_DEFAULT_PERCENT = 0.34
+
+function computeExpectedDefault(viewport: number): number {
+  const responsive = Math.round(viewport * RESPONSIVE_DEFAULT_PERCENT)
+  let width = Math.max(420, Math.min(600, responsive))
+  const remaining = viewport - width
+  if (remaining < EDITOR_MIN_WIDTH) {
+    width = viewport - EDITOR_MIN_WIDTH
+    if (width < EDITOR_SIDEBAR_MIN_WIDTH) {
+      width = EDITOR_SIDEBAR_MIN_WIDTH
+    }
+  }
+  return Math.round(width)
+}
 
 function setDesktopViewport(): void {
   Object.defineProperty(window, 'innerWidth', { configurable: true, get: () => 1440 })
@@ -45,15 +60,16 @@ describe('ResizableEditorSidebar', () => {
       </ResizableEditorSidebar>,
     )
     const handle = getHandle(container)
-    await waitFor(() => expect(getWidth(container)).toBe(EDITOR_SIDEBAR_DEFAULT_WIDTH))
+    const expectedDefault = computeExpectedDefault(1440)
+    await waitFor(() => expect(getWidth(container)).toBe(expectedDefault))
 
     fireEvent.pointerDown(handle, { button: 0, pointerId: 1, clientX: 1000 })
     expect(document.body.style.userSelect).toBe('none')
     fireEvent.pointerMove(window, { pointerId: 1, clientX: 850 })
     fireEvent.pointerUp(window, { pointerId: 1 })
 
-    expect(getWidth(container)).toBe(630)
-    expect(window.localStorage.getItem(EDITOR_SIDEBAR_STORAGE_KEY)).toBe('630')
+    expect(getWidth(container)).toBe(640)
+    expect(window.localStorage.getItem(EDITOR_SIDEBAR_STORAGE_KEY)).toBe('640')
     expect(document.body.style.userSelect).toBe('')
     expect(document.body.style.cursor).toBe('')
   })
@@ -65,17 +81,19 @@ describe('ResizableEditorSidebar', () => {
       </ResizableEditorSidebar>,
     )
     const handle = getHandle(container)
-    await waitFor(() => expect(getWidth(container)).toBe(EDITOR_SIDEBAR_DEFAULT_WIDTH))
+    const expectedDefault = computeExpectedDefault(1440)
+    await waitFor(() => expect(getWidth(container)).toBe(expectedDefault))
 
     fireEvent.pointerDown(handle, { button: 0, pointerId: 2, clientX: 1000 })
     fireEvent.pointerMove(window, { pointerId: 2, clientX: 0 })
     fireEvent.pointerUp(window, { pointerId: 2 })
-    expect(getWidth(container)).toBe(EDITOR_SIDEBAR_MAX_WIDTH)
+    const expectedMax = 1440 - EDITOR_MIN_WIDTH
+    expect(getWidth(container)).toBe(expectedMax)
 
     fireEvent.keyDown(handle, { key: 'Home' })
     expect(getWidth(container)).toBe(EDITOR_SIDEBAR_MIN_WIDTH)
     fireEvent.keyDown(handle, { key: 'End' })
-    expect(getWidth(container)).toBe(EDITOR_SIDEBAR_MAX_WIDTH)
+    expect(getWidth(container)).toBe(expectedMax)
   })
 
   it('restores the stored width and resets it on double click', async () => {
@@ -89,29 +107,34 @@ describe('ResizableEditorSidebar', () => {
     await waitFor(() => expect(getWidth(container)).toBe(600))
 
     fireEvent.doubleClick(handle)
-    expect(getWidth(container)).toBe(EDITOR_SIDEBAR_DEFAULT_WIDTH)
+    const expectedDefault = computeExpectedDefault(1440)
+    expect(getWidth(container)).toBe(expectedDefault)
     expect(window.localStorage.getItem(EDITOR_SIDEBAR_STORAGE_KEY)).toBe(
-      String(EDITOR_SIDEBAR_DEFAULT_WIDTH),
+      String(expectedDefault),
     )
   })
 
-  it('supports both arrow keys and persists keyboard changes', () => {
+  it('supports both arrow keys and persists keyboard changes', async () => {
     const { container } = render(<ResizableEditorSidebar open>内容</ResizableEditorSidebar>)
     const handle = getHandle(container)
+    const expectedDefault = computeExpectedDefault(1440)
+    await waitFor(() => expect(getWidth(container)).toBe(expectedDefault))
     fireEvent.keyDown(handle, { key: 'ArrowLeft' })
-    expect(getWidth(container)).toBe(496)
+    expect(getWidth(container)).toBe(expectedDefault + 16)
     fireEvent.keyDown(handle, { key: 'ArrowRight', shiftKey: true })
-    expect(getWidth(container)).toBe(416)
-    expect(localStorage.getItem(EDITOR_SIDEBAR_STORAGE_KEY)).toBe('416')
+    expect(getWidth(container)).toBe(expectedDefault + 16 - 80)
+    expect(localStorage.getItem(EDITOR_SIDEBAR_STORAGE_KEY)).toBe(String(expectedDefault + 16 - 80))
   })
 
-  it('ignores other pointers and clamps a touch drag at the minimum', () => {
+  it('ignores other pointers and clamps a touch drag at the minimum', async () => {
     const { container } = render(<ResizableEditorSidebar open>内容</ResizableEditorSidebar>)
     const handle = getHandle(container)
+    const expectedDefault = computeExpectedDefault(1440)
+    await waitFor(() => expect(getWidth(container)).toBe(expectedDefault))
     fireEvent.pointerDown(handle, { button: 0, pointerId: 7, pointerType: 'touch', clientX: 1000 })
     fireEvent.pointerMove(window, { pointerId: 8, clientX: 0 })
     fireEvent.pointerUp(window, { pointerId: 8 })
-    expect(getWidth(container)).toBe(480)
+    expect(getWidth(container)).toBe(expectedDefault)
     expect(document.body.style.cursor).toBe('col-resize')
     fireEvent.pointerMove(window, { pointerId: 7, clientX: 2000 })
     fireEvent.pointerCancel(window, { pointerId: 7 })
@@ -119,10 +142,11 @@ describe('ResizableEditorSidebar', () => {
     expect(document.body.style.cursor).toBe('')
   })
 
-  it.each(['unmount', 'close', 'blur'])('restores existing global styles on %s during a drag', (end) => {
+  it.each(['unmount', 'close', 'blur'])('restores existing global styles on %s during a drag', async (end) => {
     document.body.style.cursor = 'crosshair'
     document.body.style.userSelect = 'text'
     const view = render(<ResizableEditorSidebar open>内容</ResizableEditorSidebar>)
+    await act(() => new Promise<void>(resolve => window.requestAnimationFrame(() => resolve())))
     fireEvent.pointerDown(getHandle(view.container), { button: 0, pointerId: 1, clientX: 1000 })
     expect(document.body.style.userSelect).toBe('none')
     if (end === 'unmount') view.unmount()
@@ -140,8 +164,9 @@ describe('ResizableEditorSidebar', () => {
     await waitFor(() => expect(getWidth(container)).toBe(640))
     Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1024 })
     fireEvent.resize(window)
-    expect(getWidth(container)).toBe(544)
-    expect(getHandle(container)).toHaveAttribute('aria-valuemax', '544')
+    // At 1024px viewport, max would be 304 but clamped to min 360
+    expect(getWidth(container)).toBe(360)
+    expect(getHandle(container)).toHaveAttribute('aria-valuemax', '360')
     expect(localStorage.getItem(EDITOR_SIDEBAR_STORAGE_KEY)).toBe('640')
     setDesktopViewport()
     fireEvent.resize(window)
@@ -154,7 +179,8 @@ describe('ResizableEditorSidebar', () => {
     const container = document.createElement('div')
     container.innerHTML = renderToString(component)
     document.body.append(container)
-    expect(getWidth(container)).toBe(480)
+    // SSR uses CSS clamp, so we can't check the exact px value
+    expect(container.querySelector('[data-editor-workspace]')).toBeTruthy()
     const recover = vi.fn()
     render(component, { container, hydrate: true, onRecoverableError: recover })
     await waitFor(() => expect(getWidth(container)).toBe(600))
@@ -165,7 +191,8 @@ describe('ResizableEditorSidebar', () => {
     localStorage.setItem(EDITOR_SIDEBAR_STORAGE_KEY, raw)
     const { container } = render(<ResizableEditorSidebar open>内容</ResizableEditorSidebar>)
     await act(() => new Promise<void>(resolve => window.requestAnimationFrame(() => resolve())))
-    expect(getWidth(container)).toBe(480)
+    const expectedDefault = computeExpectedDefault(1440)
+    expect(getWidth(container)).toBe(expectedDefault)
   })
 
   it('works when local storage is blocked', async () => {
@@ -174,6 +201,7 @@ describe('ResizableEditorSidebar', () => {
     const { container } = render(<ResizableEditorSidebar open>内容</ResizableEditorSidebar>)
     await act(() => new Promise<void>(resolve => window.requestAnimationFrame(() => resolve())))
     fireEvent.keyDown(getHandle(container), { key: 'End' })
-    expect(getWidth(container)).toBe(640)
+    const expectedMax = 1440 - EDITOR_MIN_WIDTH
+    expect(getWidth(container)).toBe(expectedMax)
   })
 })

@@ -5,7 +5,7 @@ import puppeteer from 'puppeteer';
 
 const origin = process.env.SIDEBAR_TEST_ORIGIN || 'http://127.0.0.1:3107';
 assert.ok(['localhost', '127.0.0.1'].includes(new URL(origin).hostname));
-const key = 'resume-editor-sidebar-width-v1';
+const key = 'resume-editor-sidebar-width-v2';
 const artifacts = 'test-artifacts/resizable-editor-sidebar';
 const browser = await puppeteer.launch({
   headless: true,
@@ -73,9 +73,10 @@ try {
     const propsKey = node && Object.keys(node).find(key => key.startsWith('__reactProps$'));
     return propsKey && typeof node[propsKey].onPointerDown === 'function';
   }, {}, handle);
-  await expectWidth(480);
+  // At 1440px viewport, responsive default is 490px (34% of 1440)
+  await expectWidth(490);
   await clickText(aside + ' nav button', 'AI 助手');
-  await drag(-120);
+  await drag(-110);
   await expectWidth(600);
   assert.equal(await page.evaluate(key => localStorage.getItem(key), key), '600');
   await page.reload({ waitUntil: 'networkidle2' });
@@ -86,24 +87,26 @@ try {
   await expectWidth(360);
   const box = await (await page.$(handle)).boundingBox();
   await page.mouse.click(box.x + 4, box.y + box.height / 2, { clickCount: 2 });
-  await expectWidth(480);
+  // Double-click resets to responsive default (490px at 1440px viewport)
+  await expectWidth(490);
   await page.focus(handle);
   await page.keyboard.press('ArrowLeft');
-  await expectWidth(496);
+  await expectWidth(506);
   await page.keyboard.press('ArrowRight');
-  await expectWidth(480);
+  await expectWidth(490);
   const touchBox = await (await page.$(handle)).boundingBox();
   const cdp = await page.createCDPSession();
   const touchX = touchBox.x + 4, touchY = touchBox.y + touchBox.height / 2;
   await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: touchX, y: touchY }] });
-  await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: touchX - 80, y: touchY }] });
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: touchX - 70, y: touchY }] });
   await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
   await expectWidth(560);
   await cdp.detach();
   await page.keyboard.press('End');
   await expectWidth(640);
   await page.setViewport({ width: 1024, height: 768 });
-  await expectWidth(544);
+  // At 1024px, the max is 1024-720=304, but clamped to min 360
+  await expectWidth(360);
   assert.ok(await page.$eval('[data-editor-canvas]', node => node.getBoundingClientRect().width >= 480));
   await page.setViewport({ width: 1440, height: 900 });
   await expectWidth(640);
