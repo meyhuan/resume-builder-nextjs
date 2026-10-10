@@ -151,10 +151,19 @@ export default function MobilePreviewClient(): ReactElement {
     })
   }, [draftResumeId, searchParams, templateId])
 
+  // Keep the preview read-only for its entire lifetime. This must be separate
+  // from draft syncing below: draft changes (for example, mobile module
+  // reordering) should not run a cleanup that briefly restores edit mode.
+  useEffect(() => {
+    setReadOnly(true)
+    return (): void => {
+      setReadOnly(false)
+    }
+  }, [setReadOnly])
+
   // Sync draft data into the app store so templates can render it.
   // Falls back to loading from server if draft is empty.
   useEffect(() => {
-    setReadOnly(true)
     if (draft) {
       setResume((d: ResumeData): void => {
         Object.assign(d, draft)
@@ -194,10 +203,7 @@ export default function MobilePreviewClient(): ReactElement {
         })()
       }
     }
-    return (): void => {
-      setReadOnly(false)
-    }
-  }, [draft, searchParams, draftResumeId, setReadOnly, setResume, setFromServer, loadThemes])
+  }, [draft, searchParams, draftResumeId, setResume, setFromServer, loadThemes])
 
   useEffect(() => {
     const update = (): void => {

@@ -12,6 +12,7 @@ export default defineConfig({
       'src/editor/editable-date-field.test.tsx',
       'src/app/m/edit/_components/mobile-field-suggestions.test.tsx',
       'src/app/m/edit/_components/mobile-choice-parity.test.tsx',
+      'src/app/m/preview/preview-read-only.test.tsx',
       'src/app/m/_components/use-mini-program.test.tsx',
       'src/features/edit/form-fields/month-range-field.test.tsx',
       'src/components/modals/base-info-email.test.tsx',
