@@ -1,4 +1,5 @@
 import '@testing-library/jest-dom/vitest'
+import * as React from 'react'
 import { act, cleanup, fireEvent, render, waitFor } from '@testing-library/react'
 import { renderToString } from 'react-dom/server'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -163,9 +164,9 @@ describe('ResizableEditorSidebar', () => {
     await waitFor(() => expect(getWidth(container)).toBe(640))
     Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1024 })
     fireEvent.resize(window)
-    const expectedMax1024 = 1024 - EDITOR_MIN_WIDTH
-    expect(getWidth(container)).toBe(expectedMax1024)
-    expect(getHandle(container)).toHaveAttribute('aria-valuemax', String(expectedMax1024))
+    // At 1024px viewport, max would be 304 but clamped to min 360
+    expect(getWidth(container)).toBe(360)
+    expect(getHandle(container)).toHaveAttribute('aria-valuemax', '360')
     expect(localStorage.getItem(EDITOR_SIDEBAR_STORAGE_KEY)).toBe('640')
     setDesktopViewport()
     fireEvent.resize(window)
