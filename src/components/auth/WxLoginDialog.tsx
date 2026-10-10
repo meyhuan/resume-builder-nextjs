@@ -263,7 +263,8 @@ export const WxLoginDialog: React.FC<WxLoginDialogProps> = ({ isOpen, onClose, o
     <>
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open && closeable) onClose(); }}>
       <DialogContent
-        className="sm:max-w-[420px] max-h-[90dvh] overflow-y-auto p-0 border-none bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl ring-1 ring-white/50"
+        className="sm:max-w-[420px] max-h-[90dvh] overflow-y-auto p-0 border-none bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl ring-1 ring-white/50 !z-[1100]"
+        overlayClassName="!z-[1100]"
         onPointerDownOutside={closeable ? undefined : (e) => e.preventDefault()}
         onEscapeKeyDown={closeable ? undefined : (e) => e.preventDefault()}
         hideCloseButton={!closeable}
