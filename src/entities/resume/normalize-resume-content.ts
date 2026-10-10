@@ -27,9 +27,12 @@ export function normalizeResumeContent(
   const usedSectionIds = new Set<string>()
   const usedBlockIds = new Set<string>()
   const rawSections = Array.isArray(rawResume.sections) ? rawResume.sections : []
+  // Strip internal _version metadata
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { _version, ...cleanResume } = rawResume
 
   return {
-    ...rawResume,
+    ...cleanResume,
     id: normalizeString(rawResume.id) || options.fallbackId || 'resume-imported',
     name: normalizeString(rawResume.name),
     baseInfo: normalizeBaseInfo(rawResume.baseInfo),

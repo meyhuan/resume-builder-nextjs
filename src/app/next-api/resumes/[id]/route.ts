@@ -80,28 +80,49 @@ export async function PUT(req: Request, { params }: RouteParams) {
     updateStep = 'parse-body'
     const body = await req.json()
     const { title, content, template, thumbnail } = body
+    const hasContentField = Object.prototype.hasOwnProperty.call(body, 'content')
     const hasThumbnailField = Object.prototype.hasOwnProperty.call(body, 'thumbnail')
-    const normalizedContent = normalizeResumeContent(
-      content as Partial<ResumeData> & Record<string, unknown>,
-      { fallbackId: resumeId },
-    )
-    updateStep = 'persist-assets'
-    const persistedAssets = await persistResumeAssets({
-      content: normalizedContent as unknown as Record<string, unknown>,
-      thumbnail: hasThumbnailField ? thumbnail : undefined,
-      customPrefix: resumeId,
-    })
     
     updateStep = 'update-database'
-    const data: Prisma.ResumeUpdateInput = {
-      content: persistedAssets.content as Prisma.InputJsonValue,
-      template,
+    const data: Prisma.ResumeUpdateInput = {}
+    
+    // Handle content update (with normalization and asset persistence)
+    // Note: title and template are only updated when content is present
+    let persistedContent: { content: Record<string, unknown>; thumbnail: string | null } | undefined
+    if (hasContentField) {
+      const normalizedContent = normalizeResumeContent(
+        content as Partial<ResumeData> & Record<string, unknown>,
+        { fallbackId: resumeId },
+      )
+      updateStep = 'persist-content-assets'
+      persistedContent = await persistResumeAssets({
+        content: normalizedContent as unknown as Record<string, unknown>,
+        thumbnail: undefined,
+        customPrefix: resumeId,
+      })
+      data.content = persistedContent.content as Prisma.InputJsonValue
+      if (template) {
+        data.template = template
+      }
+      if (typeof title === 'string' && title.trim()) {
+        data.title = title.trim()
+      }
     }
+    
+    // Handle thumbnail-only update
     if (hasThumbnailField) {
-      data.thumbnail = persistedAssets.thumbnail
+      updateStep = 'persist-thumbnail'
+      const persistedThumbnail = await persistResumeAssets({
+        content: {},
+        thumbnail,
+        customPrefix: resumeId,
+      })
+      data.thumbnail = persistedThumbnail.thumbnail
     }
-    if (typeof title === 'string' && title.trim()) {
-      data.title = title.trim()
+    
+    // Require at least one field to update
+    if (Object.keys(data).length === 0) {
+      return NextResponse.json({ error: 'No fields to update' }, { status: 400 })
     }
 
     const resume = await prisma.resume.update({
@@ -112,22 +133,25 @@ export async function PUT(req: Request, { params }: RouteParams) {
       data,
     })
 
-    const oldKeys = readPortfolioObjectKeys(existingResume.content)
-    const nextKeys = readPortfolioObjectKeys(persistedAssets.content)
-    const expectedPrefix = `portfolio/${existingResume.userId}/${id}/`
-    const removedKeys = [...oldKeys].filter((key) => key.startsWith(expectedPrefix) && !nextKeys.has(key))
-    if (removedKeys.length > 0) {
-      void Promise.allSettled(removedKeys.map((key) => deleteOssAsset(key))).then((results) => {
-        results.forEach((result, index) => {
-          if (result.status === 'rejected') {
-            console.warn('portfolio-image-cleanup-failed', {
-              resumeId: id,
-              objectKey: removedKeys[index],
-              error: result.reason instanceof Error ? result.reason.message : String(result.reason),
-            })
-          }
+    // Clean up deleted portfolio images ONLY if content was updated
+    if (hasContentField && persistedContent && existingResume.content) {
+      const oldKeys = readPortfolioObjectKeys(existingResume.content)
+      const nextKeys = readPortfolioObjectKeys(persistedContent.content)
+      const expectedPrefix = `portfolio/${existingResume.userId}/${id}/`
+      const removedKeys = [...oldKeys].filter((key) => key.startsWith(expectedPrefix) && !nextKeys.has(key))
+      if (removedKeys.length > 0) {
+        void Promise.allSettled(removedKeys.map((key) => deleteOssAsset(key))).then((results) => {
+          results.forEach((result, index) => {
+            if (result.status === 'rejected') {
+              console.warn('portfolio-image-cleanup-failed', {
+                resumeId: id,
+                objectKey: removedKeys[index],
+                error: result.reason instanceof Error ? result.reason.message : String(result.reason),
+              })
+            }
+          })
         })
-      })
+      }
     }
     
     return NextResponse.json(resume)
