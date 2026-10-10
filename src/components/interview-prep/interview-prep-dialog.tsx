@@ -107,6 +107,30 @@ const CATEGORY_BADGE_CLASS: Record<InterviewPrepQuestion['category'], string> = 
 
 const LOGIN_SUBTITLE = '登录后生成，结果会保存在账号里';
 
+type InterviewPrepApiResponse = InterviewPrepOutput & {
+  error?: string;
+  quotaExceeded?: boolean;
+};
+
+/**
+ * API failures from the reverse proxy can be HTML rather than JSON. Read the
+ * body as text first so the UI can show a useful message instead of exposing
+ * `Unexpected token '<'` from Response.json().
+ */
+async function readInterviewPrepResponse(response: Response): Promise<InterviewPrepApiResponse> {
+  const contentType = response.headers.get('content-type') ?? '';
+  const body = await response.text();
+  if (!contentType.toLowerCase().includes('application/json')) {
+    throw new Error('面试准备服务暂时不可用，请稍后重试');
+  }
+
+  try {
+    return JSON.parse(body) as InterviewPrepApiResponse;
+  } catch {
+    throw new Error('面试准备服务返回了无效结果，请稍后重试');
+  }
+}
+
 function formatDate(value: number): string {
   return new Date(value).toLocaleDateString('zh-CN', {
     month: 'short',
@@ -608,10 +632,7 @@ export function InterviewPrepDialog(props: InterviewPrepDialogProps): ReactEleme
         body: JSON.stringify({ resumeData: resolved.resume, jobDescription: jd }),
         signal: controller.signal,
       });
-      const data = await response.json() as InterviewPrepOutput & {
-        error?: string;
-        quotaExceeded?: boolean;
-      };
+      const data = await readInterviewPrepResponse(response);
       if (!response.ok) {
         const payload = parseAssistErrorPayload(data);
         if (!handleAssistQuotaError('interview-prep', payload)) {
