@@ -9,7 +9,10 @@ import { DecorativeStar, Fields, Heading, Intention, Name, Portrait } from './co
 export function Masthead({ design, english = false }: { readonly design: ReferenceDesign; readonly english?: boolean }): ReactElement {
   const cn = english ? 'RESUME' : '个人简历'
   if (design.header === 'centered') return <></>
+  if (design.header === 'table') return <div className="canva-table-masthead"><span>{cn} 表格</span><small>PERSONAL RESUME</small></div>
+  if (design.header === 'watercolor') return <div className="canva-watercolor-masthead"><span>PERSONAL RESUME</span></div>
   if (design.header === 'notched') return <div className="canva-notched">PERSONAL RESUME</div>
+  if (design.header === 'blue-banner') return <div style={{ background: 'var(--canva-accent)', color: 'var(--canva-on-accent)', margin: '0 -20px 20px', padding: '10px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}><span style={{ fontSize: '1.7em', fontWeight: 800 }}>{cn}</span><span style={{ fontSize: '.72em', letterSpacing: '.16em' }}>PERSONAL RESUME</span></div>
   if (design.header === 'stacked') return <div style={{ fontSize: '2.5em', fontWeight: 800, lineHeight: 1.2, letterSpacing: '.08em', marginBottom: 24 }}>PERSONAL<br />RESUME</div>
   if (design.header === 'collage') return <div style={{ background: 'var(--canva-soft)', padding: '10px 18px', clipPath: 'polygon(0 0, 96% 3%, 100% 92%, 2% 100%)', marginBottom: 20 }}><div style={{ fontSize: '2.3em', fontWeight: 800 }}>{cn}</div><div style={{ fontSize: '.75em', letterSpacing: '.18em' }}>PERSONAL RESUME</div></div>
   if (design.header === 'angled') return <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', background: '#eee', marginBottom: 22 }}><strong style={{ background: 'var(--canva-accent)', color: 'var(--canva-on-accent)', padding: '10px 24px 10px 14px', fontSize: '1.6em', clipPath: 'polygon(0 0, 100% 0, calc(100% - 20px) 100%, 0 100%)' }}>{cn}</strong><span style={{ fontStyle: 'italic', fontSize: '.9em', padding: '8px 14px' }}>PERSONAL RESUME</span></div>
@@ -24,12 +27,12 @@ export function Masthead({ design, english = false }: { readonly design: Referen
 
 export function ReferenceHeader({ header, intention, showJob, design, english = false, includeFields = true, includeAvatar = true }: { readonly header: EditableHeader; readonly intention: EditableJobIntention; readonly showJob: boolean; readonly design: ReferenceDesign; readonly english?: boolean; readonly includeFields?: boolean; readonly includeAvatar?: boolean }): ReactElement {
   const readOnly = useAppStore((s) => s.readOnly)
-  const isLeftPhoto = design.header === 'mint' || design.header === 'banner' || design.header === 'circle'
+  const isLeftPhoto = design.header === 'mint' || design.header === 'banner' || design.header === 'circle' || design.header === 'blue-banner'
   const colored = design.header === 'banner'
   const centered = design.header === 'centered'
   const photo = includeAvatar && header.baseInfo?.showAvatar !== false
-  const personalHeading = ['bookmark', 'segmented', 'notched', 'ruled'].includes(design.header) && design.heading !== 'solid-icon' && design.heading !== 'slant'
-  return <header className="canva-header" onDoubleClick={readOnly ? undefined : (event) => { event.stopPropagation(); header.openEditModal() }} style={{ marginBottom: 'var(--canva-header-gap)', ...(design.header === 'mint' ? { background: 'var(--canva-soft)', padding: 18 } : {}), ...(colored ? { background: 'var(--canva-accent)', color: 'var(--canva-on-accent)', padding: '22px 20px' } : {}) }}>
+  const personalHeading = ['bookmark', 'segmented', 'notched', 'ruled', 'table'].includes(design.header) && design.heading !== 'solid-icon' && design.heading !== 'slant'
+  return <header className="canva-header" onDoubleClick={readOnly ? undefined : (event) => { event.stopPropagation(); header.openEditModal() }} style={{ marginBottom: 'var(--canva-header-gap)', ...(design.header === 'mint' ? { background: 'var(--canva-soft)', padding: 18 } : {}), ...(design.header === 'watercolor' ? { background: '#ffffffc9', border: '5px solid #fff', borderRadius: 28, padding: '18px 24px', boxShadow: '0 4px 15px #294d7730' } : {}), ...(colored ? { background: 'var(--canva-accent)', color: 'var(--canva-on-accent)', padding: '22px 20px' } : {}) }}>
     {design.header !== 'banner' && design.header !== 'mint' && design.header !== 'circle' ? <Masthead design={design} english={english} /> : null}
     {personalHeading ? <Heading value={english ? 'Personal Information' : '基本信息'} originalTitle="" design={design} /> : null}
     <div style={{ display: 'flex', alignItems: centered ? 'center' : 'flex-start', gap: 20, flexDirection: isLeftPhoto ? 'row' : 'row-reverse' }}>

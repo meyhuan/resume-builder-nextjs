@@ -17,13 +17,13 @@ import {
 
 describe('shared metadata and visibility', () => {
   it('covers every registered template once and preserves editor/catalog policy', () => {
-    expect(templateMetadata).toHaveLength(64)
-    expect(new Set(templateMetadata.map((t) => t.id)).size).toBe(64)
+    expect(templateMetadata).toHaveLength(114)
+    expect(new Set(templateMetadata.map((t) => t.id)).size).toBe(114)
     expect(Object.keys(TEMPLATE_REGISTRY)).toEqual(
       templateMetadata.map((t) => t.id),
     )
-    expect(getAllTemplates()).toHaveLength(63)
-    expect(templateCatalog).toHaveLength(50)
+    expect(getAllTemplates()).toHaveLength(113)
+    expect(templateCatalog).toHaveLength(100)
     expect(getPublicTemplates().map((t) => t.id)).toEqual(templateCatalog.map((t) => t.id))
     expect(getPublicTemplates().every((t) => t.visibility.catalog && t.visibility.editor)).toBe(true)
     expect(getTemplate('lanxin')).toBeDefined()
@@ -65,7 +65,9 @@ describe('filter semantics', () => {
       roles: ['technical', 'education'],
       layouts: ['double'],
     })
-    expect(result.map((t) => t.id)).toEqual(['lifeng', 'heiyao', 'shujuliu'])
+    expect(result.map((t) => t.id)).toEqual(expect.arrayContaining(['lifeng', 'heiyao', 'shujuliu']))
+    expect(result.every((t) => t.taxonomy.layouts.includes('double'))).toBe(true)
+    expect(result.every((t) => t.taxonomy.roles.some((role) => ['technical', 'education'].includes(role)))).toBe(true)
   })
   it('handles empty selections, no results and unverified bilingual capability', () => {
     expect(filterTemplates(templateCatalog, { roles: [] })).toEqual(
@@ -75,14 +77,14 @@ describe('filter semantics', () => {
       filterTemplates(templateCatalog, {
         languages: ['en'],
         layouts: ['double'],
-      }),
-    ).toEqual([])
+      }).map((t) => t.id),
+    ).toEqual(['yingke'])
     expect(
       filterTemplates(templateCatalog, { languages: ['bilingual'] }),
     ).toEqual([])
     expect(
       filterTemplates(templateCatalog, { languages: ['en'] }).map((t) => t.id),
-    ).toEqual(['moxu'])
+    ).toEqual(['moxu', 'mujian', 'huabu', 'yingke', 'shangwu'])
   })
   it('counts quick entries using only the supplied visible list', () => {
     const tech = QUICK_FILTERS.find((q) => q.id === 'tech')!

@@ -14,9 +14,12 @@ assert.ok(['127.0.0.1', 'localhost'].includes(new URL(baseUrl).hostname), 'Use a
 const metadata = fs.readFileSync('src/lib/templates/template-metadata.ts', 'utf8')
 const publicIds = [...metadata.matchAll(/^  ([a-z\d_-]+): \{([\s\S]*?)^  \},/gm)]
   .filter(([, , block]) => /editor: true/.test(block) && /catalog: true/.test(block)).map(([, id]) => id)
-assert.equal(publicIds.length, 50)
+const editorIds = [...metadata.matchAll(/^  ([a-z\d_-]+): \{([\s\S]*?)^  \},/gm)]
+  .filter(([, , block]) => /editor: true/.test(block)).map(([, id]) => id)
+assert.equal(publicIds.length, 100)
 const ids = flags.has('--ids') ? flags.get('--ids').split(',') : publicIds
-assert.ok(ids.length && new Set(ids).size === ids.length && ids.every((id) => publicIds.includes(id)))
+const allowedIds = flags.has('--allow-editor') ? editorIds : publicIds
+assert.ok(ids.length && new Set(ids).size === ids.length && ids.every((id) => allowedIds.includes(id)))
 const concurrency = Number(flags.get('--concurrency') || 2)
 assert.ok(Number.isInteger(concurrency) && concurrency >= 1 && concurrency <= 3)
 const scope = flags.get('--scope') || 'spacing'
