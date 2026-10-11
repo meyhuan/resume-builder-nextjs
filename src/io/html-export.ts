@@ -3,6 +3,7 @@ import { readPagePaddingVertical } from '@/lib/resume-page-metrics'
  * Utilities for exporting the rendered resume as standalone HTML.
  */
 import { buildResumeFontFaceCss, RESUME_FONT_BASE_URL } from '@/entities/theme/font-stacks'
+import { PRINT_PAGINATION_CSS } from '@/lib/print-pagination'
 
 const DOCUMENT_DOCTYPE: string = '<!DOCTYPE html>'
 const DEFAULT_TITLE: string = 'Resume'
@@ -35,7 +36,7 @@ export function buildResumeHtml(element: HTMLElement, options?: ResumeHtmlOption
     ? `\n    .resume-document-main[data-one-page="true"] {\n      page-break-after: avoid !important;\n      break-after: avoid !important;\n    }`
     : ''
   const onePageFrameCss: string = isOnePage
-    ? '\n    [data-one-page-print-frame="true"] { width: 210mm; max-width: 210mm; margin: 0 auto; overflow: hidden; break-inside: avoid !important; page-break-after: avoid !important; }'
+    ? '\n    [data-one-page-print-frame="true"] { width: 210mm; max-width: 210mm; margin: 0 auto; overflow: visible; break-inside: avoid !important; page-break-after: avoid !important; }'
     : ''
   const pageMarginCss: string = isOnePage
     ? 'margin: 0;'
@@ -50,52 +51,7 @@ export function buildResumeHtml(element: HTMLElement, options?: ResumeHtmlOption
     : ''
   const squareCornersCss: string = `\n    .page {\n      border-radius: 0 !important;\n      box-shadow: none !important;\n    }`
   const bodyMarkup: string = isOnePage ? `<div data-one-page-print-frame="true">${markup}</div>` : markup
-  const onePagePrintScript: string = isOnePage ? `<script>
-  (() => {
-    const fit = () => {
-      const frame = document.querySelector('[data-one-page-print-frame="true"]')
-      const root = frame?.querySelector('.resume-document-main[data-one-page="true"]')
-      if (!frame || !root) return
-      const target = (297 / 25.4) * 96 - 2
-      const minScale = 0.75
-      frame.style.height = 'auto'
-      frame.style.minHeight = target + 'px'
-      frame.style.overflow = 'visible'
-      frame.style.breakInside = 'avoid'
-      frame.style.pageBreakAfter = 'avoid'
-      root.style.transform = 'none'
-      root.style.transformOrigin = 'top left'
-      const rootRect = root.getBoundingClientRect()
-      let height = Math.max(rootRect.height, root.scrollHeight, root.clientHeight)
-      root.querySelectorAll('*').forEach((node) => {
-        const element = node
-        const style = getComputedStyle(element)
-        if (style.display === 'none' || style.visibility === 'hidden') return
-        if (style.position === 'absolute' || style.position === 'fixed' || style.position === 'sticky') return
-        const rect = element.getBoundingClientRect()
-        if (rect.width > 0 && rect.height > 0) height = Math.max(height, rect.bottom - rootRect.top)
-      })
-      if (height <= target) return
-      const scale = target / height
-      if (scale < minScale) {
-        frame.style.minHeight = '0'
-        frame.style.setProperty('break-inside', 'auto', 'important')
-        frame.style.setProperty('page-break-after', 'auto', 'important')
-        root.style.setProperty('break-after', 'auto', 'important')
-        root.style.setProperty('page-break-after', 'auto', 'important')
-        return
-      }
-      frame.style.height = target + 'px'
-      frame.style.minHeight = '0'
-      frame.style.overflow = 'hidden'
-      root.style.transform = 'scaleY(' + scale + ')'
-    }
-    window.addEventListener('load', fit, { once: true })
-    if (document.fonts?.ready) document.fonts.ready.then(() => requestAnimationFrame(fit))
-    setTimeout(fit, 0)
-  })()
-  </script>` : ''
-  return `${DOCUMENT_DOCTYPE}\n<html lang="zh-CN">\n<head>\n  <meta charset="UTF-8">\n  <meta http-equiv="X-UA-Compatible" content="IE=edge">\n  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n  <title>${title}</title>\n  ${fonts}\n  <style>\n  ${styles}${squareCornersCss}\n  @media print {\n    @page {\n      size: A4;\n      ${pageMarginCss}\n    }${firstPageMarginCss}\n    body {\n      margin: 0;\n      padding: 0;\n    }${onePageCss}${onePageFrameCss}${bleedPageCss}\n  }\n  * {\n    -webkit-print-color-adjust: exact;\n    print-color-adjust: exact;\n  }\n  .resume-container, .resume-container * {\n    box-shadow: none !important;\n    filter: none !important;\n    font-synthesis: style;\n    text-shadow: none !important;\n  }\n  </style>\n</head>\n<body>\n${bodyMarkup}\n${onePagePrintScript}\n</body>\n</html>`
+  return `${DOCUMENT_DOCTYPE}\n<html lang="zh-CN">\n<head>\n  <meta charset="UTF-8">\n  <meta http-equiv="X-UA-Compatible" content="IE=edge">\n  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n  <title>${title}</title>\n  ${fonts}\n  <style>\n  ${styles}${PRINT_PAGINATION_CSS}${squareCornersCss}\n  @media print {\n    @page {\n      size: A4;\n      ${pageMarginCss}\n    }${firstPageMarginCss}\n    body {\n      margin: 0;\n      padding: 0;\n    }${onePageCss}${onePageFrameCss}${bleedPageCss}\n  }\n  * {\n    -webkit-print-color-adjust: exact;\n    print-color-adjust: exact;\n  }\n  .resume-container, .resume-container * {\n    box-shadow: none !important;\n    filter: none !important;\n    font-synthesis: style;\n    text-shadow: none !important;\n  }\n  </style>\n</head>\n<body>\n${bodyMarkup}\n</body>\n</html>`
 }
 
 /**

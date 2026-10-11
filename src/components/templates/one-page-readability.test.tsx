@@ -84,20 +84,22 @@ describe('automatic one-page readability', () => {
     expect(result.current.theme).toMatchObject({ lineHeight: 1.2, fontSize: 13, spacingScale: 0.2 })
   })
 
-  it('scales a small print reflow without clipping the frame before measuring it', () => {
+  it('keeps a fitting print frame visible without applying a transform', () => {
     const frame = document.createElement('div')
     const root = document.createElement('div')
     document.body.append(frame)
     frame.append(root)
-    Object.defineProperty(root, 'scrollHeight', { configurable: true, value: 1200 })
-    Object.defineProperty(root, 'clientHeight', { configurable: true, value: 1200 })
-    vi.spyOn(root, 'getBoundingClientRect').mockReturnValue({ top: 0, bottom: 1200, height: 1200, width: 794 } as DOMRect)
+    Object.defineProperty(root, 'scrollHeight', { configurable: true, value: 1000 })
+    Object.defineProperty(root, 'clientHeight', { configurable: true, value: 1000 })
+    vi.spyOn(root, 'getBoundingClientRect').mockReturnValue({ top: 0, bottom: 1000, height: 1000, width: 794 } as DOMRect)
 
-    fitOnePagePrintFrame(frame, root)
+    const result = fitOnePagePrintFrame(frame, root)
 
-    expect(frame.style.height).toContain('px')
-    expect(frame.style.overflow).toBe('hidden')
-    expect(root.style.transform).toMatch(/^scaleY\(/)
+    expect(result.fits).toBe(true)
+    expect(frame.style.height).toBe('auto')
+    expect(frame.style.overflow).toBe('visible')
+    expect(root.style.transform).toBe('none')
+    expect(frame.dataset.onePageFit).toBe('true')
   })
 
   it('falls back to normal pagination when fitting would make text too small', () => {
@@ -109,8 +111,9 @@ describe('automatic one-page readability', () => {
     Object.defineProperty(root, 'clientHeight', { configurable: true, value: 2000 })
     vi.spyOn(root, 'getBoundingClientRect').mockReturnValue({ top: 0, bottom: 2000, height: 2000, width: 794 } as DOMRect)
 
-    fitOnePagePrintFrame(frame, root)
+    const result = fitOnePagePrintFrame(frame, root)
 
+    expect(result.fits).toBe(false)
     expect(frame.style.overflow).toBe('visible')
     expect(frame.style.minHeight).toBe('0')
     expect(frame.style.getPropertyValue('break-inside')).toBe('auto')

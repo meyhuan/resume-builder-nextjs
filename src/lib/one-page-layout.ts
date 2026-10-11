@@ -24,7 +24,6 @@ const STYLE_ATTR = 'data-one-page-compact-style'
 const COMPACTION_STYLES = new WeakMap<HTMLElement, HTMLStyleElement>()
 const A4_HEIGHT_PX = (297 / 25.4) * 96
 const PRINT_SAFE_MARGIN_PX = 2
-const MIN_PRINT_SCALE = 0.75
 
 function numeric(value: string): number | null {
   const parsed = Number.parseFloat(value)
@@ -163,14 +162,22 @@ export function measureOnePageContentHeight(root: HTMLElement): number {
 }
 
 /**
- * Keep a one-page print frame on a single A4 sheet after print-only CSS has
- * reflowed the template. The full visible content is measured before any
- * clipping is enabled. If a small reflow difference makes the content taller
- * than the sheet, the resume is scaled vertically. If fitting it would make
- * the text too small, the frame falls back to normal pagination so the tail
- * remains present instead of being silently clipped.
+ * Measure the one-page print frame after print-only CSS has reflowed the
+ * template. This function never scales or clips content: CSS transforms do
+ * not participate in fragmentation, and a fixed-height frame with hidden
+ * overflow can produce a PDF that looks valid while dropping the tail.
+ *
+ * When the content is too tall, the frame is released back to native
+ * fragmentation. The caller can surface the overflow state in the UI while
+ * Chromium produces as many complete A4 pages as are required.
  */
-export function fitOnePagePrintFrame(frame: HTMLElement, root: HTMLElement): void {
+export interface OnePagePrintFit {
+  readonly fits: boolean
+  readonly contentHeight: number
+  readonly targetHeight: number
+}
+
+export function fitOnePagePrintFrame(frame: HTMLElement, root: HTMLElement): OnePagePrintFit {
   const targetHeight = A4_HEIGHT_PX - PRINT_SAFE_MARGIN_PX
   frame.style.height = 'auto'
   frame.style.minHeight = `${targetHeight}px`
@@ -181,23 +188,19 @@ export function fitOnePagePrintFrame(frame: HTMLElement, root: HTMLElement): voi
   root.style.transformOrigin = 'top left'
 
   const contentHeight = measureOnePageContentHeight(root)
-  if (contentHeight <= targetHeight) return
+  const fits = contentHeight <= targetHeight
+  frame.dataset.onePageFit = fits ? 'true' : 'false'
+  root.dataset.onePageFit = fits ? 'true' : 'false'
 
-  const scale = targetHeight / contentHeight
-  if (scale < MIN_PRINT_SCALE) {
-    // A genuinely long resume should paginate. Keeping the frame at a fixed
-    // height with overflow hidden would make the export look successful while
-    // dropping the lower sections of the document.
+  if (!fits) {
+    // A genuinely long resume should paginate. Never keep a fixed-height
+    // frame or enable clipping while falling back to native fragmentation.
     frame.style.minHeight = '0'
     frame.style.setProperty('break-inside', 'auto', 'important')
     frame.style.setProperty('page-break-after', 'auto', 'important')
     root.style.setProperty('break-after', 'auto', 'important')
     root.style.setProperty('page-break-after', 'auto', 'important')
-    return
   }
 
-  frame.style.height = `${targetHeight}px`
-  frame.style.minHeight = '0'
-  frame.style.overflow = 'hidden'
-  root.style.transform = `scaleY(${scale})`
+  return { fits, contentHeight, targetHeight }
 }

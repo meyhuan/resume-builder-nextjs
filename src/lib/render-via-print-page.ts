@@ -6,10 +6,10 @@
  * and mini-program export flows (dual-auth: cookie or HMAC sign).
  */
 import type { Page } from 'puppeteer-core'
-import { getClientPaginationScript } from '@/utils/paginate-html'
 import { mintPrintToken } from '@/lib/print-token'
 import { rasterizePdfToPngs } from '@/lib/pdf-to-png'
 import { closeSharedPuppeteerPage, newSharedPuppeteerPage } from '@/lib/puppeteer-browser'
+import { getPrintLayoutDiagnostics, type PrintLayoutDiagnostics } from '@/lib/print-pagination'
 
 export interface RenderResult {
   readonly buffer: Buffer
@@ -24,6 +24,7 @@ export interface RenderDiagnostics {
   readonly printableContent?: PrintableContentSnapshot
   readonly pdfBytes?: number
   readonly previewPageCount?: number
+  readonly printLayout?: PrintLayoutDiagnostics
 }
 
 export interface PrintableContentSnapshot {
@@ -178,12 +179,30 @@ export async function renderViaPrintPage(opts: RenderViaPrintPageOpts): Promise<
     await page.goto(printUrl, { waitUntil: ['domcontentloaded', 'load'], timeout: PRINT_PAGE_NAVIGATION_TIMEOUT_MS })
     await waitForDocumentAssets(page)
 
-    // Wait for the client renderer to flag readiness, but tolerate timeouts.
-    await page.waitForSelector('[data-print-ready="1"]', { timeout: 15_000 }).catch(() => {
-      console.warn('[render-via-print-page] print-ready timed out, continuing', { traceId: opts.traceId })
-    })
+    // The renderer marks readiness only after fonts, layout compaction and two
+    // animation frames. Capturing before that marker creates preview/export
+    // drift, so a timeout is a real render failure.
+    try {
+      await page.waitForSelector('[data-print-ready="1"]', { timeout: 15_000 })
+    } catch (error) {
+      throw new ExportRenderError('PRINT_NOT_READY', 'Print page did not signal layout readiness', {
+        traceId: opts.traceId,
+        causeMessage: errorMessage(error),
+      })
+    }
     printableContent = await waitForPrintableContent(page, opts.traceId)
     await waitForDocumentAssets(page)
+    await page.evaluate(async () => {
+      await document.fonts?.ready?.catch(() => undefined)
+      await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())))
+    })
+    const printLayout = await page.evaluate(getPrintLayoutDiagnostics)
+    if (printLayout.hiddenOverflowAncestors > 0 || printLayout.transformedRoot) {
+      throw new ExportRenderError('PRINT_NOT_READY', 'Print layout contains clipped or transformed content', {
+        traceId: opts.traceId,
+        printLayout,
+      })
+    }
 
     if (opts.type !== 'pdf') {
       const target = await page.$('#print-root')
@@ -197,17 +216,14 @@ export async function renderViaPrintPage(opts: RenderViaPrintPageOpts): Promise<
           traceId: opts.traceId,
           renderDurationMs: Date.now() - startedAt,
           printableContent,
+          printLayout,
         },
       }
     }
 
-    // Apply smart per-block pagination (skips one-page/bleed layouts internally):
-    // short blocks keep together, tall blocks stay splittable to avoid large blanks.
-    await page.evaluate(getClientPaginationScript())
-
     // Generate the PDF
     const pdfBuffer = Buffer.from(
-      await page.pdf({ printBackground: true, displayHeaderFooter: false, preferCSSPageSize: true })
+      await page.pdf({ printBackground: true, displayHeaderFooter: false, preferCSSPageSize: true, waitForFonts: true })
     )
     console.log('[render-via-print-page] pdf bytes', { traceId: opts.traceId, size: pdfBuffer.length })
 
@@ -232,6 +248,7 @@ export async function renderViaPrintPage(opts: RenderViaPrintPageOpts): Promise<
         traceId: opts.traceId,
         renderDurationMs: Date.now() - startedAt,
         printableContent,
+        printLayout,
         pdfBytes: pdfBuffer.length,
         previewPageCount: pageScreenshots.length,
       },

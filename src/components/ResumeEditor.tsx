@@ -24,7 +24,7 @@ import { revalidateDashboard } from '@/app/actions'
 import { useResumePagination } from '@/hooks/use-resume-pagination'
 import { useEditorSidebarPreference } from '@/hooks/use-editor-sidebar-preference'
 import { usePdfPreviewPageCount } from '@/hooks/use-pdf-preview-page-count'
-import { ResumePageFeedback } from '@/components/editor/resume-page-feedback'
+import { ResumePageFeedback, ResumePageGuides } from '@/components/editor/resume-page-feedback'
 import { useOnePageMode } from '@/hooks/use-one-page-mode'
 import { toast } from 'sonner'
 import { DEFAULT_ONE_PAGE_STRATEGY, type AdjustableTokens, type OnePageStrategy } from '@/entities/editor/editor-meta'
@@ -288,6 +288,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
   const [showPreview, setShowPreview] = useState(false)
   const [pdfBlobUrl, setPdfBlobUrl] = useState<string>('')
   const [pdfBlob, setPdfBlob] = useState<Blob | null>(null)
+  const [pdfBlobRevision, setPdfBlobRevision] = useState<string>('')
   const [isGenerating, setIsGenerating] = useState(false)
   const [isConfirmingExport, setIsConfirmingExport] = useState(false)
   const draftBackupRestored = useRef(false)
@@ -1126,6 +1127,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
       const autoOptimized = response.headers.get('X-Pdf-Auto-Optimized') === '1'
       const url: string = window.URL.createObjectURL(blob)
       setPdfBlob(blob)
+      setPdfBlobRevision(generatedRevision)
       setPdfBlobUrl(url)
       setShowPreview(true)
       void recordPreview(blob, generatedRevision)
@@ -1143,12 +1145,20 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
   /** Confirm export: consume quota and download PDF. */
   async function handleConfirmExport(): Promise<void> {
     if (!pdfBlob || isConfirmingExport) return
+    if (pdfBlobRevision !== previewRevision) {
+      toast.info('简历内容已更新，请重新生成 PDF 预览')
+      return
+    }
     if (hasUnsavedRef.current) backupEditorDraft('before-export-auth-check')
     requireAuth(() => { void confirmExportWithAuth() })
   }
 
   async function confirmExportWithAuth(): Promise<void> {
     if (!pdfBlob || isConfirmingExport) return
+    if (pdfBlobRevision !== previewRevision) {
+      toast.info('简历内容已更新，请重新生成 PDF 预览')
+      return
+    }
     setIsConfirmingExport(true)
     track('export_click', {
       resumeId,
@@ -1307,6 +1317,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
     if (pdfBlobUrl) window.URL.revokeObjectURL(pdfBlobUrl)
     setPdfBlobUrl('')
     setPdfBlob(null)
+    setPdfBlobRevision('')
     setShowPreview(false)
   }
 
@@ -1371,6 +1382,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
         />
         <div data-editor-canvas className="min-h-0 min-w-0 flex-1 overflow-auto p-3 sm:p-6 xl:p-8 custom-scrollbar bg-slate-50/30">
           <div className="relative mx-auto max-w-[210mm] md:w-[210mm] md:max-xl:[zoom:0.8] print:[zoom:1]">
+            <ResumePageGuides pages={pages} />
             <div
               ref={printRef}
               className="page w-full bg-white shadow-[0_0_50px_rgba(0,0,0,0.05)] rounded-xl print:shadow-none print:rounded-none"

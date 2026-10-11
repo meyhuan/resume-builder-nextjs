@@ -17,6 +17,7 @@ import { exportImage } from '@/io/export-image'
 import { useVipCheck } from '@/hooks/use-vip-check'
 import VipUpgradeDialog from '@/components/vip/vip-upgrade-dialog'
 import { useOnePageMode, type OnePageStatus } from '@/hooks/use-one-page-mode'
+import { calculateResumePages } from '@/lib/resume-page-metrics'
 import { embedEditorMeta, extractEditorMeta, type AdjustableTokens } from '@/entities/editor/editor-meta'
 import { createLogger } from '@/lib/logger'
 import { track } from '@/lib/analytics'
@@ -344,6 +345,11 @@ export default function MobilePreviewClient(): ReactElement {
     setSnapshot: setOnePageSnapshot,
     strategy: MOBILE_ONE_PAGE_STRATEGY,
   })
+  const mobilePages = calculateResumePages(
+    contentHeight,
+    theme.pagePaddingVertical ?? 22,
+    onePageFit && onePageStatus === 'fit',
+  )
 
   // When switching templates, clear the snapshot to avoid restoring one
   // template's tokens onto another. The next template starts fresh.
@@ -764,6 +770,17 @@ export default function MobilePreviewClient(): ReactElement {
                   pointerEvents: 'none',
                 }}
               >
+                {mobilePages.boundaries.length > 0 && (
+                  <div data-mobile-page-guides aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 z-20">
+                    {mobilePages.boundaries.map((boundary, index) => (
+                      <div key={boundary} className="absolute inset-x-0 border-t border-dashed border-slate-300/80">
+                        <span className="absolute right-1 -top-3 rounded bg-slate-100/90 px-1.5 py-0.5 text-[9px] font-medium tracking-wide text-slate-400 shadow-sm">
+                          第 {index + 2} 页
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 <Suspense fallback={<TemplateFallback />}>
                   <div ref={resumeBodyRef} className="resume-document-main" data-one-page={onePageFit && onePageStatus === 'fit' ? 'true' : 'false'} data-one-page-mode={onePageFit ? 'true' : 'false'} data-one-page-strategy="one-page" data-one-page-status={onePageStatus}>
                     {Template ? <Template resume={renderableResume} theme={theme} /> : null}

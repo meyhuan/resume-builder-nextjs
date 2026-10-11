@@ -9,8 +9,8 @@
 
 /* Optional: fix the page height to exactly A4 on screen */
 .page-fixed {
-  height: 297mm;
-  overflow: hidden;
+  min-height: 297mm;
+  overflow: visible;
 }
 
   @media print {
