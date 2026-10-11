@@ -11,8 +11,10 @@ const metadata = fs.readFileSync('src/lib/templates/template-metadata.ts', 'utf8
 const expectedPublicIds = [...metadata.matchAll(/^  ([a-z\d_-]+): \{([\s\S]*?)^  \},/gm)]
   .filter(([, , block]) => /editor: true/.test(block) && /catalog: true/.test(block))
   .map(([, id]) => id).sort()
-assert.equal(expectedPublicIds.length, 50, 'Release catalog must have exactly 50 public templates')
-assert.equal(new Set(expectedPublicIds).size, 50, 'Public template IDs must be unique')
+const PUBLIC_COUNT = 100
+const ENGLISH_COUNT = 5
+assert.equal(expectedPublicIds.length, PUBLIC_COUNT, `Release catalog must have exactly ${PUBLIC_COUNT} public templates`)
+assert.equal(new Set(expectedPublicIds).size, PUBLIC_COUNT, 'Public template IDs must be unique')
 const artifacts = path.resolve('test-artifacts/mobile-template-filters')
 fs.mkdirSync(artifacts, { recursive: true })
 const id = 'local-template-filter-fixture'
@@ -97,7 +99,7 @@ async function clickText(page, text, scope = 'button') {
 async function count(page, n) {
   if (n > 0) await page.waitForFunction(() => document.querySelectorAll('[data-template-id]').length > 0, { timeout: 60000 })
   await page.waitForFunction((expected) => document.querySelectorAll('[data-template-id]').length === expected, { timeout: 60000 }, n)
-  if (n === 50) {
+  if (n === PUBLIC_COUNT) {
     const actualIds = await page.$$eval('[data-template-id]', (nodes) => nodes.map((node) => node.dataset.templateId).sort())
     assert.deepEqual(actualIds, expectedPublicIds, 'Mobile preview public IDs differ from metadata')
   }
@@ -112,7 +114,7 @@ async function openSettings(page) {
 }
 async function english(page) {
   await page.select('[aria-label="模板分类"]', 'english')
-  await count(page, 1)
+  await count(page, ENGLISH_COUNT)
 }
 async function closed(page) {
   await page.waitForFunction(() => !document.querySelector('[role="dialog"]'))
@@ -122,11 +124,11 @@ try {
   await page.goto(`${baseUrl}/m/preview?id=${id}`, { waitUntil: 'domcontentloaded', timeout: 120000 })
   await preview(page, 'qingning')
   await openSettings(page)
-  await count(page, 50)
+  await count(page, PUBLIC_COUNT)
   const original = await page.$eval('.resume-document-main', (el) => el.textContent)
   const originalStyle = await page.$eval('.resume-container', (el) => el.getAttribute('style'))
   await english(page)
-  await count(page, 1)
+  await count(page, ENGLISH_COUNT)
   assert.equal(await page.$eval('.resume-document-main', (el) => el.textContent), original)
   assert.equal(await page.$eval('.resume-container', (el) => el.getAttribute('style')), originalStyle)
   assert.equal(await page.$eval('[data-template-id]', (el) => el.dataset.templateId), 'moxu')
@@ -183,21 +185,21 @@ try {
   await page.click('[data-template-id="moxu"]')
   await preview(page, 'moxu')
   await clickText(page, '清除筛选', '[data-template-browser] button')
-  await count(page, 50)
+  await count(page, PUBLIC_COUNT)
   await page.click('[data-template-id="qingning"]')
   await preview(page, 'qingning')
   assert.equal(await page.$eval('.resume-document-main', (el) => el.textContent), original)
   results.push('PASS: real mobile preview filters without changing content/theme; explicit switching away/back preserves content')
 
   await clickText(page, '筛选', '[data-template-browser] button')
-  for (const label of ['英文', '双栏']) {
+  for (const label of ['英文', '教育教学']) {
     const checkbox = await page.evaluateHandle((text) => [...document.querySelectorAll('[data-template-browser] label')].find((el) => el.textContent.trim() === text)?.querySelector('input'), label)
     await checkbox.asElement().click()
   }
   await count(page, 0)
   await page.screenshot({ path: path.join(artifacts, 'mobile-filters-expanded.png') })
   await clickText(page, '查看全部模板', '[data-template-browser] button')
-  await count(page, 50)
+  await count(page, PUBLIC_COUNT)
   results.push('PASS: combined filters, empty-state recovery, complete first card at 320/375/390/414/768px widths')
 
   // Selection and theme changes remain a trial until explicitly saved.

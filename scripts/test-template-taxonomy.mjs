@@ -8,8 +8,10 @@ const metadata = fs.readFileSync('src/lib/templates/template-metadata.ts', 'utf8
 const expectedPublicIds = [...metadata.matchAll(/^  ([a-z\d_-]+): \{([\s\S]*?)^  \},/gm)]
   .filter(([, , block]) => /editor: true/.test(block) && /catalog: true/.test(block))
   .map(([, id]) => id).sort()
-assert.equal(expectedPublicIds.length, 50, 'Release catalog must have exactly 50 public templates')
-assert.equal(new Set(expectedPublicIds).size, 50, 'Public template IDs must be unique')
+const PUBLIC_COUNT = 100
+const ENGLISH_COUNT = 5
+assert.equal(expectedPublicIds.length, PUBLIC_COUNT, `Release catalog must have exactly ${PUBLIC_COUNT} public templates`)
+assert.equal(new Set(expectedPublicIds).size, PUBLIC_COUNT, 'Public template IDs must be unique')
 const artifacts = path.resolve('test-artifacts/template-taxonomy')
 fs.mkdirSync(artifacts, { recursive: true })
 const browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox'] })
@@ -43,7 +45,7 @@ async function clickText(text) {
 async function count(expected) {
   await page.waitForFunction(() => document.querySelectorAll('[data-template-browser] [data-template-id]').length > 0, { timeout: 60000 })
   await page.waitForFunction((n) => document.querySelectorAll('[data-template-browser] [data-template-id]').length === n, { timeout: 60000 }, expected)
-  if (expected === 50) {
+  if (expected === PUBLIC_COUNT) {
     const actualIds = await page.$$eval('[data-template-browser] [data-template-id]', (nodes) => nodes.map((node) => node.dataset.templateId).sort())
     assert.deepEqual(actualIds, expectedPublicIds, 'Rendered public IDs differ from metadata')
   }
@@ -54,9 +56,9 @@ async function noOverflow() {
 try {
   await page.setViewport({ width: 1440, height: 1000 })
   await page.goto(baseUrl + '/templates', { waitUntil: 'networkidle2', timeout: 120000 })
-  await count(50)
+  await count(PUBLIC_COUNT)
   await clickText('英文简历')
-  await count(1)
+  await count(ENGLISH_COUNT)
   assert.equal(await page.$eval('[data-template-id]', (el) => el.getAttribute('data-template-id')), 'moxu')
   await page.waitForFunction(() => {
     const image = document.querySelector('[data-template-id="moxu"] img')
@@ -64,16 +66,16 @@ try {
   })
   await page.screenshot({ path: path.join(artifacts, 'desktop-english.png') })
   await clickText('清除筛选')
-  await count(50)
-  results.push('PASS: exact 50 public IDs match metadata; English quick filter and reset')
+  await count(PUBLIC_COUNT)
+  results.push(`PASS: exact ${PUBLIC_COUNT} public IDs match metadata; English quick filter and reset`)
   await page.setViewport({ width: 390, height: 844, isMobile: true })
   await noOverflow()
   await page.screenshot({ path: path.join(artifacts, 'mobile-catalog.png') })
   results.push('PASS: mobile public catalog has no horizontal overflow')
   await page.goto(baseUrl + '/m', { waitUntil: 'networkidle2', timeout: 120000 })
-  await count(50)
+  await count(PUBLIC_COUNT)
   await clickText('英文简历')
-  await count(1)
+  await count(ENGLISH_COUNT)
   await page.$eval('[data-template-browser]', (el) => el.scrollIntoView())
   await noOverflow()
   await page.screenshot({ path: path.join(artifacts, 'mobile-home.png') })
@@ -81,15 +83,15 @@ try {
   await page.setViewport({ width: 1440, height: 1000 })
   await page.goto(baseUrl + '/dev/scenario-loader?tpl=qingning&scenario=full', { waitUntil: 'networkidle2', timeout: 120000 })
   await page.waitForSelector('[data-scenario-preview] .resume-container', { timeout: 60000 })
-  await count(50)
+  await count(PUBLIC_COUNT)
   const before = await page.$eval('[data-scenario-preview]', (el) => el.textContent)
   await clickText('英文简历')
-  await count(1)
+  await count(ENGLISH_COUNT)
   assert.equal(await page.$eval('[data-scenario-preview]', (el) => el.textContent), before, 'Filtering changed resume')
   await page.click('[data-template-id="moxu"]')
   await page.waitForFunction(() => document.querySelector('[data-template-id="moxu"]')?.getAttribute('aria-pressed') === 'true')
   await clickText('清除筛选')
-  await count(50)
+  await count(PUBLIC_COUNT)
   await page.click('[data-template-id="qingning"]')
   await page.waitForFunction(() => document.querySelector('[data-template-id="qingning"]')?.getAttribute('aria-pressed') === 'true')
   await page.waitForFunction((text) => document.querySelector('[data-scenario-preview]')?.textContent === text, {}, before)

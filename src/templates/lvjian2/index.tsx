@@ -1,0 +1,10 @@
+"use client"
+
+import type { ReactElement } from 'react'
+import type { TemplateProps } from '@/templates/_core'
+import { CanvaAdaptedTemplate } from '@/templates/_canva/shared'
+
+/** 独立改编自 Canva EAGvHn4pAuM：绿简二参考稿的结构与信息密度。 */
+export default function Lvjian2Template(props: TemplateProps): ReactElement {
+  return <CanvaAdaptedTemplate {...props} variant="lvjian2" />
+}

@@ -69,14 +69,14 @@ export function Heading(props: { readonly value: string; readonly originalTitle?
   const { value, originalTitle = value, onCommit, design, compact, dark, index = 0 } = props
   const kind = compact && design.heading === 'hexagon' ? 'pill' : design.heading
   const Icon = findModuleBySectionTitle(originalTitle)?.key === 'eduExp' ? GraduationCap : findModuleBySectionTitle(originalTitle)?.key === 'summary' ? UserRound : BriefcaseBusiness
-  const icons = ['hexagon', 'square', 'solid-icon', 'plane', 'bubble', 'outline-icon', 'capsule', 'arrow'].includes(kind)
+  const icons = ['hexagon', 'square', 'solid-icon', 'plane', 'bubble', 'outline-icon', 'capsule', 'arrow', 'spark-rule'].includes(kind)
   const style: CSSProperties = { display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8, minHeight: 30, marginBottom: 10, color: kind === 'rounded-bar' ? 'var(--canva-on-accent)' : dark ? '#fff' : kind === 'bubble' ? '#183945' : kind === 'flat' ? '#252525' : 'var(--canva-accent)' }
   const labelStyle: CSSProperties = { margin: 0, fontSize: 'calc(1.15em * var(--canva-title-scale))', fontWeight: 750, lineHeight: 1.45, maxWidth: '100%' }
   const english = englishTitle(originalTitle)
   return <div className={`canva-heading canva-heading-${kind} ${dark ? 'canva-heading-dark' : ''}`} style={style} data-heading-kind={kind}>
-    {icons ? <span className="canva-heading-icon" aria-hidden>{kind === 'plane' ? <Send size={16} /> : <Icon size={18} />}</span> : kind === 'triangle' || kind === 'bullet' ? <span className="canva-heading-marker" aria-hidden /> : null}
+    {icons ? <span className="canva-heading-icon" aria-hidden>{kind === 'plane' ? <Send size={16} /> : kind === 'spark-rule' ? <Star size={20} /> : <Icon size={18} />}</span> : kind === 'triangle' || kind === 'bullet' || kind === 'timeline-dot' ? <span className="canva-heading-marker" aria-hidden /> : null}
     <span className="canva-heading-label" style={{ maxWidth: '100%', minWidth: 0, ...(kind === 'tape' ? { backgroundColor: index % 2 ? '#ddd1e8' : '#d7e6d6' } : {}) }}><SectionTitleText as="h2" value={value} onCommit={onCommit} style={labelStyle} /></span>
-    {english && kind !== 'dotted' && kind !== 'triangle' && kind !== 'hexagon' && kind !== 'bullet' && kind !== 'caps-rule' ? <span aria-hidden className="canva-heading-english" style={{ fontSize: '.62em', color: dark ? '#fff' : '#666' }}>{english}</span> : null}
+    {english && kind !== 'dotted' && kind !== 'triangle' && kind !== 'hexagon' && kind !== 'bullet' && kind !== 'caps-rule' && kind !== 'table-band' ? <span aria-hidden className="canva-heading-english" style={{ fontSize: '.62em', color: dark ? '#fff' : '#666' }}>{english}</span> : null}
     <span className="canva-heading-line" aria-hidden />
   </div>
 }
@@ -98,15 +98,15 @@ function EditableReferenceSection({ section, design, theme, dragProps, compact, 
   const editable = useEditableSection(section)
   const styles: BlockRendererStyles = {
     container: design.blockFlow === 'date-track' ? 'canva-date-track-block' : undefined,
-    header: design.blockFlow === 'date-track' ? 'canva-date-track-header' : design.blockFlow === 'ledger' ? 'canva-ledger-header' : 'grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 mb-1',
+    header: design.blockFlow === 'date-track' ? 'canva-date-track-header' : design.blockFlow === 'ledger' ? 'canva-ledger-header' : design.blockFlow === 'table' ? 'canva-table-block-header' : 'grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 mb-1',
     title: { fontSize: '1em', fontWeight: '700', color: dark ? '#fff' : theme.textColor },
     subtitle: { fontSize: '.95em', color: dark ? '#f1f1f1' : theme.textColor },
-    dateRange: { className: design.blockFlow === 'date-track' ? 'canva-date-track-date' : design.blockFlow === 'ledger' ? 'canva-ledger-date' : 'shrink-0', fontSize: '.85em', color: dark ? '#ddd' : '#555' },
+    dateRange: { className: design.blockFlow === 'date-track' ? 'canva-date-track-date' : design.blockFlow === 'ledger' ? 'canva-ledger-date' : design.blockFlow === 'table' ? 'canva-table-date' : 'shrink-0', fontSize: '.85em', color: dark ? '#ddd' : '#555' },
     content: 'canva-rich mt-1',
     contentColor: dark ? '#f1f1f1' : theme.textColor,
     contentEditingColor: '#171717',
   }
-  return <section className="resume-section canva-section relative" data-template-section="true" data-template-section-title={section.title} onMouseEnter={() => editable.setHovered(true)} onMouseLeave={() => editable.setHovered(false)} style={{ marginBottom: gap(design.density === 'compact' ? 15 : 22, theme), ...(design.heading === 'two-tone' ? { borderBottom: '1px dashed #b4c9ca', paddingBottom: gap(12, theme) } : {}), ...(design.heading === 'outline-icon' ? { borderBottom: '1px solid #bbb', paddingBottom: gap(12, theme) } : {}) }}>
+  return <section className={`resume-section canva-section relative ${design.blockFlow === 'table' ? 'canva-table-section' : ''} ${design.decor === 'watercolor-cards' ? 'canva-watercolor-section' : ''}`} data-template-section="true" data-template-section-title={section.title} onMouseEnter={() => editable.setHovered(true)} onMouseLeave={() => editable.setHovered(false)} style={{ marginBottom: gap(design.density === 'compact' ? 15 : 22, theme), ...(design.heading === 'two-tone' ? { borderBottom: '1px dashed #b4c9ca', paddingBottom: gap(12, theme) } : {}), ...(design.heading === 'outline-icon' ? { borderBottom: '1px solid #bbb', paddingBottom: gap(12, theme) } : {}), ...(design.decor === 'watercolor-cards' ? { background: '#ffffffc9', border: '5px solid #fff', borderRadius: 28, padding: '16px 20px', boxShadow: '0 4px 15px #294d7730' } : {}) }}>
     <Heading value={editable.displayTitle} originalTitle={section.title} onCommit={editable.canEditTitle ? editable.onCommitTitle : undefined} design={design} compact={compact} dark={dark} index={index} />
     <SectionActions editable={editable} dragProps={dragProps} />
     <BlockList section={editable} themeColor={design.accent} spacingScale={theme.spacingScale * (design.density === 'compact' ? .8 : 1)} rendererStyles={styles} className={section.columns === 2 && !compact ? 'grid grid-cols-2 gap-4' : 'block'} />

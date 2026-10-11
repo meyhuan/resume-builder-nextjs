@@ -2,10 +2,12 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { TemplateBrowser } from './template-browser'
 import { templateCatalog } from '@/lib/templates/template-catalog'
+import { filterTemplates } from '@/lib/templates/template-taxonomy'
 import { PreviewSettingsSheet, DEFAULT_PREVIEW_THEME } from '@/app/m/preview/_components/preview-settings-sheet'
 import type { ThemeTokens } from '@/entities/theme/theme-tokens'
 
 afterEach(cleanup)
+const englishCount = filterTemplates(templateCatalog, { languages: ['en'] }).length
 function setup() {
   const select = vi.fn()
   render(
@@ -31,7 +33,7 @@ describe('template browser', () => {
       onReset={vi.fn()} onTabChange={vi.fn()} onSelectTemplate={select} onUpdateTheme={updateTheme} />)
     expect(screen.getByRole('status').textContent).toContain(`${templateCatalog.length} 款`)
     fireEvent.change(screen.getByRole('combobox', { name: '模板分类' }), { target: { value: 'english' } })
-    expect(screen.getByRole('status').textContent).toContain('1 款')
+    expect(screen.getByRole('status').textContent).toContain(`${englishCount} 款`)
     expect(select).not.toHaveBeenCalled()
     expect(updateTheme).not.toHaveBeenCalled()
     fireEvent.click(screen.getByRole('button', { name: /墨序/ }))
@@ -43,7 +45,7 @@ describe('template browser', () => {
     expect(toggle.getAttribute('aria-expanded')).toBe('false')
     fireEvent.click(toggle)
     fireEvent.click(screen.getByRole('checkbox', { name: '英文' }))
-    fireEvent.click(screen.getByRole('checkbox', { name: '双栏' }))
+    fireEvent.click(screen.getByRole('checkbox', { name: '教育教学' }))
     expect(screen.getByRole('combobox').getAttribute('aria-label')).toBe('模板分类')
     expect(screen.getByRole('button', { name: '筛选 · 2' })).toBeDefined()
     expect(screen.getByText('没有符合这些条件的模板')).toBeDefined()
@@ -81,7 +83,7 @@ describe('template browser', () => {
   it('filters without selecting a template; preserves current indication and permits explicit selection', () => {
     const select = setup()
     fireEvent.click(screen.getByRole('button', { name: /英文简历/ }))
-    expect(screen.getByRole('status').textContent).toContain('1 款')
+    expect(screen.getByRole('status').textContent).toContain(`${englishCount} 款`)
     expect(screen.getByText(/正在使用「简约」/)).toBeDefined()
     expect(select).not.toHaveBeenCalled()
     fireEvent.click(screen.getByRole('button', { name: '墨序' }))
@@ -93,7 +95,7 @@ describe('template browser', () => {
     setup()
     fireEvent.click(screen.getByText('更多筛选'))
     fireEvent.click(screen.getByRole('checkbox', { name: '英文' }))
-    fireEvent.click(screen.getByRole('checkbox', { name: '双栏' }))
+    fireEvent.click(screen.getByRole('checkbox', { name: '教育教学' }))
     expect(screen.getByText('没有符合这些条件的模板')).toBeDefined()
     fireEvent.click(screen.getByRole('button', { name: '查看全部模板' }))
     expect(screen.getByRole('status').textContent).toContain(`${templateCatalog.length} 款`)

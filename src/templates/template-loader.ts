@@ -373,6 +373,256 @@ export const TEMPLATE_REGISTRY: Record<string, TemplateConfig> = {
     component: lazy(() => import('@/templates/fawujian')),
     recommendedPrimaryColor: '#444444',
   },
+  lanhe: {
+    ...TEMPLATE_METADATA.lanhe,
+    component: lazy(() => import('@/templates/lanhe')),
+    recommendedPrimaryColor: '#5b7188',
+  },
+  lanjing: {
+    ...TEMPLATE_METADATA.lanjing,
+    component: lazy(() => import('@/templates/lanjing')),
+    recommendedPrimaryColor: '#2f6fb2',
+  },
+  mujian: {
+    ...TEMPLATE_METADATA.mujian,
+    component: lazy(() => import('@/templates/mujian')),
+    recommendedPrimaryColor: '#222222',
+  },
+  qianbiao: {
+    ...TEMPLATE_METADATA.qianbiao,
+    component: lazy(() => import('@/templates/qianbiao')),
+    recommendedPrimaryColor: '#aab9d4',
+  },
+  huabu: {
+    ...TEMPLATE_METADATA.huabu,
+    component: lazy(() => import('@/templates/huabu')),
+    recommendedPrimaryColor: '#5d8dce',
+  },
+  huigui: {
+    ...TEMPLATE_METADATA.huigui,
+    component: lazy(() => import('@/templates/huigui')),
+    recommendedPrimaryColor: '#526174',
+  },
+  lvxin: {
+    ...TEMPLATE_METADATA.lvxin,
+    component: lazy(() => import('@/templates/lvxin')),
+    recommendedPrimaryColor: '#5f9276',
+  },
+  hongcai: {
+    ...TEMPLATE_METADATA.hongcai,
+    component: lazy(() => import('@/templates/hongcai')),
+    recommendedPrimaryColor: '#a65d55',
+  },
+  yingke: {
+    ...TEMPLATE_METADATA.yingke,
+    component: lazy(() => import('@/templates/yingke')),
+    recommendedPrimaryColor: '#8a5a00',
+  },
+  hongjian: {
+    ...TEMPLATE_METADATA.hongjian,
+    component: lazy(() => import('@/templates/hongjian')),
+    recommendedPrimaryColor: '#b44c4d',
+  },
+  jibai: {
+    ...TEMPLATE_METADATA.jibai,
+    component: lazy(() => import('@/templates/jibai')),
+    recommendedPrimaryColor: '#4b82b6',
+  },
+  sulan: {
+    ...TEMPLATE_METADATA.sulan,
+    component: lazy(() => import('@/templates/sulan')),
+    recommendedPrimaryColor: '#4c79a8',
+  },
+  xinkai: {
+    ...TEMPLATE_METADATA.xinkai,
+    component: lazy(() => import('@/templates/xinkai')),
+    recommendedPrimaryColor: '#527ea5',
+  },
+  zhenmu: {
+    ...TEMPLATE_METADATA.zhenmu,
+    component: lazy(() => import('@/templates/zhenmu')),
+    recommendedPrimaryColor: '#896a57',
+  },
+  qingyu: {
+    ...TEMPLATE_METADATA.qingyu,
+    component: lazy(() => import('@/templates/qingyu')),
+    recommendedPrimaryColor: '#75a9a2',
+  },
+  lvzhou: {
+    ...TEMPLATE_METADATA.lvzhou,
+    component: lazy(() => import('@/templates/lvzhou')),
+    recommendedPrimaryColor: '#5b906e',
+  },
+  baijiao: {
+    ...TEMPLATE_METADATA.baijiao,
+    component: lazy(() => import('@/templates/baijiao')),
+    recommendedPrimaryColor: '#252525',
+  },
+  jiaozhen: {
+    ...TEMPLATE_METADATA.jiaozhen,
+    component: lazy(() => import('@/templates/jiaozhen')),
+    recommendedPrimaryColor: '#7b8490',
+  },
+  falan: {
+    ...TEMPLATE_METADATA.falan,
+    component: lazy(() => import('@/templates/falan')),
+    recommendedPrimaryColor: '#355e92',
+  },
+  lanhui: {
+    ...TEMPLATE_METADATA.lanhui,
+    component: lazy(() => import('@/templates/lanhui')),
+    recommendedPrimaryColor: '#5d82ad',
+  },
+  yuhe: {
+    ...TEMPLATE_METADATA.yuhe,
+    component: lazy(() => import('@/templates/yuhe')),
+    recommendedPrimaryColor: '#6b7f9b',
+  },
+  hongye: {
+    ...TEMPLATE_METADATA.hongye,
+    component: lazy(() => import('@/templates/hongye')),
+    recommendedPrimaryColor: '#c75b5b',
+  },
+  mihuang: {
+    ...TEMPLATE_METADATA.mihuang,
+    component: lazy(() => import('@/templates/mihuang')),
+    recommendedPrimaryColor: '#c6a268',
+  },
+  baolv: {
+    ...TEMPLATE_METADATA.baolv,
+    component: lazy(() => import('@/templates/baolv')),
+    recommendedPrimaryColor: '#6d9b73',
+  },
+  shuanglan: {
+    ...TEMPLATE_METADATA.shuanglan,
+    component: lazy(() => import('@/templates/shuanglan')),
+    recommendedPrimaryColor: '#4676b7',
+  },
+  zicui: {
+    ...TEMPLATE_METADATA.zicui,
+    component: lazy(() => import('@/templates/zicui')),
+    recommendedPrimaryColor: '#8068a5',
+  },
+  heiyu: {
+    ...TEMPLATE_METADATA.heiyu,
+    component: lazy(() => import('@/templates/heiyu')),
+    recommendedPrimaryColor: '#292929',
+  },
+  zijiao: {
+    ...TEMPLATE_METADATA.zijiao,
+    component: lazy(() => import('@/templates/zijiao')),
+    recommendedPrimaryColor: '#7965a8',
+  },
+  shangfeng: {
+    ...TEMPLATE_METADATA.shangfeng,
+    component: lazy(() => import('@/templates/shangfeng')),
+    recommendedPrimaryColor: '#3f6d9e',
+  },
+  qicheng: {
+    ...TEMPLATE_METADATA.qicheng,
+    component: lazy(() => import('@/templates/qicheng')),
+    recommendedPrimaryColor: '#4f83b0',
+  },
+  fenzhi: {
+    ...TEMPLATE_METADATA.fenzhi,
+    component: lazy(() => import('@/templates/fenzhi')),
+    recommendedPrimaryColor: '#d36c9b',
+  },
+  weizhi: {
+    ...TEMPLATE_METADATA.weizhi,
+    component: lazy(() => import('@/templates/weizhi')),
+    recommendedPrimaryColor: '#385f90',
+  },
+  baiyu: {
+    ...TEMPLATE_METADATA.baiyu,
+    component: lazy(() => import('@/templates/baiyu')),
+    recommendedPrimaryColor: '#7b7f87',
+  },
+  yingxiao: {
+    ...TEMPLATE_METADATA.yingxiao,
+    component: lazy(() => import('@/templates/yingxiao')),
+    recommendedPrimaryColor: '#4b78ad',
+  },
+  tiezi: {
+    ...TEMPLATE_METADATA.tiezi,
+    component: lazy(() => import('@/templates/tiezi')),
+    recommendedPrimaryColor: '#9c6d53',
+  },
+  zhuanxin: {
+    ...TEMPLATE_METADATA.zhuanxin,
+    component: lazy(() => import('@/templates/zhuanxin')),
+    recommendedPrimaryColor: '#5b82aa',
+  },
+  qinghe: {
+    ...TEMPLATE_METADATA.qinghe,
+    component: lazy(() => import('@/templates/qinghe')),
+    recommendedPrimaryColor: '#789276',
+  },
+  huichen: {
+    ...TEMPLATE_METADATA.huichen,
+    component: lazy(() => import('@/templates/huichen')),
+    recommendedPrimaryColor: '#6e737b',
+  },
+  changcheng: {
+    ...TEMPLATE_METADATA.changcheng,
+    component: lazy(() => import('@/templates/changcheng')),
+    recommendedPrimaryColor: '#57799d',
+  },
+  jingjian: {
+    ...TEMPLATE_METADATA.jingjian,
+    component: lazy(() => import('@/templates/jingjian')),
+    recommendedPrimaryColor: '#5278a4',
+  },
+  chaobai: {
+    ...TEMPLATE_METADATA.chaobai,
+    component: lazy(() => import('@/templates/chaobai')),
+    recommendedPrimaryColor: '#8a69bc',
+  },
+  xuexin: {
+    ...TEMPLATE_METADATA.xuexin,
+    component: lazy(() => import('@/templates/xuexin')),
+    recommendedPrimaryColor: '#4f79b1',
+  },
+  xiaoshou: {
+    ...TEMPLATE_METADATA.xiaoshou,
+    component: lazy(() => import('@/templates/xiaoshou')),
+    recommendedPrimaryColor: '#477aad',
+  },
+  lvjian: {
+    ...TEMPLATE_METADATA.lvjian,
+    component: lazy(() => import('@/templates/lvjian')),
+    recommendedPrimaryColor: '#6a9b72',
+  },
+  jiaoyu: {
+    ...TEMPLATE_METADATA.jiaoyu,
+    component: lazy(() => import('@/templates/jiaoyu')),
+    recommendedPrimaryColor: '#4f7f88',
+  },
+  pixel: {
+    ...TEMPLATE_METADATA.pixel,
+    component: lazy(() => import('@/templates/pixel')),
+    recommendedPrimaryColor: '#4776c5',
+  },
+  jingying: {
+    ...TEMPLATE_METADATA.jingying,
+    component: lazy(() => import('@/templates/jingying')),
+    recommendedPrimaryColor: '#416a9e',
+  },
+  lvjian2: {
+    ...TEMPLATE_METADATA.lvjian2,
+    component: lazy(() => import('@/templates/lvjian2')),
+    recommendedPrimaryColor: '#6e9e76',
+  },
+  shangwu: {
+    ...TEMPLATE_METADATA.shangwu,
+    component: lazy(() => import('@/templates/shangwu')),
+    recommendedPrimaryColor: '#526f99',
+  },
+  wenhe: {
+    ...TEMPLATE_METADATA.wenhe,
+    component: lazy(() => import('@/templates/wenhe')),
+    recommendedPrimaryColor: '#9b806b',
+  },
 }
 
 /**
