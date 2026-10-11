@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { useOnePageMode } from '@/hooks/use-one-page-mode'
 import type { ThemeTokens } from '@/entities/theme/theme-tokens'
 import type { AdjustableTokens, OnePageStrategy } from '@/entities/editor/editor-meta'
+import { fitOnePagePrintFrame } from '@/lib/one-page-layout'
 
 vi.mock('sonner', () => ({ toast: { info: vi.fn(), success: vi.fn(), warning: vi.fn() } }))
 const initialTheme: ThemeTokens = { primaryColor: '#7c3aed', textColor: '#171717', fontFamily: 'sans-serif', fontSize: 14, lineHeight: 1.6, spacingScale: 1, pagePaddingVertical: 16, pagePaddingHorizontal: 16 }
@@ -81,5 +82,40 @@ describe('automatic one-page readability', () => {
     await tick(3)
     expect(result.current.status).toBe('overflow')
     expect(result.current.theme).toMatchObject({ lineHeight: 1.2, fontSize: 13, spacingScale: 0.2 })
+  })
+
+  it('scales a small print reflow without clipping the frame before measuring it', () => {
+    const frame = document.createElement('div')
+    const root = document.createElement('div')
+    document.body.append(frame)
+    frame.append(root)
+    Object.defineProperty(root, 'scrollHeight', { configurable: true, value: 1200 })
+    Object.defineProperty(root, 'clientHeight', { configurable: true, value: 1200 })
+    vi.spyOn(root, 'getBoundingClientRect').mockReturnValue({ top: 0, bottom: 1200, height: 1200, width: 794 } as DOMRect)
+
+    fitOnePagePrintFrame(frame, root)
+
+    expect(frame.style.height).toContain('px')
+    expect(frame.style.overflow).toBe('hidden')
+    expect(root.style.transform).toMatch(/^scaleY\(/)
+  })
+
+  it('falls back to normal pagination when fitting would make text too small', () => {
+    const frame = document.createElement('div')
+    const root = document.createElement('div')
+    document.body.append(frame)
+    frame.append(root)
+    Object.defineProperty(root, 'scrollHeight', { configurable: true, value: 2000 })
+    Object.defineProperty(root, 'clientHeight', { configurable: true, value: 2000 })
+    vi.spyOn(root, 'getBoundingClientRect').mockReturnValue({ top: 0, bottom: 2000, height: 2000, width: 794 } as DOMRect)
+
+    fitOnePagePrintFrame(frame, root)
+
+    expect(frame.style.overflow).toBe('visible')
+    expect(frame.style.minHeight).toBe('0')
+    expect(frame.style.getPropertyValue('break-inside')).toBe('auto')
+    expect(frame.style.getPropertyValue('page-break-after')).toBe('auto')
+    expect(root.style.getPropertyValue('break-after')).toBe('auto')
+    expect(root.style.transform).toBe('none')
   })
 })

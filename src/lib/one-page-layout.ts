@@ -24,6 +24,7 @@ const STYLE_ATTR = 'data-one-page-compact-style'
 const COMPACTION_STYLES = new WeakMap<HTMLElement, HTMLStyleElement>()
 const A4_HEIGHT_PX = (297 / 25.4) * 96
 const PRINT_SAFE_MARGIN_PX = 2
+const MIN_PRINT_SCALE = 0.75
 
 function numeric(value: string): number | null {
   const parsed = Number.parseFloat(value)
@@ -163,22 +164,40 @@ export function measureOnePageContentHeight(root: HTMLElement): number {
 
 /**
  * Keep a one-page print frame on a single A4 sheet after print-only CSS has
- * reflowed the template. The frame clips only its reserved page background;
- * the resume itself is scaled vertically when its measured print height is a
- * little taller than the physical sheet, so text remains present in export.
+ * reflowed the template. The full visible content is measured before any
+ * clipping is enabled. If a small reflow difference makes the content taller
+ * than the sheet, the resume is scaled vertically. If fitting it would make
+ * the text too small, the frame falls back to normal pagination so the tail
+ * remains present instead of being silently clipped.
  */
 export function fitOnePagePrintFrame(frame: HTMLElement, root: HTMLElement): void {
   const targetHeight = A4_HEIGHT_PX - PRINT_SAFE_MARGIN_PX
-  frame.style.height = `${targetHeight}px`
-  frame.style.overflow = 'hidden'
+  frame.style.height = 'auto'
+  frame.style.minHeight = `${targetHeight}px`
+  frame.style.overflow = 'visible'
   frame.style.breakInside = 'avoid'
   frame.style.pageBreakAfter = 'avoid'
   root.style.transform = 'none'
   root.style.transformOrigin = 'top left'
 
-  const contentHeight = Math.max(root.getBoundingClientRect().height, root.scrollHeight)
+  const contentHeight = measureOnePageContentHeight(root)
   if (contentHeight <= targetHeight) return
 
   const scale = targetHeight / contentHeight
+  if (scale < MIN_PRINT_SCALE) {
+    // A genuinely long resume should paginate. Keeping the frame at a fixed
+    // height with overflow hidden would make the export look successful while
+    // dropping the lower sections of the document.
+    frame.style.minHeight = '0'
+    frame.style.setProperty('break-inside', 'auto', 'important')
+    frame.style.setProperty('page-break-after', 'auto', 'important')
+    root.style.setProperty('break-after', 'auto', 'important')
+    root.style.setProperty('page-break-after', 'auto', 'important')
+    return
+  }
+
+  frame.style.height = `${targetHeight}px`
+  frame.style.minHeight = '0'
+  frame.style.overflow = 'hidden'
   root.style.transform = `scaleY(${scale})`
 }

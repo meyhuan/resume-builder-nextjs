@@ -57,14 +57,38 @@ export function buildResumeHtml(element: HTMLElement, options?: ResumeHtmlOption
       const root = frame?.querySelector('.resume-document-main[data-one-page="true"]')
       if (!frame || !root) return
       const target = (297 / 25.4) * 96 - 2
-      frame.style.height = target + 'px'
-      frame.style.overflow = 'hidden'
+      const minScale = 0.75
+      frame.style.height = 'auto'
+      frame.style.minHeight = target + 'px'
+      frame.style.overflow = 'visible'
       frame.style.breakInside = 'avoid'
       frame.style.pageBreakAfter = 'avoid'
       root.style.transform = 'none'
       root.style.transformOrigin = 'top left'
-      const height = Math.max(root.getBoundingClientRect().height, root.scrollHeight)
-      if (height > target) root.style.transform = 'scaleY(' + (target / height) + ')'
+      const rootRect = root.getBoundingClientRect()
+      let height = Math.max(rootRect.height, root.scrollHeight, root.clientHeight)
+      root.querySelectorAll('*').forEach((node) => {
+        const element = node
+        const style = getComputedStyle(element)
+        if (style.display === 'none' || style.visibility === 'hidden') return
+        if (style.position === 'absolute' || style.position === 'fixed' || style.position === 'sticky') return
+        const rect = element.getBoundingClientRect()
+        if (rect.width > 0 && rect.height > 0) height = Math.max(height, rect.bottom - rootRect.top)
+      })
+      if (height <= target) return
+      const scale = target / height
+      if (scale < minScale) {
+        frame.style.minHeight = '0'
+        frame.style.setProperty('break-inside', 'auto', 'important')
+        frame.style.setProperty('page-break-after', 'auto', 'important')
+        root.style.setProperty('break-after', 'auto', 'important')
+        root.style.setProperty('page-break-after', 'auto', 'important')
+        return
+      }
+      frame.style.height = target + 'px'
+      frame.style.minHeight = '0'
+      frame.style.overflow = 'hidden'
+      root.style.transform = 'scaleY(' + scale + ')'
     }
     window.addEventListener('load', fit, { once: true })
     if (document.fonts?.ready) document.fonts.ready.then(() => requestAnimationFrame(fit))

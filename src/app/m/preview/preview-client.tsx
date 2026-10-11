@@ -33,6 +33,7 @@ import {
 
 const MOBILE_PAGE_MAX_WIDTH_PX = 390
 const A4_RATIO = 297 / 210
+const MOBILE_ONE_PAGE_STRATEGY = 'one-page' as const
 
 type ExportType = 'pdf' | 'image' | 'markdown'
 
@@ -341,6 +342,7 @@ export default function MobilePreviewClient(): ReactElement {
     enabled: onePageFit,
     snapshot: onePageSnapshot,
     setSnapshot: setOnePageSnapshot,
+    strategy: MOBILE_ONE_PAGE_STRATEGY,
   })
 
   // When switching templates, clear the snapshot to avoid restoring one
@@ -515,7 +517,10 @@ export default function MobilePreviewClient(): ReactElement {
    * Used by both the mini-program and H5 export flows.
    */
   const syncPreviewState = useCallback(async (targetId: string): Promise<void> => {
-    const syncKey = `${targetId}:${templateId}`
+    // A settings save can still be in flight while the auto-fit status changes.
+    // Include the export mode in the key so an export never reuses a request
+    // that persisted the previous one-page/pagination decision.
+    const syncKey = `${targetId}:${templateId}:${onePageFit ? 'one-page' : 'pagination'}:${onePageStatus}`
     const existingSync = syncPreviewStateFlightRef.current
     if (existingSync?.key === syncKey) {
       log.info('reuse in-flight syncPreviewState', { targetId, templateId })
@@ -539,8 +544,13 @@ export default function MobilePreviewClient(): ReactElement {
 
       const editorMeta = {
         themes: mergedThemes,
-        onePageMode: onePageFit,
+        // Export only when the live preview has finished fitting. If the
+        // content is still fitting or has reached the overflow state, the
+        // print renderer must keep normal pagination enabled so it cannot
+        // hide the tail of the resume behind a one-page frame.
+        onePageMode: onePageFit && onePageStatus === 'fit',
         onePageSnapshot,
+        onePageStrategy: MOBILE_ONE_PAGE_STRATEGY,
       }
 
       // Strip any stale __editorMeta that may be embedded in the resume object
@@ -577,7 +587,7 @@ export default function MobilePreviewClient(): ReactElement {
         syncPreviewStateFlightRef.current = null
       }
     }
-  }, [draft, resume, templateId, onePageFit, onePageSnapshot])
+  }, [draft, resume, templateId, onePageFit, onePageStatus, onePageSnapshot])
 
   const handleConfirmSettings = useCallback(async (): Promise<void> => {
     if (settingsSavingRef.current) return
@@ -638,6 +648,11 @@ export default function MobilePreviewClient(): ReactElement {
         return
       }
 
+      if (onePageFit && onePageStatus === 'fitting') {
+        toast.info('单页正在适配，请稍候再导出')
+        return
+      }
+
       await syncPreviewState(targetResumeId)
       const canUseNativeResult = type !== 'markdown' || miniMarkdownExportSupported
       if (inMiniProgram && canUseNativeResult && typeof window.wx?.miniProgram?.navigateTo === 'function') {
@@ -674,7 +689,7 @@ export default function MobilePreviewClient(): ReactElement {
       exportInFlightRef.current = false
       setIsExporting(false)
     }
-  }, [resume, createExportJob, openExportResult, draftResumeId, searchParams, templateId, syncPreviewState, inMiniProgram, miniMarkdownExportSupported])
+  }, [resume, createExportJob, openExportResult, draftResumeId, searchParams, templateId, syncPreviewState, inMiniProgram, miniMarkdownExportSupported, onePageFit, onePageStatus])
 
   const handleExportPdf = useCallback(async (): Promise<void> => {
     await handleExport('pdf')
