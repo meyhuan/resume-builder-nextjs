@@ -28,6 +28,7 @@ function getTypeLabel(type: string): string {
   if (type === 'pdf') return 'PDF';
   if (type === 'image') return '图片';
   if (type === 'markdown') return 'Markdown';
+  if (type === 'docx') return 'Word';
   return type.toUpperCase();
 }
 
@@ -98,7 +99,7 @@ export default async function DashboardExportsPage(): Promise<React.ReactElement
           </div>
           <h2 className="text-lg font-semibold text-slate-900">还没有导出记录</h2>
           <p className="mt-2 max-w-sm text-sm leading-6 text-slate-500">
-            从编辑器完成 PDF 或图片导出后，记录会自动出现在这里。
+            从编辑器完成 PDF、Word 或图片导出后，记录会自动出现在这里。
           </p>
           <Link href="/dashboard" className="mt-6">
             <Button className="rounded-lg bg-violet-600 px-6 text-white hover:bg-violet-700">

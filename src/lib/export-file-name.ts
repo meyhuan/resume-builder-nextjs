@@ -1,7 +1,7 @@
 export const MAX_EXPORT_FILE_NAME_LENGTH = 45
 
 const INVALID_FILE_NAME_CHARS = /[\\/:*?"<>|]/g
-const EXPORT_EXTENSION_SUFFIX = /\.(pdf|png|jpe?g|md|markdown)$/i
+const EXPORT_EXTENSION_SUFFIX = /\.(pdf|png|jpe?g|md|markdown|docx)$/i
 
 function cleanFileNameText(value: string | null | undefined): string {
   return (value ?? '')
@@ -49,5 +49,6 @@ export function buildExportContentDisposition(
 export function getExportFileExtension(type: string | null | undefined): string {
   if (type === 'image') return 'png'
   if (type === 'markdown') return 'md'
+  if (type === 'docx') return 'docx'
   return 'pdf'
 }

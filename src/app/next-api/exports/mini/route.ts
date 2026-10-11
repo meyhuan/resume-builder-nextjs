@@ -41,12 +41,14 @@ import { extractEditorMeta } from '@/entities/editor/editor-meta'
 import { normalizeResumeContent } from '@/entities/resume/normalize-resume-content'
 import type { ResumeData } from '@/entities/resume/resume-data'
 import { exportResumeToMarkdown } from '@/io/export-markdown'
+import { DOCX_CONTENT_TYPE, exportResumeToDocx, UnsupportedDocxTemplateError } from '@/io/export-docx'
+import { isDocxTemplateSupported } from '@/lib/docx-template-support'
 import { trackServerAnalyticsEvent } from '@/lib/server-analytics'
 
 /**
  * POST /next-api/exports/mini
  *
- * Creates an export asset (PDF, image, or Markdown) for a resume.
+ * Creates an export asset (PDF, image, Markdown, or verified DOCX) for a resume.
  *
  * Dual auth:
  *   1. HMAC sign (mini-program): wxId + timestamp + sign fields in body
@@ -83,7 +85,7 @@ interface CreateMiniExportRequest {
 }
 
 type ExportMode = 'preview' | 'final'
-type MiniExportType = 'pdf' | 'image' | 'markdown'
+type MiniExportType = 'pdf' | 'image' | 'markdown' | 'docx'
 type ExportFailureCode = 'PRINT_NOT_READY' | 'PDF_BLANK' | 'RASTERIZE_FAILED' | 'ONE_PAGE_FAILED' | 'RENDER_FAILED'
 
 interface ExportFailureContext {
@@ -277,6 +279,8 @@ export async function POST(req: Request): Promise<NextResponse> {
       ? 'image'
       : body.type === 'markdown'
         ? 'markdown'
+        : body.type === 'docx'
+          ? 'docx'
         : null
   const mode: ExportMode = body.mode === 'preview' ? 'preview' : 'final'
   const explicitTemplateId: string | undefined = typeof body.templateId === 'string' && body.templateId
@@ -416,6 +420,105 @@ export async function POST(req: Request): Promise<NextResponse> {
         remaining: quotaPeek.remaining,
         isVip: quotaPeek.isVip,
       }, { status: 402 })
+    }
+  }
+
+  // DOCX has a semantic renderer instead of passing the browser's CSS through
+  // a generic HTML converter. Keep this branch separate from the PDF/image
+  // print path so a future template cannot silently claim Word compatibility.
+  if (type === 'docx') {
+    if (!isDocxTemplateSupported(templateId)) {
+      return NextResponse.json({
+        error: '当前仅支持“极简、蓝序、橙研”三个模板导出 DOCX。',
+        code: 'DOCX_TEMPLATE_UNSUPPORTED',
+        supportedTemplates: ['simple', 'jingrui', 'chengyan'],
+      }, { status: 400 })
+    }
+
+    try {
+      const rawContent = resume.content && typeof resume.content === 'object' && !Array.isArray(resume.content)
+        ? resume.content as Record<string, unknown>
+        : {}
+      const { content } = extractEditorMeta(rawContent)
+      const normalizedResume: ResumeData = normalizeResumeContent(content as Partial<ResumeData>, { fallbackId: resume.id })
+      const buffer = await exportResumeToDocx(normalizedResume, templateId)
+      const contentType = DOCX_CONTENT_TYPE
+      const extension = 'docx'
+      const saved = await saveExportTemp({
+        buffer,
+        fileName,
+        contentType,
+        extension,
+        type,
+        confirmed: mode === 'final',
+        wxId,
+        userId: resume.userId,
+        resumeId: resume.id,
+        resumeTitle: resume.title,
+        templateId,
+      })
+
+      if (mode === 'final') {
+        const ossAsset = await uploadExportAsset({ token: saved.token, buffer, contentType, extension })
+        const consumed = await checkQuotaForUser(wxId, 'pdf:export')
+        if (!consumed.allowed) {
+          return NextResponse.json({
+            error: consumed.message,
+            code: 'QUOTA_EXCEEDED',
+            remaining: consumed.remaining,
+            isVip: consumed.isVip,
+          }, { status: 402 })
+        }
+        await prisma.exportRecord.upsert({
+          where: { token: saved.token },
+          update: {
+            userId: resume.userId,
+            wxId,
+            resumeId: resume.id,
+            resumeTitle: resume.title || fileName,
+            templateId: templateId || null,
+            type,
+            fileName,
+            ossKey: ossAsset.key,
+            ossUrl: ossAsset.url,
+            expiresAt: new Date(saved.expiresAt),
+            status: 'available',
+            confirmedAt: new Date(),
+          },
+          create: {
+            userId: resume.userId,
+            wxId,
+            resumeId: resume.id,
+            resumeTitle: resume.title || fileName,
+            templateId: templateId || null,
+            type,
+            fileName,
+            token: saved.token,
+            ossKey: ossAsset.key,
+            ossUrl: ossAsset.url,
+            expiresAt: new Date(saved.expiresAt),
+            status: 'available',
+          },
+        })
+      }
+
+      return NextResponse.json({
+        id: saved.token,
+        type,
+        fileName,
+        downloadUrl: `/next-api/export-file/${saved.token}`,
+        expiresAt: new Date(saved.expiresAt).toISOString(),
+        confirmed: mode === 'final',
+        remaining: quotaPeek.remaining,
+        isVip: quotaPeek.isVip,
+        previewImages: [],
+      })
+    } catch (error: unknown) {
+      if (error instanceof UnsupportedDocxTemplateError) {
+        return NextResponse.json({ error: error.message, code: 'DOCX_TEMPLATE_UNSUPPORTED' }, { status: 400 })
+      }
+      console.error('[exports/mini] DOCX render failed', { traceId, resumeId, templateId, error: normalizeErrorMessage(error) })
+      return NextResponse.json({ error: 'DOCX 生成失败，请稍后重试', code: 'DOCX_RENDER_FAILED', traceId }, { status: 500 })
     }
   }
 

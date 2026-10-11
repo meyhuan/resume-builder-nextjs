@@ -40,6 +40,7 @@ import type { ResumeData } from '@/entities/resume/resume-data'
 import { getRenderableResume } from '@/entities/resume/renderable-resume'
 import { normalizeResumeContent } from '@/entities/resume/normalize-resume-content'
 import { joinExportFileNameParts, sanitizeExportFileName } from '@/lib/export-file-name'
+import { isDocxTemplateSupported } from '@/lib/docx-template-support'
 import { track } from '@/lib/analytics'
 import { PortfolioAppendix } from '@/components/portfolio/portfolio-appendix'
 import { JdAnalysisDialog } from '@/components/editor/jd-analysis-dialog'
@@ -241,7 +242,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
   const defaultTemplate = searchParams.get('template') || 'simple'
   const [tpl, setTpl] = useState<string>(defaultTemplate)
   const trackExportPaywallBlock = useCallback((details: {
-    exportType: 'pdf' | 'image' | 'markdown'
+    exportType: 'pdf' | 'image' | 'markdown' | 'docx'
     entry: string
     stage: string
     exportResumeId?: string | null
@@ -1066,6 +1067,102 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
     })
   }, [resume, requireAuth, requirePdf, showMiniProgramExportReminder, trackExportPaywallBlock])
 
+  async function exportDocxWithAuth(): Promise<void> {
+    if (isConfirmingExport) return
+    setIsConfirmingExport(true)
+    track('export_click', {
+      resumeId,
+      templateId: tpl,
+      exportType: 'docx',
+      entry: 'pc_export_preview',
+    })
+    try {
+      const baseInfo = resume.baseInfo as Record<string, string> | undefined
+      const name = baseInfo?.fullName?.trim() || baseInfo?.name?.trim() || resume.name || '简历'
+      const position = baseInfo?.title?.trim() || baseInfo?.position?.trim() || resume.jobIntention?.position || ''
+      const phone = baseInfo?.phone?.trim() || ''
+      const fileName = joinExportFileNameParts([name, position, phone], { separator: '-', fallback: resume.name || 'export' })
+
+      let exportResumeId = resumeId
+      if (!exportResumeId || hasUnsavedChanges) {
+        const savedId = await doSave({ showSuccessToast: false, generateThumbnail: true })
+        if (!savedId) {
+          toast.error(exportResumeId ? '保存最新简历失败，请重试后再导出' : '请先保存简历，再导出 Word')
+          return
+        }
+        exportResumeId = savedId
+      }
+      if (!exportResumeId) {
+        toast.error('请先保存简历，再导出 Word')
+        return
+      }
+
+      const response = await fetch('/next-api/exports/mini', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          resumeId: exportResumeId,
+          templateId: tpl,
+          type: 'docx',
+          mode: 'final',
+          fileName,
+        }),
+      })
+      const data = await response.json().catch(() => ({})) as {
+        downloadUrl?: string
+        error?: string
+        quotaExceeded?: boolean
+      }
+      if (!response.ok || !data.downloadUrl) {
+        if (response.status === 401) {
+          backupEditorDraft('stale-auth-before-docx-export')
+          logout()
+          toast.error('登录已失效，请重新登录后导出')
+          requireAuth(() => { void exportDocxWithAuth() })
+          return
+        }
+        if (data.quotaExceeded || response.status === 402) {
+          trackExportPaywallBlock({ exportType: 'docx', entry: 'pc_export_preview', stage: 'create_export_record', statusCode: response.status })
+          setShowUpgrade(true, 'pdf-export')
+          return
+        }
+        throw new Error(data.error || 'DOCX 导出失败')
+      }
+
+      const anchor = document.createElement('a')
+      anchor.href = data.downloadUrl
+      anchor.download = `${sanitizeExportFileName(fileName)}.docx`
+      anchor.click()
+      toast.success('Word 导出成功')
+      track('export_success', { resumeId: exportResumeId, templateId: tpl, exportType: 'docx', entry: 'pc_export_preview' })
+    } catch (error) {
+      console.error('DOCX export failed:', error)
+      toast.error(error instanceof Error ? error.message : 'Word 导出失败，请重试')
+      track('export_failed', {
+        resumeId,
+        templateId: tpl,
+        exportType: 'docx',
+        entry: 'pc_export_preview',
+        stage: 'create_export_record',
+        failureReason: error instanceof Error ? error.message : String(error),
+      })
+    } finally {
+      setIsConfirmingExport(false)
+    }
+  }
+
+  function handleExportDocx(): void {
+    if (!isDocxTemplateSupported(tpl)) {
+      toast.info('当前模板尚未接入 Word 导出，已验证模板为：极简、蓝序、橙研')
+      return
+    }
+    if (!requirePdf()) {
+      trackExportPaywallBlock({ exportType: 'docx', entry: 'pc_editor_toolbar', stage: 'preflight_quota_check' })
+      return
+    }
+    requireAuth(() => { void exportDocxWithAuth() })
+  }
+
   async function handleExportPng(): Promise<void> {
     if (!requirePdf()) {
       trackExportPaywallBlock({
@@ -1476,6 +1573,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
         onConfirmExport={handleConfirmExport}
         onExportPng={() => { void handleExportPng() }}
         onExportMarkdown={handleExportMarkdown}
+        onExportDocx={isDocxTemplateSupported(tpl) ? handleExportDocx : undefined}
         onUpgradeClick={() => {
           trackExportPaywallBlock({
             exportType: 'pdf',

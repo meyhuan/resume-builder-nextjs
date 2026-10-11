@@ -20,6 +20,7 @@ interface ExportPreviewDialogProps {
   readonly onConfirmExport: () => void
   readonly onExportPng?: () => void
   readonly onExportMarkdown?: () => void
+  readonly onExportDocx?: () => void
   readonly onUpgradeClick?: () => void
   readonly remainingQuota?: number | 'unlimited'
   readonly isVip?: boolean
@@ -34,6 +35,7 @@ export default function ExportPreviewDialog({
   onConfirmExport,
   onExportPng,
   onExportMarkdown,
+  onExportDocx,
   onUpgradeClick,
   remainingQuota,
   isVip,
@@ -119,6 +121,12 @@ export default function ExportPreviewDialog({
             <Button variant="outline" size="sm" className="h-8 px-3 text-xs" onClick={onExportMarkdown}>
               <FileText className="h-3.5 w-3.5 mr-1.5" />
               Markdown
+            </Button>
+          ) : null}
+          {onExportDocx ? (
+            <Button variant="outline" size="sm" className="h-8 px-3 text-xs" onClick={onExportDocx}>
+              <FileText className="h-3.5 w-3.5 mr-1.5" />
+              Word
             </Button>
           ) : null}
           <Button
