@@ -2,6 +2,7 @@ import {
   AlignmentType,
   BorderStyle,
   Document,
+  HeightRule,
   ImageRun,
   Packer,
   Paragraph,
@@ -351,6 +352,8 @@ function renderJingrui(resume: ResumeData, avatar?: AvatarAsset): Document {
     width: { size: 100, type: WidthType.PERCENTAGE },
     borders: NO_BORDERS,
     rows: [new TableRow({
+      cantSplit: true,
+      height: { value: PAGE.height, rule: HeightRule.ATLEAST },
       children: [
         cell(left, { width: 35, shading: COLORS.jingruiAccent, margins: { top: 230, right: 170, bottom: 230, left: 170 } }),
         cell(right, { width: 65, margins: { top: 210, right: 230, bottom: 210, left: 240 } }),

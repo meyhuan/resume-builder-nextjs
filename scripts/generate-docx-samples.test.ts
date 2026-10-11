@@ -1,16 +1,17 @@
-import { mkdirSync, writeFileSync } from 'node:fs'
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import type { ResumeData } from '@/entities/resume/resume-data'
 import { exportResumeToDocx } from '@/io/export-docx'
 
 const outputDirectory = resolve(process.cwd(), 'test-artifacts', 'docx')
+const sampleAvatarDataUrl = `data:image/jpeg;base64,${readFileSync(resolve(process.cwd(), 'public', 'avatar.jpg')).toString('base64')}`
 
 const sampleResume: ResumeData = {
   id: 'docx-proof-resume',
   name: '林知夏',
   baseInfo: {
-    avatarUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+    avatarUrl: sampleAvatarDataUrl,
     showAvatar: true,
     title: '高级产品经理',
     phone: '138-0000-1234',
