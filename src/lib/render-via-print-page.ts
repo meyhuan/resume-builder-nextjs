@@ -41,6 +41,8 @@ export interface RenderViaPrintPageOpts {
   readonly resumeId: string
   readonly templateId?: string
   readonly type: 'pdf' | 'image'
+  /** Reject the export if the saved one-page layout produces anything but one PDF page. */
+  readonly requireOnePage?: boolean
   /** Print token TTL in ms. Defaults to 5 minutes. */
   readonly tokenTtlMs?: number
   readonly traceId?: string
@@ -50,7 +52,7 @@ const PRINT_PAGE_NAVIGATION_TIMEOUT_MS = 45_000
 const PRINT_PAGE_ASSET_READY_TIMEOUT_MS = 8_000
 const PRINT_PAGE_CONTENT_READY_TIMEOUT_MS = 20_000
 
-export type ExportRenderErrorCode = 'PRINT_NOT_READY' | 'RASTERIZE_FAILED'
+export type ExportRenderErrorCode = 'PRINT_NOT_READY' | 'RASTERIZE_FAILED' | 'ONE_PAGE_FAILED'
 
 export class ExportRenderError extends Error {
   readonly code: ExportRenderErrorCode
@@ -185,6 +187,16 @@ export async function renderViaPrintPage(opts: RenderViaPrintPageOpts): Promise<
     printableContent = await waitForPrintableContent(page, opts.traceId)
     await waitForDocumentAssets(page)
 
+    if (opts.requireOnePage) {
+      const onePageMarker = await page.$('.resume-document-main[data-one-page="true"]')
+      if (!onePageMarker) {
+        throw new ExportRenderError('ONE_PAGE_FAILED', '单页导出失败：当前内容尚未完成一页适配', {
+          traceId: opts.traceId,
+          reason: 'one_page_marker_missing',
+        })
+      }
+    }
+
     if (opts.type !== 'pdf') {
       const target = await page.$('#print-root')
       if (!target) throw new Error('print-root selector missing')
@@ -222,6 +234,14 @@ export async function renderViaPrintPage(opts: RenderViaPrintPageOpts): Promise<
         pdfBytes: pdfBuffer.length,
         renderDurationMs: Date.now() - startedAt,
         causeMessage: errorMessage(err),
+      })
+    }
+
+    if (opts.requireOnePage && pageScreenshots.length !== 1) {
+      throw new ExportRenderError('ONE_PAGE_FAILED', '单页导出失败：内容无法在一页内完整呈现', {
+        traceId: opts.traceId,
+        pdfBytes: pdfBuffer.length,
+        previewPageCount: pageScreenshots.length,
       })
     }
 

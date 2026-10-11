@@ -100,7 +100,7 @@ describe('automatic one-page readability', () => {
     expect(root.style.transform).toMatch(/^scaleY\(/)
   })
 
-  it('falls back to normal pagination when fitting would make text too small', () => {
+  it('scales a long document into one page without falling back to pagination', () => {
     const frame = document.createElement('div')
     const root = document.createElement('div')
     document.body.append(frame)
@@ -111,11 +111,9 @@ describe('automatic one-page readability', () => {
 
     fitOnePagePrintFrame(frame, root)
 
-    expect(frame.style.overflow).toBe('visible')
+    expect(frame.style.overflow).toBe('hidden')
+    expect(frame.style.height).toContain('px')
     expect(frame.style.minHeight).toBe('0')
-    expect(frame.style.getPropertyValue('break-inside')).toBe('auto')
-    expect(frame.style.getPropertyValue('page-break-after')).toBe('auto')
-    expect(root.style.getPropertyValue('break-after')).toBe('auto')
-    expect(root.style.transform).toBe('none')
+    expect(root.style.transform).toMatch(/^scaleY\(/)
   })
 })

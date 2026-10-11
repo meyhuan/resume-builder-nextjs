@@ -47,7 +47,7 @@ export const ONE_PAGE_BADGE_STYLES: Record<OnePageStatus, { bg: string; label: s
   idle: { bg: 'bg-violet-600/90', label: '单页模式' },
   fitting: { bg: 'bg-amber-500/90', label: '正在适配单页…' },
   fit: { bg: 'bg-emerald-600/90', label: '单页适配完成' },
-  overflow: { bg: 'bg-rose-600/90', label: '内容过多，建议精简' },
+  overflow: { bg: 'bg-rose-600/90', label: '无法完整适配一页' },
 }
 
 const PRESET_COLORS: ReadonlyArray<string> = [
@@ -479,7 +479,7 @@ function OnePagePanel({
           <div>
             <div className="text-base font-semibold text-slate-900">单页模式</div>
             <p className="mt-1 text-xs leading-5 text-slate-600">
-              自动压缩字号、行距和间距，尽量适配一页 A4。
+              自动压缩字号、行距和间距，完整适配一页 A4；内容过多时会阻止一页导出。
             </p>
           </div>
           <Switch checked={onePageFit} onChange={(): void => onUpdate({ onePageFit: !onePageFit })} />

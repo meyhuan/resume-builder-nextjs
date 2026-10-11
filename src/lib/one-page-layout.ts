@@ -24,7 +24,6 @@ const STYLE_ATTR = 'data-one-page-compact-style'
 const COMPACTION_STYLES = new WeakMap<HTMLElement, HTMLStyleElement>()
 const A4_HEIGHT_PX = (297 / 25.4) * 96
 const PRINT_SAFE_MARGIN_PX = 2
-const MIN_PRINT_SCALE = 0.75
 
 function numeric(value: string): number | null {
   const parsed = Number.parseFloat(value)
@@ -153,7 +152,10 @@ export function measureOnePageContentHeight(root: HTMLElement): number {
   for (const element of root.querySelectorAll<HTMLElement>('*')) {
     const style = getComputedStyle(element)
     if (style.display === 'none' || style.visibility === 'hidden') continue
-    if (style.position === 'absolute' || style.position === 'fixed' || style.position === 'sticky') continue
+    // Absolute decorations are usually inside the page flow, but they can
+    // also contain real template content. Include them in the boundary check
+    // so a lower absolutely-positioned block cannot be clipped silently.
+    if (style.position === 'fixed' || style.position === 'sticky') continue
     const rect = element.getBoundingClientRect()
     if (rect.width <= 0 || rect.height <= 0) continue
     bottom = Math.max(bottom, (rect.bottom - rootRect.top) / scale)
@@ -165,10 +167,9 @@ export function measureOnePageContentHeight(root: HTMLElement): number {
 /**
  * Keep a one-page print frame on a single A4 sheet after print-only CSS has
  * reflowed the template. The full visible content is measured before any
- * clipping is enabled. If a small reflow difference makes the content taller
- * than the sheet, the resume is scaled vertically. If fitting it would make
- * the text too small, the frame falls back to normal pagination so the tail
- * remains present instead of being silently clipped.
+ * clipping is enabled, then the complete document is scaled into the sheet.
+ * One-page mode is a strict promise: it never silently falls back to a second
+ * page and it never hides the lower sections behind an overflow clip.
  */
 export function fitOnePagePrintFrame(frame: HTMLElement, root: HTMLElement): void {
   const targetHeight = A4_HEIGHT_PX - PRINT_SAFE_MARGIN_PX
@@ -183,21 +184,8 @@ export function fitOnePagePrintFrame(frame: HTMLElement, root: HTMLElement): voi
   const contentHeight = measureOnePageContentHeight(root)
   if (contentHeight <= targetHeight) return
 
-  const scale = targetHeight / contentHeight
-  if (scale < MIN_PRINT_SCALE) {
-    // A genuinely long resume should paginate. Keeping the frame at a fixed
-    // height with overflow hidden would make the export look successful while
-    // dropping the lower sections of the document.
-    frame.style.minHeight = '0'
-    frame.style.setProperty('break-inside', 'auto', 'important')
-    frame.style.setProperty('page-break-after', 'auto', 'important')
-    root.style.setProperty('break-after', 'auto', 'important')
-    root.style.setProperty('page-break-after', 'auto', 'important')
-    return
-  }
-
   frame.style.height = `${targetHeight}px`
   frame.style.minHeight = '0'
   frame.style.overflow = 'hidden'
-  root.style.transform = `scaleY(${scale})`
+  root.style.transform = `scaleY(${targetHeight / contentHeight})`
 }

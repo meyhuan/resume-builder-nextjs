@@ -57,7 +57,6 @@ export function buildResumeHtml(element: HTMLElement, options?: ResumeHtmlOption
       const root = frame?.querySelector('.resume-document-main[data-one-page="true"]')
       if (!frame || !root) return
       const target = (297 / 25.4) * 96 - 2
-      const minScale = 0.75
       frame.style.height = 'auto'
       frame.style.minHeight = target + 'px'
       frame.style.overflow = 'visible'
@@ -71,24 +70,15 @@ export function buildResumeHtml(element: HTMLElement, options?: ResumeHtmlOption
         const element = node
         const style = getComputedStyle(element)
         if (style.display === 'none' || style.visibility === 'hidden') return
-        if (style.position === 'absolute' || style.position === 'fixed' || style.position === 'sticky') return
+        if (style.position === 'fixed' || style.position === 'sticky') return
         const rect = element.getBoundingClientRect()
         if (rect.width > 0 && rect.height > 0) height = Math.max(height, rect.bottom - rootRect.top)
       })
       if (height <= target) return
-      const scale = target / height
-      if (scale < minScale) {
-        frame.style.minHeight = '0'
-        frame.style.setProperty('break-inside', 'auto', 'important')
-        frame.style.setProperty('page-break-after', 'auto', 'important')
-        root.style.setProperty('break-after', 'auto', 'important')
-        root.style.setProperty('page-break-after', 'auto', 'important')
-        return
-      }
       frame.style.height = target + 'px'
       frame.style.minHeight = '0'
       frame.style.overflow = 'hidden'
-      root.style.transform = 'scaleY(' + scale + ')'
+      root.style.transform = 'scaleY(' + (target / height) + ')'
     }
     window.addEventListener('load', fit, { once: true })
     if (document.fonts?.ready) document.fonts.ready.then(() => requestAnimationFrame(fit))
