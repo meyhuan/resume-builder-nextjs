@@ -9,6 +9,8 @@ import { useVipCheck } from "@/hooks/use-vip-check";
 import { toast } from "sonner";
 import { usePathname } from "next/navigation";
 import { track } from "@/lib/analytics";
+import { useAuthStore } from "@/store/use-auth-store";
+import { AcquisitionSourceDialog } from "@/components/analytics/AcquisitionSourceDialog";
 
 interface DashboardLayoutProps {
   readonly children: ReactNode;
@@ -22,6 +24,7 @@ export default function DashboardLayout({
   children,
 }: DashboardLayoutProps): ReactElement {
   const { showUpgrade, setShowUpgrade } = useVipCheck();
+  const userId = useAuthStore((state) => state.userInfo?.id);
   const [showReLogin, setShowReLogin] = useState(false);
   const pathname = usePathname();
 
@@ -62,6 +65,7 @@ export default function DashboardLayout({
         onClose={() => setShowReLogin(false)}
         onSuccess={() => setShowReLogin(false)}
       />
+      <AcquisitionSourceDialog userId={userId} />
     </div>
   );
 }

@@ -4,6 +4,8 @@ import { getPublicJavaApiBaseUrl } from '@/lib/java-api-base'
 
 export type AnalyticsEventName =
   | 'page_view'
+  | 'acquisition_source_selected'
+  | 'acquisition_source_skipped'
   | 'login_success'
   | 'login_prompt_view'
   | 'landing_cta_click'
@@ -67,6 +69,18 @@ const FETCH_ERROR_DEDUPE_WINDOW_MS = 30 * 1000
 const MAX_RECENT_FETCH_ERROR_KEYS = 100
 const CHUNK_LOAD_RELOAD_COOLDOWN_MS = 60 * 1000
 const SUPPRESS_FETCH_ERROR_HEADER = 'x-suppress-analytics-error'
+const ATTRIBUTION_STORAGE_KEY = 'analytics_attribution'
+const ATTRIBUTION_KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'] as const
+
+type Attribution = {
+  source?: string
+  medium?: string
+  campaign?: string
+  content?: string
+  term?: string
+  referrer?: string
+  capturedAt?: string
+}
 
 const recentEvents = new Map<string, number>()
 const recentFetchErrors = new Map<string, number>()
@@ -116,6 +130,72 @@ function getClientType(url: URL): 'pc_web' | 'mobile_web' | 'mini_program_webvie
   if (url.pathname.startsWith('/m/')) return 'mobile_web'
   if (/Android|iPhone|iPad|iPod|Mobile/i.test(window.navigator.userAgent || '')) return 'mobile_web'
   return 'pc_web'
+}
+
+function cleanAttributionValue(value: string | null | undefined, maxLength = 100): string | undefined {
+  const normalized = value?.trim()
+  return normalized ? normalized.slice(0, maxLength) : undefined
+}
+
+function getStoredAttribution(): Attribution {
+  if (typeof window === 'undefined') return {}
+  try {
+    const raw = window.localStorage.getItem(ATTRIBUTION_STORAGE_KEY)
+    if (!raw) return {}
+    const parsed = JSON.parse(raw) as Attribution
+    return parsed && typeof parsed === 'object' ? parsed : {}
+  } catch {
+    return {}
+  }
+}
+
+function getReferrerHost(): string | undefined {
+  if (typeof document === 'undefined' || !document.referrer) return undefined
+  try {
+    return cleanAttributionValue(new URL(document.referrer).hostname)
+  } catch {
+    return undefined
+  }
+}
+
+function captureAttribution(url: URL): Attribution {
+  if (typeof window === 'undefined') return {}
+  const previous = getStoredAttribution()
+  const hasCampaignParams = ATTRIBUTION_KEYS.some((key) => Boolean(url.searchParams.get(key)))
+    || Boolean(url.searchParams.get('source'))
+    || Boolean(url.searchParams.get('channel'))
+  const referrer = getReferrerHost()
+  const next: Attribution = { ...previous }
+
+  if (hasCampaignParams) {
+    next.source = cleanAttributionValue(url.searchParams.get('utm_source') || url.searchParams.get('source'))
+      || previous.source
+      || 'campaign'
+    next.medium = cleanAttributionValue(url.searchParams.get('utm_medium') || url.searchParams.get('channel'))
+      || previous.medium
+      || 'campaign'
+    next.campaign = cleanAttributionValue(url.searchParams.get('utm_campaign'))
+    next.content = cleanAttributionValue(url.searchParams.get('utm_content'))
+    next.term = cleanAttributionValue(url.searchParams.get('utm_term'))
+    next.referrer = referrer
+    next.capturedAt = new Date().toISOString()
+  } else if (!previous.source && referrer) {
+    next.source = referrer
+    next.medium = 'referral'
+    next.referrer = referrer
+    next.capturedAt = new Date().toISOString()
+  } else if (!previous.source) {
+    next.source = 'direct'
+    next.medium = 'direct'
+    next.capturedAt = new Date().toISOString()
+  }
+
+  try {
+    window.localStorage.setItem(ATTRIBUTION_STORAGE_KEY, JSON.stringify(next))
+  } catch {
+    // Analytics must not interrupt the product flow when storage is unavailable.
+  }
+  return next
 }
 
 function stringProperty(properties: AnalyticsProperties, key: string): string {
@@ -229,11 +309,14 @@ export function track(eventName: AnalyticsEventName, properties: AnalyticsProper
   const anonymousId = getStorageValue(ANONYMOUS_ID_KEY, 'anon')
   const sessionId = getStorageValue(SESSION_ID_KEY, 'sess')
   const url = new URL(window.location.href)
+  const attribution = captureAttribution(url)
   const clientType = getClientType(url)
   const enrichedProperties: AnalyticsProperties = {
     clientType,
     ...properties,
   }
+  const isSelfReportedSource = eventName === 'acquisition_source_selected' || eventName === 'acquisition_source_skipped'
+  const selfReportedSource = scalarProperty(enrichedProperties, 'source')
 
   const payload = {
     eventName,
@@ -242,10 +325,13 @@ export function track(eventName: AnalyticsEventName, properties: AnalyticsProper
     sessionId,
     platform: getPlatform(url),
     page: url.pathname,
-    source: url.searchParams.get('source') || document.referrer || undefined,
-    channel: url.searchParams.get('channel') || undefined,
+    source: isSelfReportedSource ? 'user_reported' : attribution.source,
+    channel: isSelfReportedSource ? selfReportedSource || 'prefer_not_to_say' : attribution.medium,
     entry: typeof enrichedProperties.entry === 'string' ? enrichedProperties.entry : undefined,
-    properties: enrichedProperties,
+    properties: {
+      ...enrichedProperties,
+      attribution,
+    },
   }
   const dedupeKey = `${eventName}:${JSON.stringify(payload.properties)}:${payload.page}`
   const now = Date.now()

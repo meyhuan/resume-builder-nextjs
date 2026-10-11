@@ -12,6 +12,8 @@ const ENDPOINTS: Record<string, string> = {
   lifecycle: '/analytics/admin/funnel/lifecycle',
   errors: '/analytics/admin/errors',
   revenue: '/analytics/admin/revenue',
+  channels: '/analytics/admin/channels',
+  acquisitionSources: '/analytics/admin/acquisition-sources',
 };
 
 export async function POST(request: NextRequest): Promise<NextResponse> {

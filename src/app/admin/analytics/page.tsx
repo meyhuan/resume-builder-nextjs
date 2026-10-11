@@ -124,6 +124,39 @@ interface RevenueData {
   conversion: RevenueConversion[];
 }
 
+interface AttributionChannel {
+  source: string;
+  channel: string;
+  visitors: number;
+  pageViewUsers: number;
+  loginUsers: number;
+  resumeUsers: number;
+  exportUsers: number;
+  paidUsers: number;
+  paidOrders: number;
+  loginRate: number;
+  resumeRate: number;
+  exportRate: number;
+  paidRate: number;
+}
+
+interface AttributionData {
+  channels: AttributionChannel[];
+}
+
+interface SelfReportedSource {
+  source: string;
+  sourceDetail?: string;
+  responses: number;
+  users: number;
+  selected: number;
+  skipped: number;
+}
+
+interface SelfReportedSourcesData {
+  sources: SelfReportedSource[];
+}
+
 type AnalyticsState = {
   overview: OverviewData | null;
   lifecycle: LifecycleData | null;
@@ -132,6 +165,8 @@ type AnalyticsState = {
   create: FunnelData | null;
   errors: ErrorData | null;
   revenue: RevenueData | null;
+  channels: AttributionData | null;
+  acquisitionSources: SelfReportedSourcesData | null;
 };
 
 type PlatformFilter = 'all' | 'web' | 'mini_program' | 'h5_pay' | 'backend';
@@ -139,6 +174,8 @@ type ClientTypeFilter = 'all' | 'pc_web' | 'mobile_web' | 'mini_program_webview'
 
 const EVENT_LABELS: Record<string, string> = {
   page_view: '页面访问',
+  acquisition_source_selected: '用户选择来源',
+  acquisition_source_skipped: '用户跳过来源选择',
   login_success: '登录成功',
   login_prompt_view: '登录弹窗曝光',
   landing_cta_click: '首页 CTA 点击',
@@ -207,6 +244,18 @@ const PLATFORM_LABELS: Record<string, string> = {
   backend: '后端',
 };
 
+const ACQUISITION_SOURCE_LABELS: Record<string, string> = {
+  xiaohongshu: '小红书',
+  douyin: '抖音',
+  ai_tool: '豆包 / 其他 AI 工具',
+  zhihu: '知乎',
+  wechat: '微信公众号 / 朋友圈',
+  search: '搜索引擎',
+  friend: '朋友推荐',
+  other: '其他渠道',
+  prefer_not_to_say: '暂不选择',
+};
+
 const PLATFORM_OPTIONS: Array<{ value: PlatformFilter; label: string }> = [
   { value: 'all', label: '全部端' },
   { value: 'web', label: 'Web（含 PC/移动）' },
@@ -240,6 +289,10 @@ function formatCurrency(value: number | undefined): string {
 
 function labelEvent(eventName: string): string {
   return EVENT_LABELS[eventName] || eventName;
+}
+
+function labelAcquisitionSource(source: string): string {
+  return ACQUISITION_SOURCE_LABELS[source] || source;
 }
 
 async function fetchAnalytics(
@@ -279,6 +332,8 @@ export default function AnalyticsAdminPage(): React.ReactElement {
     create: null,
     errors: null,
     revenue: null,
+    channels: null,
+    acquisitionSources: null,
   });
 
   const totalEvents = useMemo(() => {
@@ -303,7 +358,7 @@ export default function AnalyticsAdminPage(): React.ReactElement {
     setLoading(true);
     setError(null);
     try {
-      const [overview, lifecycle, pay, exportFunnel, create, errors, revenue] = await Promise.all([
+      const [overview, lifecycle, pay, exportFunnel, create, errors, revenue, channels, acquisitionSources] = await Promise.all([
         fetchAnalytics('overview', days, platform, passwordToUse) as Promise<OverviewData>,
         fetchAnalytics('lifecycle', days, platform, passwordToUse, clientType) as Promise<LifecycleData>,
         fetchAnalytics('pay', days, platform, passwordToUse) as Promise<FunnelData>,
@@ -311,10 +366,12 @@ export default function AnalyticsAdminPage(): React.ReactElement {
         fetchAnalytics('create', days, platform, passwordToUse) as Promise<FunnelData>,
         fetchAnalytics('errors', days, platform, passwordToUse) as Promise<ErrorData>,
         fetchAnalytics('revenue', days, platform, passwordToUse) as Promise<RevenueData>,
+        fetchAnalytics('channels', days, platform, passwordToUse) as Promise<AttributionData>,
+        fetchAnalytics('acquisitionSources', days, platform, passwordToUse) as Promise<SelfReportedSourcesData>,
       ]);
       setStoredAdminPassword(passwordToUse);
       setHasStoredPassword(true);
-      setData({ overview, lifecycle, pay, export: exportFunnel, create, errors, revenue });
+      setData({ overview, lifecycle, pay, export: exportFunnel, create, errors, revenue, channels, acquisitionSources });
       setLoaded(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : '加载失败');
@@ -397,7 +454,7 @@ export default function AnalyticsAdminPage(): React.ReactElement {
                   setHasStoredPassword(false);
                   setAdminPassword('');
                   setLoaded(false);
-                  setData({ overview: null, lifecycle: null, pay: null, export: null, create: null, errors: null, revenue: null });
+                  setData({ overview: null, lifecycle: null, pay: null, export: null, create: null, errors: null, revenue: null, channels: null, acquisitionSources: null });
                 }}
                 className="h-10 rounded-lg border border-slate-200 px-3 text-sm text-slate-600 hover:bg-slate-50"
               >
@@ -429,6 +486,11 @@ export default function AnalyticsAdminPage(): React.ReactElement {
           </section>
 
           <LifecycleFunnelCard data={data.lifecycle} />
+
+          <section className="grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
+            <AttributionCard data={data.channels} />
+            <SelfReportedSourcesCard data={data.acquisitionSources} />
+          </section>
 
           <RevenueCard data={data.revenue} />
 
@@ -593,6 +655,81 @@ function MetricCard(props: { icon: React.ReactNode; label: string; value: string
       </div>
       <div className="mt-3 text-2xl font-bold text-slate-900">{props.value}</div>
     </div>
+  );
+}
+
+function AttributionCard(props: { data: AttributionData | null }): React.ReactElement {
+  const channels = props.data?.channels ?? [];
+  return (
+    <section className="rounded-xl border border-slate-200 bg-white p-5">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h2 className="text-sm font-semibold text-slate-900">渠道转化</h2>
+          <p className="mt-1 text-xs text-slate-400">根据推广链接来源，追踪访问到付费</p>
+        </div>
+        <span className="text-xs text-slate-400">来源 / 媒介</span>
+      </div>
+      <div className="mt-4 overflow-x-auto">
+        {channels.length === 0 ? (
+          <div className="rounded-lg border border-dashed border-slate-200 p-6 text-center text-sm text-slate-500">暂无渠道数据。</div>
+        ) : (
+          <table className="w-full min-w-[620px] text-left text-xs">
+            <thead className="text-slate-400">
+              <tr>
+                <th className="pb-2 font-medium">来源</th>
+                <th className="pb-2 font-medium">访问</th>
+                <th className="pb-2 font-medium">登录</th>
+                <th className="pb-2 font-medium">导出</th>
+                <th className="pb-2 text-right font-medium">付费</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {channels.slice(0, 12).map((item) => (
+                <tr key={`${item.source}-${item.channel}`}>
+                  <td className="py-2 pr-3">
+                    <div className="font-medium text-slate-800">{labelAcquisitionSource(item.source)}</div>
+                    <div className="text-[11px] text-slate-400">{item.channel}</div>
+                  </td>
+                  <td className="py-2 text-slate-600">{formatNumber(item.visitors)}</td>
+                  <td className="py-2 text-slate-600">{formatNumber(item.loginUsers)} <span className="text-[11px] text-slate-400">{formatPercent(item.loginRate)}</span></td>
+                  <td className="py-2 text-slate-600">{formatNumber(item.exportUsers)} <span className="text-[11px] text-slate-400">{formatPercent(item.exportRate)}</span></td>
+                  <td className="py-2 text-right font-semibold text-slate-900">{formatNumber(item.paidUsers)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function SelfReportedSourcesCard(props: { data: SelfReportedSourcesData | null }): React.ReactElement {
+  const sources = props.data?.sources ?? [];
+  return (
+    <section className="rounded-xl border border-slate-200 bg-white p-5">
+      <div>
+        <h2 className="text-sm font-semibold text-slate-900">用户自报来源</h2>
+        <p className="mt-1 text-xs text-slate-400">登录后弹窗收集，用户可跳过</p>
+      </div>
+      <div className="mt-4 space-y-2">
+        {sources.length === 0 ? (
+          <div className="rounded-lg border border-dashed border-slate-200 p-6 text-center text-sm text-slate-500">暂无回答。</div>
+        ) : sources.map((item) => (
+          <div key={`${item.source}-${item.sourceDetail || 'none'}`} className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2">
+            <div>
+              <div className="text-sm font-medium text-slate-800">{labelAcquisitionSource(item.source)}</div>
+              {item.sourceDetail && <div className="mt-0.5 text-xs text-violet-600">具体来源：{item.sourceDetail}</div>}
+              <div className="mt-0.5 text-xs text-slate-400">回答 {formatNumber(item.users)} 人</div>
+            </div>
+            <div className="text-right">
+              <div className="font-semibold text-slate-900">{formatNumber(item.selected)}</div>
+              <div className="text-[11px] text-slate-400">主动选择</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
 
