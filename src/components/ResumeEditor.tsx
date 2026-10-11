@@ -24,7 +24,7 @@ import { revalidateDashboard } from '@/app/actions'
 import { useResumePagination } from '@/hooks/use-resume-pagination'
 import { useEditorSidebarPreference } from '@/hooks/use-editor-sidebar-preference'
 import { usePdfPreviewPageCount } from '@/hooks/use-pdf-preview-page-count'
-import { ResumePageFeedback, ResumePageGuides } from '@/components/editor/resume-page-feedback'
+import { ResumePageFeedback } from '@/components/editor/resume-page-feedback'
 import { useOnePageMode } from '@/hooks/use-one-page-mode'
 import { toast } from 'sonner'
 import { DEFAULT_ONE_PAGE_STRATEGY, type AdjustableTokens, type OnePageStrategy } from '@/entities/editor/editor-meta'
@@ -283,7 +283,6 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
   const [onePageMode, setOnePageMode] = useState(false)
   const [onePageSnapshot, setOnePageSnapshot] = useState<AdjustableTokens | null>(null)
   const [onePageStrategy, setOnePageStrategy] = useState<OnePageStrategy>(DEFAULT_ONE_PAGE_STRATEGY)
-  const [pageGuides, setPageGuides] = useState(true)
   const [sidebarSectionIds, setSidebarSectionIds] = useState<readonly string[] | undefined>(undefined)
   const hasUnsavedRef = useRef(false)
   const [showPreview, setShowPreview] = useState(false)
@@ -1367,8 +1366,6 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
         <ResumePageFeedback
           pages={pages}
           contentRef={printRef}
-          guides={pageGuides}
-          onGuidesChange={setPageGuides}
           onePage={onePageMode}
           pdfPageCount={pdfPageCount}
         />
@@ -1417,7 +1414,6 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
                 <PortfolioAppendix portfolio={renderableResume.portfolio} />
               </Suspense>
             </div>
-            <ResumePageGuides pages={pages} visible={pageGuides} />
           </div>
         </div>
         </ResumeActionWorkspace>

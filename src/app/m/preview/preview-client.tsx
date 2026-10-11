@@ -25,8 +25,6 @@ import { useInMiniProgram } from '../_components/use-mini-program'
 import { useMiniProgramCapabilities } from '../_components/use-mini-program-capabilities'
 import { BottomActionBar } from './_components/bottom-action-bar'
 import { PortfolioAppendix } from '@/components/portfolio/portfolio-appendix'
-import { useResumePagination } from '@/hooks/use-resume-pagination'
-import { ResumePageGuides } from '@/components/editor/resume-page-feedback'
 import {
   ONE_PAGE_BADGE_STYLES,
   PreviewSettingsSheet,
@@ -288,8 +286,6 @@ export default function MobilePreviewClient(): ReactElement {
   const titleScale: number = theme.titleScale ?? 1
   const paragraphIndent: number = theme.paragraphIndent ?? 0
   const onePageFit: boolean = theme.onePageFit ?? false
-  const previewRevision = useMemo(() => JSON.stringify({ renderableResume, templateId, theme }), [renderableResume, templateId, theme])
-  const pages = useResumePagination(innerRef, previewRevision)
 
   const handleOpenSettings = useCallback((): void => {
     if (settingsSavingRef.current || settingsSnapshotRef.current) return
@@ -759,7 +755,6 @@ export default function MobilePreviewClient(): ReactElement {
                   </div>
                   <PortfolioAppendix portfolio={renderableResume.portfolio} />
                 </Suspense>
-                <ResumePageGuides pages={pages} visible showLabels={false} />
               </div>
 
               {onePageFit ? <OnePageBadge status={onePageStatus} /> : null}

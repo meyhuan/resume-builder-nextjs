@@ -167,31 +167,16 @@ try {
   await seed(page, long)
   await page.setViewport({ width: 414, height: 896, isMobile: true, hasTouch: true, deviceScaleFactor: 2 })
   await page.goto(`${baseUrl}/m/preview?tpl=qingning&source=web&mini=0`, { waitUntil: 'domcontentloaded', timeout: 90000 })
-  await page.waitForSelector('[data-resume-page-boundary]')
+  await page.waitForSelector('.resume-document-main')
   for (const [width, height] of [[414, 896], [320, 568]]) {
     await page.setViewport({ width, height, isMobile: true, hasTouch: true, deviceScaleFactor: 2 })
-    await page.waitForFunction(() => {
-      const guide = document.querySelector('[data-resume-page-guides]')
-      return guide && guide.getBoundingClientRect().width <= Math.min(innerWidth - 24, 390) + 1
-    })
-    const geometry = await page.$eval('[data-resume-page-boundary]', line => {
-      const root = line.parentElement
-      return { actual: line.getBoundingClientRect().top - root.getBoundingClientRect().top,
-        expected: parseFloat(line.style.top) * root.getBoundingClientRect().width / root.offsetWidth }
-    })
-    assert.ok(Math.abs(geometry.actual - geometry.expected) < 1, 'Reference line must scale with the resume')
-    assert.equal(await page.$eval('[data-resume-page-guides]', el => el.textContent), '')
+    assert.equal(await page.$('[data-resume-page-guides], [data-resume-page-boundary]'), null)
     assert.equal(await page.$('[data-mobile-page-feedback], [data-page-count-source]'), null)
     assert.equal(await page.$('script[src="/libs/pdfjs/pdf.min.js"]'), null)
     assert.equal(await page.evaluate(() => /查看 PDF 分页|定位预计跨页处|预计 \d+ 页/.test(document.body.textContent)), false)
-    await page.evaluate(() => {
-      const stage = document.querySelector('[data-mobile-preview-stage]')
-      const line = document.querySelector('[data-resume-page-boundary]')
-      stage.scrollTop += line.getBoundingClientRect().top - stage.getBoundingClientRect().top - stage.clientHeight / 2
-    })
     await safeWidth(page)
     await page.screenshot({ path: path.join(out, `mobile-pagination-${width}.png`) })
-    pass(`${width}px preview shows only automatically visible, scaled reference lines`)
+    pass(`${width}px preview hides page guides`)
   }
   await tapText(page, 'button', '样式')
   await page.waitForSelector('[role=dialog]')

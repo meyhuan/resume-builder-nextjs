@@ -5,7 +5,7 @@ import { calculateResumePages, CSS_PX_PER_MM, readPagePaddingVertical } from '@/
 import { measureResumePagination, useResumePagination } from '@/hooks/use-resume-pagination'
 import { getOnePageAdjustments } from '@/components/editor/one-page-adjustments'
 import { buildResumeHtml } from '@/io/html-export'
-import { ResumePageFeedback, ResumePageGuides } from '@/components/editor/resume-page-feedback'
+import { ResumePageFeedback } from '@/components/editor/resume-page-feedback'
 
 beforeEach(() => {
   vi.stubGlobal('ResizeObserver', class { observe() {} disconnect() {} })
@@ -42,27 +42,27 @@ describe('live pagination feedback', () => {
     expect(measureResumePagination(root)).toEqual(before)
     expect(before.pageCount).toBe(2)
   })
-  it('clearly distinguishes estimated boundaries from verified PDF totals, without adding appendix pages twice', () => {
+  it('clearly distinguishes estimated page counts from verified PDF totals, without adding appendix pages twice', () => {
     const root = fixture()
     const pages = { ...measureResumePagination(root), appendixPages: 2 }
-    const props = { pages, contentRef: { current: root as HTMLDivElement }, guides: true, onGuidesChange: vi.fn(), onePage: false }
+    const props = { pages, contentRef: { current: root as HTMLDivElement }, onePage: false }
     const { rerender } = render(<ResumePageFeedback {...props} />)
     expect(screen.getByRole('status').textContent).toContain('预计 4 页')
-    expect(screen.getByRole('checkbox', { name: '显示分页参考线' })).toBeTruthy()
+    expect(screen.queryByRole('checkbox', { name: '显示分页参考线' })).toBeNull()
     expect(screen.getByRole('button', { name: '查看预计跨页位置' })).toBeTruthy()
     rerender(<ResumePageFeedback {...props} pdfPageCount={3} />)
     expect(screen.getByRole('status').textContent).toBe('PDF 实际 3 页')
     expect(screen.getByRole('status').getAttribute('data-page-count-source')).toBe('pdf')
-    expect(screen.getByText('参考线仅供估算，实际分页以 PDF 预览为准')).toBeTruthy()
+    expect(screen.getByText('页数仅供估算，实际分页以 PDF 预览为准')).toBeTruthy()
     rerender(<ResumePageFeedback {...props} pdfPageCount={null} />)
     expect(screen.getByRole('status').textContent).toContain('预计 4 页')
   })
 
-  it('labels on-canvas boundaries as references and keeps them out of exports', () => {
+  it('does not render on-canvas page guides', () => {
     const root = fixture()
-    const { container } = render(<ResumePageGuides pages={measureResumePagination(root)} visible />)
-    expect(container.textContent).toContain('第 1 页 / 第 2 页（参考）')
-    expect(buildResumeHtml(container)).not.toContain('（参考）')
+    const { container } = render(<ResumePageFeedback pages={measureResumePagination(root)} contentRef={{ current: root as HTMLDivElement }} onePage={false} />)
+    expect(container.querySelector('[data-resume-page-guides]')).toBeNull()
+    expect(container.textContent).not.toContain('参考线')
   })
 
   it('matches first/continuation page margins and handles fractional A4 rounding', () => {

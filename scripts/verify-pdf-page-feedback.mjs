@@ -91,12 +91,11 @@ try {
   page = await newEditor()
   await estimate(page)
   assert.equal(await page.$('script[src="/libs/pdfjs/pdf.min.js"]'), null)
-  assert.ok((await page.$eval('[data-resume-page-feedback]', el => el.textContent)).includes('显示分页参考线'))
-  await page.waitForSelector('[data-resume-page-boundary]')
-  assert.ok((await page.$eval('[data-resume-page-boundary]', el => el.textContent)).includes('（参考）'))
+  assert.equal(await page.$('[data-resume-page-feedback] input[type=checkbox]'), null)
+  assert.equal(await page.$('[data-resume-page-guides], [data-resume-page-boundary]'), null)
   await clickText(page, '[data-resume-page-feedback] button', '查看预计跨页位置')
   await page.waitForFunction(() => document.querySelector('[data-editor-canvas]').scrollTop > 100)
-  passed('real PC editor labels estimated boundaries honestly and keeps the locate action usable; PDF.js stays lazy')
+  passed('real PC editor keeps the locate action usable without rendering page guides; PDF.js stays lazy')
 
   const first = await preview(page, 'initial-preview')
   assert.ok((await page.$eval('[role=dialog]', el => el.textContent)).includes(`实际 PDF 共 ${first.count} 页`))
@@ -105,11 +104,6 @@ try {
   await verified(page, first.count)
   await page.screenshot({ path: path.join(out, 'verified-feedback.png') })
   passed('actual preview page count equals independent pdfplumber metadata and remains visible after closing', { actualPdfPages: first.count })
-
-  await page.click('[data-resume-page-feedback] input[type=checkbox]')
-  await page.click('[data-resume-page-feedback] input[type=checkbox]')
-  await verified(page, first.count)
-  passed('toggling reference lines does not invalidate a verified PDF count')
 
   await editName(page, '分页反馈核对')
   await estimate(page)

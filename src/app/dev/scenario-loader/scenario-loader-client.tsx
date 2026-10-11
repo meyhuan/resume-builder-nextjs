@@ -12,7 +12,7 @@ import { PortfolioAppendix } from '@/components/portfolio/portfolio-appendix'
 import { getTemplateFixture, getTemplateLabTheme } from '@/lib/template-fixtures'
 import { useResumePagination } from '@/hooks/use-resume-pagination'
 import { usePdfPreviewPageCount } from '@/hooks/use-pdf-preview-page-count'
-import { ResumePageFeedback, ResumePageGuides } from '@/components/editor/resume-page-feedback'
+import { ResumePageFeedback } from '@/components/editor/resume-page-feedback'
 import { useOnePageMode } from '@/hooks/use-one-page-mode'
 import type { AdjustableTokens } from '@/entities/editor/editor-meta'
 import { buildResumeHtml } from '@/io/html-export'
@@ -50,7 +50,6 @@ export default function ScenarioLoaderClient(): ReactElement {
   const renderableResume = getRenderableResume(resume, readOnly ? undefined : editingBlockIds)
   const previewRef = useRef<HTMLDivElement>(null)
   const [exportStatus, setExportStatus] = useState('')
-  const [pageGuides, setPageGuides] = useState(true)
   const pages = useResumePagination(previewRef, tpl)
   const [previewPdfUrl, setPreviewPdfUrl] = useState('')
 
@@ -151,7 +150,7 @@ export default function ScenarioLoaderClient(): ReactElement {
 
         <div className="mx-auto grid h-[calc(100dvh-112px)] max-w-7xl grid-cols-[minmax(0,1fr)_360px] gap-5">
           <ResumeActionWorkspace className="rounded-lg border border-slate-200">
-          <ResumePageFeedback pages={pages} contentRef={previewRef} guides={pageGuides} onGuidesChange={setPageGuides} onePage={onePage} pdfPageCount={pdfPageCount} />
+          <ResumePageFeedback pages={pages} contentRef={previewRef} onePage={onePage} pdfPageCount={pdfPageCount} />
           <section className="min-h-0 flex-1 overflow-auto bg-slate-200 p-6" data-editor-canvas="true">
             <div ref={previewRef} className="relative mx-auto w-[794px] bg-white shadow-sm" data-scenario-preview="true">
               <div ref={resumeBodyRef} className="resume-document-main" data-one-page={onePage && onePageStatus === 'fit' ? 'true' : 'false'} data-one-page-mode={onePage ? 'true' : 'false'} data-one-page-strategy="one-page" data-one-page-status={onePageStatus} data-qa-theme={JSON.stringify(theme)}>
@@ -160,7 +159,6 @@ export default function ScenarioLoaderClient(): ReactElement {
                 <PortfolioAppendix portfolio={resume.portfolio} />
               </Suspense>
               </div>
-              <ResumePageGuides pages={pages} visible={pageGuides} />
             </div>
           </section>
           </ResumeActionWorkspace>
