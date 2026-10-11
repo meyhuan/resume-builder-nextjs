@@ -1,6 +1,10 @@
 import { NextRequest } from 'next/server';
 import { createOpenAI } from '@ai-sdk/openai';
-import { getModelByName } from '@/lib/ai/ai-runtime-config';
+import {
+  createThinkingFetch,
+  getModelByName,
+} from '@/lib/ai/ai-runtime-config';
+import type { ThinkingMode } from '@/lib/ai/thinking-policy';
 
 export interface AIConfig {
   provider: string;
@@ -19,8 +23,9 @@ export class AIConfigError extends Error {
 /**
  * Extract AI config from request headers.
  *
- * Currently only DashScope (qwen-plus / qwen-max) is supported on the
- * server side. The API key is read from the `DASHSCOPE_API_KEY` env var.
+ * The server currently uses OpenAI-compatible DashScope endpoints for the
+ * configured Qwen and DeepSeek models. The API key is read from the model's
+ * configured server-side environment variable.
  * We keep the multi-provider shape (openai/anthropic/gemini) as an extension
  * point for future "bring your own key" support.
  */
@@ -30,7 +35,11 @@ export function extractAIConfig(request: NextRequest): AIConfig {
   return { provider, model, apiKey: '', baseURL: '' };
 }
 
-export function getModel(config: AIConfig, modelOverride?: string) {
+export function getModel(
+  config: AIConfig,
+  modelOverride?: string,
+  thinkingMode: ThinkingMode = 'disabled',
+) {
   switch (config.provider) {
     case 'dashscope':
     default: {
@@ -42,6 +51,7 @@ export function getModel(config: AIConfig, modelOverride?: string) {
       const client = createOpenAI({
         apiKey,
         baseURL: modelConfig.baseUrl,
+        fetch: createThinkingFetch(modelConfig, thinkingMode),
       });
       return client.chat(modelConfig.name);
     }

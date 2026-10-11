@@ -5,6 +5,7 @@ import { analyzeJdMatch } from '@/lib/ai/analyze-jd-match';
 import { extractJson } from '@/lib/ai/extract-json';
 import { sanitizeResumeHtml } from '@/lib/ai/html-sanitize';
 import type { ResumeData } from '@/entities/resume/resume-data';
+import { resolveThinkingMode } from '@/lib/ai/thinking-policy';
 
 export type ChatChangeProposal =
   | {
@@ -141,7 +142,7 @@ Use the exact blockId from the resume data.`,
         targetLanguage: z.enum(['zh', 'en']).describe('Target language: "zh" for Chinese, "en" for English'),
       }),
       execute: async ({ targetLanguage }) => {
-        const model = getModel(aiConfig);
+        const model = getModel(aiConfig, undefined, resolveThinkingMode('default'));
         const langName = targetLanguage === 'zh' ? 'Simplified Chinese' : 'English';
         const singleBlockSchema = z.object({
           blockId: z.string(),

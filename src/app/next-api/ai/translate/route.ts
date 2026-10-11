@@ -10,6 +10,7 @@ import {
   translatedSectionSchema,
 } from '@/lib/ai/translate-schema';
 import type { ResumeData } from '@/entities/resume/resume-data';
+import { resolveThinkingMode } from '@/lib/ai/thinking-policy';
 
 const LANGUAGE_NAMES: Record<string, string> = {
   zh: 'Simplified Chinese',
@@ -84,7 +85,7 @@ export async function POST(request: NextRequest): Promise<Response> {
 
     const { targetLanguage } = parsed.data;
     const aiConfig = extractAIConfig(request);
-    const model = getModel(aiConfig);
+    const model = getModel(aiConfig, undefined, resolveThinkingMode('default'));
     const encoder = new TextEncoder();
 
     const units: Array<{ type: 'header' } | { type: 'section'; sectionId: string }> = [

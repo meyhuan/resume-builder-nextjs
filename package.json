@@ -35,7 +35,8 @@
     "extension:zip": "pnpm --dir extension zip",
     "test:application-autofill": "vitest run src/features/application-profile src/features/applications",
     "test:ai": "vitest run --config scripts/vitest.unified-ai.config.ts",
-    "test:display-title": "vitest run --config scripts/vitest.display-title.config.ts"
+    "test:display-title": "vitest run --config scripts/vitest.display-title.config.ts",
+    "benchmark:llm": "node scripts/llm-benchmark.mjs"
   },
   "dependencies": {
     "@ai-sdk/openai": "^4.0.42",

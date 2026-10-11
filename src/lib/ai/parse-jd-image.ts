@@ -1,7 +1,7 @@
 import 'server-only';
 
-import OpenAI from 'openai';
-import { getVisionModel, resolveApiKey } from '@/lib/ai/ai-runtime-config';
+import { createOpenAIClient, getVisionModel } from '@/lib/ai/ai-runtime-config';
+import { resolveThinkingMode } from '@/lib/ai/thinking-policy';
 
 const EXTRACT_PROMPT = 'Please output only the text content from the image without any additional descriptions or formatting.';
 
@@ -89,9 +89,7 @@ export async function extractJdTextFromImage(params: {
   readonly mimeType: string;
 }): Promise<string> {
   const model = getVisionModel();
-  const client = new OpenAI({
-    apiKey: resolveApiKey(model),
-    baseURL: model.baseUrl,
+  const client = createOpenAIClient(model, resolveThinkingMode('default'), {
     timeout: 90_000,
   });
   const dataUrl = `data:${params.mimeType};base64,${params.buffer.toString('base64')}`;

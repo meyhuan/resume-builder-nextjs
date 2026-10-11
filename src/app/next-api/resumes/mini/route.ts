@@ -11,8 +11,8 @@ import DocmindApi, {
   GetDocParserResultRequest,
 } from '@alicloud/docmind-api20220711'
 import { Readable } from 'stream'
-import OpenAI from 'openai'
-import { getDefaultModel, resolveApiKey } from '@/lib/ai/ai-runtime-config'
+import { createOpenAIClient, getDefaultModel } from '@/lib/ai/ai-runtime-config'
+import { resolveThinkingMode } from '@/lib/ai/thinking-policy'
 import { buildImportSystemPrompt, buildImportUserPrompt } from '@/lib/ai/import-prompt-builder'
 import { createDefaultResume } from '@/lib/default-resume'
 import { buildImportResumeTitle } from '@/lib/import-resume-title'
@@ -233,8 +233,7 @@ export async function POST(req: Request): Promise<NextResponse> {
     }
 
     const model = getDefaultModel()
-    const apiKey = resolveApiKey(model)
-    const openai = new OpenAI({ apiKey, baseURL: model.baseUrl })
+    const openai = createOpenAIClient(model, resolveThinkingMode('default'))
     const llmRes = await openai.chat.completions.create({
       model: model.name,
       messages: [

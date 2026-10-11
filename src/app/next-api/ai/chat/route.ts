@@ -6,9 +6,37 @@ import { createChatTools } from '@/lib/ai/tools';
 import { toResumeContext } from '@/lib/ai/resume-context';
 import { withQuotaCheck } from '@/lib/quota/quota-guard';
 import type { ResumeData } from '@/entities/resume/resume-data';
+import {
+  resolveThinkingMode,
+  type ThinkingMode,
+} from '@/lib/ai/thinking-policy';
 
 const MAX_ROUNDS = 10;
 const MAX_MESSAGES = MAX_ROUNDS * 2;
+
+function isComplexChat(messages: unknown): boolean {
+  if (!Array.isArray(messages)) return false;
+  if (messages.length > 4) return true;
+  const latest = messages[messages.length - 1];
+  if (!latest || typeof latest !== 'object') return false;
+  const content = (latest as { content?: unknown }).content;
+  const text =
+    typeof content === 'string'
+      ? content
+      : Array.isArray(content)
+        ? content
+            .map((part) =>
+              part && typeof part === 'object' && 'text' in part
+                ? String((part as { text?: unknown }).text ?? '')
+                : '',
+            )
+            .join(' ')
+        : '';
+  return (
+    text.length > 240 ||
+    /全文|整份|规划|方案|比较|权衡|分析|为什么|职业方向|岗位匹配|面试/.test(text)
+  );
+}
 
 /**
  * POST /next-api/ai/chat
@@ -20,10 +48,11 @@ const MAX_MESSAGES = MAX_ROUNDS * 2;
 export async function POST(request: NextRequest): Promise<Response> {
   try {
     return withQuotaCheck('ai:editor-assist', async () => {
-      const { messages, resumeData, model: modelId } = (await request.json()) as {
+      const { messages, resumeData, model: modelId, thinking } = (await request.json()) as {
         messages: unknown;
         resumeData?: ResumeData;
         model?: string;
+        thinking?: ThinkingMode;
       };
 
       if (!resumeData) {
@@ -31,7 +60,18 @@ export async function POST(request: NextRequest): Promise<Response> {
       }
 
       const aiConfig = extractAIConfig(request);
-      const model = getModel(aiConfig, modelId);
+      const requestedThinking =
+        thinking === 'disabled' || thinking === 'low'
+          ? thinking
+          : undefined;
+      const model = getModel(
+        aiConfig,
+        modelId,
+        resolveThinkingMode('chat', {
+          requested: requestedThinking,
+          complex: isComplexChat(messages),
+        }),
+      );
       const resumeContext = toResumeContext(resumeData);
       const modelMessages = await convertToModelMessages(messages as never);
       const truncatedMessages = modelMessages.slice(-MAX_MESSAGES);

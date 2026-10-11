@@ -5,10 +5,10 @@ import DocmindApi, {
   QueryDocParserStatusRequest,
   GetDocParserResultRequest,
 } from '@alicloud/docmind-api20220711';
-import OpenAI from 'openai';
+import { createOpenAIClient, getDefaultModel } from '@/lib/ai/ai-runtime-config';
 import { checkQuota } from '@/lib/quota/quota-checker';
 import { applyRateLimit } from '@/lib/ai/with-rate-limit';
-import { getDefaultModel, resolveApiKey } from '@/lib/ai/ai-runtime-config';
+import { resolveThinkingMode } from '@/lib/ai/thinking-policy';
 import { buildImportSystemPrompt, buildImportUserPrompt } from '@/lib/ai/import-prompt-builder';
 
 const POLL_INTERVAL_MS = 3000;
@@ -190,8 +190,7 @@ function extractTextFromLayouts(data: unknown): string {
 
 async function parseTextWithLLM(resumeText: string): Promise<unknown> {
   const model = getDefaultModel();
-  const apiKey = resolveApiKey(model);
-  const client = new OpenAI({ apiKey, baseURL: model.baseUrl });
+  const client = createOpenAIClient(model, resolveThinkingMode('default'));
 
   const response = await client.chat.completions.create({
     model: model.name,

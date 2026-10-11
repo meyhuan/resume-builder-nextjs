@@ -6,6 +6,7 @@ import { extractJson } from '@/lib/ai/extract-json';
 import { grammarCheckInputSchema, grammarCheckOutputSchema } from '@/lib/ai/grammar-check-schema';
 import { serializeResumeContext } from '@/lib/ai/resume-context';
 import type { ResumeData } from '@/entities/resume/resume-data';
+import { resolveThinkingMode } from '@/lib/ai/thinking-policy';
 
 const GRAMMAR_CHECK_PROMPT = `You are an expert resume reviewer and writing coach. Analyze the provided resume sections for writing quality issues.
 
@@ -49,7 +50,7 @@ export async function POST(request: NextRequest): Promise<Response> {
     }
 
     const aiConfig = extractAIConfig(request);
-    const model = getModel(aiConfig);
+    const model = getModel(aiConfig, undefined, resolveThinkingMode('default'));
     const resumeContext = serializeResumeContext(resumeData);
 
     const result = await generateText({

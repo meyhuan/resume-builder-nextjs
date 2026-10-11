@@ -12,6 +12,7 @@ import { extractJson } from '@/lib/ai/extract-json';
 import { formatJdSuggestionSection } from '@/lib/ai/jd-section-label';
 import { serializeResumeContext } from '@/lib/ai/resume-context';
 import type { ResumeData } from '@/entities/resume/resume-data';
+import { resolveThinkingMode } from '@/lib/ai/thinking-policy';
 
 const JD_ANALYSIS_PROMPT = `You are an expert resume analyst and career coach. Analyze the match between the provided resume and job description.
 
@@ -35,7 +36,7 @@ export async function analyzeJdMatch(params: {
   aiConfig: AIConfig;
 }): Promise<JdAnalysisOutput> {
   const { resumeData, jobDescription, aiConfig } = params;
-  const model = getModel(aiConfig);
+  const model = getModel(aiConfig, undefined, resolveThinkingMode('jd-match'));
   const resumeContext = serializeResumeContext(resumeData);
 
   const result = await generateText({

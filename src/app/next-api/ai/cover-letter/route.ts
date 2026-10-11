@@ -5,6 +5,7 @@ import { withQuotaCheck } from '@/lib/quota/quota-guard';
 import { coverLetterInputSchema } from '@/lib/ai/cover-letter-schema';
 import { serializeResumeContext } from '@/lib/ai/resume-context';
 import type { ResumeData } from '@/entities/resume/resume-data';
+import { resolveThinkingMode } from '@/lib/ai/thinking-policy';
 
 interface CoverLetterOutput {
   title: string;
@@ -79,7 +80,7 @@ export async function POST(request: NextRequest): Promise<Response> {
     const { jobDescription, tone } = parsed.data;
     const language = parsed.data.language || 'zh';
     const aiConfig = extractAIConfig(request);
-    const model = getModel(aiConfig);
+    const model = getModel(aiConfig, undefined, resolveThinkingMode('default'));
     const resumeContext = serializeResumeContext(resumeData);
 
     const result = await generateText({

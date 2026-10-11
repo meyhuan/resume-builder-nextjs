@@ -11,6 +11,7 @@ import {
 import { extractJson } from '@/lib/ai/extract-json';
 import { serializeResumeContext } from '@/lib/ai/resume-context';
 import type { ResumeData } from '@/entities/resume/resume-data';
+import { resolveThinkingMode } from '@/lib/ai/thinking-policy';
 
 const INTERVIEW_PREP_PROMPT = `You are a Chinese job-search coach helping candidates prepare for BOSS Zhipin / domestic interviews. Generate a practical interview-prep pack from the resume and optional job description.
 
@@ -52,7 +53,11 @@ export async function generateInterviewPrep(params: {
   aiConfig: AIConfig;
 }): Promise<InterviewPrepOutput> {
   const { resumeData, jobDescription, aiConfig } = params;
-  const model = getModel(aiConfig);
+  const model = getModel(
+    aiConfig,
+    undefined,
+    resolveThinkingMode('interview-prep'),
+  );
   const resumeContext = serializeResumeContext(resumeData);
 
   const result = await generateText({

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import OpenAI from 'openai';
-import { getModelByName, resolveApiKey } from '@/lib/ai/ai-runtime-config';
+import { createOpenAIClient, getModelByName } from '@/lib/ai/ai-runtime-config';
+import { resolveThinkingMode } from '@/lib/ai/thinking-policy';
 import { withQuotaCheck } from '@/lib/quota/quota-guard';
 import {
   buildPolishSystemPrompt,
@@ -44,12 +44,12 @@ export async function POST(request: NextRequest): Promise<Response> {
     }
 
     const modelConfig = getModelByName(modelName ?? '');
-    const apiKey: string = resolveApiKey(modelConfig);
-
-    const client = new OpenAI({
-      apiKey,
-      baseURL: modelConfig.baseUrl,
-    });
+    const client = createOpenAIClient(
+      modelConfig,
+      polishLevel === 'jd-match'
+        ? resolveThinkingMode('jd-match')
+        : resolveThinkingMode('default'),
+    );
 
     const systemPrompt: string = buildPolishSystemPrompt(
       identity,
