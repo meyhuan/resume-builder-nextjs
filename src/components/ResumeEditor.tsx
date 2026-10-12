@@ -24,7 +24,6 @@ import { revalidateDashboard } from '@/app/actions'
 import { useResumePagination } from '@/hooks/use-resume-pagination'
 import { useEditorSidebarPreference } from '@/hooks/use-editor-sidebar-preference'
 import { usePdfPreviewPageCount } from '@/hooks/use-pdf-preview-page-count'
-import { ResumePageFeedback } from '@/components/editor/resume-page-feedback'
 import { useOnePageMode } from '@/hooks/use-one-page-mode'
 import { toast } from 'sonner'
 import { DEFAULT_ONE_PAGE_STRATEGY, type AdjustableTokens, type OnePageStrategy } from '@/entities/editor/editor-meta'
@@ -1363,12 +1362,6 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
       <AiSectionProvider requireVip={requireAi}>
       <main className="flex-1 flex overflow-hidden relative z-10">
         <ResumeActionWorkspace className={activePanel ? 'hidden md:flex print:block' : ''}>
-        <ResumePageFeedback
-          pages={pages}
-          contentRef={printRef}
-          onePage={onePageMode}
-          pdfPageCount={pdfPageCount}
-        />
         <div data-editor-canvas className="min-h-0 min-w-0 flex-1 overflow-auto p-3 sm:p-6 xl:p-8 custom-scrollbar bg-slate-50/30">
           <div className="relative mx-auto max-w-[210mm] md:w-[210mm] md:max-xl:[zoom:0.8] print:[zoom:1]">
             <div
