@@ -84,7 +84,7 @@ interface CreateMiniExportRequest {
 
 type ExportMode = 'preview' | 'final'
 type MiniExportType = 'pdf' | 'image' | 'markdown'
-type ExportFailureCode = 'PRINT_NOT_READY' | 'PDF_BLANK' | 'RASTERIZE_FAILED' | 'RENDER_FAILED'
+type ExportFailureCode = 'PRINT_NOT_READY' | 'PDF_BLANK' | 'RASTERIZE_FAILED' | 'ONE_PAGE_FAILED' | 'RENDER_FAILED'
 
 interface ExportFailureContext {
   readonly traceId: string
@@ -311,6 +311,11 @@ export async function POST(req: Request): Promise<NextResponse> {
   const fileName: string = requestedFileName || sanitizeExportFileName(resume.title)
   const templateId = explicitTemplateId || resume.template || undefined
   const analyticsUserId = parseJavaUserId(resume.user.javaUserId)
+  const rawResumeContent = resume.content && typeof resume.content === 'object' && !Array.isArray(resume.content)
+    ? resume.content as Record<string, unknown>
+    : {}
+  const { meta: editorMeta } = extractEditorMeta(rawResumeContent)
+  const requiresOnePage = type === 'pdf' && editorMeta.onePageMode
 
   if (type === 'markdown') {
     const rawContent = resume.content && typeof resume.content === 'object' && !Array.isArray(resume.content)
@@ -434,6 +439,7 @@ export async function POST(req: Request): Promise<NextResponse> {
       templateId,
       type,
       traceId,
+      requireOnePage: requiresOnePage,
     })
   } catch (error: unknown) {
     const isStructured = error instanceof ExportRenderError

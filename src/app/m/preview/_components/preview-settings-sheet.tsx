@@ -6,6 +6,7 @@
  */
 
 import { TemplateBrowser } from '@/components/templates/template-browser'
+import { TemplateCover } from '@/components/templates/template-cover'
 import { templateLabels } from '@/lib/templates/template-taxonomy'
 import { useRef, type ReactElement, type ReactNode } from 'react'
 import { Check, LoaderCircle, RotateCcw, X } from 'lucide-react'
@@ -47,7 +48,7 @@ export const ONE_PAGE_BADGE_STYLES: Record<OnePageStatus, { bg: string; label: s
   idle: { bg: 'bg-violet-600/90', label: '单页模式' },
   fitting: { bg: 'bg-amber-500/90', label: '正在适配单页…' },
   fit: { bg: 'bg-emerald-600/90', label: '单页适配完成' },
-  overflow: { bg: 'bg-rose-600/90', label: '内容过多，建议精简' },
+  overflow: { bg: 'bg-rose-600/90', label: '无法完整适配一页' },
 }
 
 const PRESET_COLORS: ReadonlyArray<string> = [
@@ -244,7 +245,7 @@ function TemplatePanel({ activeId, onSelect }: { activeId: string; onSelect: (id
             ) : null}
             <div className="aspect-[210/297] bg-slate-100 rounded-lg overflow-hidden flex items-center justify-center">
               {cfg.preview ? (
-                <img src={cfg.preview} alt={cfg.name} className="w-full h-full object-cover" />
+                <TemplateCover src={cfg.preview} alt={cfg.name} className="h-full w-full object-cover" />
               ) : (
                 <span className="text-xs text-slate-400">{cfg.name}</span>
               )}
@@ -479,7 +480,7 @@ function OnePagePanel({
           <div>
             <div className="text-base font-semibold text-slate-900">单页模式</div>
             <p className="mt-1 text-xs leading-5 text-slate-600">
-              自动压缩字号、行距和间距，尽量适配一页 A4。
+              自动压缩字号、行距和间距，完整适配一页 A4；内容过多时会阻止一页导出。
             </p>
           </div>
           <Switch checked={onePageFit} onChange={(): void => onUpdate({ onePageFit: !onePageFit })} />

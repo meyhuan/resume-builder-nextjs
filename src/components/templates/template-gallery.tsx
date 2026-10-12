@@ -1,11 +1,11 @@
 'use client'
 
-import Image from 'next/image'
 import Link from 'next/link'
 import type { ReactElement } from 'react'
 import type { TemplateMetadata } from '@/lib/templates/template-metadata'
 import { templateLabels } from '@/lib/templates/template-taxonomy'
 import { TemplateBrowser } from './template-browser'
+import { TemplateCover } from './template-cover'
 
 export function TemplateGallery({
   templates,
@@ -24,12 +24,10 @@ export function TemplateGallery({
           className="overflow-hidden rounded-xl border border-slate-200 bg-white transition-colors hover:border-violet-400"
         >
           <div className="relative aspect-[210/297] bg-slate-100">
-            <Image
+            <TemplateCover
               src={template.preview}
               alt={template.name}
-              fill
-              className="object-cover object-top"
-              sizes="(max-width: 768px) 50vw, 25vw"
+              className="absolute inset-0 h-full w-full object-cover object-top"
             />
           </div>
           <div className="p-3">

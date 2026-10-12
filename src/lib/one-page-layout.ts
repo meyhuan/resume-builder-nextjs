@@ -152,7 +152,10 @@ export function measureOnePageContentHeight(root: HTMLElement): number {
   for (const element of root.querySelectorAll<HTMLElement>('*')) {
     const style = getComputedStyle(element)
     if (style.display === 'none' || style.visibility === 'hidden') continue
-    if (style.position === 'absolute' || style.position === 'fixed' || style.position === 'sticky') continue
+    // Absolute decorations are usually inside the page flow, but they can
+    // also contain real template content. Include them in the boundary check
+    // so a lower absolutely-positioned block cannot be clipped silently.
+    if (style.position === 'fixed' || style.position === 'sticky') continue
     const rect = element.getBoundingClientRect()
     if (rect.width <= 0 || rect.height <= 0) continue
     bottom = Math.max(bottom, (rect.bottom - rootRect.top) / scale)

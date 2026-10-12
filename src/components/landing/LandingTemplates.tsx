@@ -2,8 +2,8 @@
 
 import React from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { templateCatalog } from "@/lib/templates/template-catalog";
+import { TemplateCover } from "@/components/templates/template-cover";
 import type { TemplateMetadata as TemplateConfig } from "@/lib/templates/template-metadata";
 import { templateLabels } from "@/lib/templates/template-taxonomy";
 import {
@@ -237,12 +237,10 @@ export const LandingTemplates = ({ id }: TemplatesSectionProps) => {
                       >
                         <div className="relative aspect-[3/4] overflow-hidden rounded-xl bg-slate-100">
                           {item.preview ? (
-                            <Image
+                            <TemplateCover
                               src={item.preview}
                               alt={`${item.name}简历模板预览`}
-                              fill
-                              sizes="(max-width: 640px) 168px, 198px"
-                              className="object-cover object-top transition-transform duration-500 group-hover:scale-[1.03]"
+                              className="absolute inset-0 h-full w-full object-cover object-top transition-transform duration-500 group-hover:scale-[1.03]"
                             />
                           ) : (
                             <div className="absolute inset-0 flex items-center justify-center text-slate-300">

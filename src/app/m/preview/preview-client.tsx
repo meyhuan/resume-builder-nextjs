@@ -550,10 +550,10 @@ export default function MobilePreviewClient(): ReactElement {
 
       const editorMeta = {
         themes: mergedThemes,
-        // Export only when the live preview has finished fitting. If the
-        // content is still fitting or has reached the overflow state, the
-        // print renderer must keep normal pagination enabled so it cannot
-        // hide the tail of the resume behind a one-page frame.
+        // Persist one-page mode only after the live preview has finished
+        // fitting. An overflow state is kept as paginated metadata; the
+        // export action itself refuses it instead of silently changing the
+        // promised one-page result.
         onePageMode: onePageFit && onePageStatus === 'fit',
         onePageSnapshot,
         onePageStrategy: MOBILE_ONE_PAGE_STRATEGY,
@@ -654,8 +654,12 @@ export default function MobilePreviewClient(): ReactElement {
         return
       }
 
-      if (onePageFit && onePageStatus === 'fitting') {
+      if (type !== 'markdown' && onePageFit && onePageStatus === 'fitting') {
         toast.info('单页正在适配，请稍候再导出')
+        return
+      }
+      if (type !== 'markdown' && onePageFit && onePageStatus === 'overflow') {
+        toast.error('当前内容无法完整放入一页，请精简内容或关闭单页模式')
         return
       }
 
