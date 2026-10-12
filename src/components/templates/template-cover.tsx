@@ -20,8 +20,8 @@ export const TemplateCover = memo(function TemplateCover({ src, alt, className }
     const node = ref.current
     if (!node || active) return
     if (typeof IntersectionObserver === 'undefined') {
-      setActive(true)
-      return
+      const timer = setTimeout(() => setActive(true), 0)
+      return () => clearTimeout(timer)
     }
 
     const observer = new IntersectionObserver(

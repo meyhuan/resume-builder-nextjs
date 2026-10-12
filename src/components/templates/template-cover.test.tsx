@@ -1,4 +1,4 @@
-import { act, cleanup, render, screen } from '@testing-library/react'
+import { act, cleanup, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { TemplateCover } from './template-cover'
 
@@ -28,5 +28,13 @@ describe('TemplateCover', () => {
       notify?.([{ isIntersecting: true } as IntersectionObserverEntry], {} as IntersectionObserver)
     })
     expect(screen.getByRole('img', { name: '简约' }).getAttribute('src')).toBe('/thumbnails/template_simple.webp')
+  })
+
+  it('falls back to an asynchronous load when IntersectionObserver is unavailable', async () => {
+    vi.stubGlobal('IntersectionObserver', undefined)
+
+    render(<TemplateCover src="/thumbnails/template_simple.webp" alt="简约" />)
+
+    await waitFor(() => expect(screen.getByRole('img', { name: '简约' }).getAttribute('src')).toBe('/thumbnails/template_simple.webp'))
   })
 })
