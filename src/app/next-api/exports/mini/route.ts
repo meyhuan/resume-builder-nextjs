@@ -439,9 +439,9 @@ export async function POST(req: Request): Promise<NextResponse> {
       const rawContent = resume.content && typeof resume.content === 'object' && !Array.isArray(resume.content)
         ? resume.content as Record<string, unknown>
         : {}
-      const { content } = extractEditorMeta(rawContent)
+      const { content, meta: editorMeta } = extractEditorMeta(rawContent)
       const normalizedResume: ResumeData = normalizeResumeContent(content as Partial<ResumeData>, { fallbackId: resume.id })
-      const buffer = await exportResumeToDocx(normalizedResume, templateId)
+      const buffer = await exportResumeToDocx(normalizedResume, templateId, editorMeta.themes[templateId])
       const contentType = DOCX_CONTENT_TYPE
       const extension = 'docx'
       const saved = await saveExportTemp({

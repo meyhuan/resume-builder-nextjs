@@ -10,6 +10,7 @@ import {
   Table,
   TableCell,
   TableRow,
+  TableLayoutType,
   TextRun,
   VerticalAlign,
   WidthType,
@@ -18,6 +19,7 @@ import type { ITableBordersOptions, ITableCellBorders } from 'docx'
 import type { ResumeBlock } from '@/entities/blocks/resume-block'
 import type { ResumeData } from '@/entities/resume/resume-data'
 import type { Section } from '@/entities/resume/section'
+import type { ThemeTokens } from '@/entities/theme/theme-tokens'
 import { normalizeJobIntention } from '@/entities/user/job-intention-fields'
 import { prepareResumeForExport } from '@/lib/resume-export-visibility'
 import { getSectionDisplayTitle } from '@/entities/resume/section-display-title'
@@ -55,6 +57,66 @@ interface TextOptions {
   readonly color?: string
   readonly bold?: boolean
   readonly italics?: boolean
+}
+
+/**
+ * The browser preview is sized in CSS pixels while Word stores font sizes in
+ * half-points and page geometry in twips. Keeping this conversion in one place
+ * prevents the DOCX export from silently shrinking the typography compared to
+ * the preview (the old renderer used 17 half-points for almost every line).
+ */
+interface DocxMetrics {
+  readonly body: number
+  readonly bodyLine: number
+  readonly small: number
+  readonly label: number
+  readonly blockTitle: number
+  readonly blockSubtitle: number
+  readonly section: number
+  readonly jobTitle: number
+  readonly name: number
+  readonly title: number
+  readonly spacingScale: number
+  readonly textColor: string
+  readonly mutedColor: string
+  readonly accent: string
+}
+
+function cssPxToHalfPoints(px: number): number {
+  return Math.max(12, Math.round(px * 1.5))
+}
+
+function mmToTwips(mm: number): number {
+  return Math.round(mm * 56.6929133858)
+}
+
+function normalizeColor(value: string | undefined, fallback: string): string {
+  const candidate = value?.trim().replace(/^#/, '')
+  return candidate && /^[0-9a-f]{6}$/i.test(candidate) ? candidate.toUpperCase() : fallback
+}
+
+function resolveMetrics(theme?: Partial<ThemeTokens>, accentFallback = COLORS.simpleAccent): DocxMetrics {
+  const bodyPx = Math.max(11, theme?.fontSize ?? 15)
+  const lineHeight = Math.max(1.2, theme?.lineHeight ?? 1.5)
+  const scale = Math.max(0.7, Math.min(1.4, theme?.spacingScale ?? 1))
+  const textColor = normalizeColor(theme?.textColor, COLORS.ink)
+  const accent = normalizeColor(theme?.primaryColor, accentFallback)
+  return {
+    body: cssPxToHalfPoints(bodyPx),
+    bodyLine: Math.round(bodyPx * 15 * lineHeight),
+    small: cssPxToHalfPoints(bodyPx * 0.9),
+    label: cssPxToHalfPoints(bodyPx * 0.96),
+    blockTitle: cssPxToHalfPoints(bodyPx * 1.03),
+    blockSubtitle: cssPxToHalfPoints(bodyPx * 0.97),
+    section: cssPxToHalfPoints(bodyPx * 1.18 * (theme?.titleScale ?? 1)),
+    jobTitle: cssPxToHalfPoints(bodyPx * 1.18),
+    name: cssPxToHalfPoints(bodyPx * 1.86 * (theme?.titleScale ?? 1)),
+    title: cssPxToHalfPoints(bodyPx * 0.96),
+    spacingScale: scale,
+    textColor,
+    mutedColor: COLORS.muted,
+    accent,
+  }
 }
 
 interface ParagraphOptions {
@@ -113,9 +175,10 @@ function paragraph(children: TextRun[] | TextRun, options: ParagraphOptions = {}
 
 function heading(text: string, accent: string, options: { readonly size?: number; readonly shading?: string } = {}): Paragraph {
   return paragraph(run(text || '未命名模块', { size: options.size ?? 21, color: accent, bold: true }), {
-    before: 120,
-    after: 70,
+    before: 75,
+    after: 42,
     keepNext: true,
+    line: 260,
     shading: options.shading,
     border: {
       bottom: { style: BorderStyle.SINGLE, size: 6, color: accent, space: 3 },
@@ -190,13 +253,17 @@ function htmlToLines(html: string | undefined): PlainLine[] {
     .filter((line) => line.text.length > 0)
 }
 
-function richParagraphs(html: string | undefined, options: { readonly size?: number; readonly color?: string } = {}): Paragraph[] {
+function richParagraphs(
+  html: string | undefined,
+  options: { readonly size?: number; readonly color?: string; readonly line?: number; readonly after?: number; readonly indent?: number } = {},
+): Paragraph[] {
   return htmlToLines(html).map((line) => paragraph([
-    ...(line.bullet ? [run('• ', { color: options.color ?? COLORS.simpleAccent, bold: true })] : []),
-    run(line.text, { size: options.size ?? 17, color: options.color ?? COLORS.ink }),
+    ...(line.bullet ? [run('• ', { size: options.size ?? 22, color: options.color ?? COLORS.simpleAccent, bold: true })] : []),
+    run(line.text, { size: options.size ?? 22, color: options.color ?? COLORS.ink }),
   ], {
-    after: 22,
-    indent: line.bullet ? { left: 230, hanging: 110 } : undefined,
+    after: options.after ?? 30,
+    line: options.line ?? 330,
+    indent: line.bullet || options.indent ? { left: line.bullet ? 230 : options.indent, hanging: line.bullet ? 110 : undefined } : undefined,
   }))
 }
 
@@ -238,53 +305,68 @@ function intentionLines(resume: ResumeData): Array<[string, string]> {
   return fields.filter(([, value]) => Boolean(value && value.trim())).map(([label, value]) => [label, value as string])
 }
 
-function blockHeader(title: string, subtitle: string, date: string, accent: string): Paragraph {
-  return paragraph([
-    run(title, { size: 18, bold: true, color: COLORS.ink }),
-    ...(subtitle ? [run(`  ${subtitle}`, { size: 16, color: COLORS.muted })] : []),
-    ...(date ? [run(`  ${date}`, { size: 15, color: accent })] : []),
-  ], { after: 25, keepNext: true })
+function blockHeader(title: string, subtitle: string, date: string, metrics: DocxMetrics): Table {
+  const left = paragraph([
+    run(title, { size: metrics.blockTitle, bold: true, color: metrics.textColor }),
+    ...(subtitle ? [run(`  ${subtitle}`, { size: metrics.blockSubtitle, color: metrics.textColor })] : []),
+  ], { after: 0, keepNext: true, line: metrics.bodyLine })
+  const right = paragraph(
+    run(date, { size: metrics.blockSubtitle, color: metrics.accent, bold: true }),
+    { after: 0, keepNext: true, line: metrics.bodyLine, alignment: AlignmentType.RIGHT },
+  )
+  return new Table({
+    width: { size: 100, type: WidthType.PERCENTAGE },
+    layout: TableLayoutType.FIXED,
+    columnWidths: [7000, 3206],
+    borders: NO_BORDERS,
+    rows: [new TableRow({
+      children: [
+        cell([left], { width: 70, margins: { top: 0, right: 40, bottom: Math.round(25 * metrics.spacingScale), left: 0 } }),
+        cell([right], { width: 30, margins: { top: 0, right: 0, bottom: Math.round(25 * metrics.spacingScale), left: 40 } }),
+      ],
+    })],
+  })
 }
 
-function renderBlock(block: ResumeBlock, accent: string, contentColor = COLORS.ink): Array<Paragraph> {
+function renderBlock(block: ResumeBlock, metrics: DocxMetrics, contentColor = metrics.textColor): Array<Paragraph | Table> {
   if (block.type === 'experience') {
     return [
-      blockHeader(block.company, block.position, dateRange(block.startDate, block.endDate), accent),
-      ...richParagraphs(block.contentHtml, { color: contentColor }),
+      blockHeader(block.company, block.position, dateRange(block.startDate, block.endDate), metrics),
+      ...richParagraphs(block.contentHtml, { color: contentColor, size: metrics.body, line: metrics.bodyLine, after: 28 * metrics.spacingScale }),
     ]
   }
   if (block.type === 'project') {
     return [
-      blockHeader(block.name, block.role ?? '', dateRange(block.startDate, block.endDate), accent),
-      ...richParagraphs(block.contentHtml, { color: contentColor }),
+      blockHeader(block.name, block.role ?? '', dateRange(block.startDate, block.endDate), metrics),
+      ...richParagraphs(block.contentHtml, { color: contentColor, size: metrics.body, line: metrics.bodyLine, after: 28 * metrics.spacingScale }),
     ]
   }
   if (block.type === 'education') {
     return [
-      blockHeader(block.school, [block.major, block.degree].filter(Boolean).join(' · '), dateRange(block.startDate, block.endDate), accent),
-      ...richParagraphs(block.courseHtml, { color: contentColor }),
+      blockHeader(block.school, [block.major, block.degree].filter(Boolean).join(' · '), dateRange(block.startDate, block.endDate), metrics),
+      ...richParagraphs(block.courseHtml, { color: contentColor, size: metrics.body, line: metrics.bodyLine, after: 28 * metrics.spacingScale }),
     ]
   }
   if (block.type === 'campus') {
     return [
-      blockHeader(block.organization, block.position, dateRange(block.startDate, block.endDate), accent),
-      ...richParagraphs(block.contentHtml, { color: contentColor }),
+      blockHeader(block.organization, block.position, dateRange(block.startDate, block.endDate), metrics),
+      ...richParagraphs(block.contentHtml, { color: contentColor, size: metrics.body, line: metrics.bodyLine, after: 28 * metrics.spacingScale }),
     ]
   }
-  if (block.type === 'text') return richParagraphs(block.html, { color: contentColor })
-  if (block.type === 'list') return block.items.flatMap((item) => richParagraphs(item.html, { color: contentColor }).map((p) => p))
+  if (block.type === 'text') return richParagraphs(block.html, { color: contentColor, size: metrics.body, line: metrics.bodyLine, after: 28 * metrics.spacingScale })
+  if (block.type === 'list') return block.items.flatMap((item) => richParagraphs(item.html, { color: contentColor, size: metrics.body, line: metrics.bodyLine, after: 28 * metrics.spacingScale }).map((p) => p))
   return []
 }
 
-function renderSectionBlocks(section: Section, accent: string, contentColor = COLORS.ink): Array<Paragraph> {
-  return section.blocks.flatMap((block) => renderBlock(block, accent, contentColor))
+function renderSectionBlocks(section: Section, metrics: DocxMetrics, contentColor = metrics.textColor): Array<Paragraph | Table> {
+  return section.blocks.flatMap((block) => renderBlock(block, metrics, contentColor))
 }
 
-function renderPairLines(lines: Array<[string, string]>, color = COLORS.ink, size = 16): Paragraph[] {
+function renderPairLines(lines: Array<[string, string]>, color = COLORS.ink, size = 20, line = 300): Paragraph[] {
   return lines.map(([label, value]) => paragraph([
     run(`${label}：`, { size, color, bold: true }),
     run(value, { size, color }),
-  ], { after: 22 }))
+  ], { after: 22, line }))
 }
 
 function avatarParagraph(avatar: AvatarAsset, width: number, height: number): Paragraph {
@@ -292,70 +374,120 @@ function avatarParagraph(avatar: AvatarAsset, width: number, height: number): Pa
     type: avatar.type,
     data: avatar.data,
     transformation: { width, height },
-  }) as unknown as TextRun, { after: 0, alignment: AlignmentType.RIGHT })
+  }) as unknown as TextRun, { after: 0, alignment: AlignmentType.CENTER })
 }
 
-function simpleHeader(resume: ResumeData, avatar?: AvatarAsset): Paragraph | Table {
-  const title = resume.baseInfo?.title
-  const contacts = contactLines(resume).map(([label, value]) => `${label}：${value}`).join('   ')
-  const content = paragraph([
-    run(resume.name || '姓名', { size: 33, bold: true, color: COLORS.ink }),
-    ...(title ? [run(`  ${title}`, { size: 19, bold: true, color: COLORS.simpleAccent })] : []),
-    ...(contacts ? [run(`\n${contacts}`, { size: 15, color: COLORS.muted })] : []),
-  ], {
-    after: 105,
-    line: 260,
-    border: { bottom: { style: BorderStyle.SINGLE, size: 9, color: COLORS.simpleAccent, space: 5 } },
-  })
-  if (!avatar) return content
+function lineGrid(
+  lines: Array<[string, string]>,
+  columns: number,
+  metrics: DocxMetrics,
+  options: { readonly color?: string; readonly labelColor?: string; readonly valueSize?: number } = {},
+): Table {
+  const rows: TableRow[] = []
+  const columnWidth = Math.floor(100 / columns)
+  for (let index = 0; index < lines.length; index += columns) {
+    const rowLines = lines.slice(index, index + columns)
+    const cells = rowLines.map(([label, value]) => cell([
+      paragraph([
+        run(`${label}：`, { size: options.valueSize ?? metrics.label, color: options.labelColor ?? options.color ?? metrics.mutedColor, bold: true }),
+        run(value, { size: options.valueSize ?? metrics.label, color: options.color ?? metrics.textColor }),
+      ], { after: 0, line: metrics.bodyLine }),
+    ], {
+      width: columnWidth,
+      margins: { top: 12, right: 55, bottom: 12, left: 0 },
+    }))
+    while (cells.length < columns) {
+      cells.push(cell([paragraph(run('', { size: metrics.label }), { after: 0 })], {
+        width: columnWidth,
+        margins: { top: 12, right: 55, bottom: 12, left: 0 },
+      }))
+    }
+    rows.push(new TableRow({ children: cells }))
+  }
   return new Table({
     width: { size: 100, type: WidthType.PERCENTAGE },
+    layout: TableLayoutType.FIXED,
+    borders: NO_BORDERS,
+    rows,
+  })
+}
+
+function simpleHeader(resume: ResumeData, metrics: DocxMetrics, avatar?: AvatarAsset): Table {
+  const title = resume.baseInfo?.title
+  const bottomBorder = { style: BorderStyle.SINGLE, size: 9, color: metrics.accent, space: 5 }
+  const content: Array<Paragraph | Table> = [paragraph([
+    run(resume.name || '姓名', { size: metrics.name, bold: true, color: metrics.textColor }),
+    ...(title ? [run(`    意向岗位：${title}`, { size: metrics.title, bold: true, color: metrics.accent })] : []),
+  ], { after: 50, line: metrics.bodyLine })]
+  const contacts = contactLines(resume)
+  if (contacts.length > 0) content.push(lineGrid(contacts, 3, metrics, { valueSize: metrics.small }))
+  return new Table({
+    width: { size: 100, type: WidthType.PERCENTAGE },
+    layout: TableLayoutType.FIXED,
+    columnWidths: avatar ? [1500, 8706] : [10206],
     borders: NO_BORDERS,
     rows: [new TableRow({
       children: [
-        cell([content], { width: 84, margins: { top: 0, right: 100, bottom: 0, left: 0 } }),
-        cell([avatarParagraph(avatar, 88, 106)], { width: 16, margins: { top: 0, right: 0, bottom: 0, left: 0 } }),
+        ...(avatar ? [cell([avatarParagraph(avatar, 88, 106)], {
+          width: 16,
+          margins: { top: 0, right: 90, bottom: 60, left: 0 },
+          borders: { ...NO_BORDERS, bottom: bottomBorder },
+        })] : []),
+        cell(content, {
+          width: avatar ? 84 : 100,
+          margins: { top: 0, right: 0, bottom: 60, left: avatar ? 0 : 0 },
+          borders: { ...NO_BORDERS, bottom: bottomBorder },
+        }),
       ],
     })],
   })
 }
 
-function renderSimple(resume: ResumeData, avatar?: AvatarAsset): Document {
-  const children: Array<Paragraph | Table> = [simpleHeader(resume, avatar)]
+function renderSimple(resume: ResumeData, avatar?: AvatarAsset, theme?: Partial<ThemeTokens>): Document {
+  const metrics = resolveMetrics(theme, COLORS.simpleAccent)
+  const children: Array<Paragraph | Table> = [simpleHeader(resume, metrics, avatar)]
   const intention = intentionLines(resume)
   if (intention.length > 0) {
-    children.push(heading('求职意向', COLORS.simpleAccent))
-    children.push(...renderPairLines(intention))
+    children.push(heading('求职意向', metrics.accent, { size: metrics.jobTitle }))
+    children.push(lineGrid(intention, 2, metrics))
   }
   for (const section of resume.sections) {
-    children.push(heading(getSectionDisplayTitle(section) || section.title, COLORS.simpleAccent))
-    children.push(...renderSectionBlocks(section, COLORS.simpleAccent))
+    children.push(heading(getSectionDisplayTitle(section) || section.title, metrics.accent, { size: metrics.section }))
+    children.push(...renderSectionBlocks(section, metrics))
   }
-  return baseDocument(children, { top: 560, right: 680, bottom: 560, left: 680 })
+  return baseDocument(children, {
+    top: mmToTwips(theme?.pagePaddingVertical ?? 19),
+    right: mmToTwips(theme?.pagePaddingHorizontal ?? 15),
+    bottom: mmToTwips(theme?.pagePaddingVertical ?? 19),
+    left: mmToTwips(theme?.pagePaddingHorizontal ?? 15),
+  })
 }
 
-function renderJingrui(resume: ResumeData, avatar?: AvatarAsset): Document {
+function renderJingrui(resume: ResumeData, avatar?: AvatarAsset, theme?: Partial<ThemeTokens>): Document {
+  const metrics = resolveMetrics(theme, COLORS.jingruiAccent)
   const left: Array<Paragraph | Table> = [
     ...(avatar ? [avatarParagraph(avatar, 150, 178)] : []),
-    paragraph(run(resume.name || '姓名', { size: 29, bold: true, color: COLORS.white }), { alignment: AlignmentType.CENTER, after: 30 }),
-    ...(resume.baseInfo?.title ? [paragraph(run(resume.baseInfo.title, { size: 17, bold: true, color: 'E0E7FF' }), { alignment: AlignmentType.CENTER, after: 150 })] : []),
-    heading('联系方式', COLORS.white, { size: 18, shading: COLORS.jingruiAccent }),
-    ...renderPairLines(contactLines(resume), COLORS.white, 15),
-    ...(intentionLines(resume).length > 0 ? [heading('求职意向', COLORS.white, { size: 18, shading: COLORS.jingruiAccent }), ...renderPairLines(intentionLines(resume), COLORS.white, 15)] : []),
+    paragraph(run(resume.name || '姓名', { size: Math.round(metrics.name * 0.8), bold: true, color: COLORS.white }), { alignment: AlignmentType.CENTER, after: 30, line: metrics.bodyLine }),
+    ...(resume.baseInfo?.title ? [paragraph(run(resume.baseInfo.title, { size: metrics.small, bold: true, color: 'E0E7FF' }), { alignment: AlignmentType.CENTER, after: 150 })] : []),
+    heading('联系方式', COLORS.white, { size: metrics.jobTitle, shading: metrics.accent }),
+    ...renderPairLines(contactLines(resume), COLORS.white, metrics.small, metrics.bodyLine),
+    ...(intentionLines(resume).length > 0 ? [heading('求职意向', COLORS.white, { size: metrics.jobTitle, shading: metrics.accent }), ...renderPairLines(intentionLines(resume), COLORS.white, metrics.small, metrics.bodyLine)] : []),
   ]
   const right: Array<Paragraph | Table> = []
   for (const section of resume.sections) {
-    right.push(heading(getSectionDisplayTitle(section) || section.title, COLORS.jingruiAccent))
-    right.push(...renderSectionBlocks(section, COLORS.jingruiAccent))
+    right.push(heading(getSectionDisplayTitle(section) || section.title, metrics.accent, { size: metrics.section }))
+    right.push(...renderSectionBlocks(section, metrics))
   }
   const table = new Table({
     width: { size: 100, type: WidthType.PERCENTAGE },
+    layout: TableLayoutType.FIXED,
+    columnWidths: [4130, 7776],
     borders: NO_BORDERS,
     rows: [new TableRow({
       cantSplit: true,
       height: { value: PAGE.height, rule: HeightRule.ATLEAST },
       children: [
-        cell(left, { width: 35, shading: COLORS.jingruiAccent, margins: { top: 230, right: 170, bottom: 230, left: 170 } }),
+        cell(left, { width: 35, shading: metrics.accent, margins: { top: 230, right: 170, bottom: 230, left: 170 } }),
         cell(right, { width: 65, margins: { top: 210, right: 230, bottom: 210, left: 240 } }),
       ],
     })],
@@ -363,37 +495,42 @@ function renderJingrui(resume: ResumeData, avatar?: AvatarAsset): Document {
   return baseDocument([table], { top: 0, right: 0, bottom: 0, left: 0 })
 }
 
-function renderChengyan(resume: ResumeData, avatar?: AvatarAsset): Document {
+function renderChengyan(resume: ResumeData, avatar?: AvatarAsset, theme?: Partial<ThemeTokens>): Document {
+  const metrics = resolveMetrics(theme, COLORS.chengyanAccent)
+  const accent = metrics.accent
+  const headerContent = paragraph([
+    run(resume.name || '姓名', { size: Math.round(metrics.name * 0.85), bold: true, color: COLORS.white }),
+    ...(resume.baseInfo?.title ? [run(`  ${resume.baseInfo.title}`, { size: metrics.title, color: 'FEF3C7' })] : []),
+    ...(contactLines(resume).length > 0 ? [run(`\n${contactLines(resume).map(([label, value]) => `${label}：${value}`).join('   ')}`, { size: metrics.small, color: 'FFF7ED' })] : []),
+  ], { line: metrics.bodyLine, after: 0 })
   const header = new Table({
     width: { size: 100, type: WidthType.PERCENTAGE },
+    layout: TableLayoutType.FIXED,
+    columnWidths: avatar ? [8500, 2125] : [10625],
     borders: NO_BORDERS,
     rows: [new TableRow({
-      children: [cell([
-        paragraph([
-          run(resume.name || '姓名', { size: 31, bold: true, color: COLORS.white }),
-          ...(resume.baseInfo?.title ? [run(`  ${resume.baseInfo.title}`, { size: 18, color: 'FEF3C7' })] : []),
-          ...(contactLines(resume).length > 0 ? [run(`\n${contactLines(resume).map(([label, value]) => `${label}：${value}`).join('   ')}`, { size: 15, color: 'FFF7ED' })] : []),
-        ], { line: 260, after: 0 }),
-        ...(avatar ? [avatarParagraph(avatar, 78, 93)] : []),
-      ], { width: 100, shading: COLORS.chengyanAccent, margins: { top: 190, right: 220, bottom: 190, left: 220 } })],
+      children: [
+        cell([headerContent], { width: avatar ? 80 : 100, shading: accent, margins: { top: 190, right: 220, bottom: 190, left: 220 } }),
+        ...(avatar ? [cell([avatarParagraph(avatar, 78, 93)], { width: 20, shading: accent, margins: { top: 130, right: 220, bottom: 130, left: 80 } })] : []),
+      ],
     })],
   })
   const children: Array<Paragraph | Table> = [header]
   const intention = intentionLines(resume)
   if (intention.length > 0) {
-    children.push(heading('求职意向', COLORS.chengyanAccent, { shading: COLORS.chengyanPale }))
-    children.push(...renderPairLines(intention))
+    children.push(heading('求职意向', accent, { size: metrics.jobTitle, shading: COLORS.chengyanPale }))
+    children.push(lineGrid(intention, 2, metrics))
   }
   for (const section of resume.sections) {
-    children.push(heading(getSectionDisplayTitle(section) || section.title, COLORS.chengyanAccent, { shading: COLORS.chengyanPale }))
+    children.push(heading(getSectionDisplayTitle(section) || section.title, accent, { size: metrics.section, shading: COLORS.chengyanPale }))
     const rows = section.blocks.map((block) => {
-      const rendered = renderBlock(block, COLORS.chengyanAccent)
+      const rendered = renderBlock(block, metrics)
       const date = 'startDate' in block ? dateRange(block.startDate, block.endDate) : ''
       return new TableRow({
         children: [
-          cell([paragraph(run(date, { size: 14, color: COLORS.chengyanAccent, bold: true }), { after: 0 })], {
+          cell([paragraph(run(date, { size: metrics.small, color: accent, bold: true }), { after: 0, line: metrics.bodyLine })], {
             width: 20,
-            borders: { ...NO_BORDERS, right: { style: BorderStyle.SINGLE, size: 9, color: COLORS.chengyanAccent } },
+            borders: { ...NO_BORDERS, right: { style: BorderStyle.SINGLE, size: 9, color: accent } },
             margins: { top: 65, right: 100, bottom: 65, left: 0 },
           }),
           cell(rendered, { width: 80, margins: { top: 65, right: 0, bottom: 65, left: 160 } }),
@@ -401,22 +538,26 @@ function renderChengyan(resume: ResumeData, avatar?: AvatarAsset): Document {
       })
     })
     if (rows.length > 0) {
-      children.push(new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, borders: NO_BORDERS, rows }))
+      children.push(new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, layout: TableLayoutType.FIXED, columnWidths: [2125, 8501], borders: NO_BORDERS, rows }))
     }
   }
   return baseDocument(children, { top: 0, right: 640, bottom: 500, left: 640 })
 }
 
 /** Build a WordprocessingML document for one of the verified templates. */
-export async function exportResumeToDocx(resumeInput: ResumeData, templateId: string): Promise<Buffer> {
+export async function exportResumeToDocx(
+  resumeInput: ResumeData,
+  templateId: string,
+  theme?: Partial<ThemeTokens>,
+): Promise<Buffer> {
   if (!isDocxTemplateSupported(templateId)) throw new UnsupportedDocxTemplateError(templateId)
   const resume = prepareResumeForExport(resumeInput)
   const avatar = await loadAvatar(resume.baseInfo?.avatarUrl, resume.baseInfo?.showAvatar !== false)
   const document = templateId === 'simple'
-    ? renderSimple(resume, avatar)
+    ? renderSimple(resume, avatar, theme)
     : templateId === 'jingrui'
-      ? renderJingrui(resume, avatar)
-      : renderChengyan(resume, avatar)
+      ? renderJingrui(resume, avatar, theme)
+      : renderChengyan(resume, avatar, theme)
   return Packer.toBuffer(document)
 }
 
