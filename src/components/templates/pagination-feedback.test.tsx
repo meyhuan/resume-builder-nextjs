@@ -124,6 +124,14 @@ describe('live pagination feedback', () => {
     expect(html).not.toContain('overflow: hidden !important')
   })
 
+  it('embeds the native print fragmentation contract without a client pagination script', () => {
+    const html = buildResumeHtml(fixture())
+    expect(html).toContain('break-inside: avoid-page')
+    expect(html).toContain('widows: 3')
+    expect(html).not.toContain('scaleY(')
+    expect(html).not.toContain('getClientPaginationScript')
+  })
+
   it('explains only changed settings, preserving exact opening values', () => {
     const before = { spacingScale: 1.2, lineHeight: 1.8, fontSize: 15 }
     expect(getOnePageAdjustments(before, before)).toEqual([])
