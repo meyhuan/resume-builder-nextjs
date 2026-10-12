@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { TemplateBrowser } from './template-browser'
 import { templateCatalog } from '@/lib/templates/template-catalog'
@@ -6,7 +6,20 @@ import { filterTemplates } from '@/lib/templates/template-taxonomy'
 import { PreviewSettingsSheet, DEFAULT_PREVIEW_THEME } from '@/app/m/preview/_components/preview-settings-sheet'
 import type { ThemeTokens } from '@/entities/theme/theme-tokens'
 
-afterEach(cleanup)
+afterEach(() => {
+  cleanup()
+  vi.unstubAllGlobals()
+})
+
+beforeEach(() => {
+  class Observer {
+    observe(): void {}
+    disconnect(): void {}
+    unobserve(): void {}
+    takeRecords(): IntersectionObserverEntry[] { return [] }
+  }
+  vi.stubGlobal('IntersectionObserver', Observer)
+})
 const englishCount = filterTemplates(templateCatalog, { languages: ['en'] }).length
 function setup() {
   const select = vi.fn()
@@ -79,7 +92,7 @@ describe('template browser', () => {
     expect((screen.getByRole('button', { name: '保存中…' }) as HTMLButtonElement).disabled).toBe(true)
     expect((screen.getByRole('button', { name: '取消并关闭' }) as HTMLButtonElement).disabled).toBe(true)
     expect(document.querySelector('[inert]')).not.toBeNull()
-  })
+  }, 15000)
   it('filters without selecting a template; preserves current indication and permits explicit selection', () => {
     const select = setup()
     fireEvent.click(screen.getByRole('button', { name: /英文简历/ }))

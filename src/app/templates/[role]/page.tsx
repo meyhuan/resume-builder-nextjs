@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import type { ReactElement } from 'react';
-import Image from 'next/image';
+import { TemplateCover } from '@/components/templates/template-cover';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -799,12 +799,10 @@ export default async function TemplateRolePage({ params }: RolePageParams): Prom
                   {recommendedTemplates.map((template) => (
                     <div key={template.id} className="overflow-hidden rounded-xl border border-slate-200 bg-white">
                       <div className="relative aspect-[3/4] bg-slate-100">
-                        <Image
+                        <TemplateCover
                           src={template.preview}
                           alt={template.name}
-                          fill
-                          className="object-cover object-top"
-                          sizes="(max-width: 768px) 100vw, 33vw"
+                          className="absolute inset-0 h-full w-full object-cover object-top"
                         />
                       </div>
                       <div className="p-4">

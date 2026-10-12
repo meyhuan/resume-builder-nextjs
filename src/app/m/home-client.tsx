@@ -1,6 +1,7 @@
 'use client'
 
 import { TemplateBrowser } from '@/components/templates/template-browser'
+import { TemplateCover } from '@/components/templates/template-cover'
 import { templateLabels } from '@/lib/templates/template-taxonomy'
 
 import { useCallback, useEffect, useState, type ReactElement } from 'react'
@@ -700,12 +701,10 @@ function TemplateCard({
     >
       <div className="relative aspect-[210/297] bg-slate-50">
         {template.preview ? (
-          <Image
+          <TemplateCover
             src={template.preview}
             alt={template.name}
-            fill
-            sizes="(max-width: 640px) 50vw, 240px"
-            className="object-cover"
+            className="absolute inset-0 h-full w-full object-cover"
           />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center text-slate-300 text-[12px]">

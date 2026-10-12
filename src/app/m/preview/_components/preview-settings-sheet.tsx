@@ -6,6 +6,7 @@
  */
 
 import { TemplateBrowser } from '@/components/templates/template-browser'
+import { TemplateCover } from '@/components/templates/template-cover'
 import { templateLabels } from '@/lib/templates/template-taxonomy'
 import { useRef, type ReactElement, type ReactNode } from 'react'
 import { Check, LoaderCircle, RotateCcw, X } from 'lucide-react'
@@ -244,7 +245,7 @@ function TemplatePanel({ activeId, onSelect }: { activeId: string; onSelect: (id
             ) : null}
             <div className="aspect-[210/297] bg-slate-100 rounded-lg overflow-hidden flex items-center justify-center">
               {cfg.preview ? (
-                <img src={cfg.preview} alt={cfg.name} className="w-full h-full object-cover" />
+                <TemplateCover src={cfg.preview} alt={cfg.name} className="h-full w-full object-cover" />
               ) : (
                 <span className="text-xs text-slate-400">{cfg.name}</span>
               )}

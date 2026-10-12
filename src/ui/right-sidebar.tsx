@@ -21,7 +21,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import { Layout, Database, X } from 'lucide-react'
 import SectionManager from '@/ui/section-manager'
-import Image from 'next/image'
+import { TemplateCover } from '@/components/templates/template-cover'
 import PortfolioManager from '@/components/portfolio/portfolio-manager'
 
 export interface RightSidebarProps {
@@ -204,12 +204,10 @@ function LayoutPanel(props: LayoutPanelProps): ReactElement {
               >
                 <div className="aspect-[3/4] bg-slate-50 overflow-hidden relative border-b border-slate-100">
                   {template.preview ? (
-                    <Image
+                    <TemplateCover
                       src={template.preview}
                       alt={template.name}
-                      fill
-                      className="object-cover object-top transition-transform duration-300 group-hover:scale-105"
-                      sizes="232px"
+                      className="absolute inset-0 h-full w-full object-cover object-top transition-transform duration-300 group-hover:scale-105"
                     />
                   ) : (
                     <div className="absolute inset-0 flex items-center justify-center text-slate-200">
