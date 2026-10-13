@@ -72,7 +72,7 @@ function errorMessage(error: unknown): string {
 }
 
 async function waitForDocumentAssets(page: Page): Promise<void> {
-  const failedPortfolioImages = await page.evaluate(async (timeoutMs: number): Promise<string[]> => {
+  const failedImages = await page.evaluate(async (timeoutMs: number): Promise<string[]> => {
     const wait = (ms: number): Promise<void> => new Promise((resolve) => {
       window.setTimeout(resolve, ms)
     })
@@ -85,13 +85,17 @@ async function waitForDocumentAssets(page: Page): Promise<void> {
       })
     }))
     await Promise.race([Promise.all([fontsReady, imagesReady]), wait(timeoutMs)])
-    return Array.from(document.querySelectorAll<HTMLImageElement>('.portfolio-appendix img'))
+    // An avatar is part of the resume header, so it must be validated too.
+    // Previously only portfolio images were checked; a failed avatar request
+    // therefore silently produced the gray placeholder in exported files.
+    return Array.from(document.querySelectorAll<HTMLImageElement>('[data-resume-avatar] img, .portfolio-appendix img'))
       .filter((image) => !image.complete || image.naturalWidth === 0)
       .map((image) => image.currentSrc || image.src)
   }, PRINT_PAGE_ASSET_READY_TIMEOUT_MS)
-  if (failedPortfolioImages.length > 0) {
-    throw new ExportRenderError('PRINT_NOT_READY', 'Portfolio images failed to load', {
-      failedPortfolioImageCount: failedPortfolioImages.length,
+  if (failedImages.length > 0) {
+    throw new ExportRenderError('PRINT_NOT_READY', 'Resume images failed to load', {
+      failedImageCount: failedImages.length,
+      failedImages: failedImages.slice(0, 5),
     })
   }
 }
