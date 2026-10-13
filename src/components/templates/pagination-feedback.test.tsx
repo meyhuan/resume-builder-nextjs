@@ -127,6 +127,7 @@ describe('live pagination feedback', () => {
   it('embeds the native print fragmentation contract without a client pagination script', () => {
     const html = buildResumeHtml(fixture())
     expect(html).toContain('break-inside: avoid-page')
+    expect(html).toContain(':where(')
     expect(html).toContain('widows: 3')
     expect(html).not.toContain('scaleY(')
     expect(html).not.toContain('getClientPaginationScript')

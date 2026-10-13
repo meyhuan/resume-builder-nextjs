@@ -35,17 +35,20 @@ export const PRINT_PAGINATION_CSS = `
 
   /* A normal resume item stays together when it fits. Chromium may fragment
      an item that is taller than the remaining page, so long rich text is not
-     silently pushed out of the document. */
-  [data-resume-block],
-  .resume-item,
-  .experience-item,
-  .education-item,
-  .project-item,
-  .skill-item,
-  figure,
-  table {
-    break-inside: avoid-page !important;
-    page-break-inside: avoid !important;
+     silently pushed out of the document. Keep this default deliberately low
+     specificity so a template can opt into natural fragmentation explicitly. */
+  :where(
+    [data-resume-block],
+    .resume-item,
+    .experience-item,
+    .education-item,
+    .project-item,
+    .skill-item,
+    figure,
+    table
+  ) {
+    break-inside: avoid-page;
+    page-break-inside: avoid;
   }
 
   /* Rich text is the intentional fragmentation boundary inside a block. */
