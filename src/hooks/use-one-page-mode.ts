@@ -39,6 +39,8 @@ export interface UseOnePageModeOptions {
   setSnapshot: (s: AdjustableTokens | null) => void
   /** User-selected goal for fitting. Defaults to the one-page-first strategy. */
   strategy?: OnePageStrategy
+  /** Called once when automatic fitting reaches its lower limits and still overflows. */
+  onOverflow?: () => void
 }
 
 export interface UseOnePageModeReturn {
@@ -84,7 +86,7 @@ function mmToPx(mm: number): number {
  * Hook that drives the one-page mode feature.
  */
 export function useOnePageMode(opts: UseOnePageModeOptions): UseOnePageModeReturn {
-  const { contentRef, theme, patchTheme, enabled, snapshot, setSnapshot, strategy = DEFAULT_ONE_PAGE_STRATEGY } = opts
+  const { contentRef, theme, patchTheme, enabled, snapshot, setSnapshot, strategy = DEFAULT_ONE_PAGE_STRATEGY, onOverflow } = opts
   const [status, setStatus] = useState<OnePageStatus>(enabled ? 'fitting' : 'idle')
 
   // Track whether we are currently running the fit algorithm to avoid re-entry.
@@ -261,13 +263,17 @@ export function useOnePageMode(opts: UseOnePageModeOptions): UseOnePageModeRetur
     } else {
       setStatus('overflow')
       if (!overflowToastShown.current) {
-        toast.warning('已达到可读性下限，建议精简内容或保留分页')
+        if (onOverflow) {
+          onOverflow()
+        } else {
+          toast.warning('已达到可读性下限，建议精简内容或保留分页')
+        }
         overflowToastShown.current = true
       }
     }
 
     fittingRef.current = false
-  }, [contentRef, enabled, strategy, theme.spacingScale, theme.lineHeight, theme.fontSize, theme.pagePaddingVertical, patchTheme])
+  }, [contentRef, enabled, onOverflow, strategy, theme.spacingScale, theme.lineHeight, theme.fontSize, theme.pagePaddingVertical, patchTheme])
 
   // ── ResizeObserver: watch content height ──────────────────────────────
   useEffect(() => {
