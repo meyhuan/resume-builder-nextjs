@@ -7,6 +7,7 @@ import { toast } from 'sonner'
 import { useDraftStore } from '@/features/edit/draft/draft-store'
 import { cn } from '@/lib/utils'
 import { useVisualViewportKeyboard } from '@/hooks/use-visual-viewport-keyboard'
+import { platformAdapter } from '@/lib/platform/adapter'
 import { useInMiniProgram } from '../../_components/use-mini-program'
 
 export interface ValidationResult {
@@ -26,6 +27,8 @@ interface ModuleEditShellProps {
    * the save and shows a toast. Pages declare their required-field rules here.
    */
   readonly validate?: () => ValidationResult
+  readonly onSaveSuccess?: () => void
+  readonly onSaveFailure?: (message: string) => void
 }
 
 /**
@@ -35,7 +38,7 @@ interface ModuleEditShellProps {
  * and haptic feedback on save success.
  */
 export function ModuleEditShell(props: ModuleEditShellProps): ReactElement {
-  const { title, subtitle, children, onBack, footer, validate } = props
+  const { title, subtitle, children, onBack, footer, validate, onSaveSuccess, onSaveFailure } = props
   const router = useRouter()
   const dirtyCount = useDraftStore((s) => s.dirtyPaths.length)
   const isSaving = useDraftStore((s) => s.isSaving)
@@ -46,10 +49,8 @@ export function ModuleEditShell(props: ModuleEditShellProps): ReactElement {
   const { keyboardOpen } = useVisualViewportKeyboard()
 
   useEffect((): void => {
-    document.title = title
-    if (inMiniProgram && typeof window.wx?.miniProgram?.postMessage === 'function') {
-      window.wx.miniProgram.postMessage({ data: { action: 'setTitle', title } })
-    }
+    if (inMiniProgram) platformAdapter.setTitle(title)
+    else document.title = title
   }, [inMiniProgram, title])
 
   const doBack = (): void => {
@@ -82,13 +83,16 @@ export function ModuleEditShell(props: ModuleEditShellProps): ReactElement {
     if (!runValidation()) return
     const res = await saveAll()
     if (res.ok) {
+      onSaveSuccess?.()
       toast.success('已保存')
       if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
         navigator.vibrate(12)
       }
       doBack()
     } else {
-      toast.error(res.error || '保存失败')
+      const message = res.error || '保存失败'
+      onSaveFailure?.(message)
+      toast.error(message)
     }
   }
 
@@ -96,10 +100,13 @@ export function ModuleEditShell(props: ModuleEditShellProps): ReactElement {
     if (!runValidation()) return
     const res = await saveAll()
     if (res.ok) {
+      onSaveSuccess?.()
       setConfirmBack(false)
       doBack()
     } else {
-      toast.error(res.error || '保存失败')
+      const message = res.error || '保存失败'
+      onSaveFailure?.(message)
+      toast.error(message)
     }
   }
 

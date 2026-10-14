@@ -7,6 +7,7 @@ import { prisma } from '@/lib/prisma'
 import { createDefaultResume } from '@/lib/default-resume'
 import { normalizeResumeContent } from '@/entities/resume/normalize-resume-content'
 import type { ResumeData } from '@/entities/resume/resume-data'
+import { createMobileEditPath, getSafeReturnPath } from '@/lib/platform/route'
 import MobileAiToolsClient, { type InitialAiToolsResume } from './tools-client'
 
 export const metadata: Metadata = {
@@ -19,6 +20,7 @@ interface ToolsPageProps {
   readonly searchParams: Promise<{
     readonly id?: string
     readonly tool?: string
+    readonly returnTo?: string
   }>
 }
 
@@ -37,10 +39,17 @@ export default async function MobileAiToolsPage(
   const params = await searchParams
   const store = await cookies()
   const wxId = store.get('auth_uid')?.value
-  if (!wxId) redirect('/login?redirect=/m/edit/tools')
+  const fallbackReturnTo = params.id ? createMobileEditPath(params.id) : '/m/edit'
+  const returnTo = getSafeReturnPath(params.returnTo, fallbackReturnTo)
+  const loginRedirect = `/m/edit/tools?${new URLSearchParams({
+    ...(params.id ? { id: params.id } : {}),
+    ...(params.tool ? { tool: params.tool } : {}),
+    returnTo,
+  }).toString()}`
+  if (!wxId) redirect(`/login?redirect=${encodeURIComponent(loginRedirect)}`)
 
   const user = await prisma.user.findUnique({ where: { wxId }, select: { id: true } })
-  if (!user) redirect('/login?redirect=/m/edit/tools')
+  if (!user) redirect(`/login?redirect=${encodeURIComponent(loginRedirect)}`)
 
   const resume = params.id
     ? await prisma.resume.findFirst({
@@ -76,6 +85,7 @@ export default async function MobileAiToolsPage(
     <MobileAiToolsClient
       initial={initial}
       initialTool={params.tool === 'translate' ? 'translate' : 'assistant'}
+      returnTo={returnTo}
     />
   )
 }

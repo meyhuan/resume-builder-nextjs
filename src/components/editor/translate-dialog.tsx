@@ -28,6 +28,7 @@ import {
 import { EditorAssistQuotaHint } from '@/components/ai/editor-assist-quota-hint';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import { track } from '@/lib/analytics';
 import {
   applyTranslatedHeader,
   applyTranslatedHeaderToClone,
@@ -71,7 +72,7 @@ export function TranslateDialog(props: {
   /** Optional destination used by mobile/web-view callers after creating a copy. */
   readonly successPath?: (resumeId: string) => string;
 }): ReactElement {
-  const { template, successPath } = props;
+  const { resumeId, template, successPath } = props;
   const open = useEditorUiStore((state) => state.activeModal === 'translate');
   const closeModal = useEditorUiStore((state) => state.closeModal);
   const { requireAiFeature } = useVipCheck();
@@ -165,6 +166,7 @@ export function TranslateDialog(props: {
           setFailedCount(Number(data.failedCount) || 0);
           setState('success');
           trackAssistSuccess('translate');
+          track('translation_apply', { mode, targetLanguage, resumeId: resumeId ?? '' });
           refreshEditorAssistQuota();
           if (mode === 'overwrite') {
             applyTranslatedHeader({ language: targetLanguage });
@@ -191,7 +193,7 @@ export function TranslateDialog(props: {
       setState('error');
       setErrorMessage(error instanceof Error ? error.message : '翻译失败');
     }
-  }, [closeModal, mode, requireAiFeature, router, successPath, targetLanguage, template]);
+  }, [closeModal, mode, requireAiFeature, resumeId, router, successPath, targetLanguage, template]);
 
   const progressPercent = progress.total > 0
     ? Math.round((progress.completed / progress.total) * 100)

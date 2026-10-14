@@ -1,9 +1,8 @@
 'use client'
 
 import { useEffect, useRef, useState, type ReactElement } from 'react'
-import { ArrowLeft, Languages, Save, Sparkles } from 'lucide-react'
-import { useRouter } from 'next/navigation'
-import { toast } from 'sonner'
+import { Languages, Sparkles } from 'lucide-react'
+import { track } from '@/lib/analytics'
 import type { ResumeData } from '@/entities/resume/resume-data'
 import { EditorAiPanel } from '@/components/ai-chat/editor-ai-panel'
 import { TranslateDialog } from '@/components/editor/translate-dialog'
@@ -12,6 +11,8 @@ import { useAppStore } from '@/state/store'
 import { useEditorUiStore } from '@/state/editor-ui-store'
 import { useDraftStore } from '@/features/edit/draft/draft-store'
 import { useVipCheck } from '@/hooks/use-vip-check'
+import { ModuleEditShell } from '../_components/module-edit-shell'
+import { replaceResumeId } from '@/lib/platform/route'
 
 export interface InitialAiToolsResume {
   readonly id: string
@@ -23,6 +24,7 @@ export interface InitialAiToolsResume {
 interface MobileAiToolsClientProps {
   readonly initial: InitialAiToolsResume
   readonly initialTool: 'assistant' | 'translate'
+  readonly returnTo: string
 }
 
 /**
@@ -32,14 +34,10 @@ interface MobileAiToolsClientProps {
  * single persistence path.
  */
 export default function MobileAiToolsClient(
-  { initial, initialTool }: MobileAiToolsClientProps,
+  { initial, initialTool, returnTo }: MobileAiToolsClientProps,
 ): ReactElement {
-  const router = useRouter()
   const initializedRef = useRef(false)
   const setFromServer = useDraftStore((state) => state.setFromServer)
-  const saveAll = useDraftStore((state) => state.saveAll)
-  const dirtyCount = useDraftStore((state) => state.dirtyPaths.length)
-  const isSaving = useDraftStore((state) => state.isSaving)
   const [tool, setTool] = useState<'assistant' | 'translate'>(initialTool)
   const { showUpgrade, setShowUpgrade } = useVipCheck()
 
@@ -56,6 +54,7 @@ export default function MobileAiToolsClient(
       activePanel: initialTool === 'assistant' ? 'ai' : null,
       showAiChat: initialTool === 'assistant',
     })
+    if (initialTool === 'translate') useEditorUiStore.getState().openModal('translate')
     initializedRef.current = true
 
     const unsubscribe = useAppStore.subscribe((state, previous) => {
@@ -85,35 +84,13 @@ export default function MobileAiToolsClient(
     useEditorUiStore.getState().openModal('translate')
   }
 
-  const handleSave = async (): Promise<void> => {
-    const result = await saveAll()
-    if (result.ok) toast.success('AI 修改已保存')
-    else toast.error(result.error || '保存失败')
-  }
-
   return (
-    <div className="min-h-[100dvh] bg-slate-50 text-slate-900">
-      <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-slate-200 bg-white/95 px-3 backdrop-blur">
-        <button
-          type="button"
-          onClick={() => router.back()}
-          className="flex h-10 w-10 items-center justify-center rounded-xl text-slate-600 active:bg-slate-100"
-          aria-label="返回编辑"
-        >
-          <ArrowLeft size={20} />
-        </button>
-        <div className="text-[17px] font-semibold">AI 工具</div>
-        <button
-          type="button"
-          onClick={() => void handleSave()}
-          disabled={isSaving || dirtyCount === 0}
-          className="flex h-10 items-center gap-1 rounded-xl px-2 text-sm font-medium text-violet-700 disabled:text-slate-300"
-        >
-          <Save size={17} />
-          {isSaving ? '保存中' : '保存'}
-        </button>
-      </header>
-
+    <ModuleEditShell
+      title="AI 工具"
+      subtitle={initial.title}
+      onSaveSuccess={() => track('draft_save_success', { source: 'ai_tools', resumeId: initial.id })}
+      onSaveFailure={(message) => track('draft_save_failed', { source: 'ai_tools', resumeId: initial.id, error: message })}
+    >
       <main className="mx-auto flex w-full max-w-2xl flex-col px-3 pb-8 pt-3">
         <section className="rounded-2xl border border-violet-100 bg-white p-4 shadow-sm">
           <div className="flex items-start gap-3">
@@ -159,9 +136,9 @@ export default function MobileAiToolsClient(
       <TranslateDialog
         resumeId={initial.id}
         template={initial.template}
-        successPath={(resumeId) => `/m/edit?id=${encodeURIComponent(resumeId)}`}
+        successPath={(resumeId) => replaceResumeId(returnTo, resumeId)}
       />
       <VipUpgradeDialog open={showUpgrade} onOpenChange={setShowUpgrade} />
-    </div>
+    </ModuleEditShell>
   )
 }
