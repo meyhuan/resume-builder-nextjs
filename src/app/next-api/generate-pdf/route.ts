@@ -176,6 +176,10 @@ export async function POST(req: Request) {
         await document.fonts?.ready?.catch(() => undefined);
         await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
       });
+      await page.evaluate(async () => {
+        const guard = (window as typeof window & { __resumeOnePageGuardReady?: Promise<void> }).__resumeOnePageGuardReady;
+        if (guard) await guard.catch(() => undefined);
+      });
       const printDiagnostics: PrintLayoutDiagnostics = await page.evaluate(getPrintLayoutDiagnostics);
       if (printDiagnostics.hiddenOverflowAncestors > 0 || printDiagnostics.transformedRoot) {
         throw new Error(`Print layout is clipped or transformed: ${JSON.stringify(printDiagnostics)}`);

@@ -24,6 +24,10 @@ const STYLE_ATTR = 'data-one-page-compact-style'
 const COMPACTION_STYLES = new WeakMap<HTMLElement, HTMLStyleElement>()
 const A4_HEIGHT_PX = (297 / 25.4) * 96
 const PRINT_SAFE_MARGIN_PX = 2
+// Reserve a small amount of vertical slack for print-only reflow and
+// break-inside: avoid-page decisions. A page can be shorter than A4 in total
+// and still move its final protected block to a second sheet.
+export const ONE_PAGE_CONTENT_RESERVE_PX = 72
 
 function numeric(value: string): number | null {
   const parsed = Number.parseFloat(value)
@@ -165,6 +169,48 @@ export function measureOnePageContentHeight(root: HTMLElement): number {
 }
 
 /**
+ * Measure the content that would naturally flow on the page, ignoring the
+ * artificial A4-sized min-height used to paint the editor's paper surface.
+ *
+ * The editor and the standalone print document do not always resolve the
+ * template at exactly the same width. Measuring the page shell itself can
+ * therefore report "fit" while print reflow pushes the last block onto a
+ * second sheet. Temporarily removing page-shell min-heights makes the fit
+ * decision depend on real content boundaries while restoring the visual page
+ * immediately after the synchronous layout read.
+ */
+export function measureNaturalOnePageContentHeight(root: HTMLElement): number {
+  const candidates = [root, ...Array.from(root.querySelectorAll<HTMLElement>('*'))]
+    .filter((element) => numeric(getComputedStyle(element).minHeight) !== null && numeric(getComputedStyle(element).minHeight)! >= A4_HEIGHT_PX * 0.8)
+  const snapshots = candidates.map((element) => ({
+    element,
+    minHeight: element.style.getPropertyValue('min-height'),
+    minHeightPriority: element.style.getPropertyPriority('min-height'),
+    height: element.style.getPropertyValue('height'),
+    heightPriority: element.style.getPropertyPriority('height'),
+  }))
+
+  try {
+    for (const { element } of snapshots) {
+      // !important is required because one-page compaction deliberately uses
+      // the same priority for its A4 paper shell rule.
+      element.style.setProperty('min-height', '0px', 'important')
+      // Full-height column children otherwise keep the removed page height
+      // through `height: 100%`, masking the actual content boundary.
+      element.style.setProperty('height', 'auto', 'important')
+    }
+    return measureOnePageContentHeight(root)
+  } finally {
+    for (const { element, minHeight, minHeightPriority, height, heightPriority } of snapshots) {
+      if (minHeight) element.style.setProperty('min-height', minHeight, minHeightPriority)
+      else element.style.removeProperty('min-height')
+      if (height) element.style.setProperty('height', height, heightPriority)
+      else element.style.removeProperty('height')
+    }
+  }
+}
+
+/**
  * Measure the one-page print frame after print-only CSS has reflowed the
  * template. This function never scales or clips content: CSS transforms do
  * not participate in fragmentation, and a fixed-height frame with hidden
@@ -190,7 +236,7 @@ export function fitOnePagePrintFrame(frame: HTMLElement, root: HTMLElement): One
   root.style.transform = 'none'
   root.style.transformOrigin = 'top left'
 
-  const contentHeight = measureOnePageContentHeight(root)
+  const contentHeight = measureNaturalOnePageContentHeight(root)
   const fits = contentHeight <= targetHeight
   frame.dataset.onePageFit = fits ? 'true' : 'false'
   root.dataset.onePageFit = fits ? 'true' : 'false'
