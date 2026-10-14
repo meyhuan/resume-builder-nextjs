@@ -335,6 +335,24 @@ export default function MobilePreviewClient(): ReactElement {
     [templateId, setThemeForTemplate],
   )
 
+  const handleOnePageOverflow = useCallback((): void => {
+    if (templateId === 'yiyetong') {
+      toast.warning('已达到可读性下限，建议精简内容或保留分页')
+      return
+    }
+    toast.warning('当前模板无法在保证可读性的情况下完整放入一页', {
+      description: '可以尝试「一页通」模板，它更适合信息量较多的简历。切换模板不会修改简历内容。',
+      duration: 9000,
+      action: {
+        label: '查看一页通',
+        onClick: (): void => {
+          setTab('template')
+          setSheetOpen(true)
+        },
+      },
+    })
+  }, [templateId])
+
   // Drive the auto-fit algorithm against the unscaled template content (innerRef).
   const { status: onePageStatus } = useOnePageMode({
     contentRef: resumeBodyRef,
@@ -344,6 +362,7 @@ export default function MobilePreviewClient(): ReactElement {
     snapshot: onePageSnapshot,
     setSnapshot: setOnePageSnapshot,
     strategy: MOBILE_ONE_PAGE_STRATEGY,
+    onOverflow: handleOnePageOverflow,
   })
   const mobilePages = calculateResumePages(
     contentHeight,

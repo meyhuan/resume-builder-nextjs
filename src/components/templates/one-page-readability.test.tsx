@@ -10,7 +10,7 @@ import { fitOnePagePrintFrame } from '@/lib/one-page-layout'
 vi.mock('sonner', () => ({ toast: { info: vi.fn(), success: vi.fn(), warning: vi.fn() } }))
 const initialTheme: ThemeTokens = { primaryColor: '#7c3aed', textColor: '#171717', fontFamily: 'sans-serif', fontSize: 14, lineHeight: 1.6, spacingScale: 1, pagePaddingVertical: 16, pagePaddingHorizontal: 16 }
 
-function useFixture(height: number, override: Partial<ThemeTokens> = {}, strategy: OnePageStrategy = 'one-page') {
+function useFixture(height: number, override: Partial<ThemeTokens> = {}, strategy: OnePageStrategy = 'one-page', onOverflow?: () => void) {
   const [theme, setTheme] = useState({ ...initialTheme, ...override })
   const [enabled, setEnabled] = useState(false)
   const [snapshot, setSnapshot] = useState<AdjustableTokens | null>(null)
@@ -20,7 +20,7 @@ function useFixture(height: number, override: Partial<ThemeTokens> = {}, strateg
     return element
   })
   const contentRef = useRef<HTMLDivElement | null>(content)
-  const { status } = useOnePageMode({ contentRef, theme, enabled, snapshot, setSnapshot, strategy, patchTheme: (patch) => setTheme((current) => ({ ...current, ...patch })) })
+  const { status } = useOnePageMode({ contentRef, theme, enabled, snapshot, setSnapshot, strategy, onOverflow, patchTheme: (patch) => setTheme((current) => ({ ...current, ...patch })) })
   return { theme, enabled, setEnabled, snapshot, status }
 }
 
@@ -82,6 +82,16 @@ describe('automatic one-page readability', () => {
     await tick(3)
     expect(result.current.status).toBe('overflow')
     expect(result.current.theme).toMatchObject({ lineHeight: 1.2, fontSize: 13, spacingScale: 0.2 })
+  })
+
+  it('uses the overflow callback instead of the default warning when provided', async () => {
+    const onOverflow = vi.fn()
+    const { result } = renderHook(() => useFixture(1500, {}, 'one-page', onOverflow))
+    act(() => result.current.setEnabled(true))
+    await tick(30)
+    expect(result.current.status).toBe('overflow')
+    expect(onOverflow).toHaveBeenCalledOnce()
+    expect(toast.warning).not.toHaveBeenCalled()
   })
 
   it('keeps a fitting print frame visible without applying a transform', () => {

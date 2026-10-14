@@ -1025,6 +1025,21 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
     })
   }, [tpl, setThemeForTemplate])
 
+  const handleOnePageOverflow = useCallback((): void => {
+    if (tpl === 'yiyetong') {
+      toast.warning('已达到可读性下限，建议精简内容或保留分页')
+      return
+    }
+    toast.warning('当前模板无法在保证可读性的情况下完整放入一页', {
+      description: '可以尝试「一页通」模板，它更适合信息量较多的简历。切换模板不会修改简历内容。',
+      duration: 9000,
+      action: {
+        label: '查看一页通',
+        onClick: (): void => setActivePanel('templates'),
+      },
+    })
+  }, [setActivePanel, tpl])
+
   // One-page mode hook
   const { status: onePageStatus, reset: resetOnePage } = useOnePageMode({
     contentRef: resumeBodyRef,
@@ -1034,6 +1049,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
     snapshot: onePageSnapshot,
     setSnapshot: setOnePageSnapshot,
     strategy: onePageStrategy,
+    onOverflow: handleOnePageOverflow,
   })
   const previewRevision = `${currentFingerprint}:${onePageStatus}`
   const { pdfPageCount, recordPreview } = usePdfPreviewPageCount(previewRevision)

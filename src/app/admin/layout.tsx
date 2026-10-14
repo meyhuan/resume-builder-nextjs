@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react';
 import Link from 'next/link';
-import { LayoutDashboard, ArrowLeft, BarChart3, Crown } from 'lucide-react';
+import { LayoutDashboard, ArrowLeft, BarChart3, Crown, NotebookPen } from 'lucide-react';
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   return (
@@ -33,6 +33,10 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             <Link href="/admin/extension-metrics" className="flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
               <BarChart3 className="w-4 h-4" />
               插件填写效果
+            </Link>
+            <Link href="/admin/xhs-notes" className="flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+              <NotebookPen className="w-4 h-4" />
+              笔记奖励
             </Link>
             <Link
               href="/dashboard"
