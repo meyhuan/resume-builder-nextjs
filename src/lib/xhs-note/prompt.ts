@@ -1,4 +1,4 @@
-import { BRAND_TAGS, findTopic, passphraseSentence } from '@/lib/xhs-note/topics'
+import { BRAND_TAGS, findTopic } from '@/lib/xhs-note/topics'
 
 export function buildXhsSystemPrompt(topicKey: string, passphrase: string): string {
   const topic = findTopic(topicKey)
