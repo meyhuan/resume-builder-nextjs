@@ -26,8 +26,22 @@ model User {
   extensionAuthorizations  ExtensionAuthorization[]
   extensionAuthCodes       ExtensionAuthCode[]
   extensionTelemetry       ExtensionTelemetryEvent[]
+  xhsNoteDrafts            XhsNoteDraft[]
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @updatedAt
+}
+
+/// One row per successful Xiaohongshu note draft. Used for the daily generation cap.
+model XhsNoteDraft {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resumeId  String
+  topic     String
+  output    Json
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
 }
 
 model Resume {
