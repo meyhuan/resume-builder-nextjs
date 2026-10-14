@@ -130,6 +130,11 @@ interface ParagraphOptions {
   readonly indent?: { readonly left?: number; readonly hanging?: number }
 }
 
+interface BlockRenderOptions {
+  /** Whether the block header owns the date column. Chengyan renders dates in its timeline column. */
+  readonly showDate?: boolean
+}
+
 interface PlainLine {
   readonly text: string
   readonly bullet: boolean
@@ -305,11 +310,12 @@ function intentionLines(resume: ResumeData): Array<[string, string]> {
   return fields.filter(([, value]) => Boolean(value && value.trim())).map(([label, value]) => [label, value as string])
 }
 
-function blockHeader(title: string, subtitle: string, date: string, metrics: DocxMetrics): Table {
+function blockHeader(title: string, subtitle: string, date: string, metrics: DocxMetrics, options: BlockRenderOptions = {}): Paragraph | Table {
   const left = paragraph([
     run(title, { size: metrics.blockTitle, bold: true, color: metrics.textColor }),
     ...(subtitle ? [run(`  ${subtitle}`, { size: metrics.blockSubtitle, color: metrics.textColor })] : []),
   ], { after: 0, keepNext: true, line: metrics.bodyLine })
+  if (options.showDate === false) return left
   const right = paragraph(
     run(date, { size: metrics.blockSubtitle, color: metrics.accent, bold: true }),
     { after: 0, keepNext: true, line: metrics.bodyLine, alignment: AlignmentType.RIGHT },
@@ -328,28 +334,28 @@ function blockHeader(title: string, subtitle: string, date: string, metrics: Doc
   })
 }
 
-function renderBlock(block: ResumeBlock, metrics: DocxMetrics, contentColor = metrics.textColor): Array<Paragraph | Table> {
+function renderBlock(block: ResumeBlock, metrics: DocxMetrics, contentColor = metrics.textColor, options: BlockRenderOptions = {}): Array<Paragraph | Table> {
   if (block.type === 'experience') {
     return [
-      blockHeader(block.company, block.position, dateRange(block.startDate, block.endDate), metrics),
+      blockHeader(block.company, block.position, dateRange(block.startDate, block.endDate), metrics, options),
       ...richParagraphs(block.contentHtml, { color: contentColor, size: metrics.body, line: metrics.bodyLine, after: 28 * metrics.spacingScale }),
     ]
   }
   if (block.type === 'project') {
     return [
-      blockHeader(block.name, block.role ?? '', dateRange(block.startDate, block.endDate), metrics),
+      blockHeader(block.name, block.role ?? '', dateRange(block.startDate, block.endDate), metrics, options),
       ...richParagraphs(block.contentHtml, { color: contentColor, size: metrics.body, line: metrics.bodyLine, after: 28 * metrics.spacingScale }),
     ]
   }
   if (block.type === 'education') {
     return [
-      blockHeader(block.school, [block.major, block.degree].filter(Boolean).join(' · '), dateRange(block.startDate, block.endDate), metrics),
+      blockHeader(block.school, [block.major, block.degree].filter(Boolean).join(' · '), dateRange(block.startDate, block.endDate), metrics, options),
       ...richParagraphs(block.courseHtml, { color: contentColor, size: metrics.body, line: metrics.bodyLine, after: 28 * metrics.spacingScale }),
     ]
   }
   if (block.type === 'campus') {
     return [
-      blockHeader(block.organization, block.position, dateRange(block.startDate, block.endDate), metrics),
+      blockHeader(block.organization, block.position, dateRange(block.startDate, block.endDate), metrics, options),
       ...richParagraphs(block.contentHtml, { color: contentColor, size: metrics.body, line: metrics.bodyLine, after: 28 * metrics.spacingScale }),
     ]
   }
@@ -381,7 +387,7 @@ function lineGrid(
   lines: Array<[string, string]>,
   columns: number,
   metrics: DocxMetrics,
-  options: { readonly color?: string; readonly labelColor?: string; readonly valueSize?: number } = {},
+  options: { readonly color?: string; readonly labelColor?: string; readonly valueSize?: number; readonly columnWidths?: number[] } = {},
 ): Table {
   const rows: TableRow[] = []
   const columnWidth = Math.floor(100 / columns)
@@ -407,6 +413,7 @@ function lineGrid(
   return new Table({
     width: { size: 100, type: WidthType.PERCENTAGE },
     layout: TableLayoutType.FIXED,
+    columnWidths: options.columnWidths?.map((width) => Math.round(10206 * width / 100)),
     borders: NO_BORDERS,
     rows,
   })
@@ -420,7 +427,7 @@ function simpleHeader(resume: ResumeData, metrics: DocxMetrics, avatar?: AvatarA
     ...(title ? [run(`    意向岗位：${title}`, { size: metrics.title, bold: true, color: metrics.accent })] : []),
   ], { after: 50, line: metrics.bodyLine })]
   const contacts = contactLines(resume)
-  if (contacts.length > 0) content.push(lineGrid(contacts, 3, metrics, { valueSize: metrics.small }))
+  if (contacts.length > 0) content.push(lineGrid(contacts, 3, metrics, { valueSize: metrics.small, columnWidths: [30, 43, 27] }))
   return new Table({
     width: { size: 100, type: WidthType.PERCENTAGE },
     layout: TableLayoutType.FIXED,
@@ -443,13 +450,105 @@ function simpleHeader(resume: ResumeData, metrics: DocxMetrics, avatar?: AvatarA
   })
 }
 
+function englishSectionTitle(title: string): string {
+  const normalized = title.trim()
+  if (normalized.includes('教育')) return 'Education background'
+  if (normalized.includes('校园')) return 'Campus experience'
+  if (normalized.includes('工作') || normalized.includes('实习')) return 'Work experience'
+  if (normalized.includes('项目')) return 'Project experience'
+  if (normalized.includes('技能')) return 'Professional skills'
+  if (normalized.includes('评价') || normalized.includes('介绍')) return 'Self introduction'
+  return 'Resume section'
+}
+
+function jingruiSectionHeading(title: string, metrics: DocxMetrics): Table {
+  const mark = cell([
+    paragraph(run('◆', { size: 16, color: metrics.accent, bold: true }), { after: 0, line: 210, alignment: AlignmentType.CENTER }),
+  ], {
+    width: 6,
+    margins: { top: 45, right: 45, bottom: 45, left: 45 },
+  })
+  const copy = cell([
+    paragraph(run(title || '未命名模块', { size: metrics.section, color: metrics.accent, bold: true }), {
+      after: 0,
+      line: 245,
+      keepNext: true,
+    }),
+    paragraph(run(englishSectionTitle(title), { size: metrics.small, color: COLORS.lightMuted }), {
+      before: 0,
+      after: 25,
+      line: 180,
+    }),
+  ], {
+    width: 94,
+    margins: { top: 0, right: 0, bottom: 25, left: 120 },
+    borders: {
+      ...NO_BORDERS,
+      bottom: { style: BorderStyle.SINGLE, size: 5, color: 'D9DBE8', space: 3 },
+    },
+  })
+  return new Table({
+    width: { size: 100, type: WidthType.PERCENTAGE },
+    layout: TableLayoutType.FIXED,
+    columnWidths: [612, 9594],
+    borders: NO_BORDERS,
+    rows: [new TableRow({ children: [mark, copy] })],
+  })
+}
+
+function jingruiSidebarContent(resume: ResumeData, metrics: DocxMetrics, avatar?: AvatarAsset): Array<Paragraph | Table> {
+  const top = cell([
+    paragraph(run('RESUME', { size: metrics.small, color: '29354B', bold: true }), {
+      after: 110,
+      line: 220,
+      alignment: AlignmentType.CENTER,
+    }),
+    ...(avatar ? [avatarParagraph(avatar, 150, 178)] : []),
+  ], {
+    width: 100,
+    shading: 'E9EEF5',
+    margins: { top: 180, right: 170, bottom: 180, left: 170 },
+  })
+  const topPanel = new Table({
+    width: { size: 100, type: WidthType.PERCENTAGE },
+    layout: TableLayoutType.FIXED,
+    columnWidths: [10000],
+    borders: NO_BORDERS,
+    rows: [new TableRow({ height: { value: 4700, rule: HeightRule.ATLEAST }, children: [top] })],
+  })
+  const bottom: Array<Paragraph | Table> = [
+    paragraph(run(resume.name || '姓名', { size: Math.round(metrics.name * 0.8), bold: true, color: COLORS.white }), {
+      alignment: AlignmentType.CENTER,
+      after: 30,
+      line: metrics.bodyLine,
+    }),
+    ...(resume.baseInfo?.title ? [paragraph(run(resume.baseInfo.title, { size: metrics.small, bold: true, color: 'E0E7FF' }), {
+      alignment: AlignmentType.CENTER,
+      after: 130,
+      line: metrics.bodyLine,
+    })] : []),
+    paragraph(run('━━━━━━━━', { size: 13, color: 'E0E7FF' }), { alignment: AlignmentType.CENTER, after: 100, line: 180 }),
+    ...renderPairLines(contactLines(resume), COLORS.white, metrics.small, metrics.bodyLine),
+    ...(intentionLines(resume).length > 0 ? [
+      paragraph(run('求职意向', { size: metrics.jobTitle, color: COLORS.white, bold: true }), {
+        before: 100,
+        after: 45,
+        line: metrics.bodyLine,
+        border: { bottom: { style: BorderStyle.SINGLE, size: 5, color: 'FFFFFF', space: 3 } },
+      }),
+      ...renderPairLines(intentionLines(resume), COLORS.white, metrics.small, metrics.bodyLine),
+    ] : []),
+  ]
+  return [topPanel, ...bottom]
+}
+
 function renderSimple(resume: ResumeData, avatar?: AvatarAsset, theme?: Partial<ThemeTokens>): Document {
   const metrics = resolveMetrics(theme, COLORS.simpleAccent)
   const children: Array<Paragraph | Table> = [simpleHeader(resume, metrics, avatar)]
   const intention = intentionLines(resume)
   if (intention.length > 0) {
     children.push(heading('求职意向', metrics.accent, { size: metrics.jobTitle }))
-    children.push(lineGrid(intention, 2, metrics))
+    children.push(lineGrid(intention, 2, metrics, { columnWidths: [50, 50] }))
   }
   for (const section of resume.sections) {
     children.push(heading(getSectionDisplayTitle(section) || section.title, metrics.accent, { size: metrics.section }))
@@ -465,17 +564,9 @@ function renderSimple(resume: ResumeData, avatar?: AvatarAsset, theme?: Partial<
 
 function renderJingrui(resume: ResumeData, avatar?: AvatarAsset, theme?: Partial<ThemeTokens>): Document {
   const metrics = resolveMetrics(theme, COLORS.jingruiAccent)
-  const left: Array<Paragraph | Table> = [
-    ...(avatar ? [avatarParagraph(avatar, 150, 178)] : []),
-    paragraph(run(resume.name || '姓名', { size: Math.round(metrics.name * 0.8), bold: true, color: COLORS.white }), { alignment: AlignmentType.CENTER, after: 30, line: metrics.bodyLine }),
-    ...(resume.baseInfo?.title ? [paragraph(run(resume.baseInfo.title, { size: metrics.small, bold: true, color: 'E0E7FF' }), { alignment: AlignmentType.CENTER, after: 150 })] : []),
-    heading('联系方式', COLORS.white, { size: metrics.jobTitle, shading: metrics.accent }),
-    ...renderPairLines(contactLines(resume), COLORS.white, metrics.small, metrics.bodyLine),
-    ...(intentionLines(resume).length > 0 ? [heading('求职意向', COLORS.white, { size: metrics.jobTitle, shading: metrics.accent }), ...renderPairLines(intentionLines(resume), COLORS.white, metrics.small, metrics.bodyLine)] : []),
-  ]
   const right: Array<Paragraph | Table> = []
   for (const section of resume.sections) {
-    right.push(heading(getSectionDisplayTitle(section) || section.title, metrics.accent, { size: metrics.section }))
+    right.push(jingruiSectionHeading(getSectionDisplayTitle(section) || section.title, metrics))
     right.push(...renderSectionBlocks(section, metrics))
   }
   const table = new Table({
@@ -487,7 +578,11 @@ function renderJingrui(resume: ResumeData, avatar?: AvatarAsset, theme?: Partial
       cantSplit: true,
       height: { value: PAGE.height, rule: HeightRule.ATLEAST },
       children: [
-        cell(left, { width: 35, shading: metrics.accent, margins: { top: 230, right: 170, bottom: 230, left: 170 } }),
+        cell(jingruiSidebarContent(resume, metrics, avatar), {
+          width: 35,
+          shading: metrics.accent,
+          margins: { top: 0, right: 170, bottom: 230, left: 170 },
+        }),
         cell(right, { width: 65, margins: { top: 210, right: 230, bottom: 210, left: 240 } }),
       ],
     })],
@@ -498,10 +593,24 @@ function renderJingrui(resume: ResumeData, avatar?: AvatarAsset, theme?: Partial
 function renderChengyan(resume: ResumeData, avatar?: AvatarAsset, theme?: Partial<ThemeTokens>): Document {
   const metrics = resolveMetrics(theme, COLORS.chengyanAccent)
   const accent = metrics.accent
+  const topBand = new Table({
+    width: { size: 100, type: WidthType.PERCENTAGE },
+    layout: TableLayoutType.FIXED,
+    columnWidths: [10625],
+    borders: NO_BORDERS,
+    rows: [new TableRow({
+      height: { value: 95, rule: HeightRule.EXACT },
+      children: [cell([paragraph(run('', { size: 1 }), { after: 0, line: 1 })], {
+        width: 100,
+        shading: accent,
+        margins: { top: 0, right: 0, bottom: 0, left: 0 },
+      })],
+    })],
+  })
   const headerContent = paragraph([
-    run(resume.name || '姓名', { size: Math.round(metrics.name * 0.85), bold: true, color: COLORS.white }),
-    ...(resume.baseInfo?.title ? [run(`  ${resume.baseInfo.title}`, { size: metrics.title, color: 'FEF3C7' })] : []),
-    ...(contactLines(resume).length > 0 ? [run(`\n${contactLines(resume).map(([label, value]) => `${label}：${value}`).join('   ')}`, { size: metrics.small, color: 'FFF7ED' })] : []),
+    run(resume.name || '姓名', { size: Math.round(metrics.name * 0.85), bold: true, color: metrics.textColor }),
+    ...(resume.baseInfo?.title ? [run(`  ${resume.baseInfo.title}`, { size: metrics.title, color: metrics.mutedColor })] : []),
+    ...(contactLines(resume).length > 0 ? [run(`\n${contactLines(resume).map(([label, value]) => `${label}：${value}`).join('   ')}`, { size: metrics.small, color: metrics.textColor })] : []),
   ], { line: metrics.bodyLine, after: 0 })
   const header = new Table({
     width: { size: 100, type: WidthType.PERCENTAGE },
@@ -510,36 +619,51 @@ function renderChengyan(resume: ResumeData, avatar?: AvatarAsset, theme?: Partia
     borders: NO_BORDERS,
     rows: [new TableRow({
       children: [
-        cell([headerContent], { width: avatar ? 80 : 100, shading: accent, margins: { top: 190, right: 220, bottom: 190, left: 220 } }),
-        ...(avatar ? [cell([avatarParagraph(avatar, 78, 93)], { width: 20, shading: accent, margins: { top: 130, right: 220, bottom: 130, left: 80 } })] : []),
+        cell([headerContent], {
+          width: avatar ? 80 : 100,
+          shading: COLORS.chengyanPale,
+          margins: { top: 180, right: 220, bottom: 180, left: 220 },
+          borders: { ...NO_BORDERS, bottom: { style: BorderStyle.SINGLE, size: 5, color: 'D9D4CE', space: 3 } },
+        }),
+        ...(avatar ? [cell([avatarParagraph(avatar, 78, 93)], {
+          width: 20,
+          shading: COLORS.chengyanPale,
+          margins: { top: 130, right: 220, bottom: 130, left: 80 },
+          borders: { ...NO_BORDERS, bottom: { style: BorderStyle.SINGLE, size: 5, color: 'D9D4CE', space: 3 } },
+        })] : []),
       ],
     })],
   })
-  const children: Array<Paragraph | Table> = [header]
+  const children: Array<Paragraph | Table> = [topBand, header]
   const intention = intentionLines(resume)
   if (intention.length > 0) {
     children.push(heading('求职意向', accent, { size: metrics.jobTitle, shading: COLORS.chengyanPale }))
     children.push(lineGrid(intention, 2, metrics))
   }
   for (const section of resume.sections) {
-    children.push(heading(getSectionDisplayTitle(section) || section.title, accent, { size: metrics.section, shading: COLORS.chengyanPale }))
-    const rows = section.blocks.map((block) => {
-      const rendered = renderBlock(block, metrics)
-      const date = 'startDate' in block ? dateRange(block.startDate, block.endDate) : ''
-      return new TableRow({
-        children: [
-          cell([paragraph(run(date, { size: metrics.small, color: accent, bold: true }), { after: 0, line: metrics.bodyLine })], {
-            width: 20,
-            borders: { ...NO_BORDERS, right: { style: BorderStyle.SINGLE, size: 9, color: accent } },
-            margins: { top: 65, right: 100, bottom: 65, left: 0 },
-          }),
-          cell(rendered, { width: 80, margins: { top: 65, right: 0, bottom: 65, left: 160 } }),
-        ],
-      })
+    const title = getSectionDisplayTitle(section) || section.title
+    const sectionTitle = cell([
+      paragraph(run(title, { size: metrics.section, color: accent, bold: true }), {
+        after: 0,
+        line: metrics.bodyLine,
+      }),
+    ], {
+      width: 20,
+      margins: { top: 65, right: 100, bottom: 65, left: 0 },
+      borders: { ...NO_BORDERS, right: { style: BorderStyle.SINGLE, size: 9, color: accent } },
     })
-    if (rows.length > 0) {
-      children.push(new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, layout: TableLayoutType.FIXED, columnWidths: [2125, 8501], borders: NO_BORDERS, rows }))
-    }
+    const sectionBody = cell(renderSectionBlocks(section, metrics), {
+      width: 80,
+      margins: { top: 65, right: 0, bottom: 65, left: 160 },
+      borders: { ...NO_BORDERS, top: { style: BorderStyle.SINGLE, size: 5, color: 'CFCAC4', space: 3 } },
+    })
+    children.push(new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE },
+      layout: TableLayoutType.FIXED,
+      columnWidths: [2125, 8501],
+      borders: NO_BORDERS,
+      rows: [new TableRow({ cantSplit: true, children: [sectionTitle, sectionBody] })],
+    }))
   }
   return baseDocument(children, { top: 0, right: 640, bottom: 500, left: 640 })
 }
