@@ -427,7 +427,7 @@ function simpleHeader(resume: ResumeData, metrics: DocxMetrics, avatar?: AvatarA
     ...(title ? [run(`    意向岗位：${title}`, { size: metrics.title, bold: true, color: metrics.accent })] : []),
   ], { after: 50, line: metrics.bodyLine })]
   const contacts = contactLines(resume)
-  if (contacts.length > 0) content.push(lineGrid(contacts, 3, metrics, { valueSize: metrics.small, columnWidths: [30, 43, 27] }))
+  if (contacts.length > 0) content.push(lineGrid(contacts, 3, metrics, { valueSize: metrics.small, columnWidths: [25, 40, 35] }))
   return new Table({
     width: { size: 100, type: WidthType.PERCENTAGE },
     layout: TableLayoutType.FIXED,
