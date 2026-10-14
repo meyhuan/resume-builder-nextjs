@@ -21,6 +21,7 @@ import { ResumeProfileCard } from './_components/resume-profile-card'
 import { SectionsList } from './_components/sections-list'
 import { PortfolioPreview } from './_components/portfolio-preview'
 import { TemplateSpecificSettings } from './_components/template-metrics-preview'
+import { AiToolsEntry } from './_components/ai-tools-entry'
 
 /**
  * Resume data already loaded on the server and passed as a prop.
@@ -469,6 +470,7 @@ export default function MobileEditHomeClient(
         </div>
       )}
 
+      <AiToolsEntry resumeId={resumeId ?? initial?.id ?? ''} />
       <ResumeProfileCard resume={resume} progress={progress} missingItems={missingItems} />
 
       <div className="mt-2 px-3">
