@@ -623,6 +623,24 @@ export const TEMPLATE_REGISTRY: Record<string, TemplateConfig> = {
     component: lazy(() => import('@/templates/wenhe')),
     recommendedPrimaryColor: '#9b806b',
   },
+  'canva-minimal': {
+    ...TEMPLATE_METADATA['canva-minimal'],
+    component: lazy(() => import('@/templates/canva-minimal')),
+    recommendedPrimaryColor: '#27313b',
+    recommendedFontFamilyId: 'sans',
+  },
+  'canva-columns': {
+    ...TEMPLATE_METADATA['canva-columns'],
+    component: lazy(() => import('@/templates/canva-columns')),
+    recommendedPrimaryColor: '#334155',
+    recommendedFontFamilyId: 'sans',
+  },
+  'canva-sidebar': {
+    ...TEMPLATE_METADATA['canva-sidebar'],
+    component: lazy(() => import('@/templates/canva-sidebar')),
+    recommendedPrimaryColor: '#5279a8',
+    recommendedFontFamilyId: 'sans',
+  },
 }
 
 /**

@@ -17,13 +17,13 @@ import {
 
 describe('shared metadata and visibility', () => {
   it('covers every registered template once and preserves editor/catalog policy', () => {
-    expect(templateMetadata).toHaveLength(114)
-    expect(new Set(templateMetadata.map((t) => t.id)).size).toBe(114)
+    expect(templateMetadata).toHaveLength(117)
+    expect(new Set(templateMetadata.map((t) => t.id)).size).toBe(117)
     expect(Object.keys(TEMPLATE_REGISTRY)).toEqual(
       templateMetadata.map((t) => t.id),
     )
-    expect(getAllTemplates()).toHaveLength(113)
-    expect(templateCatalog).toHaveLength(100)
+    expect(getAllTemplates()).toHaveLength(116)
+    expect(templateCatalog).toHaveLength(103)
     expect(getPublicTemplates().map((t) => t.id)).toEqual(templateCatalog.map((t) => t.id))
     expect(getPublicTemplates().every((t) => t.visibility.catalog && t.visibility.editor)).toBe(true)
     expect(getTemplate('lanxin')).toBeDefined()

@@ -121,7 +121,8 @@ function runStaticChecks(id) {
   pass('Template registry', `Found ${id}.`)
 
   // Display metadata is shared with the server-side public catalog.
-  const metadataKey = /\.\.\.TEMPLATE_METADATA\.([a-zA-Z0-9_]+)/.exec(entry)?.[1]
+  const metadataMatch = /\.\.\.TEMPLATE_METADATA(?:\.([a-zA-Z0-9_]+)|\[['"]([^'\"]+)['"]\])/.exec(entry)
+  const metadataKey = metadataMatch?.[1] || metadataMatch?.[2]
   if (metadataKey) {
     if (metadataKey !== id) fail('Metadata key', `Expected ${id}, got ${metadataKey}.`)
     const metadataSource = fs.readFileSync(path.join(root, 'src/lib/templates/template-metadata.ts'), 'utf8')
@@ -280,7 +281,7 @@ function getRegisteredTemplateIds() {
     return []
   }
   const registrySource = source.slice(registryStart)
-  const ids = [...registrySource.matchAll(/\n\s{2}([a-zA-Z0-9_-]+)\s*:\s*\{/g)].map((m) => m[1])
+  const ids = [...registrySource.matchAll(/\n\s{2}(?:(?:["'])([a-zA-Z0-9_-]+)(?:["'])|([a-zA-Z0-9_-]+))\s*:\s*\{/g)].map((m) => m[1] || m[2])
   if (ids.length === 0) {
     fail('Template registry', 'No template ids found.')
   } else {
@@ -2668,7 +2669,8 @@ function commandCandidates(localBinName, localArgs, ...fallbacks) {
 }
 
 function extractRegistryEntry(source, id) {
-  const keyPattern = new RegExp(`\\n\\s*${escapeRegExp(id)}\\s*:\\s*\\{`)
+  const escapedId = escapeRegExp(id)
+  const keyPattern = new RegExp(`\\n\\s*(?:(?:["'])${escapedId}(?:["'])|${escapedId})\\s*:\\s*\\{`)
   const match = keyPattern.exec(source)
   if (!match) return null
   const start = source.indexOf('{', match.index)

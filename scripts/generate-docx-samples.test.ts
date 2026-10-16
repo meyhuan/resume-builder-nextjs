@@ -84,6 +84,9 @@ const sampleResume: ResumeData = {
 
 describe('DOCX template proof of concept', () => {
   it.each([
+    ['canva-minimal', 'canva-minimal.docx'],
+    ['canva-columns', 'canva-columns.docx'],
+    ['canva-sidebar', 'canva-sidebar.docx'],
     ['simple', 'single-column.docx'],
     ['jingrui', 'two-column.docx'],
     ['chengyan', 'complex-decorative.docx'],
@@ -96,6 +99,6 @@ describe('DOCX template proof of concept', () => {
   })
 
   it('rejects unverified templates instead of silently approximating them', async () => {
-    await expect(exportResumeToDocx(sampleResume, 'modern-grid')).rejects.toThrow('simple, jingrui, and chengyan only')
+    await expect(exportResumeToDocx(sampleResume, 'modern-grid')).rejects.toThrow('verified Word templates only')
   })
 })

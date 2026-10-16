@@ -149,7 +149,7 @@ export class UnsupportedDocxTemplateError extends Error {
   readonly templateId: string
 
   constructor(templateId: string) {
-    super(`DOCX export is currently supported for simple, jingrui, and chengyan only (received: ${templateId || 'unknown'})`)
+    super(`DOCX export is currently supported for the verified Word templates only (received: ${templateId || 'unknown'})`)
     this.name = 'UnsupportedDocxTemplateError'
     this.templateId = templateId
   }
@@ -668,6 +668,104 @@ function renderChengyan(resume: ResumeData, avatar?: AvatarAsset, theme?: Partia
   return baseDocument(children, { top: 0, right: 640, bottom: 500, left: 640 })
 }
 
+function renderCanvaMinimal(resume: ResumeData, avatar?: AvatarAsset, theme?: Partial<ThemeTokens>): Document {
+  const metrics = resolveMetrics(theme, '27313B')
+  const children: Array<Paragraph | Table> = [simpleHeader(resume, metrics, avatar)]
+  const intention = intentionLines(resume)
+  if (intention.length > 0) {
+    children.push(heading('求职意向', metrics.accent, { size: metrics.jobTitle }))
+    children.push(lineGrid(intention, 2, metrics, { columnWidths: [50, 50] }))
+  }
+  for (const section of resume.sections) {
+    children.push(heading(getSectionDisplayTitle(section) || section.title, metrics.accent, { size: metrics.section }))
+    children.push(...renderSectionBlocks(section, metrics))
+  }
+  return baseDocument(children, {
+    top: mmToTwips(theme?.pagePaddingVertical ?? 18),
+    right: mmToTwips(theme?.pagePaddingHorizontal ?? 16),
+    bottom: mmToTwips(theme?.pagePaddingVertical ?? 18),
+    left: mmToTwips(theme?.pagePaddingHorizontal ?? 16),
+  })
+}
+
+function renderCanvaColumns(resume: ResumeData, avatar?: AvatarAsset, theme?: Partial<ThemeTokens>): Document {
+  const metrics = resolveMetrics(theme, '334155')
+  const sidebarSections = resume.sections.filter((section) => {
+    const title = section.title.toLowerCase()
+    return section.blocks.every((block) => block.type === 'text' || block.type === 'list')
+      || ['技能', '语言', '证书', '自我', '评价', '兴趣', 'skill', 'language', 'certificate'].some((keyword) => title.includes(keyword))
+  }).slice(0, 2)
+  const sidebarIds = new Set(sidebarSections.map((section) => section.id))
+  const mainSections = resume.sections.filter((section) => !sidebarIds.has(section.id))
+  const sidebarChildren: Array<Paragraph | Table> = []
+  const header = simpleHeader(resume, metrics, avatar)
+  const intention = intentionLines(resume)
+  if (intention.length > 0) {
+    sidebarChildren.push(heading('求职意向', metrics.accent, { size: metrics.jobTitle }))
+    sidebarChildren.push(...renderPairLines(intention, metrics.textColor, metrics.small, metrics.bodyLine))
+  }
+  for (const section of sidebarSections) {
+    sidebarChildren.push(heading(getSectionDisplayTitle(section) || section.title, metrics.accent, { size: metrics.section }))
+    sidebarChildren.push(...renderSectionBlocks(section, metrics))
+  }
+  const mainChildren: Array<Paragraph | Table> = []
+  for (const section of mainSections) {
+    mainChildren.push(heading(getSectionDisplayTitle(section) || section.title, metrics.accent, { size: metrics.section }))
+    mainChildren.push(...renderSectionBlocks(section, metrics))
+  }
+  const columns = new Table({
+    width: { size: 100, type: WidthType.PERCENTAGE },
+    layout: TableLayoutType.FIXED,
+    columnWidths: [3000, 7206],
+    borders: NO_BORDERS,
+    rows: [new TableRow({
+      children: [
+        cell(sidebarChildren, { width: 30, shading: 'F8FAFC', margins: { top: 120, right: 140, bottom: 120, left: 0 }, borders: { ...NO_BORDERS, right: { style: BorderStyle.SINGLE, size: 6, color: 'CBD5E1', space: 3 } } }),
+        cell(mainChildren, { width: 70, margins: { top: 120, right: 0, bottom: 120, left: 190 } }),
+      ],
+    })],
+  })
+  return baseDocument([header, columns], {
+    top: mmToTwips(theme?.pagePaddingVertical ?? 16),
+    right: mmToTwips(theme?.pagePaddingHorizontal ?? 15),
+    bottom: mmToTwips(theme?.pagePaddingVertical ?? 16),
+    left: mmToTwips(theme?.pagePaddingHorizontal ?? 15),
+  })
+}
+
+function renderCanvaSidebar(resume: ResumeData, avatar?: AvatarAsset, theme?: Partial<ThemeTokens>): Document {
+  const metrics = resolveMetrics(theme, '5279A8')
+  const sideChildren: Array<Paragraph | Table> = [
+    ...(avatar ? [avatarParagraph(avatar, 150, 180)] : []),
+    paragraph(run(resume.name || '姓名', { size: Math.round(metrics.name * 0.82), color: COLORS.white, bold: true }), { after: 35, line: metrics.bodyLine }),
+    ...(resume.baseInfo?.title ? [paragraph(run(resume.baseInfo.title, { size: metrics.small, color: 'DBEAFE', bold: true }), { after: 100, line: metrics.bodyLine })] : []),
+    ...renderPairLines(contactLines(resume), COLORS.white, metrics.small, metrics.bodyLine),
+  ]
+  const intention = intentionLines(resume)
+  if (intention.length > 0) {
+    sideChildren.push(heading('求职意向', COLORS.white, { size: metrics.jobTitle }))
+    sideChildren.push(...renderPairLines(intention, COLORS.white, metrics.small, metrics.bodyLine))
+  }
+  const mainChildren: Array<Paragraph | Table> = []
+  for (const section of resume.sections) {
+    mainChildren.push(heading(getSectionDisplayTitle(section) || section.title, metrics.accent, { size: metrics.section }))
+    mainChildren.push(...renderSectionBlocks(section, metrics))
+  }
+  const shell = new Table({
+    width: { size: 100, type: WidthType.PERCENTAGE },
+    layout: TableLayoutType.FIXED,
+    columnWidths: [3500, 6706],
+    borders: NO_BORDERS,
+    rows: [new TableRow({
+      children: [
+        cell(sideChildren, { width: 35, shading: metrics.accent, margins: { top: 250, right: 170, bottom: 250, left: 170 } }),
+        cell(mainChildren, { width: 65, margins: { top: 180, right: 0, bottom: 180, left: 230 } }),
+      ],
+    })],
+  })
+  return baseDocument([shell], { top: 0, right: 0, bottom: 0, left: 0 })
+}
+
 /** Build a WordprocessingML document for one of the verified templates. */
 export async function exportResumeToDocx(
   resumeInput: ResumeData,
@@ -677,11 +775,17 @@ export async function exportResumeToDocx(
   if (!isDocxTemplateSupported(templateId)) throw new UnsupportedDocxTemplateError(templateId)
   const resume = prepareResumeForExport(resumeInput)
   const avatar = await loadAvatar(resume.baseInfo?.avatarUrl, resume.baseInfo?.showAvatar !== false)
-  const document = templateId === 'simple'
-    ? renderSimple(resume, avatar, theme)
-    : templateId === 'jingrui'
-      ? renderJingrui(resume, avatar, theme)
-      : renderChengyan(resume, avatar, theme)
+  const document = templateId === 'canva-minimal'
+    ? renderCanvaMinimal(resume, avatar, theme)
+    : templateId === 'canva-columns'
+      ? renderCanvaColumns(resume, avatar, theme)
+      : templateId === 'canva-sidebar'
+        ? renderCanvaSidebar(resume, avatar, theme)
+        : templateId === 'simple'
+          ? renderSimple(resume, avatar, theme)
+          : templateId === 'jingrui'
+            ? renderJingrui(resume, avatar, theme)
+            : renderChengyan(resume, avatar, theme)
   return Packer.toBuffer(document)
 }
 
