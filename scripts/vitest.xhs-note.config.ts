@@ -8,6 +8,7 @@ export default defineConfig({
       'src/lib/xhs-note/redact.test.ts',
       'src/lib/xhs-note/validate.test.ts',
       'src/lib/xhs-note/sign.test.ts',
+      'src/app/next-api/xhs-note/mini/route.smoke.test.ts',
     ],
   },
 })
