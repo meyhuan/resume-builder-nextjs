@@ -149,7 +149,11 @@ function baseStyle(theme: ThemeTokens, variant: DocxSafeVariant): CSSProperties 
     minHeight: '297mm', background: '#ffffff', color: theme.textColor,
     fontFamily: theme.fontFamily, fontSize: `${theme.fontSize}px`, lineHeight: theme.lineHeight,
     '--docx-safe-accent': accent,
-    '--docx-safe-on-accent': contrastingInk(accent),
+    // The Canva sidebar reference uses a medium blue rail with white type.
+    // The generic contrast helper quite correctly prefers black by a tiny
+    // WCAG ratio margin for this particular blue, but that produces visibly
+    // muddy text in the rail. Keep this variant's branded rail readable.
+    '--docx-safe-on-accent': variant === 'sidebar' ? '#ffffff' : contrastingInk(accent),
     '--docx-safe-spacing': `${theme.spacingScale}`,
     '--docx-safe-line-height': `${theme.lineHeight}`,
     '--docx-safe-padding-v': `${theme.pagePaddingVertical}mm`,
@@ -208,6 +212,11 @@ export function DocxSafeTemplate({ resume, theme, sidebarSectionIds, variant }: 
         .docx-safe-columns-side .docx-safe-title-rule { display:none; }
         .docx-safe-sidebar-shell { display:grid; grid-template-columns:34% minmax(0,1fr); min-height:297mm; }
         .docx-safe-sidebar-side { min-width:0; padding:var(--docx-safe-padding-v) 18px; color:var(--docx-safe-on-accent); background:var(--docx-safe-accent); }
+        .docx-safe-sidebar-side .docx-safe-fields,
+        .docx-safe-sidebar-side .docx-safe-job { color:rgba(255,255,255,.96); border-color:rgba(255,255,255,.78); }
+        .docx-safe-sidebar-side .docx-safe-field,
+        .docx-safe-sidebar-side .docx-safe-job-field,
+        .docx-safe-sidebar-side .docx-safe-job-field strong { color:inherit; }
         .docx-safe-sidebar-main { min-width:0; padding:var(--docx-safe-padding-v) var(--docx-safe-padding-h); background:#fff; }
         .docx-safe-side-header { display:flex; flex-direction:column; align-items:stretch; gap:8px; }
         .docx-safe-avatar-side { width:100%; height:145px; margin:0 auto 8px; border-color:#dbeafe; background:#e2e8f0; }

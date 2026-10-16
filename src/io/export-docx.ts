@@ -133,6 +133,8 @@ interface ParagraphOptions {
 interface BlockRenderOptions {
   /** Whether the block header owns the date column. Chengyan renders dates in its timeline column. */
   readonly showDate?: boolean
+  /** Fixed twip widths for a nested block header when the parent is a narrow column. */
+  readonly headerColumnWidths?: readonly [number, number]
 }
 
 interface PlainLine {
@@ -323,7 +325,7 @@ function blockHeader(title: string, subtitle: string, date: string, metrics: Doc
   return new Table({
     width: { size: 100, type: WidthType.PERCENTAGE },
     layout: TableLayoutType.FIXED,
-    columnWidths: [7000, 3206],
+    columnWidths: options.headerColumnWidths ?? [7000, 3206],
     borders: NO_BORDERS,
     rows: [new TableRow({
       children: [
@@ -364,8 +366,8 @@ function renderBlock(block: ResumeBlock, metrics: DocxMetrics, contentColor = me
   return []
 }
 
-function renderSectionBlocks(section: Section, metrics: DocxMetrics, contentColor = metrics.textColor): Array<Paragraph | Table> {
-  return section.blocks.flatMap((block) => renderBlock(block, metrics, contentColor))
+function renderSectionBlocks(section: Section, metrics: DocxMetrics, contentColor = metrics.textColor, options: BlockRenderOptions = {}): Array<Paragraph | Table> {
+  return section.blocks.flatMap((block) => renderBlock(block, metrics, contentColor, options))
 }
 
 function renderPairLines(lines: Array<[string, string]>, color = COLORS.ink, size = 20, line = 300): Paragraph[] {
@@ -734,7 +736,18 @@ function renderCanvaColumns(resume: ResumeData, avatar?: AvatarAsset, theme?: Pa
 }
 
 function renderCanvaSidebar(resume: ResumeData, avatar?: AvatarAsset, theme?: Partial<ThemeTokens>): Document {
-  const metrics = resolveMetrics(theme, '5279A8')
+  // Word's CJK font metrics occupy more vertical space than Chromium at the
+  // same nominal CSS size. Use a restrained density correction for this
+  // narrow two-column layout so the reference full fixture remains one page;
+  // long content still flows naturally to additional pages.
+  const metrics = resolveMetrics({
+    ...theme,
+    fontSize: (theme?.fontSize ?? 15) * 0.92,
+    lineHeight: Math.min(theme?.lineHeight ?? 1.5, 1.35),
+  }, '5279A8')
+  const verticalPadding = mmToTwips(theme?.pagePaddingVertical ?? 19)
+  const mainHorizontalPadding = mmToTwips(theme?.pagePaddingHorizontal ?? 15)
+  const sidebarHorizontalPadding = 270
   const sideChildren: Array<Paragraph | Table> = [
     ...(avatar ? [avatarParagraph(avatar, 150, 180)] : []),
     paragraph(run(resume.name || '姓名', { size: Math.round(metrics.name * 0.82), color: COLORS.white, bold: true }), { after: 35, line: metrics.bodyLine }),
@@ -749,17 +762,23 @@ function renderCanvaSidebar(resume: ResumeData, avatar?: AvatarAsset, theme?: Pa
   const mainChildren: Array<Paragraph | Table> = []
   for (const section of resume.sections) {
     mainChildren.push(heading(getSectionDisplayTitle(section) || section.title, metrics.accent, { size: metrics.section }))
-    mainChildren.push(...renderSectionBlocks(section, metrics))
+    // Main-column content has about 6158 twips after its 15 mm cell margins.
+    // Keep the date column on the same line instead of reusing the old
+    // full-page 7000/3206 twip split inside this narrower table cell.
+    mainChildren.push(...renderSectionBlocks(section, metrics, metrics.textColor, { headerColumnWidths: [4000, 2158] }))
   }
   const shell = new Table({
     width: { size: 100, type: WidthType.PERCENTAGE },
     layout: TableLayoutType.FIXED,
-    columnWidths: [3500, 6706],
+    // The table must consume the full A4 text width. The previous 3500/6706
+    // pair totaled only 10206 twips, leaving an unused right strip that made
+    // the main column much narrower than the HTML/PDF 34%/66% layout.
+    columnWidths: [4048, 7858],
     borders: NO_BORDERS,
     rows: [new TableRow({
       children: [
-        cell(sideChildren, { width: 35, shading: metrics.accent, margins: { top: 250, right: 170, bottom: 250, left: 170 } }),
-        cell(mainChildren, { width: 65, margins: { top: 180, right: 0, bottom: 180, left: 230 } }),
+        cell(sideChildren, { width: 34, shading: metrics.accent, margins: { top: verticalPadding, right: sidebarHorizontalPadding, bottom: verticalPadding, left: sidebarHorizontalPadding } }),
+        cell(mainChildren, { width: 66, margins: { top: verticalPadding, right: mainHorizontalPadding, bottom: verticalPadding, left: mainHorizontalPadding } }),
       ],
     })],
   })
