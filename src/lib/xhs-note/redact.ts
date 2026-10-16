@@ -6,6 +6,12 @@ const EMAIL = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g
 const ID_CARD = /\b\d{17}[\dXx]\b/g
 const WECHAT = /(?:微信|vx|v信|VX)\s*[:：]?\s*[A-Za-z0-9_-]{4,}/gi
 
+export interface RedactedResumeResult {
+  text: string
+  usable: boolean
+  roleHint: string
+}
+
 function scrub(value: string, personName = ''): string {
   let next = value
     .replace(/<[^>]+>/g, ' ')
@@ -46,10 +52,34 @@ function walk(value: unknown, key = '', personName = ''): unknown {
   return value
 }
 
-export function redactResume(resume: ResumeData): { text: string; usable: boolean } {
+function extractRoleHint(resume: ResumeData, personName: string): string {
+  const ctx = toResumeContext(resume)
+  const parts: string[] = []
+  if (ctx.jobIntention?.position) {
+    parts.push(`目标岗位：${scrub(ctx.jobIntention.position, personName)}`)
+  }
+  for (const sec of ctx.sections) {
+    for (const block of sec.blocks) {
+      if (block.meta?.position && parts.length < 2) {
+        parts.push(`经历岗位：${scrub(block.meta.position, personName)}`)
+      }
+      if (block.meta?.major && parts.length < 3) {
+        parts.push(`专业背景：${scrub(block.meta.major, personName)}`)
+      }
+    }
+  }
+  return parts.join('；')
+}
+
+export function redactResume(resume: ResumeData): RedactedResumeResult {
   const personName = typeof resume.name === 'string' ? resume.name.trim() : ''
   const redacted = walk(toResumeContext({ ...resume, name: '某同学' }), '', personName)
   const text = JSON.stringify(redacted)
   const material = text.replace(/某同学|某大厂|某211|某组织/g, '')
-  return { text, usable: material.replace(/\W/g, '').length >= 40 }
+  const roleHint = extractRoleHint(resume, personName)
+  return {
+    text,
+    usable: material.replace(/\W/g, '').length >= 40,
+    roleHint,
+  }
 }

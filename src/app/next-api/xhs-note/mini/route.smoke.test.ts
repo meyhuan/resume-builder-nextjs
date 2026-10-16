@@ -27,8 +27,8 @@ import { POST } from './route'
 function validPackage(code: string) {
   return {
     titles: ['简历改清楚', '应届简历避坑', '求职表达整理'],
-    body: '把经历写成动作、场景和结果，读起来会清楚很多。'.repeat(14)
-      + `想要同款模板：小程序搜「智简简历」，输入口令 ${code}`,
+    body: '把经历写成动作、场景和结果，做改前改后对照，读起来会清楚很多。'.repeat(14)
+      + '小程序搜「智简简历」，制作同款简历。',
     tags: ['智简简历', '简历模板', '求职', '简历修改', '应届生', '求职经验'],
     cover: { line1: '简历改清楚', line2: '把经历写成具体动作', badge: '简历改造' },
   }
@@ -45,9 +45,6 @@ describe('XHS mini API smoke flow', () => {
       content: { baseInfo: { name: '测试用户' }, experiences: [{ title: '项目经历', content: '完成项目' }] },
     })
     prisma.xhsNoteDraft.create.mockResolvedValue({ id: 'draft-1' })
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(
-      new Response(JSON.stringify({ data: { code: 'ABCD1234' } }), { status: 200 }),
-    ))
   })
 
   it('simulates topics then generate, retrying once before persisting a valid draft', async () => {
@@ -56,7 +53,7 @@ describe('XHS mini API smoke flow', () => {
       body: JSON.stringify({ wxId: 'wx-1', timestamp: Date.now(), sign: 'test', action: 'topics' }),
     }))
     expect(topics.status).toBe(200)
-    expect((await topics.json()).remaining).toBe(5)
+    expect((await topics.json()).remaining).toBeNull()
 
     generateText
       .mockResolvedValueOnce({ text: '{"titles":[]}' })
@@ -77,8 +74,8 @@ describe('XHS mini API smoke flow', () => {
 
     expect(response.status).toBe(200)
     const payload = await response.json()
-    expect(payload.inviteCode).toBe('ABCD1234')
-    expect(payload.remaining).toBe(4)
+    expect(payload.inviteCode).toBeUndefined()
+    expect(payload.remaining).toBeNull()
     expect(generateText).toHaveBeenCalledTimes(2)
     expect(prisma.xhsNoteDraft.create).toHaveBeenCalledTimes(1)
   })
