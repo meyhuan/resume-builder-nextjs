@@ -26,7 +26,7 @@ export const AI_THINKING_POLICY: Readonly<
   'jd-match': 'low',
   'interview-prep': 'low',
   chat: 'disabled',
-  'fact-check': 'low',
+  'fact-check': 'disabled',
 };
 
 export function resolveThinkingMode(
