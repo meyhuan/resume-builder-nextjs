@@ -1,7 +1,7 @@
 import { it, expect, vi } from 'vitest';
 vi.mock('@/lib/ai/provider', () => ({}));
 import { runAssistant, type JsonRunner } from './engine';
-import type { AssistantTask } from './types';
+import { KEEP_ORIGINAL_ANSWER, type AssistantTask } from './types';
 import type { ResumeData } from '@/entities/resume/resume-data';
 const resume = {
   id: 'r',
@@ -58,6 +58,40 @@ async function run(outputs: unknown[], text = '帮我润色', extra = {}) {
   });
   return { result, charge, runner };
 }
+it('keeps the source text without charging or generating another rewrite', async () => {
+  const charge = vi.fn();
+  const runner = vi.fn() as unknown as JsonRunner;
+  const result = await runAssistant({
+    task,
+    turns: [
+      {
+        text: '帮我润色',
+        answer: '',
+        questions: [
+          {
+            question: '请确认这段内容涉及的具体职责。',
+            options: [],
+            blockId: 'b',
+            originalText: '协助登记和发放物品。',
+            canKeepOriginal: true,
+          },
+        ],
+        proposals: [],
+      },
+    ],
+    text: `请确认这段内容涉及的具体职责。：${KEEP_ORIGINAL_ANSWER}`,
+    requestId: 'request',
+    resume,
+    run: runner,
+    charge,
+  });
+  expect(result.answer).toContain('已保留原文');
+  expect(result.answer).toContain('协助登记和发放物品');
+  expect(result.questions).toEqual([]);
+  expect(result.proposals).toEqual([]);
+  expect(charge).not.toHaveBeenCalled();
+  expect(runner).not.toHaveBeenCalled();
+});
 it('clarifies missing information for free and cannot leak proposed text', async () => {
   const { result, charge, runner } = await run([
     {

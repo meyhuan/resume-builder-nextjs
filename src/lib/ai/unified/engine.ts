@@ -18,6 +18,7 @@ import {
   type HistoryTurn,
   type CheckedProposal,
   type MessageSource,
+  KEEP_ORIGINAL_ANSWER,
 } from './types';
 import { confirmedStatements } from './followups';
 import {
@@ -254,6 +255,25 @@ export async function runAssistant(params: {
   const allBlocks = context.sections.flatMap((s) =>
     s.blocks.map((b) => ({ ...b, sectionTitle: s.title })),
   );
+  const keptQuestion = turns.at(-1)?.questions.find(
+    (question) =>
+      question.canKeepOriginal && text.includes(KEEP_ORIGINAL_ANSWER),
+  );
+  if (keptQuestion) {
+    return {
+      requestId: params.requestId,
+      text,
+      answer: keptQuestion.originalText
+        ? `已保留原文：${keptQuestion.originalText}`
+        : '已保留原文，本次不应用这条 AI 修改。',
+      questions: [],
+      proposals: [],
+      followups: [],
+      direct: false,
+      charged: false,
+      feature: task.feature,
+    };
+  }
   if (task.blockId && !allBlocks.some((b) => b.blockId === task.blockId))
     throw new Error('对应经历已删除，请重新选择');
   if (
@@ -573,19 +593,32 @@ export async function runAssistant(params: {
   for (const { proposal, target, numbers, key } of candidates) {
     const audit = auditByKey.get(key) ?? {
       safe: false,
-      questions: ['暂时无法完成事实核对，请确认这段经历的实际职责和成果。'],
+      questions: [
+        'AI 暂时无法确认这段改写是否完全基于原始经历。请补充真实职责或成果，或选择保留原文。',
+      ],
     };
     if (!audit.safe || numbers.length) {
       draft.questions.push(
         ...(audit.questions.length
           ? audit.questions
           : [
-              '请确认这段内容涉及的具体职责、能力或数字；目前的事实不足以支持此改写。',
+              'AI 暂时无法确认这段改写是否完全基于原始经历。请补充真实职责或成果，或选择保留原文。',
             ]
         ).map((question) => ({
           question,
           options: [],
-          ...(target ? { blockId: target.blockId } : {}),
+          canKeepOriginal: Boolean(target),
+          ...(target
+            ? {
+                blockId: target.blockId,
+                originalText: plainText(target.content),
+                inputHint: /成果|结果|提升|增长|效率|数字|数量|规模/.test(
+                  question,
+                )
+                  ? '补充一句真实结果即可，例如：完成了什么、带来什么变化；没有数字也可以。'
+                  : '补充一句真实职责即可，例如：你具体负责什么、完成了什么。',
+              }
+            : {}),
         })),
       );
       continue;

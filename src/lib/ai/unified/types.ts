@@ -24,7 +24,11 @@ export const questionSchema = z.object({
   question: z.string().min(1).max(300),
   blockId: z.string().max(100).optional(),
   options: z.array(z.string().max(100)).max(4).default([]),
+  originalText: z.string().max(12000).optional(),
+  inputHint: z.string().max(200).optional(),
+  canKeepOriginal: z.boolean().optional(),
 });
+export const KEEP_ORIGINAL_ANSWER = '保留原文（不应用这条 AI 修改）';
 export const draftSchema = z.object({
   answer: z.string().max(10000),
   reviewedBlockIds: z.array(z.string()).max(3200).default([]),

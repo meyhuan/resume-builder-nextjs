@@ -3,6 +3,7 @@
 import { Check, PencilLine } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import type { AssistantTurn } from '@/lib/ai/unified/types';
+import { KEEP_ORIGINAL_ANSWER } from '@/lib/ai/unified/types';
 import {
   questionReplyRange,
   updateQuestionReply,
@@ -54,6 +55,11 @@ export function UnifiedQuestions({
     ? questionReplyRange(draft, question.question, turn.questions).answer
     : draft.trim();
   const last = progress.index === turn.questions.length - 1;
+  const inputHint =
+    question.inputHint ||
+    (/成果|结果|提升|增长|效率|数字|数量|规模/.test(question.question)
+      ? '补充一句真实结果即可，例如：完成了什么、带来什么变化；没有数字也可以。'
+      : '补充一句真实职责即可，例如：你具体负责什么、完成了什么。');
   const control =
     'rounded-lg px-3 py-2 text-xs leading-5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-500 disabled:cursor-not-allowed disabled:opacity-40';
   return (
@@ -101,6 +107,14 @@ export function UnifiedQuestions({
         >
           {question.question}
         </p>
+        {question.originalText && (
+          <div className="rounded-lg border border-amber-200 bg-white/80 px-3 py-2 text-xs leading-5 text-slate-600">
+            <p className="mb-1 font-medium text-slate-500">当前原文</p>
+            <p className="max-h-28 overflow-y-auto whitespace-pre-wrap break-words">
+              {question.originalText}
+            </p>
+          </div>
+        )}
         <div className="flex flex-wrap gap-2">
           {question.options.map((option) => {
             const selected = answer === option && !!answer;
@@ -143,38 +157,59 @@ export function UnifiedQuestions({
             <PencilLine aria-hidden="true" className="h-3.5 w-3.5" />
             自己填写
           </button>
-          <button
-            type="button"
-            disabled={busy}
-            aria-pressed={answer === '暂不确定，请保留原有事实，不自行补全'}
-            className={`${control} border ${answer === '暂不确定，请保留原有事实，不自行补全' ? 'border-violet-500 bg-violet-50 text-violet-700' : 'border-slate-200 bg-white text-slate-600 hover:border-violet-300'}`}
-            onClick={() =>
-              onChange(
-                updateQuestionReply(
-                  draft,
-                  question.question,
-                  answer === '暂不确定，请保留原有事实，不自行补全'
-                    ? null
-                    : '暂不确定，请保留原有事实，不自行补全',
-                  turn.questions,
-                ),
-              )
-            }
-          >
-            暂不确定
-          </button>
+          {question.canKeepOriginal ? (
+            <button
+              type="button"
+              disabled={busy}
+              aria-pressed={answer === KEEP_ORIGINAL_ANSWER}
+              className={`${control} border ${answer === KEEP_ORIGINAL_ANSWER ? 'border-violet-500 bg-violet-50 text-violet-700' : 'border-slate-200 bg-white text-slate-600 hover:border-violet-300'}`}
+              onClick={() =>
+                onChange(
+                  updateQuestionReply(
+                    draft,
+                    question.question,
+                    answer === KEEP_ORIGINAL_ANSWER ? null : KEEP_ORIGINAL_ANSWER,
+                    turn.questions,
+                  ),
+                )
+              }
+            >
+              保留原文
+            </button>
+          ) : (
+            <button
+              type="button"
+              disabled={busy}
+              aria-pressed={answer === '暂不确定，请保留原有事实，不自行补全'}
+              className={`${control} border border-slate-200 bg-white text-slate-600 hover:border-violet-300`}
+              onClick={() =>
+                onChange(
+                  updateQuestionReply(
+                    draft,
+                    question.question,
+                    answer === '暂不确定，请保留原有事实，不自行补全'
+                      ? null
+                      : '暂不确定，请保留原有事实，不自行补全',
+                    turn.questions,
+                  ),
+                )
+              }
+            >
+              暂不确定
+            </button>
+          )}
         </div>
         {customIndex === progress.index && (
           <label className="block space-y-1 text-xs text-slate-600">
-            <span>你的回答</span>
+            <span>补充一句即可</span>
             <textarea
               ref={customInput}
               autoFocus
               aria-label="你的回答"
               disabled={busy}
-              rows={3}
+              rows={2}
               className="block w-full resize-y rounded-lg border border-violet-300 bg-white p-3 text-sm leading-6 text-slate-800 outline-none focus:ring-2 focus:ring-violet-500 disabled:opacity-50"
-              placeholder="用自己的话描述，不确定的地方也可以说明…"
+              placeholder={inputHint}
               value={answer}
               onChange={(e) =>
                 onChange(
