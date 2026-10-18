@@ -1,0 +1,413 @@
+{
+  "version": "usage-2026-10-18",
+  "start": "2026-10-13T09:22:36.930Z",
+  "end": "2026-10-18T09:22:36.930Z",
+  "metric": "Distinct users of resumes updated within the window, grouped by current template; ties use resume count, then existing order. Not active-selection preference.",
+  "rows": [
+    {
+      "template": "simple",
+      "records": 1275,
+      "users": 905
+    },
+    {
+      "template": "elegant",
+      "records": 319,
+      "users": 270
+    },
+    {
+      "template": "lanying",
+      "records": 111,
+      "users": 100
+    },
+    {
+      "template": "timeline",
+      "records": 82,
+      "users": 76
+    },
+    {
+      "template": "lanfa",
+      "records": 67,
+      "users": 64
+    },
+    {
+      "template": "xinghe",
+      "records": 56,
+      "users": 45
+    },
+    {
+      "template": "heijiao",
+      "records": 50,
+      "users": 45
+    },
+    {
+      "template": "lanzhe",
+      "records": 45,
+      "users": 42
+    },
+    {
+      "template": "hengjian",
+      "records": 42,
+      "users": 41
+    },
+    {
+      "template": "yiyetong",
+      "records": 62,
+      "users": 39
+    },
+    {
+      "template": "jijian",
+      "records": 41,
+      "users": 39
+    },
+    {
+      "template": "warm",
+      "records": 40,
+      "users": 37
+    },
+    {
+      "template": "tablegrid",
+      "records": 44,
+      "users": 36
+    },
+    {
+      "template": "jinshu",
+      "records": 33,
+      "users": 32
+    },
+    {
+      "template": "lifeng",
+      "records": 33,
+      "users": 27
+    },
+    {
+      "template": "qingning",
+      "records": 21,
+      "users": 19
+    },
+    {
+      "template": "lanzix",
+      "records": 20,
+      "users": 19
+    },
+    {
+      "template": "liuguang",
+      "records": 19,
+      "users": 19
+    },
+    {
+      "template": "yuanshan",
+      "records": 17,
+      "users": 16
+    },
+    {
+      "template": "lanjiao",
+      "records": 15,
+      "users": 15
+    },
+    {
+      "template": "qianyao",
+      "records": 16,
+      "users": 13
+    },
+    {
+      "template": "jilan",
+      "records": 15,
+      "users": 13
+    },
+    {
+      "template": "dense",
+      "records": 15,
+      "users": 13
+    },
+    {
+      "template": "guanlan",
+      "records": 12,
+      "users": 12
+    },
+    {
+      "template": "qingsui",
+      "records": 12,
+      "users": 12
+    },
+    {
+      "template": "mingxu",
+      "records": 12,
+      "users": 11
+    },
+    {
+      "template": "jiagoushi",
+      "records": 10,
+      "users": 9
+    },
+    {
+      "template": "chujian",
+      "records": 9,
+      "users": 9
+    },
+    {
+      "template": "qiance",
+      "records": 10,
+      "users": 8
+    },
+    {
+      "template": "yunbai",
+      "records": 8,
+      "users": 7
+    },
+    {
+      "template": "zhanxu",
+      "records": 7,
+      "users": 7
+    },
+    {
+      "template": "jinhang",
+      "records": 7,
+      "users": 7
+    },
+    {
+      "template": "qinglan",
+      "records": 6,
+      "users": 6
+    },
+    {
+      "template": "chunzhao",
+      "records": 4,
+      "users": 4
+    },
+    {
+      "template": "zhangxu",
+      "records": 4,
+      "users": 4
+    },
+    {
+      "template": "qicheng",
+      "records": 4,
+      "users": 4
+    },
+    {
+      "template": "jingying",
+      "records": 3,
+      "users": 3
+    },
+    {
+      "template": "fenzhi",
+      "records": 3,
+      "users": 3
+    },
+    {
+      "template": "lanhe",
+      "records": 3,
+      "users": 3
+    },
+    {
+      "template": "falan",
+      "records": 3,
+      "users": 3
+    },
+    {
+      "template": "yuhe",
+      "records": 3,
+      "users": 3
+    },
+    {
+      "template": "yinxing",
+      "records": 3,
+      "users": 3
+    },
+    {
+      "template": "xiaoyuanlan",
+      "records": 3,
+      "users": 3
+    },
+    {
+      "template": "wenhe",
+      "records": 3,
+      "users": 3
+    },
+    {
+      "template": "sulan",
+      "records": 3,
+      "users": 3
+    },
+    {
+      "template": "jingjian",
+      "records": 3,
+      "users": 3
+    },
+    {
+      "template": "qingyu",
+      "records": 3,
+      "users": 2
+    },
+    {
+      "template": "xinkai",
+      "records": 3,
+      "users": 2
+    },
+    {
+      "template": "baijiao",
+      "records": 2,
+      "users": 2
+    },
+    {
+      "template": "zhumo",
+      "records": 2,
+      "users": 2
+    },
+    {
+      "template": "mujian",
+      "records": 2,
+      "users": 2
+    },
+    {
+      "template": "ziji",
+      "records": 2,
+      "users": 2
+    },
+    {
+      "template": "xiaoshou",
+      "records": 2,
+      "users": 2
+    },
+    {
+      "template": "zijiao",
+      "records": 2,
+      "users": 2
+    },
+    {
+      "template": "xingmiao",
+      "records": 2,
+      "users": 2
+    },
+    {
+      "template": "huichen",
+      "records": 2,
+      "users": 2
+    },
+    {
+      "template": "shujuliu",
+      "records": 2,
+      "users": 2
+    },
+    {
+      "template": "qinghe",
+      "records": 2,
+      "users": 2
+    },
+    {
+      "template": "lanhui",
+      "records": 2,
+      "users": 2
+    },
+    {
+      "template": "fawujian",
+      "records": 2,
+      "users": 2
+    },
+    {
+      "template": "lanjing",
+      "records": 2,
+      "users": 2
+    },
+    {
+      "template": "shangfeng",
+      "records": 2,
+      "users": 1
+    },
+    {
+      "template": "changcheng",
+      "records": 2,
+      "users": 1
+    },
+    {
+      "template": "baolv",
+      "records": 1,
+      "users": 1
+    },
+    {
+      "template": "caiwulan",
+      "records": 1,
+      "users": 1
+    },
+    {
+      "template": "heiyao",
+      "records": 1,
+      "users": 1
+    },
+    {
+      "template": "hongjian",
+      "records": 1,
+      "users": 1
+    },
+    {
+      "template": "huigui",
+      "records": 1,
+      "users": 1
+    },
+    {
+      "template": "jikebai",
+      "records": 1,
+      "users": 1
+    },
+    {
+      "template": "lanmu",
+      "records": 1,
+      "users": 1
+    },
+    {
+      "template": "lvxin",
+      "records": 1,
+      "users": 1
+    },
+    {
+      "template": "mashang",
+      "records": 1,
+      "users": 1
+    },
+    {
+      "template": "mihuang",
+      "records": 1,
+      "users": 1
+    },
+    {
+      "template": "moxu",
+      "records": 1,
+      "users": 1
+    },
+    {
+      "template": "qihang",
+      "records": 1,
+      "users": 1
+    },
+    {
+      "template": "qingyun",
+      "records": 1,
+      "users": 1
+    },
+    {
+      "template": "shanglan",
+      "records": 1,
+      "users": 1
+    },
+    {
+      "template": "shuanglan",
+      "records": 1,
+      "users": 1
+    },
+    {
+      "template": "weizhi",
+      "records": 1,
+      "users": 1
+    },
+    {
+      "template": "zicui",
+      "records": 1,
+      "users": 1
+    },
+    {
+      "template": "zixunhui",
+      "records": 1,
+      "users": 1
+    }
+  ]
+}

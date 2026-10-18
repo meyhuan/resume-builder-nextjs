@@ -3,6 +3,7 @@
  * 每个模板会被打包成独立的chunk，按需加载
  */
 import { lazy, type ComponentType } from 'react'
+import { sortTemplatesByUsage } from '@/lib/templates/template-order'
 import { TEMPLATE_METADATA, type TemplateMetadata } from '@/lib/templates/template-metadata'
 import type { ResumeData } from '@/entities/resume/resume-data'
 import type { ThemeTokens } from '@/entities/theme/theme-tokens'
@@ -634,7 +635,7 @@ export function getAllTemplates(): TemplateConfig[] {
 
 /** User-facing choices share the public catalog; hidden templates remain loadable by ID. */
 export function getPublicTemplates(): TemplateConfig[] {
-  return Object.values(TEMPLATE_REGISTRY).filter((template) => template.visibility.editor && template.visibility.catalog)
+  return sortTemplatesByUsage(Object.values(TEMPLATE_REGISTRY).filter((template) => template.visibility.editor && template.visibility.catalog))
 }
 
 /**

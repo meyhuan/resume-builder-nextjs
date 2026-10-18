@@ -6,7 +6,6 @@ import { useTemplateImpressions } from "@/components/templates/use-template-impr
 import Link from "next/link";
 import { templateCatalog } from "@/lib/templates/template-catalog";
 import { TemplateCover } from "@/components/templates/template-cover";
-import type { TemplateMetadata as TemplateConfig } from "@/lib/templates/template-metadata";
 import { templateLabels } from "@/lib/templates/template-taxonomy";
 import {
   ArrowRight,
@@ -26,16 +25,7 @@ interface TemplatesSectionProps {
   id?: string;
 }
 
-const FEATURED_TEMPLATE_IDS = [
-  "qingsui",
-  "lifeng",
-  "xinghe",
-  "hengjian",
-  "yuanshan",
-  "yiyetong",
-  "ziji",
-  "simple",
-] as const;
+const featuredTemplates = templateCatalog.slice(0, 8);
 
 const TEMPLATE_SCENES: Record<string, string> = {
   qingsui: "校招 / 应届",
@@ -63,26 +53,10 @@ const TEMPLATE_HIGHLIGHTS = [
   },
 ];
 
-function getFeaturedTemplates(
-  templates: readonly TemplateConfig[],
-): TemplateConfig[] {
-  const templateMap = new Map(
-    templates.map((template) => [template.id, template]),
-  );
-  const featuredTemplates = FEATURED_TEMPLATE_IDS.map((id) =>
-    templateMap.get(id),
-  ).filter((template): template is TemplateConfig => Boolean(template));
-
-  return featuredTemplates.length > 0
-    ? featuredTemplates
-    : templates.slice(0, 8);
-}
-
 export const LandingTemplates = ({ id }: TemplatesSectionProps) => {
   const templates = templateCatalog;
-  const featuredTemplates = getFeaturedTemplates(templates);
   const railRef = React.useRef<HTMLDivElement>(null);
-  useTemplateImpressions(railRef, FEATURED_TEMPLATE_IDS.join(","), "landing_featured");
+  useTemplateImpressions(railRef, featuredTemplates.map(template => template.id).join(","), "landing_featured");
   const [scrollState, setScrollState] = React.useState({
     canScrollLeft: false,
     canScrollRight: false,
