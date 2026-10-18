@@ -26,6 +26,7 @@ import { useInMiniProgram } from '../_components/use-mini-program'
 import { useMiniProgramCapabilities } from '../_components/use-mini-program-capabilities'
 import { BottomActionBar } from './_components/bottom-action-bar'
 import { PortfolioAppendix } from '@/components/portfolio/portfolio-appendix'
+import { scanResumePlaceholders } from '@/lib/resume/placeholder-scan'
 import {
   ONE_PAGE_BADGE_STYLES,
   PreviewSettingsSheet,
@@ -680,6 +681,13 @@ export default function MobilePreviewClient(): ReactElement {
       if (type !== 'markdown' && onePageFit && onePageStatus === 'overflow') {
         toast.error('当前内容无法完整放入一页，请精简内容或关闭单页模式')
         return
+      }
+
+      if (resume) {
+        const scan = scanResumePlaceholders(resume)
+        if (scan.hasPlaceholders) {
+          toast.warning(`简历中尚有 ${scan.count} 处 [X] 待填数据，请注意核对`)
+        }
       }
 
       await syncPreviewState(targetResumeId)

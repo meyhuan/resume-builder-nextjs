@@ -25,10 +25,17 @@ describe('single-turn authorization', () => {
     (text) => expect(explicitlyDirect(text)).toBe(true),
   );
 });
-it('detects unsupported numbers and percentages', () =>
+it('detects unsupported numbers and percentages while allowing [X]% placeholders', () => {
   expect(
     numericAdditions('协助处理10份材料', '主导处理100份材料，效率提高20%'),
-  ).toEqual(['100', '20%']));
+  ).toEqual(['100', '20%']);
+  expect(
+    numericAdditions(
+      '负责Android端性能分析与优化',
+      '<li><strong>性能与兼容性优化：</strong>覆盖[X]+款主流机型，推动核心场景崩溃率降低[X]%</li>',
+    ),
+  ).toEqual([]);
+});
 it('requires a block for module tasks', () =>
   expect(
     taskSchema.safeParse({

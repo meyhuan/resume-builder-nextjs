@@ -7,6 +7,8 @@ import type {
   PolishLevel,
 } from '@/lib/ai/section-types';
 
+import type { MissingFact } from '@/lib/ai/unified/types';
+
 export interface PolishSectionParams {
   readonly content: string;
   readonly identity: SectionIdentity;
@@ -20,6 +22,7 @@ export interface PolishSectionParams {
 export interface PolishSectionState {
   readonly isPolishing: boolean;
   readonly streamedHtml: string;
+  readonly missingFacts: MissingFact[];
   readonly error: string | null;
 }
 
@@ -38,6 +41,7 @@ export type UsePolishSectionReturn = PolishSectionState & PolishSectionActions;
 export function usePolishSection(): UsePolishSectionReturn {
   const [isPolishing, setIsPolishing] = useState<boolean>(false);
   const [streamedHtml, setStreamedHtml] = useState<string>('');
+  const [missingFacts, setMissingFacts] = useState<MissingFact[]>([]);
   const [error, setError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
@@ -52,6 +56,7 @@ export function usePolishSection(): UsePolishSectionReturn {
   const reset = useCallback((): void => {
     abort();
     setStreamedHtml('');
+    setMissingFacts([]);
     setError(null);
   }, [abort]);
 
@@ -103,13 +108,25 @@ export function usePolishSection(): UsePolishSectionReturn {
             if (payload === '[DONE]') continue;
 
             try {
-              const parsed: { content?: string; error?: string } = JSON.parse(payload);
+              const parsed: {
+                content?: string;
+                replaceHtml?: string;
+                missingFacts?: MissingFact[];
+                error?: string;
+              } = JSON.parse(payload);
               if (parsed.error) {
                 throw new Error(parsed.error);
               }
               if (parsed.content) {
                 accumulated += parsed.content;
                 setStreamedHtml(accumulated);
+              }
+              if (typeof parsed.replaceHtml === 'string') {
+                accumulated = parsed.replaceHtml;
+                setStreamedHtml(accumulated);
+              }
+              if (Array.isArray(parsed.missingFacts)) {
+                setMissingFacts(parsed.missingFacts);
               }
             } catch (parseErr) {
               if (parseErr instanceof Error && parseErr.message !== payload) {
@@ -135,5 +152,5 @@ export function usePolishSection(): UsePolishSectionReturn {
     [reset],
   );
 
-  return { isPolishing, streamedHtml, error, polish, abort, reset };
+  return { isPolishing, streamedHtml, missingFacts, error, polish, abort, reset };
 }

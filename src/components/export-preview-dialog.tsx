@@ -24,6 +24,7 @@ interface ExportPreviewDialogProps {
   readonly remainingQuota?: number | 'unlimited'
   readonly isVip?: boolean
   readonly isConfirming?: boolean
+  readonly placeholderCount?: number
 }
 
 export default function ExportPreviewDialog({
@@ -38,6 +39,7 @@ export default function ExportPreviewDialog({
   remainingQuota,
   isVip,
   isConfirming,
+  placeholderCount,
 }: ExportPreviewDialogProps): ReactElement {
   const isQuotaDepleted = !isVip && remainingQuota === 0
   const showLowQuotaWarning = !isVip && typeof remainingQuota === 'number' && remainingQuota <= 1
@@ -69,6 +71,12 @@ export default function ExportPreviewDialog({
           <DialogDescription className="text-xs text-slate-400 mt-1">
             {pdfPageCount != null ? `实际 PDF 共 ${pdfPageCount} 页，确认无误后继续导出` : '以下为实际生成的 PDF，确认无误后继续导出'}
           </DialogDescription>
+          {placeholderCount && placeholderCount > 0 ? (
+            <div className="mt-2 flex items-center gap-1.5 rounded-md border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-xs text-amber-800">
+              <AlertCircle className="h-3.5 w-3.5 shrink-0 text-amber-600" />
+              <span>简历中尚有 <strong>{placeholderCount}</strong> 处 [X] 待填数据，请确认是否已核对后再投递。</span>
+            </div>
+          ) : null}
         </DialogHeader>
 
         <div className="flex-1 overflow-hidden">

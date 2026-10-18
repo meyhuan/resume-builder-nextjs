@@ -43,21 +43,21 @@ export const POLISH_LEVEL_OPTIONS: readonly PolishLevelOption[] = [
     label: '基础纠错',
     description: '修正错别字与语病，保持原文原意',
     exampleBefore: '我做了一个活动，带了100个用户',
-    exampleAfter: '我策划了一场线上活动，吸引了100名用户参与。',
+    exampleAfter: '负责策划线上活动，累计吸引100名用户参与。',
   },
   {
     id: 'professional',
     label: '专业表达',
-    description: '转化为职场术语，增强专业度',
+    description: '转化为职场术语，展开完整工作流（数据待您确认）',
     exampleBefore: '给老板写PPT，总结了上个月的数据',
-    exampleAfter: '负责部门月度经营数据的整理与分析，产出复盘报告。',
+    exampleAfter: '数据复盘汇报：负责部门月度经营数据归集与多维分析，输出可视化复盘报告，支撑业务决策。',
   },
   {
     id: 'jd-match',
     label: 'JD匹配',
     description: '贴合目标岗位JD，突出相关能力',
-    exampleBefore: '负责小红书账号运营，涨粉500',
-    exampleAfter: '【JD：需具备内容网感】独立负责小红书矩阵运营，网感敏锐，实现粉丝数净增500+。',
+    exampleBefore: '负责小红书账号运营，发日常笔记',
+    exampleAfter: '内容矩阵运营：负责小红书官方账号选题策划与图文排版发布，累计产出原创笔记 [X] 篇。',
   },
 ] as const;
 
@@ -67,11 +67,15 @@ export const POLISH_LEVEL_OPTIONS: readonly PolishLevelOption[] = [
 
 /** Resume module types that support AI polish/generation. */
 export type SectionModuleType =
+  | 'education'
   | 'experience'
+  | 'internship'
   | 'project'
   | 'campus'
   | 'self-evaluation'
-  | 'skills';
+  | 'skills'
+  | 'honors'
+  | 'generic';
 
 export interface SectionModuleOption {
   readonly id: SectionModuleType;
@@ -79,7 +83,9 @@ export interface SectionModuleOption {
 }
 
 export const SECTION_MODULE_OPTIONS: readonly SectionModuleOption[] = [
+  { id: 'education', label: '教育背景' },
   { id: 'experience', label: '工作经历' },
+  { id: 'internship', label: '实习经历' },
   { id: 'project', label: '项目经历' },
   { id: 'campus', label: '校园经历' },
   { id: 'self-evaluation', label: '自我评价' },
@@ -112,15 +118,15 @@ export const JOB_CATEGORY_OPTIONS: readonly JobCategoryOption[] = [
 
 /** Allowed action verbs per identity to enforce tone compliance. */
 export const ACTION_VERB_WHITELIST: Record<SectionIdentity, readonly string[]> = {
-  student: ['协助', '参与', '执行', '配合', '整理', '落地', '学习', '支持', '完成', '记录'],
-  graduate: ['独立负责', '落地', '优化', '推动', '搭建', '参与', '执行', '复盘', '梳理', '整理'],
-  professional: ['主导', '统筹', '搭建', '优化', '推动', '攻克', '落地', '负责', '复盘', '策划'],
+  student: ['协助', '参与', '执行', '配合', '整理', '完成', '支持', '核对', '记录', '跟进'],
+  graduate: ['负责', '参与', '协助', '执行', '完成', '跟进', '梳理', '整理', '配合', '核验'],
+  professional: ['负责', '推进', '搭建', '优化', '执行', '落地', '梳理', '协同', '跟进', '复盘'],
 } as const;
 
 /** Forbidden action verbs per identity to prevent tone escalation. */
 export const ACTION_VERB_BLACKLIST: Record<SectionIdentity, readonly string[]> = {
   student: ['主导', '统筹', '全链路负责', '核心决策', '操盘', '战略'],
-  graduate: ['操盘', '核心战略制定', '公司级决策'],
+  graduate: ['主导', '操盘', '核心战略制定', '公司级决策'],
   professional: ['非自身负责的公司级成果'],
 } as const;
 

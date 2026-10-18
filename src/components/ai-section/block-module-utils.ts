@@ -11,6 +11,8 @@ import type { SectionModuleType } from '@/lib/ai/section-types';
  */
 export function blockTypeToModuleType(blockType: string): SectionModuleType | undefined {
   switch (blockType) {
+    case 'education':
+      return 'education';
     case 'experience':
       return 'experience';
     case 'project':

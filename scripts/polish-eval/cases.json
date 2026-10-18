@@ -1,0 +1,111 @@
+{
+  "version": 1,
+  "description": "Resume AI polishing eval set covering all modules with deterministic rules and WPS comparison benchmarks.",
+  "cases": [
+    {
+      "id": "android-lenovo",
+      "moduleKind": "experience",
+      "identity": "professional",
+      "label": "联想 Android 客户端（原题对比用例）",
+      "content": "• 参与公司级核心项目超级互联的多端开发工作\n• 负责 Android 端架构的搭建，UI/UX 功能实现\n• 负责 Android 端性能分析和优化，如 ANR，OOM，卡顿，兼容性适配等\n• 参与多端通信协议和数据结构制定\n• 核心项目参与：参与公司级核心项目超级互联的多端开发工作，协同跨端团队保障功能落地\n• Android端架构与UI实现：协助完成Android端架构搭建，执行UI/UX功能开发与适配，保障界面交互流畅性\n• 性能优化与兼容性保障：执行Android端性能分析与优化（含ANR、OOM、卡顿问题），完成多机型兼容性适配，有效提升用户体验\n• 多端通信支持：协同制定多端通信协议与数据结构，为跨端功能协同提供技术支持",
+      "wpsReference": "- 核心项目参与：参与公司级核心项目「超级互联」的多端开发工作，协同iOS、PC端等跨部门研发团队，按项目里程碑推进需求落地，保障多端功能一致性。\n- Android端架构与UI实现：协助 senior 工程师完成Android端分层架构搭建，执行UI/UX全量功能开发与不同分辨率屏幕适配，严格遵循交互设计规范，保障界面操作响应流畅度达标。\n- 性能优化与兼容性适配：依托Profiler、LeakCanary等工具执行Android端性能专项分析，完成ANR、OOM、页面卡顿等问题定位与修复，覆盖X+款不同品牌、系统版本机型的兼容性适配，推动应用核心场景稳定性提升X%，有效降低用户反馈问题率。\n- 多端通信协同：参与跨端通信协议与统一数据结构的讨论制定，输出Android侧技术适配方案，为多端数据同步、指令互通提供底层技术支撑。",
+      "mustKeep": ["负责", "参与", "ANR", "OOM", "超级互联"],
+      "forbiddenL3": ["LeakCanary", "Profiler", "MVVM", "MVP", "组件化", "senior"],
+      "forbiddenRoleShift": ["协助 senior", "主导", "统筹"],
+      "maxPlaceholders": 2,
+      "bulletLen": [35, 80],
+      "genericEndings": ["提升用户体验", "提供技术支持", "保障功能落地"]
+    },
+    {
+      "id": "frontend-react",
+      "moduleKind": "project",
+      "identity": "professional",
+      "label": "前端 React 项目开发",
+      "content": "负责公司电商大促活动系统的前端开发，技术栈使用 React、TypeScript 和 Next.js，完成优惠券领取、秒杀列表等页面的开发与联调，解决高并发下的状态同步问题。",
+      "mustKeep": ["React", "TypeScript", "Next.js", "优惠券", "秒杀"],
+      "forbiddenL3": ["Redux", "Zustand", "Vue", "Webpack", "Vite", "Docker", "Kubernetes"],
+      "forbiddenRoleShift": ["主导", "架构师"],
+      "maxPlaceholders": 2,
+      "bulletLen": [35, 80],
+      "genericEndings": ["提升用户体验", "提供技术支持", "保障功能落地"]
+    },
+    {
+      "id": "ops-wechat",
+      "moduleKind": "experience",
+      "identity": "graduate",
+      "label": "新媒体微信运营",
+      "content": "负责公司微信公众号的日常排版与内容发布，每周更新2-3篇行业资讯与活动推送；跟进粉丝后台留言与互动；制作月度阅读量与增粉数据复盘表格。",
+      "mustKeep": ["公众号", "排版", "发布", "留言", "复盘"],
+      "forbiddenL3": ["小红书", "抖音", "快手", "SEO", "投放", "千川", "SEM"],
+      "forbiddenRoleShift": ["主导", "操盘", "总监"],
+      "maxPlaceholders": 2,
+      "bulletLen": [35, 75],
+      "genericEndings": ["助力业务发展", "提升用户体验"]
+    },
+    {
+      "id": "admin-reimburse",
+      "moduleKind": "experience",
+      "identity": "professional",
+      "label": "行政财务初审",
+      "content": "负责部门日常差旅与采购费用报销初审，核对发票及报销单据合规性；维护月度费用台账并对接财务部门流转；负责办公用品采购与固定资产盘点登记。",
+      "mustKeep": ["报销", "初审", "台账", "财务", "盘点"],
+      "forbiddenL3": ["ERP", "SAP", "用友", "金蝶", "Oracle"],
+      "forbiddenRoleShift": ["主导", "主管"],
+      "maxPlaceholders": 1,
+      "bulletLen": [30, 70],
+      "genericEndings": ["提供有力支持", "保障平稳运行"]
+    },
+    {
+      "id": "intern-product",
+      "moduleKind": "internship",
+      "identity": "student",
+      "label": "产品运营实习生",
+      "content": "作为产品实习生，协助导师收集竞品功能更新动态，参与3次用户需求访谈并整理原始访谈记录；协助撰写部分后台管理功能的产品需求文档（PRD）。",
+      "mustKeep": ["协助", "参与", "竞品", "访谈", "PRD"],
+      "forbiddenL3": ["Axure", "Figma", "Sketch", "独立负责", "主导"],
+      "forbiddenRoleShift": ["主导", "全链路负责", "独立完成产品规划"],
+      "maxPlaceholders": 1,
+      "bulletLen": [30, 65],
+      "genericEndings": ["保障功能落地", "提升用户体验"]
+    },
+    {
+      "id": "campus-activity",
+      "moduleKind": "campus",
+      "identity": "student",
+      "label": "校园社团迎新活动",
+      "content": "在校学生会宣传部担任干事，参与迎新晚会的前期宣传物资清点与分发；活动当天负责现场来宾签到登记与座位引导，配合团队维持入场秩序。",
+      "mustKeep": ["宣传", "物资", "签到", "配合"],
+      "forbiddenL3": ["部长", "主席", "赞助商", "万元资金"],
+      "forbiddenRoleShift": ["统筹全校", "独立策划晚会"],
+      "maxPlaceholders": 1,
+      "bulletLen": [30, 65],
+      "genericEndings": ["提供技术支持"]
+    },
+    {
+      "id": "self-evaluation-tech",
+      "moduleKind": "self-evaluation",
+      "identity": "professional",
+      "label": "3年 Android 工程师自我评价",
+      "content": "3年Android客户端开发经验，擅长性能调优和多端通信，做过架构搭建，想找一份高级Android开发工作。",
+      "mustKeep": ["Android", "性能", "开发"],
+      "forbiddenL3": ["精通", "架构师", "管理经验"],
+      "forbiddenRoleShift": [],
+      "maxPlaceholders": 0,
+      "bulletLen": [50, 160],
+      "genericEndings": ["吃苦耐劳", "热爱学习", "抗压能力强", "性格开朗"]
+    },
+    {
+      "id": "skills-android",
+      "moduleKind": "skills",
+      "identity": "professional",
+      "label": "Android 技能清单整理",
+      "content": "Java, Kotlin, Android SDK, 性能优化(ANR/OOM), Git, 多端通信",
+      "mustKeep": ["Java", "Kotlin", "Android", "Git"],
+      "forbiddenL3": ["C++", "Flutter", "React Native", "Swift", "iOS", "Go", "Python", "Rust"],
+      "forbiddenRoleShift": [],
+      "maxPlaceholders": 0,
+      "bulletLen": [10, 80],
+      "genericEndings": []
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 import { it, expect, vi } from 'vitest';
 vi.mock('@/lib/ai/provider', () => ({}));
 import { runAssistant, type JsonRunner } from './engine';
-import { KEEP_ORIGINAL_ANSWER, type AssistantTask } from './types';
+import { KEEP_ORIGINAL_ANSWER, type AssistantTask, type DraftAnswer } from './types';
 import type { ResumeData } from '@/entities/resume/resume-data';
 const resume = {
   id: 'r',
@@ -41,6 +41,71 @@ const draft = {
   ],
   followups: ['这段还能再精简一点吗？'],
 };
+const confirmationHistory = [{
+  text: '我不知道怎么写，请引导我', answer: '', proposals: [],
+  questions: [{ question: '请确认实际职责', options: [], blockId: 'b', canKeepOriginal: true }],
+}];
+it('routes a submitted confirmation to its target and produces a checked modification', async () => {
+  const { result, runner } = await run([
+    draft, { safe: true, questions: [] },
+  ], '请确认实际职责：没有这项经历，请仅基于原文润色', {
+    task: { ...task, feature: 'chat', blockId: undefined, entry: 'assistant' },
+    turns: confirmationHistory,
+  });
+  expect(result.questions).toEqual([]);
+  expect(result.proposals).toHaveLength(1);
+  const input = JSON.parse(vi.mocked(runner).mock.calls[0][1]);
+  expect(input.resolvedPlan.targets).toEqual(['b']);
+});
+it('repairs rejected content once after confirmation without charging again', async () => {
+  const { result, charge, runner } = await run([
+    { ...draft, proposals: [{ action: 'updateBlock', blockId: 'b', html: '<p>主导会员运营。</p>' }] },
+    { safe: false, questions: ['篡改职业职责'] },
+    draft, { safe: true, questions: [] },
+  ], '请确认实际职责：是的，符合我的真实经历', { turns: confirmationHistory });
+  expect(result.questions).toEqual([]);
+  expect(result.proposals[0]).toMatchObject({ html: draft.proposals[0].html, factChecked: true });
+  expect(charge).toHaveBeenCalledTimes(1);
+  expect(runner).toHaveBeenCalledTimes(4);
+});
+it('ends repeated failed fact checks instead of asking the same question again', async () => {
+  const { result, runner } = await run([
+    draft, { safe: false, questions: [] },
+    draft, { safe: false, questions: [] },
+  ], '请确认实际职责：没有这项经历，请仅基于原文润色', { turns: confirmationHistory });
+  expect(result.questions).toEqual([]);
+  expect(result.proposals).toEqual([]);
+  expect(result.answer).toContain('已保留原文');
+  expect(runner).toHaveBeenCalledTimes(4);
+});
+it('repairs a fact-checked proposal that merely repeats the original after answers', async () => {
+  const { result, runner } = await run([
+    { ...draft, proposals: [{ action: 'updateBlock', blockId: 'b', html: '<p>协助登记和发放物品。</p>' }] },
+    { safe: true, questions: [] },
+    draft, { safe: true, questions: [] },
+  ], '请确认实际职责：协助登记和发放物品', { turns: confirmationHistory });
+  expect(result.questions).toEqual([]);
+  expect(result.proposals[0]).toMatchObject({ html: draft.proposals[0].html });
+  expect(runner).toHaveBeenCalledTimes(4);
+});
+it('does not present an unchanged repair as an applicable modification', async () => {
+  const unchanged = { ...draft, proposals: [{ action: 'updateBlock', blockId: 'b', html: '<p>协助登记和发放物品。</p>' }] };
+  const { result } = await run([
+    unchanged, { safe: true, questions: [] },
+    unchanged, { safe: true, questions: [] },
+  ], '请确认实际职责：协助登记和发放物品', { turns: confirmationHistory });
+  expect(result.questions).toEqual([]);
+  expect(result.proposals).toEqual([]);
+  expect(result.answer).toContain('已保留原文');
+});
+it('does not repeat model-generated questions after the user submits answers', async () => {
+  const { result } = await run([
+    { ...draft, questions: [{ question: '请再次确认', options: [] }] },
+  ], '请确认实际职责：协助登记物品', { turns: confirmationHistory });
+  expect(result.questions).toEqual([]);
+  expect(result.proposals).toEqual([]);
+  expect(result.answer).toContain('已保留原文');
+});
 async function run(outputs: unknown[], text = '帮我润色', extra = {}) {
   const charge = vi.fn();
   const runner = vi.fn(async (_s, _p, schema) =>
@@ -494,4 +559,48 @@ it('a question after a whole-resume task stays an answer, not another full rewri
   expect(result.scope).toBeUndefined();
   expect(result.answer).toBe('本轮只调整表达。');
   expect(result.proposals).toEqual([]);
+});
+it('charges each whole-resume continuation request once regardless of browser history', async () => {
+  const nextDraft: DraftAnswer = {
+    answer: '已优化第 2 项模块',
+    questions: [],
+    proposals: [
+      {
+        action: 'updateBlock',
+        blockId: 'c',
+        html: '<p>整理校园活动物资</p>',
+        reason: '表达更清晰',
+      },
+    ],
+    reviewedBlockIds: ['c'],
+    missingFacts: [],
+    followups: [],
+  };
+  const { result, charge, runner } = await run(
+    [plan, nextDraft, { safe: true }],
+    '请继续优化整份简历的下一个模块：「经历 2」（blockId=c）。直接基于现有内容润色输出，不要提问。',
+    {
+      task: { ...globalTask, scope: 'resume' },
+      resume: multiResume,
+      turns: [
+        {
+          text: '优化整份简历',
+          answer: '已优化第 1 项',
+          questions: [],
+          proposals: draft.proposals,
+          reviewedBlockIds: ['b'],
+        },
+      ],
+    },
+  );
+  expect(charge).toHaveBeenCalledTimes(1);
+  expect(result.charged).toBe(true);
+  expect(result.proposals).toHaveLength(1);
+  expect(result.proposals[0]).toMatchObject({ blockId: 'c' });
+  expect(result.coverage).toEqual([
+    { blockId: 'b', label: '在校经历 · 文本模块', status: 'unchanged' },
+    { blockId: 'c', label: '在校经历 · 文本模块', status: 'proposed' },
+    { blockId: 'd', label: '在校经历 · 文本模块', status: 'unreviewed' },
+  ]);
+  expect(vi.mocked(runner).mock.calls[1][0]).toContain('blockId="c"');
 });

@@ -24,7 +24,7 @@ vi.mock('ai', () => ({ generateText }))
 
 import { POST } from './route'
 
-function validPackage(code: string) {
+function validPackage() {
   return {
     titles: ['简历改清楚', '应届简历避坑', '求职表达整理'],
     body: '把经历写成动作、场景和结果，做改前改后对照，读起来会清楚很多。'.repeat(14)
@@ -57,7 +57,7 @@ describe('XHS mini API smoke flow', () => {
 
     generateText
       .mockResolvedValueOnce({ text: '{"titles":[]}' })
-      .mockResolvedValueOnce({ text: JSON.stringify(validPackage('ABCD1234')) })
+      .mockResolvedValueOnce({ text: JSON.stringify(validPackage()) })
 
     const response = await POST(new Request('http://local', {
       method: 'POST',

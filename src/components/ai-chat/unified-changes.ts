@@ -1,7 +1,7 @@
 import { useEditorUiStore } from '@/state/editor-ui-store';
 import { useAppStore, separateAiHistory } from '@/state/store';
 import { applyChangeProposal } from './apply-block-change';
-import { targetSnapshot } from '@/lib/ai/unified/policy';
+import { targetSnapshot, snapshotsMatch } from '@/lib/ai/unified/policy';
 import type { CheckedProposal } from '@/lib/ai/unified/types';
 import type { ResumeData } from '@/entities/resume/resume-data';
 
@@ -29,11 +29,12 @@ export function applyChecked(
     proposals.some(
       (p) =>
         !p.factChecked ||
-        p.before !==
+        !snapshotsMatch(p.before,
           targetSnapshot(
             before,
             p.action === 'updateBlock' ? p.blockId : undefined,
           ),
+        ),
     )
   )
     return null;
@@ -77,7 +78,7 @@ export function undoChecked(receipt: UndoReceipt): boolean {
   )
     return false;
   if (!receipt.targets.length) {
-    if (JSON.stringify(state.resume) !== JSON.stringify(receipt.after))
+    if (!snapshotsMatch(JSON.stringify(state.resume), JSON.stringify(receipt.after)))
       return false;
     separateAiHistory();
     state.setResume(() => receipt.before);
@@ -87,7 +88,7 @@ export function undoChecked(receipt: UndoReceipt): boolean {
   if (
     receipt.targets.some(
       (id) =>
-        targetSnapshot(state.resume, id) !== targetSnapshot(receipt.after, id),
+        !snapshotsMatch(targetSnapshot(state.resume, id), targetSnapshot(receipt.after, id)),
     )
   )
     return false;

@@ -31,6 +31,7 @@ import { DEFAULT_ONE_PAGE_STRATEGY, type AdjustableTokens, type OnePageStrategy 
 import { extractEditorMeta, embedEditorMeta } from '@/entities/editor/editor-meta'
 import AiSectionProvider from '@/components/ai-section/ai-section-provider'
 import ExportPreviewDialog from '@/components/export-preview-dialog'
+import { scanResumePlaceholders } from '@/lib/resume/placeholder-scan'
 import { useRequireAuth } from '@/hooks/use-require-auth'
 import { WxLoginDialog } from '@/components/auth/WxLoginDialog'
 import { useAuthStore } from '@/store/use-auth-store'
@@ -1509,6 +1510,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
         remainingQuota={quota.pdfExport.remaining}
         isVip={isVip}
         isConfirming={isConfirmingExport}
+        placeholderCount={resume ? scanResumePlaceholders(resume).count : 0}
       />
       <JdAnalysisDialog resumeId={resumeId} />
       <TranslateDialog resumeId={resumeId} template={tpl} />

@@ -1,5 +1,6 @@
 import 'server-only'
 import OpenAI from 'openai'
+import { fetchWithFailover } from '@/lib/ai/provider-failover'
 import {
   getThinkingRequestFields,
   type ThinkingMode,
@@ -21,6 +22,8 @@ export interface AiModelConfig {
   readonly supportsThinking: boolean
   /** Optional provider-specific budget for the product's low/high modes. */
   readonly thinkingBudget?: number
+  /** Disable routing for isolated provider benchmarks. */
+  readonly allowFallback?: boolean
 }
 
 const DASHSCOPE_BASE_URL =
@@ -32,6 +35,14 @@ const DASHSCOPE_BASE_URL =
  * names, endpoints, or reasoning adapters across route handlers.
  */
 export const AI_MODEL_REGISTRY: readonly AiModelConfig[] = [
+  {
+    name: 'deepseek-flash',
+    displayName: 'DeepSeek 官方（百炼备用）',
+    baseUrl: 'https://api.deepseek.com',
+    apiKeyEnv: 'DEEPSEEK_API_KEY',
+    thinkingProtocol: 'deepseek',
+    supportsThinking: true,
+  },
   {
     name: 'qwen-plus',
     displayName: '通义千问 Plus',
@@ -76,7 +87,7 @@ export const AI_MODEL_REGISTRY: readonly AiModelConfig[] = [
 ] as const
 
 /** Override these without changing route code when the provider model changes. */
-const DEFAULT_MODEL_NAME = process.env.AI_DEFAULT_MODEL ?? 'qwen-plus'
+const DEFAULT_MODEL_NAME = process.env.AI_DEFAULT_MODEL ?? 'deepseek-flash'
 const VISION_MODEL_NAME = process.env.AI_VISION_MODEL ?? 'qwen3.5-ocr'
 
 export function getDefaultModel(): AiModelConfig {
@@ -92,7 +103,10 @@ export function getModelByName(name: string): AiModelConfig {
 }
 
 export function resolveApiKey(model: AiModelConfig): string {
-  const key: string = process.env[model.apiKeyEnv] ?? ''
+  const key: string = process.env[model.apiKeyEnv] ||
+    (model.name === 'deepseek-flash' && model.allowFallback !== false &&
+      process.env.AI_PROVIDER_FALLBACK !== 'false' && process.env.DASHSCOPE_API_KEY
+      ? 'provider-routing-placeholder' : '')
   if (!key) {
     throw new Error(`Missing environment variable: ${model.apiKeyEnv}`)
   }
@@ -136,7 +150,46 @@ export function createThinkingFetch(
       ...parsed,
       ...getThinkingRequestFields(model.thinkingProtocol, mode, model.thinkingBudget),
     })
-    return baseFetch(input, { ...init, body: patchedBody })
+    if (model.name !== 'deepseek-flash' || model.allowFallback === false || process.env.AI_PROVIDER_FALLBACK === 'false') {
+      return baseFetch(input, { ...init, body: patchedBody })
+    }
+    const backup = AI_MODEL_REGISTRY.find(m => m.name === 'deepseek-v4.1-flash')!
+    const backupKey = process.env[backup.apiKeyEnv]
+    const officialKey = process.env[model.apiKeyEnv]
+    const positive = (key: string, fallback: number) => {
+      const value = Number(process.env[key]);
+      return Number.isFinite(value) && value > 0 ? value : fallback
+    }
+    const sendBackup = backupKey ? (signal: AbortSignal) => {
+      const headers = new Headers(init?.headers)
+      headers.set('authorization', `Bearer ${backupKey}`)
+      headers.delete('content-length')
+      const backupBody = { ...parsed }
+      delete backupBody.thinking
+      delete backupBody.reasoning_effort
+      delete backupBody.enable_thinking
+      delete backupBody.thinking_budget
+      return baseFetch(`${backup.baseUrl.replace(/\/$/, '')}/chat/completions`, {
+        ...init, signal, headers, body: JSON.stringify({ ...backupBody, model: backup.name,
+          ...getThinkingRequestFields(backup.thinkingProtocol, mode, backup.thinkingBudget) }),
+      })
+    } : undefined
+    const signal = init?.signal ?? (input instanceof Request ? input.signal : undefined)
+    return fetchWithFailover({
+      primary: async signal => {
+        if (!officialKey) throw new Error('Official provider is not configured')
+        const headers = new Headers(init?.headers)
+        headers.set('authorization', `Bearer ${officialKey}`)
+        return baseFetch(input, { ...init, signal, headers, body: patchedBody })
+      },
+      backup: sendBackup, signal, streaming: parsed.stream === true,
+      policy: {
+        firstOutputMs: positive('AI_PRIMARY_FIRST_OUTPUT_MS', mode === 'disabled' ? 5000 : 30000),
+        completionMs: positive('AI_PROVIDER_COMPLETION_MS', mode === 'disabled' ? 30000 : 90000),
+        failureThreshold: positive('AI_PROVIDER_FAILURE_THRESHOLD', 3),
+        cooldownMs: positive('AI_PROVIDER_COOLDOWN_MS', 60000),
+      },
+    })
   }
 }
 
@@ -149,6 +202,7 @@ export function createOpenAIClient(
     apiKey: resolveApiKey(model),
     baseURL: model.baseUrl,
     fetch: createThinkingFetch(model, mode),
+    ...(model.name === 'deepseek-flash' ? { maxRetries: 0 } : {}),
     ...(options?.timeout ? { timeout: options.timeout } : {}),
   })
 }

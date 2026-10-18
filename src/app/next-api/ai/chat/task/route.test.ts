@@ -29,6 +29,8 @@ vi.mock('@/lib/ai/unified/quota', () => ({
   consumeAssistantQuota: m.charge,
 }));
 import { POST } from './route';
+import { snapshotsMatch, targetSnapshot } from '@/lib/ai/unified/policy';
+import type { ResumeData } from '@/entities/resume/resume-data';
 const task = {
   id: '00000000-0000-4000-8000-000000000001',
   resumeId: 'r',
@@ -48,6 +50,18 @@ const req = (data: unknown = body) =>
     method: 'POST',
     body: JSON.stringify(data),
   });
+it('preserves snapshot identity across actual request schema field reordering', async () => {
+  const resume = { id: 'r', name: '测试', sections: [{ id: 's', title: '自我评价',
+    blocks: [{ html: '<p>Android 开发经验</p>', type: 'text', id: 'b' }],
+  }] } as ResumeData;
+  const response = await POST(req({ ...body, resumeData: resume }));
+  expect(response.status).toBe(200);
+  const validated = m.run.mock.calls[0][0].resume;
+  const clientSnapshot = targetSnapshot(resume, 'b');
+  const serverSnapshot = targetSnapshot(validated, 'b');
+  expect(serverSnapshot).not.toBe(clientSnapshot);
+  expect(snapshotsMatch(serverSnapshot, clientSnapshot)).toBe(true);
+});
 it('reports a safe timeout category without exposing model error details', async () => {
   m.run.mockRejectedValue(
     new DOMException('private model detail', 'TimeoutError'),

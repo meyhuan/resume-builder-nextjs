@@ -3,6 +3,7 @@ import { createOpenAI } from '@ai-sdk/openai';
 import {
   createThinkingFetch,
   getModelByName,
+  resolveApiKey,
 } from '@/lib/ai/ai-runtime-config';
 import type { ThinkingMode } from '@/lib/ai/thinking-policy';
 
@@ -44,7 +45,9 @@ export function getModel(
     case 'dashscope':
     default: {
       const modelConfig = getModelByName(modelOverride || config.model);
-      const apiKey = modelConfig.apiKeyEnv ? process.env[modelConfig.apiKeyEnv] : '';
+      let apiKey: string;
+      try { apiKey = resolveApiKey(modelConfig); }
+      catch { throw new AIConfigError('AI 服务未配置，请联系管理员'); }
       if (!apiKey) {
         throw new AIConfigError('AI 服务未配置，请联系管理员');
       }

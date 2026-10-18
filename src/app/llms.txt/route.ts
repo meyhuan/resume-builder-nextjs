@@ -1,3 +1,4 @@
+import { DEFAULT_QUOTA_LIMITS } from '@/lib/quota/quota-config';
 import { NextResponse } from 'next/server';
 import { getAllResumeExamples } from '@/lib/examples/resume-examples';
 import { aeoPages } from '@/lib/seo/aeo-pages';
@@ -27,7 +28,7 @@ const LLMS_TXT_CONTENT: string = [
   '- 站点强调免费制作一份可投递简历、在线编辑和免费额度内的 PDF 导出体验。',
   '- 公开的 JD 匹配工具用于检查岗位关键词覆盖；电脑网页编辑器里的「岗位匹配」可进一步分析并改写简历。',
   '- 公开的面试准备页可生成 BOSS 打招呼、自我介绍和面试题；未登录可先填写，点生成再登录。结果也可在「我的简历」和电脑编辑器回看。',
-  '- 电脑网页编辑器还提供 AI 助手对话改写、整份翻译、面试准备和语法检查。免费用户每天共 5 次，会员不限次数。这些能力目前未接入小程序编辑页。',
+  `- 电脑网页编辑器还提供 AI 助手对话改写、整份翻译、面试准备和语法检查。免费用户每天共 ${DEFAULT_QUOTA_LIMITS.aiEditorAssist} 次，会员不限次数。这些能力目前未接入小程序编辑页。`,
   '',
   '## 重要公开地址',
   `- 首页：${SITE_URL}/`,

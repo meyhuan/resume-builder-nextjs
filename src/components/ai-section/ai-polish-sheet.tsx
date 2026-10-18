@@ -24,6 +24,7 @@ import {
 } from '@/lib/ai/section-types';
 import { useAiSectionStore } from '@/state/ai-section-store';
 import InlineEditor from '@/editor/inline-editor';
+import { DataConfirmationChips } from '@/components/ai-section/data-confirmation-chips';
 import { toast } from 'sonner';
 
 export interface AiPolishSheetProps {
@@ -49,6 +50,7 @@ export default function AiPolishSheet(props: AiPolishSheetProps): ReactElement {
   const [jobDescription, setJobDescription] = useState<string>(store.cachedJobDescription);
   const [editedResult, setEditedResult] = useState<string>('');
   const [hasResult, setHasResult] = useState<boolean>(false);
+  const [editorEpoch, setEditorEpoch] = useState<number>(0);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const setIdentity = useCallback((id: SectionIdentity): void => {
@@ -388,14 +390,24 @@ export default function AiPolishSheet(props: AiPolishSheetProps): ReactElement {
                 )}
               </div>
               {hasResult ? (
-                <div className="w-full min-h-[160px] text-xs rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-700 focus-within:border-violet-400 focus-within:ring-1 focus-within:ring-violet-400/30 leading-relaxed overflow-y-auto custom-scrollbar">
-                  <InlineEditor
-                    initialHtml={editedResult}
-                    onChange={(html: string): void => setEditedResult(html)}
-                    floatingToolbar={false}
-                    className="outline-none"
+                <>
+                  <div className="w-full min-h-[160px] text-xs rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-700 focus-within:border-violet-400 focus-within:ring-1 focus-within:ring-violet-400/30 leading-relaxed overflow-y-auto custom-scrollbar">
+                    <InlineEditor
+                      key={`polish-result-${editorEpoch}`}
+                      initialHtml={editedResult}
+                      onChange={(html: string): void => setEditedResult(html)}
+                      floatingToolbar={false}
+                      className="outline-none"
+                    />
+                  </div>
+                  <DataConfirmationChips
+                    html={editedResult}
+                    onChange={(nextHtml: string): void => {
+                      setEditedResult(nextHtml);
+                      setEditorEpoch((n) => n + 1);
+                    }}
                   />
-                </div>
+                </>
               ) : (
                 <div className="bg-white rounded-lg border border-violet-200 p-3 text-xs text-slate-700 leading-relaxed min-h-[100px]">
                   <div dangerouslySetInnerHTML={{ __html: displayHtml }} />

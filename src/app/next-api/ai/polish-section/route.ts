@@ -6,6 +6,7 @@ import {
   buildPolishSystemPrompt,
   buildPolishUserPrompt,
 } from '@/lib/ai/section-prompt-builder';
+import { sanitizePolishedHtml, toMissingFacts } from '@/lib/ai/output-guards';
 import type { PolishSectionRequest } from '@/lib/ai/section-types';
 import { MIN_POLISH_CONTENT_LENGTH } from '@/lib/ai/section-types';
 
@@ -66,7 +67,7 @@ export async function POST(request: NextRequest): Promise<Response> {
         { role: 'user', content: userPrompt },
       ],
       stream: true,
-      temperature: 0.6,
+      temperature: 0.35,
       max_tokens: 4096,
     });
 
@@ -75,12 +76,33 @@ export async function POST(request: NextRequest): Promise<Response> {
     const readable = new ReadableStream({
       async start(controller): Promise<void> {
         try {
+          let accumulated = '';
           for await (const chunk of stream) {
             const delta: string | null | undefined =
               chunk.choices[0]?.delta?.content;
             if (delta) {
+              accumulated += delta;
               const sseData: string = `data: ${JSON.stringify({ content: delta })}\n\n`;
               controller.enqueue(encoder.encode(sseData));
+            }
+          }
+          if (accumulated.trim()) {
+            const sanitized = sanitizePolishedHtml(
+              content,
+              accumulated,
+              moduleType,
+              realisticMode,
+            );
+            const missingFacts = toMissingFacts(sanitized);
+            if (sanitized !== accumulated || missingFacts.length > 0) {
+              controller.enqueue(
+                encoder.encode(
+                  `data: ${JSON.stringify({
+                    replaceHtml: sanitized,
+                    missingFacts,
+                  })}\n\n`,
+                ),
+              );
             }
           }
           controller.enqueue(encoder.encode('data: [DONE]\n\n'));

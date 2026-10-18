@@ -12,6 +12,7 @@ import { htmlToPlainText } from './html-text'
 import { isMeaningfulText } from '@/features/edit/progress/meaningful-field'
 import type { SectionIdentity, SectionModuleType, PolishLevel } from '@/lib/ai/section-types'
 import { MIN_POLISH_CONTENT_LENGTH } from '@/lib/ai/section-types'
+import { DataConfirmationChips } from '@/components/ai-section/data-confirmation-chips'
 import { cn } from '@/lib/utils'
 
 export interface RichAiTextareaProps {
@@ -132,8 +133,10 @@ export function RichAiTextarea(props: RichAiTextareaProps): ReactElement {
   // Previously we used `html` content as the key, which caused the Lexical
   // editor to unmount on every keystroke and lose focus (#2 bug fix).
   const [editorEpoch, setEditorEpoch] = useState<number>(0)
+  const [overrideHtml, setOverrideHtml] = useState<string | null>(null)
 
-  const currentStreamedHtml: string = previewMode === 'generate' ? generatedHtml : polishedHtml
+  const rawStreamedHtml: string = previewMode === 'generate' ? generatedHtml : polishedHtml
+  const currentStreamedHtml: string = overrideHtml ?? rawStreamedHtml
   const currentIsLoading: boolean = previewMode === 'generate' ? isGenerating : isPolishing
 
   const applyResult = (): void => {
@@ -143,6 +146,7 @@ export function RichAiTextarea(props: RichAiTextareaProps): ReactElement {
       toast.success(previewMode === 'generate' ? '已插入生成内容 ✨' : '已应用润色结果 ✨')
     }
     setPreviewing(false)
+    setOverrideHtml(null)
     resetPolish()
     resetGenerate()
   }
@@ -151,6 +155,7 @@ export function RichAiTextarea(props: RichAiTextareaProps): ReactElement {
     abortPolish()
     abortGenerate()
     setPreviewing(false)
+    setOverrideHtml(null)
     resetPolish()
     resetGenerate()
   }
@@ -311,6 +316,13 @@ export function RichAiTextarea(props: RichAiTextareaProps): ReactElement {
                   <div dangerouslySetInnerHTML={{ __html: currentStreamedHtml }} />
                 )}
               </div>
+              {!currentIsLoading && currentStreamedHtml && (
+                <DataConfirmationChips
+                  html={currentStreamedHtml}
+                  onChange={(nextHtml: string): void => setOverrideHtml(nextHtml)}
+                  compact
+                />
+              )}
             </div>
             <div className="px-4 py-3 border-t border-slate-100 flex gap-2">
               <button
