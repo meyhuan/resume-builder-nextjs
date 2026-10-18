@@ -33,10 +33,9 @@ export const PRINT_PAGINATION_CSS = `
     widows: 3;
   }
 
-  /* A normal resume item stays together when it fits. Chromium may fragment
-     an item that is taller than the remaining page, so long rich text is not
-     silently pushed out of the document. Keep this default deliberately low
-     specificity so a template can opt into natural fragmentation explicitly. */
+  /* Compact items stay together. Text-bearing items opt out below: avoid-page
+     on an ancestor otherwise pushes the entire item onto the next page, even
+     when its rich-text child explicitly allows fragmentation. */
   :where(
     [data-resume-block],
     .resume-item,
@@ -51,7 +50,26 @@ export const PRINT_PAGINATION_CSS = `
     page-break-inside: avoid;
   }
 
-  /* Rich text is the intentional fragmentation boundary inside a block. */
+  :is(
+    [data-resume-block],
+    .resume-item,
+    .experience-item,
+    .education-item,
+    .project-item,
+    .skill-item
+  ):has([data-print-splittable="true"]):not([data-print-keep-together="true"]) {
+    break-inside: auto;
+    page-break-inside: auto;
+  }
+
+  [data-print-block-header] {
+    break-inside: avoid-page;
+    page-break-inside: avoid;
+    break-after: avoid-page;
+    page-break-after: avoid;
+  }
+
+  /* Rich text can fragment at paragraphs/lines, respecting widows/orphans. */
   [data-print-splittable="true"] {
     break-inside: auto !important;
     page-break-inside: auto !important;
@@ -75,6 +93,31 @@ export const PRINT_PAGINATION_CSS = `
   }
 }
 `
+
+/** Runs in the print browser after fonts and one-page fitting settle.
+ * Only classifies items; Chromium still chooses every physical page break.
+ * Keep this function self-contained so both renderers can pass it to evaluate.
+ */
+export function preparePrintFragmentation(): void {
+  const selector = '[data-resume-block], .resume-item, .experience-item, .education-item, .project-item, .skill-item'
+  const items = Array.from(document.querySelectorAll<HTMLElement>(selector))
+  // Clear previous measurements, including when re-rendering optimized images.
+  for (const item of items) item.removeAttribute('data-print-keep-together')
+  const decisions = items.map((item) => {
+    if (!item.querySelector('[data-print-splittable="true"]')) return false
+    if (item.closest('[data-one-page="true"]')) return false
+    const container = item.closest('.resume-container')
+    const rawPadding = Number(container?.getAttribute('data-page-padding-vertical') ?? 19)
+    const padding = Number.isFinite(rawPadding) ? Math.max(0, Math.min(100, rawPadding)) : 19
+    const usableHeight = (297 - padding * 2) * 96 / 25.4
+    const height = item.getBoundingClientRect().height
+    return height > 0 && height <= usableHeight / 3
+  })
+  // Batch writes after measurements to avoid interleaving layout and mutation.
+  items.forEach((item, index) => {
+    if (decisions[index]) item.setAttribute('data-print-keep-together', 'true')
+  })
+}
 
 export interface PrintLayoutDiagnostics {
   readonly hasRoot: boolean

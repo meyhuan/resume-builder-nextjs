@@ -9,7 +9,7 @@ import type { Page } from 'puppeteer-core'
 import { mintPrintToken } from '@/lib/print-token'
 import { rasterizePdfToPngs } from '@/lib/pdf-to-png'
 import { closeSharedPuppeteerPage, newSharedPuppeteerPage } from '@/lib/puppeteer-browser'
-import { getPrintLayoutDiagnostics, type PrintLayoutDiagnostics } from '@/lib/print-pagination'
+import { getPrintLayoutDiagnostics, preparePrintFragmentation, type PrintLayoutDiagnostics } from '@/lib/print-pagination'
 
 export interface RenderResult {
   readonly buffer: Buffer
@@ -238,6 +238,7 @@ export async function renderViaPrintPage(opts: RenderViaPrintPageOpts): Promise<
     }
 
     // Generate the PDF
+    await page.evaluate(preparePrintFragmentation)
     const pdfBuffer = Buffer.from(
       await page.pdf({ printBackground: true, displayHeaderFooter: false, preferCSSPageSize: true, waitForFonts: true })
     )

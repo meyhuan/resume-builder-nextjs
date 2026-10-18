@@ -14,7 +14,7 @@
 import { NextResponse } from 'next/server';
 import type { Page } from 'puppeteer-core';
 import { paginateHtml } from '@/utils/paginate-html';
-import { getPrintLayoutDiagnostics, type PrintLayoutDiagnostics } from '@/lib/print-pagination';
+import { getPrintLayoutDiagnostics, preparePrintFragmentation, type PrintLayoutDiagnostics } from '@/lib/print-pagination';
 import { checkQuota } from '@/lib/quota/quota-checker';
 import { savePdfTemp } from '@/lib/pdf-temp-store';
 import { buildExportContentDisposition, sanitizeExportFileName } from '@/lib/export-file-name';
@@ -147,8 +147,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'HTML content is required' }, { status: 400 });
     }
 
-    // Inject the shared CSS contract. Chromium's native print fragmentation is
-    // the only pagination writer; no post-layout block mutation is performed.
+    // Inject the shared CSS contract; Chromium chooses the physical breaks.
     const paginatedHtml = paginateHtml(html);
 
     let page: Page | undefined;
@@ -185,12 +184,15 @@ export async function POST(req: Request) {
         throw new Error(`Print layout is clipped or transformed: ${JSON.stringify(printDiagnostics)}`);
       }
       
-      const createPdf = () => pdfPage.pdf({
-        printBackground: true,
-        displayHeaderFooter: false,
-        preferCSSPageSize: true,
-        waitForFonts: true,
-      });
+      const createPdf = async () => {
+        await pdfPage.evaluate(preparePrintFragmentation);
+        return pdfPage.pdf({
+          printBackground: true,
+          displayHeaderFooter: false,
+          preferCSSPageSize: true,
+          waitForFonts: true,
+        });
+      };
       let pdf = await createPdf();
       let autoOptimized = false;
 
