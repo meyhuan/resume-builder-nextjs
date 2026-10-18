@@ -1,3 +1,4 @@
+import { TemplateExposureList } from '@/components/templates/template-exposure-list';
 import type { Metadata } from 'next';
 import type { ReactElement } from 'react';
 import { TemplateCover } from '@/components/templates/template-cover';
@@ -795,9 +796,9 @@ export default async function TemplateRolePage({ params }: RolePageParams): Prom
                 <p className="mt-2 text-sm leading-7 text-slate-600">
                   根据 {roleRecord.role} 岗位常见的阅读偏好，优先考虑这些模板。
                 </p>
-                <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-3">
+                <TemplateExposureList scope={roleRecord.role} className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-3">
                   {recommendedTemplates.map((template) => (
-                    <div key={template.id} className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+                    <div key={template.id} data-template-id={template.id} className="overflow-hidden rounded-xl border border-slate-200 bg-white">
                       <div className="relative aspect-[3/4] bg-slate-100">
                         <TemplateCover
                           src={template.preview}
@@ -818,7 +819,7 @@ export default async function TemplateRolePage({ params }: RolePageParams): Prom
                       </div>
                     </div>
                   ))}
-                </div>
+                </TemplateExposureList>
               </section>
 
               {recommendedArticles.length > 0 ? (

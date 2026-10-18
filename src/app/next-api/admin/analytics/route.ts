@@ -5,6 +5,7 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '';
 const ANALYTICS_ADMIN_TOKEN = process.env.ANALYTICS_ADMIN_TOKEN || ADMIN_PASSWORD;
 
 const ENDPOINTS: Record<string, string> = {
+  templates: '/analytics/admin/funnel/templates',
   overview: '/analytics/admin/overview',
   pay: '/analytics/admin/funnel/pay',
   export: '/analytics/admin/funnel/export',

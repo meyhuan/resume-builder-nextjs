@@ -1,6 +1,7 @@
 'use client'
 
-import { useId, useState, type ReactNode, type ReactElement } from 'react'
+import { useTemplateImpressions } from './use-template-impressions'
+import { useId, useRef, useState, type ReactNode, type ReactElement } from 'react'
 import { SlidersHorizontal } from 'lucide-react'
 import type { TemplateMetadata } from '@/lib/templates/template-metadata'
 import {
@@ -23,6 +24,7 @@ const DIMENSION_LABELS: Record<TaxonomyDimension, string> = {
 interface TemplateBrowserProps<T extends TemplateMetadata> {
   readonly templates: readonly T[]
   readonly currentId?: string
+  readonly analyticsEntry?: string
   /** Keep more space for template cards inside the mobile preview sheet. */
   readonly compact?: boolean
   readonly gridClassName?: string
@@ -33,6 +35,7 @@ interface TemplateBrowserProps<T extends TemplateMetadata> {
 export function TemplateBrowser<T extends TemplateMetadata>({
   templates,
   currentId,
+  analyticsEntry = 'template_gallery',
   compact = false,
   gridClassName = 'grid grid-cols-2 gap-4',
   renderTemplate,
@@ -42,6 +45,8 @@ export function TemplateBrowser<T extends TemplateMetadata>({
   const [expanded, setExpanded] = useState(false)
   const filtersId = useId()
   const filtered = filterTemplates(templates, filters)
+  const gridRef = useRef<HTMLDivElement>(null)
+  useTemplateImpressions(gridRef, JSON.stringify({ filters, ids: filtered.map(t => t.id) }), analyticsEntry)
   const current = templates.find((template) => template.id === currentId)
   const activeCount = Object.values(filters).reduce(
     (sum, values) => sum + values.length,
@@ -187,7 +192,7 @@ export function TemplateBrowser<T extends TemplateMetadata>({
           </button>
         </div>
       ) : (
-        <div className={gridClassName}>{filtered.map(renderTemplate)}</div>
+        <div ref={gridRef} className={gridClassName}>{filtered.map(renderTemplate)}</div>
       )}
     </div>
   )

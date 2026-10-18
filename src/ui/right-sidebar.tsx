@@ -187,7 +187,7 @@ function LayoutPanel(props: LayoutPanelProps): ReactElement {
         <div className="flex-1 px-4 py-4 overflow-y-auto custom-scrollbar">
           {/* Fit columns to the panel, keeping two cards even on narrow mobile screens.
               auto-fill also keeps filtered cards from stretching into empty columns. */}
-          <TemplateBrowser templates={templates} currentId={tpl} gridClassName="grid grid-cols-[repeat(auto-fill,minmax(min(144px,calc((100%_-_16px)/2)),1fr))] gap-4 pb-4"
+          <TemplateBrowser analyticsEntry="pc_editor" templates={templates} currentId={tpl} gridClassName="grid grid-cols-[repeat(auto-fill,minmax(min(144px,calc((100%_-_16px)/2)),1fr))] gap-4 pb-4"
             renderTemplate={(template) => (
               <button
                 key={template.id}

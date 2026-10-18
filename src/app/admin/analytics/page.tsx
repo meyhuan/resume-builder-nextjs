@@ -13,6 +13,7 @@ import {
   Sparkles,
   TrendingUp,
 } from 'lucide-react';
+import { TEMPLATE_METADATA } from '@/lib/templates/template-metadata';
 import { cn } from '@/lib/utils';
 import { clearStoredAdminPassword, getStoredAdminPassword, setStoredAdminPassword } from '@/lib/admin-auth';
 
@@ -157,7 +158,10 @@ interface SelfReportedSourcesData {
   sources: SelfReportedSource[];
 }
 
+interface TemplateFunnelData { rows: { templateId: string; impressions: number; activeSelections: number; selectedImpressions: number; exposedSelections: number; savedJourneys: number; exportedJourneys: number; defaultSavedJourneys: number; selectionRate: number | null; saveToExportRate: number | null }[]; notes: string[] }
+
 type AnalyticsState = {
+  templates: TemplateFunnelData | null;
   overview: OverviewData | null;
   lifecycle: LifecycleData | null;
   pay: FunnelData | null;
@@ -211,7 +215,8 @@ const EVENT_LABELS: Record<string, string> = {
   ai_assist_success: 'AI 编辑助手成功',
   ai_assist_failed: 'AI 编辑助手失败',
   ai_assist_blocked_by_quota: 'AI 编辑助手额度不足',
-  template_select: '选择模板',
+  template_impression: '模板可见曝光',
+  template_select: '主动选择模板',
   resume_preview: '预览简历',
   editor_open: '打开编辑器',
   editor_first_edit: '首次编辑',
@@ -325,6 +330,7 @@ export default function AnalyticsAdminPage(): React.ReactElement {
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<AnalyticsState>({
+    templates: null,
     overview: null,
     lifecycle: null,
     pay: null,
@@ -358,7 +364,7 @@ export default function AnalyticsAdminPage(): React.ReactElement {
     setLoading(true);
     setError(null);
     try {
-      const [overview, lifecycle, pay, exportFunnel, create, errors, revenue, channels, acquisitionSources] = await Promise.all([
+      const [overview, lifecycle, pay, exportFunnel, create, errors, revenue, channels, acquisitionSources, templates] = await Promise.all([
         fetchAnalytics('overview', days, platform, passwordToUse) as Promise<OverviewData>,
         fetchAnalytics('lifecycle', days, platform, passwordToUse, clientType) as Promise<LifecycleData>,
         fetchAnalytics('pay', days, platform, passwordToUse) as Promise<FunnelData>,
@@ -368,10 +374,11 @@ export default function AnalyticsAdminPage(): React.ReactElement {
         fetchAnalytics('revenue', days, platform, passwordToUse) as Promise<RevenueData>,
         fetchAnalytics('channels', days, platform, passwordToUse) as Promise<AttributionData>,
         fetchAnalytics('acquisitionSources', days, platform, passwordToUse) as Promise<SelfReportedSourcesData>,
+        (fetchAnalytics('templates', days, platform, passwordToUse) as Promise<TemplateFunnelData>).catch(() => null),
       ]);
       setStoredAdminPassword(passwordToUse);
       setHasStoredPassword(true);
-      setData({ overview, lifecycle, pay, export: exportFunnel, create, errors, revenue, channels, acquisitionSources });
+      setData({ overview, lifecycle, pay, export: exportFunnel, create, errors, revenue, channels, acquisitionSources, templates });
       setLoaded(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : '加载失败');
@@ -454,7 +461,7 @@ export default function AnalyticsAdminPage(): React.ReactElement {
                   setHasStoredPassword(false);
                   setAdminPassword('');
                   setLoaded(false);
-                  setData({ overview: null, lifecycle: null, pay: null, export: null, create: null, errors: null, revenue: null, channels: null, acquisitionSources: null });
+                  setData({ templates: null, overview: null, lifecycle: null, pay: null, export: null, create: null, errors: null, revenue: null, channels: null, acquisitionSources: null });
                 }}
                 className="h-10 rounded-lg border border-slate-200 px-3 text-sm text-slate-600 hover:bg-slate-50"
               >
@@ -486,6 +493,22 @@ export default function AnalyticsAdminPage(): React.ReactElement {
           </section>
 
           <LifecycleFunnelCard data={data.lifecycle} />
+          <section className="rounded-xl border border-slate-200 bg-white p-5">
+            <h2 className="text-sm font-semibold">模板使用漏斗</h2>
+            <p className="mt-2 text-xs text-slate-500">保存、导出按有曝光的主动选择链路计数；默认使用单列。跨 H5 与原生小程序请选「全部平台」。</p>
+            <div className="mt-4 overflow-x-auto"><table className="w-full text-left text-sm">
+              <thead><tr>{['模板', '曝光', '主动选择', '有曝光的选择', '保存链路', '成功导出链路', '默认保存', '曝光选择率', '保存导出率'].map(label => <th key={label} className="whitespace-nowrap p-2">{label}</th>)}</tr></thead>
+              <tbody>{data.templates?.rows.map(row => <tr key={row.templateId} className="border-t border-slate-100">
+                <td className="whitespace-nowrap p-2">{TEMPLATE_METADATA[row.templateId as keyof typeof TEMPLATE_METADATA]?.name || row.templateId}</td>
+                {[row.impressions, row.activeSelections, row.exposedSelections, row.savedJourneys, row.exportedJourneys, row.defaultSavedJourneys].map((value, i) => <td className="p-2" key={i}>{value}</td>)}
+                <td className="p-2">{row.selectionRate === null ? '—' : `${(row.selectionRate * 100).toFixed(1)}%`}</td>
+                <td className="p-2">{row.saveToExportRate === null ? '—' : `${(row.saveToExportRate * 100).toFixed(1)}%`}</td>
+              </tr>)}</tbody>
+            </table></div>
+            {!data.templates && <p className="mt-3 text-sm text-amber-700">模板统计暂不可用，请确认统计服务已更新后重试。其他报表不受影响。</p>}
+            {data.templates && !data.templates.rows.length && <p className="mt-3 text-sm text-slate-500">暂无新版模板链路数据，历史使用量不会回填为转化率。</p>}
+            {data.templates?.notes.map(note => <p key={note} className="mt-2 text-xs text-slate-500">{note}</p>)}
+          </section>
 
           <section className="grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
             <AttributionCard data={data.channels} />

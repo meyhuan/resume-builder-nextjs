@@ -1,6 +1,8 @@
 "use client";
 
 import React from "react";
+import { track } from "@/lib/analytics";
+import { useTemplateImpressions } from "@/components/templates/use-template-impressions";
 import Link from "next/link";
 import { templateCatalog } from "@/lib/templates/template-catalog";
 import { TemplateCover } from "@/components/templates/template-cover";
@@ -80,6 +82,7 @@ export const LandingTemplates = ({ id }: TemplatesSectionProps) => {
   const templates = templateCatalog;
   const featuredTemplates = getFeaturedTemplates(templates);
   const railRef = React.useRef<HTMLDivElement>(null);
+  useTemplateImpressions(railRef, FEATURED_TEMPLATE_IDS.join(","), "landing_featured");
   const [scrollState, setScrollState] = React.useState({
     canScrollLeft: false,
     canScrollRight: false,
@@ -233,6 +236,8 @@ export const LandingTemplates = ({ id }: TemplatesSectionProps) => {
                       <Link
                         key={item.id}
                         href={`/editor?template=${item.id}`}
+                        data-template-id={item.id}
+                        onClick={() => track("template_select", { templateId: item.id, entry: "landing_featured" })}
                         className="group snap-start rounded-2xl border border-slate-100 bg-white p-2.5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-violet-200 hover:shadow-xl hover:shadow-violet-500/10"
                       >
                         <div className="relative aspect-[3/4] overflow-hidden rounded-xl bg-slate-100">

@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { track } from '@/lib/analytics'
 import type { ReactElement } from 'react'
 import type { TemplateMetadata } from '@/lib/templates/template-metadata'
 import { templateLabels } from '@/lib/templates/template-taxonomy'
@@ -19,6 +20,7 @@ export function TemplateGallery({
       renderTemplate={(template) => (
         <Link
           href={`/editor?template=${template.id}`}
+          onClick={() => track('template_select', { templateId: template.id, entry: 'template_gallery' })}
           key={template.id}
           data-template-id={template.id}
           className="overflow-hidden rounded-xl border border-slate-200 bg-white transition-colors hover:border-violet-400"

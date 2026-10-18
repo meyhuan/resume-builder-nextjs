@@ -222,7 +222,7 @@ function BottomSheet({ open, onClose, onConfirm, confirming, saveError, selected
 
 function TemplatePanel({ activeId, onSelect }: { activeId: string; onSelect: (id: string) => void }): ReactElement {
   return (
-    <TemplateBrowser templates={TEMPLATES} currentId={activeId} compact gridClassName="grid grid-cols-2 gap-3"
+    <TemplateBrowser analyticsEntry="mobile_preview" templates={TEMPLATES} currentId={activeId} compact gridClassName="grid grid-cols-2 gap-3"
       renderTemplate={(cfg) => {
         const id = cfg.id
         const isActive = id === activeId

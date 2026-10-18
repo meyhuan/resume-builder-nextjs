@@ -1,5 +1,7 @@
 'use client'
 
+import { captureTemplateJourney, serializeTemplateJourney } from '@/lib/templates/template-journey'
+
 import { useEffect, useMemo, useRef, useState, useCallback, Suspense, type ReactElement } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
@@ -379,6 +381,7 @@ export default function MobilePreviewClient(): ReactElement {
       setOnePageSnapshot(null)
       setTemplateId(nextId)
       track('template_select', {
+        entry: 'mobile_preview',
         resumeId: draftResumeId || searchParams.get('id'),
         templateId: nextId,
         previousTemplateId: templateId,
@@ -457,6 +460,7 @@ export default function MobilePreviewClient(): ReactElement {
   const createExportJob = useCallback(async (
     payload: { readonly resumeId: string; readonly templateId: string; readonly type: ExportType; readonly fileName: string },
   ): Promise<ExportJobResponse> => {
+    const exportJourney = captureTemplateJourney(payload.templateId, payload.resumeId)
     const response = await fetch('/next-api/exports/mini', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -484,6 +488,8 @@ export default function MobilePreviewClient(): ReactElement {
     const job = await response.json() as ExportJobResponse
     log.info('create export job parsed', { id: job.id, type: job.type, fileName: job.fileName, previewImages: job.previewImages?.length, expiresAt: job.expiresAt })
     track('export_success', {
+      ...exportJourney,
+      successKind: 'file_ready',
       resumeId: payload.resumeId,
       templateId: payload.templateId,
       exportType: payload.type,
@@ -587,6 +593,7 @@ export default function MobilePreviewClient(): ReactElement {
       )
       const contentWithMeta = embedEditorMeta(cleanContent, { ...previousMeta, ...editorMeta })
 
+      const saveJourney = captureTemplateJourney(templateId, targetId)
       const response = await fetchWithNetworkRetry(`/next-api/resumes/${targetId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -603,6 +610,7 @@ export default function MobilePreviewClient(): ReactElement {
         log.warn('failed to sync preview state before export', { status: response.status, message })
         throw new Error('保存失败，修改已保留，请重试或取消。')
       }
+      track('resume_save_success', { ...saveJourney, resumeId: targetId, templateId, entry: 'mobile_preview', saveKind: 'content_and_settings' })
     })()
 
     syncPreviewStateFlightRef.current = { key: syncKey, promise: syncPromise }
@@ -699,6 +707,7 @@ export default function MobilePreviewClient(): ReactElement {
           type,
           fileName,
         })
+        params.set('templateAnalytics', serializeTemplateJourney(templateId, targetResumeId))
         const page = `/pages/exportResult/exportResult?${params.toString()}`
         log.info('navigateTo native mini-program exportResult before confirm', { page })
         window.wx.miniProgram.navigateTo({ url: page })

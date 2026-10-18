@@ -1,5 +1,7 @@
 "use client"
 
+import { captureTemplateJourney } from '@/lib/templates/template-journey'
+
 /**
  * ResumeEditor - Main Editor Component
  * App with Dynamic Template Loading
@@ -470,6 +472,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
       resumeId,
       templateId: tpl,
       entry: initialData ? 'existing_resume' : 'new_resume',
+      selectionMode: !initialData && !searchParams.has('template') ? 'default' : 'restored_or_direct',
       source: searchParams.get('source') || undefined,
       hasPersistedResume: Boolean(resumeId),
     })
@@ -698,6 +701,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
       }
       
       // 3. Save content to DB first
+      const saveJourney = captureTemplateJourney(currentTpl, currentId)
       const res = await fetchWithNetworkRetry(`/next-api/resumes/${currentId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -768,6 +772,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
       }
       
       track('resume_save_success', {
+        ...saveJourney,
         resumeId: currentId,
         templateId: currentTpl,
         entry: createCompleted ? 'pc_editor_create' : 'pc_editor_update',
@@ -1066,6 +1071,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
     }
     requireAuth(() => {
       try {
+        track('export_click', { resumeId, templateId: tpl, exportType: 'markdown', entry: 'pc_editor_toolbar' })
         const markdownContent = exportResumeToMarkdown(resume)
         const blob = new Blob([markdownContent], { type: 'text/markdown;charset=utf-8' })
         const url = URL.createObjectURL(blob)
@@ -1074,15 +1080,17 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
         a.download = `${sanitizeExportFileName(resume.name)}.md`
         a.click()
         URL.revokeObjectURL(url)
+        track('export_success', { resumeId, templateId: tpl, exportType: 'markdown', successKind: 'download_initiated', entry: 'pc_editor_toolbar' })
         if (!showMiniProgramExportReminder()) {
           toast.success('Markdown导出成功')
         }
       } catch (error) {
+        track('export_failed', { resumeId, templateId: tpl, exportType: 'markdown', entry: 'pc_editor_toolbar' })
         console.error('Export markdown failed:', error)
         toast.error('Markdown导出失败，请重试')
       }
     })
-  }, [resume, requireAuth, requirePdf, showMiniProgramExportReminder, trackExportPaywallBlock])
+  }, [resume, resumeId, tpl, requireAuth, requirePdf, showMiniProgramExportReminder, trackExportPaywallBlock])
 
   async function handleExportPng(): Promise<void> {
     if (!requirePdf()) {
@@ -1100,11 +1108,14 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
       entry: 'pc_editor_toolbar',
     })
     try {
+      const exportJourney = captureTemplateJourney(tpl, resumeId)
       await exportImage<HTMLDivElement>(printRef, { fileName: 'resume', pixelRatio: 2 })
       if (!showMiniProgramExportReminder()) {
         toast.success('图片导出成功')
       }
       track('export_success', {
+        ...exportJourney,
+        successKind: 'download_initiated',
         resumeId,
         templateId: tpl,
         exportType: 'image',
@@ -1223,6 +1234,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
       return
     }
 
+    const exportJourney = captureTemplateJourney(tpl, exportResumeId)
     let downloadUrl = ''
     let exportId = ''
     try {
@@ -1316,6 +1328,8 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
       toast.success('PDF 导出成功')
     }
     track('export_success', {
+      ...exportJourney,
+      successKind: 'file_ready',
       resumeId: exportResumeId,
       templateId: tpl,
       exportType: 'pdf',
@@ -1345,8 +1359,9 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
       setOnePageMode(false)
       toast.info('已切换模板，一页模式已关闭')
     }
+    if (next !== tpl) track('template_select', { resumeId, templateId: next, previousTemplateId: tpl, entry: 'pc_editor' })
     setTpl(next)
-  }, [onePageMode, resetOnePage])
+  }, [onePageMode, resetOnePage, resumeId, tpl])
 
   // 获取当前模板组件
   const templateConfig = getTemplate(tpl)
