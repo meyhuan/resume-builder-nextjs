@@ -388,7 +388,10 @@ export default function MobileJdMatchClient({
 
               {result.summary ? (
                 <div className="mt-3 rounded-xl bg-slate-50 p-3 text-xs leading-relaxed text-slate-700 border border-slate-100">
-                  <span className="font-semibold text-slate-900">📌 诊断综述：</span>
+                  <span className="inline-flex items-center gap-1 font-semibold text-slate-900 mr-1">
+                    <Target size={13} className="text-violet-600" />
+                    <span>诊断综述：</span>
+                  </span>
                   {result.summary}
                 </div>
               ) : null}
@@ -449,15 +452,19 @@ export default function MobileJdMatchClient({
                     ))}
                   </div>
                 ) : (
-                  <p className="text-xs text-emerald-600">🎉 恭喜！未发现核心硬技能词缺失。</p>
+                  <p className="inline-flex items-center gap-1.5 text-xs text-emerald-600">
+                    <CheckCircle2 size={14} className="shrink-0" />
+                    <span>恭喜！未发现核心硬技能词缺失。</span>
+                  </p>
                 )}
 
                 {/* Selected Missing Word Prompt Card */}
                 {selectedMissingWord ? (
                   <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50/70 p-3 space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-amber-900">
-                        💡 如何补充「{selectedMissingWord}」？
+                      <span className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-900">
+                        <Lightbulb size={14} className="text-amber-600 shrink-0" />
+                        <span>如何补充「{selectedMissingWord}」？</span>
                       </span>
                       <button
                         type="button"
@@ -548,7 +555,10 @@ export default function MobileJdMatchClient({
 
                             <div>
                               <div className="flex items-center justify-between mb-1">
-                                <span className="font-bold text-emerald-700">✨ 建议改法：</span>
+                                <span className="inline-flex items-center gap-1 font-bold text-emerald-700">
+                                  <Sparkles size={13} className="text-emerald-600" />
+                                  <span>建议改法：</span>
+                                </span>
                                 <button
                                   type="button"
                                   onClick={() => void handleCopy(s.suggested, copyKey, '建议改法已复制')}

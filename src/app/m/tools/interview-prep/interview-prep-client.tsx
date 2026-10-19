@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState, useTransition, type ReactElement } fr
 import {
   Sparkles,
   Clipboard,
+  ClipboardList,
   Copy,
   Check,
   History,
@@ -18,6 +19,9 @@ import {
   FileText,
   Loader2,
   Volume2,
+  Target,
+  Lightbulb,
+  Bookmark,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import type { ResumeData } from '@/entities/resume/resume-data'
@@ -551,8 +555,18 @@ export default function MobileInterviewPrepClient({
                   return (
                     <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
                       <div className="mb-2 flex items-center justify-between">
-                        <span className="text-xs font-bold text-slate-800">
-                          {selfIntroVersion === '30s' ? '⏱️ 30 秒快速破冰' : '📋 2 分钟深度介绍'}
+                        <span className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-800">
+                          {selfIntroVersion === '30s' ? (
+                            <>
+                              <Clock size={14} className="text-violet-600" />
+                              <span>30 秒快速破冰</span>
+                            </>
+                          ) : (
+                            <>
+                              <ClipboardList size={14} className="text-violet-600" />
+                              <span>2 分钟深度介绍</span>
+                            </>
+                          )}
                         </span>
                         <span className="text-[11px] text-slate-400">{introText.length} 字</span>
                       </div>
@@ -632,23 +646,32 @@ export default function MobileInterviewPrepClient({
                       {isOpen ? (
                         <div className="border-t border-slate-100 bg-slate-50/70 p-3.5 space-y-3 text-xs leading-relaxed">
                           {q.why ? (
-                            <div>
-                              <span className="font-semibold text-violet-700">🎯 考察意图：</span>
-                              <span className="text-slate-600 ml-1">{q.why}</span>
+                            <div className="flex items-start gap-1.5">
+                              <Target size={14} className="mt-0.5 shrink-0 text-violet-600" />
+                              <div>
+                                <span className="font-semibold text-violet-700">考察意图：</span>
+                                <span className="text-slate-600">{q.why}</span>
+                              </div>
                             </div>
                           ) : null}
 
                           {q.experienceHint ? (
-                            <div>
-                              <span className="font-semibold text-indigo-700">📌 结合经历：</span>
-                              <span className="text-slate-600 ml-1">{q.experienceHint}</span>
+                            <div className="flex items-start gap-1.5">
+                              <Bookmark size={14} className="mt-0.5 shrink-0 text-indigo-600" />
+                              <div>
+                                <span className="font-semibold text-indigo-700">结合经历：</span>
+                                <span className="text-slate-600">{q.experienceHint}</span>
+                              </div>
                             </div>
                           ) : null}
 
                           {q.starAnswer ? (
                             <div className="rounded-xl border border-violet-100 bg-white p-3 space-y-1.5">
                               <div className="flex items-center justify-between">
-                                <span className="font-bold text-slate-800">💡 推荐回答思路 (STAR)：</span>
+                                <span className="inline-flex items-center gap-1.5 font-bold text-slate-800">
+                                  <Lightbulb size={14} className="text-amber-500" />
+                                  <span>推荐回答思路 (STAR)：</span>
+                                </span>
                                 <button
                                   type="button"
                                   onClick={() => void handleCopy(q.starAnswer, copyKey, '回答思路已复制')}
@@ -664,7 +687,10 @@ export default function MobileInterviewPrepClient({
 
                           {q.followUps && q.followUps.length > 0 ? (
                             <div className="rounded-lg bg-amber-50/70 p-2.5 border border-amber-100">
-                              <span className="font-semibold text-amber-800">❓ 常见追问：</span>
+                              <span className="inline-flex items-center gap-1.5 font-semibold text-amber-800">
+                                <HelpCircle size={14} className="text-amber-600" />
+                                <span>常见追问：</span>
+                              </span>
                               <ul className="mt-1 space-y-1 list-disc list-inside text-amber-900/80">
                                 {q.followUps.map((fu, fIdx) => (
                                   <li key={fIdx}>{fu}</li>
