@@ -294,8 +294,11 @@ export default function MobileInterviewPrepClient({
     <div className="flex flex-col">
       <MobileToolHeader
         title="面试准备与打招呼"
-        subtitle={currentResume?.title || '快速针对岗位备战'}
         returnTo={returnTo}
+        currentResumeTitle={currentResume?.title || '未命名简历'}
+        selectedResumeId={selectedResumeId}
+        resumeOptions={resumeOptions}
+        onSelectResume={(id) => void handleSelectResume(id)}
         rightAction={
           historyList.length > 0 ? (
             <button
@@ -310,48 +313,14 @@ export default function MobileInterviewPrepClient({
         }
       />
 
-      <main className="mx-auto flex w-full max-w-lg flex-col px-3 py-3 space-y-3">
-        {/* Resume Selector Card */}
-        {resumeOptions.length > 1 ? (
-          <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 shadow-xs">
-            <div className="flex items-center gap-2 overflow-hidden">
-              <FileText size={16} className="text-violet-600 shrink-0" />
-              <span className="text-xs text-slate-500 shrink-0">当前简历:</span>
-              <span className="truncate text-xs font-semibold text-slate-800">
-                {currentResume?.title || '未命名简历'}
-              </span>
-            </div>
-            <div className="relative shrink-0">
-              <select
-                aria-label="切换简历"
-                value={selectedResumeId}
-                onChange={(e) => void handleSelectResume(e.target.value)}
-                className="opacity-0 absolute inset-0 w-full h-full cursor-pointer"
-              >
-                {resumeOptions.map((opt) => (
-                  <option key={opt.id} value={opt.id}>
-                    {opt.title}
-                  </option>
-                ))}
-              </select>
-              <button
-                type="button"
-                className="flex items-center gap-1 text-xs font-medium text-violet-600"
-              >
-                <span>切换</span>
-                <ChevronDown size={14} />
-              </button>
-            </div>
-          </div>
-        ) : null}
-
+      <main className="mx-auto flex w-full max-w-lg flex-col px-3 py-2.5 space-y-3">
         {/* JD Input Card */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-3.5 shadow-xs">
+        <div className="rounded-2xl border border-slate-200/90 bg-white p-3.5 shadow-xs">
           <div className="mb-2 flex items-center justify-between">
             <div className="flex items-center gap-1.5">
               <BookOpen size={16} className="text-violet-600" />
               <span className="text-sm font-semibold text-slate-900">目标岗位 JD</span>
-              <span className="text-xs text-slate-400 font-normal">（选填）</span>
+              <span className="text-xs text-slate-400 font-normal">（选填，留空则按简历生成）</span>
             </div>
             <button
               type="button"
@@ -367,14 +336,43 @@ export default function MobileInterviewPrepClient({
             <textarea
               value={jobDescription}
               onChange={(e) => setJobDescription(e.target.value.slice(0, MAX_INTERVIEW_PREP_JD_LENGTH))}
-              placeholder="粘贴招聘软件上的岗位职责与任职要求，例如 BOSS 直聘岗位详情；若留空则基于简历通用准备..."
+              placeholder="粘贴招聘软件上的岗位职责与任职要求；若留空，AI 将直接提炼你的简历核心亮点生成通用准备..."
               rows={3}
-              className="w-full resize-none rounded-xl border border-slate-200 p-2.5 text-xs leading-relaxed text-slate-800 placeholder-slate-400 focus:border-violet-500 focus:outline-hidden focus:ring-1 focus:ring-violet-500"
+              className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50/50 p-2.5 text-xs leading-relaxed text-slate-800 placeholder-slate-400 focus:border-violet-500 focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-violet-500"
             />
             <span className="absolute bottom-2 right-2 text-[10px] text-slate-400">
               {jobDescription.length}/{MAX_INTERVIEW_PREP_JD_LENGTH}
             </span>
           </div>
+
+          {!jobDescription.trim() ? (
+            <div className="mt-2 flex items-center gap-1.5 overflow-x-auto">
+              <span className="shrink-0 text-[11px] text-slate-400">快捷示例：</span>
+              {[
+                {
+                  label: '技术研发岗',
+                  jd: '负责核心业务系统的架构设计与研发，熟悉主流前后端框架，具备良好的性能优化与工程化实践经验，有跨团队协作推进复杂项目的能力。',
+                },
+                {
+                  label: '产品/运营岗',
+                  jd: '负责核心产品功能规划与全生命周期管理，深入理解用户需求，通过数据分析驱动转化率与留存指标增长，具备优秀的跨部门沟通推进能力。',
+                },
+                {
+                  label: '校招/管培生',
+                  jd: '面向应届毕业生，具备扎实的专业基础与快速学习能力，逻辑清晰，在学校或实习期间有代表性的项目实践成果與团队协作经历。',
+                },
+              ].map((sample) => (
+                <button
+                  key={sample.label}
+                  type="button"
+                  onClick={() => setJobDescription(sample.jd)}
+                  className="shrink-0 rounded-lg border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] text-slate-600 active:border-violet-200 active:bg-violet-50 active:text-violet-700"
+                >
+                  + {sample.label}
+                </button>
+              ))}
+            </div>
+          ) : null}
 
           <button
             type="button"
@@ -390,11 +388,61 @@ export default function MobileInterviewPrepClient({
             ) : (
               <>
                 <Sparkles size={16} />
-                <span>{result ? '重新生成面试准备' : '生成打招呼语 & 面试题'}</span>
+                <span>{result ? '重新生成面试准备' : '一键生成打招呼语 & 面试题'}</span>
               </>
             )}
           </button>
         </div>
+
+        {/* Empty State Feature Preview (Eliminates Bottom Blank Area) */}
+        {!result && !isGenerating ? (
+          <div className="rounded-2xl border border-slate-200/80 bg-white p-3.5 shadow-xs space-y-2.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-800">生成后你将获得 3 项定制内容</span>
+              <span className="rounded-md bg-violet-50 px-1.5 py-0.5 text-[11px] font-medium text-violet-700">
+                约 8 秒生成
+              </span>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-start gap-2.5 rounded-xl bg-slate-50/80 p-2.5">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-violet-100 text-violet-600">
+                  <MessageSquare size={14} />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xs font-semibold text-slate-800">3 种高回复率 BOSS 打招呼语</div>
+                  <p className="mt-0.5 text-[11px] leading-relaxed text-slate-500">
+                    包含「亮点突出」「诚恳得体」「极简直接」3 种风格，提炼简历核心战绩，一键复制直发 HR。
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-2.5 rounded-xl bg-slate-50/80 p-2.5">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-violet-100 text-violet-600">
+                  <Volume2 size={14} />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xs font-semibold text-slate-800">30秒 & 2分钟自我介绍（含提词器模式）</div>
+                  <p className="mt-0.5 text-[11px] leading-relaxed text-slate-500">
+                    结构化串联个人背景与代表成果，支持开启大字号高对比度「提词背诵模式」，面试前随时速记。
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-2.5 rounded-xl bg-slate-50/80 p-2.5">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-violet-100 text-violet-600">
+                  <HelpCircle size={14} />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xs font-semibold text-slate-800">高频压力面试题 & STAR 回答思路</div>
+                  <p className="mt-0.5 text-[11px] leading-relaxed text-slate-500">
+                    针对你的经历深挖与岗位缺口预测必考题，每道题附带考察意图与 STAR 满分回答框架。
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : null}
 
         {/* Loading waiting state */}
         {isGenerating ? (

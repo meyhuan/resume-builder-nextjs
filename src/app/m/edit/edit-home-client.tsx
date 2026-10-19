@@ -13,7 +13,6 @@ import { htmlToPlainText } from '@/features/edit/form-fields/html-text'
 import { computeProgress } from '@/features/edit/progress/module-completeness'
 import { isMeaningfulText } from '@/features/edit/progress/meaningful-field'
 import { useInMiniProgram } from '../_components/use-mini-program'
-import { MobileAiFab } from '../_components/mobile-ai-fab'
 import { MobileAiAssistantDrawer } from '../_components/mobile-ai-assistant-drawer'
 import { AddMoreModules } from './_components/add-more-modules'
 import { DeveloperNote } from './_components/developer-note'
@@ -494,11 +493,6 @@ export default function MobileEditHomeClient(
       <HomeActionBar
         resumeId={resumeId ?? initial?.id ?? null}
         template={currentTemplateId}
-      />
-
-      <MobileAiFab
-        resumeId={resumeId ?? initial?.id ?? ''}
-        onClick={(): void => setAiAssistantOpen(true)}
       />
 
       <MobileAiAssistantDrawer

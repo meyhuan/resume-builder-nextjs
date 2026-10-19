@@ -262,8 +262,11 @@ export default function MobileJdMatchClient({
     <div className="flex flex-col">
       <MobileToolHeader
         title="JD 岗位匹配测试"
-        subtitle={currentResume?.title || '测匹配度 & 补关键词'}
         returnTo={returnTo}
+        currentResumeTitle={currentResume?.title || '未命名简历'}
+        selectedResumeId={selectedResumeId}
+        resumeOptions={resumeOptions}
+        onSelectResume={(id) => void handleSelectResume(id)}
         rightAction={
           historyList.length > 0 ? (
             <button
@@ -278,43 +281,9 @@ export default function MobileJdMatchClient({
         }
       />
 
-      <main className="mx-auto flex w-full max-w-lg flex-col px-3 py-3 space-y-3">
-        {/* Resume Selector */}
-        {resumeOptions.length > 1 ? (
-          <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 shadow-xs">
-            <div className="flex items-center gap-2 overflow-hidden">
-              <FileText size={16} className="text-violet-600 shrink-0" />
-              <span className="text-xs text-slate-500 shrink-0">当前简历:</span>
-              <span className="truncate text-xs font-semibold text-slate-800">
-                {currentResume?.title || '未命名简历'}
-              </span>
-            </div>
-            <div className="relative shrink-0">
-              <select
-                aria-label="切换简历"
-                value={selectedResumeId}
-                onChange={(e) => void handleSelectResume(e.target.value)}
-                className="opacity-0 absolute inset-0 w-full h-full cursor-pointer"
-              >
-                {resumeOptions.map((opt) => (
-                  <option key={opt.id} value={opt.id}>
-                    {opt.title}
-                  </option>
-                ))}
-              </select>
-              <button
-                type="button"
-                className="flex items-center gap-1 text-xs font-medium text-violet-600"
-              >
-                <span>切换</span>
-                <ChevronDown size={14} />
-              </button>
-            </div>
-          </div>
-        ) : null}
-
+      <main className="mx-auto flex w-full max-w-lg flex-col px-3 py-2.5 space-y-3">
         {/* JD Input Card */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-3.5 shadow-xs">
+        <div className="rounded-2xl border border-slate-200/90 bg-white p-3.5 shadow-xs">
           <div className="mb-2 flex items-center justify-between">
             <div className="flex items-center gap-1.5">
               <BookOpen size={16} className="text-violet-600" />
@@ -337,12 +306,41 @@ export default function MobileJdMatchClient({
               onChange={(e) => setJobDescription(e.target.value.slice(0, MAX_JD_ANALYSIS_JD_LENGTH))}
               placeholder="在此粘贴 BOSS直聘 / 猎聘 / 智联 上的岗位职责与任职要求..."
               rows={4}
-              className="w-full resize-none rounded-xl border border-slate-200 p-2.5 text-xs leading-relaxed text-slate-800 placeholder-slate-400 focus:border-violet-500 focus:outline-hidden focus:ring-1 focus:ring-violet-500"
+              className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50/50 p-2.5 text-xs leading-relaxed text-slate-800 placeholder-slate-400 focus:border-violet-500 focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-violet-500"
             />
             <span className="absolute bottom-2 right-2 text-[10px] text-slate-400">
               {jobDescription.length}/{MAX_JD_ANALYSIS_JD_LENGTH}
             </span>
           </div>
+
+          {!jobDescription.trim() ? (
+            <div className="mt-2 flex items-center gap-1.5 overflow-x-auto">
+              <span className="shrink-0 text-[11px] text-slate-400">一键填入示例测试：</span>
+              {[
+                {
+                  label: '技术研发岗',
+                  jd: '岗位职责：1. 负责核心业务系统的架构设计与研发；2. 推动系统性能优化与工程化建设。任职要求：本科及以上学历，熟悉主流技术栈，具备高并发或复杂业务系统落地经验，有良好的跨团队沟通能力。',
+                },
+                {
+                  label: '产品/运营岗',
+                  jd: '岗位职责：1. 负责产品核心链路迭代与增长策略落地；2. 通过漏斗分析与 A/B 实验持续提升核心转化率。任职要求：具备敏锐的数据洞察力与项目统筹推进能力，有成功的产品或增长案例。',
+                },
+                {
+                  label: '校招通用岗',
+                  jd: '岗位职责：参与核心业务模块日常推进、跨团队项目协同与质量标准化落地。任职要求：应届毕业生，具备良好的专业基础、结构化思维与执行力，有相关实习或学术项目成果优先。',
+                },
+              ].map((sample) => (
+                <button
+                  key={sample.label}
+                  type="button"
+                  onClick={() => setJobDescription(sample.jd)}
+                  className="shrink-0 rounded-lg border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] text-slate-600 active:border-violet-200 active:bg-violet-50 active:text-violet-700"
+                >
+                  + {sample.label}
+                </button>
+              ))}
+            </div>
+          ) : null}
 
           <button
             type="button"
@@ -363,6 +361,56 @@ export default function MobileJdMatchClient({
             )}
           </button>
         </div>
+
+        {/* Empty State Diagnostic Preview */}
+        {!result && !isAnalyzing ? (
+          <div className="rounded-2xl border border-slate-200/80 bg-white p-3.5 shadow-xs space-y-2.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-800">AI 将为你深度诊断 3 大维度</span>
+              <span className="rounded-md bg-violet-50 px-1.5 py-0.5 text-[11px] font-medium text-violet-700">
+                防机筛淘汰
+              </span>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-start gap-2.5 rounded-xl bg-slate-50/80 p-2.5">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-violet-100 text-violet-600">
+                  <Target size={14} />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xs font-semibold text-slate-800">综合契合度 & ATS 初筛预测分</div>
+                  <p className="mt-0.5 text-[11px] leading-relaxed text-slate-500">
+                    模拟大厂招聘系统（ATS）自动筛简历算法，量化评估你的简历在当前岗位下的初筛通过率。
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-2.5 rounded-xl bg-slate-50/80 p-2.5">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-violet-100 text-violet-600">
+                  <CheckCircle2 size={14} />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xs font-semibold text-slate-800">已命中技能 & 缺失核心关键词雷达</div>
+                  <p className="mt-0.5 text-[11px] leading-relaxed text-slate-500">
+                    逐字比对岗位 JD 硬性要求，精准揪出简历漏掉的高权重关键词，点击缺失词即可查看造句示范。
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-2.5 rounded-xl bg-slate-50/80 p-2.5">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-violet-100 text-violet-600">
+                  <Lightbulb size={14} />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xs font-semibold text-slate-800">简历原句 → 优化后对比建议</div>
+                  <p className="mt-0.5 text-[11px] leading-relaxed text-slate-500">
+                    定位到具体模块给出「修改前 vs 修改后」示范句，一键复制并跳回编辑器完成补词闭环。
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : null}
 
         {/* Loading waiting state */}
         {isAnalyzing ? (

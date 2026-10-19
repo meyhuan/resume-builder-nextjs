@@ -239,55 +239,24 @@ export default function MobileTranslateClient({
     <div className="flex flex-col">
       <MobileToolHeader
         title="简历双语翻译"
-        subtitle={currentResume?.title || '安全生成独立外语副本'}
         returnTo={returnTo}
+        currentResumeTitle={currentResume?.title || '未命名简历'}
+        selectedResumeId={selectedResumeId}
+        resumeOptions={resumeOptions}
+        onSelectResume={(id) => void handleSelectResume(id)}
       />
 
-      <main className="mx-auto flex w-full max-w-lg flex-col px-3 py-3 space-y-3">
-        {/* Resume Selector */}
-        {resumeOptions.length > 1 ? (
-          <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 shadow-xs">
-            <div className="flex items-center gap-2 overflow-hidden">
-              <FileText size={16} className="text-violet-600 shrink-0" />
-              <span className="text-xs text-slate-500 shrink-0">当前源简历:</span>
-              <span className="truncate text-xs font-semibold text-slate-800">
-                {currentResume?.title || '未命名简历'}
-              </span>
-            </div>
-            <div className="relative shrink-0">
-              <select
-                aria-label="切换简历"
-                value={selectedResumeId}
-                onChange={(e) => void handleSelectResume(e.target.value)}
-                className="opacity-0 absolute inset-0 w-full h-full cursor-pointer"
-              >
-                {resumeOptions.map((opt) => (
-                  <option key={opt.id} value={opt.id}>
-                    {opt.title}
-                  </option>
-                ))}
-              </select>
-              <button
-                type="button"
-                className="flex items-center gap-1 text-xs font-medium text-violet-600"
-              >
-                <span>切换</span>
-                <ChevronDown size={14} />
-              </button>
-            </div>
-          </div>
-        ) : null}
-
+      <main className="mx-auto flex w-full max-w-lg flex-col px-3 py-2.5 space-y-3">
         {/* Translation Config Card */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs space-y-3">
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700">
+        <div className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs space-y-3">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-100 text-violet-700">
               <Languages size={18} />
             </div>
             <div>
-              <span className="text-sm font-bold text-slate-900">选择目标语言</span>
+              <span className="text-sm font-bold text-slate-900">选择目标外语</span>
               <p className="text-[11px] text-slate-400">
-                翻译将自动生成一份独立新简历，原简历保持不变
+                自动生成独立外语新简历，100% 保护原中文简历不被覆盖
               </p>
             </div>
           </div>
@@ -300,13 +269,13 @@ export default function MobileTranslateClient({
                 onClick={() => setTargetLang(lang.code)}
                 className={`flex items-center justify-between rounded-xl border p-2.5 text-xs font-medium transition active:scale-95 ${
                   targetLang === lang.code
-                    ? 'border-emerald-500 bg-emerald-50 text-emerald-800 font-semibold'
+                    ? 'border-violet-500 bg-violet-50 text-violet-800 font-semibold'
                     : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'
                 }`}
               >
                 <span>{lang.name}</span>
                 {targetLang === lang.code ? (
-                  <CheckCircle2 size={14} className="text-emerald-600" />
+                  <CheckCircle2 size={14} className="text-violet-600" />
                 ) : null}
               </button>
             ))}
@@ -316,7 +285,7 @@ export default function MobileTranslateClient({
             type="button"
             disabled={isTranslating || !currentResume}
             onClick={() => void handleStartTranslate()}
-            className="mt-2 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 font-semibold text-sm text-white shadow-sm transition active:scale-[0.99] disabled:opacity-50"
+            className="mt-2 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 font-semibold text-sm text-white shadow-sm transition active:scale-[0.99] disabled:opacity-50"
           >
             {isTranslating ? (
               <>
@@ -334,10 +303,48 @@ export default function MobileTranslateClient({
           </button>
         </div>
 
+        {/* Empty State Guarantee Preview */}
+        {!translatedDraft && !isTranslating ? (
+          <div className="rounded-2xl border border-slate-200/80 bg-white p-3.5 shadow-xs space-y-2.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-800">外企级专业简历翻译特性</span>
+              <span className="rounded-md bg-violet-50 px-1.5 py-0.5 text-[11px] font-medium text-violet-700">
+                安全独立副本
+              </span>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-start gap-2.5 rounded-xl bg-slate-50/80 p-2.5">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-violet-100 text-violet-600">
+                  <Sparkles size={14} />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xs font-semibold text-slate-800">地道职场强动词（Action Verbs）转换</div>
+                  <p className="mt-0.5 text-[11px] leading-relaxed text-slate-500">
+                    告别生硬机翻，自动使用 Spearheaded、Architected、Optimized 等外企 HR 偏好的专业表达。
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-2.5 rounded-xl bg-slate-50/80 p-2.5">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-violet-100 text-violet-600">
+                  <FileText size={14} />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xs font-semibold text-slate-800">双语对照核对 & 独立新简历保存</div>
+                  <p className="mt-0.5 text-[11px] leading-relaxed text-slate-500">
+                    翻译完成后支持逐模块中英对照审阅，确认无误后自动创建「{currentResume?.title || '我的简历'}-{selectedLangMeta?.suffix || 'English'}」独立副本。
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
         {/* Translation Progress Bar */}
         {isTranslating ? (
-          <div className="rounded-2xl border border-emerald-100 bg-emerald-50/50 p-4 space-y-2">
-            <div className="flex items-center justify-between text-xs font-semibold text-emerald-900">
+          <div className="rounded-2xl border border-violet-100 bg-violet-50/50 p-4 space-y-2">
+            <div className="flex items-center justify-between text-xs font-semibold text-violet-900">
               <span>AI 逐段多并发翻译中...</span>
               <span>
                 {progress.total > 0
@@ -345,9 +352,9 @@ export default function MobileTranslateClient({
                   : '初始化...'}
               </span>
             </div>
-            <div className="h-2 w-full rounded-full bg-emerald-200/60 overflow-hidden">
+            <div className="h-2 w-full rounded-full bg-violet-200/60 overflow-hidden">
               <div
-                className="h-full bg-emerald-600 transition-all duration-300 rounded-full"
+                className="h-full bg-violet-600 transition-all duration-300 rounded-full"
                 style={{
                   width: `${
                     progress.total > 0
@@ -357,7 +364,7 @@ export default function MobileTranslateClient({
                 }}
               />
             </div>
-            <p className="text-[11px] text-emerald-700/80">保留原有排版结构与技术专有名词格式</p>
+            <p className="text-[11px] text-violet-700/80">保留原有排版结构与技术专有名词格式</p>
           </div>
         ) : null}
 

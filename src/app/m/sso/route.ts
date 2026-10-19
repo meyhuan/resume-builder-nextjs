@@ -16,21 +16,44 @@ interface SsoVerifyResult {
 /**
  * GET /m/sso?token=<one-time-token>&r=<redirect-path>
  *
- * Entry point used by the WeChat mini-program web-view handoff. Exchanges a
- * one-time SSO token issued by the Java backend for a long-lived {@code auth_uid}
- * cookie, upserts the Prisma User (so new mini-program users get a Next.js row),
- * then 302s to the requested in-app path.
+ * Read-only landing page for the WeChat web-view handoff. The page submits
+ * POST /m/sso to exchange the one-time token, synchronize the user and set
+ * the auth cookie, then redirects with 303 to the requested in-app path.
  */
 export async function GET(request: NextRequest): Promise<NextResponse> {
+  const url = new URL(request.url)
+  const token = url.searchParams.get('token')
+  if (!token) return renderErrorPage('缺少登录参数，请返回小程序重新进入', 400)
+  // DevTools inspects web-view URLs with an additional GET. A read-only
+  // landing page prevents that probe from consuming the one-time token.
+  const target = sanitizeRedirect(url.searchParams.get('r') || '/m')
+  return new NextResponse(`<!doctype html><html lang="zh-CN"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>正在登录 · 智简简历</title></head><body>
+<p>正在安全登录，请稍候…</p>
+<form method="post" action="/m/sso">
+<input type="hidden" name="token" value="${escapeHtml(token)}">
+<input type="hidden" name="r" value="${escapeHtml(target)}">
+<noscript><button type="submit">继续登录</button></noscript>
+</form><script>history.replaceState(null,'','/m/sso');document.forms[0].submit();</script>
+</body></html>`, { headers: {
+    'Content-Type': 'text/html; charset=utf-8',
+    'Cache-Control': 'no-store',
+    'Referrer-Policy': 'no-referrer',
+  } })
+}
+
+export async function POST(request: NextRequest): Promise<NextResponse> {
   const reqUrl: URL = new URL(request.url)
-  const { searchParams } = reqUrl
-  const token: string | null = searchParams.get('token')
-  const redirectParam: string = searchParams.get('r') || '/m'
+  const form = await request.formData()
+  const tokenValue = form.get('token')
+  const token = typeof tokenValue === 'string' ? tokenValue : null
+  const redirectValue = form.get('r')
+  const redirectParam = typeof redirectValue === 'string' ? redirectValue : '/m'
   const safeRedirect: string = sanitizeRedirect(redirectParam)
   const miniVersion: string = extractMiniVersion(safeRedirect)
   const ua: string = request.headers.get('user-agent') || ''
-  console.log('[m/sso] GET in', {
-    href: reqUrl.href,
+  console.log('[m/sso] POST in', {
     hasToken: Boolean(token),
     r: redirectParam,
     safeRedirect,
@@ -79,12 +102,12 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     })
   }
   const host = request.headers.get('x-forwarded-host') || request.headers.get('host') || 'aijianli.cn'
-  const protocol = request.headers.get('x-forwarded-proto') || (host.includes('localhost') ? 'http' : 'https')
+  const protocol = request.headers.get('x-forwarded-proto') || reqUrl.protocol.replace(':', '')
   const baseUrl = `${protocol}://${host}`
 
   const finalUrl: URL = new URL(safeRedirect, baseUrl)
   console.log('[m/sso] redirecting to final destination ->', finalUrl.href)
-  return NextResponse.redirect(finalUrl.href, { status: 302 })
+  return NextResponse.redirect(finalUrl.href, { status: 303, headers: { 'Cache-Control': 'no-store' } })
 }
 
 /**
