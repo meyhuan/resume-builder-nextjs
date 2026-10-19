@@ -1,8 +1,8 @@
-export type MobileTool = 'assistant' | 'translate'
+export type MobileTool = 'assistant' | 'translate' | 'interview-prep' | 'jd-match'
 export type RouteSource = 'web' | 'mini'
 
 export interface MobileToolRouteOptions {
-  readonly resumeId: string
+  readonly resumeId?: string
   readonly tool: MobileTool
   readonly source?: RouteSource
   readonly returnTo?: string
@@ -10,11 +10,11 @@ export interface MobileToolRouteOptions {
 
 export function createMobileToolPath(options: MobileToolRouteOptions): string {
   const params = new URLSearchParams()
-  params.set('id', options.resumeId)
-  params.set('tool', options.tool)
+  if (options.resumeId) params.set('id', options.resumeId)
   if (options.source) params.set('source', options.source)
   if (options.returnTo) params.set('returnTo', options.returnTo)
-  return `/m/edit/tools?${params.toString()}`
+  const qs = params.toString()
+  return `/m/tools/${options.tool}${qs ? `?${qs}` : ''}`
 }
 
 export function createMobileEditPath(resumeId: string): string {

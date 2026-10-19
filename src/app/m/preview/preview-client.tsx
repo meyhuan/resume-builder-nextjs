@@ -4,7 +4,7 @@ import { captureTemplateJourney, serializeTemplateJourney } from '@/lib/template
 
 import { useEffect, useMemo, useRef, useState, useCallback, Suspense, type ReactElement } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Sparkles } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAppStore } from '@/state/store'
 import { useDraftStore } from '@/features/edit/draft/draft-store'
@@ -846,6 +846,56 @@ export default function MobilePreviewClient(): ReactElement {
           >
             {Math.round(userZoom * 100)}% · 点击复位
           </button>
+        )}
+
+        {/* Post-Edit AI Next-Step Loop Card */}
+        {draftResumeId && (
+          <div
+            className="fixed left-3 right-3 z-20 flex items-center justify-between rounded-xl border border-violet-100 bg-white/95 px-3 py-2 shadow-md backdrop-blur-sm"
+            style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 68px)' }}
+          >
+            <div className="flex items-center gap-2 overflow-hidden">
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-violet-100 text-violet-700">
+                <Sparkles size={14} />
+              </div>
+              <div className="flex flex-col overflow-hidden">
+                <span className="truncate text-xs font-semibold text-slate-800">
+                  投递准备：生成打招呼语或测匹配度
+                </span>
+                <span className="text-[10px] text-slate-400">提高 3 倍 HR 回复率</span>
+              </div>
+            </div>
+            <div className="flex shrink-0 items-center gap-1.5">
+              <button
+                type="button"
+                onClick={(): void => {
+                  track('ai_tool_open', {
+                    tool: 'interview-prep',
+                    resumeId: draftResumeId,
+                    entry: 'preview_card',
+                  })
+                  router.push(`/m/tools/interview-prep?id=${encodeURIComponent(draftResumeId)}`)
+                }}
+                className="rounded-lg bg-violet-50 px-2 py-1 text-[11px] font-semibold text-violet-700 active:bg-violet-100"
+              >
+                打招呼
+              </button>
+              <button
+                type="button"
+                onClick={(): void => {
+                  track('ai_tool_open', {
+                    tool: 'jd-match',
+                    resumeId: draftResumeId,
+                    entry: 'preview_card',
+                  })
+                  router.push(`/m/tools/jd-match?id=${encodeURIComponent(draftResumeId)}`)
+                }}
+                className="rounded-lg bg-sky-50 px-2 py-1 text-[11px] font-semibold text-sky-700 active:bg-sky-100"
+              >
+                测匹配
+              </button>
+            </div>
+          </div>
         )}
 
         <BottomActionBar

@@ -13,7 +13,16 @@ describe('mobile platform route contract', () => {
       tool: 'assistant',
       source: 'mini',
       returnTo: '/m/edit?id=resume%2F1',
-    })).toBe('/m/edit/tools?id=resume%2F1&tool=assistant&source=mini&returnTo=%2Fm%2Fedit%3Fid%3Dresume%252F1')
+    })).toBe('/m/tools/assistant?id=resume%2F1&source=mini&returnTo=%2Fm%2Fedit%3Fid%3Dresume%252F1')
+
+    expect(createMobileToolPath({
+      resumeId: 'resume/2',
+      tool: 'interview-prep',
+    })).toBe('/m/tools/interview-prep?id=resume%2F2')
+
+    expect(createMobileToolPath({
+      tool: 'jd-match',
+    })).toBe('/m/tools/jd-match')
   })
 
   it('keeps return paths internal', () => {

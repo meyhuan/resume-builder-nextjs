@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useLayoutEffect, useMemo, useRef, type ReactElement, type SyntheticEvent } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactElement, type SyntheticEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { ArrowLeft } from 'lucide-react'
@@ -13,6 +13,8 @@ import { htmlToPlainText } from '@/features/edit/form-fields/html-text'
 import { computeProgress } from '@/features/edit/progress/module-completeness'
 import { isMeaningfulText } from '@/features/edit/progress/meaningful-field'
 import { useInMiniProgram } from '../_components/use-mini-program'
+import { MobileAiFab } from '../_components/mobile-ai-fab'
+import { MobileAiAssistantDrawer } from '../_components/mobile-ai-assistant-drawer'
 import { AddMoreModules } from './_components/add-more-modules'
 import { DeveloperNote } from './_components/developer-note'
 import { HomeActionBar } from './_components/home-action-bar'
@@ -95,6 +97,7 @@ export default function MobileEditHomeClient(
   const draft = useDraftStore((s): ResumeData | null => s.draft)
   const resumeId = useDraftStore((s): string | null => s.resumeId)
   const draftTemplateId = useDraftStore((s): string => s.templateId)
+  const [aiAssistantOpen, setAiAssistantOpen] = useState<boolean>(false)
   const hydratedRef = useRef<boolean>(false)
   const restoredScrollRef = useRef<boolean>(false)
   const restoredAnchorRef = useRef<boolean>(false)
@@ -470,7 +473,10 @@ export default function MobileEditHomeClient(
         </div>
       )}
 
-      <AiToolsEntry resumeId={resumeId ?? initial?.id ?? ''} />
+      <AiToolsEntry
+        resumeId={resumeId ?? initial?.id ?? ''}
+        onOpenAssistant={(): void => setAiAssistantOpen(true)}
+      />
       <ResumeProfileCard resume={resume} progress={progress} missingItems={missingItems} />
 
       <div className="mt-2 px-3">
@@ -488,6 +494,17 @@ export default function MobileEditHomeClient(
       <HomeActionBar
         resumeId={resumeId ?? initial?.id ?? null}
         template={currentTemplateId}
+      />
+
+      <MobileAiFab
+        resumeId={resumeId ?? initial?.id ?? ''}
+        onClick={(): void => setAiAssistantOpen(true)}
+      />
+
+      <MobileAiAssistantDrawer
+        isOpen={aiAssistantOpen}
+        onClose={(): void => setAiAssistantOpen(false)}
+        resumeId={resumeId ?? initial?.id ?? ''}
       />
     </div>
   )
