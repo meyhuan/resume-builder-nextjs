@@ -2,15 +2,21 @@ import fs from 'fs/promises'
 import os from 'os'
 import path from 'path'
 import puppeteerCore from 'puppeteer-core'
-import type { Browser, Page } from 'puppeteer-core'
+import type { Browser, BrowserContext, Page } from 'puppeteer-core'
 import chromium from '@sparticuz/chromium'
 
 const DEFAULT_IDLE_CLOSE_MS = 10 * 60 * 1000
 const DEFAULT_DISK_CACHE_SIZE_BYTES = 128 * 1024 * 1024
 
-let browserPromise: Promise<Browser> | null = null
-let activePageCount = 0
-let idleCloseTimer: ReturnType<typeof setTimeout> | null = null
+// Next development hot reloads re-evaluate modules without stopping Chrome.
+// Keep the connection and its lifecycle counters together across reloads.
+interface SharedBrowserState {
+  browserPromise: Promise<Browser> | null
+  activePageCount: number
+  idleCloseTimer: ReturnType<typeof setTimeout> | null
+}
+const runtime = globalThis as typeof globalThis & { __resumePuppeteerState?: SharedBrowserState }
+const shared = runtime.__resumePuppeteerState ??= { browserPromise: null, activePageCount: 0, idleCloseTimer: null }
 
 function getIdleCloseMs(): number {
   const raw = Number(process.env.PUPPETEER_IDLE_CLOSE_MS)
@@ -34,22 +40,22 @@ function getDiskCacheDir(): string {
 }
 
 function clearIdleCloseTimer(): void {
-  if (idleCloseTimer) {
-    clearTimeout(idleCloseTimer)
-    idleCloseTimer = null
+  if (shared.idleCloseTimer) {
+    clearTimeout(shared.idleCloseTimer)
+    shared.idleCloseTimer = null
   }
 }
 
 function scheduleIdleClose(): void {
   clearIdleCloseTimer()
   const idleCloseMs = getIdleCloseMs()
-  if (idleCloseMs === 0 || activePageCount > 0 || !browserPromise) return
+  if (idleCloseMs === 0 || shared.activePageCount > 0 || !shared.browserPromise) return
 
-  idleCloseTimer = setTimeout(() => {
+  shared.idleCloseTimer = setTimeout(() => {
     void (async (): Promise<void> => {
-      if (activePageCount > 0 || !browserPromise) return
-      const browser = await browserPromise.catch(() => null)
-      browserPromise = null
+      if (shared.activePageCount > 0 || !shared.browserPromise) return
+      const browser = await shared.browserPromise.catch(() => null)
+      shared.browserPromise = null
       if (browser?.connected) {
         await browser.close().catch((error: unknown) => {
           console.warn('[puppeteer-browser] idle close failed', {
@@ -68,7 +74,10 @@ async function launchSharedBrowser(): Promise<Browser> {
   const executablePath = isLocal
     ? 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
     : await chromium.executablePath()
-  const userDataDir = getUserDataDir()
+  // Isolate launches from orphaned profiles (including older hot-reloaded code).
+  const profilePrefix = getUserDataDir()
+  await fs.mkdir(path.dirname(profilePrefix), { recursive: true })
+  const userDataDir = await fs.mkdtemp(`${profilePrefix}-`)
   const diskCacheDir = getDiskCacheDir()
   const diskCacheSize = Number(process.env.PUPPETEER_DISK_CACHE_SIZE_BYTES) || DEFAULT_DISK_CACHE_SIZE_BYTES
 
@@ -87,7 +96,7 @@ async function launchSharedBrowser(): Promise<Browser> {
   })
 
   browser.on('disconnected', () => {
-    browserPromise = null
+    shared.browserPromise = null
     clearIdleCloseTimer()
   })
 
@@ -102,28 +111,31 @@ async function launchSharedBrowser(): Promise<Browser> {
 
 async function getSharedBrowser(): Promise<Browser> {
   clearIdleCloseTimer()
-  if (browserPromise) {
-    const browser = await browserPromise.catch(() => null)
+  if (shared.browserPromise) {
+    const browser = await shared.browserPromise.catch(() => null)
     if (browser?.connected) return browser
-    browserPromise = null
+    shared.browserPromise = null
   }
 
-  browserPromise = launchSharedBrowser().catch((error: unknown) => {
-    browserPromise = null
+  shared.browserPromise = launchSharedBrowser().catch((error: unknown) => {
+    shared.browserPromise = null
     throw error
   })
-  return browserPromise
+  return shared.browserPromise
 }
 
-export async function newSharedPuppeteerPage(): Promise<Page> {
+export async function newSharedPuppeteerPage(options?: { isolated?: boolean }): Promise<Page> {
   const browser = await getSharedBrowser()
-  activePageCount += 1
+  shared.activePageCount += 1
+  let context: BrowserContext | undefined
   try {
-    const page = await browser.newPage()
+    if (options?.isolated) context = await browser.createBrowserContext()
+    const page = context ? await context.newPage() : await browser.newPage()
     await page.setCacheEnabled(true)
     return page
   } catch (error) {
-    activePageCount = Math.max(0, activePageCount - 1)
+    await context?.close().catch(() => undefined)
+    shared.activePageCount = Math.max(0, shared.activePageCount - 1)
     scheduleIdleClose()
     throw error
   }
@@ -131,13 +143,17 @@ export async function newSharedPuppeteerPage(): Promise<Page> {
 
 export async function closeSharedPuppeteerPage(page: Page | undefined): Promise<void> {
   try {
-    if (page && !page.isClosed()) await page.close()
+    if (page && !page.isClosed()) {
+      const context = page.browserContext()
+      if (context !== page.browser().defaultBrowserContext()) await context.close()
+      else await page.close()
+    }
   } catch (error) {
     console.warn('[puppeteer-browser] page close failed', {
       error: error instanceof Error ? error.message : String(error),
     })
   } finally {
-    activePageCount = Math.max(0, activePageCount - 1)
+    shared.activePageCount = Math.max(0, shared.activePageCount - 1)
     scheduleIdleClose()
   }
 }

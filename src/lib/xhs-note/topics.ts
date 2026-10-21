@@ -64,7 +64,7 @@ export const XHS_TOPICS: readonly XhsTopic[] = [
       card2Badge: '排版细节',
       card3Title: '挑选模板自查',
       card3Sub: '选对版式，投递前最后核对',
-      card3Cta: '在「智简简历」获取同款极简单页模板',
+      card3Cta: '整理自个人改稿笔记 · 用智简简历排版导出',
     },
   },
   {
@@ -86,7 +86,7 @@ export const XHS_TOPICS: readonly XhsTopic[] = [
       card2Badge: '导入体验',
       card3Title: '导入后核对清单',
       card3Sub: '解析完成后检查这几项',
-      card3Cta: '在「智简简历」一键上传旧简历解析',
+      card3Cta: '整理自个人改稿笔记 · 自动解析拆分模块',
     },
   },
   {
@@ -108,7 +108,7 @@ export const XHS_TOPICS: readonly XhsTopic[] = [
       card2Badge: '导出排查',
       card3Title: 'PDF 导出前核验',
       card3Sub: '发送前务必按项核对',
-      card3Cta: '在「智简简历」免费导出高清无水印 PDF',
+      card3Cta: '整理自个人改稿笔记 · A4无水印排版导出',
     },
   },
   {
@@ -130,7 +130,7 @@ export const XHS_TOPICS: readonly XhsTopic[] = [
       card2Badge: '初稿思路',
       card3Title: '初稿完善清单',
       card3Sub: '框架搭好后逐项填充',
-      card3Cta: '在「智简简历」快速生成岗位简历框架',
+      card3Cta: '整理自个人改稿笔记 · 岗位框架梳理记录',
     },
   },
   {
@@ -152,7 +152,7 @@ export const XHS_TOPICS: readonly XhsTopic[] = [
       card2Badge: '协同体验',
       card3Title: '大屏导出自查',
       card3Sub: '在电脑端做最终版式确认',
-      card3Cta: '小程序随手记，电脑登录 aijianli.cn 精修',
+      card3Cta: '整理自个人改稿笔记 · 手机记灵感大屏精修',
     },
   },
 
@@ -176,7 +176,7 @@ export const XHS_TOPICS: readonly XhsTopic[] = [
       card2Badge: '动词替换',
       card3Title: '经历段落自查',
       card3Sub: '每一段都按这 4 点过一遍',
-      card3Cta: '在「智简简历」一键润色简历经历措辞',
+      card3Cta: '整理自个人改稿笔记 · 动词具体化实操',
     },
   },
   {
@@ -198,7 +198,7 @@ export const XHS_TOPICS: readonly XhsTopic[] = [
       card2Badge: '关键词对齐',
       card3Title: '投递前对齐清单',
       card3Sub: '投递前花 2 分钟核对这 4 点',
-      card3Cta: '在电脑端「智简简历」粘贴 JD 进行对齐分析',
+      card3Cta: '整理自个人改稿笔记 · 岗位JD关键词对齐',
     },
   },
   {
@@ -220,7 +220,7 @@ export const XHS_TOPICS: readonly XhsTopic[] = [
       card2Badge: '排版压缩',
       card3Title: '一页纸自检步骤',
       card3Sub: '排版溢出时的排查顺序',
-      card3Cta: '在「智简简历」切换紧凑模板自适应一页纸',
+      card3Cta: '整理自个人改稿笔记 · 单页版式自适应压缩',
     },
   },
 
@@ -244,7 +244,7 @@ export const XHS_TOPICS: readonly XhsTopic[] = [
       card2Badge: '应届示范',
       card3Title: '应届生自查清单',
       card3Sub: '初入职场简历避坑指南',
-      card3Cta: '在「智简简历」使用应届生专属单页模板',
+      card3Cta: '整理自个人改稿笔记 · 校园课程项目拆解',
     },
   },
   {
@@ -266,7 +266,7 @@ export const XHS_TOPICS: readonly XhsTopic[] = [
       card2Badge: '转岗重构',
       card3Title: '转岗简历核对',
       card3Sub: '跨方向投递前逐项确认',
-      card3Cta: '在「智简简历」自由拖拽调整简历模块与排版',
+      card3Cta: '整理自个人改稿笔记 · 模块拖拽与可迁移能力',
     },
   },
   {
@@ -288,7 +288,7 @@ export const XHS_TOPICS: readonly XhsTopic[] = [
       card2Badge: '成果清单',
       card3Title: '跳槽简历快检',
       card3Sub: '投出前核对这 4 个职场关键项',
-      card3Cta: '在「智简简历」快速更新在职工作经历',
+      card3Cta: '整理自个人改稿笔记 · 在职成果速理清单',
     },
   },
   {
@@ -310,7 +310,7 @@ export const XHS_TOPICS: readonly XhsTopic[] = [
       card2Badge: '自查对比',
       card3Title: '投递前 5 分钟清单',
       card3Sub: '点击发送前必过的 4 道门槛',
-      card3Cta: '在「智简简历」完成在线预览与标准导出',
+      card3Cta: '整理自个人改稿笔记 · 投递前自查清单',
     },
   },
 ]

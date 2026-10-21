@@ -1,0 +1,158 @@
+[
+  {
+    "id": "01-mobile-template-a",
+    "platform": "mobile",
+    "feature": "templates",
+    "variant": "A",
+    "name": "手机模板 A",
+    "titles": [
+      "内容填好了\n版式不用从头做",
+      "在手机预览里\n换个版式看效果",
+      "模块分清楚\n重点经历先被看到"
+    ],
+    "subtitle": "选个单页清爽模板，先看整体排版"
+  },
+  {
+    "id": "02-mobile-template-b",
+    "platform": "mobile",
+    "feature": "templates",
+    "variant": "B",
+    "name": "手机模板 B",
+    "titles": [
+      "同一个模板\n换个主色气质大不同",
+      "选好版式后\n挑个顺眼的主题色",
+      "全篇颜色统一\n排版细节再过一遍"
+    ],
+    "subtitle": "先排好经历，再微调视觉风格"
+  },
+  {
+    "id": "03-desktop-template-a",
+    "platform": "desktop",
+    "feature": "templates",
+    "variant": "A",
+    "name": "PC 模板 A",
+    "titles": [
+      "告别混乱表格\n旧简历换个清爽版式",
+      "电脑大屏对比\n切换模板直观预览",
+      "换的是版面外壳\n核心还是经历提炼"
+    ],
+    "subtitle": "保留原有文字，一键套用单页排版"
+  },
+  {
+    "id": "04-desktop-template-b",
+    "platform": "desktop",
+    "feature": "templates",
+    "variant": "B",
+    "name": "PC 模板 B",
+    "titles": [
+      "简历模板怎么选？\n根据经历体量挑版式",
+      "看完整大图预览\n比只盯缩略图靠谱",
+      "选定模板后\n这三处细节必自查"
+    ],
+    "subtitle": "单栏清晰结构，适合绝大多数求职者"
+  },
+  {
+    "id": "05-mobile-edit-a",
+    "platform": "mobile",
+    "feature": "editing",
+    "variant": "A",
+    "name": "手机编辑 A",
+    "titles": [
+      "手机也能改简历\n先把核心经历理清楚",
+      "项目经历分开填\n不用挤成一大长段",
+      "填完自动排版\n排版整齐一览无余"
+    ],
+    "subtitle": "按模块分别填写，思路不凌乱"
+  },
+  {
+    "id": "06-mobile-edit-b",
+    "platform": "mobile",
+    "feature": "editing",
+    "variant": "B",
+    "name": "手机编辑 B",
+    "titles": [
+      "每填完一段经历\n退出来看一眼效果",
+      "发现描述太啰嗦\n随时点进模块精简",
+      "全部内容整理完\n投递前全屏自查"
+    ],
+    "subtitle": "随写随看，排版舒心不焦虑"
+  },
+  {
+    "id": "07-desktop-edit-a",
+    "platform": "desktop",
+    "feature": "editing",
+    "variant": "A",
+    "name": "PC 编辑 A",
+    "titles": [
+      "告别表单跳转\n直接在简历画布上改",
+      "点到哪段改哪段\n像在白纸上排版一样顺",
+      "文字改完通读\n重点检查分页与行距"
+    ],
+    "subtitle": "所见即所得，改字同时看排版"
+  },
+  {
+    "id": "08-desktop-edit-b",
+    "platform": "desktop",
+    "feature": "editing",
+    "variant": "B",
+    "name": "PC 编辑 B",
+    "titles": [
+      "想让HR先看什么？\n把核心亮点往前移",
+      "鼠标直接拖拽\n模块顺序一秒调整",
+      "结合投递岗位排顺序\n让匹配度第一眼显现"
+    ],
+    "subtitle": "因岗调整重点，核心亮点往前放"
+  },
+  {
+    "id": "09-mobile-ai-a",
+    "platform": "mobile",
+    "feature": "ai-polish",
+    "variant": "A",
+    "name": "手机 AI A",
+    "titles": [
+      "做过的事像流水账？\n换种表达更显干练",
+      "基于真实经历润色\n把口水话提炼成动作",
+      "AI 建议仅作参考\n挑选合适语气再采纳"
+    ],
+    "subtitle": "从大白话到职业化描述，给表达新思路"
+  },
+  {
+    "id": "10-mobile-ai-b",
+    "platform": "mobile",
+    "feature": "ai-polish",
+    "variant": "B",
+    "name": "手机 AI B",
+    "titles": [
+      "想把经历写出亮点？\n先弄清实际做了什么",
+      "对照润色建议\n保留真实数据与过程",
+      "留下准确描述\n改成自己面试能讲清的话"
+    ],
+    "subtitle": "拒绝空洞大话，用具体动作讲清职责"
+  },
+  {
+    "id": "11-desktop-ai-a",
+    "platform": "desktop",
+    "feature": "ai-polish",
+    "variant": "A",
+    "name": "PC AI A",
+    "titles": [
+      "经历写得太散？\n理清动词与量化成果",
+      "左右双栏对照\n逐句查看改写建议",
+      "表达可以更专业\n但经历坚决不编造"
+    ],
+    "subtitle": "用“动作+情境+结果”重构项目描述"
+  },
+  {
+    "id": "12-desktop-ai-b",
+    "platform": "desktop",
+    "feature": "ai-polish",
+    "variant": "B",
+    "name": "PC AI B",
+    "titles": [
+      "AI 润色改完后\n千万不要无脑全盘照搬",
+      "逐字对比改动处\n筛出真正贴合的词句",
+      "投递前必查三件事\n事实/数据/问心无愧"
+    ],
+    "subtitle": "机器给的是句式参考，事实还得靠自己"
+  }
+]
