@@ -10,6 +10,7 @@ import { XHS_CATEGORIES, XHS_TOPICS, XHS_PAIN_POINTS, findTopic } from '@/lib/xh
 import { redactResume } from '@/lib/xhs-note/redact'
 import { buildXhsSystemPrompt, buildXhsUserPrompt } from '@/lib/xhs-note/prompt'
 import { normalizeXhsPackage, validateXhsPackage } from '@/lib/xhs-note/validate'
+import { pickPersona, pickLayoutVariant } from '@/lib/xhs-note/personas'
 
 const DAILY_LIMIT = 10
 const IS_UNLIMITED_ENV = process.env.NODE_ENV !== 'production'
@@ -58,11 +59,27 @@ export async function POST(req: Request): Promise<NextResponse> {
     const used = await prisma.xhsNoteDraft.count({
       where: { userId: user.id, createdAt: { gte: startOfShanghaiDay() } },
     })
+
+    let recommendedTopics: string[] = []
+    try {
+      const latestResume = await prisma.resume.findFirst({
+        where: { userId: user.id },
+        orderBy: { updatedAt: 'desc' },
+      })
+      if (latestResume && latestResume.content && typeof latestResume.content === 'object' && !Array.isArray(latestResume.content)) {
+        const parsed = normalizeResumeContent(latestResume.content as Partial<ResumeData>)
+        recommendedTopics = redactResume(parsed).recommendedTopics || []
+      }
+    } catch {
+      // Ignore recommendation failure
+    }
+
     return NextResponse.json({
       categories: XHS_CATEGORIES,
       topics: XHS_TOPICS,
       painPoints: XHS_PAIN_POINTS,
       remaining: remainingFor(used),
+      recommendedTopics,
     })
   }
 
@@ -112,6 +129,10 @@ export async function POST(req: Request): Promise<NextResponse> {
     return NextResponse.json({ error: '简历里能写的经历太少，请先补充一段再来' }, { status: 400 })
   }
 
+  const seed = `${user.id}-${resumeId}-${Date.now()}`
+  const persona = pickPersona(seed)
+  const layoutVariant = pickLayoutVariant(seed)
+
   try {
     const model = getModel(
       { provider: 'dashscope', model: '', apiKey: '', baseURL: '' },
@@ -123,7 +144,7 @@ export async function POST(req: Request): Promise<NextResponse> {
       const userPrompt = buildXhsUserPrompt(redacted.text, userNote, redacted.roleHint)
       const result = await generateText({
         model,
-        system: buildXhsSystemPrompt(topicKey),
+        system: buildXhsSystemPrompt(topicKey, persona),
         prompt: attempt === 0
           ? userPrompt
           : `${userPrompt}\n上次结果不合格：${lastError}。请重写并严格输出 JSON。`,
@@ -143,6 +164,8 @@ export async function POST(req: Request): Promise<NextResponse> {
         if (topic?.visuals) {
           output.visuals = topic.visuals
         }
+        output.layoutVariant = layoutVariant
+        output.personaName = persona.name
         await prisma.xhsNoteDraft.create({
           data: { userId: user.id, resumeId, topic: topicKey, output: output as object },
         })

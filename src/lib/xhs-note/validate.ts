@@ -1,4 +1,5 @@
 import { BRAND_TAGS, findTopic } from '@/lib/xhs-note/topics'
+import type { XhsLayoutVariant } from '@/lib/xhs-note/personas'
 
 export interface XhsCover {
   line1: string
@@ -20,6 +21,9 @@ export interface XhsNotePackage {
   tags: string[]
   cover: XhsCover
   beforeAfter?: XhsBeforeAfterItem[]
+  formula?: string
+  actionVerbs?: string[]
+  layoutVariant?: XhsLayoutVariant
   checklist?: string[]
 }
 
@@ -151,6 +155,19 @@ export function normalizeXhsPackage(raw: unknown, topicKey = ''): unknown {
     .map((item) => item.trim().slice(0, 44))
     .slice(0, 4)
   value.checklist = validChecklist.length >= 3 ? validChecklist : GENERIC_CHECKLIST
+
+  if (typeof value.formula !== 'string' || !value.formula.trim()) {
+    value.formula = '【高阶动词】+【具体业务对象】+【量化/可验证交付】'
+  } else {
+    value.formula = value.formula.trim().slice(0, 36)
+  }
+
+  const rawVerbs = Array.isArray(value.actionVerbs) ? value.actionVerbs : []
+  const validVerbs = rawVerbs
+    .filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
+    .map((item) => item.trim().slice(0, 6))
+    .slice(0, 6)
+  value.actionVerbs = validVerbs.length >= 3 ? validVerbs : ['搭建', '梳理', '推进落地', '独立承接']
 
   if (value.cover && typeof value.cover === 'object') {
     const cover = { ...(value.cover as Record<string, unknown>) }

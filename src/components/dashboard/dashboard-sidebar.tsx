@@ -20,6 +20,7 @@ import {
   Puzzle,
   MessageSquareHeart,
   Sparkles,
+  Share2,
   UserRoundPen,
   X,
 } from "lucide-react";
@@ -59,6 +60,12 @@ const JOB_NAV_ITEMS: NavItem[] = [
 ];
 
 const OTHER_NAV_ITEMS: NavItem[] = [
+  {
+    key: "share-story",
+    label: "小红书分享",
+    href: "/m/share-story?platform=desktop",
+    icon: <Share2 className="w-[18px] h-[18px]" />,
+  },
   {
     key: "exports",
     label: "导出记录",

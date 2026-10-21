@@ -97,9 +97,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   const response =
-    action === 'list'
+    (action === 'list' || action === 'config')
       ? await fetch(
-          `${javaBase}/xhs-note/admin/list${
+          `${javaBase}/xhs-note/admin/${action}${
             body.status === undefined ? '' : `?status=${encodeURIComponent(String(body.status))}`
           }`,
           { headers, cache: 'no-store' }

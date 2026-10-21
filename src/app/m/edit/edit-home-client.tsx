@@ -2,6 +2,7 @@
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactElement, type SyntheticEvent } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { toast } from 'sonner'
 import { ArrowLeft } from 'lucide-react'
 import { createLogger } from '@/lib/logger'
@@ -491,6 +492,14 @@ export default function MobileEditHomeClient(
       <AddMoreModules emptyModules={emptyOptionalModules} />
 
       <DeveloperNote />
+      <div className="px-4 py-3 text-center">
+        <Link
+          href={inMiniProgram ? '/m/share-story?source=mini' : '/m/share-story?platform=mobile'}
+          className="inline-flex min-h-11 items-center rounded-lg px-4 text-sm text-violet-700 hover:bg-violet-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-violet-500"
+        >
+          分享使用体验到小红书
+        </Link>
+      </div>
       <HomeActionBar
         resumeId={resumeId ?? initial?.id ?? null}
         template={currentTemplateId}

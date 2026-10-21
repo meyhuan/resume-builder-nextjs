@@ -47,7 +47,7 @@ const resume = {
 
 describe('redactResume', () => {
   it('removes identity and generalizes company and school names', () => {
-    const { text, usable } = redactResume(resume)
+    const { text, usable, recommendedTopics } = redactResume(resume)
     expect(usable).toBe(true)
     expect(text).not.toContain('袁观环')
     expect(text).not.toContain('13800138000')
@@ -56,10 +56,12 @@ describe('redactResume', () => {
     expect(text).not.toContain('浙江大学')
     expect(text).not.toContain('110101199001011234')
     expect(text).not.toContain('yuan_wx')
-    expect(text).toContain('某大厂')
-    expect(text).toContain('某211')
+    expect(text).toContain('某连锁品牌公司')
+    expect(text).toMatch(/某综合大学|某重点高校|某院校|某本科院校/)
     expect(text).toContain('品牌运营实习生')
     expect(text).toContain('晚班排班')
+    expect(Array.isArray(recommendedTopics)).toBe(true)
+    expect(recommendedTopics.length).toBeGreaterThanOrEqual(1)
   })
 
   it('rejects a resume that has no usable experience text', () => {

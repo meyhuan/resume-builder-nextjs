@@ -24,6 +24,7 @@ interface NoteRow {
   inviteCode: string
   inviteConversions: number
   createdAt: string
+  publishedAt?: string | null
   baseDays: number
   bonusDays: number
   views?: number | null
@@ -42,6 +43,7 @@ interface RecentDraftRow {
 }
 
 interface MetricInput {
+  publishedAt: string
   views: string
   likes: string
   collects: string
@@ -68,31 +70,32 @@ const TOPIC_LABELS: Record<string, string> = {
 const STATUS_LABELS: Record<number, string> = { 0: '待审核', 1: '已通过', 2: '已拒绝', 3: '已回收' }
 
 const QUICK_REASONS = [
-  '正文中未包含专属口令',
+  '正文或首评未自然提及「智简简历」',
   '笔记已删除或仅自己可见',
   '未使用活动生成的配图或内容',
   '内容与求职简历无关',
 ]
 
 // 与后端 XhsNoteRewardCalculator 保持一致：互动 = 赞 + 藏 + 评，阈值取自 application.properties 默认值
-const RULE = { tier1Views: 300, tier1Engagement: 30, tier1Total: 30, tier2Views: 1000, tier2Total: 60 }
+const DEFAULT_RULE = { baseDays: 7, bonusAfterHours: 48, tier1Views: 300, tier1Engagement: 30, tier1TotalDays: 30, tier2Views: 1000, tier2TotalDays: 60 }
+type RewardRules = typeof DEFAULT_RULE
 
-function preview(row: NoteRow, m: MetricInput) {
+function preview(row: NoteRow, m: MetricInput, rule: RewardRules) {
   const views = Math.max(0, Number(m.views) || 0)
   const likes = Math.max(0, Number(m.likes) || 0)
   const collects = Math.max(0, Number(m.collects) || 0)
   const comments = Math.max(0, Number(m.comments) || 0)
   const engagement = likes + collects + comments
   let target = 0
-  if (views >= RULE.tier2Views) target = RULE.tier2Total
-  else if (views >= RULE.tier1Views || engagement >= RULE.tier1Engagement) target = RULE.tier1Total
+  if (views >= rule.tier2Views) target = rule.tier2TotalDays
+  else if (views >= rule.tier1Views || engagement >= rule.tier1Engagement) target = rule.tier1TotalDays
   const granted = (row.baseDays || 0) + (row.bonusDays || 0)
   return { views, likes, collects, comments, engagement, target, granted, delta: Math.max(0, target - granted) }
 }
 
 function hoursSince(createdAt?: string): number {
-  const t = createdAt ? new Date(createdAt).getTime() : NaN
-  return Number.isNaN(t) ? 48 : Math.floor((Date.now() - t) / 3600000)
+  const t = createdAt ? new Date(createdAt.replace(/(?:Z|[+-]\d{2}:\d{2})$/, '') + '+08:00').getTime() : NaN
+  return Number.isNaN(t) ? -1 : Math.floor((Date.now() - t) / 3600000)
 }
 
 const input = 'rounded border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 outline-none focus:border-violet-600'
@@ -108,6 +111,7 @@ export default function XhsNotesAdminPage() {
   const [error, setError] = useState('')
   const [reason, setReason] = useState<Record<number, string>>({})
   const [metrics, setMetrics] = useState<Record<number, MetricInput>>({})
+  const [rules, setRules] = useState<RewardRules>(DEFAULT_RULE)
   const [open, setOpen] = useState<number | null>(null)
 
   useEffect(() => {
@@ -137,6 +141,9 @@ export default function XhsNotesAdminPage() {
         const payload = await call('drafts')
         setDrafts(Array.isArray(payload?.data) ? payload.data : [])
       } else {
+        const config = await call('config')
+        if (!config?.data) throw new Error('无法获取活动奖励规则')
+        setRules(config.data)
         const payload = await call('list', { status: target })
         const list: NoteRow[] = Array.isArray(payload?.data) ? payload.data : []
         setRows(list)
@@ -144,6 +151,7 @@ export default function XhsNotesAdminPage() {
           const next: Record<number, MetricInput> = {}
           list.forEach((r) => {
             next[r.id] = prev[r.id] || {
+              publishedAt: r.publishedAt?.slice(0, 16) || '',
               views: r.views != null ? String(r.views) : '',
               likes: r.likes != null ? String(r.likes) : '',
               collects: r.collects != null ? String(r.collects) : '',
@@ -172,7 +180,7 @@ export default function XhsNotesAdminPage() {
   }
 
   function setMetric(id: number, field: keyof MetricInput, value: string) {
-    setMetrics((prev) => ({ ...prev, [id]: { ...(prev[id] || { views: '', likes: '', collects: '', comments: '' }), [field]: value } }))
+    setMetrics((prev) => ({ ...prev, [id]: { ...(prev[id] || { publishedAt: '', views: '', likes: '', collects: '', comments: '' }), [field]: value } }))
   }
 
   function switchQueue(next: Queue) {
@@ -203,7 +211,7 @@ export default function XhsNotesAdminPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">笔记奖励审核</h1>
           <p className="mt-1 text-sm text-stone-500">
-            通过前核对：公开可见、含口令、非搬运。已通过的笔记满 48 小时后录入数据补发。
+            通过前核对：公开可见、正文或首评自然提及「智简简历」、非搬运。已通过的笔记需核验实际发布时间（北京时间），发布满 {rules.bonusAfterHours} 小时后录入数据补发。
           </p>
         </div>
         <div className="flex gap-2">
@@ -254,7 +262,7 @@ export default function XhsNotesAdminPage() {
           </button>
         ))}
         <span className="ml-auto pb-3 text-xs text-stone-400">
-          规则：通过 7 天；浏览 ≥300 或 赞+藏+评 ≥30 补至 30 天；浏览 ≥1000 补至 60 天
+          规则：通过 {rules.baseDays} 天；浏览 ≥{rules.tier1Views} 或 赞+藏+评 ≥{rules.tier1Engagement} 累计至 {rules.tier1TotalDays} 天；浏览 ≥{rules.tier2Views} 累计至 {rules.tier2TotalDays} 天
         </span>
       </nav>
 
@@ -304,9 +312,10 @@ export default function XhsNotesAdminPage() {
       ) : (
         <div className="divide-y divide-stone-200">
           {rows.map((row) => {
-            const m = metrics[row.id] || { views: '', likes: '', collects: '', comments: '' }
-            const p = preview(row, m)
-            const hours = hoursSince(row.createdAt)
+            const m = metrics[row.id] || { publishedAt: '', views: '', likes: '', collects: '', comments: '' }
+            const p = preview(row, m, rules)
+            const hours = hoursSince(row.publishedAt || m.publishedAt)
+            const invalidMetrics = [m.views, m.likes, m.collects, m.comments].some(value => value.trim() !== '' && (!/^\d+$/.test(value) || Number(value) > 2147483647))
             const draft = row.draft?.output
             return (
               <article key={row.id} className="py-6">
@@ -353,7 +362,7 @@ export default function XhsNotesAdminPage() {
                   <div className="mt-4 space-y-3">
                     <div className="flex flex-wrap items-center gap-2">
                       <button className={btnSolid} type="button" onClick={() => void act('approve', row.id)}>
-                        通过，发放 7 天
+                        通过，发放 {rules.baseDays} 天
                       </button>
                       <input
                         className={`${input} w-72`}
@@ -386,10 +395,14 @@ export default function XhsNotesAdminPage() {
                   <div className="mt-4 border-t border-stone-200 pt-4">
                     <div className="flex items-baseline justify-between text-sm">
                       <span className="font-semibold">效果数据</span>
-                      <span className={hours >= 48 ? 'text-stone-500' : 'text-amber-800'}>
-                        已发布 {hours} 小时{hours >= 48 ? '' : '，未满 48 小时'}
+                      <span className={hours >= rules.bonusAfterHours ? 'text-stone-500' : 'text-amber-800'}>
+                        {hours < 0 ? '请核验实际发布时间' : `已发布 ${hours} 小时${hours >= rules.bonusAfterHours ? '' : `，未满 ${rules.bonusAfterHours} 小时`}`}
                       </span>
                     </div>
+                    <label className="mt-3 block text-xs text-stone-600">
+                      笔记实际发布时间（北京时间，核验后填写）
+                      <input type="datetime-local" className={`${input} mt-1 block`} aria-label="笔记实际发布时间（北京时间）" value={row.publishedAt?.slice(0, 16) || m.publishedAt} disabled={!!row.publishedAt} onChange={e => setMetric(row.id, 'publishedAt', e.target.value)} />
+                    </label>
                     <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-5">
                       {(
                         [
@@ -414,12 +427,12 @@ export default function XhsNotesAdminPage() {
                         <button
                           type="button"
                           className={`${btnSolid} w-full`}
-                          disabled={hours < 48}
+                          disabled={hours < rules.bonusAfterHours || invalidMetrics}
                           onClick={() =>
                             void act(
                               'bonus',
                               row.id,
-                              { views: String(p.views), likes: String(p.likes), collects: String(p.collects), comments: String(p.comments) },
+                              { publishedAt: row.publishedAt || m.publishedAt, views: String(p.views), likes: String(p.likes), collects: String(p.collects), comments: String(p.comments) },
                               p.delta > 0 ? `将补发 ${p.delta} 天会员，确认？` : undefined,
                             )
                           }
