@@ -1,9 +1,10 @@
 'use client'
 
-import { useCallback, useEffect, useState, useTransition, type ReactElement } from 'react'
+import { JdInput } from '../_components/jd-input'
+
+import { useEffect, useRef, useState, useTransition, type ReactElement } from 'react'
 import {
   Sparkles,
-  Clipboard,
   ClipboardList,
   Copy,
   Check,
@@ -11,12 +12,9 @@ import {
   Trash2,
   ChevronDown,
   ChevronRight,
-  BookOpen,
   MessageSquare,
   Clock,
   HelpCircle,
-  AlertCircle,
-  FileText,
   Loader2,
   Volume2,
   Target,
@@ -40,14 +38,14 @@ import {
   type InterviewPrepHistoryItem,
 } from '@/lib/ai/interview-prep-history'
 import { fetchInterviewPrepResume } from '@/lib/ai/interview-prep-resume'
+import { GenerationFeedback, useGenerationRequest } from '../_components/generation-feedback'
+import { useCareerQuota } from '../_components/career-quota'
 import { MobileToolHeader } from '../_components/mobile-tool-header'
+import { Teleprompter } from '../_components/teleprompter'
+import { GreetingCompany } from '../_components/greeting-company'
 import { track } from '@/lib/analytics'
 
-const WAITING_MESSAGES = [
-  'AI 正在阅读简历核心经历…',
-  '正在对照岗位要求提炼匹配亮点…',
-  '正在组织高情商打招呼语与面试题…',
-] as const
+
 
 const GREETING_META: Record<
   InterviewPrepGreeting['style'],
@@ -97,6 +95,7 @@ interface MobileInterviewPrepClientProps {
   } | null
   readonly resumeOptions: readonly ResumeOption[]
   readonly returnTo?: string
+  readonly initialTab?: TabType
   readonly source?: string
 }
 
@@ -107,7 +106,11 @@ export default function MobileInterviewPrepClient({
   resumeOptions,
   returnTo,
   source = 'web',
+  initialTab = 'greetings',
 }: MobileInterviewPrepClientProps): ReactElement {
+  const quota = useCareerQuota()
+  const generation = useGenerationRequest()
+  const resumeSwitch = useRef(0)
   const [selectedResumeId, setSelectedResumeId] = useState<string>(initialResume?.id || '')
   const [currentResume, setCurrentResume] = useState<{
     id: string
@@ -115,18 +118,18 @@ export default function MobileInterviewPrepClient({
     content: ResumeData
   } | null>(initialResume)
 
+  const [company, setCompany] = useState('')
   const [jobDescription, setJobDescription] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
-  const [waitingStep, setWaitingStep] = useState(0)
   const [result, setResult] = useState<InterviewPrepOutput | null>(null)
-  const [activeTab, setActiveTab] = useState<TabType>('greetings')
+  const [activeTab, setActiveTab] = useState<TabType>(initialTab)
   const [selfIntroVersion, setSelfIntroVersion] = useState<'30s' | '2min'>('30s')
   const [teleprompterMode, setTeleprompterMode] = useState(false)
   const [expandedQuestion, setExpandedQuestion] = useState<number | null>(0)
   const [historyList, setHistoryList] = useState<InterviewPrepHistoryItem[]>([])
   const [showHistorySheet, setShowHistorySheet] = useState(false)
   const [copiedKey, setCopiedKey] = useState<string | null>(null)
-  const [, startSwitchResume] = useTransition()
+  const [isSwitchingResume, startSwitchResume] = useTransition()
 
   // Load history from IndexedDB on mount
   useEffect(() => {
@@ -138,53 +141,33 @@ export default function MobileInterviewPrepClient({
     }
   }, [])
 
-  // Cycle waiting messages
-  useEffect(() => {
-    if (!isGenerating) return
-    const timer = setInterval(() => {
-      setWaitingStep((prev) => (prev + 1) % WAITING_MESSAGES.length)
-    }, 2500)
-    return () => clearInterval(timer)
-  }, [isGenerating])
-
   // Switch resume selector
   const handleSelectResume = async (resumeId: string): Promise<void> => {
     if (resumeId === selectedResumeId) return
+    generation.cancel()
+    setIsGenerating(false)
+    const switchId = ++resumeSwitch.current
     setSelectedResumeId(resumeId)
     startSwitchResume(async () => {
       try {
         const fetched = await fetchInterviewPrepResume(resumeId)
+        if (switchId !== resumeSwitch.current) return
+        setResult(null)
         setCurrentResume({
           id: resumeId,
           title: fetched.title,
           content: fetched.resume,
         })
         toast.success(`已切换至简历「${fetched.title}」`)
-      } catch (err) {
+      } catch {
+        if (switchId !== resumeSwitch.current) return
+        setSelectedResumeId(currentResume?.id || '')
         toast.error('切换简历失败，请稍后重试')
       }
     })
   }
 
   // Clipboard read action
-  const handlePasteClipboard = async (): Promise<void> => {
-    try {
-      if (!navigator.clipboard?.readText) {
-        toast.info('浏览器不支持自动读取剪贴板，请长按文本框粘贴')
-        return
-      }
-      const text = await navigator.clipboard.readText()
-      if (!text || !text.trim()) {
-        toast.info('剪贴板中没有文字内容')
-        return
-      }
-      setJobDescription((prev) => (prev ? `${prev}\n\n${text.trim()}` : text.trim()).slice(0, MAX_INTERVIEW_PREP_JD_LENGTH))
-      toast.success('已填入剪贴板内容')
-    } catch {
-      toast.info('未获取到剪贴板权限，请长按输入框直接粘贴')
-    }
-  }
-
   // Copy helper with feedback
   const handleCopy = async (text: string, key: string, label = '内容已复制'): Promise<void> => {
     try {
@@ -207,8 +190,9 @@ export default function MobileInterviewPrepClient({
       return
     }
 
+    if (!quota.allow()) return
+    const request = generation.begin()
     setIsGenerating(true)
-    setWaitingStep(0)
     track('ai_assist_start', {
       feature: 'interview-prep',
       resumeId: currentResume.id,
@@ -218,6 +202,7 @@ export default function MobileInterviewPrepClient({
 
     try {
       const response = await fetch('/next-api/ai/interview-prep', {
+        signal: request.signal,
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -227,7 +212,7 @@ export default function MobileInterviewPrepClient({
       })
 
       const raw = await response.text()
-      let data: InterviewPrepOutput & { error?: string }
+      let data: InterviewPrepOutput & { error?: string; quotaExceeded?: boolean }
       try {
         data = JSON.parse(raw)
       } catch {
@@ -235,12 +220,14 @@ export default function MobileInterviewPrepClient({
       }
 
       if (!response.ok) {
+        if (quota.handleError(data)) return
         throw new Error(data.error || '生成失败，请稍后重试')
       }
 
+      if (request.signal.aborted) return
       setResult(data)
-      setActiveTab('greetings')
-      toast.success('面试准备已生成！')
+      setActiveTab(initialTab)
+      toast.success(initialTab === 'intro' ? '面试准备已生成！' : '打招呼文案已生成！')
 
       // Save to IndexedDB history
       const accountId = resolveInterviewPrepAccountId()
@@ -254,7 +241,7 @@ export default function MobileInterviewPrepClient({
           resumeTitle: currentResume.title,
         }
         const updated = await saveInterviewPrepHistory(accountId, historyItem)
-        setHistoryList(updated)
+        if (!request.signal.aborted) setHistoryList(updated)
       }
 
       track('ai_assist_success', {
@@ -264,20 +251,24 @@ export default function MobileInterviewPrepClient({
         questionsCount: data.questions?.length || 0,
       })
     } catch (err: unknown) {
+      if (request.signal.aborted) return
       const msg = err instanceof Error ? err.message : '生成失败，请重试'
       toast.error(msg)
       track('ai_assist_failed', { feature: 'interview-prep', error: msg })
     } finally {
-      setIsGenerating(false)
+      quota.refresh()
+      if (!request.signal.aborted) setIsGenerating(false)
     }
   }
 
   // History restore / delete
   const handleRestoreHistory = (item: InterviewPrepHistoryItem): void => {
+    generation.cancel()
+    setIsGenerating(false)
     setResult(item.result)
     setJobDescription(item.jobDescription || '')
     setShowHistorySheet(false)
-    setActiveTab('greetings')
+    setActiveTab(initialTab)
     toast.success('已加载历史生成记录')
   }
 
@@ -293,7 +284,7 @@ export default function MobileInterviewPrepClient({
   return (
     <div className="flex flex-col">
       <MobileToolHeader
-        title="面试准备与打招呼"
+        title={initialTab === 'intro' ? '面试准备' : '打招呼文案'}
         returnTo={returnTo}
         currentResumeTitle={currentResume?.title || '未命名简历'}
         selectedResumeId={selectedResumeId}
@@ -313,52 +304,25 @@ export default function MobileInterviewPrepClient({
         }
       />
 
-      <main className="mx-auto flex w-full max-w-lg flex-col px-3 py-2.5 space-y-3">
+      <main className="mx-auto flex w-full max-w-lg flex-col px-4 py-3 space-y-3">
         {/* JD Input Card */}
-        <div className="rounded-2xl border border-slate-200/90 bg-white p-3.5 shadow-xs">
-          <div className="mb-2 flex items-center justify-between">
-            <div className="flex items-center gap-1.5">
-              <BookOpen size={16} className="text-violet-600" />
-              <span className="text-sm font-semibold text-slate-900">目标岗位 JD</span>
-              <span className="text-xs text-slate-400 font-normal">（选填，留空则按简历生成）</span>
-            </div>
-            <button
-              type="button"
-              onClick={() => void handlePasteClipboard()}
-              className="flex items-center gap-1 rounded-lg bg-violet-50 px-2 py-1 text-xs font-medium text-violet-700 active:bg-violet-100"
-            >
-              <Clipboard size={12} />
-              <span>读取剪贴板</span>
-            </button>
-          </div>
-
-          <div className="relative">
-            <textarea
-              value={jobDescription}
-              onChange={(e) => setJobDescription(e.target.value.slice(0, MAX_INTERVIEW_PREP_JD_LENGTH))}
-              placeholder="粘贴招聘软件上的岗位职责与任职要求；若留空，AI 将直接提炼你的简历核心亮点生成通用准备..."
-              rows={3}
-              className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50/50 p-2.5 text-xs leading-relaxed text-slate-800 placeholder-slate-400 focus:border-violet-500 focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-violet-500"
-            />
-            <span className="absolute bottom-2 right-2 text-[10px] text-slate-400">
-              {jobDescription.length}/{MAX_INTERVIEW_PREP_JD_LENGTH}
-            </span>
-          </div>
+        <div className="rounded-xl border border-slate-200/90 bg-white p-3 shadow-xs">
+          <JdInput value={jobDescription} onChange={setJobDescription} maxLength={MAX_INTERVIEW_PREP_JD_LENGTH} optional />
 
           {!jobDescription.trim() ? (
-            <div className="mt-2 flex items-center gap-1.5 overflow-x-auto">
-              <span className="shrink-0 text-[11px] text-slate-400">快捷示例：</span>
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+
               {[
                 {
-                  label: '技术研发岗',
+                  label: '技术研发',
                   jd: '负责核心业务系统的架构设计与研发，熟悉主流前后端框架，具备良好的性能优化与工程化实践经验，有跨团队协作推进复杂项目的能力。',
                 },
                 {
-                  label: '产品/运营岗',
+                  label: '产品运营',
                   jd: '负责核心产品功能规划与全生命周期管理，深入理解用户需求，通过数据分析驱动转化率与留存指标增长，具备优秀的跨部门沟通推进能力。',
                 },
                 {
-                  label: '校招/管培生',
+                  label: '校招',
                   jd: '面向应届毕业生，具备扎实的专业基础与快速学习能力，逻辑清晰，在学校或实习期间有代表性的项目实践成果與团队协作经历。',
                 },
               ].map((sample) => (
@@ -376,9 +340,9 @@ export default function MobileInterviewPrepClient({
 
           <button
             type="button"
-            disabled={isGenerating || !currentResume}
+            disabled={isSwitchingResume || isGenerating || !currentResume}
             onClick={() => void handleGenerate()}
-            className="mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 font-semibold text-sm text-white shadow-sm transition active:scale-[0.99] disabled:opacity-50"
+            className="mt-3 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-violet-600 font-semibold text-sm text-white shadow-sm transition active:scale-[0.99] disabled:opacity-50"
           >
             {isGenerating ? (
               <>
@@ -388,19 +352,22 @@ export default function MobileInterviewPrepClient({
             ) : (
               <>
                 <Sparkles size={16} />
-                <span>{result ? '重新生成面试准备' : '一键生成打招呼语 & 面试题'}</span>
+                <span>{result ? '重新生成' : '生成'}{initialTab === 'intro' ? '面试准备' : '打招呼文案'}</span>
               </>
             )}
           </button>
+          {quota.ui}
         </div>
 
         {/* Empty State Feature Preview (Eliminates Bottom Blank Area) */}
         {!result && !isGenerating ? (
-          <div className="rounded-2xl border border-slate-200/80 bg-white p-3.5 shadow-xs space-y-2.5">
+          <details className="rounded-xl border border-slate-200/80 bg-white p-3 text-xs text-slate-600">
+            <summary className="cursor-pointer leading-6">生成内容：打招呼 · 自我介绍 · 面试追问</summary>
+            <div className="mt-3 space-y-2.5">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-slate-800">生成后你将获得 3 项定制内容</span>
               <span className="rounded-md bg-violet-50 px-1.5 py-0.5 text-[11px] font-medium text-violet-700">
-                约 8 秒生成
+                结合当前简历
               </span>
             </div>
 
@@ -410,7 +377,7 @@ export default function MobileInterviewPrepClient({
                   <MessageSquare size={14} />
                 </div>
                 <div className="min-w-0">
-                  <div className="text-xs font-semibold text-slate-800">3 种高回复率 BOSS 打招呼语</div>
+                  <div className="text-xs font-semibold text-slate-800">3 种风格的打招呼文案</div>
                   <p className="mt-0.5 text-[11px] leading-relaxed text-slate-500">
                     包含「亮点突出」「诚恳得体」「极简直接」3 种风格，提炼简历核心战绩，一键复制直发 HR。
                   </p>
@@ -436,24 +403,16 @@ export default function MobileInterviewPrepClient({
                 <div className="min-w-0">
                   <div className="text-xs font-semibold text-slate-800">高频压力面试题 & STAR 回答思路</div>
                   <p className="mt-0.5 text-[11px] leading-relaxed text-slate-500">
-                    针对你的经历深挖与岗位缺口预测必考题，每道题附带考察意图与 STAR 满分回答框架。
+                    针对你的经历深挖与岗位缺口准备常见问题，每道题附带考察意图与 STAR 回答框架。
                   </p>
                 </div>
               </div>
             </div>
-          </div>
+            </div>
+          </details>
         ) : null}
 
-        {/* Loading waiting state */}
-        {isGenerating ? (
-          <div className="flex flex-col items-center justify-center rounded-2xl border border-violet-100 bg-violet-50/50 p-6 text-center">
-            <Loader2 size={32} className="animate-spin text-violet-600 mb-3" />
-            <p className="text-sm font-semibold text-violet-900 transition-all">
-              {WAITING_MESSAGES[waitingStep]}
-            </p>
-            <p className="mt-1 text-xs text-violet-600/80">大约需要 5~10 秒，正在全速运算</p>
-          </div>
-        ) : null}
+        {isGenerating ? <GenerationFeedback label={initialTab === 'intro' ? '正在生成面试准备内容…' : '正在生成打招呼文案…'} onCancel={() => { generation.cancel(); setIsGenerating(false) }} /> : null}
 
         {/* Results Presentation */}
         {result && !isGenerating ? (
@@ -462,7 +421,7 @@ export default function MobileInterviewPrepClient({
             <div className="grid grid-cols-3 gap-1 rounded-xl bg-slate-200/70 p-1 text-center font-medium text-xs">
               <button
                 type="button"
-                onClick={() => setActiveTab('greetings')}
+                onClick={() => setActiveTab(initialTab)}
                 className={`flex items-center justify-center gap-1 rounded-lg py-2 transition ${
                   activeTab === 'greetings'
                     ? 'bg-white text-violet-700 font-semibold shadow-xs'
@@ -516,16 +475,16 @@ export default function MobileInterviewPrepClient({
                         >
                           {meta.label}
                         </span>
-                        <span className="text-[11px] text-slate-400">{g.text.length} 字</span>
+                        <span className="text-[11px] text-slate-400">{g.text.replaceAll('贵司', company || '贵司').length} 字</span>
                       </div>
                       <p className="text-xs leading-5 text-slate-500 mb-2.5">{meta.desc}</p>
-                      <div className="rounded-xl bg-slate-50 p-3 text-sm leading-relaxed text-slate-800 selection:bg-violet-100">
-                        {g.text}
+                      <div className="rounded-xl bg-slate-50 p-3 text-sm leading-[1.9] text-slate-800 selection:bg-violet-100">
+                        <GreetingCompany text={g.text} company={company} onChange={setCompany} />
                       </div>
                       <button
                         type="button"
-                        onClick={() => void handleCopy(g.text, copyKey, '开场白已复制，可直接粘贴发给 HR！')}
-                        className={`mt-3 flex h-10 w-full items-center justify-center gap-1.5 rounded-xl font-semibold text-xs transition active:scale-[0.98] ${
+                        onClick={() => void handleCopy(g.text.replaceAll('贵司', company || '贵司'), copyKey, '开场白已复制，可直接粘贴发给 HR！')}
+                        className={`mt-3 flex h-12 w-full items-center justify-center gap-1.5 rounded-xl font-semibold text-xs transition active:scale-[0.98] ${
                           isCopied
                             ? 'bg-emerald-600 text-white'
                             : 'bg-violet-600 text-white shadow-xs'
@@ -632,7 +591,7 @@ export default function MobileInterviewPrepClient({
                       <button
                         type="button"
                         onClick={() => void handleCopy(introText, copyKey, '自我介绍已复制')}
-                        className={`mt-3 flex h-10 w-full items-center justify-center gap-1.5 rounded-xl font-semibold text-xs transition active:scale-[0.98] ${
+                        className={`mt-3 flex h-12 w-full items-center justify-center gap-1.5 rounded-xl font-semibold text-xs transition active:scale-[0.98] ${
                           isCopied
                             ? 'bg-emerald-600 text-white'
                             : 'bg-violet-600 text-white shadow-xs'
@@ -757,6 +716,7 @@ export default function MobileInterviewPrepClient({
         ) : null}
       </main>
 
+      <Teleprompter open={teleprompterMode} onOpenChange={setTeleprompterMode} text={result ? (selfIntroVersion === '30s' ? result.selfIntro30s : result.selfIntro2min) : ''} />
       {/* History Bottom Sheet */}
       {showHistorySheet ? (
         <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/50 backdrop-blur-xs">

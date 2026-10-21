@@ -19,6 +19,7 @@ interface PageProps {
   readonly searchParams: Promise<{
     readonly id?: string
     readonly returnTo?: string
+    readonly intent?: string
     readonly source?: string
   }>
 }
@@ -50,6 +51,7 @@ export default async function MobileInterviewPrepPage({
     const loginRedirect = `/m/tools/interview-prep?${new URLSearchParams({
       ...(params.id ? { id: params.id } : {}),
       ...(params.source ? { source: params.source } : {}),
+      ...(params.intent ? { intent: params.intent } : {}),
       returnTo,
     }).toString()}`
     redirect(`/login?redirect=${encodeURIComponent(loginRedirect)}`)
@@ -97,6 +99,7 @@ export default async function MobileInterviewPrepPage({
 
   return (
     <MobileInterviewPrepClient
+      initialTab={params.intent === 'intro' ? 'intro' : 'greetings'}
       initialResume={initialResume}
       resumeOptions={resumeOptions}
       returnTo={returnTo}

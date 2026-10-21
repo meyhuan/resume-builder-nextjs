@@ -3,7 +3,7 @@ import { NextRequest } from 'next/server';
 import { generateText, type LanguageModel } from 'ai';
 import { extractAIConfig, getJsonProviderOptions, getModel, AIConfigError, type AIConfig } from '@/lib/ai/provider';
 import { extractJson } from '@/lib/ai/extract-json';
-import { withQuotaCheck } from '@/lib/quota/quota-guard';
+import { withCareerQuota } from '@/lib/quota/career-quota-guard';
 import {
   translateInputSchema,
   translatedHeaderSchema,
@@ -71,7 +71,7 @@ async function runWithConcurrency<T, R>(
 
 export async function POST(request: NextRequest): Promise<Response> {
   try {
-    return withQuotaCheck('ai:editor-assist', async () => {
+    return await withCareerQuota(async () => {
     const body = await request.json();
     const parsed = translateInputSchema.safeParse(body);
     if (!parsed.success) {
@@ -129,7 +129,7 @@ export async function POST(request: NextRequest): Promise<Response> {
           language: targetLanguage,
           failedCount,
         });
-        controller.close();
+        try { controller.close(); } catch { /* client cancelled */ }
       },
     });
 

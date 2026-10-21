@@ -22,6 +22,7 @@ import { ResumeProfileCard } from './_components/resume-profile-card'
 import { SectionsList } from './_components/sections-list'
 import { PortfolioPreview } from './_components/portfolio-preview'
 import { TemplateSpecificSettings } from './_components/template-metrics-preview'
+import { MobileAiFab } from '../_components/mobile-ai-fab'
 import { AiToolsEntry } from './_components/ai-tools-entry'
 
 /**
@@ -472,11 +473,11 @@ export default function MobileEditHomeClient(
         </div>
       )}
 
+      <ResumeProfileCard resume={resume} progress={progress} missingItems={missingItems} />
       <AiToolsEntry
         resumeId={resumeId ?? initial?.id ?? ''}
         onOpenAssistant={(): void => setAiAssistantOpen(true)}
       />
-      <ResumeProfileCard resume={resume} progress={progress} missingItems={missingItems} />
 
       <div className="mt-2 px-3">
         <JobIntentionPreview resume={resume} />
@@ -495,6 +496,7 @@ export default function MobileEditHomeClient(
         template={currentTemplateId}
       />
 
+      <MobileAiFab resumeId={resumeId ?? initial?.id ?? ''} onClick={() => setAiAssistantOpen(true)} />
       <MobileAiAssistantDrawer
         isOpen={aiAssistantOpen}
         onClose={(): void => setAiAssistantOpen(false)}

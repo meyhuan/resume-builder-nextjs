@@ -38,6 +38,8 @@ interface QuotasData {
 }
 
 export interface QuotaCheckResult {
+  /** Internal receipt for reverting a failed AI generation in the same quota window. */
+  readonly receipt?: { userId: string; feature: string; date: string };
   /** Whether the action is allowed. */
   readonly allowed: boolean;
   /** Whether user is VIP (unlimited). */
@@ -392,5 +394,18 @@ async function checkQuotaCore(
     message,
     feature,
     freeExportCount,
+    receipt: skipConsume ? undefined : { userId: user.id, feature, date: isLifetimeQuota ? 'lifetime' : todayKey },
+  });
+}
+
+/** Caller owns single-use semantics; the row lock preserves concurrent charges. */
+export async function refundFailedGeneration(receipt: NonNullable<QuotaCheckResult['receipt']>): Promise<void> {
+  const { userId, feature, date } = receipt;
+  await prisma.$transaction(async tx => {
+    const [row] = await tx.$queryRaw<{ quotas: QuotasData }[]>`SELECT "quotas" FROM "UserQuota" WHERE "userId"=${userId} FOR UPDATE`;
+    const current = row?.quotas[feature];
+    if (!current || current.date !== date || current.used <= 0) return;
+    const value = JSON.stringify({ ...current, used: current.used - 1 });
+    await tx.$executeRaw`UPDATE "UserQuota" SET "quotas"=jsonb_set("quotas",ARRAY[${feature}],${value}::jsonb,true),"updatedAt"=CURRENT_TIMESTAMP WHERE "userId"=${userId}`;
   });
 }

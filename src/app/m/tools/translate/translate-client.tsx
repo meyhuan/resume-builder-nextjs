@@ -1,27 +1,26 @@
 'use client'
 
-import { useEffect, useState, useTransition, type ReactElement } from 'react'
+import { useRef, useState, useTransition, type ReactElement } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Languages,
   Sparkles,
   CheckCircle2,
   ChevronDown,
-  ChevronRight,
   FileText,
   Loader2,
-  Copy,
   ArrowRight,
   ExternalLink,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import type { ResumeData } from '@/entities/resume/resume-data'
 import {
-  applyTranslatedHeaderToClone,
-  applyTranslatedSectionToClone,
   cloneResumeData,
 } from '@/lib/ai/apply-translated-section'
+import { applyMobileTranslationUnit, finishMobileTranslation } from '@/lib/ai/mobile-translation-stream'
 import { fetchInterviewPrepResume } from '@/lib/ai/interview-prep-resume'
+import { GenerationFeedback, useGenerationRequest } from '../_components/generation-feedback'
+import { useCareerQuota } from '../_components/career-quota'
 import { MobileToolHeader } from '../_components/mobile-tool-header'
 import { track } from '@/lib/analytics'
 
@@ -55,7 +54,8 @@ async function readNDJSON(
   response: Response,
   onLine: (data: Record<string, unknown>) => void,
 ): Promise<void> {
-  const reader = response.body!.getReader()
+  if (!response.body) throw new Error('翻译响应为空，请重试')
+  const reader = response.body.getReader()
   const decoder = new TextDecoder()
   let buffer = ''
   for (;;) {
@@ -79,6 +79,9 @@ export default function MobileTranslateClient({
   source = 'web',
 }: MobileTranslateClientProps): ReactElement {
   const router = useRouter()
+  const quota = useCareerQuota()
+  const generation = useGenerationRequest()
+  const resumeSwitch = useRef(0)
   const [selectedResumeId, setSelectedResumeId] = useState<string>(initialResume?.id || '')
   const [currentResume, setCurrentResume] = useState<{
     id: string
@@ -94,15 +97,19 @@ export default function MobileTranslateClient({
   const [createdResumeId, setCreatedResumeId] = useState<string | null>(null)
   const [isSavingCopy, setIsSavingCopy] = useState(false)
   const [expandedSection, setExpandedSection] = useState<string | null>(null)
-  const [, startSwitchResume] = useTransition()
+  const [isSwitchingResume, startSwitchResume] = useTransition()
 
   // Switch resume
   const handleSelectResume = async (resumeId: string): Promise<void> => {
     if (resumeId === selectedResumeId) return
+    generation.cancel()
+    setIsTranslating(false)
+    const switchId = ++resumeSwitch.current
     setSelectedResumeId(resumeId)
     startSwitchResume(async () => {
       try {
         const fetched = await fetchInterviewPrepResume(resumeId)
+        if (switchId !== resumeSwitch.current) return
         setCurrentResume({
           id: resumeId,
           title: fetched.title,
@@ -113,6 +120,8 @@ export default function MobileTranslateClient({
         setCreatedResumeId(null)
         toast.success(`已切换至简历「${fetched.title}」`)
       } catch {
+        if (switchId !== resumeSwitch.current) return
+        setSelectedResumeId(currentResume?.id || '')
         toast.error('切换简历失败，请稍后重试')
       }
     })
@@ -125,6 +134,8 @@ export default function MobileTranslateClient({
       return
     }
 
+    if (!quota.allow()) return
+    const request = generation.begin()
     setIsTranslating(true)
     setProgress({ current: 0, total: 1 })
     setTranslatedDraft(null)
@@ -140,6 +151,7 @@ export default function MobileTranslateClient({
     try {
       let accumulated = cloneResumeData(currentResume.content)
       const res = await fetch('/next-api/ai/translate', {
+        signal: request.signal,
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -156,6 +168,7 @@ export default function MobileTranslateClient({
         let errMessage = '翻译失败，请稍后重试'
         try {
           const parsed = JSON.parse(text)
+          if (quota.handleError(parsed)) return
           if (parsed.error) errMessage = parsed.error
         } catch {
           // fallback
@@ -163,26 +176,21 @@ export default function MobileTranslateClient({
         throw new Error(errMessage)
       }
 
+      let completed = false
+      let failed = 0
       await readNDJSON(res, (line) => {
+        if (request.signal.aborted) return
+        if (line.type === 'error') throw new Error(String(line.error || line.message || '翻译失败，请重试'))
         if (line.type === 'progress') {
-          setProgress({
-            current: Number(line.current ?? 0),
-            total: Number(line.total ?? 1),
-          })
-        } else if (line.type === 'header' && line.header) {
-          accumulated = applyTranslatedHeaderToClone(
-            accumulated,
-            line.header as Record<string, unknown>,
-          )
-        } else if (line.type === 'section' && line.section) {
-          accumulated = applyTranslatedSectionToClone(
-            accumulated,
-            line.section as { sectionId: string; title?: string; displayTitle?: string; blocks?: unknown[] },
-          )
+          setProgress({ current: Number(line.completed ?? 0), total: Number(line.total ?? 1) })
+          accumulated = applyMobileTranslationUnit(accumulated, line.unit)
+        } else if (line.type === 'done') {
+          completed = true
+          failed = Number(line.failedCount ?? 0)
         }
       })
-
-      setTranslatedDraft(accumulated)
+      if (request.signal.aborted) return
+      setTranslatedDraft(finishMobileTranslation(accumulated, completed, failed, targetLang))
       toast.success('翻译完成！请检查双语核对预览')
       track('ai_assist_success', {
         feature: 'translate',
@@ -190,11 +198,13 @@ export default function MobileTranslateClient({
         targetLanguage: targetLang,
       })
     } catch (err: unknown) {
+      if (request.signal.aborted) return
       const msg = err instanceof Error ? err.message : '翻译服务异常，请稍后重试'
       toast.error(msg)
       track('ai_assist_failed', { feature: 'translate', error: msg })
     } finally {
-      setIsTranslating(false)
+      quota.refresh()
+      if (!request.signal.aborted) setIsTranslating(false)
     }
   }
 
@@ -243,12 +253,12 @@ export default function MobileTranslateClient({
         currentResumeTitle={currentResume?.title || '未命名简历'}
         selectedResumeId={selectedResumeId}
         resumeOptions={resumeOptions}
-        onSelectResume={(id) => void handleSelectResume(id)}
+        onSelectResume={isSavingCopy ? undefined : (id) => void handleSelectResume(id)}
       />
 
-      <main className="mx-auto flex w-full max-w-lg flex-col px-3 py-2.5 space-y-3">
+      <main className="mx-auto flex w-full max-w-lg flex-col px-4 py-3 space-y-3">
         {/* Translation Config Card */}
-        <div className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs space-y-3">
+        <div className="rounded-xl border border-slate-200/90 bg-white p-3 shadow-xs space-y-3">
           <div className="flex items-center gap-2.5">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-100 text-violet-700">
               <Languages size={18} />
@@ -256,7 +266,7 @@ export default function MobileTranslateClient({
             <div>
               <span className="text-sm font-bold text-slate-900">选择目标外语</span>
               <p className="text-[11px] text-slate-400">
-                自动生成独立外语新简历，100% 保护原中文简历不被覆盖
+                逐段核对翻译内容，确认后另存为外语简历
               </p>
             </div>
           </div>
@@ -266,8 +276,9 @@ export default function MobileTranslateClient({
               <button
                 key={lang.code}
                 type="button"
-                onClick={() => setTargetLang(lang.code)}
-                className={`flex items-center justify-between rounded-xl border p-2.5 text-xs font-medium transition active:scale-95 ${
+                disabled={isTranslating || isSavingCopy}
+                onClick={() => { setTargetLang(lang.code); setTranslatedDraft(null); setCreatedResumeId(null) }}
+                className={`flex min-h-[52px] items-center justify-between rounded-xl border p-3 text-xs font-medium transition active:scale-95 ${
                   targetLang === lang.code
                     ? 'border-violet-500 bg-violet-50 text-violet-800 font-semibold'
                     : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'
@@ -283,9 +294,9 @@ export default function MobileTranslateClient({
 
           <button
             type="button"
-            disabled={isTranslating || !currentResume}
+            disabled={isSwitchingResume || isTranslating || !currentResume}
             onClick={() => void handleStartTranslate()}
-            className="mt-2 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 font-semibold text-sm text-white shadow-sm transition active:scale-[0.99] disabled:opacity-50"
+            className="mt-2 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-violet-600 font-semibold text-sm text-white shadow-sm transition active:scale-[0.99] disabled:opacity-50"
           >
             {isTranslating ? (
               <>
@@ -301,11 +312,12 @@ export default function MobileTranslateClient({
               </>
             )}
           </button>
+          {quota.ui}
         </div>
 
         {/* Empty State Guarantee Preview */}
         {!translatedDraft && !isTranslating ? (
-          <div className="rounded-2xl border border-slate-200/80 bg-white p-3.5 shadow-xs space-y-2.5">
+          <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-xs space-y-2.5">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-slate-800">外企级专业简历翻译特性</span>
               <span className="rounded-md bg-violet-50 px-1.5 py-0.5 text-[11px] font-medium text-violet-700">
@@ -341,34 +353,8 @@ export default function MobileTranslateClient({
           </div>
         ) : null}
 
-        {/* Translation Progress Bar */}
-        {isTranslating ? (
-          <div className="rounded-2xl border border-violet-100 bg-violet-50/50 p-4 space-y-2">
-            <div className="flex items-center justify-between text-xs font-semibold text-violet-900">
-              <span>AI 逐段多并发翻译中...</span>
-              <span>
-                {progress.total > 0
-                  ? `${Math.round((progress.current / progress.total) * 100)}%`
-                  : '初始化...'}
-              </span>
-            </div>
-            <div className="h-2 w-full rounded-full bg-violet-200/60 overflow-hidden">
-              <div
-                className="h-full bg-violet-600 transition-all duration-300 rounded-full"
-                style={{
-                  width: `${
-                    progress.total > 0
-                      ? Math.min(100, Math.round((progress.current / progress.total) * 100))
-                      : 10
-                  }%`,
-                }}
-              />
-            </div>
-            <p className="text-[11px] text-violet-700/80">保留原有排版结构与技术专有名词格式</p>
-          </div>
-        ) : null}
+        {isTranslating ? <GenerationFeedback progress={progress} label="正在翻译简历…" onCancel={() => { generation.cancel(); setIsTranslating(false) }} /> : null}
 
-        {/* Translation Verification Accordion */}
         {translatedDraft && !isTranslating ? (
           <div className="space-y-3">
             <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs space-y-3">
@@ -461,7 +447,7 @@ export default function MobileTranslateClient({
                   type="button"
                   disabled={isSavingCopy}
                   onClick={() => void handleSaveAsCopy()}
-                  className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 font-semibold text-sm text-white shadow-sm transition active:scale-[0.99] disabled:opacity-50"
+                  className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 font-semibold text-sm text-white shadow-sm transition active:scale-[0.99] disabled:opacity-50"
                 >
                   {isSavingCopy ? (
                     <>
@@ -479,7 +465,7 @@ export default function MobileTranslateClient({
                 <button
                   type="button"
                   onClick={() => router.push(`/m/preview?id=${encodeURIComponent(createdResumeId)}`)}
-                  className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-violet-600 font-semibold text-sm text-white shadow-sm transition active:scale-[0.99]"
+                  className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-violet-600 font-semibold text-sm text-white shadow-sm transition active:scale-[0.99]"
                 >
                   <span>立即去预览新英文简历</span>
                   <ExternalLink size={16} />

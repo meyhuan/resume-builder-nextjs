@@ -1,19 +1,18 @@
 'use client'
 
-import { useEffect, useState, useTransition, type ReactElement } from 'react'
+import { JdInput } from '../_components/jd-input'
+
+import { useEffect, useRef, useState, useTransition, type ReactElement } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Sparkles,
-  Clipboard,
   Copy,
   Check,
   History,
   Trash2,
   ChevronDown,
   ChevronRight,
-  BookOpen,
   Target,
-  FileText,
   Loader2,
   AlertTriangle,
   CheckCircle2,
@@ -36,16 +35,15 @@ import {
 } from '@/lib/ai/analysis-history'
 import { fetchInterviewPrepResume } from '@/lib/ai/interview-prep-resume'
 import { formatJdSuggestionSection } from '@/lib/ai/jd-section-label'
+import { resolveJdEditTarget, storeJdEditSuggestion } from '@/lib/ai/jd-edit-target'
+import { GenerationFeedback, useGenerationRequest } from '../_components/generation-feedback'
+import { useCareerQuota } from '../_components/career-quota'
 import { MobileToolHeader } from '../_components/mobile-tool-header'
 import { track } from '@/lib/analytics'
 
 const HISTORY_KIND = 'jd-analysis'
 
-const WAITING_MESSAGES = [
-  'AI 正在解析目标岗位核心要求…',
-  '正在比对简历经历与技能关键词…',
-  '正在计算 ATS 契合度与优化建议…',
-] as const
+
 
 interface ResumeOption {
   readonly id: string
@@ -70,6 +68,9 @@ export default function MobileJdMatchClient({
   source = 'web',
 }: MobileJdMatchClientProps): ReactElement {
   const router = useRouter()
+  const quota = useCareerQuota()
+  const generation = useGenerationRequest()
+  const resumeSwitch = useRef(0)
   const [selectedResumeId, setSelectedResumeId] = useState<string>(initialResume?.id || '')
   const [currentResume, setCurrentResume] = useState<{
     id: string
@@ -79,14 +80,13 @@ export default function MobileJdMatchClient({
 
   const [jobDescription, setJobDescription] = useState('')
   const [isAnalyzing, setIsAnalyzing] = useState(false)
-  const [waitingStep, setWaitingStep] = useState(0)
   const [result, setResult] = useState<JdAnalysisOutput | null>(null)
   const [selectedMissingWord, setSelectedMissingWord] = useState<string | null>(null)
   const [expandedSuggestion, setExpandedSuggestion] = useState<number | null>(0)
   const [historyList, setHistoryList] = useState<AnalysisHistoryItem<JdAnalysisOutput>[]>([])
   const [showHistorySheet, setShowHistorySheet] = useState(false)
   const [copiedKey, setCopiedKey] = useState<string | null>(null)
-  const [, startSwitchResume] = useTransition()
+  const [isSwitchingResume, startSwitchResume] = useTransition()
 
   // Load history from IndexedDB on mount
   useEffect(() => {
@@ -96,22 +96,18 @@ export default function MobileJdMatchClient({
     })
   }, [currentResume?.id])
 
-  // Cycle waiting messages
-  useEffect(() => {
-    if (!isAnalyzing) return
-    const timer = setInterval(() => {
-      setWaitingStep((prev) => (prev + 1) % WAITING_MESSAGES.length)
-    }, 2500)
-    return () => clearInterval(timer)
-  }, [isAnalyzing])
-
   // Switch resume
   const handleSelectResume = async (resumeId: string): Promise<void> => {
     if (resumeId === selectedResumeId) return
+    generation.cancel()
+    setIsAnalyzing(false)
+    const switchId = ++resumeSwitch.current
     setSelectedResumeId(resumeId)
     startSwitchResume(async () => {
       try {
         const fetched = await fetchInterviewPrepResume(resumeId)
+        if (switchId !== resumeSwitch.current) return
+        setResult(null)
         setCurrentResume({
           id: resumeId,
           title: fetched.title,
@@ -121,30 +117,14 @@ export default function MobileJdMatchClient({
         setHistoryList(items)
         toast.success(`已切换至简历「${fetched.title}」`)
       } catch {
+        if (switchId !== resumeSwitch.current) return
+        setSelectedResumeId(currentResume?.id || '')
         toast.error('切换简历失败，请稍后重试')
       }
     })
   }
 
   // Paste from clipboard
-  const handlePasteClipboard = async (): Promise<void> => {
-    try {
-      if (!navigator.clipboard?.readText) {
-        toast.info('浏览器不支持自动读取剪贴板，请长按文本框粘贴')
-        return
-      }
-      const text = await navigator.clipboard.readText()
-      if (!text || !text.trim()) {
-        toast.info('剪贴板中没有文字内容')
-        return
-      }
-      setJobDescription((prev) => (prev ? `${prev}\n\n${text.trim()}` : text.trim()).slice(0, MAX_JD_ANALYSIS_JD_LENGTH))
-      toast.success('已填入剪贴板内容')
-    } catch {
-      toast.info('未获取到剪贴板权限，请长按输入框直接粘贴')
-    }
-  }
-
   // Copy helper
   const handleCopy = async (text: string, key: string, label = '内容已复制'): Promise<void> => {
     try {
@@ -173,8 +153,9 @@ export default function MobileJdMatchClient({
       return
     }
 
+    if (!quota.allow()) return
+    const request = generation.begin()
     setIsAnalyzing(true)
-    setWaitingStep(0)
     track('ai_assist_start', {
       feature: 'jd-match',
       resumeId: currentResume.id,
@@ -183,6 +164,7 @@ export default function MobileJdMatchClient({
 
     try {
       const response = await fetch('/next-api/ai/jd-analysis', {
+        signal: request.signal,
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -192,7 +174,7 @@ export default function MobileJdMatchClient({
       })
 
       const raw = await response.text()
-      let data: JdAnalysisOutput & { error?: string }
+      let data: JdAnalysisOutput & { error?: string; quotaExceeded?: boolean }
       try {
         data = JSON.parse(raw)
       } catch {
@@ -200,9 +182,11 @@ export default function MobileJdMatchClient({
       }
 
       if (!response.ok) {
+        if (quota.handleError(data)) return
         throw new Error(data.error || '分析失败，请稍后重试')
       }
 
+      if (request.signal.aborted) return
       setResult(data)
       toast.success('岗位匹配度分析已完成！')
 
@@ -220,7 +204,7 @@ export default function MobileJdMatchClient({
         currentResume.id,
         historyItem,
       )
-      setHistoryList(updated)
+      if (!request.signal.aborted) setHistoryList(updated)
 
       track('ai_assist_success', {
         feature: 'jd-match',
@@ -229,16 +213,20 @@ export default function MobileJdMatchClient({
         atsScore: data.atsScore,
       })
     } catch (err: unknown) {
+      if (request.signal.aborted) return
       const msg = err instanceof Error ? err.message : '分析失败，请重试'
       toast.error(msg)
       track('ai_assist_failed', { feature: 'jd-match', error: msg })
     } finally {
-      setIsAnalyzing(false)
+      quota.refresh()
+      if (!request.signal.aborted) setIsAnalyzing(false)
     }
   }
 
   // Restore history
   const handleRestoreHistory = (item: AnalysisHistoryItem<JdAnalysisOutput>): void => {
+    generation.cancel()
+    setIsAnalyzing(false)
     setResult(item.result)
     setJobDescription(item.jobDescription || '')
     setShowHistorySheet(false)
@@ -281,52 +269,25 @@ export default function MobileJdMatchClient({
         }
       />
 
-      <main className="mx-auto flex w-full max-w-lg flex-col px-3 py-2.5 space-y-3">
+      <main className="mx-auto flex w-full max-w-lg flex-col px-4 py-3 space-y-3">
         {/* JD Input Card */}
-        <div className="rounded-2xl border border-slate-200/90 bg-white p-3.5 shadow-xs">
-          <div className="mb-2 flex items-center justify-between">
-            <div className="flex items-center gap-1.5">
-              <BookOpen size={16} className="text-violet-600" />
-              <span className="text-sm font-semibold text-slate-900">目标岗位 JD</span>
-              <span className="text-xs text-rose-500 font-medium">*必填</span>
-            </div>
-            <button
-              type="button"
-              onClick={() => void handlePasteClipboard()}
-              className="flex items-center gap-1 rounded-lg bg-violet-50 px-2 py-1 text-xs font-medium text-violet-700 active:bg-violet-100"
-            >
-              <Clipboard size={12} />
-              <span>读取剪贴板</span>
-            </button>
-          </div>
-
-          <div className="relative">
-            <textarea
-              value={jobDescription}
-              onChange={(e) => setJobDescription(e.target.value.slice(0, MAX_JD_ANALYSIS_JD_LENGTH))}
-              placeholder="在此粘贴 BOSS直聘 / 猎聘 / 智联 上的岗位职责与任职要求..."
-              rows={4}
-              className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50/50 p-2.5 text-xs leading-relaxed text-slate-800 placeholder-slate-400 focus:border-violet-500 focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-violet-500"
-            />
-            <span className="absolute bottom-2 right-2 text-[10px] text-slate-400">
-              {jobDescription.length}/{MAX_JD_ANALYSIS_JD_LENGTH}
-            </span>
-          </div>
+        <div className="rounded-xl border border-slate-200/90 bg-white p-3 shadow-xs">
+          <JdInput value={jobDescription} onChange={setJobDescription} maxLength={MAX_JD_ANALYSIS_JD_LENGTH} />
 
           {!jobDescription.trim() ? (
-            <div className="mt-2 flex items-center gap-1.5 overflow-x-auto">
-              <span className="shrink-0 text-[11px] text-slate-400">一键填入示例测试：</span>
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+
               {[
                 {
-                  label: '技术研发岗',
+                  label: '技术研发',
                   jd: '岗位职责：1. 负责核心业务系统的架构设计与研发；2. 推动系统性能优化与工程化建设。任职要求：本科及以上学历，熟悉主流技术栈，具备高并发或复杂业务系统落地经验，有良好的跨团队沟通能力。',
                 },
                 {
-                  label: '产品/运营岗',
+                  label: '产品运营',
                   jd: '岗位职责：1. 负责产品核心链路迭代与增长策略落地；2. 通过漏斗分析与 A/B 实验持续提升核心转化率。任职要求：具备敏锐的数据洞察力与项目统筹推进能力，有成功的产品或增长案例。',
                 },
                 {
-                  label: '校招通用岗',
+                  label: '校招',
                   jd: '岗位职责：参与核心业务模块日常推进、跨团队项目协同与质量标准化落地。任职要求：应届毕业生，具备良好的专业基础、结构化思维与执行力，有相关实习或学术项目成果优先。',
                 },
               ].map((sample) => (
@@ -344,9 +305,9 @@ export default function MobileJdMatchClient({
 
           <button
             type="button"
-            disabled={isAnalyzing || !currentResume || !jobDescription.trim()}
+            disabled={isSwitchingResume || isAnalyzing || !currentResume || !jobDescription.trim()}
             onClick={() => void handleAnalyze()}
-            className="mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 font-semibold text-sm text-white shadow-sm transition active:scale-[0.99] disabled:opacity-50"
+            className="mt-3 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-violet-600 font-semibold text-sm text-white shadow-sm transition active:scale-[0.99] disabled:opacity-50"
           >
             {isAnalyzing ? (
               <>
@@ -360,15 +321,18 @@ export default function MobileJdMatchClient({
               </>
             )}
           </button>
+          {quota.ui}
         </div>
 
         {/* Empty State Diagnostic Preview */}
         {!result && !isAnalyzing ? (
-          <div className="rounded-2xl border border-slate-200/80 bg-white p-3.5 shadow-xs space-y-2.5">
+          <details className="rounded-xl border border-slate-200/80 bg-white p-3 text-xs text-slate-600">
+            <summary className="cursor-pointer leading-6">分析内容：岗位匹配 · 关键词 · 修改建议</summary>
+            <div className="mt-3 space-y-2.5">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-slate-800">AI 将为你深度诊断 3 大维度</span>
               <span className="rounded-md bg-violet-50 px-1.5 py-0.5 text-[11px] font-medium text-violet-700">
-                防机筛淘汰
+                辅助参考
               </span>
             </div>
 
@@ -380,7 +344,7 @@ export default function MobileJdMatchClient({
                 <div className="min-w-0">
                   <div className="text-xs font-semibold text-slate-800">综合契合度 & ATS 初筛预测分</div>
                   <p className="mt-0.5 text-[11px] leading-relaxed text-slate-500">
-                    模拟大厂招聘系统（ATS）自动筛简历算法，量化评估你的简历在当前岗位下的初筛通过率。
+                    对照岗位要求评估经历与关键词覆盖情况，分数仅供完善简历参考。
                   </p>
                 </div>
               </div>
@@ -409,19 +373,11 @@ export default function MobileJdMatchClient({
                 </div>
               </div>
             </div>
-          </div>
+            </div>
+          </details>
         ) : null}
 
-        {/* Loading waiting state */}
-        {isAnalyzing ? (
-          <div className="flex flex-col items-center justify-center rounded-2xl border border-violet-100 bg-violet-50/50 p-6 text-center">
-            <Loader2 size={32} className="animate-spin text-violet-600 mb-3" />
-            <p className="text-sm font-semibold text-violet-900 transition-all">
-              {WAITING_MESSAGES[waitingStep]}
-            </p>
-            <p className="mt-1 text-xs text-violet-600/80">正在逐行比对技能词，约需 5~8 秒</p>
-          </div>
-        ) : null}
+        {isAnalyzing ? <GenerationFeedback label="正在分析简历与岗位要求…" onCancel={() => { generation.cancel(); setIsAnalyzing(false) }} /> : null}
 
         {/* Results Presentation */}
         {result && !isAnalyzing ? (
@@ -624,10 +580,18 @@ export default function MobileJdMatchClient({
                             {currentResume?.id ? (
                               <button
                                 type="button"
-                                onClick={() => router.push(`/m/edit?id=${encodeURIComponent(currentResume.id)}`)}
+                                onClick={() => {
+                                  const target = resolveJdEditTarget(currentResume.content, s.section, s.blockId)
+                                  if (target) {
+                                    try { storeJdEditSuggestion(currentResume.id, target, s.suggested) } catch { /* Storage unavailable: the editor remains accessible. */ }
+                                  } else {
+                                    toast.info('请在编辑页选择对应模块进行修改')
+                                  }
+                                  router.push(`/m/edit?id=${encodeURIComponent(currentResume.id)}`)
+                                }}
                                 className="flex items-center gap-1 text-[11px] font-semibold text-violet-600 hover:underline pt-1"
                               >
-                                <span>前往简历编辑主页应用修改</span>
+                                <span>前往对应模块修改</span>
                                 <ExternalLink size={12} />
                               </button>
                             ) : null}

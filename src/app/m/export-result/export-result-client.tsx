@@ -36,6 +36,7 @@ function getResultTitle(type: ExportType): string {
 export default function ExportResultClient(): ReactElement {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const resumeId = searchParams.get('resumeId')
 
   const state = useMemo<ExportResultState | null>(() => {
     const type = searchParams.get('type')
@@ -135,6 +136,26 @@ export default function ExportResultClient(): ReactElement {
             )}
           </div>
         </div>
+
+        {resumeId && (
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-white px-4 py-2">
+            <span className="text-xs text-slate-500">准备联系 HR？</span>
+            <button
+              type="button"
+              className="min-h-11 text-sm font-medium text-violet-700 active:text-violet-900"
+              onClick={() => {
+                const params = new URLSearchParams({
+                  id: resumeId,
+                  intent: 'greetings',
+                  returnTo: `/m/export-result?${searchParams.toString()}`,
+                })
+                router.push(`/m/tools/interview-prep?${params.toString()}`)
+              }}
+            >
+              生成打招呼文案 →
+            </button>
+          </div>
+        )}
 
       </main>
 
