@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ArrowLeft, Download, Copy, X, ChevronRight, Sparkles, LoaderCircle, Check, Award, Clock, CheckCircle2, AlertCircle, Send } from 'lucide-react'
 import { CORE_STORY_FEATURES, STORY_PACKS, featureForPack, packImage, packsFor } from '@/lib/xhs-note/fixed-story'
+import { useInMiniProgram } from '../_components/use-mini-program'
 import { STORY_REASONS } from '@/lib/xhs-note/story-template'
 import { DEFAULT_PINNED_COMMENT } from '@/lib/xhs-note/fixed-story-prompt'
 import type { StoryPlatform } from '@/lib/xhs-note/story-assets'
@@ -57,6 +58,8 @@ export default function FixedStoryClient({
   detectedJob?: string
   detectedStage?: string
 }) {
+  const inMiniProgram = useInMiniProgram(source === 'mini')
+  const isMini = source === 'mini' || inMiniProgram
   const storageKey = `zhijian:fixed-story:sage-v3:${source}:${initialPlatform}`
   const [platform, setPlatform] = useState(initialPlatform)
   const [packId, setPackId] = useState(packsFor(initialPlatform, 'templates')[0].id)
@@ -140,6 +143,12 @@ export default function FixedStoryClient({
     if (viewImage !== null && !lightbox.current?.open) lightbox.current?.showModal()
     else if (viewImage === null) lightbox.current?.close()
   }, [viewImage])
+
+  useEffect(() => {
+    if (!notice) return
+    const timer = window.setTimeout(() => setNotice(''), 3500)
+    return () => window.clearTimeout(timer)
+  }, [notice])
 
   function invalidate() { setDraft(null); setReviewed(true); setSaved([]); setCopied(false); setCopiedComment(false); setError(''); setNotice('') }
   function choosePack(id: string) { setPackId(id); setActiveImage(0); carousel.current?.scrollTo({left:0}); setFeeling(''); setConfirmed(true); setOrder([0, 1, 2]); invalidate() }
@@ -354,10 +363,20 @@ export default function FixedStoryClient({
   const stepNumber = step === 'choose' ? 1 : step === 'feeling' ? 2 : 3
   return <main ref={root} className={s.root}>
     <div className={s.shell}>
-      <header className={s.header}>
-        {step !== 'choose' ? <button onClick={back} aria-label="返回上一步"><ArrowLeft size={20} /></button> : <span className={s.brand}>智简</span>}
-        <span>分享使用体验</span><small aria-label={`第 ${stepNumber} 步，共 3 步`}>{stepNumber} / 3</small>
-      </header>
+      {!isMini ? (
+        <header className={s.header}>
+          {step !== 'choose' ? <button type="button" onClick={back} aria-label="返回上一步"><ArrowLeft size={20} /></button> : <span className={s.brand}>智简</span>}
+          <span>分享使用体验</span><small aria-label={`第 ${stepNumber} 步，共 3 步`}>{stepNumber} / 3</small>
+        </header>
+      ) : step !== 'choose' ? (
+        <div className={s.miniHeader}>
+          <button type="button" onClick={back} className={s.miniBackBtn} aria-label="返回上一步">
+            <ArrowLeft size={16} />
+            <span>上一步</span>
+          </button>
+          <span className={s.miniStepPill}>步骤 {stepNumber} / 3</span>
+        </div>
+      ) : null}
       <div className={s.content}>
       {step === 'choose' && <>
         <div className={s.intro}><small>从你用过的功能开始</small><h1>这次，想分享什么？</h1><p>选好配图，再加上你的真实感受</p></div>
@@ -600,24 +619,63 @@ export default function FixedStoryClient({
           </button>
         )}
         {step === 'draft' && (
-          <>
-            <button className={s.secondary} disabled={busy} onClick={() => void generate(true)}>
-              {aiGenerating ? <LoaderCircle size={16} className={s.spinner} /> : <Sparkles size={16} />}
-              <span>{aiGenerating ? 'AI 正在换个语气生成...' : '换个写法 · 重新生成'}</span>
-            </button>
-            <button className={s.primary} disabled={busy} onClick={() => void copy()}>
-              {copied ? <Check size={18} /> : <Copy size={18} />}
-              <span>{copied ? '已复制正文与标签 · 可再复制' : '复制正文与话题标签'}</span>
-            </button>
-            <button type="button" className={s.submitActionBtn} disabled={submitUnavailable} onClick={() => openSubmit()}>
-              <Award size={16} />
-              <span>{rewardLoading ? '正在查询领奖资格…' : rewardError ? '请先刷新奖励状态' : !rewardStatus?.enabled ? '活动暂未开放' : rewardStatus.blocked ? '当前账号暂无领奖资格' : rewardStatus.remainingAwards <= 0 ? '本次活动获奖次数已用完' : rewardStatus.submissions.some(note => note.status === 0) ? '笔记审核中 · 请等待审核结果' : '我已在小红书发布 · 提交链接领 VIP'}</span>
-            </button>
-            <button type="button" className={s.copyAllBtn} disabled={busy} onClick={() => void copyAll()}>
-              <span>{copiedAll ? '✓ 已复制整篇（含标题、正文、话题）' : '复制整篇笔记（含标题、正文、话题）'}</span>
-            </button>
-            <p className={s.disclosure}>保存配图后，去小红书发布并抢首评</p>
-          </>
+          <div className={s.draftActionsWrap}>
+            <div className={s.btnRow}>
+              <button
+                type="button"
+                className={s.secondaryBtn}
+                disabled={busy}
+                onClick={() => void generate(true)}
+              >
+                {aiGenerating ? <LoaderCircle size={15} className={s.spinner} /> : <Sparkles size={15} />}
+                <span>{aiGenerating ? 'AI 生成中...' : '换个写法'}</span>
+              </button>
+              <button
+                type="button"
+                className={s.primaryBtn}
+                disabled={busy}
+                onClick={() => void copy()}
+              >
+                {copied ? <Check size={16} /> : <Copy size={16} />}
+                <span>{copied ? '已复制正文与标签' : '复制正文与话题标签'}</span>
+              </button>
+            </div>
+            <div className={s.rewardRow}>
+              <button
+                type="button"
+                className={s.vipPill}
+                disabled={submitUnavailable}
+                onClick={() => openSubmit()}
+              >
+                <Award size={14} className={s.vipPillIcon} />
+                <span className={s.vipPillText}>
+                  {rewardLoading
+                    ? '查询领奖资格…'
+                    : rewardError
+                    ? '请刷新奖励状态'
+                    : !rewardStatus?.enabled
+                    ? '活动暂未开放'
+                    : rewardStatus.blocked
+                    ? '暂无领奖资格'
+                    : rewardStatus.remainingAwards <= 0
+                    ? '获奖次数已用完'
+                    : rewardStatus.submissions.some((note) => note.status === 0)
+                    ? '笔记审核中 · 查看进度'
+                    : '我已在小红书发布 · 提交链接领 VIP'}
+                </span>
+                <ChevronRight size={13} className={s.vipPillArrow} />
+              </button>
+              <button
+                type="button"
+                className={s.copyAllSubBtn}
+                disabled={busy}
+                onClick={() => void copyAll()}
+                title="复制整篇笔记（含标题、正文、话题）"
+              >
+                <span>{copiedAll ? '✓ 已复制整篇' : '复制整篇'}</span>
+              </button>
+            </div>
+          </div>
         )}
       </div>
     </div>
