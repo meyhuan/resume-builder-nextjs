@@ -36,7 +36,10 @@ export function useTemplateImpressions(ref: RefObject<HTMLElement | null>, scope
       }
     }, { threshold: [0, 0.5] })
     const visibility = (): void => {
-      for (const card of visible) document.visibilityState === 'hidden' ? cancel(card) : start(card)
+      for (const card of visible) {
+        if (document.visibilityState === 'hidden') cancel(card)
+        else start(card)
+      }
     }
     cards.forEach(card => observer.observe(card))
     document.addEventListener('visibilitychange', visibility)

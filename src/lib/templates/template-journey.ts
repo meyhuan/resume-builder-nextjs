@@ -66,14 +66,16 @@ export function templateJourneyProperties(event: string, p: Properties): Propert
   }
   journeys[key] = journey
   persist()
-  const { at: _at, ...fields } = journey
+  const fields: Properties = { ...journey }
+  delete fields.at
   return { ...fields, templateSchemaVersion: 1, occurredAt: new Date().toISOString() }
 }
 
 /** Capture before awaiting save/export, and spread into the completion event. */
 export function captureTemplateJourney(templateId: string, resumeId?: string | null): Properties {
   try {
-    const { occurredAt: _time, ...context } = templateJourneyProperties('resume_preview', { templateId, resumeId })
+    const context = templateJourneyProperties('resume_preview', { templateId, resumeId })
+    delete context.occurredAt
     return context
   } catch { return {} }
 }
