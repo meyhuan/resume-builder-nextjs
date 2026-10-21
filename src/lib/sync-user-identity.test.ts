@@ -5,14 +5,18 @@ const mocks = vi.hoisted(() => ({
   findUnique: vi.fn(),
   update: vi.fn(),
   create: vi.fn(),
+  updateMany: vi.fn(),
+  verify: vi.fn(),
 }))
 
+vi.mock('@/lib/verify-identity-relink', () => ({ verifyIdentityRelink: mocks.verify }))
 vi.mock('@/lib/prisma', () => ({
   prisma: {
     user: {
       findUnique: mocks.findUnique,
       update: mocks.update,
       create: mocks.create,
+      updateMany: mocks.updateMany,
     },
   },
 }))
@@ -24,6 +28,9 @@ describe('syncUserIdentity', () => {
     mocks.findUnique.mockReset()
     mocks.update.mockReset()
     mocks.create.mockReset()
+    mocks.updateMany.mockReset()
+    mocks.verify.mockReset()
+    mocks.verify.mockResolvedValue(false)
   })
 
   it('prefers the Java-linked account when a numeric wxId shadow row exists', async () => {
@@ -109,5 +116,42 @@ describe('syncUserIdentity', () => {
     }))
     await expect(syncUserIdentity({ wxId: 'unionid' })).rejects.toThrow('unique')
     expect(mocks.create).toHaveBeenCalledTimes(3)
+  })
+
+  it('preserves the original account and its 23 resumes when Java proves re-registration', async () => {
+    const old = { id: 'original', wxId: 'unionid', javaUserId: '363080', resumes: Array.from({ length: 23 }, (_, id) => ({ id })) }
+    const repaired = { ...old, javaUserId: '371915' }
+    mocks.findUnique.mockResolvedValueOnce(null).mockResolvedValueOnce(old).mockResolvedValueOnce(repaired)
+    mocks.verify.mockResolvedValue(true)
+    mocks.updateMany.mockResolvedValue({ count: 1 })
+    expect(await syncUserIdentity({ wxId: 'unionid', javaUserId: '371915' })).toEqual(repaired)
+    expect(mocks.verify).toHaveBeenCalledWith('unionid', '363080', '371915')
+    expect(mocks.updateMany).toHaveBeenCalledWith({
+      where: { id: 'original', wxId: 'unionid', javaUserId: '363080' },
+      data: { javaUserId: '371915' },
+    })
+    expect(mocks.create).not.toHaveBeenCalled()
+    expect(mocks.update).not.toHaveBeenCalled()
+  })
+
+  it('never merges into an occupied new Java account', async () => {
+    mocks.findUnique.mockResolvedValueOnce({ id: 'other' })
+      .mockResolvedValueOnce({ id: 'original', javaUserId: '363080' })
+    mocks.verify.mockResolvedValue(true)
+    await expect(syncUserIdentity({ wxId: 'unionid', javaUserId: '371915' })).rejects.toThrow('身份关联冲突')
+    expect(mocks.verify).not.toHaveBeenCalled()
+    expect(mocks.updateMany).not.toHaveBeenCalled()
+  })
+
+  it('re-reads both keys when another login wins the repair', async () => {
+    const old = { id: 'original', wxId: 'unionid', javaUserId: '363080' }
+    const repaired = { ...old, javaUserId: '371915' }
+    mocks.findUnique.mockResolvedValueOnce(null).mockResolvedValueOnce(old)
+      .mockResolvedValueOnce(repaired).mockResolvedValueOnce(repaired)
+    mocks.verify.mockResolvedValue(true)
+    mocks.updateMany.mockResolvedValue({ count: 0 })
+    mocks.update.mockResolvedValue(repaired)
+    expect(await syncUserIdentity({ wxId: 'unionid', javaUserId: '371915' })).toEqual(repaired)
+    expect(mocks.create).not.toHaveBeenCalled()
   })
 })

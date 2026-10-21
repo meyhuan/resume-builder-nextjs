@@ -6,6 +6,7 @@ export default defineConfig({
   test: {
     include: [
       'src/lib/sync-user-identity.test.ts',
+      'src/lib/verify-identity-relink.test.ts',
       'src/lib/quota/quota-identity.test.ts',
       'src/app/m/sso/route.test.ts',
     ],

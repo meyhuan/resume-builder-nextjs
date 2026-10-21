@@ -14,6 +14,7 @@ vi.mock('@/lib/prisma', () => ({ prisma: { $executeRaw: mocks.execute, $transact
 } } }))
 
 import { checkQuota, checkQuotaForUser } from './quota-checker'
+import { getQuotaLimit } from './membership-benefits'
 
 describe('quota account identity', () => {
   afterEach(() => vi.useRealTimers())
@@ -47,15 +48,16 @@ describe('quota account identity', () => {
   })
 
   it('counts legacy usage without copying it repeatedly into the canonical counter', async () => {
-    const quotas = { 'ai:polish-section': { used: 1, date: '2026-09-24' } }
+    const limit = getQuotaLimit('ai:polish-section')
+    const quotas = { 'ai:polish-section': { used: limit - 4, date: '2026-09-24' } }
     mocks.upsert.mockImplementation(async () => ({ userId: 'canonical', quotas: structuredClone(quotas) }))
     mocks.query.mockImplementation(async () => [{ quotas: structuredClone(quotas) }])
     mocks.execute.mockImplementation(async (_sql, feature, value) => { quotas[feature as keyof typeof quotas] = JSON.parse(value); return 1 })
     mocks.legacy.mockResolvedValue({ quotas: { 'ai:polish-section': { used: 2, date: '2026-09-24' } } })
-    expect((await checkQuota('ai:polish-section')).used).toBe(4)
-    expect(quotas['ai:polish-section'].used).toBe(2)
-    expect((await checkQuota('ai:polish-section')).used).toBe(5)
-    expect(quotas['ai:polish-section'].used).toBe(3)
+    expect((await checkQuota('ai:polish-section')).used).toBe(limit - 1)
+    expect(quotas['ai:polish-section'].used).toBe(limit - 3)
+    expect((await checkQuota('ai:polish-section')).used).toBe(limit)
+    expect(quotas['ai:polish-section'].used).toBe(limit - 2)
     expect((await checkQuota('ai:polish-section')).allowed).toBe(false)
     expect(mocks.execute).toHaveBeenCalledTimes(2)
   })

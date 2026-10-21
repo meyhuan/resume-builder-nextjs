@@ -1,5 +1,6 @@
 import { Prisma, type User } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
+import { verifyIdentityRelink } from '@/lib/verify-identity-relink'
 
 export interface UserIdentity {
   wxId: string
@@ -21,9 +22,24 @@ export async function syncUserIdentity(input: UserIdentity): Promise<User> {
         ? await prisma.user.findUnique({ where: { javaUserId } })
         : null
       const byWx = await prisma.user.findUnique({ where: { wxId } })
-      // Never rebind a login identity already linked to another Java account.
+      // Only repair an orphan after Java confirms deletion and exact ownership.
       if (javaUserId && byWx?.javaUserId && byWx.javaUserId !== javaUserId) {
-        throw new Error('登录身份关联冲突，请联系客服核查账号')
+        if (byJava || !await verifyIdentityRelink(wxId, byWx.javaUserId, javaUserId)) {
+          throw new Error('登录身份关联冲突，请联系客服核查账号')
+        }
+        // Compare-and-set prevents an overlapping login from overwriting a new link.
+        // Keep the row ID, wxId, resumes, quotas and all other related data intact.
+        const result = await prisma.user.updateMany({
+          where: { id: byWx.id, wxId, javaUserId: byWx.javaUserId },
+          data: { javaUserId },
+        })
+        if (result.count !== 1) continue
+        const repaired = await prisma.user.findUnique({ where: { id: byWx.id } })
+        if (!repaired || repaired.javaUserId !== javaUserId) continue
+        console.info('[identity-relink] repaired deleted Java account', {
+          userId: byWx.id, oldJavaUserId: byWx.javaUserId, newJavaUserId: javaUserId,
+        })
+        return repaired
       }
       const existing = byJava ?? byWx
       const profile = {
