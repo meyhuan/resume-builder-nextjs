@@ -3,8 +3,8 @@ const mocks = vi.hoisted(() => ({findMany:vi.fn(),count:vi.fn()}));
 vi.mock("@/lib/prisma",()=>({prisma:{extensionTelemetryEvent:mocks}}));
 import { POST } from "./route";
 const request=(body:unknown)=>new Request("http://local/next-api/admin/extension-metrics",{method:"POST",body:JSON.stringify(body)});
-beforeEach(()=>{vi.resetAllMocks();vi.stubEnv("ADMIN_PASSWORD","synthetic-only");mocks.findMany.mockResolvedValue([]);mocks.count.mockResolvedValue(0);});
-afterEach(()=>vi.unstubAllEnvs());
+beforeEach(()=>{vi.resetAllMocks();vi.stubEnv("ADMIN_PASSWORD","synthetic-only");vi.stubEnv("NEXT_PUBLIC_JAVA_API_BASE_URL","http://java.local");vi.stubGlobal("fetch",vi.fn(async()=>new Response(JSON.stringify({status:401}),{status:200})));mocks.findMany.mockResolvedValue([]);mocks.count.mockResolvedValue(0);});
+afterEach(()=>{vi.unstubAllEnvs();vi.unstubAllGlobals();});
 it("rejects malformed shapes without querying the database",async()=>{
   for (const body of [null,[],true,42,"text"]) expect((await POST(request(body))).status).toBe(400);
   expect((await POST(new Request("http://local",{method:"POST",body:"{"}))).status).toBe(400);

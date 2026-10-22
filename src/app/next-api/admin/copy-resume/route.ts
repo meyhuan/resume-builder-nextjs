@@ -3,6 +3,7 @@ import { Prisma, type Resume, type User } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { cookies } from 'next/headers';
 import { getServerJavaApiBaseUrl } from '@/lib/java-api-base';
+import { verifyAdminPassword } from '@/lib/verify-admin-password';
 import type { ResumeData } from '@/entities/resume/resume-data';
 import { normalizeResumeContent } from '@/entities/resume/normalize-resume-content';
 import {
@@ -12,8 +13,6 @@ import {
   RESUME_LIMIT_EXCEEDED_CODE,
   RESUME_LIMIT_EXCEEDED_MESSAGE,
 } from '@/lib/resume-limits';
-
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '';
 
 interface CopyResumeBody {
   adminPassword: string;
@@ -26,24 +25,6 @@ interface CopyResumeBody {
 
 function getAdminPassword(req: Request): string {
   return req.headers.get('X-Admin-Password') || '';
-}
-
-async function verifyAdminPassword(password: string): Promise<boolean> {
-  if (!password) return false;
-  if (ADMIN_PASSWORD && password === ADMIN_PASSWORD) return true;
-
-  try {
-    const res = await fetch(`${getServerJavaApiBaseUrl()}/admin/verify-password`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password }),
-    });
-    if (!res.ok) return false;
-    const json = await res.json() as { status?: number };
-    return json.status === 100;
-  } catch {
-    return false;
-  }
 }
 
 async function resolveUserByIdentifiers(identifiers: readonly (string | null | undefined)[]): Promise<User | null> {

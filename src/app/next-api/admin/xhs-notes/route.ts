@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerJavaApiBaseUrl } from '@/lib/java-api-base'
 import { prisma } from '@/lib/prisma'
+import { verifyAdminPassword } from '@/lib/verify-admin-password'
 
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || ''
-const XHS_ADMIN_TOKEN = process.env.XHS_ADMIN_TOKEN || ADMIN_PASSWORD
+const XHS_ADMIN_TOKEN = process.env.XHS_ADMIN_TOKEN || process.env.ADMIN_PASSWORD || ''
 
 interface JavaSubmissionRow {
   id: number
@@ -76,7 +76,7 @@ async function enrichRowsWithDrafts(rows: JavaSubmissionRow[]) {
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const body = (await request.json().catch(() => ({}))) as Record<string, unknown>
   const adminPassword = typeof body.adminPassword === 'string' ? body.adminPassword : ''
-  if (!ADMIN_PASSWORD || adminPassword !== ADMIN_PASSWORD) {
+  if (!(await verifyAdminPassword(adminPassword))) {
     return NextResponse.json({ error: '管理员密码不正确' }, { status: 403 })
   }
 

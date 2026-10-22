@@ -1,7 +1,7 @@
-import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { summarizeFillEvents } from "@/features/extension-analytics/report";
+import { verifyAdminPassword } from "@/lib/verify-admin-password";
 
 export async function POST(request:Request) {
   const raw = await request.text();
@@ -12,9 +12,8 @@ export async function POST(request:Request) {
     if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("INVALID_BODY");
     body = parsed as Record<string, unknown>;
   } catch { return NextResponse.json({error:"无效的统计请求"},{status:400}); }
-  const expected=process.env.ADMIN_PASSWORD || "";
   const password=typeof body.adminPassword === "string" ? body.adminPassword : "";
-  if (!expected || Buffer.byteLength(password)!==Buffer.byteLength(expected) || !timingSafeEqual(Buffer.from(password),Buffer.from(expected))) {
+  if (!(await verifyAdminPassword(password))) {
     return NextResponse.json({error:"管理员验证失败"},{status:403});
   }
   const days=body.days ?? 7;
