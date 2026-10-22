@@ -60,6 +60,7 @@ export default function FixedStoryClient({
 }) {
   const inMiniProgram = useInMiniProgram(source === 'mini')
   const isMini = source === 'mini' || inMiniProgram
+  const isWeChat = typeof window !== 'undefined' && (/micromessenger/i.test(navigator.userAgent) || isMini)
   const storageKey = `zhijian:fixed-story:sage-v3:${source}:${initialPlatform}`
   const [platform, setPlatform] = useState(initialPlatform)
   const [packId, setPackId] = useState(packsFor(initialPlatform, 'templates')[0].id)
@@ -99,6 +100,33 @@ export default function FixedStoryClient({
   const lightbox = useRef<HTMLDialogElement>(null)
   const pack = STORY_PACKS.find(item => item.id === packId && item.platform === platform) || packsFor(platform, 'templates')[0]
   const feature = featureForPack(pack)
+
+  const openPreview = useCallback((index: number) => {
+    const origin = typeof window !== 'undefined' ? window.location.origin : ''
+    const toAbs = (url: string) => (url.startsWith('http') ? url : `${origin}${url}`)
+    const current = toAbs(packImage(pack, index))
+    const urls = order.map(i => toAbs(packImage(pack, i)))
+
+    if (isWeChat) {
+      const bridge = (window as unknown as { WeixinJSBridge?: { invoke: (action: string, data: unknown) => void } }).WeixinJSBridge
+      if (bridge && typeof bridge.invoke === 'function') {
+        try {
+          bridge.invoke('imagePreview', { current, urls })
+          return
+        } catch { /* fallback to dialog */ }
+      }
+
+      const wx = (window as unknown as { wx?: { previewImage?: (opt: { current: string; urls: string[] }) => void } }).wx
+      if (wx && typeof wx.previewImage === 'function') {
+        try {
+          wx.previewImage({ current, urls })
+          return
+        } catch { /* fallback to dialog */ }
+      }
+    }
+
+    setViewImage(index)
+  }, [pack, order, isWeChat])
 
   useEffect(() => {
     try {
@@ -223,7 +251,18 @@ export default function FixedStoryClient({
   }
   async function saveImage(index: number) {
     if (busy) return
-    setBusy(true); setError('')
+    setError('')
+
+    // In WeChat / Mini Program, browsers intercept HTML downloads with "可在浏览器打开此网页保存图片".
+    // Directly open WeChat native full-screen image viewer where users can long-press to save to album.
+    if (isWeChat) {
+      setSaved(previous => [...new Set([...previous, index])])
+      openPreview(index)
+      setNotice('已打开高清大图：长按即可「保存到手机相册」，左右滑动可连续保存 3 张。')
+      return
+    }
+
+    setBusy(true)
     try {
       const response = await fetch(packImage(pack, index), { signal: AbortSignal.timeout(20000) })
       if (!response.ok) throw new Error('图片加载失败，请重试。')
@@ -232,7 +271,7 @@ export default function FixedStoryClient({
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a'); a.href = url; a.download = `智简简历-${order.indexOf(index) + 1}-${pack.id}.png`; a.click()
       setTimeout(() => URL.revokeObjectURL(url), 60000)
-      setSaved(previous => [...new Set([...previous, index])]); setNotice('已发起下载。微信内若未保存，可点开大图后长按保存。')
+      setSaved(previous => [...new Set([...previous, index])]); setNotice('已发起下载。')
     } catch (cause) { setError(cause instanceof Error ? cause.message : '保存失败，请重试。') }
     finally { setBusy(false) }
   }
@@ -383,7 +422,7 @@ export default function FixedStoryClient({
         {source !== 'mini' ? <div className={s.platform} aria-label="实际使用端">{(['mobile', 'desktop'] as const).map(p => <button key={p} aria-pressed={platform === p} onClick={() => changePlatform(p)}>{p === 'mobile' ? '手机 / 小程序' : '电脑网页版'}</button>)}</div> : <p className={s.muted}>微信小程序 / 手机端素材</p>}
         <div className={s.features} aria-label="分享功能">{CORE_STORY_FEATURES.map(item => <button key={item.id} aria-pressed={pack.feature === item.id} onClick={() => choosePack(packsFor(platform, item.id)[0].id)}><strong>{item.label}</strong></button>)}</div>
         <div key={pack.id} ref={carousel} className={s.carousel} aria-label="配图预览" onScroll={event => { const el = event.currentTarget; const center = el.scrollLeft + el.clientWidth / 2; const distances = Array.from(el.children).map(child => Math.abs((child as HTMLElement).offsetLeft + child.clientWidth / 2 - center)); setActiveImage(distances.indexOf(Math.min(...distances))) }}>
-          {order.map((index, position) => <button key={index} className={s.heroImage} onClick={() => setViewImage(index)} aria-label={`查看第 ${position + 1} 张大图`}><img src={packThumbnail(pack, index)} alt={pack.titles[index].replace('\n', '，')} loading={position === 0 ? 'eager' : 'lazy'} decoding="async" /></button>)}
+          {order.map((index, position) => <button key={index} className={s.heroImage} onClick={() => openPreview(index)} aria-label={`查看第 ${position + 1} 张大图`}><img src={packThumbnail(pack, index)} alt={pack.titles[index].replace('\n', '，')} loading={position === 0 ? 'eager' : 'lazy'} decoding="async" /></button>)}
         </div>
         <p className={s.counter}>{activeImage + 1} / 3 · 左右滑动，点击查看大图</p>
         <div className={s.variants}>{packsFor(platform, pack.feature).map(item => <button key={item.id} aria-pressed={item.id === pack.id} onClick={() => choosePack(item.id)}>方案 {item.variant}</button>)}</div>
@@ -392,7 +431,7 @@ export default function FixedStoryClient({
       </>}
       {step === 'feeling' && <>
         <div className={s.intro}><small>基于你的使用体验</small><h1>说说你的真实感受</h1><p>这将帮助更多同学了解这个功能是否适合自己</p></div>
-        <div className={s.miniCards}>{order.map(i => <button key={i} onClick={() => setViewImage(i)} aria-label={`查看${pack.titles[i]}`}><img src={packThumbnail(pack, i)} alt={pack.titles[i]} loading="lazy" decoding="async" /></button>)}</div>
+        <div className={s.miniCards}>{order.map(i => <button key={i} onClick={() => openPreview(i)} aria-label={`查看${pack.titles[i]}`}><img src={packThumbnail(pack, i)} alt={pack.titles[i]} loading="lazy" decoding="async" /></button>)}</div>
         <fieldset className={s.options}>
           <div className={s.roleHeader}>
             <legend>你的求职目标</legend>
@@ -588,8 +627,26 @@ export default function FixedStoryClient({
           <span className={s.commentTip}>小贴士：发布笔记后，第一时间将这段发在评论区第一条。有人在评论区问起你在哪里排版时，自然解答即可～</span>
         </div>
         <h2 className={s.imageHeading}>配图（3 张 · 请按顺序保存）</h2>
-        <div className={s.cards}>{order.map((i, position) => <div key={i}><button className={s.imageButton} onClick={() => setViewImage(i)} aria-label={`打开第 ${position + 1} 张大图`}><img src={packThumbnail(pack, i)} alt={pack.titles[i]} loading="lazy" decoding="async" /></button><button className={s.download} disabled={busy} onClick={() => void saveImage(i)}><Download size={14} />{saved.includes(i) ? '再次保存' : `保存第 ${position + 1} 张`}</button></div>)}</div>
-        <p className={s.disclosure}>微信内可点开大图，长按保存</p>
+        <div className={s.cards}>{order.map((i, position) => <div key={i}><button className={s.imageButton} onClick={() => openPreview(i)} aria-label={`打开第 ${position + 1} 张大图`}><img src={packThumbnail(pack, i)} alt={pack.titles[i]} loading="lazy" decoding="async" /></button><button className={s.download} disabled={busy} onClick={() => void saveImage(i)}><Download size={14} />{isWeChat ? (saved.includes(i) ? '再次点开' : `点开长按存第 ${position + 1} 张`) : (saved.includes(i) ? '再次保存' : `保存第 ${position + 1} 张`)}</button></div>)}</div>
+        {isWeChat && (
+          <button
+            type="button"
+            className={s.batchPreviewBtn}
+            onClick={() => {
+              setSaved([0, 1, 2])
+              openPreview(order[0])
+              setNotice('已打开高清大图：长按即可「保存到手机相册」，左右滑动可连续保存 3 张。')
+            }}
+          >
+            <Download size={15} />
+            <span>一键点开 3 张高清图（长按存入相册）</span>
+          </button>
+        )}
+        <p className={s.disclosure}>
+          {isWeChat
+            ? '微信内长按大图即可直接存入手机相册，左右滑动可连续保存全部 3 张。'
+            : '微信内可点开大图，长按保存'}
+        </p>
         <label className={s.confirm}><input type="checkbox" checked={reviewed} onChange={event => setReviewed(event.target.checked)} />我已检查，正文符合我的真实感受</label>
       </>}
       </div>

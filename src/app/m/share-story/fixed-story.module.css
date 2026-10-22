@@ -86,3 +86,5 @@
 .vipPillArrow{flex-shrink:0;color:#b45309}
 .copyAllSubBtn{flex-shrink:0;background:transparent;border:none;color:var(--muted);font-size:11px;padding:4px 6px;border-radius:4px;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
 .copyAllSubBtn:hover{color:var(--accent)}
+.batchPreviewBtn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;min-height:40px;border-radius:10px;background:var(--soft);color:var(--accent);border:1.5px solid #ddd6fe;font-size:13px;font-weight:600;margin-top:10px;cursor:pointer;transition:all .15s}
+.batchPreviewBtn:hover{background:#ede9fe}
