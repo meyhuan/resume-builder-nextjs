@@ -1,9 +1,9 @@
 // @vitest-environment node
 import { afterEach, expect, it, vi } from 'vitest';
-import { createThinkingFetch, getModelByName, resolveApiKey } from './ai-runtime-config';
+import { createThinkingFetch, getModelByName, getVisionModel, resolveApiKey } from './ai-runtime-config';
 import { officialCircuit } from './provider-failover';
 
-afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); officialCircuit.success(); });
+afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); vi.unstubAllEnvs(); officialCircuit.success(); });
 
 it('rewrites credentials, model and reasoning protocol only for the backup request', async () => {
   vi.stubEnv('DEEPSEEK_API_KEY', 'test-official');
@@ -32,6 +32,7 @@ it('does not send a Bailian credential to the official host when the official ke
   vi.stubEnv('DEEPSEEK_API_KEY', '');
   vi.stubEnv('DASHSCOPE_API_KEY', 'test-backup');
   vi.stubEnv('AI_PROVIDER_FALLBACK', 'true');
+  const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
   const fetcher = vi.fn<(input: RequestInfo | URL, init?: RequestInit) => Promise<Response>>(async () => new Response('{"ok":true}'));
   vi.stubGlobal('fetch', fetcher);
   expect(resolveApiKey(getModelByName('deepseek-flash'))).not.toBe('test-backup');
@@ -40,4 +41,21 @@ it('does not send a Bailian credential to the official host when the official ke
   });
   expect(fetcher).toHaveBeenCalledTimes(1);
   expect(String(fetcher.mock.calls[0]?.[0])).toContain('aliyuncs.com');
+  expect(warn).toHaveBeenCalledWith(expect.stringContaining('reason=missing key'));
+  expect(warn.mock.calls.flat().join(' ')).not.toContain('test-backup');
+});
+
+it('keeps OCR on Bailian and does not apply the text-model failover', async () => {
+  const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+  const fetcher = vi.fn<(input: RequestInfo | URL, init?: RequestInit) => Promise<Response>>(async () => new Response('{"ok":true}'));
+  vi.stubGlobal('fetch', fetcher);
+  const vision = getVisionModel();
+  expect(vision.name).toBe('qwen3.5-ocr');
+  expect(vision.baseUrl).not.toContain('api.deepseek.com');
+  await createThinkingFetch(vision, 'disabled')('https://vision.example/chat/completions', {
+    method: 'POST', body: JSON.stringify({ model: vision.name, messages: [] }),
+  });
+  expect(fetcher).toHaveBeenCalledTimes(1);
+  expect(String(fetcher.mock.calls[0]?.[0])).toBe('https://vision.example/chat/completions');
+  expect(warn).not.toHaveBeenCalled();
 });

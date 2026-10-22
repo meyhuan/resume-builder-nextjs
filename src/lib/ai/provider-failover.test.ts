@@ -24,15 +24,20 @@ describe('provider failover', () => {
     expect(backup).not.toHaveBeenCalled();
   });
   it('ignores role and heartbeat chunks, aborts slow primary and switches once', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     let primarySignal: AbortSignal | undefined;
     const backup = vi.fn(async () => stream('backup'));
     const response = await run(s => { primarySignal = s; return stalled(s); }, backup);
     expect(await response.text()).toContain('backup');
     expect(primarySignal?.aborted).toBe(true);
     expect(backup).toHaveBeenCalledTimes(1);
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('reason=deadline'));
   });
   it.each([401, 402, 403, 429, 503])('falls back on HTTP %s', async status => {
-    expect(await (await run(async () => new Response('', { status }))).text()).toContain('backup');
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    expect(await (await run(async () => new Response('secret body', { status }))).text()).toContain('backup');
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining(`reason=HTTP ${status}`));
+    expect(warn.mock.calls.flat().join(' ')).not.toContain('secret body');
   });
   it('does not hide invalid request errors', async () => {
     const backup = vi.fn(async () => stream('backup'));

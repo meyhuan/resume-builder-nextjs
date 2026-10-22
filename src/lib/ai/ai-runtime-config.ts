@@ -184,7 +184,7 @@ export function createThinkingFetch(
       },
       backup: sendBackup, signal, streaming: parsed.stream === true,
       policy: {
-        firstOutputMs: positive('AI_PRIMARY_FIRST_OUTPUT_MS', mode === 'disabled' ? 5000 : 30000),
+        firstOutputMs: positive('AI_PRIMARY_FIRST_OUTPUT_MS', mode === 'disabled' ? 15000 : 30000),
         completionMs: positive('AI_PROVIDER_COMPLETION_MS', mode === 'disabled' ? 30000 : 90000),
         failureThreshold: positive('AI_PROVIDER_FAILURE_THRESHOLD', 3),
         cooldownMs: positive('AI_PROVIDER_COOLDOWN_MS', 60000),

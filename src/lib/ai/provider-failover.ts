@@ -28,6 +28,28 @@ export class ProviderCircuit {
 
 export const officialCircuit = new ProviderCircuit();
 
+/** Short operational label. Never include prompts, credentials, or response bodies. */
+export function failoverReason(error: unknown): string {
+  const message = error instanceof Error ? error.message : '';
+  if (message === 'Official provider is not configured') return 'missing key';
+  if (message === 'Provider deadline exceeded') return 'deadline';
+  const status = /^Provider HTTP (\d+)$/.exec(message);
+  if (status) return `HTTP ${status[1]}`;
+  if (
+    message === 'Provider stream error' ||
+    message === 'Empty provider response' ||
+    message === 'Stream ended without output' ||
+    message === 'Excessive stream preamble'
+  ) {
+    return message;
+  }
+  return 'unavailable';
+}
+
+function warnFailover(reason: string) {
+  console.warn(`[ai-provider] official unavailable before output; using bailian; reason=${reason}`);
+}
+
 class ProviderUnavailable extends Error {}
 const retryable = (status: number) => [401, 402, 403, 408, 429].includes(status) || status >= 500;
 
@@ -128,9 +150,10 @@ export async function fetchWithFailover(options: {
     } catch (error) {
       if (signal?.aborted) { circuit.release(); throw error; }
       circuit.failure(policy);
-      // No prompts, credentials or upstream error bodies in operational logs.
-      console.warn('[ai-provider] official unavailable before output; using bailian');
+      warnFailover(failoverReason(error));
     }
+  } else {
+    warnFailover('circuit open');
   }
   signal?.throwIfAborted();
   // One backup attempt; no recursively scheduled provider retries.
