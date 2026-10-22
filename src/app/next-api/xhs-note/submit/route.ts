@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import { checkVipStatus } from '@/lib/api/vip-api'
 import { fetchJavaWithLog, parseJsonWithLog } from '@/lib/api/fetch-with-log'
 import { prisma } from '@/lib/prisma'
+import { normalizeXhsRawText } from '@/lib/xhs-note/link-normalize'
 
 export async function POST(req: Request): Promise<NextResponse> {
   const cookieStore = await cookies()
@@ -35,13 +36,15 @@ export async function POST(req: Request): Promise<NextResponse> {
       return NextResponse.json({ status: 400, error: '请提供小红书笔记链接或分享文案' }, { status: 400 })
     }
 
+    const normalizedText = normalizeXhsRawText(rawText)
+
     const response = await fetchJavaWithLog('/xhs-note/submit', {
       logPrefix: '[xhs-note/submit]',
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json; charset=utf-8' },
       body: JSON.stringify({
         userId: javaUserId,
-        rawText,
+        rawText: normalizedText,
         topicKey,
       }),
       cache: 'no-store',

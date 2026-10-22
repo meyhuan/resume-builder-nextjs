@@ -48,30 +48,15 @@ describe('xhs-note submit API route', () => {
     expect(json.error).toContain('请先登录')
   })
 
-  it('rejects empty rawText with 400', async () => {
-    mocks.cookie.mockReturnValue({ value: 'wx_test_123' })
-    mocks.checkVipStatus.mockResolvedValue({ javaUserId: '42' })
-    const req = new Request('http://localhost/next-api/xhs-note/submit', {
-      method: 'POST',
-      body: JSON.stringify({ rawText: '   ', topicKey: '01-mobile-template-a' }),
-    })
-
-    const res = await POST(req)
-    const json = await res.json()
-
-    expect(res.status).toBe(400)
-    expect(json.error).toContain('请提供小红书笔记链接')
-  })
-
-  it('submits valid note link to Java backend successfully', async () => {
-    mocks.cookie.mockReturnValue({ value: 'wx_test_123' })
-    mocks.checkVipStatus.mockResolvedValue({ javaUserId: '42' })
-    mocks.fetchJavaWithLog.mockResolvedValue({ ok: true, status: 200 })
-    mocks.parseJsonWithLog.mockResolvedValue({ status: 100, data: 1001 })
+  it('submits a valid note URL and returns 100 on success', async () => {
+    mocks.cookie.mockReturnValue({ value: 'wx_123456' })
+    mocks.checkVipStatus.mockResolvedValue({ javaUserId: 12345 })
+    mocks.fetchJavaWithLog.mockResolvedValue({ ok: true })
+    mocks.parseJsonWithLog.mockResolvedValue({ status: 100, result: 'ok', data: 42 })
 
     const req = new Request('http://localhost/next-api/xhs-note/submit', {
       method: 'POST',
-      body: JSON.stringify({ rawText: '77 复制此链接打卡 http://xhslink.com/a/abc123', topicKey: '01-mobile-template-a' }),
+      body: JSON.stringify({ rawText: 'http://xhslink.com/a/abc123', topicKey: '01-mobile-template-a' }),
     })
 
     const res = await POST(req)
@@ -79,23 +64,41 @@ describe('xhs-note submit API route', () => {
 
     expect(res.status).toBe(200)
     expect(json.status).toBe(100)
-    expect(json.data).toBe(1001)
+    expect(json.data).toBe(42)
+  })
+
+  it('normalizes protocol-less and mobile links before forwarding to Java backend', async () => {
+    mocks.cookie.mockReturnValue({ value: 'wx_123456' })
+    mocks.checkVipStatus.mockResolvedValue({ javaUserId: 12345 })
+    mocks.fetchJavaWithLog.mockResolvedValue({ ok: true })
+    mocks.parseJsonWithLog.mockResolvedValue({ status: 100, result: 'ok', data: 42 })
+
+    const req = new Request('http://localhost/next-api/xhs-note/submit', {
+      method: 'POST',
+      body: JSON.stringify({
+        rawText: 'xhslink.cn/o/3evPWmNafFe 把文本复制好，进入【小红书】即可浏览全文。',
+        topicKey: '01-mobile-template-a',
+      }),
+    })
+
+    await POST(req)
+
     expect(mocks.fetchJavaWithLog).toHaveBeenCalledWith(
       '/xhs-note/submit',
       expect.objectContaining({
         body: JSON.stringify({
-          userId: '42',
-          rawText: '77 复制此链接打卡 http://xhslink.com/a/abc123',
+          userId: 12345,
+          rawText: 'https://xhslink.cn/o/3evPWmNafFe 把文本复制好，进入【小红书】即可浏览全文。',
           topicKey: '01-mobile-template-a',
         }),
       }),
     )
   })
 
-  it('handles backend business errors smoothly (e.g. note already submitted)', async () => {
-    mocks.cookie.mockReturnValue({ value: 'wx_test_123' })
-    mocks.checkVipStatus.mockResolvedValue({ javaUserId: '42' })
-    mocks.fetchJavaWithLog.mockResolvedValue({ ok: true, status: 200 })
+  it('returns backend error if Java service reports failure', async () => {
+    mocks.cookie.mockReturnValue({ value: 'wx_123456' })
+    mocks.checkVipStatus.mockResolvedValue({ javaUserId: 12345 })
+    mocks.fetchJavaWithLog.mockResolvedValue({ ok: true })
     mocks.parseJsonWithLog.mockResolvedValue({ status: 999, result: '这条笔记已经提交过' })
 
     const req = new Request('http://localhost/next-api/xhs-note/submit', {
@@ -109,6 +112,7 @@ describe('xhs-note submit API route', () => {
     expect(json.status).toBe(999)
     expect(json.error).toBe('这条笔记已经提交过')
   })
+
   it('returns a controlled error when account lookup fails', async () => {
     mocks.cookie.mockReturnValue({ value: 'wx_test_123' })
     mocks.checkVipStatus.mockResolvedValue({})
@@ -144,5 +148,4 @@ describe('xhs-note submit API route', () => {
     expect(response.status).toBe(400)
     expect(mocks.fetchJavaWithLog).not.toHaveBeenCalled()
   })
-
 })

@@ -11,6 +11,7 @@ export default defineConfig({
       'src/lib/xhs-note/redact.test.ts',
       'src/lib/xhs-note/validate.test.ts',
       'src/lib/xhs-note/sign.test.ts',
+      'src/lib/xhs-note/link-normalize.test.ts',
       'src/app/next-api/xhs-note/mini/route.smoke.test.ts',
       'src/lib/xhs-note/fixed-story-prompt.test.ts',
       'src/app/next-api/xhs-note/fixed-story/route.test.ts',
