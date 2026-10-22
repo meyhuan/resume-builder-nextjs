@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import { Prisma, type Resume, type User } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { cookies } from 'next/headers';
-import { getServerJavaApiBaseUrl } from '@/lib/java-api-base';
 import { verifyAdminPassword } from '@/lib/verify-admin-password';
 import type { ResumeData } from '@/entities/resume/resume-data';
 import { normalizeResumeContent } from '@/entities/resume/normalize-resume-content';
