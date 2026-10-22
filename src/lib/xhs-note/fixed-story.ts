@@ -21,6 +21,14 @@ export function packImage(pack: StoryPack, index: number) {
   if (![0, 1, 2].includes(index)) throw new Error('素材序号无效')
   return `/m/story-packs/sage-v3/${pack.id}-${index + 1}.png`
 }
+export function packThumbnail(pack: StoryPack, index: number) {
+  if (![0, 1, 2].includes(index)) throw new Error('素材序号无效')
+  return `/m/story-packs/sage-v3-thumbs/${pack.id}-${index + 1}.webp`
+}
+export function packThumbnailFallback(pack: StoryPack, index: number) {
+  if (![0, 1, 2].includes(index)) throw new Error('素材序号无效')
+  return `/m/story-packs/sage-v3-thumbs/${pack.id}-${index + 1}.png`
+}
 export function fixedStory(packId: string, input: Pick<StoryChoices, 'reason' | 'feeling' | 'extra' | 'confirmed'>, platform: StoryPlatform) {
   const pack = STORY_PACKS.find(item => item.id === packId && item.platform === platform)
   if (!pack) throw new Error('请重新选择当前端的素材。')

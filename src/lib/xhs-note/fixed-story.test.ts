@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { readFileSync } from 'node:fs'
-import { CORE_STORY_FEATURES, STORY_PACKS, featureForPack, fixedStory, packImage, packsFor } from './fixed-story'
+import { readFileSync, existsSync } from 'node:fs'
+import { CORE_STORY_FEATURES, STORY_PACKS, featureForPack, fixedStory, packImage, packThumbnail, packThumbnailFallback, packsFor } from './fixed-story'
 
 describe('fixed promotional story packs', () => {
   it('has two complete, distinct triptychs per platform and core feature', () => {
@@ -18,6 +18,12 @@ describe('fixed promotional story packs', () => {
           expect(file).toContain('/sage-v3/')
           expect(data.readUInt32BE(16)).toBeGreaterThanOrEqual(1000)
           expect(data.readUInt32BE(16) / data.readUInt32BE(20)).toBeCloseTo(0.75, 1)
+
+          // Verify thumbnails exist for fast mobile display
+          const thumbWebp = packThumbnail(pack, i)
+          expect(existsSync(`public${thumbWebp}`)).toBe(true)
+          const thumbPng = packThumbnailFallback(pack, i)
+          expect(existsSync(`public${thumbPng}`)).toBe(true)
         }
       }
     }
@@ -41,5 +47,6 @@ describe('fixed promotional story packs', () => {
     expect(() => fixedStory(STORY_PACKS[0].id, valid, 'desktop')).toThrow()
     expect(() => fixedStory('unknown', valid, 'mobile')).toThrow()
     expect(() => packImage(STORY_PACKS[0], 3)).toThrow()
+    expect(() => packThumbnail(STORY_PACKS[0], 3)).toThrow()
   })
 })
