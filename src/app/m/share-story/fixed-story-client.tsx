@@ -383,16 +383,16 @@ export default function FixedStoryClient({
         {source !== 'mini' ? <div className={s.platform} aria-label="实际使用端">{(['mobile', 'desktop'] as const).map(p => <button key={p} aria-pressed={platform === p} onClick={() => changePlatform(p)}>{p === 'mobile' ? '手机 / 小程序' : '电脑网页版'}</button>)}</div> : <p className={s.muted}>微信小程序 / 手机端素材</p>}
         <div className={s.features} aria-label="分享功能">{CORE_STORY_FEATURES.map(item => <button key={item.id} aria-pressed={pack.feature === item.id} onClick={() => choosePack(packsFor(platform, item.id)[0].id)}><strong>{item.label}</strong></button>)}</div>
         <div key={pack.id} ref={carousel} className={s.carousel} aria-label="配图预览" onScroll={event => { const el = event.currentTarget; const center = el.scrollLeft + el.clientWidth / 2; const distances = Array.from(el.children).map(child => Math.abs((child as HTMLElement).offsetLeft + child.clientWidth / 2 - center)); setActiveImage(distances.indexOf(Math.min(...distances))) }}>
-          {order.map((index, position) => <button key={index} className={s.heroImage} onClick={() => setViewImage(index)} aria-label={`查看第 ${position + 1} 张大图`}><img src={packImage(pack, index)} alt={pack.titles[index].replace('\n', '，')} /></button>)}
+          {order.map((index, position) => <button key={index} className={s.heroImage} onClick={() => setViewImage(index)} aria-label={`查看第 ${position + 1} 张大图`}><img src={packImage(pack, index)} alt={pack.titles[index].replace('\n', '，')} loading={position === 0 ? 'eager' : 'lazy'} decoding="async" /></button>)}
         </div>
         <p className={s.counter}>{activeImage + 1} / 3 · 左右滑动，点击查看大图</p>
         <div className={s.variants}>{packsFor(platform, pack.feature).map(item => <button key={item.id} aria-pressed={item.id === pack.id} onClick={() => choosePack(item.id)}>方案 {item.variant}</button>)}</div>
-        <div className={s.cards}>{order.map((index, position) => <div key={index}><button className={s.thumbnail} aria-pressed={activeImage === position} onClick={() => selectImage(position)} aria-label={`预览第 ${position + 1} 张`}><img src={packImage(pack, index)} alt={pack.titles[index]} /></button><div className={s.cardCaption}>{position === 0 ? <span>封面</span> : <button onClick={() => { setOrder([index, ...order.filter(n => n !== index)]); setSaved([]); selectImage(0) }}>设为封面</button>}</div></div>)}</div>
+        <div className={s.cards}>{order.map((index, position) => <div key={index}><button className={s.thumbnail} aria-pressed={activeImage === position} onClick={() => selectImage(position)} aria-label={`预览第 ${position + 1} 张`}><img src={packImage(pack, index)} alt={pack.titles[index]} loading="lazy" decoding="async" /></button><div className={s.cardCaption}>{position === 0 ? <span>封面</span> : <button onClick={() => { setOrder([index, ...order.filter(n => n !== index)]); setSaved([]); selectImage(0) }}>设为封面</button>}</div></div>)}</div>
         <p className={s.disclosure}>AI 设计示意图 · 人物与经历为模拟数据<br />界面细节以实际产品为准</p>
       </>}
       {step === 'feeling' && <>
         <div className={s.intro}><small>基于你的使用体验</small><h1>说说你的真实感受</h1><p>这将帮助更多同学了解这个功能是否适合自己</p></div>
-        <div className={s.miniCards}>{order.map(i => <button key={i} onClick={() => setViewImage(i)} aria-label={`查看${pack.titles[i]}`}><img src={packImage(pack, i)} alt={pack.titles[i]} /></button>)}</div>
+        <div className={s.miniCards}>{order.map(i => <button key={i} onClick={() => setViewImage(i)} aria-label={`查看${pack.titles[i]}`}><img src={packImage(pack, i)} alt={pack.titles[i]} loading="lazy" decoding="async" /></button>)}</div>
         <fieldset className={s.options}>
           <div className={s.roleHeader}>
             <legend>你的求职目标</legend>
@@ -588,7 +588,7 @@ export default function FixedStoryClient({
           <span className={s.commentTip}>小贴士：发布笔记后，第一时间将这段发在评论区第一条。有人在评论区问起你在哪里排版时，自然解答即可～</span>
         </div>
         <h2 className={s.imageHeading}>配图（3 张 · 请按顺序保存）</h2>
-        <div className={s.cards}>{order.map((i, position) => <div key={i}><button className={s.imageButton} onClick={() => setViewImage(i)} aria-label={`打开第 ${position + 1} 张大图`}><img src={packImage(pack, i)} alt={pack.titles[i]} /></button><button className={s.download} disabled={busy} onClick={() => void saveImage(i)}><Download size={14} />{saved.includes(i) ? '再次保存' : `保存第 ${position + 1} 张`}</button></div>)}</div>
+        <div className={s.cards}>{order.map((i, position) => <div key={i}><button className={s.imageButton} onClick={() => setViewImage(i)} aria-label={`打开第 ${position + 1} 张大图`}><img src={packImage(pack, i)} alt={pack.titles[i]} loading="lazy" decoding="async" /></button><button className={s.download} disabled={busy} onClick={() => void saveImage(i)}><Download size={14} />{saved.includes(i) ? '再次保存' : `保存第 ${position + 1} 张`}</button></div>)}</div>
         <p className={s.disclosure}>微信内可点开大图，长按保存</p>
         <label className={s.confirm}><input type="checkbox" checked={reviewed} onChange={event => setReviewed(event.target.checked)} />我已检查，正文符合我的真实感受</label>
       </>}
@@ -729,6 +729,6 @@ export default function FixedStoryClient({
         </div>
       </div>
     )}
-    <dialog ref={lightbox} className={s.lightbox} aria-label="素材大图" onCancel={() => setViewImage(null)} onClick={event => { if (event.target === event.currentTarget) setViewImage(null) }}><button autoFocus onClick={() => setViewImage(null)} aria-label="关闭大图"><X size={22} /></button>{viewImage !== null && <img src={packImage(pack, viewImage)} alt={pack.titles[viewImage]} />}<p>手机可长按图片保存</p></dialog>
+    <dialog ref={lightbox} className={s.lightbox} aria-label="素材大图" onCancel={() => setViewImage(null)} onClick={event => { if (event.target === event.currentTarget) setViewImage(null) }}><button autoFocus onClick={() => setViewImage(null)} aria-label="关闭大图"><X size={22} /></button>{viewImage !== null && <img src={packImage(pack, viewImage)} alt={pack.titles[viewImage]} decoding="async" />}</dialog>
   </main>
 }
