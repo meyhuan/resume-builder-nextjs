@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { Crown, Search, RotateCcw, User, CheckCircle, AlertCircle, LogIn, Shield, Copy, FileText, ChevronDown, ChevronUp, Download, Minus, Plus } from 'lucide-react';
+import { useState } from 'react';
+import { Crown, Search, RotateCcw, User, CheckCircle, AlertCircle, Copy, FileText, ChevronDown, ChevronUp, Download, Minus, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { getPublicJavaApiBaseUrl } from '@/lib/java-api-base';
-import { clearStoredAdminPassword, getStoredAdminPassword, setStoredAdminPassword } from '@/lib/admin-auth';
-
-const JAVA_API = getPublicJavaApiBaseUrl();
+import { getStoredAdminPassword } from '@/lib/admin-auth';
+import { adminErrorText, adminJava, vipTypeLabel } from '@/lib/admin-java';
+import { AdminStats } from '@/components/admin/admin-stats';
+import { ResumeReplace } from '@/components/admin/resume-replace';
+import { UserList } from '@/components/admin/user-list';
 
 interface UserInfo {
   id: number;
@@ -55,8 +56,6 @@ function getExpiryDate(days: number): string {
 }
 
 export default function AdminPage(): React.ReactElement {
-  const [password, setPassword] = useState('');
-  const [authed, setAuthed] = useState(false);
   const [searchValue, setSearchValue] = useState('');
   const [user, setUser] = useState<UserInfo | null>(null);
   const [loading, setLoading] = useState(false);
@@ -81,63 +80,24 @@ export default function AdminPage(): React.ReactElement {
     expiryDate: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 16),
   });
 
-  useEffect(() => {
-    const storedPassword = getStoredAdminPassword();
-    if (storedPassword) {
-      setPassword(storedPassword);
-      setAuthed(true);
-    }
-  }, []);
-
-  function adminHeaders(): HeadersInit {
-    return { 'Content-Type': 'application/json', 'X-Admin-Password': password };
-  }
-
-  async function login(): Promise<void> {
-    setLoading(true);
-    try {
-      const res = await fetch(`${JAVA_API}/admin/verify-password`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password }),
-      });
-      const json = await res.json();
-      if (json.status === 100) {
-        setStoredAdminPassword(password);
-        setAuthed(true);
-        setMessage(null);
-      } else {
-        setMessage({ type: 'error', text: '密码错误' });
-      }
-    } catch {
-      setMessage({ type: 'error', text: '登录失败，请检查网络' });
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function searchUser(): Promise<void> {
-    if (!searchValue.trim()) {
+  async function searchUser(idOverride?: string): Promise<void> {
+    const query = (idOverride ?? searchValue).trim();
+    if (!query) {
       setMessage({ type: 'error', text: '请输入 User ID' });
       return;
     }
+    if (idOverride) setSearchValue(idOverride);
     setLoading(true);
     setMessage(null);
     setUser(null);
     try {
-      const url = `${JAVA_API}/admin/users/${searchValue.trim()}`;
-      const res = await fetch(url, { headers: adminHeaders() });
-      const json = await res.json();
-      if (!res.ok || json.status !== 100) {
-        setMessage({ type: 'error', text: json.message || '用户未找到' });
-        return;
-      }
-      const foundUser = json.data as UserInfo;
+      const foundUser = await adminJava<UserInfo>(`/users/${encodeURIComponent(query)}`);
       setUser(foundUser);
       setExportCount(Math.max(0, foundUser.freeExportCount ?? 0));
       setShowVipForm(false);
+      document.getElementById('selected-user')?.scrollIntoView({ block: 'start' });
     } catch (err) {
-      setMessage({ type: 'error', text: '搜索失败: ' + (err instanceof Error ? err.message : '未知错误') });
+      setMessage({ type: 'error', text: adminErrorText(err, '用户未找到') });
     } finally {
       setLoading(false);
     }
@@ -148,25 +108,19 @@ export default function AdminPage(): React.ReactElement {
     setLoading(true);
     setMessage(null);
     try {
-      const res = await fetch(`${JAVA_API}/admin/users/${user.id}/vip`, {
+      await adminJava(`/users/${user.id}/vip`, {
         method: 'PUT',
-        headers: adminHeaders(),
         body: JSON.stringify({
           vipType: vipForm.vipType,
           expiryDate: vipForm.expiryDate,
           freeExportCount: user.freeExportCount ?? 0,
         }),
       });
-      const json = await res.json();
-      if (!res.ok || json.status !== 100) {
-        setMessage({ type: 'error', text: json.message || '操作失败' });
-        return;
-      }
       setMessage({ type: 'success', text: 'VIP 已授予' });
       setShowVipForm(false);
-      await searchUser();
+      await searchUser(String(user.id));
     } catch (err) {
-      setMessage({ type: 'error', text: '操作失败: ' + (err instanceof Error ? err.message : '未知错误') });
+      setMessage({ type: 'error', text: adminErrorText(err, '操作失败') });
     } finally {
       setLoading(false);
     }
@@ -244,7 +198,7 @@ export default function AdminPage(): React.ReactElement {
     try {
       const params = new URLSearchParams({ userId: query });
       const res = await fetch(`/next-api/admin/copy-resume?${params.toString()}`, {
-        headers: { 'X-Admin-Password': password },
+        headers: { 'X-Admin-Password': getStoredAdminPassword() },
       });
       const json = await res.json();
       if (!res.ok || json.error) {
@@ -277,7 +231,7 @@ export default function AdminPage(): React.ReactElement {
     try {
       const params = new URLSearchParams({ resumeName: query });
       const res = await fetch(`/next-api/admin/copy-resume?${params.toString()}`, {
-        headers: { 'X-Admin-Password': password },
+        headers: { 'X-Admin-Password': getStoredAdminPassword() },
       });
       const json = await res.json();
       if (!res.ok || json.error) {
@@ -326,13 +280,13 @@ export default function AdminPage(): React.ReactElement {
     try {
       const payload = copyMode === 'to-current'
         ? {
-            adminPassword: password,
+            adminPassword: getStoredAdminPassword(),
             resumeId: selectedResumeId,
             sourceUserId: sourceIdentifier,
             direction: 'to-current' as const,
           }
         : {
-            adminPassword: password,
+            adminPassword: getStoredAdminPassword(),
             resumeId: selectedResumeId,
             targetUserId: targetUserId.trim(),
             direction: 'to-user' as const,
@@ -366,19 +320,11 @@ export default function AdminPage(): React.ReactElement {
     setLoading(true);
     setMessage(null);
     try {
-      const res = await fetch(`${JAVA_API}/admin/users/${user.id}/vip`, {
-        method: 'DELETE',
-        headers: adminHeaders(),
-      });
-      const json = await res.json();
-      if (!res.ok || json.status !== 100) {
-        setMessage({ type: 'error', text: json.message || '重置失败' });
-        return;
-      }
+      await adminJava(`/users/${user.id}/vip`, { method: 'DELETE' });
       setMessage({ type: 'success', text: 'VIP 已重置' });
-      await searchUser();
+      await searchUser(String(user.id));
     } catch (err) {
-      setMessage({ type: 'error', text: '重置失败: ' + (err instanceof Error ? err.message : '未知错误') });
+      setMessage({ type: 'error', text: adminErrorText(err, '重置失败') });
     } finally {
       setLoading(false);
     }
@@ -394,22 +340,16 @@ export default function AdminPage(): React.ReactElement {
     setExportCountLoading(true);
     setMessage(null);
     try {
-      const res = await fetch(`${JAVA_API}/admin/users/${user.id}/export-count`, {
+      const saved = await adminJava<{ freeExportCount?: number }>(`/users/${user.id}/export-count`, {
         method: 'PUT',
-        headers: adminHeaders(),
         body: JSON.stringify({ freeExportCount: exportCount }),
       });
-      const json = await res.json();
-      if (!res.ok || json.status !== 100) {
-        setMessage({ type: 'error', text: json.result || json.message || '导出次数保存失败' });
-        return;
-      }
-      const savedCount = Number(json.data?.freeExportCount ?? exportCount);
+      const savedCount = Number(saved?.freeExportCount ?? exportCount);
       setUser((current) => current ? { ...current, freeExportCount: savedCount } : current);
       setExportCount(savedCount);
       setMessage({ type: 'success', text: `剩余导出次数已更新为 ${savedCount} 次` });
     } catch (err) {
-      setMessage({ type: 'error', text: '导出次数保存失败: ' + (err instanceof Error ? err.message : '未知错误') });
+      setMessage({ type: 'error', text: adminErrorText(err, '导出次数保存失败') });
     } finally {
       setExportCountLoading(false);
     }
@@ -417,7 +357,7 @@ export default function AdminPage(): React.ReactElement {
 
   function getVipStatusText(vipStatus: number, vipType: number): string {
     if (vipStatus === 0) return '非VIP';
-    return `VIP (${VIP_TYPES[vipType] || '未知'})`;
+    return `VIP (${vipTypeLabel(vipType)})`;
   }
 
   const activeCopyResumes: ResumeItem[] = copyMode === 'to-user' ? myResumes : sourceUserResumes;
@@ -430,59 +370,16 @@ export default function AdminPage(): React.ReactElement {
     || (copyMode === 'to-current' && sourceLookupMode === 'user' && !sourceUserQuery.trim())
     || (copyMode === 'to-current' && sourceLookupMode === 'resume-name' && !selectedSourceResume?.user?.id);
 
-  if (!authed) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-8">
-        <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-200 w-full max-w-sm">
-          <div className="text-center mb-6">
-            <div className="w-12 h-12 bg-violet-100 rounded-full flex items-center justify-center mx-auto mb-3">
-              <Shield className="w-6 h-6 text-violet-600" />
-            </div>
-            <h1 className="font-bold text-slate-800 text-lg">管理后台</h1>
-            <p className="text-slate-500 text-sm mt-1">请输入管理员密码</p>
-          </div>
-          {message && (
-            <div className="mb-4 p-3 rounded-xl bg-rose-50 text-rose-700 text-sm flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0" />
-              {message.text}
-            </div>
-          )}
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && login()}
-            placeholder="管理员密码"
-            className="w-full px-4 py-3 border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-violet-500 mb-3"
-          />
-          <button
-            onClick={login}
-            disabled={loading}
-            className="w-full py-3 bg-violet-600 hover:bg-violet-700 text-white font-medium rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-          >
-            <LogIn className="w-4 h-4" />
-            {loading ? '验证中...' : '登录'}
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-slate-50 p-8">
-      <div className="max-w-2xl mx-auto">
-        <div className="mb-8 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Crown className="w-5 h-5 text-amber-500" />
-            <span className="font-bold text-slate-700 text-lg">管理后台</span>
-          </div>
-          <button onClick={() => { clearStoredAdminPassword(); setPassword(''); setAuthed(false); setUser(null); setMessage(null); }} className="text-sm text-slate-400 hover:text-slate-600">
-            退出登录
-          </button>
-        </div>
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-xl font-semibold text-slate-900">会员</h2>
+        <p className="mt-1 text-sm text-slate-500">按 User ID 处理单个用户，或在下面的列表里筛选。</p>
+      </div>
+      <AdminStats />
 
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 mb-6">
-          <div className="flex gap-3">
+        <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 md:p-6">
+          <div className="flex flex-col gap-3 sm:flex-row">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input
@@ -495,9 +392,10 @@ export default function AdminPage(): React.ReactElement {
               />
             </div>
             <button
-              onClick={searchUser}
+              type="button"
+              onClick={() => void searchUser()}
               disabled={loading}
-              className="px-6 py-3 bg-violet-600 text-white font-medium rounded-xl hover:bg-violet-700 transition-colors disabled:opacity-50"
+              className="min-h-11 px-6 py-3 bg-violet-600 text-white font-medium rounded-xl hover:bg-violet-700 transition-colors disabled:opacity-50"
             >
               {loading ? '搜索中...' : '搜索'}
             </button>
@@ -514,8 +412,8 @@ export default function AdminPage(): React.ReactElement {
         )}
 
         {user && (
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
-            <div className="flex items-center gap-4 mb-6">
+          <div id="selected-user" className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 md:p-6">
+            <div className="mb-6 flex flex-wrap items-center gap-4">
               <div className="w-14 h-14 bg-gradient-to-br from-violet-100 to-violet-200 rounded-full flex items-center justify-center">
                 <User className="w-7 h-7 text-violet-500" />
               </div>
@@ -921,13 +819,8 @@ export default function AdminPage(): React.ReactElement {
           )}
         </div>
 
-        {!user && !loading && !message && (
-          <div className="text-center py-12 text-slate-400">
-            <Search className="w-12 h-12 mx-auto mb-3 opacity-50" />
-            <p>输入 User ID 搜索用户</p>
-          </div>
-        )}
-      </div>
+        <UserList onOpenUser={(id) => { void searchUser(String(id)); }} />
+        <ResumeReplace />
     </div>
   );
 }

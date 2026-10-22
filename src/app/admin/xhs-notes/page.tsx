@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { getStoredAdminPassword, setStoredAdminPassword } from '@/lib/admin-auth'
+import { getStoredAdminPassword } from '@/lib/admin-auth'
 
 interface DraftPackage {
   titles?: string[]
@@ -31,7 +31,7 @@ interface NoteRow {
   likes?: number | null
   collects?: number | null
   comments?: number | null
-  draft?: { id: string; topic: string; output: DraftPackage; createdAt: string } | null
+  draft?: { id: string; topic: string; output?: DraftPackage; createdAt: string } | null
 }
 
 interface RecentDraftRow {
@@ -98,12 +98,11 @@ function hoursSince(createdAt?: string): number {
   return Number.isNaN(t) ? -1 : Math.floor((Date.now() - t) / 3600000)
 }
 
-const input = 'rounded border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 outline-none focus:border-violet-600'
-const btn = 'rounded border border-violet-600 px-4 py-2 text-sm text-violet-700 hover:bg-violet-50 disabled:opacity-40'
-const btnSolid = 'rounded bg-violet-600 px-4 py-2 text-sm text-white hover:bg-violet-700 disabled:opacity-40'
+const input = 'h-11 w-full rounded-lg border border-stone-300 bg-white px-3 text-sm text-stone-900 outline-none focus:border-violet-600'
+const btn = 'h-11 rounded-lg border border-violet-600 px-4 text-sm text-violet-700 hover:bg-violet-50 disabled:opacity-40'
+const btnSolid = 'h-11 rounded-lg bg-violet-600 px-4 text-sm font-medium text-white hover:bg-violet-700 disabled:opacity-40'
 
 export default function XhsNotesAdminPage() {
-  const [password, setPassword] = useState('')
   const [queue, setQueue] = useState<Queue>('0')
   const [rows, setRows] = useState<NoteRow[]>([])
   const [drafts, setDrafts] = useState<RecentDraftRow[]>([])
@@ -115,15 +114,17 @@ export default function XhsNotesAdminPage() {
   const [open, setOpen] = useState<number | null>(null)
 
   useEffect(() => {
-    const saved = getStoredAdminPassword()
-    if (saved) setPassword(saved)
+    void load('0')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   async function call(action: string, extra: Record<string, unknown> = {}) {
+    const adminPassword = getStoredAdminPassword()
+    if (!adminPassword) throw new Error('请先在管理后台登录')
     const response = await fetch('/next-api/admin/xhs-notes', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ adminPassword: password, action, ...extra }),
+      body: JSON.stringify({ adminPassword, action, ...extra }),
     })
     const payload = await response.json().catch(() => null)
     if (!response.ok || (payload && typeof payload.status === 'number' && payload.status !== 100)) {
@@ -136,15 +137,16 @@ export default function XhsNotesAdminPage() {
     setError('')
     setLoading(true)
     try {
-      setStoredAdminPassword(password)
       if (target === 'drafts') {
         const payload = await call('drafts')
         setDrafts(Array.isArray(payload?.data) ? payload.data : [])
       } else {
-        const config = await call('config')
+        const [config, payload] = await Promise.all([
+          call('config'),
+          call('list', { status: target }),
+        ])
         if (!config?.data) throw new Error('无法获取活动奖励规则')
         setRules(config.data)
-        const payload = await call('list', { status: target })
         const list: NoteRow[] = Array.isArray(payload?.data) ? payload.data : []
         setRows(list)
         setMetrics((prev) => {
@@ -183,6 +185,25 @@ export default function XhsNotesAdminPage() {
     setMetrics((prev) => ({ ...prev, [id]: { ...(prev[id] || { publishedAt: '', views: '', likes: '', collects: '', comments: '' }), [field]: value } }))
   }
 
+  async function toggleDraft(row: NoteRow): Promise<void> {
+    if (open === row.id) {
+      setOpen(null)
+      return
+    }
+    setOpen(row.id)
+    if (!row.draft || row.draft.output) return
+    try {
+      const payload = await call('draft', { draftId: row.draft.id })
+      const output = payload?.data?.output as DraftPackage | undefined
+      if (!output) return
+      setRows((current) => current.map((item) => item.id === row.id && item.draft
+        ? { ...item, draft: { ...item.draft, output } }
+        : item))
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '原稿加载失败')
+    }
+  }
+
   function switchQueue(next: Queue) {
     setQueue(next)
     void load(next)
@@ -207,39 +228,29 @@ export default function XhsNotesAdminPage() {
 
   return (
     <div className="max-w-5xl text-stone-900">
-      <div className="flex flex-wrap items-end justify-between gap-4 border-b-2 border-violet-600 pb-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">笔记奖励审核</h1>
-          <p className="mt-1 text-sm text-stone-500">
-            通过前核对：公开可见、正文或首评自然提及「智简简历」、非搬运。已通过的笔记需核验实际发布时间（北京时间），发布满 {rules.bonusAfterHours} 小时后录入数据补发。
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <input
-            className={`${input} w-44`}
-            type="password"
-            value={password}
-            placeholder="管理密码"
-            onChange={(e) => setPassword(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && void load()}
-          />
-          <button className={btnSolid} type="button" disabled={loading} onClick={() => void load()}>
+      <div className="border-b-2 border-violet-600 pb-4">
+        <div className="flex items-center justify-between gap-3">
+          <h1 className="text-xl font-bold tracking-tight">笔记奖励审核</h1>
+          <button className={`${btnSolid} shrink-0`} type="button" disabled={loading} onClick={() => void load()}>
             {loading ? '加载中' : '刷新'}
           </button>
         </div>
+        <p className="mt-2 text-xs leading-5 text-stone-500">
+          通过前核对：公开可见、正文或首评自然提及「智简简历」、非搬运。已通过的笔记需核验实际发布时间（北京时间），发布满 {rules.bonusAfterHours} 小时后录入数据补发。
+        </p>
       </div>
 
       {queue !== 'drafts' && (
-        <dl className="grid grid-cols-4 divide-x divide-stone-200 border-b border-stone-200 py-4 text-sm">
+        <dl className="grid grid-cols-2 gap-x-3 gap-y-4 border-b border-stone-200 py-4 sm:grid-cols-4">
           {[
             ['当前记录', stats.count, '条'],
             ['已发放时长', stats.days, '天'],
             ['口令带来新用户', stats.conversions, '人'],
             ['短链待人工核对', stats.manual, '条'],
-          ].map(([label, value, unit], i) => (
-            <div key={label as string} className={i === 0 ? 'pr-6' : 'px-6'}>
-              <dt className="text-stone-500">{label}</dt>
-              <dd className="mt-1 text-3xl font-bold tabular-nums">
+          ].map(([label, value, unit]) => (
+            <div key={label as string} className="min-w-0">
+              <dt className="text-xs leading-5 text-stone-500">{label}</dt>
+              <dd className="mt-1 text-2xl font-bold tabular-nums">
                 {value}
                 <span className="ml-1 text-sm font-normal text-stone-500">{unit}</span>
               </dd>
@@ -248,23 +259,23 @@ export default function XhsNotesAdminPage() {
         </dl>
       )}
 
-      <nav className="mt-6 flex gap-8 border-b border-stone-200">
+      <nav className="mt-4 flex gap-1 overflow-x-auto border-b border-stone-200">
         {tabs.map((t) => (
           <button
             key={t.key}
             type="button"
             onClick={() => switchQueue(t.key)}
-            className={`-mb-px border-b-2 pb-3 text-sm ${
-              queue === t.key ? 'border-violet-600 font-semibold text-violet-700' : 'border-transparent text-stone-500 hover:text-stone-900'
+            className={`h-11 shrink-0 whitespace-nowrap border-b-2 px-3 text-sm ${
+              queue === t.key ? 'border-violet-600 font-semibold text-violet-700' : 'border-transparent text-stone-500'
             }`}
           >
             {t.label}
           </button>
         ))}
-        <span className="ml-auto pb-3 text-xs text-stone-400">
-          规则：通过 {rules.baseDays} 天；浏览 ≥{rules.tier1Views} 或 赞+藏+评 ≥{rules.tier1Engagement} 累计至 {rules.tier1TotalDays} 天；浏览 ≥{rules.tier2Views} 累计至 {rules.tier2TotalDays} 天
-        </span>
       </nav>
+      <p className="mt-2 text-xs leading-5 text-stone-400">
+        规则：通过 {rules.baseDays} 天；浏览 ≥{rules.tier1Views} 或 赞+藏+评 ≥{rules.tier1Engagement} 累计至 {rules.tier1TotalDays} 天；浏览 ≥{rules.tier2Views} 累计至 {rules.tier2TotalDays} 天
+      </p>
 
       {error && <p className="mt-4 text-sm text-red-700">{error}</p>}
 
@@ -316,7 +327,7 @@ export default function XhsNotesAdminPage() {
             const p = preview(row, m, rules)
             const hours = hoursSince(row.publishedAt || m.publishedAt)
             const invalidMetrics = [m.views, m.likes, m.collects, m.comments].some(value => value.trim() !== '' && (!/^\d+$/.test(value) || Number(value) > 2147483647))
-            const draft = row.draft?.output
+            const draft = row.draft
             return (
               <article key={row.id} className="py-6">
                 <div className="flex flex-wrap items-start justify-between gap-4">
@@ -336,7 +347,7 @@ export default function XhsNotesAdminPage() {
                   </div>
                   <div className="flex items-center gap-4 text-sm">
                     {draft && (
-                      <button type="button" className="text-stone-600 underline" onClick={() => setOpen(open === row.id ? null : row.id)}>
+                      <button type="button" className="text-stone-600 underline" onClick={() => void toggleDraft(row)}>
                         {open === row.id ? '收起原稿' : '对照原稿'}
                       </button>
                     )}
@@ -353,37 +364,43 @@ export default function XhsNotesAdminPage() {
 
                 {open === row.id && draft && (
                   <div className="mt-4 bg-stone-100 p-4 text-sm">
-                    <p className="font-medium">{(draft.titles || []).join(' / ')}</p>
-                    <p className="mt-2 whitespace-pre-wrap leading-7 text-stone-700">{draft.body}</p>
+                    {draft.output ? (
+                      <>
+                        <p className="font-medium">{(draft.output.titles || []).join(' / ')}</p>
+                        <p className="mt-2 whitespace-pre-wrap leading-7 text-stone-700">{draft.output.body}</p>
+                      </>
+                    ) : (
+                      <p className="text-stone-500">正在加载原稿</p>
+                    )}
                   </div>
                 )}
 
                 {row.status === 0 && (
-                  <div className="mt-4 space-y-3">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <button className={btnSolid} type="button" onClick={() => void act('approve', row.id)}>
-                        通过，发放 {rules.baseDays} 天
-                      </button>
-                      <input
-                        className={`${input} w-72`}
-                        placeholder="拒绝原因"
-                        value={reason[row.id] || ''}
-                        onChange={(e) => setReason({ ...reason, [row.id]: e.target.value })}
-                      />
+                  <div className="mt-4 space-y-2">
+                    <button className={`${btnSolid} w-full sm:w-auto`} type="button" onClick={() => void act('approve', row.id)}>
+                      通过，发放 {rules.baseDays} 天
+                    </button>
+                    <input
+                      className={input}
+                      placeholder="拒绝原因"
+                      value={reason[row.id] || ''}
+                      onChange={(e) => setReason({ ...reason, [row.id]: e.target.value })}
+                    />
+                    <div className="grid grid-cols-2 gap-2">
                       <button className={btn} type="button" onClick={() => void act('reject', row.id, { reason: reason[row.id] || '' })}>
                         拒绝
                       </button>
                       <button
-                        className="ml-auto text-sm text-stone-500 underline"
+                        className="h-11 rounded-lg text-sm text-stone-500"
                         type="button"
                         onClick={() => void act('revoke', row.id, {}, '回收后该用户不能再领取奖励，确认？')}
                       >
                         回收资格
                       </button>
                     </div>
-                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-stone-500">
+                    <div className="grid gap-1.5 sm:grid-cols-2">
                       {QUICK_REASONS.map((t) => (
-                        <button key={t} type="button" className="underline hover:text-stone-900" onClick={() => setReason({ ...reason, [row.id]: t })}>
+                        <button key={t} type="button" className="rounded-lg bg-stone-50 px-3 py-2 text-left text-xs leading-5 text-stone-600" onClick={() => setReason({ ...reason, [row.id]: t })}>
                           {t}
                         </button>
                       ))}

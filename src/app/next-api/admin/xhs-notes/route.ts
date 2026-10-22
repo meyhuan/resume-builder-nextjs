@@ -4,6 +4,8 @@ import { prisma } from '@/lib/prisma'
 import { verifyAdminPassword } from '@/lib/verify-admin-password'
 
 const XHS_ADMIN_TOKEN = process.env.XHS_ADMIN_TOKEN || process.env.ADMIN_PASSWORD || ''
+const CONFIG_TTL_MS = 10 * 60 * 1000
+let configCache: { at: number; data: unknown } | null = null
 
 interface JavaSubmissionRow {
   id: number
@@ -42,7 +44,6 @@ async function enrichRowsWithDrafts(rows: JavaSubmissionRow[]) {
           select: {
             id: true,
             topic: true,
-            output: true,
             createdAt: true,
           },
         },
@@ -62,7 +63,6 @@ async function enrichRowsWithDrafts(rows: JavaSubmissionRow[]) {
           ? {
               id: matchedDraft.id,
               topic: matchedDraft.topic,
-              output: matchedDraft.output,
               createdAt: matchedDraft.createdAt.toISOString(),
             }
           : null,
@@ -84,6 +84,24 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const javaBase = getServerJavaApiBaseUrl()
   const headers: Record<string, string> = { 'Content-Type': 'application/json' }
   if (XHS_ADMIN_TOKEN) headers['X-Xhs-Admin-Token'] = XHS_ADMIN_TOKEN
+
+  if (action === 'config' && configCache && Date.now() - configCache.at < CONFIG_TTL_MS) {
+    return NextResponse.json({ status: 100, data: configCache.data })
+  }
+
+  if (action === 'draft') {
+    const draftId = typeof body.draftId === 'string' ? body.draftId : ''
+    if (!draftId) return NextResponse.json({ error: '缺少原稿' }, { status: 400 })
+    const draft = await prisma.xhsNoteDraft.findUnique({
+      where: { id: draftId },
+      select: { id: true, topic: true, output: true, createdAt: true },
+    })
+    if (!draft) return NextResponse.json({ error: '原稿不存在' }, { status: 404 })
+    return NextResponse.json({
+      status: 100,
+      data: { id: draft.id, topic: draft.topic, output: draft.output, createdAt: draft.createdAt.toISOString() },
+    })
+  }
 
   if (action === 'drafts') {
     const drafts = await prisma.xhsNoteDraft.findMany({
@@ -118,6 +136,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   if (action === 'list' && Array.isArray(data.data)) {
     data.data = await enrichRowsWithDrafts(data.data as JavaSubmissionRow[])
+  }
+  if (action === 'config' && data.status === 100) {
+    configCache = { at: Date.now(), data: data.data }
   }
 
   return NextResponse.json(data, { status: response.status })

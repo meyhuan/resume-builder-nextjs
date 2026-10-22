@@ -22,9 +22,11 @@ it('accepts the local admin password without calling Java', async () => {
   expect(fetch).not.toHaveBeenCalled()
 })
 
-it('accepts the password Java accepts at login', async () => {
+it('accepts the password Java accepts at login and reuses that result', async () => {
   vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({ status: 100 }), { status: 200 }))
   await expect(verifyAdminPassword('java-secret')).resolves.toBe(true)
+  await expect(verifyAdminPassword('java-secret')).resolves.toBe(true)
+  expect(fetch).toHaveBeenCalledTimes(1)
   expect(fetch).toHaveBeenCalledWith('http://java.local/admin/verify-password', expect.objectContaining({
     method: 'POST',
     body: JSON.stringify({ password: 'java-secret' }),

@@ -8,14 +8,13 @@ import {
   CalendarDays,
   Download,
   Gauge,
-  Lock,
   RefreshCw,
   Sparkles,
   TrendingUp,
 } from 'lucide-react';
 import { TEMPLATE_METADATA } from '@/lib/templates/template-metadata';
 import { cn } from '@/lib/utils';
-import { clearStoredAdminPassword, getStoredAdminPassword, setStoredAdminPassword } from '@/lib/admin-auth';
+import { getStoredAdminPassword } from '@/lib/admin-auth';
 
 interface FunnelStep {
   eventName: string;
@@ -321,8 +320,6 @@ async function fetchAnalytics(
 }
 
 export default function AnalyticsAdminPage(): React.ReactElement {
-  const [adminPassword, setAdminPassword] = useState('');
-  const [hasStoredPassword, setHasStoredPassword] = useState(false);
   const [days, setDays] = useState(7);
   const [platform, setPlatform] = useState<PlatformFilter>('all');
   const [clientType, setClientType] = useState<ClientTypeFilter>('all');
@@ -347,44 +344,56 @@ export default function AnalyticsAdminPage(): React.ReactElement {
   }, [data.overview]);
 
   useEffect(() => {
-    const storedPassword = getStoredAdminPassword();
-    if (storedPassword) {
-      setAdminPassword(storedPassword);
-      setHasStoredPassword(true);
-      void loadAll(storedPassword);
-    }
+    void loadAll();
+    // The shell has already stored the password. Reload stays on the refresh button.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function loadAll(passwordOverride?: string): Promise<void> {
-    const passwordToUse = passwordOverride || adminPassword;
+  async function loadAll(): Promise<void> {
+    const passwordToUse = getStoredAdminPassword();
     if (!passwordToUse.trim()) {
-      setError('请输入管理员密码');
+      setError('请先在管理后台登录');
       return;
     }
     setLoading(true);
+    setLoaded(true);
     setError(null);
-    try {
-      const [overview, lifecycle, pay, exportFunnel, create, errors, revenue, channels, acquisitionSources, templates] = await Promise.all([
-        fetchAnalytics('overview', days, platform, passwordToUse) as Promise<OverviewData>,
-        fetchAnalytics('lifecycle', days, platform, passwordToUse, clientType) as Promise<LifecycleData>,
-        fetchAnalytics('pay', days, platform, passwordToUse) as Promise<FunnelData>,
-        fetchAnalytics('export', days, platform, passwordToUse) as Promise<FunnelData>,
-        fetchAnalytics('create', days, platform, passwordToUse) as Promise<FunnelData>,
-        fetchAnalytics('errors', days, platform, passwordToUse) as Promise<ErrorData>,
-        fetchAnalytics('revenue', days, platform, passwordToUse) as Promise<RevenueData>,
-        fetchAnalytics('channels', days, platform, passwordToUse) as Promise<AttributionData>,
-        fetchAnalytics('acquisitionSources', days, platform, passwordToUse) as Promise<SelfReportedSourcesData>,
-        (fetchAnalytics('templates', days, platform, passwordToUse) as Promise<TemplateFunnelData>).catch(() => null),
-      ]);
-      setStoredAdminPassword(passwordToUse);
-      setHasStoredPassword(true);
-      setData({ overview, lifecycle, pay, export: exportFunnel, create, errors, revenue, channels, acquisitionSources, templates });
-      setLoaded(true);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '加载失败');
-    } finally {
-      setLoading(false);
-    }
+    setData({
+      templates: null,
+      overview: null,
+      lifecycle: null,
+      pay: null,
+      export: null,
+      create: null,
+      errors: null,
+      revenue: null,
+      channels: null,
+      acquisitionSources: null,
+    });
+    const requests: Array<[keyof AnalyticsState, Promise<unknown>]> = [
+      ['overview', fetchAnalytics('overview', days, platform, passwordToUse)],
+      ['lifecycle', fetchAnalytics('lifecycle', days, platform, passwordToUse, clientType)],
+      ['pay', fetchAnalytics('pay', days, platform, passwordToUse)],
+      ['export', fetchAnalytics('export', days, platform, passwordToUse)],
+      ['create', fetchAnalytics('create', days, platform, passwordToUse)],
+      ['errors', fetchAnalytics('errors', days, platform, passwordToUse)],
+      ['revenue', fetchAnalytics('revenue', days, platform, passwordToUse)],
+      ['channels', fetchAnalytics('channels', days, platform, passwordToUse)],
+      ['acquisitionSources', fetchAnalytics('acquisitionSources', days, platform, passwordToUse)],
+      ['templates', fetchAnalytics('templates', days, platform, passwordToUse).catch(() => null)],
+    ];
+    const results = await Promise.all(requests.map(async ([key, request]) => {
+      try {
+        const value = await request;
+        setData((current) => ({ ...current, [key]: value as AnalyticsState[typeof key] }));
+        return true;
+      } catch (err) {
+        setError(err instanceof Error ? err.message : '加载失败');
+        return false;
+      }
+    }));
+    if (results.every((ok) => !ok)) setLoaded(false);
+    setLoading(false);
   }
 
   return (
@@ -399,20 +408,7 @@ export default function AnalyticsAdminPage(): React.ReactElement {
             <p className="mt-1 text-sm text-slate-500">轻量封装数据库事件数据，便于查看核心漏斗。</p>
           </div>
 
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            {!hasStoredPassword && (
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                <input
-                  type="password"
-                  value={adminPassword}
-                  onChange={(e) => setAdminPassword(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && void loadAll()}
-                  placeholder="管理员密码"
-                  className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 pl-9 pr-3 text-sm outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 sm:w-52"
-                />
-              </div>
-            )}
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
             <div className="relative">
               <CalendarDays className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <select
@@ -453,21 +449,6 @@ export default function AnalyticsAdminPage(): React.ReactElement {
               <RefreshCw className={cn('h-4 w-4', loading && 'animate-spin')} />
               {loading ? '加载中' : '刷新数据'}
             </button>
-            {hasStoredPassword && (
-              <button
-                type="button"
-                onClick={() => {
-                  clearStoredAdminPassword();
-                  setHasStoredPassword(false);
-                  setAdminPassword('');
-                  setLoaded(false);
-                  setData({ templates: null, overview: null, lifecycle: null, pay: null, export: null, create: null, errors: null, revenue: null, channels: null, acquisitionSources: null });
-                }}
-                className="h-10 rounded-lg border border-slate-200 px-3 text-sm text-slate-600 hover:bg-slate-50"
-              >
-                退出
-              </button>
-            )}
           </div>
         </div>
 
@@ -481,7 +462,7 @@ export default function AnalyticsAdminPage(): React.ReactElement {
 
       {!loaded ? (
         <div className="rounded-xl border border-dashed border-slate-300 bg-white p-10 text-center text-sm text-slate-500">
-          {hasStoredPassword ? '正在加载数据。' : '输入管理员密码后刷新数据。'}
+          {loading ? '正在加载数据。' : '暂时没有数据。'}
         </div>
       ) : (
         <>
@@ -561,7 +542,9 @@ export default function AnalyticsAdminPage(): React.ReactElement {
               <span className="text-xs text-slate-400">按平台、页面、错误信息聚合</span>
             </div>
             <div className="mt-4 space-y-3">
-              {(data.errors?.errors ?? []).length === 0 ? (
+              {data.errors == null ? (
+                <div className="rounded-lg border border-dashed border-slate-200 p-6 text-center text-sm text-slate-500">加载中</div>
+              ) : data.errors.errors.length === 0 ? (
                 <div className="rounded-lg border border-dashed border-slate-200 p-6 text-center text-sm text-slate-500">
                   当前时间范围内没有错误上报。
                 </div>
@@ -616,6 +599,7 @@ function LifecycleFunnelCard(props: { data: LifecycleData | null }): React.React
         </div>
       </div>
 
+      {!props.data && <p className="mt-4 text-sm text-slate-400">加载中</p>}
       <div className="mt-5 grid gap-3 xl:grid-cols-3">
         {steps.map((step, index) => {
           const width = Math.max(4, Math.round((step.orderedUsers / max) * 100));
@@ -847,6 +831,7 @@ function FunnelCard(props: { title: string; icon: React.ReactNode; data: FunnelD
         <span className="text-violet-600">{props.icon}</span>
         {props.title}
       </div>
+      {!props.data && <p className="mt-4 text-sm text-slate-400">加载中</p>}
       <div className="mt-4 space-y-3">
         {(props.data?.steps ?? []).map((step) => {
           const width = Math.max(5, Math.round((step.count / max) * 100));
