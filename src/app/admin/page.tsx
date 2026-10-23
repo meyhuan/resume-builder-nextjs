@@ -1,12 +1,30 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { Crown, Search, RotateCcw, User, CheckCircle, AlertCircle, LogIn, Shield, Copy, FileText, ChevronDown, ChevronUp, Download, Minus, Plus } from 'lucide-react';
+import { useState } from 'react';
+import {
+  Crown,
+  Search,
+  RotateCcw,
+  User,
+  CheckCircle,
+  AlertCircle,
+  Copy,
+  ChevronDown,
+  ChevronUp,
+  Download,
+  Minus,
+  Plus,
+  Check,
+  Sparkles,
+  Clock,
+  X,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { getPublicJavaApiBaseUrl } from '@/lib/java-api-base';
-import { clearStoredAdminPassword, getStoredAdminPassword, setStoredAdminPassword } from '@/lib/admin-auth';
-
-const JAVA_API = getPublicJavaApiBaseUrl();
+import { getStoredAdminPassword } from '@/lib/admin-auth';
+import { adminErrorText, adminJava, vipTypeLabel } from '@/lib/admin-java';
+import { AdminStats } from '@/components/admin/admin-stats';
+import { ResumeReplace } from '@/components/admin/resume-replace';
+import { UserList } from '@/components/admin/user-list';
 
 interface UserInfo {
   id: number;
@@ -42,12 +60,10 @@ interface VipFormData {
 type CopyMode = 'to-user' | 'to-current';
 type SourceLookupMode = 'user' | 'resume-name';
 
-const VIP_TYPES = ['', '月卡', '年卡', '终身'] as const;
-
 const QUICK_PRESETS: Array<{ label: string; vipType: number; days: number }> = [
   { label: '月卡 30天', vipType: 1, days: 30 },
   { label: '年卡 365天', vipType: 2, days: 365 },
-  { label: '终身', vipType: 3, days: 36500 },
+  { label: '终身会员', vipType: 3, days: 36500 },
 ];
 
 function getExpiryDate(days: number): string {
@@ -55,8 +71,6 @@ function getExpiryDate(days: number): string {
 }
 
 export default function AdminPage(): React.ReactElement {
-  const [password, setPassword] = useState('');
-  const [authed, setAuthed] = useState(false);
   const [searchValue, setSearchValue] = useState('');
   const [user, setUser] = useState<UserInfo | null>(null);
   const [loading, setLoading] = useState(false);
@@ -76,68 +90,40 @@ export default function AdminPage(): React.ReactElement {
   const [copyMessage, setCopyMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [exportCount, setExportCount] = useState(0);
   const [exportCountLoading, setExportCountLoading] = useState(false);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [vipForm, setVipForm] = useState<VipFormData>({
     vipType: 1,
     expiryDate: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 16),
   });
 
-  useEffect(() => {
-    const storedPassword = getStoredAdminPassword();
-    if (storedPassword) {
-      setPassword(storedPassword);
-      setAuthed(true);
-    }
-  }, []);
-
-  function adminHeaders(): HeadersInit {
-    return { 'Content-Type': 'application/json', 'X-Admin-Password': password };
+  function copyTextToClipboard(text: string, key: string) {
+    if (!navigator?.clipboard) return;
+    navigator.clipboard.writeText(text).then(() => {
+      setCopiedKey(key);
+      setTimeout(() => {
+        setCopiedKey((prev) => (prev === key ? null : prev));
+      }, 1800);
+    }).catch(() => {});
   }
 
-  async function login(): Promise<void> {
-    setLoading(true);
-    try {
-      const res = await fetch(`${JAVA_API}/admin/verify-password`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password }),
-      });
-      const json = await res.json();
-      if (json.status === 100) {
-        setStoredAdminPassword(password);
-        setAuthed(true);
-        setMessage(null);
-      } else {
-        setMessage({ type: 'error', text: '密码错误' });
-      }
-    } catch {
-      setMessage({ type: 'error', text: '登录失败，请检查网络' });
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function searchUser(): Promise<void> {
-    if (!searchValue.trim()) {
+  async function searchUser(idOverride?: string): Promise<void> {
+    const query = (idOverride ?? searchValue).trim();
+    if (!query) {
       setMessage({ type: 'error', text: '请输入 User ID' });
       return;
     }
+    if (idOverride) setSearchValue(idOverride);
     setLoading(true);
     setMessage(null);
     setUser(null);
     try {
-      const url = `${JAVA_API}/admin/users/${searchValue.trim()}`;
-      const res = await fetch(url, { headers: adminHeaders() });
-      const json = await res.json();
-      if (!res.ok || json.status !== 100) {
-        setMessage({ type: 'error', text: json.message || '用户未找到' });
-        return;
-      }
-      const foundUser = json.data as UserInfo;
+      const foundUser = await adminJava<UserInfo>(`/users/${encodeURIComponent(query)}`);
       setUser(foundUser);
       setExportCount(Math.max(0, foundUser.freeExportCount ?? 0));
       setShowVipForm(false);
+      document.getElementById('selected-user')?.scrollIntoView({ block: 'start' });
     } catch (err) {
-      setMessage({ type: 'error', text: '搜索失败: ' + (err instanceof Error ? err.message : '未知错误') });
+      setMessage({ type: 'error', text: adminErrorText(err, '用户未找到') });
     } finally {
       setLoading(false);
     }
@@ -148,39 +134,30 @@ export default function AdminPage(): React.ReactElement {
     setLoading(true);
     setMessage(null);
     try {
-      const res = await fetch(`${JAVA_API}/admin/users/${user.id}/vip`, {
+      await adminJava<UserInfo>(`/users/${user.id}/vip`, {
         method: 'PUT',
-        headers: adminHeaders(),
         body: JSON.stringify({
           vipType: vipForm.vipType,
           expiryDate: vipForm.expiryDate,
           freeExportCount: user.freeExportCount ?? 0,
         }),
       });
-      const json = await res.json();
-      if (!res.ok || json.status !== 100) {
-        setMessage({ type: 'error', text: json.message || '操作失败' });
-        return;
-      }
-      setMessage({ type: 'success', text: 'VIP 已授予' });
+      setMessage({ type: 'success', text: 'VIP 状态更新成功！' });
       setShowVipForm(false);
-      await searchUser();
+      await searchUser(String(user.id));
     } catch (err) {
-      setMessage({ type: 'error', text: '操作失败: ' + (err instanceof Error ? err.message : '未知错误') });
+      setMessage({ type: 'error', text: adminErrorText(err, '授予操作失败') });
     } finally {
       setLoading(false);
     }
   }
 
-  async function loadMyResumes(): Promise<void> {
-    setShowCopySection((v) => {
-      if (!v) {
-        if (copyMode === 'to-user') {
-          fetchMyResumes();
-        }
-      }
-      return !v;
-    });
+  async function toggleCopySection(): Promise<void> {
+    const nextState = !showCopySection;
+    setShowCopySection(nextState);
+    if (nextState && copyMode === 'to-user' && myResumes.length === 0) {
+      void fetchMyResumes();
+    }
   }
 
   function handleCopyModeChange(mode: CopyMode): void {
@@ -217,7 +194,7 @@ export default function AdminPage(): React.ReactElement {
         if (json.length > 0) setSelectedResumeId(json[0].id);
       }
     } catch {
-      setCopyMessage({ type: 'error', text: '加载简历列表失败' });
+      setCopyMessage({ type: 'error', text: '加载我的简历列表失败' });
     }
   }
 
@@ -241,10 +218,12 @@ export default function AdminPage(): React.ReactElement {
       setCopyMessage({ type: 'error', text: '请输入来源用户 ID' });
       return;
     }
+    setCopyLoading(true);
+    setCopyMessage(null);
     try {
       const params = new URLSearchParams({ userId: query });
       const res = await fetch(`/next-api/admin/copy-resume?${params.toString()}`, {
-        headers: { 'X-Admin-Password': password },
+        headers: { 'X-Admin-Password': getStoredAdminPassword() },
       });
       const json = await res.json();
       if (!res.ok || json.error) {
@@ -265,19 +244,23 @@ export default function AdminPage(): React.ReactElement {
       }
     } catch (err) {
       setCopyMessage({ type: 'error', text: '加载对方简历列表失败: ' + (err instanceof Error ? err.message : '未知错误') });
+    } finally {
+      setCopyLoading(false);
     }
   }
 
   async function fetchSourceResumesByName(): Promise<void> {
     const query = resumeNameQuery.trim();
     if (!query) {
-      setCopyMessage({ type: 'error', text: '请输入简历基本信息里的姓名' });
+      setCopyMessage({ type: 'error', text: '请输入简历基本信息姓名' });
       return;
     }
+    setCopyLoading(true);
+    setCopyMessage(null);
     try {
       const params = new URLSearchParams({ resumeName: query });
       const res = await fetch(`/next-api/admin/copy-resume?${params.toString()}`, {
-        headers: { 'X-Admin-Password': password },
+        headers: { 'X-Admin-Password': getStoredAdminPassword() },
       });
       const json = await res.json();
       if (!res.ok || json.error) {
@@ -294,10 +277,12 @@ export default function AdminPage(): React.ReactElement {
       if (resumes.length === 0) {
         setCopyMessage({ type: 'error', text: '没有找到匹配该姓名的简历' });
       } else {
-        setCopyMessage({ type: 'success', text: `找到 ${resumes.length} 份匹配简历，请选择后复制到我的账号` });
+        setCopyMessage({ type: 'success', text: `找到 ${resumes.length} 份匹配简历，请选择后复制` });
       }
     } catch (err) {
       setCopyMessage({ type: 'error', text: '按姓名搜索简历失败: ' + (err instanceof Error ? err.message : '未知错误') });
+    } finally {
+      setCopyLoading(false);
     }
   }
 
@@ -326,13 +311,13 @@ export default function AdminPage(): React.ReactElement {
     try {
       const payload = copyMode === 'to-current'
         ? {
-            adminPassword: password,
+            adminPassword: getStoredAdminPassword(),
             resumeId: selectedResumeId,
             sourceUserId: sourceIdentifier,
             direction: 'to-current' as const,
           }
         : {
-            adminPassword: password,
+            adminPassword: getStoredAdminPassword(),
             resumeId: selectedResumeId,
             targetUserId: targetUserId.trim(),
             direction: 'to-user' as const,
@@ -363,22 +348,17 @@ export default function AdminPage(): React.ReactElement {
 
   async function resetVip(): Promise<void> {
     if (!user) return;
+    if (!window.confirm('确定要重置该用户的 VIP 状态吗？重置后将恢复为非会员。')) {
+      return;
+    }
     setLoading(true);
     setMessage(null);
     try {
-      const res = await fetch(`${JAVA_API}/admin/users/${user.id}/vip`, {
-        method: 'DELETE',
-        headers: adminHeaders(),
-      });
-      const json = await res.json();
-      if (!res.ok || json.status !== 100) {
-        setMessage({ type: 'error', text: json.message || '重置失败' });
-        return;
-      }
-      setMessage({ type: 'success', text: 'VIP 已重置' });
-      await searchUser();
+      await adminJava<void>(`/users/${user.id}/vip`, { method: 'DELETE' });
+      setMessage({ type: 'success', text: 'VIP 已成功重置' });
+      await searchUser(String(user.id));
     } catch (err) {
-      setMessage({ type: 'error', text: '重置失败: ' + (err instanceof Error ? err.message : '未知错误') });
+      setMessage({ type: 'error', text: adminErrorText(err, '重置失败') });
     } finally {
       setLoading(false);
     }
@@ -394,30 +374,19 @@ export default function AdminPage(): React.ReactElement {
     setExportCountLoading(true);
     setMessage(null);
     try {
-      const res = await fetch(`${JAVA_API}/admin/users/${user.id}/export-count`, {
+      const data = await adminJava<{ freeExportCount?: number }>(`/users/${user.id}/export-count`, {
         method: 'PUT',
-        headers: adminHeaders(),
         body: JSON.stringify({ freeExportCount: exportCount }),
       });
-      const json = await res.json();
-      if (!res.ok || json.status !== 100) {
-        setMessage({ type: 'error', text: json.result || json.message || '导出次数保存失败' });
-        return;
-      }
-      const savedCount = Number(json.data?.freeExportCount ?? exportCount);
+      const savedCount = Number(data?.freeExportCount ?? exportCount);
       setUser((current) => current ? { ...current, freeExportCount: savedCount } : current);
       setExportCount(savedCount);
       setMessage({ type: 'success', text: `剩余导出次数已更新为 ${savedCount} 次` });
     } catch (err) {
-      setMessage({ type: 'error', text: '导出次数保存失败: ' + (err instanceof Error ? err.message : '未知错误') });
+      setMessage({ type: 'error', text: adminErrorText(err, '导出次数保存失败') });
     } finally {
       setExportCountLoading(false);
     }
-  }
-
-  function getVipStatusText(vipStatus: number, vipType: number): string {
-    if (vipStatus === 0) return '非VIP';
-    return `VIP (${VIP_TYPES[vipType] || '未知'})`;
   }
 
   const activeCopyResumes: ResumeItem[] = copyMode === 'to-user' ? myResumes : sourceUserResumes;
@@ -430,139 +399,186 @@ export default function AdminPage(): React.ReactElement {
     || (copyMode === 'to-current' && sourceLookupMode === 'user' && !sourceUserQuery.trim())
     || (copyMode === 'to-current' && sourceLookupMode === 'resume-name' && !selectedSourceResume?.user?.id);
 
-  if (!authed) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-8">
-        <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-200 w-full max-w-sm">
-          <div className="text-center mb-6">
-            <div className="w-12 h-12 bg-violet-100 rounded-full flex items-center justify-center mx-auto mb-3">
-              <Shield className="w-6 h-6 text-violet-600" />
-            </div>
-            <h1 className="font-bold text-slate-800 text-lg">管理后台</h1>
-            <p className="text-slate-500 text-sm mt-1">请输入管理员密码</p>
-          </div>
-          {message && (
-            <div className="mb-4 p-3 rounded-xl bg-rose-50 text-rose-700 text-sm flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0" />
-              {message.text}
-            </div>
-          )}
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && login()}
-            placeholder="管理员密码"
-            className="w-full px-4 py-3 border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-violet-500 mb-3"
-          />
-          <button
-            onClick={login}
-            disabled={loading}
-            className="w-full py-3 bg-violet-600 hover:bg-violet-700 text-white font-medium rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-          >
-            <LogIn className="w-4 h-4" />
-            {loading ? '验证中...' : '登录'}
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-slate-50 p-8">
-      <div className="max-w-2xl mx-auto">
-        <div className="mb-8 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Crown className="w-5 h-5 text-amber-500" />
-            <span className="font-bold text-slate-700 text-lg">管理后台</span>
+    <div className="space-y-3 sm:space-y-6">
+      {/* Top Stats Overview */}
+      <AdminStats />
+
+      {/* User Search Bar */}
+      <div className="rounded-xl border border-slate-200/80 bg-white p-2.5 sm:rounded-2xl sm:p-5 shadow-xs">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            void searchUser();
+          }}
+          className="flex gap-2"
+        >
+          <div className="relative flex-1">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <input
+              type="text"
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
+              placeholder="输入 User ID 搜索用户"
+              className="w-full rounded-xl border border-slate-200 bg-slate-50/70 pl-10 pr-9 py-2.5 sm:py-3 text-base sm:text-sm outline-none transition-all focus:border-violet-500 focus:bg-white focus:ring-2 focus:ring-violet-100"
+            />
+            {searchValue && (
+              <button
+                type="button"
+                onClick={() => setSearchValue('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-slate-400 hover:text-slate-600"
+                aria-label="清空输入"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
           </div>
-          <button onClick={() => { clearStoredAdminPassword(); setPassword(''); setAuthed(false); setUser(null); setMessage(null); }} className="text-sm text-slate-400 hover:text-slate-600">
-            退出登录
+          <button
+            type="submit"
+            disabled={loading || !searchValue.trim()}
+            className="flex h-11 shrink-0 items-center justify-center rounded-xl bg-violet-600 px-3 text-sm font-semibold text-white shadow-xs hover:bg-violet-700 active:scale-[0.99] disabled:opacity-50 transition-all"
+          >
+            {loading ? '搜索中' : '搜索'}
+          </button>
+        </form>
+      </div>
+
+      {/* Global Alert Notification */}
+      {message && (
+        <div
+          className={cn(
+            'flex items-start gap-2.5 rounded-2xl p-3.5 sm:p-4 text-xs sm:text-sm border transition-all animate-in fade-in',
+            message.type === 'success'
+              ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+              : 'bg-rose-50 text-rose-800 border-rose-200'
+          )}
+        >
+          {message.type === 'success' ? (
+            <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 shrink-0 text-emerald-600 mt-0.5" />
+          ) : (
+            <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 shrink-0 text-rose-600 mt-0.5" />
+          )}
+          <span className="flex-1 font-medium">{message.text}</span>
+          <button
+            type="button"
+            onClick={() => setMessage(null)}
+            className="text-slate-400 hover:text-slate-600 p-0.5"
+            aria-label="关闭提示"
+          >
+            <X className="h-4 w-4" />
           </button>
         </div>
+      )}
 
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 mb-6">
-          <div className="flex gap-3">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <input
-                type="text"
-                value={searchValue}
-                onChange={(e) => setSearchValue(e.target.value)}
-                placeholder="输入 User ID 搜索"
-                className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
-                onKeyDown={(e) => e.key === 'Enter' && searchUser()}
-              />
+      {/* Selected User Details Card */}
+      {user && (
+        <div id="selected-user" className="rounded-2xl sm:rounded-3xl border border-slate-200/80 bg-white p-4 sm:p-6 shadow-xs space-y-5">
+          {/* Header Info */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white font-bold text-lg sm:text-xl shadow-xs shrink-0">
+                {user.name ? user.name.slice(0, 1) : <User className="h-6 w-6" />}
+              </div>
+              <div className="min-w-0">
+                <h3 className="font-bold text-slate-800 text-base sm:text-lg truncate">
+                  {user.name || '未命名用户'}
+                </h3>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <span className="text-xs text-slate-500">ID: {user.id}</span>
+                  <button
+                    type="button"
+                    onClick={() => copyTextToClipboard(String(user.id), 'user-id')}
+                    className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[11px] font-medium text-violet-600 hover:bg-violet-50 active:bg-violet-100 transition-colors"
+                    title="复制 User ID"
+                  >
+                    {copiedKey === 'user-id' ? (
+                      <>
+                        <Check className="h-3 w-3 text-emerald-600" />
+                        <span className="text-emerald-600">已复制</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="h-3 w-3" />
+                        <span>复制</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
             </div>
-            <button
-              onClick={searchUser}
-              disabled={loading}
-              className="px-6 py-3 bg-violet-600 text-white font-medium rounded-xl hover:bg-violet-700 transition-colors disabled:opacity-50"
-            >
-              {loading ? '搜索中...' : '搜索'}
-            </button>
-          </div>
-        </div>
 
-        {message && (
-          <div className={`mb-6 p-4 rounded-xl flex items-center gap-3 ${
-            message.type === 'success' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'
-          }`}>
-            {message.type === 'success' ? <CheckCircle className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
-            <span>{message.text}</span>
+            <div className="flex items-center self-start sm:self-center">
+              <span
+                className={cn(
+                  'inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold border',
+                  user.vipStatus === 1
+                    ? 'bg-amber-50 text-amber-700 border-amber-200 shadow-2xs'
+                    : 'bg-slate-100 text-slate-600 border-slate-200'
+                )}
+              >
+                {user.vipStatus === 1 ? <Crown className="h-3.5 w-3.5 text-amber-600" /> : <User className="h-3.5 w-3.5 text-slate-400" />}
+                <span>{user.vipStatus === 1 ? `VIP · ${vipTypeLabel(user.vipType)}` : '非VIP 用户'}</span>
+              </span>
+            </div>
           </div>
-        )}
 
-        {user && (
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
-            <div className="flex items-center gap-4 mb-6">
-              <div className="w-14 h-14 bg-gradient-to-br from-violet-100 to-violet-200 rounded-full flex items-center justify-center">
-                <User className="w-7 h-7 text-violet-500" />
-              </div>
-              <div>
-                <h3 className="font-bold text-slate-800">{user.name || '未命名用户'}</h3>
-                <p className="text-sm text-slate-500">ID: {user.id}</p>
-              </div>
-              <div className="ml-auto">
-                <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                  user.vipStatus === 1 ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600'
-                }`}>
-                  {getVipStatusText(user.vipStatus, user.vipType)}
+          {/* Details Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs sm:text-sm">
+            <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100">
+              <span className="text-slate-500 shrink-0">OpenID</span>
+              <div className="flex items-center gap-1.5 max-w-[65%]">
+                <span className="font-mono text-xs text-slate-700 truncate" title={user.openid}>
+                  {user.openid}
                 </span>
+                <button
+                  type="button"
+                  onClick={() => copyTextToClipboard(user.openid, 'openid')}
+                  className="p-1 rounded text-slate-400 hover:text-violet-600 hover:bg-white transition-colors shrink-0"
+                  title="复制 OpenID"
+                >
+                  {copiedKey === 'openid' ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
+                </button>
               </div>
             </div>
 
-            <div className="space-y-2 mb-6 text-sm">
-              {([
-                ['OpenID', <span key="o" className="font-mono text-xs">{user.openid}</span>],
-                ['VIP 类型', VIP_TYPES[user.vipType] || '-'],
-                ['到期时间', user.vipExpireTime ? new Date(user.vipExpireTime).toLocaleString('zh-CN') : '无'],
-              ] as [string, React.ReactNode][]).map(([label, val]) => (
-                <div key={label} className="flex justify-between py-2 border-b border-slate-100">
-                  <span className="text-slate-500">{label}</span>
-                  <span className="font-medium text-slate-700">{val}</span>
-                </div>
-              ))}
+            <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100">
+              <span className="text-slate-500 shrink-0">VIP 到期时间</span>
+              <div className="flex items-center gap-1.5 text-right font-medium text-slate-700 text-xs sm:text-sm">
+                <Clock className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                <span>{user.vipExpireTime ? new Date(user.vipExpireTime).toLocaleString('zh-CN') : '暂未开通'}</span>
+              </div>
             </div>
+          </div>
 
-            <div className="mb-6 border-y border-slate-100 py-5">
-              <div className="mb-3 flex items-center gap-2">
-                <Download className="h-4 w-4 text-violet-500" />
+          {/* Export Quota Stepper Box */}
+          <div className="rounded-2xl border border-slate-200/90 bg-slate-50/60 p-3.5 sm:p-4 space-y-3">
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-2">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-violet-100 text-violet-600">
+                  <Download className="h-3.5 w-3.5" />
+                </div>
                 <div>
-                  <h4 className="text-sm font-semibold text-slate-700">剩余导出次数</h4>
-                  <p className="text-xs text-slate-400">仅修改单次导出余额，不影响会员状态</p>
+                  <h4 className="text-xs sm:text-sm font-bold text-slate-800">剩余导出次数</h4>
+                  <p className="text-[11px] text-slate-400">单次导出额度，与 VIP 状态相互独立</p>
                 </div>
               </div>
-              <div className="grid grid-cols-[40px_minmax(56px,1fr)_40px_48px] gap-2 sm:grid-cols-[40px_minmax(80px,1fr)_40px_48px_auto]">
+              <span className="rounded-lg bg-white px-2.5 py-1 text-xs font-bold text-violet-700 border border-violet-100 shadow-2xs">
+                当前: {user.freeExportCount ?? 0} 次
+              </span>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center">
+              <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => setExportCount((count) => Math.max(0, count - 1))}
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:border-violet-300 hover:text-violet-600"
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 hover:border-violet-300 hover:text-violet-600 active:scale-95 transition-all shadow-2xs"
                   title="减少 1 次"
                   aria-label="减少 1 次导出"
                 >
                   <Minus className="h-4 w-4" />
                 </button>
+
                 <input
                   type="number"
                   min={0}
@@ -572,63 +588,94 @@ export default function AdminPage(): React.ReactElement {
                     const nextCount = Number(event.target.value);
                     setExportCount(Number.isFinite(nextCount) ? Math.max(0, nextCount) : 0);
                   }}
-                  className="h-10 min-w-0 flex-1 rounded-lg border border-slate-200 bg-slate-50 px-3 text-center text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  className="h-11 min-w-0 flex-1 sm:w-24 rounded-xl border border-slate-200 bg-white px-3 text-center text-base font-bold text-slate-800 outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-100 shadow-2xs"
                   aria-label="剩余导出次数"
                 />
+
                 <button
                   type="button"
                   onClick={() => setExportCount((count) => count + 1)}
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:border-violet-300 hover:text-violet-600"
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 hover:border-violet-300 hover:text-violet-600 active:scale-95 transition-all shadow-2xs"
                   title="增加 1 次"
                   aria-label="增加 1 次导出"
                 >
                   <Plus className="h-4 w-4" />
                 </button>
+              </div>
+
+              <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => setExportCount((count) => count + 5)}
-                  className="h-10 shrink-0 rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-600 hover:border-violet-300 hover:text-violet-600"
+                  className="flex-1 sm:flex-none h-11 rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-600 hover:border-violet-300 hover:text-violet-600 active:scale-95 transition-all shadow-2xs"
                 >
-                  +5
+                  +5 次
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setExportCount((count) => count + 10)}
+                  className="flex-1 sm:flex-none h-11 rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-600 hover:border-violet-300 hover:text-violet-600 active:scale-95 transition-all shadow-2xs"
+                >
+                  +10 次
                 </button>
                 <button
                   type="button"
                   onClick={updateExportCount}
                   disabled={exportCountLoading || exportCount === (user.freeExportCount ?? 0)}
-                  className="col-span-4 h-10 rounded-lg bg-violet-600 px-4 text-sm font-medium text-white hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-50 sm:col-span-1"
+                  className="flex-1 sm:flex-none h-11 rounded-xl bg-violet-600 px-5 text-xs font-semibold text-white shadow-xs hover:bg-violet-700 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 transition-all shrink-0"
                 >
-                  {exportCountLoading ? '保存中...' : '保存次数'}
+                  {exportCountLoading ? '保存中...' : '保存修改'}
                 </button>
               </div>
             </div>
+          </div>
 
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowVipForm((v) => !v)}
-                className="flex-1 py-2.5 bg-violet-600 hover:bg-violet-700 text-white font-medium rounded-xl transition-colors flex items-center justify-center gap-2"
-              >
-                <Crown className="w-4 h-4" />
-                授予 VIP
-              </button>
-              {user.vipStatus === 1 && (
-                <button
-                  onClick={resetVip}
-                  disabled={loading}
-                  className="flex-1 py-2.5 bg-rose-500 hover:bg-rose-600 text-white font-medium rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  <RotateCcw className="w-4 h-4" />
-                  {loading ? '处理中...' : '重置 VIP'}
-                </button>
+          {/* Action Row */}
+          <div className="flex flex-col sm:flex-row gap-2.5 pt-1">
+            <button
+              type="button"
+              onClick={() => setShowVipForm((v) => !v)}
+              className={cn(
+                'flex-1 py-3 px-4 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-2 min-h-[44px]',
+                showVipForm
+                  ? 'bg-violet-100 text-violet-800 border border-violet-300'
+                  : 'bg-violet-600 hover:bg-violet-700 active:scale-[0.99] text-white shadow-xs'
               )}
-            </div>
+            >
+              <Crown className="h-4 w-4" />
+              <span>{showVipForm ? '收起 VIP 表单' : '授予 / 调整 VIP'}</span>
+            </button>
 
-            {showVipForm && (
-              <div className="mt-4 p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
-                {/* Quick presets */}
-                <div>
-                  <p className="text-xs text-slate-500 mb-2">快速选择</p>
-                  <div className="flex gap-2 flex-wrap">
-                    {QUICK_PRESETS.map((preset) => (
+            {user.vipStatus === 1 && (
+              <button
+                type="button"
+                onClick={resetVip}
+                disabled={loading}
+                className="py-3 px-4 rounded-xl font-semibold text-sm text-rose-600 bg-rose-50 hover:bg-rose-100 active:bg-rose-200 border border-rose-200 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 min-h-[44px]"
+              >
+                <RotateCcw className="h-4 w-4" />
+                <span>{loading ? '处理中...' : '重置为非VIP'}</span>
+              </button>
+            )}
+          </div>
+
+          {/* Collapsible VIP Form */}
+          {showVipForm && (
+            <div className="rounded-2xl border border-violet-100 bg-violet-50/40 p-4 sm:p-5 space-y-4 animate-in fade-in duration-200">
+              <div className="flex items-center justify-between border-b border-violet-100 pb-2">
+                <span className="text-xs font-bold text-violet-900 flex items-center gap-1.5">
+                  <Sparkles className="h-3.5 w-3.5 text-violet-600" />
+                  配置 VIP 方案
+                </span>
+                <span className="text-[11px] text-violet-600">选择预设或自定义到期时间</span>
+              </div>
+
+              <div>
+                <p className="text-xs text-slate-500 mb-2 font-medium">快速预设</p>
+                <div className="grid grid-cols-3 gap-2">
+                  {QUICK_PRESETS.map((preset) => {
+                    const active = vipForm.vipType === preset.vipType;
+                    return (
                       <button
                         key={preset.label}
                         type="button"
@@ -638,296 +685,338 @@ export default function AdminPage(): React.ReactElement {
                           expiryDate: getExpiryDate(preset.days),
                         }))}
                         className={cn(
-                          'px-3 py-1.5 rounded-lg text-sm font-medium border transition-all',
-                          vipForm.vipType === preset.vipType
-                            ? 'bg-violet-600 text-white border-violet-600'
-                            : 'bg-white text-slate-600 border-slate-200 hover:border-violet-400 hover:text-violet-600',
+                          'py-2 px-2 rounded-xl text-xs font-semibold border transition-all text-center min-h-[40px]',
+                          active
+                            ? 'bg-violet-600 text-white border-violet-600 shadow-xs'
+                            : 'bg-white text-slate-700 border-slate-200 hover:border-violet-300'
                         )}
                       >
                         {preset.label}
                       </button>
-                    ))}
-                  </div>
+                    );
+                  })}
                 </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs text-slate-500 mb-1">VIP 类型</label>
+                  <label className="block text-xs font-medium text-slate-600 mb-1.5">VIP 会员类型</label>
                   <select
                     value={vipForm.vipType}
                     onChange={(e) => setVipForm((f) => ({ ...f, vipType: Number(e.target.value) }))}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+                    className="w-full px-3 py-2.5 border border-slate-200 rounded-xl bg-white text-base sm:text-sm outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
                   >
-                    <option value={1}>月卡</option>
-                    <option value={2}>年卡</option>
-                    <option value={3}>终身</option>
+                    <option value={1}>月卡会员 (30天)</option>
+                    <option value={2}>年卡会员 (365天)</option>
+                    <option value={3}>终身会员</option>
                   </select>
                 </div>
+
                 <div>
-                  <label className="block text-xs text-slate-500 mb-1">到期时间</label>
+                  <label className="block text-xs font-medium text-slate-600 mb-1.5">到期时间</label>
                   <input
                     type="datetime-local"
                     value={vipForm.expiryDate}
                     onChange={(e) => setVipForm((f) => ({ ...f, expiryDate: e.target.value }))}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+                    className="w-full px-3 py-2.5 border border-slate-200 rounded-xl bg-white text-base sm:text-sm outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
                   />
                 </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={grantVip}
+                disabled={loading}
+                className="w-full py-3 bg-violet-600 hover:bg-violet-700 active:scale-[0.99] text-white font-semibold rounded-xl text-sm transition-all shadow-xs disabled:opacity-50 min-h-[44px]"
+              >
+                {loading ? '保存中...' : '确认授予 / 保存 VIP'}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Resume Sync / Copy Across Accounts Section */}
+      <div className="rounded-2xl sm:rounded-3xl border border-slate-200/80 bg-white shadow-xs overflow-hidden">
+        <button
+          type="button"
+          onClick={toggleCopySection}
+          className="w-full flex items-center justify-between p-3 sm:p-5 hover:bg-slate-50/80 active:bg-slate-100/80 transition-colors text-left"
+        >
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-violet-100 text-violet-600 shrink-0">
+              <Copy className="h-4 w-4 sm:h-5 sm:w-5" />
+            </div>
+            <div>
+              <span className="font-bold text-slate-800 text-sm sm:text-base block">简历同步 · 跨账号复制</span>
+              <span className="text-[11px] sm:text-xs text-slate-400 block mt-0.5">将简历在不同用户账号间快速迁移或复制</span>
+            </div>
+          </div>
+          <div className="p-1 rounded-lg text-slate-400">
+            {showCopySection ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+          </div>
+        </button>
+
+        {showCopySection && (
+          <div className="px-4 pb-5 sm:px-6 sm:pb-6 space-y-4 border-t border-slate-100 pt-4 animate-in fade-in duration-200">
+            {/* Mode Switcher Tabs */}
+            <div className="grid grid-cols-2 gap-1 rounded-xl bg-slate-100 p-1">
+              {([
+                ['to-user', '我的简历 → 他人账号'],
+                ['to-current', '他人简历 → 我的账号'],
+              ] as [CopyMode, string][]).map(([mode, label]) => (
                 <button
-                  onClick={grantVip}
-                  disabled={loading}
-                  className="w-full py-2.5 bg-violet-600 hover:bg-violet-700 text-white font-medium rounded-xl transition-colors disabled:opacity-50"
+                  key={mode}
+                  type="button"
+                  onClick={() => handleCopyModeChange(mode)}
+                  className={cn(
+                    'rounded-lg py-2 px-2 text-xs font-semibold transition-all text-center min-h-[38px]',
+                    copyMode === mode
+                      ? 'bg-white text-violet-700 shadow-xs ring-1 ring-slate-200'
+                      : 'text-slate-600 hover:text-slate-900'
+                  )}
                 >
-                  {loading ? '处理中...' : '确认授予'}
+                  {label}
                 </button>
+              ))}
+            </div>
+
+            {/* Copy Feedback Alert */}
+            {copyMessage && (
+              <div
+                className={cn(
+                  'p-3.5 rounded-xl flex items-start gap-2.5 text-xs sm:text-sm border',
+                  copyMessage.type === 'success'
+                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                    : 'bg-rose-50 text-rose-800 border-rose-200'
+                )}
+              >
+                {copyMessage.type === 'success' ? (
+                  <CheckCircle className="h-4 w-4 shrink-0 mt-0.5 text-emerald-600" />
+                ) : (
+                  <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-rose-600" />
+                )}
+                <span className="break-all font-medium leading-relaxed">{copyMessage.text}</span>
               </div>
             )}
-          </div>
-        )}
 
-        {/* Resume Copy Section */}
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 mb-6 overflow-hidden">
-          <button
-            onClick={loadMyResumes}
-            className="w-full flex items-center justify-between px-6 py-4 hover:bg-slate-50 transition-colors"
-          >
-            <div className="flex items-center gap-2">
-              <Copy className="w-5 h-5 text-violet-500" />
-              <span className="font-semibold text-slate-700">简历同步 · 账号间复制</span>
-            </div>
-            {showCopySection ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
-          </button>
+            {/* Source Lookup Controls for "To-Current" mode */}
+            {copyMode === 'to-current' && (
+              <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3.5 space-y-3">
+                <div className="grid grid-cols-2 gap-1 rounded-lg bg-white p-1 border border-slate-200/60">
+                  {([
+                    ['user', '按来源用户 ID 搜索'],
+                    ['resume-name', '按简历内姓名搜索'],
+                  ] as [SourceLookupMode, string][]).map(([mode, label]) => (
+                    <button
+                      key={mode}
+                      type="button"
+                      onClick={() => handleSourceLookupModeChange(mode)}
+                      className={cn(
+                        'rounded-md py-1.5 px-2 text-xs font-medium transition-all text-center',
+                        sourceLookupMode === mode
+                          ? 'bg-violet-600 text-white shadow-2xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      )}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
 
-          {showCopySection && (
-            <div className="px-6 pb-6 space-y-4 border-t border-slate-100 pt-4">
-              <div className="grid grid-cols-2 gap-2 rounded-xl bg-slate-50 p-1">
-                {([
-                  ['to-user', '我的简历 → 他人账号'],
-                  ['to-current', '他人简历 → 我的账号'],
-                ] as [CopyMode, string][]).map(([mode, label]) => (
-                  <button
-                    key={mode}
-                    type="button"
-                    onClick={() => handleCopyModeChange(mode)}
-                    className={cn(
-                      'rounded-lg px-3 py-2 text-xs font-medium transition-all',
-                      copyMode === mode
-                        ? 'bg-white text-violet-700 shadow-sm ring-1 ring-violet-100'
-                        : 'text-slate-500 hover:text-slate-700',
+                {sourceLookupMode === 'user' ? (
+                  <div className="space-y-2">
+                    <label className="block text-xs font-medium text-slate-600">
+                      来源用户 ID（Java User ID、wxId 或数据库 ID）
+                    </label>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <input
+                        type="text"
+                        value={sourceUserQuery}
+                        onChange={(e) => handleSourceUserQueryChange(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') void fetchSourceUserResumes();
+                        }}
+                        placeholder="输入来源用户的 ID / wxId"
+                        className="flex-1 px-3 py-2.5 border border-slate-200 rounded-xl bg-white text-base sm:text-sm outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => void fetchSourceUserResumes()}
+                        disabled={copyLoading || !sourceUserQuery.trim()}
+                        className="shrink-0 px-4 py-2.5 rounded-xl bg-violet-600 text-white text-xs sm:text-sm font-semibold hover:bg-violet-700 active:scale-95 disabled:opacity-50 transition-all min-h-[44px]"
+                      >
+                        {copyLoading ? '搜索中...' : '搜索简历'}
+                      </button>
+                    </div>
+                    {copySourceUser && (
+                      <div className="rounded-lg bg-violet-50/60 border border-violet-100 p-2.5 text-xs text-violet-900 flex flex-wrap gap-x-3 gap-y-1">
+                        <span>已找到账号：<strong>{copySourceUser.name || '未命名'}</strong></span>
+                        <span>DB ID: <code className="font-mono">{copySourceUser.id}</code></span>
+                        {copySourceUser.javaUserId && <span>Java ID: <code className="font-mono">{copySourceUser.javaUserId}</code></span>}
+                      </div>
                     )}
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <label className="block text-xs font-medium text-slate-600">
+                      简历内的个人姓名
+                    </label>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <input
+                        type="text"
+                        value={resumeNameQuery}
+                        onChange={(e) => handleResumeNameQueryChange(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') void fetchSourceResumesByName();
+                        }}
+                        placeholder="例如：张三 / 李四"
+                        className="flex-1 px-3 py-2.5 border border-slate-200 rounded-xl bg-white text-base sm:text-sm outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => void fetchSourceResumesByName()}
+                        disabled={copyLoading || !resumeNameQuery.trim()}
+                        className="shrink-0 px-4 py-2.5 rounded-xl bg-violet-600 text-white text-xs sm:text-sm font-semibold hover:bg-violet-700 active:scale-95 disabled:opacity-50 transition-all min-h-[44px]"
+                      >
+                        {copyLoading ? '搜索中...' : '搜索简历'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Resume Selection Cards */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-slate-700">
+                  {copyMode === 'to-user'
+                    ? '选择要复制的简历（当前账号）'
+                    : sourceLookupMode === 'resume-name'
+                      ? '选择匹配的简历'
+                      : '选择要复制的简历（来源账号）'}
+                </label>
+                {copyMode === 'to-current' && sourceLookupMode === 'user' && copySourceUser && (
+                  <button
+                    type="button"
+                    onClick={() => void fetchSourceUserResumes()}
+                    className="text-xs text-violet-600 font-medium hover:text-violet-700"
                   >
-                    {label}
+                    刷新简历
                   </button>
-                ))}
+                )}
               </div>
 
-              {copyMessage && (
-                <div className={`p-3 rounded-xl flex items-start gap-2 text-sm ${
-                  copyMessage.type === 'success' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'
-                }`}>
-                  {copyMessage.type === 'success' ? <CheckCircle className="w-4 h-4 shrink-0 mt-0.5" /> : <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />}
-                  <span className="break-all">{copyMessage.text}</span>
+              {copyMode === 'to-current' && sourceLookupMode === 'user' && !copySourceUser ? (
+                <div className="rounded-xl border border-dashed border-slate-200 p-6 text-center text-xs sm:text-sm text-slate-400">
+                  请输入来源用户 ID，并点击“搜索简历”
                 </div>
-              )}
-
-              {copyMode === 'to-current' && (
-                <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-                  <div className="mb-3 grid grid-cols-2 gap-1 rounded-lg bg-white p-1">
-                    {([
-                      ['user', '按来源用户搜索'],
-                      ['resume-name', '按简历姓名搜索'],
-                    ] as [SourceLookupMode, string][]).map(([mode, label]) => (
-                      <button
-                        key={mode}
-                        type="button"
-                        onClick={() => handleSourceLookupModeChange(mode)}
-                        className={cn(
-                          'rounded-md px-2 py-1.5 text-xs font-medium transition-all',
-                          sourceLookupMode === mode
-                            ? 'bg-violet-600 text-white shadow-sm'
-                            : 'text-slate-500 hover:text-slate-700',
-                        )}
-                      >
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-
-                  {sourceLookupMode === 'user' ? (
-                    <>
-                      <label className="block text-xs text-slate-500 mb-1.5">来源用户 ID（Java User ID、wxId 或数据库 ID）</label>
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          value={sourceUserQuery}
-                          onChange={(e) => handleSourceUserQueryChange(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') void fetchSourceUserResumes();
-                          }}
-                          placeholder="输入要复制来源的用户 ID / wxId / 数据库 ID"
-                          className="min-w-0 flex-1 px-3 py-2.5 border border-slate-200 rounded-xl bg-white text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => void fetchSourceUserResumes()}
-                          disabled={copyLoading || !sourceUserQuery.trim()}
-                          className="shrink-0 px-4 py-2.5 rounded-xl bg-violet-600 text-white text-sm font-medium hover:bg-violet-700 disabled:opacity-50"
-                        >
-                          搜索简历
-                        </button>
-                      </div>
-                      {copySourceUser && (
-                        <div className="mt-2 text-xs leading-relaxed text-slate-500">
-                          已加载来源账号：{copySourceUser.name || '未命名用户'}，
-                          数据库 ID：<span className="font-mono">{copySourceUser.id}</span>
-                          {copySourceUser.javaUserId ? <>，Java ID：<span className="font-mono">{copySourceUser.javaUserId}</span></> : null}
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <>
-                      <label className="block text-xs text-slate-500 mb-1.5">简历基本信息姓名</label>
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          value={resumeNameQuery}
-                          onChange={(e) => handleResumeNameQueryChange(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') void fetchSourceResumesByName();
-                          }}
-                          placeholder="例如：张三 / 李小满 / 夸小克"
-                          className="min-w-0 flex-1 px-3 py-2.5 border border-slate-200 rounded-xl bg-white text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => void fetchSourceResumesByName()}
-                          disabled={copyLoading || !resumeNameQuery.trim()}
-                          className="shrink-0 px-4 py-2.5 rounded-xl bg-violet-600 text-white text-sm font-medium hover:bg-violet-700 disabled:opacity-50"
-                        >
-                          搜索简历
-                        </button>
-                      </div>
-                      <p className="mt-2 text-xs leading-relaxed text-slate-500">
-                        会搜索简历内容里的姓名字段，结果中会显示简历 ID 和来源账号，选择后可直接复制到当前登录账号。
-                      </p>
-                    </>
-                  )}
+              ) : copyMode === 'to-current' && sourceLookupMode === 'resume-name' && !resumeNameQuery.trim() ? (
+                <div className="rounded-xl border border-dashed border-slate-200 p-6 text-center text-xs sm:text-sm text-slate-400">
+                  请输入简历姓名，并点击“搜索简历”
                 </div>
-              )}
-
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-xs text-slate-500">
-                    {copyMode === 'to-user'
-                      ? '选择要复制的简历（当前账号）'
-                      : sourceLookupMode === 'resume-name'
-                        ? '选择匹配姓名的简历'
-                        : '选择要复制的简历（来源账号）'}
-                  </label>
-                  {copyMode === 'to-current' && sourceLookupMode === 'user' && copySourceUser && (
-                    <button
-                      type="button"
-                      onClick={() => void fetchSourceUserResumes()}
-                      className="text-xs text-violet-600 hover:text-violet-700"
-                    >
-                      重新加载
-                    </button>
-                  )}
+              ) : activeCopyResumes.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-slate-200 p-6 text-center text-xs sm:text-sm text-slate-400">
+                  {copyMode === 'to-user' ? '当前账号暂无简历' : '暂无匹配的简历'}
                 </div>
-                {copyMode === 'to-current' && sourceLookupMode === 'user' && !copySourceUser ? (
-                  <p className="text-sm text-slate-400 py-2">请输入来源用户 ID，并点击“搜索简历”</p>
-                ) : copyMode === 'to-current' && sourceLookupMode === 'resume-name' && !resumeNameQuery.trim() ? (
-                  <p className="text-sm text-slate-400 py-2">请输入简历基本信息姓名，并点击“搜索简历”</p>
-                ) : activeCopyResumes.length === 0 ? (
-                  <p className="text-sm text-slate-400 py-2">
-                    {copyMode === 'to-user'
-                      ? '当前账号暂无简历'
-                      : sourceLookupMode === 'resume-name'
-                        ? '没有找到匹配姓名的简历'
-                        : '该用户暂无简历'}
-                  </p>
-                ) : (
-                  <div className="space-y-2 max-h-48 overflow-y-auto">
-                    {activeCopyResumes.map((r) => (
+              ) : (
+                <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                  {activeCopyResumes.map((r) => {
+                    const isSelected = selectedResumeId === r.id;
+                    return (
                       <label
                         key={r.id}
                         className={cn(
-                          'flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all',
-                          selectedResumeId === r.id
-                            ? 'border-violet-400 bg-violet-50'
-                            : 'border-slate-200 hover:border-slate-300',
+                          'flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all min-h-[52px]',
+                          isSelected
+                            ? 'border-violet-500 bg-violet-50/70 shadow-xs'
+                            : 'border-slate-200 bg-white hover:border-slate-300'
                         )}
                       >
                         <input
                           type="radio"
                           name="resume"
                           value={r.id}
-                          checked={selectedResumeId === r.id}
+                          checked={isSelected}
                           onChange={() => setSelectedResumeId(r.id)}
-                          className="accent-violet-600"
+                          className="mt-1 h-4 w-4 accent-violet-600 shrink-0"
                         />
-                        <FileText className="w-4 h-4 text-slate-400 shrink-0" />
-                        <div className="min-w-0">
-                          <p className="font-medium text-slate-700 text-sm truncate">
-                            {r.title}
-                            {r.resumeName ? <span className="ml-1 text-slate-400 font-normal">（{r.resumeName}）</span> : null}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="font-bold text-slate-800 text-xs sm:text-sm truncate">
+                              {r.title}
+                            </span>
+                            {r.resumeName && (
+                              <span className="rounded bg-violet-100/70 px-1.5 py-0.2 text-[10px] text-violet-700 font-medium">
+                                {r.resumeName}
+                              </span>
+                            )}
+                            <span className="rounded bg-slate-100 px-1.5 py-0.2 text-[10px] text-slate-500 font-mono">
+                              {r.template}
+                            </span>
+                          </div>
+
+                          <p className="mt-1 text-[11px] text-slate-400 break-all leading-normal">
+                            ID: <span className="font-mono">{r.id}</span> · 更新于 {new Date(r.updatedAt).toLocaleString('zh-CN')}
                           </p>
-                          <p className="text-xs text-slate-400 break-all">
-                            ID: {r.id} · {r.template} · {new Date(r.updatedAt).toLocaleString('zh-CN')}
-                          </p>
-                          {copyMode === 'to-current' && sourceLookupMode === 'resume-name' && r.user ? (
-                            <p className="text-xs text-slate-400 break-all">
-                              来源账号：{r.user.name || '未命名用户'} · DB: {r.user.id}
-                              {r.user.javaUserId ? ` · Java: ${r.user.javaUserId}` : ''}
+
+                          {copyMode === 'to-current' && sourceLookupMode === 'resume-name' && r.user && (
+                            <p className="mt-0.5 text-[11px] text-slate-500">
+                              所属用户: {r.user.name || '未命名'}（DB: <span className="font-mono">{r.user.id}</span>{r.user.javaUserId ? ` · Java: ${r.user.javaUserId}` : ''}）
                             </p>
-                          ) : null}
+                          )}
                         </div>
                       </label>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {copyMode === 'to-user' ? (
-                <div>
-                  <label className="block text-xs text-slate-500 mb-1.5">目标用户 ID（Java User ID、wxId 或数据库 ID）</label>
-                  <input
-                    type="text"
-                    value={targetUserId}
-                    onChange={(e) => setTargetUserId(e.target.value)}
-                    placeholder="输入对方的 User ID / wxId / 数据库 ID"
-                    className="w-full px-3 py-2.5 border border-slate-200 rounded-xl bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
-                  />
-                </div>
-              ) : (
-                <div className="rounded-xl border border-violet-100 bg-violet-50 px-3 py-2.5 text-xs leading-relaxed text-violet-700">
-                  来源账号：{sourceLookupMode === 'resume-name'
-                    ? selectedSourceResume?.user
-                      ? `${selectedSourceResume.user.name || '未命名用户'}（ID: ${selectedSourceResume.user.id}）`
-                      : '未选择'
-                    : copySourceUser
-                      ? `${copySourceUser.name || '未命名用户'}（ID: ${copySourceUser.id}）`
-                      : '未加载'}。
-                  复制后会生成一份新的简历到当前登录的管理账号，不会移动或删除对方原简历。
+                    );
+                  })}
                 </div>
               )}
-
-              <button
-                onClick={copyResume}
-                disabled={copyButtonDisabled}
-                className="w-full py-2.5 bg-violet-600 hover:bg-violet-700 text-white font-medium rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                <Copy className="w-4 h-4" />
-                {copyLoading ? '复制中...' : copyMode === 'to-current' ? '确认复制到我的账号' : '确认复制到该用户'}
-              </button>
             </div>
-          )}
-        </div>
 
-        {!user && !loading && !message && (
-          <div className="text-center py-12 text-slate-400">
-            <Search className="w-12 h-12 mx-auto mb-3 opacity-50" />
-            <p>输入 User ID 搜索用户</p>
+            {/* Target User Input */}
+            {copyMode === 'to-user' ? (
+              <div className="space-y-1.5">
+                <label className="block text-xs font-medium text-slate-600">
+                  目标接收用户 ID（Java User ID、wxId 或数据库 ID）
+                </label>
+                <input
+                  type="text"
+                  value={targetUserId}
+                  onChange={(e) => setTargetUserId(e.target.value)}
+                  placeholder="输入接收方的 User ID"
+                  className="w-full px-3 py-2.5 border border-slate-200 rounded-xl bg-slate-50 text-base sm:text-sm outline-none focus:border-violet-500 focus:bg-white focus:ring-2 focus:ring-violet-100"
+                />
+              </div>
+            ) : (
+              <div className="rounded-xl border border-violet-100 bg-violet-50/60 p-3 text-xs leading-relaxed text-violet-800">
+                复制后将在当前登录的管理员账号中生成该简历的独立副本，不会影响对方的原版数据。
+              </div>
+            )}
+
+            {/* Submit Button */}
+            <button
+              type="button"
+              onClick={copyResume}
+              disabled={copyButtonDisabled}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-violet-600 py-3 text-sm font-semibold text-white shadow-xs hover:bg-violet-700 active:scale-[0.99] disabled:opacity-40 transition-all min-h-[44px]"
+            >
+              <Copy className="h-4 w-4" />
+              {copyLoading
+                ? '正在处理复制...'
+                : copyMode === 'to-current'
+                  ? '确认复制到我的账号'
+                  : '确认复制到目标用户'}
+            </button>
           </div>
         )}
       </div>
+
+      {/* User List Component from Unified Admin */}
+      <UserList onOpenUser={(id) => { void searchUser(String(id)); }} />
+
+      {/* Resume Replace Component from Unified Admin */}
+      <ResumeReplace />
     </div>
   );
 }
