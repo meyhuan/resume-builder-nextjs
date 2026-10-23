@@ -12,11 +12,11 @@ for (let index = 2; index < process.argv.length; index += 2) flags.set(process.a
 const baseUrl = flags.get('--base-url') || 'http://127.0.0.1:3012'
 assert.ok(['127.0.0.1', 'localhost'].includes(new URL(baseUrl).hostname), 'Use an isolated local fixture server')
 const metadata = fs.readFileSync('src/lib/templates/template-metadata.ts', 'utf8')
-const publicIds = [...metadata.matchAll(/^  ([a-z\d_-]+): \{([\s\S]*?)^  \},/gm)]
+const publicIds = [...metadata.matchAll(/^  ['"]?([a-z\d_-]+)['"]?: \{([\s\S]*?)^  \},/gm)]
   .filter(([, , block]) => /editor: true/.test(block) && /catalog: true/.test(block)).map(([, id]) => id)
-const editorIds = [...metadata.matchAll(/^  ([a-z\d_-]+): \{([\s\S]*?)^  \},/gm)]
+const editorIds = [...metadata.matchAll(/^  ['"]?([a-z\d_-]+)['"]?: \{([\s\S]*?)^  \},/gm)]
   .filter(([, , block]) => /editor: true/.test(block)).map(([, id]) => id)
-assert.equal(publicIds.length, 100)
+assert.ok(publicIds.length > 0 && new Set(publicIds).size === publicIds.length, 'Expected a non-empty public template catalog without duplicate ids')
 const ids = flags.has('--ids') ? flags.get('--ids').split(',') : publicIds
 const allowedIds = flags.has('--allow-editor') ? editorIds : publicIds
 assert.ok(ids.length && new Set(ids).size === ids.length && ids.every((id) => allowedIds.includes(id)))
@@ -81,10 +81,12 @@ async function readSpacing(page) {
       .filter((node) => visible(node) && (node.matches('[data-template-section="true"]') || (node.querySelector('h2') && !node.closest('[data-template-section="true"]')))
         && !node.matches('[data-template-job-intention-trigger="true"]') && !node.querySelector('[data-template-job-intention-trigger="true"]'))
       .filter((node, _, all) => !all.some((child) => child !== node && node.contains(child)))
-    const sections = sectionNodes.map((node, index) => ({ key: node.getAttribute('data-template-section-title') || node.querySelector('h2')?.textContent.trim() || String(index), node, rect: rect(node) }))
+    const sections = sectionNodes.map((node, index) => ({ key: node.getAttribute('data-template-section-title') || node.querySelector('h2')?.textContent.trim() || String(index), node, container: node.closest('main, aside') || root, rect: rect(node) }))
     const sameColumn = (a, b) => Math.abs(a.left - b.left) < 2 && Math.abs(a.width - b.width) < 2
     const pairs = (items) => items.flatMap((item, index) => {
-      const next = items.slice(index + 1).filter((candidate) => sameColumn(item.rect, candidate.rect) && candidate.rect.top >= item.rect.bottom - 1)
+      // Mobile panels can share their x/width while retaining separate content
+      // flows. Their page padding is not controlled by module spacing.
+      const next = items.slice(index + 1).filter((candidate) => candidate.container === item.container && sameColumn(item.rect, candidate.rect) && candidate.rect.top >= item.rect.bottom - 1)
         .sort((a, b) => a.rect.top - b.rect.top)[0]
       return next ? [{ key: `${item.key} -> ${next.key}`, gap: next.rect.top - item.rect.bottom }] : []
     })

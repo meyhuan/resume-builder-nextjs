@@ -638,6 +638,7 @@ export const TEMPLATE_REGISTRY: Record<string, TemplateConfig> = {
   'canva-sidebar': {
     ...TEMPLATE_METADATA['canva-sidebar'],
     component: lazy(() => import('@/templates/canva-sidebar')),
+    exportLayout: 'bleed',
     recommendedPrimaryColor: '#5279a8',
     recommendedFontFamilyId: 'sans',
   },

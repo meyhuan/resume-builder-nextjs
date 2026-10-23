@@ -42,8 +42,10 @@ import { normalizeResumeContent } from '@/entities/resume/normalize-resume-conte
 import type { ResumeData } from '@/entities/resume/resume-data'
 import { exportResumeToMarkdown } from '@/io/export-markdown'
 import { DOCX_CONTENT_TYPE, exportResumeToDocx, UnsupportedDocxTemplateError } from '@/io/export-docx'
-import { isDocxTemplateSupported } from '@/lib/docx-template-support'
+import { DOCX_SUPPORTED_TEMPLATE_IDS, isDocxTemplateSupported } from '@/lib/docx-template-support'
 import { trackServerAnalyticsEvent } from '@/lib/server-analytics'
+
+export const runtime = 'nodejs'
 
 /**
  * POST /next-api/exports/mini
@@ -429,9 +431,9 @@ export async function POST(req: Request): Promise<NextResponse> {
   if (type === 'docx') {
     if (!isDocxTemplateSupported(templateId)) {
       return NextResponse.json({
-        error: '当前仅支持“极简、蓝序、橙研”三个模板导出 DOCX。',
+        error: '当前模板暂不支持导出 DOCX，请选择支持 Word 导出的模板。',
         code: 'DOCX_TEMPLATE_UNSUPPORTED',
-        supportedTemplates: ['simple', 'jingrui', 'chengyan'],
+        supportedTemplates: DOCX_SUPPORTED_TEMPLATE_IDS,
       }, { status: 400 })
     }
 

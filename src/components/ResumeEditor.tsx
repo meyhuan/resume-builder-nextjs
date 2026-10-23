@@ -1153,7 +1153,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
 
   function handleExportDocx(): void {
     if (!isDocxTemplateSupported(tpl)) {
-      toast.info('当前模板尚未接入 Word 导出，已验证模板为：极简、蓝序、橙研')
+      toast.info('当前模板暂不支持 Word 导出，请切换到支持 Word 导出的模板')
       return
     }
     if (!requirePdf()) {

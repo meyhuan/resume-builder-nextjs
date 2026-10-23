@@ -244,6 +244,9 @@ function runStaticChecks(id) {
 
 function getTemplateImplementationSource(indexSource) {
   const sources = [indexSource]
+  if (/\bDocxSafeTemplate\b/.test(indexSource)) {
+    sources.push(fs.readFileSync(path.join(root, 'src', 'templates', '_docx-safe', 'index.tsx'), 'utf8'))
+  }
   if (/CanvaAdaptedTemplate/.test(indexSource)) {
     for (const file of ['shared.tsx', 'designs.ts', 'components.tsx', 'header.tsx', 'styles.tsx', 'saved-facts.tsx']) {
       sources.push(fs.readFileSync(path.join(root, 'src', 'templates', '_canva', file), 'utf8'))
@@ -487,7 +490,7 @@ async function launchBrowser(puppeteer) {
   return puppeteer.default.launch({
     headless: true,
     ...(executablePath ? { executablePath } : {}),
-    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-background-timer-throttling', '--disable-backgrounding-occluded-windows', '--disable-renderer-backgrounding'],
   })
 }
 
@@ -655,6 +658,8 @@ async function checkSparsePdfTail(browser, options) {
 
     await page.waitForSelector('[data-template-lab="ready"] [data-template-root="true"] .resume-container', { timeout: 20_000 })
     await waitForPdfAssets(page)
+    const railColor = id === 'canva-sidebar' ? await page.$eval('.docx-safe-sidebar-side', (rail) =>
+      getComputedStyle(rail).backgroundColor.match(/\d+/g).slice(0, 3).map(Number)) : undefined
     const html = await buildTemplateLabExportHtml(page)
 
     await page.setViewport({ width: 794, height: 1123, deviceScaleFactor: 1 })
@@ -670,7 +675,7 @@ async function checkSparsePdfTail(browser, options) {
     }))
     fs.writeFileSync(pdfPath, pdf)
 
-    const analysis = await analyzePdfPages(page, pdf)
+    const analysis = await analyzePdfPages(page, pdf, railColor)
     if (analysis.lastPagePng) fs.writeFileSync(lastPagePath, Buffer.from(analysis.lastPagePng, 'base64'))
     for (const rendered of analysis.renderedPages) {
       fs.writeFileSync(path.join(artifactDir, `local-pdf-${fixture}-${themeId}-page-${rendered.pageNumber}.png`), Buffer.from(rendered.png, 'base64'))
@@ -693,11 +698,15 @@ async function checkSparsePdfTail(browser, options) {
       `pageText=${analysis.pages.map((item) => item.textChars).join('/')}`,
       `lastText=${lastPage.textChars}`,
       `lastInk=${lastPage.nonWhiteRatio}`,
+      railColor ? `railCoverage=${analysis.pages.map((item) => item.railCoverage).join('/')}` : '',
       `PDF: ${relative(pdfPath)}`,
       analysis.lastPagePng ? `last page: ${relative(lastPagePath)}` : '',
     ].filter(Boolean).join(', ')
 
-    if (missingText.length) {
+    const incompleteRails = railColor ? analysis.pages.filter((item) => item.railCoverage < 0.999) : []
+    if (incompleteRails.length) {
+      fail(name, `Sidebar background does not fill each page: ${incompleteRails.map((item) => item.pageNumber).join(', ')} (${details}).`)
+    } else if (missingText.length) {
       fail(name, `PDF lost expected fixture content: ${missingText.join(', ')} (${details}).`)
     } else if (hasTrailingTextlessPage) {
       fail(name, `Trailing page contains no text (${details}).`)
@@ -787,7 +796,7 @@ async function applyPdfPaginationHints(page) {
   })
 }
 
-async function analyzePdfPages(page, pdf) {
+async function analyzePdfPages(page, pdf, railColor) {
   if (!fs.existsSync(pdfjsPath) || !fs.existsSync(pdfjsWorkerPath)) {
     throw new Error('Local PDF.js assets are missing under public/libs/pdfjs/.')
   }
@@ -800,7 +809,7 @@ async function analyzePdfPages(page, pdf) {
     pdfjs.GlobalWorkerOptions.workerSrc = URL.createObjectURL(new Blob([source], { type: 'application/javascript' }))
   }, workerSource)
 
-  return page.evaluate(async (encoded) => {
+  return page.evaluate(async ({ encoded, railColor }) => {
     const pdfjs = window['pdfjs-dist/build/pdf']
     const binary = atob(encoded)
     const bytes = new Uint8Array(binary.length)
@@ -828,11 +837,26 @@ async function analyzePdfPages(page, pdf) {
       for (let index = 0; index < pixels.length; index += 4) {
         if (pixels[index] < 248 || pixels[index + 1] < 248 || pixels[index + 2] < 248) nonWhite += 1
       }
+      let railCoverage
+      if (railColor) {
+        // Sample both edges of the rail and the adjacent main-column gutter.
+        // Ignore the outer raster edge; glyphs stay inside the cell padding.
+        const probes = [[0.01, railColor], [0.33, railColor], [0.35, [255, 255, 255]]]
+        let matches = 0
+        for (let y = 1; y < canvas.height - 1; y += 1) {
+          for (const [ratio, color] of probes) {
+            const offset = (y * canvas.width + Math.floor(canvas.width * ratio)) * 4
+            if (color.every((channel, index) => Math.abs(pixels[offset + index] - channel) <= 3)) matches += 1
+          }
+        }
+        railCoverage = Number((matches / ((canvas.height - 2) * probes.length)).toFixed(6))
+      }
       pages.push({
         pageNumber,
         textChars,
         text: text.items.map((item) => String(item.str || '')).join(''),
         nonWhiteRatio: Number((nonWhite / (canvas.width * canvas.height)).toFixed(6)),
+        ...(railColor ? { railCoverage } : {}),
       })
       const png = canvas.toDataURL('image/png').split(',')[1] || ''
       renderedPages.push({ pageNumber, png })
@@ -841,7 +865,7 @@ async function analyzePdfPages(page, pdf) {
 
     await handle.destroy()
     return { pages, renderedPages, lastPagePng }
-  }, pdf.toString('base64'))
+  }, { encoded: pdf.toString('base64'), railColor })
 }
 
 async function checkTemplateSpecificLayout(page, options) {

@@ -1,11 +1,36 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { describe, expect, it } from 'vitest'
+import { performance } from 'node:perf_hooks'
+import { afterAll, describe, expect, it } from 'vitest'
 import type { ResumeData } from '@/entities/resume/resume-data'
 import { exportResumeToDocx } from '@/io/export-docx'
+import { getTemplateFixture, getTemplateLabTheme } from '@/lib/template-fixtures'
+import type { ThemeTokens } from '@/entities/theme/theme-tokens'
 
-const outputDirectory = resolve(process.cwd(), 'test-artifacts', 'docx')
+const outputDirectory = resolve(process.env.DOCX_QA_OUTPUT_DIR || resolve(process.cwd(), 'test-artifacts', 'docx'))
 const sampleAvatarDataUrl = `data:image/jpeg;base64,${readFileSync(resolve(process.cwd(), 'public', 'avatar.jpg')).toString('base64')}`
+const artifacts: { templateId: string; file: string; bytes: number; generationMs: number }[] = []
+
+async function generateArtifact(resume: ResumeData, templateId: string, file: string, theme?: ThemeTokens) {
+  const started = performance.now()
+  const buffer = await exportResumeToDocx(resume, templateId, theme)
+  const generationMs = Math.round((performance.now() - started) * 100) / 100
+  expect(buffer.subarray(0, 4).toString('hex')).toBe('504b0304')
+  expect(buffer.byteLength).toBeGreaterThan(5000)
+  mkdirSync(outputDirectory, { recursive: true })
+  writeFileSync(resolve(outputDirectory, file), buffer)
+  artifacts.push({ templateId, file, bytes: buffer.byteLength, generationMs })
+}
+
+afterAll(() => {
+  mkdirSync(outputDirectory, { recursive: true })
+  writeFileSync(resolve(outputDirectory, 'manifest.json'), JSON.stringify({
+    generatedAt: new Date().toISOString(),
+    runtime: { node: process.version, platform: process.platform, arch: process.arch },
+    scope: 'Actual exporter smoke test. Timings cover generation only, not API latency or concurrent throughput. Visual layout and Word compatibility require separate review.',
+    artifacts,
+  }, null, 2))
+})
 
 const sampleResume: ResumeData = {
   id: 'docx-proof-resume',
@@ -83,6 +108,20 @@ const sampleResume: ResumeData = {
 }
 
 describe('DOCX template proof of concept', () => {
+  it.each(['canva-minimal', 'canva-columns', 'canva-sidebar'])('exports an oversized entry for %s pagination QA', async (templateId) => {
+    const resume = structuredClone(sampleResume)
+    resume.sections = [{ id: 'overflow', title: '超长条目验证', columns: 1, blocks: [{
+      id: 'overflow-entry', type: 'experience', company: '跨页完整性验证公司', position: '产品经理',
+      startDate: '2020.01', endDate: '至今',
+      contentHtml: Array.from({ length: 80 }, (_, i) => `<p>验证段落${String(i + 1).padStart(3, '0')}：负责需求分析、项目协作、方案评审与上线验收，持续跟踪用户反馈并优化产品体验。</p>`).join(''),
+    }] }]
+    await generateArtifact(resume, templateId, `${templateId}-oversized.docx`)
+    const entry = resume.sections[0].blocks[0]
+    if (entry.type === 'experience') {
+      resume.sections = [{ ...resume.sections[0], blocks: [{ ...entry, contentHtml: entry.contentHtml?.replaceAll('</p><p>', '') }] }]
+      await generateArtifact(resume, templateId, `${templateId}-oversized-paragraph.docx`)
+    }
+  })
   it.each([
     ['canva-minimal', 'canva-minimal.docx'],
     ['canva-columns', 'canva-columns.docx'],
@@ -91,14 +130,20 @@ describe('DOCX template proof of concept', () => {
     ['jingrui', 'two-column.docx'],
     ['chengyan', 'complex-decorative.docx'],
   ] as const)('generates a valid %s artifact', async (templateId, fileName) => {
-    mkdirSync(outputDirectory, { recursive: true })
-    const buffer = await exportResumeToDocx(sampleResume, templateId)
-    expect(buffer.subarray(0, 2).toString('ascii')).toBe('PK')
-    expect(buffer.byteLength).toBeGreaterThan(5000)
-    writeFileSync(resolve(outputDirectory, fileName), buffer)
+    await generateArtifact(sampleResume, templateId, fileName)
   })
 
   it('rejects unverified templates instead of silently approximating them', async () => {
     await expect(exportResumeToDocx(sampleResume, 'modern-grid')).rejects.toThrow('verified Word templates only')
+  })
+
+  it.each((['canva-minimal', 'canva-columns', 'canva-sidebar'] as const).flatMap(templateId =>
+    (['full', 'sparse', 'long'] as const).map(fixture => ({ templateId, fixture })),
+  ))('exports $templateId / $fixture for render QA', async ({ templateId, fixture }) => {
+    const resume = structuredClone(getTemplateFixture(fixture))
+    resume.baseInfo = { ...resume.baseInfo, avatarUrl: sampleAvatarDataUrl, showAvatar: true }
+    const theme = { ...getTemplateLabTheme('base'), primaryColor: { 'canva-minimal': '#27313b', 'canva-columns': '#334155', 'canva-sidebar': '#5279a8' }[templateId] }
+    await generateArtifact(resume, templateId, `${templateId}-${fixture}.docx`, theme)
+    writeFileSync(resolve(outputDirectory, `${templateId}-${fixture}.input.json`), JSON.stringify({ resume, theme }, null, 2))
   })
 })

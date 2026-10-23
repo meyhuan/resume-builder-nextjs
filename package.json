@@ -9,6 +9,8 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
+    "docx:check": "node scripts/check-docx-runtime.mjs",
+    "docx:smoke": "vitest run --config scripts/vitest.docx.config.ts --testTimeout=15000",
     "verify:template": "node scripts/verify-template.mjs",
     "xhs:package": "node scripts/create-xhs-publish-package.mjs",
     "xhs:publish-assist": "node scripts/xhs-publish-assistant.mjs",

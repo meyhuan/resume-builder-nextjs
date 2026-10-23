@@ -2,8 +2,11 @@ import {
   AlignmentType,
   BorderStyle,
   Document,
+  Footer,
   HeightRule,
+  HorizontalPositionRelativeFrom,
   ImageRun,
+  LineRuleType,
   Packer,
   Paragraph,
   ShadingType,
@@ -11,8 +14,11 @@ import {
   TableCell,
   TableRow,
   TableLayoutType,
+  TabStopType,
   TextRun,
+  TextWrappingType,
   VerticalAlign,
+  VerticalPositionRelativeFrom,
   WidthType,
 } from 'docx'
 import type { ITableBordersOptions, ITableCellBorders } from 'docx'
@@ -23,6 +29,8 @@ import type { ThemeTokens } from '@/entities/theme/theme-tokens'
 import { normalizeJobIntention } from '@/entities/user/job-intention-fields'
 import { prepareResumeForExport } from '@/lib/resume-export-visibility'
 import { getSectionDisplayTitle } from '@/entities/resume/section-display-title'
+import { getBaseInfoFieldLabel } from '@/lib/resume-ui-labels'
+import { isUserVisibleBaseInfoCustomField } from '@/lib/template-exclusive-fields'
 import { isDocxTemplateSupported, type DocxTemplateId } from '@/lib/docx-template-support'
 
 /** DOCX content type used by the export routes and object storage. */
@@ -66,6 +74,7 @@ interface TextOptions {
  * the preview (the old renderer used 17 half-points for almost every line).
  */
 interface DocxMetrics {
+  readonly exactLine?: boolean
   readonly body: number
   readonly bodyLine: number
   readonly small: number
@@ -120,10 +129,12 @@ function resolveMetrics(theme?: Partial<ThemeTokens>, accentFallback = COLORS.si
 }
 
 interface ParagraphOptions {
+  readonly exactLine?: boolean
   readonly after?: number
   readonly before?: number
   readonly line?: number
   readonly keepNext?: boolean
+  readonly keepLines?: boolean
   readonly alignment?: (typeof AlignmentType)[keyof typeof AlignmentType]
   readonly shading?: string
   readonly border?: Record<string, unknown>
@@ -131,6 +142,10 @@ interface ParagraphOptions {
 }
 
 interface BlockRenderOptions {
+  /** Native paragraphs keep section headings attached across Word table boundaries. */
+  readonly paragraphHeaderWidth?: number
+  /** Keep a wrapped Canva block title/date together without locking its body. */
+  readonly keepHeaderTogether?: boolean
   /** Whether the block header owns the date column. Chengyan renders dates in its timeline column. */
   readonly showDate?: boolean
   /** Fixed twip widths for a nested block header when the parent is a narrow column. */
@@ -171,8 +186,9 @@ function run(text: string, options: TextOptions = {}): TextRun {
 function paragraph(children: TextRun[] | TextRun, options: ParagraphOptions = {}): Paragraph {
   return new Paragraph({
     children: Array.isArray(children) ? children : [children],
-    spacing: { after: options.after ?? 35, before: options.before, line: options.line ?? 250 },
+    spacing: { after: options.after ?? 35, before: options.before, line: options.line ?? 250, ...(options.exactLine ? { lineRule: LineRuleType.EXACT } : {}) },
     keepNext: options.keepNext,
+    keepLines: options.keepLines,
     alignment: options.alignment,
     shading: options.shading ? { fill: options.shading, type: ShadingType.CLEAR } : undefined,
     border: options.border,
@@ -180,11 +196,11 @@ function paragraph(children: TextRun[] | TextRun, options: ParagraphOptions = {}
   })
 }
 
-function heading(text: string, accent: string, options: { readonly size?: number; readonly shading?: string } = {}): Paragraph {
+function heading(text: string, accent: string, options: { readonly size?: number; readonly shading?: string; readonly keepNext?: boolean } = {}): Paragraph {
   return paragraph(run(text || '未命名模块', { size: options.size ?? 21, color: accent, bold: true }), {
     before: 75,
     after: 42,
-    keepNext: true,
+    keepNext: options.keepNext ?? true,
     line: 260,
     shading: options.shading,
     border: {
@@ -209,7 +225,7 @@ function cell(children: Array<Paragraph | Table>, options: {
   })
 }
 
-function baseDocument(children: Array<Paragraph | Table>, margins: { top: number; right: number; bottom: number; left: number }): Document {
+function baseDocument(children: Array<Paragraph | Table>, margins: { top: number; right: number; bottom: number; left: number }, backgroundFooter?: Footer): Document {
   return new Document({
     creator: '智简简历',
     title: '简历',
@@ -217,9 +233,10 @@ function baseDocument(children: Array<Paragraph | Table>, margins: { top: number
       properties: {
         page: {
           size: PAGE,
-          margin: margins,
+          margin: backgroundFooter ? { ...margins, footer: 0 } : margins,
         },
       },
+      ...(backgroundFooter ? { footers: { default: backgroundFooter } } : {}),
       children,
     }],
   })
@@ -262,7 +279,7 @@ function htmlToLines(html: string | undefined): PlainLine[] {
 
 function richParagraphs(
   html: string | undefined,
-  options: { readonly size?: number; readonly color?: string; readonly line?: number; readonly after?: number; readonly indent?: number } = {},
+  options: { readonly size?: number; readonly color?: string; readonly line?: number; readonly after?: number; readonly indent?: number; readonly exactLine?: boolean } = {},
 ): Paragraph[] {
   return htmlToLines(html).map((line) => paragraph([
     ...(line.bullet ? [run('• ', { size: options.size ?? 22, color: options.color ?? COLORS.simpleAccent, bold: true })] : []),
@@ -270,6 +287,7 @@ function richParagraphs(
   ], {
     after: options.after ?? 30,
     line: options.line ?? 330,
+    exactLine: options.exactLine,
     indent: line.bullet || options.indent ? { left: line.bullet ? 230 : options.indent, hanging: line.bullet ? 110 : undefined } : undefined,
   }))
 }
@@ -313,14 +331,27 @@ function intentionLines(resume: ResumeData): Array<[string, string]> {
 }
 
 function blockHeader(title: string, subtitle: string, date: string, metrics: DocxMetrics, options: BlockRenderOptions = {}): Paragraph | Table {
+  if (options.paragraphHeaderWidth) {
+    return new Paragraph({
+      children: [
+        run(title, { size: metrics.blockTitle, bold: true, color: metrics.textColor }),
+        ...(date ? [run(`\t${date}`, { size: metrics.small, color: metrics.accent })] : []),
+        ...(subtitle ? [new TextRun({ text: subtitle, break: 1, font, size: metrics.blockSubtitle, color: metrics.mutedColor })] : []),
+      ],
+      tabStops: [{ type: TabStopType.RIGHT, position: options.paragraphHeaderWidth }],
+      spacing: { before: 35 * metrics.spacingScale, after: 25 * metrics.spacingScale, line: metrics.bodyLine, ...(metrics.exactLine ? { lineRule: LineRuleType.EXACT } : {}) },
+      keepNext: true,
+      keepLines: true,
+    })
+  }
   const left = paragraph([
     run(title, { size: metrics.blockTitle, bold: true, color: metrics.textColor }),
     ...(subtitle ? [run(`  ${subtitle}`, { size: metrics.blockSubtitle, color: metrics.textColor })] : []),
-  ], { after: 0, keepNext: true, line: metrics.bodyLine })
+  ], { after: 0, keepNext: true, keepLines: options.keepHeaderTogether, line: metrics.bodyLine })
   if (options.showDate === false) return left
   const right = paragraph(
     run(date, { size: metrics.blockSubtitle, color: metrics.accent, bold: true }),
-    { after: 0, keepNext: true, line: metrics.bodyLine, alignment: AlignmentType.RIGHT },
+    { after: 0, keepNext: true, keepLines: options.keepHeaderTogether, line: metrics.bodyLine, alignment: AlignmentType.RIGHT },
   )
   return new Table({
     width: { size: 100, type: WidthType.PERCENTAGE },
@@ -328,6 +359,7 @@ function blockHeader(title: string, subtitle: string, date: string, metrics: Doc
     columnWidths: options.headerColumnWidths ?? [7000, 3206],
     borders: NO_BORDERS,
     rows: [new TableRow({
+      cantSplit: options.keepHeaderTogether,
       children: [
         cell([left], { width: 70, margins: { top: 0, right: 40, bottom: Math.round(25 * metrics.spacingScale), left: 0 } }),
         cell([right], { width: 30, margins: { top: 0, right: 0, bottom: Math.round(25 * metrics.spacingScale), left: 40 } }),
@@ -340,34 +372,68 @@ function renderBlock(block: ResumeBlock, metrics: DocxMetrics, contentColor = me
   if (block.type === 'experience') {
     return [
       blockHeader(block.company, block.position, dateRange(block.startDate, block.endDate), metrics, options),
-      ...richParagraphs(block.contentHtml, { color: contentColor, size: metrics.body, line: metrics.bodyLine, after: 28 * metrics.spacingScale }),
+      ...richParagraphs(block.contentHtml, { color: contentColor, size: metrics.body, line: metrics.bodyLine, exactLine: metrics.exactLine, after: 28 * metrics.spacingScale }),
     ]
   }
   if (block.type === 'project') {
     return [
       blockHeader(block.name, block.role ?? '', dateRange(block.startDate, block.endDate), metrics, options),
-      ...richParagraphs(block.contentHtml, { color: contentColor, size: metrics.body, line: metrics.bodyLine, after: 28 * metrics.spacingScale }),
+      ...richParagraphs(block.contentHtml, { color: contentColor, size: metrics.body, line: metrics.bodyLine, exactLine: metrics.exactLine, after: 28 * metrics.spacingScale }),
     ]
   }
   if (block.type === 'education') {
     return [
       blockHeader(block.school, [block.major, block.degree].filter(Boolean).join(' · '), dateRange(block.startDate, block.endDate), metrics, options),
-      ...richParagraphs(block.courseHtml, { color: contentColor, size: metrics.body, line: metrics.bodyLine, after: 28 * metrics.spacingScale }),
+      ...richParagraphs(block.courseHtml, { color: contentColor, size: metrics.body, line: metrics.bodyLine, exactLine: metrics.exactLine, after: 28 * metrics.spacingScale }),
     ]
   }
   if (block.type === 'campus') {
     return [
       blockHeader(block.organization, block.position, dateRange(block.startDate, block.endDate), metrics, options),
-      ...richParagraphs(block.contentHtml, { color: contentColor, size: metrics.body, line: metrics.bodyLine, after: 28 * metrics.spacingScale }),
+      ...richParagraphs(block.contentHtml, { color: contentColor, size: metrics.body, line: metrics.bodyLine, exactLine: metrics.exactLine, after: 28 * metrics.spacingScale }),
     ]
   }
-  if (block.type === 'text') return richParagraphs(block.html, { color: contentColor, size: metrics.body, line: metrics.bodyLine, after: 28 * metrics.spacingScale })
-  if (block.type === 'list') return block.items.flatMap((item) => richParagraphs(item.html, { color: contentColor, size: metrics.body, line: metrics.bodyLine, after: 28 * metrics.spacingScale }).map((p) => p))
+  if (block.type === 'text') return richParagraphs(block.html, { color: contentColor, size: metrics.body, line: metrics.bodyLine, exactLine: metrics.exactLine, after: 28 * metrics.spacingScale })
+  if (block.type === 'list') return block.items.flatMap((item) => richParagraphs(item.html, { color: contentColor, size: metrics.body, line: metrics.bodyLine, exactLine: metrics.exactLine, after: 28 * metrics.spacingScale }).map((p) => p))
   return []
 }
 
 function renderSectionBlocks(section: Section, metrics: DocxMetrics, contentColor = metrics.textColor, options: BlockRenderOptions = {}): Array<Paragraph | Table> {
   return section.blocks.flatMap((block) => renderBlock(block, metrics, contentColor, options))
+}
+
+// Some compatible renderers ignore paragraph keep flags inside a multi-page
+// outer table row. Protect the entry header and first body paragraph only;
+// continuation paragraphs must remain splittable, including oversized entries.
+function canvaColumnSection(section: Section, metrics: DocxMetrics, width: number): Table {
+  const blocks = section.blocks.length ? section.blocks : [undefined]
+  return new Table({
+    width: { size: 100, type: WidthType.PERCENTAGE },
+    layout: TableLayoutType.FIXED,
+    columnWidths: [width],
+    borders: NO_BORDERS,
+    rows: blocks.flatMap((block, index) => {
+      const content = block ? renderBlock(block, metrics, metrics.textColor, { paragraphHeaderWidth: width, keepHeaderTogether: true }) : []
+      const hasHeader = block && ['experience', 'project', 'education', 'campus'].includes(block.type)
+      const first = content.splice(0, hasHeader ? 2 : 1)
+      const html = block && ('contentHtml' in block ? block.contentHtml : 'courseHtml' in block ? block.courseHtml : 'html' in block ? block.html : block.type === 'list' ? block.items[0]?.html : '')
+      const firstText = htmlToLines(html || '')[0]?.text || ''
+      // A row taller than a page can be clipped by LibreOffice if cantSplit
+      // is set. Use a conservative CJK-width estimate to release that flag.
+      const estimatedHeight = (Math.ceil(firstText.length / Math.max(1, width / (metrics.body * 10))) + 6) * metrics.bodyLine
+      const protectedRow = new TableRow({
+        cantSplit: estimatedHeight < PAGE.height * 0.55,
+        children: [cell([
+        ...(index === 0 ? [heading(getSectionDisplayTitle(section) || section.title, metrics.accent, { size: metrics.section, keepNext: false })] : []),
+          ...first,
+        ], { width: 100, margins: { top: 0, right: 0, bottom: 0, left: 0 } })],
+      })
+      return [protectedRow, ...content.map(p => new TableRow({
+        cantSplit: false,
+        children: [cell([p], { width: 100, margins: { top: 0, right: 0, bottom: 0, left: 0 } })],
+      }))]
+    }),
+  })
 }
 
 function renderPairLines(lines: Array<[string, string]>, color = COLORS.ink, size = 20, line = 300): Paragraph[] {
@@ -670,17 +736,65 @@ function renderChengyan(resume: ResumeData, avatar?: AvatarAsset, theme?: Partia
   return baseDocument(children, { top: 0, right: 640, bottom: 500, left: 640 })
 }
 
+function canvaMetrics(theme: Partial<ThemeTokens> | undefined, accent: string): DocxMetrics {
+  const px = Math.max(11, theme?.fontSize ?? 15)
+  return {
+    ...resolveMetrics(theme, accent),
+    body: cssPxToHalfPoints(px * 0.9),
+    bodyLine: Math.round(px * 0.9 * Math.max(1.2, theme?.lineHeight ?? 1.5) * 15),
+    exactLine: true,
+    small: cssPxToHalfPoints(px * 0.78),
+    blockTitle: cssPxToHalfPoints(px),
+    blockSubtitle: cssPxToHalfPoints(px * 0.88),
+    section: cssPxToHalfPoints(px * 1.08 * (theme?.titleScale ?? 1)),
+    name: cssPxToHalfPoints(px * 2.1),
+    spacingScale: Math.max(0, theme?.spacingScale ?? 1),
+  }
+}
+
+function canvaContactLines(resume: ResumeData): Array<[string, string]> {
+  const info = resume.baseInfo
+  if (!info) return []
+  // Same visible field order as the editor, without importing React UI into
+  // the server exporter. Zero is a valid age; hidden custom fields stay hidden.
+  const keys = ['gender', 'age', 'currentLocation', 'workStartTime', 'phone', 'email', 'nation', 'household', 'politicalStatus', 'height', 'weight'] as const
+  const fields: Array<[string, string]> = []
+  for (const key of keys) {
+    const value = info[key]
+    if (value === undefined || value === null || value === '') continue
+    fields.push([getBaseInfoFieldLabel(key, resume.language), `${value}${key === 'height' ? 'cm' : key === 'weight' ? 'kg' : ''}`])
+  }
+  for (const field of info.customFields ?? []) if (isUserVisibleBaseInfoCustomField(field)) fields.push([field.label, field.value])
+  return fields
+}
+
+function canvaHeader(resume: ResumeData, metrics: DocxMetrics, avatar?: AvatarAsset): Table {
+  const contacts = canvaContactLines(resume)
+  const copy = [
+    paragraph(run(resume.name || '姓名', { size: metrics.name, bold: true, color: metrics.textColor }), { after: 50 }),
+    ...(resume.baseInfo?.title ? [paragraph(run(resume.baseInfo.title, { size: metrics.title, color: metrics.accent }), { after: 65 })] : []),
+    paragraph(contacts.flatMap(([label, value], index) => [run(`${index ? '    ' : ''}${label}：${value}`, { size: metrics.small, color: metrics.mutedColor })]), { after: 0, line: 280 }),
+  ]
+  return new Table({
+    width: { size: 100, type: WidthType.PERCENTAGE }, layout: TableLayoutType.FIXED,
+    columnWidths: avatar ? [8706, 1500] : [10206], borders: NO_BORDERS,
+    rows: [new TableRow({ children: [
+      cell(copy, { width: avatar ? 84 : 100, margins: { top: 0, right: 100, bottom: 70, left: 0 } }),
+      ...(avatar ? [cell([avatarParagraph(avatar, 74, 90)], { width: 16, margins: { top: 0, right: 0, bottom: 70, left: 0 } })] : []),
+    ] })],
+  })
+}
+
 function renderCanvaMinimal(resume: ResumeData, avatar?: AvatarAsset, theme?: Partial<ThemeTokens>): Document {
-  const metrics = resolveMetrics(theme, '27313B')
-  const children: Array<Paragraph | Table> = [simpleHeader(resume, metrics, avatar)]
+  const metrics = canvaMetrics(theme, '27313B')
+  const children: Array<Paragraph | Table> = [canvaHeader(resume, metrics, avatar)]
   const intention = intentionLines(resume)
   if (intention.length > 0) {
-    children.push(heading('求职意向', metrics.accent, { size: metrics.jobTitle }))
-    children.push(lineGrid(intention, 2, metrics, { columnWidths: [50, 50] }))
+    children.push(paragraph(intention.map(([label, value], index) => run(`${index ? '    ' : ''}${label}：${value}`, { size: metrics.small, color: metrics.textColor })), { line: 280, after: 90 }))
   }
   for (const section of resume.sections) {
     children.push(heading(getSectionDisplayTitle(section) || section.title, metrics.accent, { size: metrics.section }))
-    children.push(...renderSectionBlocks(section, metrics))
+    children.push(...renderSectionBlocks(section, metrics, metrics.textColor, { keepHeaderTogether: true, paragraphHeaderWidth: PAGE.width - 2 * mmToTwips(theme?.pagePaddingHorizontal ?? 16) }))
   }
   return baseDocument(children, {
     top: mmToTwips(theme?.pagePaddingVertical ?? 18),
@@ -691,7 +805,7 @@ function renderCanvaMinimal(resume: ResumeData, avatar?: AvatarAsset, theme?: Pa
 }
 
 function renderCanvaColumns(resume: ResumeData, avatar?: AvatarAsset, theme?: Partial<ThemeTokens>): Document {
-  const metrics = resolveMetrics(theme, '334155')
+  const metrics = canvaMetrics(theme, '334155')
   const sidebarSections = resume.sections.filter((section) => {
     const title = section.title.toLowerCase()
     return section.blocks.every((block) => block.type === 'text' || block.type === 'list')
@@ -699,31 +813,33 @@ function renderCanvaColumns(resume: ResumeData, avatar?: AvatarAsset, theme?: Pa
   }).slice(0, 2)
   const sidebarIds = new Set(sidebarSections.map((section) => section.id))
   const mainSections = resume.sections.filter((section) => !sidebarIds.has(section.id))
+  const contentWidth = PAGE.width - 2 * mmToTwips(theme?.pagePaddingHorizontal ?? 15)
+  const sideWidth = Math.round(contentWidth * 0.34)
+  const mainWidth = contentWidth - sideWidth
   const sidebarChildren: Array<Paragraph | Table> = []
-  const header = simpleHeader(resume, metrics, avatar)
+  const header = canvaHeader(resume, metrics, avatar)
   const intention = intentionLines(resume)
   if (intention.length > 0) {
-    sidebarChildren.push(heading('求职意向', metrics.accent, { size: metrics.jobTitle }))
+    sidebarChildren.push(heading('求职意向', metrics.accent, { size: metrics.jobTitle, keepNext: false }))
     sidebarChildren.push(...renderPairLines(intention, metrics.textColor, metrics.small, metrics.bodyLine))
   }
   for (const section of sidebarSections) {
-    sidebarChildren.push(heading(getSectionDisplayTitle(section) || section.title, metrics.accent, { size: metrics.section }))
-    sidebarChildren.push(...renderSectionBlocks(section, metrics))
+    sidebarChildren.push(canvaColumnSection(section, metrics, sideWidth - 540))
   }
   const mainChildren: Array<Paragraph | Table> = []
   for (const section of mainSections) {
-    mainChildren.push(heading(getSectionDisplayTitle(section) || section.title, metrics.accent, { size: metrics.section }))
-    mainChildren.push(...renderSectionBlocks(section, metrics))
+    mainChildren.push(canvaColumnSection(section, metrics, mainWidth - 540))
   }
   const columns = new Table({
     width: { size: 100, type: WidthType.PERCENTAGE },
     layout: TableLayoutType.FIXED,
-    columnWidths: [3000, 7206],
+    columnWidths: [sideWidth, mainWidth],
     borders: NO_BORDERS,
     rows: [new TableRow({
+      cantSplit: false,
       children: [
-        cell(sidebarChildren, { width: 30, shading: 'F8FAFC', margins: { top: 120, right: 140, bottom: 120, left: 0 }, borders: { ...NO_BORDERS, right: { style: BorderStyle.SINGLE, size: 6, color: 'CBD5E1', space: 3 } } }),
-        cell(mainChildren, { width: 70, margins: { top: 120, right: 0, bottom: 120, left: 190 } }),
+        cell(sidebarChildren, { width: 34, shading: 'F8FAFC', margins: { top: 300, right: 270, bottom: 300, left: 270 }, borders: { ...NO_BORDERS, right: { style: BorderStyle.SINGLE, size: 6, color: 'CBD5E1', space: 3 } } }),
+        cell(mainChildren, { width: 66, margins: { top: 300, right: 270, bottom: 300, left: 270 } }),
       ],
     })],
   })
@@ -735,24 +851,61 @@ function renderCanvaColumns(resume: ResumeData, avatar?: AvatarAsset, theme?: Pa
   })
 }
 
-function renderCanvaSidebar(resume: ResumeData, avatar?: AvatarAsset, theme?: Partial<ThemeTokens>): Document {
-  // Word's CJK font metrics occupy more vertical space than Chromium at the
-  // same nominal CSS size. Use a restrained density correction for this
-  // narrow two-column layout so the reference full fixture remains one page;
-  // long content still flows naturally to additional pages.
-  const metrics = resolveMetrics({
-    ...theme,
-    fontSize: (theme?.fontSize ?? 15) * 0.92,
-    lineHeight: Math.min(theme?.lineHeight ?? 1.5, 1.35),
-  }, '5279A8')
+async function renderCanvaSidebar(resume: ResumeData, avatar?: AvatarAsset, theme?: Partial<ThemeTokens>): Promise<Document> {
+  const metrics = canvaMetrics(theme, '5279A8')
   const verticalPadding = mmToTwips(theme?.pagePaddingVertical ?? 19)
   const mainHorizontalPadding = mmToTwips(theme?.pagePaddingHorizontal ?? 15)
   const sidebarHorizontalPadding = 270
+  const sidebarWidth = 4048
+  // A cell's shading ends with its content. Anchor the decorative rail to the
+  // page in a repeating footer so it also covers unused space and later pages.
+  // A footer anchor avoids the minimum header clearance shifting the body.
+  // Only this flat background is an image; all resume text stays editable.
+  const { default: sharp } = await import('sharp')
+  // Match the centered 150x180 portrait frame in .docx-safe-avatar-side.
+  // Contain the whole photo; pad mismatched aspect ratios instead of cropping
+  // heads/shoulders or stretching the original image in compatible renderers.
+  const avatarWidth = 150
+  const avatarHeight = 180
+  const avatarScale = 3
+  const sidebarAvatar: AvatarAsset | undefined = avatar ? {
+    type: 'png',
+    data: await sharp(avatar.data).rotate().resize(
+      Math.round(avatarWidth * avatarScale) - 2 * avatarScale,
+      avatarHeight * avatarScale - 2 * avatarScale,
+      { fit: 'contain', position: 'centre', background: '#e2e8f0' },
+    ).flatten({ background: '#e2e8f0' }).extend({
+      top: avatarScale, right: avatarScale, bottom: avatarScale, left: avatarScale,
+      background: '#dbeafe',
+    }).png().toBuffer(),
+  } : undefined
+  const backgroundPixel = await sharp({
+    create: { width: 1, height: 1, channels: 3, background: `#${metrics.accent}` },
+  }).png().toBuffer()
+  const backgroundFooter = new Footer({
+    children: [new Paragraph({
+      spacing: { before: 0, after: 0, line: 1, lineRule: LineRuleType.EXACT },
+      children: [new ImageRun({
+        type: 'png',
+        data: backgroundPixel,
+        transformation: { width: sidebarWidth / 15, height: PAGE.height / 15 },
+        floating: {
+          horizontalPosition: { relative: HorizontalPositionRelativeFrom.PAGE, offset: 0 },
+          verticalPosition: { relative: VerticalPositionRelativeFrom.PAGE, offset: 0 },
+          behindDocument: true,
+          allowOverlap: true,
+          lockAnchor: true,
+          layoutInCell: false,
+          wrap: { type: TextWrappingType.NONE },
+        },
+      })],
+    })],
+  })
   const sideChildren: Array<Paragraph | Table> = [
-    ...(avatar ? [avatarParagraph(avatar, 150, 180)] : []),
+    ...(sidebarAvatar ? [avatarParagraph(sidebarAvatar, avatarWidth, avatarHeight)] : []),
     paragraph(run(resume.name || '姓名', { size: Math.round(metrics.name * 0.82), color: COLORS.white, bold: true }), { after: 35, line: metrics.bodyLine }),
     ...(resume.baseInfo?.title ? [paragraph(run(resume.baseInfo.title, { size: metrics.small, color: 'DBEAFE', bold: true }), { after: 100, line: metrics.bodyLine })] : []),
-    ...renderPairLines(contactLines(resume), COLORS.white, metrics.small, metrics.bodyLine),
+    ...renderPairLines(canvaContactLines(resume), COLORS.white, metrics.small, metrics.bodyLine),
   ]
   const intention = intentionLines(resume)
   if (intention.length > 0) {
@@ -761,11 +914,7 @@ function renderCanvaSidebar(resume: ResumeData, avatar?: AvatarAsset, theme?: Pa
   }
   const mainChildren: Array<Paragraph | Table> = []
   for (const section of resume.sections) {
-    mainChildren.push(heading(getSectionDisplayTitle(section) || section.title, metrics.accent, { size: metrics.section }))
-    // Main-column content has about 6158 twips after its 15 mm cell margins.
-    // Keep the date column on the same line instead of reusing the old
-    // full-page 7000/3206 twip split inside this narrower table cell.
-    mainChildren.push(...renderSectionBlocks(section, metrics, metrics.textColor, { headerColumnWidths: [4000, 2158] }))
+    mainChildren.push(canvaColumnSection(section, metrics, PAGE.width - sidebarWidth - 2 * mainHorizontalPadding))
   }
   const shell = new Table({
     width: { size: 100, type: WidthType.PERCENTAGE },
@@ -773,7 +922,7 @@ function renderCanvaSidebar(resume: ResumeData, avatar?: AvatarAsset, theme?: Pa
     // The table must consume the full A4 text width. The previous 3500/6706
     // pair totaled only 10206 twips, leaving an unused right strip that made
     // the main column much narrower than the HTML/PDF 34%/66% layout.
-    columnWidths: [4048, 7858],
+    columnWidths: [sidebarWidth, PAGE.width - sidebarWidth],
     borders: NO_BORDERS,
     rows: [new TableRow({
       children: [
@@ -782,7 +931,7 @@ function renderCanvaSidebar(resume: ResumeData, avatar?: AvatarAsset, theme?: Pa
       ],
     })],
   })
-  return baseDocument([shell], { top: 0, right: 0, bottom: 0, left: 0 })
+  return baseDocument([shell], { top: 0, right: 0, bottom: 0, left: 0 }, backgroundFooter)
 }
 
 /** Build a WordprocessingML document for one of the verified templates. */
@@ -799,7 +948,7 @@ export async function exportResumeToDocx(
     : templateId === 'canva-columns'
       ? renderCanvaColumns(resume, avatar, theme)
       : templateId === 'canva-sidebar'
-        ? renderCanvaSidebar(resume, avatar, theme)
+        ? await renderCanvaSidebar(resume, avatar, theme)
         : templateId === 'simple'
           ? renderSimple(resume, avatar, theme)
           : templateId === 'jingrui'

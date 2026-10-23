@@ -94,14 +94,14 @@ function HeaderBlock({ header, job, dark = false, sidebar = false, showJob = tru
   )
 }
 
-function SideHeader({ header, job }: { readonly header: ReturnType<typeof useEditableHeader>; readonly job: EditableJobIntention }): ReactElement {
+function SideHeader({ header, job, showJob }: { readonly header: ReturnType<typeof useEditableHeader>; readonly job: EditableJobIntention; readonly showJob: boolean }): ReactElement {
   return (
     <div className="docx-safe-side-header">
       <AvatarSlot header={header} className="docx-safe-avatar docx-safe-avatar-side" placeholderSize={50} placeholderColor="#dbeafe" />
       <EditableText as="h1" value={header.name} onCommit={header.onCommitName} className="docx-safe-side-name" />
       {header.baseInfo?.title ? <div className="docx-safe-side-role">{header.baseInfo.title}</div> : null}
       <FieldGroup header={header} dark />
-      {job.fields.length > 0 ? <JobFields job={job} vertical /> : null}
+      {showJob ? <JobFields job={job} vertical /> : null}
     </div>
   )
 }
@@ -164,13 +164,14 @@ function baseStyle(theme: ThemeTokens, variant: DocxSafeVariant): CSSProperties 
 export function DocxSafeTemplate({ resume, theme, sidebarSectionIds, variant }: TemplateProps & { readonly variant: DocxSafeVariant }): ReactElement {
   const header = useEditableHeader(resume.name, resume.baseInfo ?? null, TEMPLATE_IDS[variant])
   const job = useEditableJobIntention(resume.jobIntention)
+  const showJob = resume.jobIntentionVisible ?? Boolean(resume.jobIntention)
   const sidebarIds = sectionIdsForColumns(resume, sidebarSectionIds)
   const sidebarSections = variant === 'columns' ? resume.sections.filter((section) => sidebarIds.has(section.id)) : []
   const mainSections = variant === 'columns' ? resume.sections.filter((section) => !sidebarIds.has(section.id)) : resume.sections
   const style = baseStyle(theme, variant)
 
   return (
-    <ResumeFrame resume={resume} theme={theme} className={`docx-safe docx-safe-${variant}`} style={style}>
+    <ResumeFrame resume={resume} theme={theme} bleed={variant === 'sidebar'} className={`docx-safe docx-safe-${variant}`} style={style}>
       <style>{`
         .docx-safe { box-sizing:border-box; overflow-wrap:anywhere; }
         .docx-safe *, .docx-safe *::before, .docx-safe *::after { box-sizing:border-box; }
@@ -206,11 +207,12 @@ export function DocxSafeTemplate({ resume, theme, sidebarSectionIds, variant }: 
         .docx-safe-actions button { display:grid; place-items:center; width:24px; height:24px; border:0; border-radius:3px; color:inherit; background:transparent; cursor:pointer; }
         .docx-safe-actions button:hover { background:#f1f5f9; }
         .docx-safe-shell { display:grid; flex:1; grid-template-columns:34% minmax(0,1fr); min-height:0; }
-        .docx-safe-columns-side { min-width:0; padding:var(--docx-safe-padding-v) 18px; background:#f8fafc; border-right:1px solid #cbd5e1; }
-        .docx-safe-columns-main { min-width:0; padding:var(--docx-safe-padding-v) var(--docx-safe-padding-h); }
+        .docx-safe-columns-side { min-width:0; padding:20px 18px; background:#f8fafc; border-right:1px solid #cbd5e1; }
+        .docx-safe-columns-main { min-width:0; padding:20px 18px; }
         .docx-safe-columns-side .docx-safe-section-title-row { display:block; padding-bottom:5px; border-bottom:1px solid #94a3b8; }
         .docx-safe-columns-side .docx-safe-title-rule { display:none; }
         .docx-safe-sidebar-shell { display:grid; grid-template-columns:34% minmax(0,1fr); min-height:297mm; }
+        .docx-safe-page-background { display:none; }
         .docx-safe-sidebar-side { min-width:0; padding:var(--docx-safe-padding-v) 18px; color:var(--docx-safe-on-accent); background:var(--docx-safe-accent); }
         .docx-safe-sidebar-side .docx-safe-fields,
         .docx-safe-sidebar-side .docx-safe-job { color:rgba(255,255,255,.96); border-color:rgba(255,255,255,.78); }
@@ -219,7 +221,8 @@ export function DocxSafeTemplate({ resume, theme, sidebarSectionIds, variant }: 
         .docx-safe-sidebar-side .docx-safe-job-field strong { color:inherit; }
         .docx-safe-sidebar-main { min-width:0; padding:var(--docx-safe-padding-v) var(--docx-safe-padding-h); background:#fff; }
         .docx-safe-side-header { display:flex; flex-direction:column; align-items:stretch; gap:8px; }
-        .docx-safe-avatar-side { width:100%; height:145px; margin:0 auto 8px; border-color:#dbeafe; background:#e2e8f0; }
+        .docx-safe-avatar-side { width:150px; height:180px; margin:0 auto 8px; border-color:#dbeafe; background:#e2e8f0; }
+        .docx-safe-avatar-side img { object-fit:contain; object-position:center; }
         .docx-safe-side-name { margin:0; color:inherit; font-size:1.8em; line-height:1.1; font-weight:800; }
         .docx-safe-side-role { color:inherit; font-size:.9em; opacity:.9; }
         .docx-safe-header-dark .docx-safe-fields, .docx-safe-header-dark .docx-safe-job { color:inherit; border-color:currentColor; }
@@ -230,18 +233,25 @@ export function DocxSafeTemplate({ resume, theme, sidebarSectionIds, variant }: 
           .docx-safe-shell, .docx-safe-sidebar-shell { display:block; min-height:0; }
           .docx-safe-columns-side, .docx-safe-sidebar-side { padding:24px; border-right:0; }
           .docx-safe-columns-main, .docx-safe-sidebar-main { padding:24px; }
-          .docx-safe-avatar-side { width:150px; margin-left:0; }
+          .docx-safe-avatar-side { margin-left:auto; margin-right:auto; }
         }
         @media print {
+          .docx-safe-page { display:block; padding-bottom:0; }
           .docx-safe, .docx-safe-page, .docx-safe-sidebar-shell { min-height:calc(297mm - 2 * var(--docx-safe-padding-v) - 2px) !important; overflow:visible !important; }
           .docx-safe-shell { min-height:0 !important; overflow:visible !important; }
+          /* A grid cell ends with its content on the last fragment. Repeat only
+             the decorative rail on each printed page, including page margins. */
+          .docx-safe-page-background { display:block; position:fixed; left:0; top:0; width:34%; height:297mm; background:var(--docx-safe-accent); pointer-events:none; z-index:0; }
+          .docx-safe-sidebar-side, .docx-safe-sidebar-main { position:relative; z-index:1; }
+          .docx-safe-sidebar-main { -webkit-box-decoration-break:clone; box-decoration-break:clone; }
           .docx-safe-rich p, .docx-safe-rich li { orphans:2; widows:2; }
         }
       `}</style>
       {variant === 'sidebar' ? (
         <div className="docx-safe-sidebar-shell">
+          <div className="docx-safe-page-background" aria-hidden="true" />
           <aside className="docx-safe-sidebar-side" data-template-base-info-trigger="true">
-            <SideHeader header={header} job={job} />
+            <SideHeader header={header} job={job} showJob={showJob} />
           </aside>
           <main className="docx-safe-sidebar-main" data-template-padding-probe="true" data-template-body-text="true">
             <SectionList sections={mainSections} theme={theme} variant={variant} />
@@ -252,7 +262,7 @@ export function DocxSafeTemplate({ resume, theme, sidebarSectionIds, variant }: 
           <HeaderBlock header={header} job={job} showJob={false} />
           <div className="docx-safe-shell">
             <aside className="docx-safe-columns-side">
-              {job.fields.length > 0 ? <JobFields job={job} vertical /> : null}
+              {showJob ? <JobFields job={job} vertical /> : null}
               {sidebarSections.length > 0 ? <SectionList sections={sidebarSections} theme={theme} variant={variant} /> : null}
             </aside>
             <main className="docx-safe-columns-main" data-template-body-text="true">
@@ -262,7 +272,7 @@ export function DocxSafeTemplate({ resume, theme, sidebarSectionIds, variant }: 
         </div>
       ) : (
         <div className="docx-safe-page" data-template-padding-probe="true">
-          <HeaderBlock header={header} job={job} />
+          <HeaderBlock header={header} job={job} showJob={showJob} />
           <main className="docx-safe-main" data-template-body-text="true">
             <SectionList sections={mainSections} theme={theme} variant={variant} />
           </main>
