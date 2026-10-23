@@ -1,7 +1,15 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import {
+  ExternalLink,
+  RotateCw,
+  AlertCircle,
+  ChevronDown,
+  ChevronUp,
+} from 'lucide-react'
 import { getStoredAdminPassword } from '@/lib/admin-auth'
+import { cn } from '@/lib/utils'
 
 interface DraftPackage {
   titles?: string[]
@@ -98,9 +106,9 @@ function hoursSince(createdAt?: string): number {
   return Number.isNaN(t) ? -1 : Math.floor((Date.now() - t) / 3600000)
 }
 
-const input = 'h-11 w-full rounded-lg border border-stone-300 bg-white px-3 text-sm text-stone-900 outline-none focus:border-violet-600'
-const btn = 'h-11 rounded-lg border border-violet-600 px-4 text-sm text-violet-700 hover:bg-violet-50 disabled:opacity-40'
-const btnSolid = 'h-11 rounded-lg bg-violet-600 px-4 text-sm font-medium text-white hover:bg-violet-700 disabled:opacity-40'
+const inputClass = 'min-h-[44px] w-full rounded-xl border border-stone-200 bg-white px-3 text-base sm:text-sm text-stone-900 outline-none transition-all focus:border-violet-600 focus:ring-2 focus:ring-violet-100'
+const btnOutline = 'min-h-[44px] rounded-xl border border-violet-600 px-4 text-sm font-semibold text-violet-700 hover:bg-violet-50 active:scale-[0.99] disabled:opacity-40 transition-all flex items-center justify-center'
+const btnSolid = 'min-h-[44px] rounded-xl bg-violet-600 px-5 text-sm font-semibold text-white hover:bg-violet-700 active:scale-[0.99] disabled:opacity-40 transition-all shadow-xs flex items-center justify-center'
 
 export default function XhsNotesAdminPage() {
   const [queue, setQueue] = useState<Queue>('0')
@@ -227,90 +235,114 @@ export default function XhsNotesAdminPage() {
   ]
 
   return (
-    <div className="max-w-5xl text-stone-900">
-      <div className="border-b-2 border-violet-600 pb-4">
+    <div className="space-y-4 sm:space-y-6 text-stone-900">
+      {/* Page Header */}
+      <div className="rounded-2xl border border-stone-200/80 bg-white p-4 sm:p-5 shadow-xs">
         <div className="flex items-center justify-between gap-3">
-          <h1 className="text-xl font-bold tracking-tight">笔记奖励审核</h1>
-          <button className={`${btnSolid} shrink-0`} type="button" disabled={loading} onClick={() => void load()}>
-            {loading ? '加载中' : '刷新'}
+          <div>
+            <h1 className="text-base sm:text-lg font-bold text-slate-800">笔记奖励审核</h1>
+            <p className="mt-1 text-xs text-stone-500 leading-relaxed">
+              核对公开可见、自然提及「智简简历」、非搬运。满 {rules.bonusAfterHours} 小时后录入效果数据补发。
+            </p>
+          </div>
+          <button
+            className={cn(btnSolid, 'shrink-0 min-h-[40px] px-3.5 text-xs sm:text-sm')}
+            type="button"
+            disabled={loading}
+            onClick={() => void load()}
+          >
+            <RotateCw className={cn('h-3.5 w-3.5 mr-1.5', loading && 'animate-spin')} />
+            {loading ? '刷新中' : '刷新'}
           </button>
         </div>
-        <p className="mt-2 text-xs leading-5 text-stone-500">
-          通过前核对：公开可见、正文或首评自然提及「智简简历」、非搬运。已通过的笔记需核验实际发布时间（北京时间），发布满 {rules.bonusAfterHours} 小时后录入数据补发。
-        </p>
       </div>
 
+      {/* Stats Cards */}
       {queue !== 'drafts' && (
-        <dl className="grid grid-cols-2 gap-x-3 gap-y-4 border-b border-stone-200 py-4 sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
           {[
             ['当前记录', stats.count, '条'],
             ['已发放时长', stats.days, '天'],
             ['口令带来新用户', stats.conversions, '人'],
             ['短链待人工核对', stats.manual, '条'],
           ].map(([label, value, unit]) => (
-            <div key={label as string} className="min-w-0">
-              <dt className="text-xs leading-5 text-stone-500">{label}</dt>
-              <dd className="mt-1 text-2xl font-bold tabular-nums">
+            <div key={label as string} className="rounded-2xl border border-stone-200/80 bg-white p-3.5 shadow-2xs">
+              <span className="text-[11px] sm:text-xs text-stone-500 block truncate">{label}</span>
+              <p className="mt-1 text-xl sm:text-2xl font-bold tabular-nums text-slate-800">
                 {value}
-                <span className="ml-1 text-sm font-normal text-stone-500">{unit}</span>
-              </dd>
+                <span className="ml-1 text-xs font-normal text-stone-400">{unit}</span>
+              </p>
             </div>
           ))}
-        </dl>
+        </div>
       )}
 
-      <nav className="mt-4 flex gap-1 overflow-x-auto border-b border-stone-200">
+      {/* Queue Tabs */}
+      <div className="flex gap-1.5 overflow-x-auto no-scrollbar p-1.5 bg-stone-100/80 rounded-2xl border border-stone-200/60">
         {tabs.map((t) => (
           <button
             key={t.key}
             type="button"
             onClick={() => switchQueue(t.key)}
-            className={`h-11 shrink-0 whitespace-nowrap border-b-2 px-3 text-sm ${
-              queue === t.key ? 'border-violet-600 font-semibold text-violet-700' : 'border-transparent text-stone-500'
-            }`}
+            className={cn(
+              'flex-1 min-h-[38px] rounded-xl px-3 py-1.5 text-xs sm:text-sm font-semibold transition-all whitespace-nowrap text-center',
+              queue === t.key
+                ? 'bg-white text-violet-700 shadow-xs ring-1 ring-stone-200'
+                : 'text-stone-600 hover:text-stone-900'
+            )}
           >
             {t.label}
           </button>
         ))}
-      </nav>
-      <p className="mt-2 text-xs leading-5 text-stone-400">
-        规则：通过 {rules.baseDays} 天；浏览 ≥{rules.tier1Views} 或 赞+藏+评 ≥{rules.tier1Engagement} 累计至 {rules.tier1TotalDays} 天；浏览 ≥{rules.tier2Views} 累计至 {rules.tier2TotalDays} 天
+      </div>
+
+      <p className="text-[11px] sm:text-xs text-stone-400 px-1">
+        奖励规则：通过 {rules.baseDays} 天；浏览 ≥{rules.tier1Views} 或 赞+藏+评 ≥{rules.tier1Engagement} 累计至 {rules.tier1TotalDays} 天；浏览 ≥{rules.tier2Views} 累计至 {rules.tier2TotalDays} 天
       </p>
 
-      {error && <p className="mt-4 text-sm text-red-700">{error}</p>}
+      {error && (
+        <div className="rounded-xl bg-rose-50 p-3.5 text-xs sm:text-sm text-rose-700 border border-rose-100 flex items-center gap-2">
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          <span>{error}</span>
+        </div>
+      )}
 
       {queue === 'drafts' ? (
-        <div className="mt-2 divide-y divide-stone-200">
+        <div className="space-y-3">
           {drafts.map((d) => {
             const out = d.output || {}
             return (
-              <article key={d.id} className="py-6">
-                <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <h2 className="font-semibold">
+              <article key={d.id} className="rounded-2xl border border-stone-200 bg-white p-4 sm:p-5 shadow-xs space-y-3">
+                <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-stone-100 pb-3">
+                  <h2 className="font-bold text-sm sm:text-base text-slate-800">
                     {TOPIC_LABELS[d.topic] || d.topic}
-                    <span className="ml-3 text-sm font-normal text-stone-500">
+                    <span className="ml-2 text-xs font-normal text-stone-500">
                       {d.user?.name || d.user?.wxId || d.user?.id}
-                      {d.user?.javaUserId ? ` · Java ${d.user.javaUserId}` : ''}
+                      {d.user?.javaUserId ? ` · Java ${d.user?.javaUserId}` : ''}
                     </span>
                   </h2>
                   <span className="text-xs text-stone-400">{new Date(d.createdAt).toLocaleString('zh-CN')}</span>
                 </div>
-                <ol className="mt-3 space-y-1 text-sm">
+                <ol className="space-y-1.5 text-xs sm:text-sm">
                   {(out.titles || []).map((t, i) => (
-                    <li key={i}>
-                      <span className="mr-2 text-stone-400">{['封面向', '发布向', '搜索向'][i]}</span>
-                      {t}
+                    <li key={i} className="flex items-start gap-2">
+                      <span className="shrink-0 rounded bg-stone-100 px-1.5 py-0.5 text-[10px] text-stone-500 font-medium">
+                        {['封面向', '发布向', '搜索向'][i]}
+                      </span>
+                      <span className="text-stone-800">{t}</span>
                     </li>
                   ))}
                 </ol>
-                <p className="mt-4 whitespace-pre-wrap text-sm leading-7 text-stone-700">{out.body}</p>
+                <p className="whitespace-pre-wrap text-xs sm:text-sm leading-relaxed text-stone-700 bg-stone-50/70 p-3 rounded-xl border border-stone-100">
+                  {out.body}
+                </p>
                 {Array.isArray(out.beforeAfter) && out.beforeAfter.length > 0 && (
-                  <ul className="mt-4 space-y-1 border-l-2 border-violet-300 pl-4 text-sm">
+                  <ul className="space-y-1.5 border-l-2 border-violet-400 pl-3 text-xs sm:text-sm">
                     {out.beforeAfter.map((p, i) => (
                       <li key={i}>
                         <span className="text-stone-400 line-through">{p.bad}</span>
                         <span className="mx-2 text-stone-400">→</span>
-                        <span className="font-medium">{p.good}</span>
+                        <span className="font-semibold text-violet-700">{p.good}</span>
                       </li>
                     ))}
                   </ul>
@@ -318,10 +350,14 @@ export default function XhsNotesAdminPage() {
               </article>
             )
           })}
-          {drafts.length === 0 && <p className="py-12 text-sm text-stone-500">没有草稿。输入密码后点「刷新」。</p>}
+          {drafts.length === 0 && (
+            <div className="rounded-2xl border border-dashed border-stone-200 bg-white p-12 text-center text-xs sm:text-sm text-stone-400">
+              暂无草稿记录，点击上方「刷新」加载。
+            </div>
+          )}
         </div>
       ) : (
-        <div className="divide-y divide-stone-200">
+        <div className="space-y-3.5">
           {rows.map((row) => {
             const m = metrics[row.id] || { publishedAt: '', views: '', likes: '', collects: '', comments: '' }
             const p = preview(row, m, rules)
@@ -329,69 +365,110 @@ export default function XhsNotesAdminPage() {
             const invalidMetrics = [m.views, m.likes, m.collects, m.comments].some(value => value.trim() !== '' && (!/^\d+$/.test(value) || Number(value) > 2147483647))
             const draft = row.draft
             return (
-              <article key={row.id} className="py-6">
-                <div className="flex flex-wrap items-start justify-between gap-4">
+              <article key={row.id} className="rounded-2xl sm:rounded-3xl border border-stone-200/90 bg-white p-4 sm:p-5 shadow-xs space-y-3.5">
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 border-b border-stone-100 pb-3.5">
                   <div>
-                    <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                      <h2 className="font-semibold">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h2 className="font-bold text-sm sm:text-base text-slate-800">
                         用户 {row.userId}
                         {row.userName ? ` · ${row.userName}` : ''}
                       </h2>
-                      <span className="text-sm text-stone-500">{TOPIC_LABELS[row.topicKey] || row.topicKey || '未选题'}</span>
-                      <span className="rounded border border-stone-300 px-1.5 text-xs text-stone-600">{STATUS_LABELS[row.status] ?? row.status}</span>
+                      <span className="rounded-full bg-violet-50 px-2.5 py-0.5 text-xs font-medium text-violet-700 border border-violet-100">
+                        {TOPIC_LABELS[row.topicKey] || row.topicKey || '未选题'}
+                      </span>
+                      <span
+                        className={cn(
+                          'rounded-full px-2 py-0.5 text-[11px] font-semibold border',
+                          row.status === 1
+                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                            : row.status === 2
+                              ? 'bg-rose-50 text-rose-700 border-rose-200'
+                              : 'bg-amber-50 text-amber-700 border-amber-200'
+                        )}
+                      >
+                        {STATUS_LABELS[row.status] ?? row.status}
+                      </span>
                     </div>
-                    <p className="mt-1 text-xs text-stone-500">
-                      {row.createdAt?.replace('T', ' ').slice(0, 16)} · 口令 <span className="font-mono">{row.inviteCode || '无'}</span> · 带来 {row.inviteConversions} 人 · 已发 {(row.baseDays || 0) + (row.bonusDays || 0)} 天
+                    <p className="mt-1 text-xs text-stone-500 leading-normal">
+                      提交于 {row.createdAt?.replace('T', ' ').slice(0, 16)} · 口令 <code className="font-mono text-violet-700">{row.inviteCode || '无'}</code> · 带来 {row.inviteConversions} 人 · 已发 {(row.baseDays || 0) + (row.bonusDays || 0)} 天
                     </p>
-                    <p className="mt-0.5 break-all font-mono text-xs text-stone-400">{row.noteId}</p>
+                    <p className="mt-0.5 break-all font-mono text-[11px] text-stone-400">笔记 ID: {row.noteId}</p>
                   </div>
-                  <div className="flex items-center gap-4 text-sm">
+
+                  <div className="flex items-center gap-2.5 self-start sm:self-auto shrink-0">
                     {draft && (
-                      <button type="button" className="text-stone-600 underline" onClick={() => void toggleDraft(row)}>
-                        {open === row.id ? '收起原稿' : '对照原稿'}
+                      <button
+                        type="button"
+                        className="inline-flex items-center gap-1 rounded-lg border border-stone-200 bg-stone-50 px-2.5 py-1.5 text-xs font-medium text-stone-700 hover:bg-stone-100 min-h-[36px]"
+                        onClick={() => void toggleDraft(row)}
+                      >
+                        {open === row.id ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                        <span>{open === row.id ? '收起原稿' : '对照原稿'}</span>
                       </button>
                     )}
-                    <a className="font-medium text-violet-700 underline" href={row.noteUrl} target="_blank" rel="noreferrer">
-                      打开笔记
+                    <a
+                      className="inline-flex items-center gap-1 rounded-lg bg-violet-50 px-3 py-1.5 text-xs font-semibold text-violet-700 hover:bg-violet-100 border border-violet-100 min-h-[36px]"
+                      href={row.noteUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" />
+                      <span>查看笔记</span>
                     </a>
                   </div>
                 </div>
 
                 {row.needsManualCheck && (
-                  <p className="mt-3 border-l-2 border-amber-600 pl-3 text-sm text-amber-800">短链没有展开成长链，请打开确认不是重复提交的旧笔记。</p>
+                  <p className="rounded-xl bg-amber-50 p-3 text-xs sm:text-sm text-amber-900 border border-amber-200">
+                    ⚠️ 短链没有展开成长链，请打开确认不是重复提交的旧笔记。
+                  </p>
                 )}
-                {row.status === 2 && row.rejectReason && <p className="mt-3 text-sm text-red-700">拒绝原因：{row.rejectReason}</p>}
+
+                {row.status === 2 && row.rejectReason && (
+                  <p className="rounded-xl bg-rose-50 p-3 text-xs sm:text-sm text-rose-800 border border-rose-200">
+                    拒绝原因：{row.rejectReason}
+                  </p>
+                )}
 
                 {open === row.id && draft && (
-                  <div className="mt-4 bg-stone-100 p-4 text-sm">
+                  <div className="rounded-2xl bg-stone-50 p-3.5 sm:p-4 text-xs sm:text-sm space-y-2 border border-stone-200 animate-in fade-in">
                     {draft.output ? (
                       <>
-                        <p className="font-medium">{(draft.output.titles || []).join(' / ')}</p>
-                        <p className="mt-2 whitespace-pre-wrap leading-7 text-stone-700">{draft.output.body}</p>
+                        <p className="font-bold text-slate-800">{(draft.output.titles || []).join(' / ')}</p>
+                        <p className="whitespace-pre-wrap leading-relaxed text-stone-700">{draft.output.body}</p>
                       </>
                     ) : (
-                      <p className="text-stone-500">正在加载原稿</p>
+                      <p className="text-stone-400">正在加载原稿...</p>
                     )}
                   </div>
                 )}
 
+                {/* Status 0: Review Actions */}
                 {row.status === 0 && (
-                  <div className="mt-4 space-y-2">
-                    <button className={`${btnSolid} w-full sm:w-auto`} type="button" onClick={() => void act('approve', row.id)}>
-                      通过，发放 {rules.baseDays} 天
+                  <div className="space-y-2.5 pt-1">
+                    <button
+                      className={cn(btnSolid, 'w-full')}
+                      type="button"
+                      onClick={() => void act('approve', row.id)}
+                    >
+                      通过审核，发放 {rules.baseDays} 天 VIP
                     </button>
                     <input
-                      className={input}
-                      placeholder="拒绝原因"
+                      className={inputClass}
+                      placeholder="如需拒绝，请输入拒绝原因"
                       value={reason[row.id] || ''}
                       onChange={(e) => setReason({ ...reason, [row.id]: e.target.value })}
                     />
                     <div className="grid grid-cols-2 gap-2">
-                      <button className={btn} type="button" onClick={() => void act('reject', row.id, { reason: reason[row.id] || '' })}>
+                      <button
+                        className={btnOutline}
+                        type="button"
+                        onClick={() => void act('reject', row.id, { reason: reason[row.id] || '' })}
+                      >
                         拒绝
                       </button>
                       <button
-                        className="h-11 rounded-lg text-sm text-stone-500"
+                        className="min-h-[44px] rounded-xl border border-stone-200 text-xs sm:text-sm text-stone-500 hover:bg-stone-50 active:scale-[0.99] transition-all"
                         type="button"
                         onClick={() => void act('revoke', row.id, {}, '回收后该用户不能再领取奖励，确认？')}
                       >
@@ -400,7 +477,12 @@ export default function XhsNotesAdminPage() {
                     </div>
                     <div className="grid gap-1.5 sm:grid-cols-2">
                       {QUICK_REASONS.map((t) => (
-                        <button key={t} type="button" className="rounded-lg bg-stone-50 px-3 py-2 text-left text-xs leading-5 text-stone-600" onClick={() => setReason({ ...reason, [row.id]: t })}>
+                        <button
+                          key={t}
+                          type="button"
+                          className="rounded-xl border border-stone-200/70 bg-stone-50/80 px-3 py-2 text-left text-xs leading-5 text-stone-600 hover:bg-stone-100 transition-colors"
+                          onClick={() => setReason({ ...reason, [row.id]: t })}
+                        >
                           {t}
                         </button>
                       ))}
@@ -408,42 +490,56 @@ export default function XhsNotesAdminPage() {
                   </div>
                 )}
 
+                {/* Status 1: Performance & Bonus */}
                 {row.status === 1 && (
-                  <div className="mt-4 border-t border-stone-200 pt-4">
-                    <div className="flex items-baseline justify-between text-sm">
-                      <span className="font-semibold">效果数据</span>
-                      <span className={hours >= rules.bonusAfterHours ? 'text-stone-500' : 'text-amber-800'}>
-                        {hours < 0 ? '请核验实际发布时间' : `已发布 ${hours} 小时${hours >= rules.bonusAfterHours ? '' : `，未满 ${rules.bonusAfterHours} 小时`}`}
+                  <div className="border-t border-stone-100 pt-3 space-y-3">
+                    <div className="flex items-center justify-between text-xs sm:text-sm">
+                      <span className="font-bold text-slate-800">核验效果数据</span>
+                      <span className={cn('font-medium text-xs', hours >= rules.bonusAfterHours ? 'text-stone-500' : 'text-amber-700')}>
+                        {hours < 0 ? '请核验实际发布时间' : `已发布 ${hours} 小时${hours >= rules.bonusAfterHours ? '（可补发）' : `，未满 ${rules.bonusAfterHours} 小时`}`}
                       </span>
                     </div>
-                    <label className="mt-3 block text-xs text-stone-600">
-                      笔记实际发布时间（北京时间，核验后填写）
-                      <input type="datetime-local" className={`${input} mt-1 block`} aria-label="笔记实际发布时间（北京时间）" value={row.publishedAt?.slice(0, 16) || m.publishedAt} disabled={!!row.publishedAt} onChange={e => setMetric(row.id, 'publishedAt', e.target.value)} />
-                    </label>
-                    <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-5">
+
+                    <div>
+                      <label className="block text-xs font-medium text-stone-600 mb-1">
+                        笔记实际发布时间（北京时间，核验后填写）
+                      </label>
+                      <input
+                        type="datetime-local"
+                        className={inputClass}
+                        aria-label="笔记实际发布时间（北京时间）"
+                        value={row.publishedAt?.slice(0, 16) || m.publishedAt}
+                        disabled={!!row.publishedAt}
+                        onChange={e => setMetric(row.id, 'publishedAt', e.target.value)}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
                       {(
                         [
-                          ['views', '浏览'],
-                          ['likes', '点赞'],
-                          ['collects', '收藏'],
-                          ['comments', '评论'],
+                          ['views', '浏览量'],
+                          ['likes', '点赞数'],
+                          ['collects', '收藏数'],
+                          ['comments', '评论数'],
                         ] as [keyof MetricInput, string][]
                       ).map(([field, label]) => (
-                        <label key={field} className="text-xs text-stone-500">
-                          {label}
+                        <div key={field}>
+                          <label className="block text-[11px] font-medium text-stone-500 mb-1">
+                            {label}
+                          </label>
                           <input
                             type="number"
                             min={0}
-                            className={`${input} mt-1 w-full`}
+                            className={inputClass}
                             value={m[field]}
                             onChange={(e) => setMetric(row.id, field, e.target.value)}
                           />
-                        </label>
+                        </div>
                       ))}
-                      <div className="flex items-end">
+                      <div className="col-span-2 sm:col-span-1 flex items-end">
                         <button
                           type="button"
-                          className={`${btnSolid} w-full`}
+                          className={cn(btnSolid, 'w-full')}
                           disabled={hours < rules.bonusAfterHours || invalidMetrics}
                           onClick={() =>
                             void act(
@@ -458,15 +554,17 @@ export default function XhsNotesAdminPage() {
                         </button>
                       </div>
                     </div>
-                    <p className="mt-3 text-sm text-stone-600">
-                      互动 {p.engagement}（赞 {p.likes} + 藏 {p.collects} + 评 {p.comments}），
+
+                    <p className="text-xs sm:text-sm text-stone-600 leading-normal">
+                      互动量 <strong>{p.engagement}</strong>（赞 {p.likes} + 藏 {p.collects} + 评 {p.comments}），
                       {p.target > 0 ? `达到 ${p.target} 天档，已发 ${p.granted} 天，` : '未达进阶档，'}
-                      <span className={p.delta > 0 ? 'font-semibold text-violet-700' : ''}>
+                      <span className={cn(p.delta > 0 ? 'font-bold text-violet-700' : '')}>
                         {p.delta > 0 ? `本次补发 ${p.delta} 天` : '本次不补发'}
                       </span>
                     </p>
+
                     <button
-                      className="mt-2 text-xs text-stone-500 underline"
+                      className="text-xs text-rose-600 hover:text-rose-700 underline pt-1 block"
                       type="button"
                       onClick={() => void act('revoke', row.id, {}, '确认该笔记已删除并回收资格？')}
                     >
@@ -477,7 +575,11 @@ export default function XhsNotesAdminPage() {
               </article>
             )
           })}
-          {rows.length === 0 && <p className="py-12 text-sm text-stone-500">这个队列是空的。输入密码后点「刷新」。</p>}
+          {rows.length === 0 && (
+            <div className="rounded-2xl border border-dashed border-stone-200 bg-white p-12 text-center text-xs sm:text-sm text-stone-400">
+              当前队列为空，点击上方「刷新」获取数据。
+            </div>
+          )}
         </div>
       )}
     </div>

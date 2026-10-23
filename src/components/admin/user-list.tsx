@@ -128,14 +128,14 @@ export function UserList(props: { onOpenUser: (id: number) => void }): React.Rea
   }
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-4 md:p-6">
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <h2 className="font-semibold text-slate-800">用户列表</h2>
+    <section className="rounded-xl border border-slate-200 bg-white p-3 md:rounded-2xl md:p-6">
+      <div className="mb-2 flex items-center justify-between gap-3">
+        <h2 className="text-sm font-semibold text-slate-800">用户列表</h2>
         <p className="text-xs text-slate-400">{data ? `共 ${data.totalElements} 人` : ''}</p>
       </div>
 
       <form
-        className="mb-4 grid gap-3 sm:grid-cols-4"
+        className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-4"
         onSubmit={(event) => {
           event.preventDefault()
           void load(0)
@@ -146,20 +146,20 @@ export function UserList(props: { onOpenUser: (id: number) => void }): React.Rea
           onChange={(event) => setUserId(event.target.value)}
           inputMode="numeric"
           placeholder="User ID"
-          className="min-h-11 rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm outline-none focus:ring-2 focus:ring-violet-500"
+          className="col-span-2 min-h-10 rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm outline-none focus:ring-2 focus:ring-violet-500 sm:col-span-1"
         />
-        <select value={vipType} onChange={(event) => setVipType(event.target.value)} className="min-h-11 rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm">
+        <select value={vipType} onChange={(event) => setVipType(event.target.value)} className="min-h-10 rounded-lg border border-slate-200 bg-slate-50 px-2 text-sm">
           <option value="">全部类型</option>
           <option value="1">月卡</option>
           <option value="2">年卡</option>
           <option value="3">终身</option>
         </select>
-        <select value={vipStatus} onChange={(event) => setVipStatus(event.target.value)} className="min-h-11 rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm">
+        <select value={vipStatus} onChange={(event) => setVipStatus(event.target.value)} className="min-h-10 rounded-lg border border-slate-200 bg-slate-50 px-2 text-sm">
           <option value="">全部状态</option>
           <option value="1">有效</option>
           <option value="0">非会员</option>
         </select>
-        <button type="submit" className="min-h-11 w-full rounded-xl bg-violet-600 px-6 text-sm font-medium text-white hover:bg-violet-700 sm:w-fit sm:justify-self-start">
+        <button type="submit" className="col-span-2 h-10 w-fit justify-self-start rounded-lg bg-violet-600 px-4 text-sm font-medium text-white hover:bg-violet-700 sm:col-span-1">
           {loading ? '筛选中...' : '筛选'}
         </button>
       </form>
@@ -169,18 +169,14 @@ export function UserList(props: { onOpenUser: (id: number) => void }): React.Rea
       <div className="space-y-3 md:hidden">
         {users.length === 0 && !loading && <p className="py-8 text-center text-sm text-slate-400">没有匹配的用户</p>}
         {users.map((user) => (
-          <article key={user.id} className="rounded-xl border border-slate-200 p-4">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="font-medium text-slate-800">{user.name || '未命名用户'}</p>
-                <p className="text-xs text-slate-500">ID {user.id}</p>
-              </div>
-              <span className={user.vipStatus === 1 ? 'rounded-full bg-amber-100 px-2 py-1 text-xs text-amber-700' : 'rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-600'}>
+          <article key={user.id} className="rounded-lg border border-slate-200 px-3 py-2.5">
+            <div className="flex items-center justify-between gap-2">
+              <p className="min-w-0 truncate text-sm font-medium text-slate-800">{user.name || '未命名用户'} · {user.id}</p>
+              <span className={user.vipStatus === 1 ? 'shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-700' : 'shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600'}>
                 {user.vipStatus === 1 ? vipTypeLabel(user.vipType) : '非会员'}
               </span>
             </div>
-            <p className="mt-2 text-sm text-slate-500">到期 {formatWhen(user.vipExpireTime)}</p>
-            <p className="text-sm text-slate-500">剩余导出 {user.freeExportCount ?? 0}</p>
+            <p className="mt-1 truncate text-xs text-slate-500">到期 {formatWhen(user.vipExpireTime)} · 剩余导出 {user.freeExportCount ?? 0}</p>
             <div className="mt-3">
               <UserActions user={user} />
             </div>

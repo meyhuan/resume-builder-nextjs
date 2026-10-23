@@ -36,11 +36,11 @@ export function AdminStats(): React.ReactElement {
   return (
     <section>
       {error && <p className="mb-3 text-sm text-rose-600">{error}</p>}
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-3 gap-2">
         {cards.map((card) => (
-          <div key={card.label} className="rounded-2xl border border-slate-200 bg-white p-4">
-            <p className="text-sm text-slate-500">{card.label}</p>
-            <p className="mt-1 text-3xl font-semibold tabular-nums text-slate-800">{card.value}</p>
+          <div key={card.label} className="rounded-xl border border-slate-200 bg-white px-2.5 py-2">
+            <p className="text-[11px] leading-4 text-slate-500">{card.label}</p>
+            <p className="mt-0.5 text-xl font-semibold tabular-nums text-slate-800 sm:text-3xl">{card.value}</p>
           </div>
         ))}
       </div>
