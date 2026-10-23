@@ -56,3 +56,39 @@ export function updateQuestionReply(
   }
   return draft.slice(0, range.answerStart) + answer + draft.slice(range.end);
 }
+
+const OPTION_SEP = '、';
+
+export function splitQuestionOptions(answer: string): string[] {
+  return answer
+    .split(OPTION_SEP)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+export function toggleQuestionOption(
+  draft: string,
+  question: string,
+  option: string,
+  allOptions: readonly string[],
+  questions?: readonly { question: string }[],
+): string {
+  const current = questionReplyRange(draft, question, questions).answer.trim();
+  const currentParts = splitQuestionOptions(current);
+  const allMatchOptions =
+    currentParts.length > 0 &&
+    currentParts.every((part) => allOptions.includes(part));
+  const nextParts = allMatchOptions
+    ? currentParts.includes(option)
+      ? currentParts.filter((part) => part !== option)
+      : [...currentParts, option]
+    : current === option
+      ? []
+      : [option];
+  return updateQuestionReply(
+    draft,
+    question,
+    nextParts.length > 0 ? nextParts.join(OPTION_SEP) : null,
+    questions,
+  );
+}

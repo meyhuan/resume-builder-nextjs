@@ -1,4 +1,4 @@
-import { expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { confirmedStatements, followupFactTopic } from './followups';
 import { numericAdditions, followupsFor } from './policy';
 import { toHistory, type AssistantTurn } from './types';
@@ -81,4 +81,135 @@ it('recovers clicked-suggestion provenance from older stored sessions', () => {
   expect(confirmedStatements(history, '继续精简').join('')).not.toContain(
     '200',
   );
+});
+
+describe('Dynamic Followups Generation & Sanitization', () => {
+  it('sanitizes model followups: rejects escalation, ungrounded numbers, and foreign tools', async () => {
+    const { sanitizeModelFollowup } = await import('./followups');
+
+    // Reject role escalation
+    expect(sanitizeModelFollowup('建议写成独立负责整个移动端架构')).toBeNull();
+    expect(sanitizeModelFollowup('主导团队完成接口重构')).toBeNull();
+
+    // Reject hallucinated numbers
+    expect(sanitizeModelFollowup('将接口耗时优化至200ms以内', '负责接口开发')).toBeNull();
+    // Allow numbers if already present in source
+    expect(
+      sanitizeModelFollowup('针对Vue3技术栈做更详细的说明', '使用Vue3进行前端开发'),
+    ).not.toBeNull();
+
+    // Reject ungrounded tools
+    expect(sanitizeModelFollowup('补充Jira或Pytest的使用经验', '负责测试')).toBeNull();
+
+    // Normalize questions to actionable first-person requests
+    expect(
+      sanitizeModelFollowup('能否补充在跨端通信协议中的具体工作？', '参与多端通信'),
+    ).toBe('帮我补充在跨端通信协议中的具体工作');
+    expect(
+      sanitizeModelFollowup('补充性能优化排查ANR的具体思路', '负责定位ANR问题'),
+    ).toBe('补充性能优化排查ANR的具体思路');
+  });
+
+  it('finds the next candidate block to optimize with module priority', async () => {
+    const { findNextBlockToOptimize } = await import('./followups');
+
+    const allBlocks = [
+      {
+        blockId: 'b1',
+        sectionTitle: '工作经历',
+        label: '前端开发实习',
+        content: '<p>负责Vue后台开发</p>',
+        type: 'experience',
+      },
+      {
+        blockId: 'b2',
+        sectionTitle: '项目经历',
+        label: '设备借用后台',
+        content: '<p>同学写后端，我写前端</p>',
+        type: 'project',
+      },
+      {
+        blockId: 'b3',
+        sectionTitle: '自我评价',
+        label: '个人总结',
+        content: '<p>性格开朗，沟通能力强</p>',
+        type: 'self-evaluation',
+      },
+    ];
+
+    // When currently polishing b1, project经历 b2 has highest priority
+    const next = findNextBlockToOptimize(allBlocks, 'b1');
+    expect(next).toEqual({
+      blockId: 'b2',
+      label: '项目经历 · 设备借用后台',
+    });
+
+    // When currently polishing b2, experience b1 comes next
+    const nextFromB2 = findNextBlockToOptimize(allBlocks, 'b2');
+    expect(nextFromB2?.blockId).toBe('b1');
+  });
+
+  it('generates rich dynamic followups with [X] guidance, next block relay, and sanitized model recommendations', async () => {
+    const { generateDynamicFollowups } = await import('./followups');
+
+    const res = generateDynamicFollowups({
+      questions: [],
+      proposals: [
+        {
+          action: 'updateBlock',
+          blockId: 'b1',
+          html: '<ul><li><strong>性能治理：</strong>排查卡顿并优化，使卡顿率降低 [X]%。</li></ul>',
+          before: '<p>排查卡顿</p>',
+          targetLabel: '工作经历 · 前端开发',
+          factChecked: true,
+        },
+      ],
+      missingFacts: [
+        { label: '卡顿率降低比例', hint: '请填写实际百分比，如 30%' },
+      ],
+      followups: [
+        '补充排查卡顿与ANR问题的具体工具链与思路',
+        '建议写成独立主导架构升级', // should be filtered out (escalation)
+        '将耗时从500ms缩短到200ms', // should be filtered out (hallucinated numbers)
+      ],
+      targetBlockId: 'b1',
+      moduleType: 'experience',
+      targetContent: '负责排查ANR和卡顿',
+      allBlocks: [
+        {
+          blockId: 'b1',
+          sectionTitle: '工作经历',
+          label: '联想 Android',
+          content: '<p>负责排查ANR和卡顿</p>',
+        },
+        {
+          blockId: 'b2',
+          sectionTitle: '项目经历',
+          label: '超级互联',
+          content: '<p>参与多端通信</p>',
+        },
+      ],
+    });
+
+    expect(res.followups.length).toBeLessThanOrEqual(3);
+    expect(res.followupActions.length).toBeLessThanOrEqual(3);
+
+    // 1. Must contain estimation guidance because [X] exists
+    expect(res.followups.some((f) => f.includes('待确认数据'))).toBe(true);
+
+    // 2. Must contain next block relay
+    const nextBlockAction = res.followupActions.find((a) => a.kind === 'next_block');
+    expect(nextBlockAction).toBeDefined();
+    expect(nextBlockAction?.targetBlockId).toBe('b2');
+    expect(nextBlockAction?.text).toContain('项目经历 · 超级互联');
+
+    // 3. Must include sanitized model suggestion
+    expect(
+      res.followups.some((f) => f.includes('补充排查卡顿与ANR问题的具体工具链与思路')),
+    ).toBe(true);
+
+    // 4. Must NOT contain forbidden escalations or numbers
+    expect(res.followups.join(' ')).not.toContain('独立主导');
+    expect(res.followups.join(' ')).not.toContain('500ms');
+  });
 });

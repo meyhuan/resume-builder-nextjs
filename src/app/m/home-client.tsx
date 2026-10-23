@@ -1,6 +1,8 @@
 'use client'
 
+import { useDraftStore } from '@/features/edit/draft/draft-store'
 import { TemplateBrowser } from '@/components/templates/template-browser'
+import { TemplateCover } from '@/components/templates/template-cover'
 import { templateLabels } from '@/lib/templates/template-taxonomy'
 
 import { useCallback, useEffect, useState, type ReactElement } from 'react'
@@ -296,6 +298,7 @@ export default function MobileHomeClient(props: MobileHomeClientProps = {}): Rea
 
   const handleSelectTemplate = useCallback(
     (tplId: string): void => {
+      track('template_select', { resumeId: useDraftStore.getState().resumeId, templateId: tplId, entry: 'mobile_home' })
       router.push(`/m/preview?tpl=${tplId}`)
     },
     [router],
@@ -672,7 +675,7 @@ function TemplatesSection({
     <section className="mt-6">
       <SectionHeader title="风格简历模板" />
       <div className="mt-3 px-4">
-        <TemplateBrowser templates={templates} gridClassName="grid grid-cols-2 gap-3" renderTemplate={(tpl): ReactElement => (
+        <TemplateBrowser analyticsEntry="mobile_home" templates={templates} gridClassName="grid grid-cols-2 gap-3" renderTemplate={(tpl): ReactElement => (
           <TemplateCard key={tpl.id} template={tpl} onClick={(): void => onSelect(tpl.id)} />
         )} />
       </div>
@@ -700,12 +703,10 @@ function TemplateCard({
     >
       <div className="relative aspect-[210/297] bg-slate-50">
         {template.preview ? (
-          <Image
+          <TemplateCover
             src={template.preview}
             alt={template.name}
-            fill
-            sizes="(max-width: 640px) 50vw, 240px"
-            className="object-cover"
+            className="absolute inset-0 h-full w-full object-cover"
           />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center text-slate-300 text-[12px]">

@@ -13,7 +13,8 @@
  */
 import { NextResponse } from 'next/server';
 import type { Page } from 'puppeteer-core';
-import { paginateHtml, getClientPaginationScript } from '@/utils/paginate-html';
+import { paginateHtml } from '@/utils/paginate-html';
+import { getPrintLayoutDiagnostics, preparePrintFragmentation, type PrintLayoutDiagnostics } from '@/lib/print-pagination';
 import { checkQuota } from '@/lib/quota/quota-checker';
 import { savePdfTemp } from '@/lib/pdf-temp-store';
 import { buildExportContentDisposition, sanitizeExportFileName } from '@/lib/export-file-name';
@@ -146,12 +147,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'HTML content is required' }, { status: 400 });
     }
 
-    // Detect one-page mode and bleed templates from the HTML content
-    const isOnePage = html.includes('data-one-page="true"');
-    const isBleed = html.includes('data-bleed="true"');
-
-    // Pre-process HTML with pagination hints (skip for one-page mode)
-    const paginatedHtml = isOnePage || isBleed ? html : paginateHtml(html);
+    // Inject the shared CSS contract; Chromium chooses the physical breaks.
+    const paginatedHtml = paginateHtml(html);
 
     let page: Page | undefined;
     try {
@@ -174,17 +171,28 @@ export async function POST(req: Request) {
         timeout: PDF_RENDER_TIMEOUT_MS,
       });
       await waitForDocumentAssets(page);
-      
-      // Run client-side pagination script to measure and adjust elements (skip for one-page mode)
-      if (!isOnePage && !isBleed) {
-        await page.evaluate(getClientPaginationScript());
+      await page.evaluate(async () => {
+        await document.fonts?.ready?.catch(() => undefined);
+        await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+      });
+      await page.evaluate(async () => {
+        const guard = (window as typeof window & { __resumeOnePageGuardReady?: Promise<void> }).__resumeOnePageGuardReady;
+        if (guard) await guard.catch(() => undefined);
+      });
+      const printDiagnostics: PrintLayoutDiagnostics = await page.evaluate(getPrintLayoutDiagnostics);
+      if (printDiagnostics.hiddenOverflowAncestors > 0 || printDiagnostics.transformedRoot) {
+        throw new Error(`Print layout is clipped or transformed: ${JSON.stringify(printDiagnostics)}`);
       }
       
-      const createPdf = () => pdfPage.pdf({
-        printBackground: true,
-        displayHeaderFooter: false,
-        preferCSSPageSize: true,
-      });
+      const createPdf = async () => {
+        await pdfPage.evaluate(preparePrintFragmentation);
+        return pdfPage.pdf({
+          printBackground: true,
+          displayHeaderFooter: false,
+          preferCSSPageSize: true,
+          waitForFonts: true,
+        });
+      };
       let pdf = await createPdf();
       let autoOptimized = false;
 

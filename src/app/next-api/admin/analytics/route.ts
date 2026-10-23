@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerJavaApiBaseUrl } from '@/lib/java-api-base';
+import { verifyAdminPassword } from '@/lib/verify-admin-password';
 
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '';
-const ANALYTICS_ADMIN_TOKEN = process.env.ANALYTICS_ADMIN_TOKEN || ADMIN_PASSWORD;
+const ANALYTICS_ADMIN_TOKEN = process.env.ANALYTICS_ADMIN_TOKEN || process.env.ADMIN_PASSWORD || '';
 
 const ENDPOINTS: Record<string, string> = {
+  templates: '/analytics/admin/funnel/templates',
   overview: '/analytics/admin/overview',
   pay: '/analytics/admin/funnel/pay',
   export: '/analytics/admin/funnel/export',
@@ -24,7 +25,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const platform = typeof body.platform === 'string' ? body.platform : 'all';
   const clientType = typeof body.clientType === 'string' ? body.clientType : 'all';
 
-  if (!ADMIN_PASSWORD || adminPassword !== ADMIN_PASSWORD) {
+  if (!(await verifyAdminPassword(adminPassword))) {
     return NextResponse.json({ error: 'Invalid admin password' }, { status: 403 });
   }
 

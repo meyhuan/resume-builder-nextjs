@@ -1,7 +1,7 @@
 'use client'
 
 import { getSectionDisplayTitle } from '@/entities/resume/section-display-title'
-import { createElement, type ReactElement } from 'react'
+import { createElement, useCallback, useState, useSyncExternalStore, type ReactElement } from 'react'
 import { useRouter } from 'next/navigation'
 import { Award, BriefcaseBusiness, ChevronRight, FileText, FolderKanban, GraduationCap, GripVertical, Plus, School, Sparkles, Wrench, type LucideIcon } from 'lucide-react'
 import type { ResumeBlock } from '@/entities/blocks/resume-block'
@@ -10,6 +10,13 @@ import type { Section } from '@/entities/resume/section'
 import { htmlToPlainText } from '@/features/edit/form-fields/html-text'
 import { isMeaningfulText } from '@/features/edit/progress/meaningful-field'
 import { cn } from '@/lib/utils'
+import { useDraftStore } from '@/features/edit/draft/draft-store'
+
+function subscribeSuggestion(listener: () => void): () => void {
+  window.addEventListener('storage', listener)
+  return () => window.removeEventListener('storage', listener)
+}
+const emptySuggestion = (): null => null
 
 export interface SectionPreviewProps {
   readonly section: Section
@@ -23,6 +30,18 @@ export function SectionPreview(
   { section, module, dragging, dragHandleProps, onAddItem }: SectionPreviewProps,
 ): ReactElement {
   const router = useRouter()
+  const resumeId = useDraftStore(s => s.resumeId)
+  const [dismissed, setDismissed] = useState(false)
+  const readSuggestion = useCallback((): string | null => {
+    if (!resumeId) return null
+    try {
+      const raw = sessionStorage.getItem(`m-jd-suggestion:${resumeId}`)
+      const value = raw ? JSON.parse(raw) : null
+      return value?.sectionId === section.id && typeof value.text === 'string' ? value.text : null
+    } catch { return null }
+  }, [resumeId, section.id])
+  const storedSuggestion = useSyncExternalStore(subscribeSuggestion, readSuggestion, emptySuggestion)
+  const suggestion = dismissed ? null : storedSuggestion
   const label: string = getSectionDisplayTitle(section, module?.label ?? section.title)
   const baseRoute: string = module?.route ?? '/m/edit/custom'
   const isEmpty: boolean = section.blocks.length === 0 || (
@@ -38,7 +57,7 @@ export function SectionPreview(
     if (module?.isList) {
       return (
         <div className="mt-3 flex flex-col gap-2">
-          {section.blocks.slice(0, 2).map((b, idx) => (
+          {section.blocks.slice(0, suggestion ? undefined : 2).map((b, idx) => (
             <button
               key={b.id}
               type="button"
@@ -48,7 +67,7 @@ export function SectionPreview(
               <BlockSummary block={b} />
             </button>
           ))}
-          {section.blocks.length > 2 && (
+          {section.blocks.length > 2 && !suggestion && (
             <button
               type="button"
               onClick={(): void => router.push(baseRoute)}
@@ -84,6 +103,7 @@ export function SectionPreview(
       className={cn(
         'rounded-[18px] border border-[#edf0f5] bg-white p-3.5 shadow-[0_8px_24px_rgba(15,23,42,0.045)] transition-shadow',
         dragging && 'ring-2 ring-violet-300 shadow-lg',
+        suggestion && 'ring-2 ring-violet-300',
       )}
     >
       <div className="grid grid-cols-[32px_1fr_auto_16px] items-center gap-2">
@@ -117,6 +137,17 @@ export function SectionPreview(
         <ChevronRight size={16} className="text-slate-300" />
       </div>
 
+      {suggestion && <aside className="mt-3 rounded-xl bg-violet-50 p-3 text-sm leading-6 text-violet-900">
+        <div className="mb-1 flex items-center justify-between font-semibold">
+          <span>岗位匹配建议</span>
+          <button type="button" className="min-h-9 px-2 text-xs" onClick={() => {
+            setDismissed(true)
+            try { if (resumeId) sessionStorage.removeItem(`m-jd-suggestion:${resumeId}`) } catch { /* Dismiss locally when storage is unavailable. */ }
+          }}>收起</button>
+        </div>
+        <p className="whitespace-pre-wrap">{suggestion}</p>
+        <p className="mt-2 text-xs text-violet-600">点击下方经历进入编辑，请结合真实经历调整。</p>
+      </aside>}
       {isEmpty ? (
         <button
           type="button"

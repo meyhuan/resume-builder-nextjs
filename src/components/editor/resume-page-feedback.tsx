@@ -32,3 +32,23 @@ export function ResumePageFeedback({ pages, contentRef, onePage, pdfPageCount }:
     <span className="text-muted-foreground">页数仅供估算，实际分页以 PDF 预览为准</span>
   </div>
 }
+
+/**
+ * Screen-only A4 boundary overlay. It is driven by the same physical A4
+ * metrics as the status bar and is explicitly excluded from exported HTML.
+ * Chromium remains the source of truth for the final PDF fragmentation.
+ */
+export function ResumePageGuides({ pages }: { readonly pages: ResumePagination }) {
+  if (!pages.ready || pages.boundaries.length === 0) return null
+  return (
+    <div data-resume-page-guides data-export-hide="true" aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 z-20 print:hidden">
+      {pages.boundaries.map((boundary, index) => (
+        <div key={boundary} className="absolute inset-x-0 border-t border-dashed border-slate-300/80">
+          <span className="absolute right-1 -top-3 rounded bg-slate-100/90 px-1.5 py-0.5 text-[9px] font-medium tracking-wide text-slate-400 shadow-sm">
+            第 {index + 2} 页
+          </span>
+        </div>
+      ))}
+    </div>
+  )
+}

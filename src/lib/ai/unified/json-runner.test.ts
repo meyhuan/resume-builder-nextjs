@@ -65,7 +65,7 @@ it('clears the invalid preview before retrying draft formatting', async () => {
   expect(onRetry).toHaveBeenCalledTimes(1);
   expect(m.stream.mock.calls[1][0].system).toContain('answer: invalid_type');
 });
-it('does not convert upstream stream errors to successful draft output or silently retry them', async () => {
+it('does not accept partial output or retry a non-transient upstream error', async () => {
   const failure = new Error('provider failed');
   m.stream.mockReturnValue(
     streamParts([
@@ -80,6 +80,27 @@ it('does not convert upstream stream errors to successful draft output or silent
     }),
   ).rejects.toBe(failure);
   expect(m.stream).toHaveBeenCalledTimes(1);
+});
+it('retries an input-stream failure and validates the restarted response', async () => {
+  m.stream
+    .mockReturnValueOnce(
+      streamParts([
+        { type: 'text-delta', text: '{"answer":"部分内容' },
+        { type: 'error', error: new Error('Error in input stream') },
+      ]),
+    )
+    .mockReturnValueOnce(
+      streamParts([{ type: 'text-delta', text: '{"answer":"完整内容"}' }]),
+    );
+  const onRetry = vi.fn();
+  await expect(
+    runner()('JSON', '生成', z.object({ answer: z.string() }), {
+      onPartial: vi.fn(),
+      onRetry,
+    }),
+  ).resolves.toEqual({ answer: '完整内容' });
+  expect(m.stream).toHaveBeenCalledTimes(2);
+  expect(onRetry).toHaveBeenCalledTimes(1);
 });
 it('retries with schema feedback without exposing invalid content', async () => {
   m.generate

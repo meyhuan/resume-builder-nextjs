@@ -57,6 +57,7 @@ export default function PrintRenderer({ resume, templateId, savedTheme, onePage 
   )
 
   const [ready, setReady] = useState<boolean>(false)
+  const [onePageStatus, setOnePageStatus] = useState<'idle' | 'checking' | 'fit' | 'overflow'>(onePage ? 'checking' : 'idle')
 
   useLayoutEffect((): (() => void) => {
     setReadOnly(true)
@@ -72,6 +73,22 @@ export default function PrintRenderer({ resume, templateId, savedTheme, onePage 
     let cancelled = false
     const markReady = (): void => {
       if (cancelled) return
+      const root = document.querySelector<HTMLElement>('[data-print-template] .resume-document-main')
+      const hasRenderedTemplate = Boolean(root?.querySelector('.resume-container, [data-template-root]'))
+      if (!root || !hasRenderedTemplate) {
+        requestAnimationFrame(markReady)
+        return
+      }
+      if (onePage) {
+        const frame = document.querySelector<HTMLElement>('[data-one-page-print-frame]')
+        if (frame) {
+          compactOnePageLayout(root, onePageStrategy)
+          const result = fitOnePagePrintFrame(frame, root)
+          const status = result.fits ? 'fit' : 'overflow'
+          root.dataset.onePageStatus = status
+          setOnePageStatus(status)
+        }
+      }
       console.log('[print-renderer] ready')
       setReady(true)
     }
@@ -80,14 +97,6 @@ export default function PrintRenderer({ resume, templateId, savedTheme, onePage 
     void fontsPromise.finally((): void => {
       requestAnimationFrame((): void => {
         requestAnimationFrame(() => {
-          if (onePage) {
-            const root = document.querySelector<HTMLElement>('[data-print-template] .resume-document-main')
-            const frame = document.querySelector<HTMLElement>('[data-one-page-print-frame]')
-            if (root) {
-              compactOnePageLayout(root, onePageStrategy)
-              if (frame) fitOnePagePrintFrame(frame, root)
-            }
-          }
           markReady()
         })
       })
@@ -117,7 +126,7 @@ export default function PrintRenderer({ resume, templateId, savedTheme, onePage 
       `}</style>
       <Suspense fallback={<div data-print-loading="1" />}>
         <div data-one-page-print-frame={onePage ? 'true' : undefined}>
-          <div className="resume-document-main" data-one-page={onePage ? 'true' : 'false'} data-one-page-mode={onePage ? 'true' : 'false'} data-one-page-strategy={onePageStrategy} data-one-page-status={onePage ? 'fit' : 'idle'}>
+          <div className="resume-document-main" data-one-page={onePage ? 'true' : 'false'} data-one-page-mode={onePage ? 'true' : 'false'} data-one-page-strategy={onePageStrategy} data-one-page-status={onePage ? onePageStatus : 'idle'}>
             <TemplateComponent resume={renderableResume} theme={theme} />
           </div>
         </div>

@@ -52,6 +52,19 @@ it('does not overwrite edits made after generation', () => {
   });
   expect(applyChecked([p], 'r')).toBeNull();
 });
+it('applies saved proposals even when API validation reordered block properties', () => {
+  const p = proposal();
+  p.before = JSON.stringify({ html: '<p>协助登记</p>', type: 'text', id: 'b' });
+  const receipt = applyChecked([p], 'r');
+  expect(receipt).not.toBeNull();
+  expect(targetSnapshot(useAppStore.getState().resume, 'b')).toContain('协助完成登记');
+  expect(undoChecked(receipt!)).toBe(true);
+});
+it('still rejects changed content in a reordered snapshot', () => {
+  const p = proposal();
+  p.before = JSON.stringify({ html: '<p>不同原文</p>', type: 'text', id: 'b' });
+  expect(applyChecked([p], 'r')).toBeNull();
+});
 it('selective undo preserves unrelated edits', () => {
   const receipt = applyChecked([proposal()], 'r')!;
   useAppStore.getState().setResume((d) => {

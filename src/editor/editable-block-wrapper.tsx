@@ -126,6 +126,7 @@ export default function EditableBlockWrapper(props: EditableBlockWrapperProps): 
     return (
       <div
         data-ai-block-id={props.blockId}
+        data-print-splittable="true"
         className={`${CONTENT_BASE_STYLES} p-1 ${LIST_STYLES} ${className || ''}`.trim()}
         dangerouslySetInnerHTML={{ __html: hasContent ? content : '' }}
       />
@@ -179,6 +180,7 @@ export default function EditableBlockWrapper(props: EditableBlockWrapperProps): 
       aria-label={props.placeholder || '编辑正文'}
       data-ai-block-id={props.blockId}
       data-resume-edit-field="rich-text"
+        data-print-splittable="true"
       className={`${displayStyles} ${className || ''}`.trim()}
       onClick={startEditing}
       onMouseUp={finishNativeSelection}

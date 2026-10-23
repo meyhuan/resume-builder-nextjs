@@ -1,5 +1,12 @@
 @import "tailwindcss";
 
+/* Reveal controls without translating the reading surface or changing its height. */
+@keyframes assistant-reveal { from { opacity: 0; } to { opacity: 1; } }
+.assistant-reveal { animation: assistant-reveal 160ms ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  .assistant-reveal { animation: none; }
+}
+
 @theme {
   /* AI/Cyberpunk Theme (Electric Violet + Fuchsia) */
   --color-background: #ffffff;

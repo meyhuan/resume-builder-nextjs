@@ -84,7 +84,7 @@ describe('filter semantics', () => {
     ).toEqual([])
     expect(
       filterTemplates(templateCatalog, { languages: ['en'] }).map((t) => t.id),
-    ).toEqual(['moxu', 'mujian', 'huabu', 'yingke', 'shangwu'])
+    ).toEqual(['mujian', 'moxu', 'huabu', 'yingke', 'shangwu'])
   })
   it('counts quick entries using only the supplied visible list', () => {
     const tech = QUICK_FILTERS.find((q) => q.id === 'tech')!

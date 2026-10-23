@@ -10,7 +10,7 @@ import { fitOnePagePrintFrame } from '@/lib/one-page-layout'
 vi.mock('sonner', () => ({ toast: { info: vi.fn(), success: vi.fn(), warning: vi.fn() } }))
 const initialTheme: ThemeTokens = { primaryColor: '#7c3aed', textColor: '#171717', fontFamily: 'sans-serif', fontSize: 14, lineHeight: 1.6, spacingScale: 1, pagePaddingVertical: 16, pagePaddingHorizontal: 16 }
 
-function useFixture(height: number, override: Partial<ThemeTokens> = {}, strategy: OnePageStrategy = 'one-page') {
+function useFixture(height: number, override: Partial<ThemeTokens> = {}, strategy: OnePageStrategy = 'one-page', onOverflow?: () => void) {
   const [theme, setTheme] = useState({ ...initialTheme, ...override })
   const [enabled, setEnabled] = useState(false)
   const [snapshot, setSnapshot] = useState<AdjustableTokens | null>(null)
@@ -20,7 +20,7 @@ function useFixture(height: number, override: Partial<ThemeTokens> = {}, strateg
     return element
   })
   const contentRef = useRef<HTMLDivElement | null>(content)
-  const { status } = useOnePageMode({ contentRef, theme, enabled, snapshot, setSnapshot, strategy, patchTheme: (patch) => setTheme((current) => ({ ...current, ...patch })) })
+  const { status } = useOnePageMode({ contentRef, theme, enabled, snapshot, setSnapshot, strategy, onOverflow, patchTheme: (patch) => setTheme((current) => ({ ...current, ...patch })) })
   return { theme, enabled, setEnabled, snapshot, status }
 }
 
@@ -84,23 +84,35 @@ describe('automatic one-page readability', () => {
     expect(result.current.theme).toMatchObject({ lineHeight: 1.2, fontSize: 13, spacingScale: 0.2 })
   })
 
-  it('scales a small print reflow without clipping the frame before measuring it', () => {
+  it('uses the overflow callback instead of the default warning when provided', async () => {
+    const onOverflow = vi.fn()
+    const { result } = renderHook(() => useFixture(1500, {}, 'one-page', onOverflow))
+    act(() => result.current.setEnabled(true))
+    await tick(30)
+    expect(result.current.status).toBe('overflow')
+    expect(onOverflow).toHaveBeenCalledOnce()
+    expect(toast.warning).not.toHaveBeenCalled()
+  })
+
+  it('keeps a fitting print frame visible without applying a transform', () => {
     const frame = document.createElement('div')
     const root = document.createElement('div')
     document.body.append(frame)
     frame.append(root)
-    Object.defineProperty(root, 'scrollHeight', { configurable: true, value: 1200 })
-    Object.defineProperty(root, 'clientHeight', { configurable: true, value: 1200 })
-    vi.spyOn(root, 'getBoundingClientRect').mockReturnValue({ top: 0, bottom: 1200, height: 1200, width: 794 } as DOMRect)
+    Object.defineProperty(root, 'scrollHeight', { configurable: true, value: 1000 })
+    Object.defineProperty(root, 'clientHeight', { configurable: true, value: 1000 })
+    vi.spyOn(root, 'getBoundingClientRect').mockReturnValue({ top: 0, bottom: 1000, height: 1000, width: 794 } as DOMRect)
 
-    fitOnePagePrintFrame(frame, root)
+    const result = fitOnePagePrintFrame(frame, root)
 
-    expect(frame.style.height).toContain('px')
-    expect(frame.style.overflow).toBe('hidden')
-    expect(root.style.transform).toMatch(/^scaleY\(/)
+    expect(result.fits).toBe(true)
+    expect(frame.style.height).toBe('auto')
+    expect(frame.style.overflow).toBe('visible')
+    expect(root.style.transform).toBe('none')
+    expect(frame.dataset.onePageFit).toBe('true')
   })
 
-  it('scales a long document into one page without falling back to pagination', () => {
+  it('falls back to normal pagination when fitting would make text too small', () => {
     const frame = document.createElement('div')
     const root = document.createElement('div')
     document.body.append(frame)
@@ -109,11 +121,14 @@ describe('automatic one-page readability', () => {
     Object.defineProperty(root, 'clientHeight', { configurable: true, value: 2000 })
     vi.spyOn(root, 'getBoundingClientRect').mockReturnValue({ top: 0, bottom: 2000, height: 2000, width: 794 } as DOMRect)
 
-    fitOnePagePrintFrame(frame, root)
+    const result = fitOnePagePrintFrame(frame, root)
 
-    expect(frame.style.overflow).toBe('hidden')
-    expect(frame.style.height).toContain('px')
+    expect(result.fits).toBe(false)
+    expect(frame.style.overflow).toBe('visible')
     expect(frame.style.minHeight).toBe('0')
-    expect(root.style.transform).toMatch(/^scaleY\(/)
+    expect(frame.style.getPropertyValue('break-inside')).toBe('auto')
+    expect(frame.style.getPropertyValue('page-break-after')).toBe('auto')
+    expect(root.style.getPropertyValue('break-after')).toBe('auto')
+    expect(root.style.transform).toBe('none')
   })
 })

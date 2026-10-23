@@ -5,7 +5,7 @@ import {
   interviewPrepInputSchema,
   MAX_INTERVIEW_PREP_JD_LENGTH,
 } from '@/lib/ai/interview-prep-schema';
-import { withQuotaCheck } from '@/lib/quota/quota-guard';
+import { withCareerQuota } from '@/lib/quota/career-quota-guard';
 
 /**
  * POST /next-api/ai/interview-prep
@@ -14,7 +14,7 @@ import { withQuotaCheck } from '@/lib/quota/quota-guard';
  */
 export async function POST(request: NextRequest): Promise<Response> {
   try {
-    return withQuotaCheck('ai:editor-assist', async () => {
+    return await withCareerQuota(async () => {
       const body = await request.json();
       const parsed = interviewPrepInputSchema.safeParse(body);
       if (!parsed.success) {

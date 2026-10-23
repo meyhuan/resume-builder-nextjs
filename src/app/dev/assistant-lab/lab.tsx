@@ -63,6 +63,21 @@ function Content() {
 export default function AssistantLab() {
   const [revision, setRevision] = useState(0);
   const [demo, setDemo] = useState(false);
+  const loadLayoutDemo = async () => {
+    const resume: ResumeData = { ...sample, sections: [...sample.sections,
+      { id: 'projects', title: '项目经历', columns: 1, blocks: [
+        { id: 'empty-layout', type: 'text', html: '<p><br></p>' },
+        { id: 'project-layout', type: 'text', html: '<p>课程项目中使用 Excel 整理报名信息，核对重复报名记录，与同学一起完成数据整理和结果展示。</p>' },
+      ] },
+      { id: 'summary', title: '自我评价', columns: 1, blocks: [{ id: 'summary-layout', type: 'text', html: '<p>参与过校园活动的信息登记与物品发放，能使用 Excel 整理数据，愿意配合同学完成任务。</p>' }] },
+    ] };
+    const task = { id: crypto.randomUUID(), resumeId: sample.id, feature: 'generate' as const,
+      entry: 'module' as const, blockId: 'campus-activity', label: '在校经历' };
+    await set(`ai-unified-history:${sample.id}`, [{ task, turns: [], reviews: {}, receipts: {}, updatedAt: Date.now() }]);
+    useAppStore.setState({ resume, pastStates: [], futureStates: [] });
+    useEditorUiStore.setState({ assistantTask: task, activePanel: 'ai', showAiChat: true, pendingAiMessage: null });
+    setRevision(value => value + 1);
+  };
   const loadReviewDemo = async () => {
     const resume: ResumeData = {
       ...sample,
@@ -176,6 +191,7 @@ export default function AssistantLab() {
             <button onClick={() => void loadReviewDemo()}>
               加载全文优化示例（模拟）
             </button>
+            <button onClick={() => void loadLayoutDemo()}>加载布局验收简历</button>
             {demo && (
               <span className="text-amber-700">当前为模拟结果，不调用模型</span>
             )}

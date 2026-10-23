@@ -1,7 +1,8 @@
 'use client'
 
-import { useEffect, useLayoutEffect, useMemo, useRef, type ReactElement, type SyntheticEvent } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactElement, type SyntheticEvent } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { toast } from 'sonner'
 import { ArrowLeft } from 'lucide-react'
 import { createLogger } from '@/lib/logger'
@@ -13,6 +14,7 @@ import { htmlToPlainText } from '@/features/edit/form-fields/html-text'
 import { computeProgress } from '@/features/edit/progress/module-completeness'
 import { isMeaningfulText } from '@/features/edit/progress/meaningful-field'
 import { useInMiniProgram } from '../_components/use-mini-program'
+import { MobileAiAssistantDrawer } from '../_components/mobile-ai-assistant-drawer'
 import { AddMoreModules } from './_components/add-more-modules'
 import { DeveloperNote } from './_components/developer-note'
 import { HomeActionBar } from './_components/home-action-bar'
@@ -21,6 +23,8 @@ import { ResumeProfileCard } from './_components/resume-profile-card'
 import { SectionsList } from './_components/sections-list'
 import { PortfolioPreview } from './_components/portfolio-preview'
 import { TemplateSpecificSettings } from './_components/template-metrics-preview'
+import { MobileAiFab } from '../_components/mobile-ai-fab'
+import { AiToolsEntry } from './_components/ai-tools-entry'
 
 /**
  * Resume data already loaded on the server and passed as a prop.
@@ -94,6 +98,7 @@ export default function MobileEditHomeClient(
   const draft = useDraftStore((s): ResumeData | null => s.draft)
   const resumeId = useDraftStore((s): string | null => s.resumeId)
   const draftTemplateId = useDraftStore((s): string => s.templateId)
+  const [aiAssistantOpen, setAiAssistantOpen] = useState<boolean>(false)
   const hydratedRef = useRef<boolean>(false)
   const restoredScrollRef = useRef<boolean>(false)
   const restoredAnchorRef = useRef<boolean>(false)
@@ -470,6 +475,10 @@ export default function MobileEditHomeClient(
       )}
 
       <ResumeProfileCard resume={resume} progress={progress} missingItems={missingItems} />
+      <AiToolsEntry
+        resumeId={resumeId ?? initial?.id ?? ''}
+        onOpenAssistant={(): void => setAiAssistantOpen(true)}
+      />
 
       <div className="mt-2 px-3">
         <JobIntentionPreview resume={resume} />
@@ -483,9 +492,24 @@ export default function MobileEditHomeClient(
       <AddMoreModules emptyModules={emptyOptionalModules} />
 
       <DeveloperNote />
+      <div className="px-4 py-3 text-center">
+        <Link
+          href={inMiniProgram ? '/m/share-story?source=mini' : '/m/share-story?platform=mobile'}
+          className="inline-flex min-h-11 items-center rounded-lg px-4 text-sm text-violet-700 hover:bg-violet-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-violet-500"
+        >
+          分享使用体验到小红书
+        </Link>
+      </div>
       <HomeActionBar
         resumeId={resumeId ?? initial?.id ?? null}
         template={currentTemplateId}
+      />
+
+      <MobileAiFab resumeId={resumeId ?? initial?.id ?? ''} onClick={() => setAiAssistantOpen(true)} />
+      <MobileAiAssistantDrawer
+        isOpen={aiAssistantOpen}
+        onClose={(): void => setAiAssistantOpen(false)}
+        resumeId={resumeId ?? initial?.id ?? ''}
       />
     </div>
   )

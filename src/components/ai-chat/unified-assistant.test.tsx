@@ -132,6 +132,63 @@ async function mount() {
     name: '当前任务：校园旧物交换活动，查看详情和历史对话',
   });
 }
+async function mountFactExamples() {
+  mocks.saved = [{
+    task, reviews: {}, receipts: {}, updatedAt: 1,
+    turns: [{
+      requestId: 'fact-example', text: '润色', answer: '请核对修改',
+      questions: [], proposals: [], followups: [], direct: false,
+      charged: true, feature: 'polish',
+      missingFacts: [
+        { label: '性能问题闭环数量', hint: '如：累计定位并优化 ANR/OOM/卡顿问题 20 个，请按实际填写' },
+        { label: '兼容性适配机型数', hint: '例如：完成 10 款机型适配' },
+        { label: '其他信息', hint: '' },
+      ],
+    }],
+  }];
+  await mount();
+  return screen.getByRole('textbox', { name: '向 AI 描述修改需求' });
+}
+
+it('previews the complete fact example and accepts Tab into an editable draft without sending', async () => {
+  const input = await mountFactExamples();
+  fireEvent.click(screen.getByRole('button', { name: /\+ 性能问题闭环数量/ }));
+  expect(document.activeElement).toBe(input);
+  expect((input as HTMLTextAreaElement).value).toBe('性能问题闭环数量：');
+  expect(screen.getByText('示例：累计定位并优化 ANR/OOM/卡顿问题 20 个')).toBeTruthy();
+  expect(fireEvent.keyDown(input, { key: 'Tab', shiftKey: true })).toBe(true);
+  expect(fireEvent.keyDown(input, { key: 'Tab', isComposing: true })).toBe(true);
+  expect(fireEvent.keyDown(input, { key: 'Tab' })).toBe(false);
+  expect((input as HTMLTextAreaElement).value).toBe('性能问题闭环数量：累计定位并优化 ANR/OOM/卡顿问题 20 个');
+  expect(mocks.fetch).not.toHaveBeenCalled();
+  expect(screen.queryByText('按 Tab 填入示例')).toBeNull();
+  expect(fireEvent.keyDown(input, { key: 'Tab' })).toBe(true);
+  fireEvent.change(input, { target: { value: '性能问题闭环数量：累计定位并优化 ANR/OOM/卡顿问题 3 个' } });
+  reply();
+  fireEvent.click(screen.getByRole('button', { name: '发送消息' }));
+  await waitFor(() => expect(mocks.fetch).toHaveBeenCalledTimes(1));
+  expect(JSON.parse(mocks.fetch.mock.calls[0][1].body).text).toContain('问题 3 个');
+});
+
+it('switches unfilled examples, preserves drafts, supports clicking, and dismisses stale suggestions', async () => {
+  const input = await mountFactExamples();
+  fireEvent.change(input, { target: { value: '保留已有补充' } });
+  fireEvent.click(screen.getByRole('button', { name: /\+ 性能问题闭环数量/ }));
+  fireEvent.click(screen.getByRole('button', { name: /\+ 兼容性适配机型数/ }));
+  expect((input as HTMLTextAreaElement).value).toBe('保留已有补充\n兼容性适配机型数：');
+  fireEvent.click(screen.getByRole('button', { name: '按 Tab 填入示例' }));
+  expect((input as HTMLTextAreaElement).value).toBe('保留已有补充\n兼容性适配机型数：完成 10 款机型适配');
+  fireEvent.click(screen.getByRole('button', { name: /\+ 性能问题闭环数量/ }));
+  fireEvent.change(input, { target: { value: '自己填写' } });
+  expect(screen.queryByText('按 Tab 填入示例')).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: /\+ 性能问题闭环数量/ }));
+  fireEvent.keyDown(input, { key: 'Escape' });
+  expect(screen.queryByText('按 Tab 填入示例')).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: /\+ 其他信息/ }));
+  expect(fireEvent.keyDown(input, { key: 'Tab' })).toBe(true);
+  expect(mocks.fetch).not.toHaveBeenCalled();
+});
+
 it('starts a fresh module polish once, previews changes, and never replays restored history', async () => {
   mocks.saved = undefined;
   reply(true); // Even an incorrect direct response must not apply a starter request.
@@ -315,6 +372,7 @@ it('shows incremental draft text before completion, only applies the checked fin
   );
   act(() => stream.emit({ type: 'preview', text: '协助完成' }));
   expect(await screen.findByText('协助完成')).toBeTruthy();
+  const replyShell = screen.getByLabelText('生成中的草稿').closest('[data-assistant-reply]');
   expect(screen.getByText(/尚未完成事实核对/)).toBeTruthy();
   expect(screen.queryByText('应用这一处')).toBeNull();
   expect(useAppStore.getState().pastStates).toHaveLength(0);
@@ -326,6 +384,8 @@ it('shows incremental draft text before completion, only applies the checked fin
   act(() => stream.finish());
   await screen.findByText('已应用');
   expect(screen.queryByLabelText('生成中的草稿')).toBeNull();
+  expect(replyShell?.isConnected).toBe(true);
+  expect(screen.getByText('已应用').closest('[data-assistant-reply]')).toBe(replyShell);
   expect(useAppStore.getState().pastStates).toHaveLength(1);
   expect(JSON.stringify(mocks.saved)).not.toContain('尚未完成');
 });
@@ -1105,4 +1165,202 @@ it('batch conflict writes nothing and never reports acceptance', async () => {
   expect(useAppStore.getState().pastStates).toHaveLength(0);
   expect(events('apply')).toHaveLength(0);
   expect(events('conflict')).toHaveLength(2);
+});
+
+it('previews whole-resume steps until explicitly applied and supports undo all', async () => {
+  let taskStep = 0;
+  mocks.fetch.mockImplementation(async (url, options) => {
+    if (!options?.body) {
+      return { ok: true, json: async () => ({}) };
+    }
+    const body = JSON.parse(options.body);
+    taskStep += 1;
+    if (taskStep === 1) {
+      return {
+        ok: true,
+        json: async () => ({
+          turn: {
+            requestId: body.requestId,
+            text: body.text,
+            answer: '',
+            questions: [],
+            scope: 'resume',
+            coverage: [
+              { blockId: 'b', label: '经历 1', status: 'proposed' },
+              { blockId: 'c', label: '经历 2', status: 'unreviewed' },
+            ],
+            proposals: [
+              {
+                action: 'updateBlock',
+                blockId: 'b',
+                html: '<p>重构核心链路</p>',
+                reason: '突出价值',
+                before: targetSnapshot(resume, 'b'),
+                targetLabel: '经历 1',
+                factChecked: true,
+              },
+            ],
+            followups: [],
+            direct: false,
+            charged: true,
+            feature: 'polish',
+          },
+        }),
+      };
+    }
+    return {
+      ok: true,
+      json: async () => ({
+        turn: {
+          requestId: body.requestId,
+          text: body.text,
+          answer: '',
+          questions: [],
+          scope: 'resume',
+          coverage: [
+            { blockId: 'b', label: '经历 1', status: 'unchanged' },
+            { blockId: 'c', label: '经历 2', status: 'proposed' },
+          ],
+          proposals: [
+            {
+              action: 'updateBlock',
+              blockId: 'c',
+              html: '<p>优化第 2 段</p>',
+              reason: '更精炼',
+              before: targetSnapshot(resume, 'c'),
+              targetLabel: '经历 2',
+              factChecked: true,
+            },
+          ],
+          followups: [],
+          direct: false,
+          charged: false,
+          feature: 'polish',
+        },
+      }),
+    };
+  });
+  await mount();
+  fireEvent.change(screen.getByRole('textbox'), {
+    target: { value: '优化整份简历' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: '发送消息' }));
+
+  await screen.findByTestId('resume-step-controller');
+  expect(useAppStore.getState().resume.sections[0].blocks[0]).toEqual(resume.sections[0].blocks[0]);
+
+  // Click to confirm current module and advance to next module
+  fireEvent.click(
+    screen.getByRole('button', { name: /确认应用，优化下一模块/ }),
+  );
+  await screen.findByText('整份简历共 2 个模块已完成检查，请确认尚未应用的修改建议。');
+  expect(useAppStore.getState().resume.sections[0].blocks[1]).toEqual(resume.sections[0].blocks[1]);
+  fireEvent.click(screen.getByRole('button', { name: '应用这一处' }));
+  expect(useAppStore.getState().resume.sections[0].blocks[1]).toMatchObject({
+    id: 'c',
+    html: '<p>优化第 2 段</p>',
+  });
+
+  // Click one-click undo all to restore both modules
+  fireEvent.click(screen.getByRole('button', { name: /一键全部撤销/ }));
+  expect((useAppStore.getState().resume.sections[0].blocks[0] as { html: string }).html).toBe(
+    (resume.sections[0].blocks[0] as { html: string }).html,
+  );
+  expect((useAppStore.getState().resume.sections[0].blocks[1] as { html: string }).html).toBe(
+    (resume.sections[0].blocks[1] as { html: string }).html,
+  );
+});
+
+
+it('does not advance or charge another module when applying the current proposal conflicts', async () => {
+  let taskStep = 0;
+  mocks.fetch.mockImplementation(async (url, options) => {
+    if (!options?.body) {
+      return { ok: true, json: async () => ({}) };
+    }
+    const body = JSON.parse(options.body);
+    taskStep += 1;
+    if (taskStep === 1) {
+      return {
+        ok: true,
+        json: async () => ({
+          turn: {
+            requestId: body.requestId,
+            text: body.text,
+            answer: '',
+            questions: [],
+            scope: 'resume',
+            coverage: [
+              { blockId: 'b', label: '经历 1', status: 'proposed' },
+              { blockId: 'c', label: '经历 2', status: 'unreviewed' },
+            ],
+            proposals: [
+              {
+                action: 'updateBlock',
+                blockId: 'b',
+                html: '<p>重构核心链路</p>',
+                reason: '突出价值',
+                before: targetSnapshot(resume, 'b'),
+                targetLabel: '经历 1',
+                factChecked: true,
+              },
+            ],
+            followups: [],
+            direct: false,
+            charged: true,
+            feature: 'polish',
+          },
+        }),
+      };
+    }
+    return {
+      ok: true,
+      json: async () => ({
+        turn: {
+          requestId: body.requestId,
+          text: body.text,
+          answer: '',
+          questions: [],
+          scope: 'resume',
+          coverage: [
+            { blockId: 'b', label: '经历 1', status: 'unchanged' },
+            { blockId: 'c', label: '经历 2', status: 'proposed' },
+          ],
+          proposals: [
+            {
+              action: 'updateBlock',
+              blockId: 'c',
+              html: '<p>优化第 2 段</p>',
+              reason: '更精炼',
+              before: targetSnapshot(resume, 'c'),
+              targetLabel: '经历 2',
+              factChecked: true,
+            },
+          ],
+          followups: [],
+          direct: false,
+          charged: false,
+          feature: 'polish',
+        },
+      }),
+    };
+  });
+  await mount();
+  fireEvent.change(screen.getByRole('textbox'), {
+    target: { value: '优化整份简历' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: '发送消息' }));
+
+  await screen.findByTestId('resume-step-controller');
+  expect(useAppStore.getState().resume.sections[0].blocks[0]).toEqual(resume.sections[0].blocks[0]);
+
+  act(() => {
+    const changed = structuredClone(useAppStore.getState().resume);
+    (changed.sections[0].blocks[0] as { html: string }).html = '<p>用户手动修改的原文</p>';
+    useAppStore.setState({ resume: changed });
+  });
+  fireEvent.click(screen.getByRole('button', { name: /确认应用，优化下一模块/ }));
+  await screen.findByText('原文已变化，请重新生成');
+  expect(taskStep).toBe(1);
+  expect((useAppStore.getState().resume.sections[0].blocks[0] as { html: string }).html).toBe('<p>用户手动修改的原文</p>');
 });

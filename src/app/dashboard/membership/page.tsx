@@ -7,6 +7,7 @@ import { Crown, ArrowLeft, LogOut, Copy, Check, X, Sparkles, FileText, Zap, Tras
 import { useAuthStore } from '@/store/use-auth-store';
 import { useVipCheck } from '@/hooks/use-vip-check';
 import VipUpgradeDialog from '@/components/vip/vip-upgrade-dialog';
+import { DEFAULT_QUOTA_LIMITS } from '@/lib/quota/quota-config';
 
 interface VipInfo {
   isVip: boolean;
@@ -34,14 +35,15 @@ function getDaysRemaining(expireTime: string | null): number | null {
 }
 
 const COMPARE_ROWS: Array<{ label: string; free: string | false; vip: string | true }> = [
-  { label: 'AI 生成简历', free: '每日 3 次', vip: '无限次' },
-  { label: 'AI 续写 & 润色', free: '每日 5 次', vip: '无限次' },
-  { label: 'AI 编辑助手', free: '每日 5 次', vip: '无限次' },
+  { label: 'AI 生成简历', free: `每日 ${DEFAULT_QUOTA_LIMITS.aiGenerateResume} 次`, vip: '无限次' },
+  { label: 'AI 续写内容', free: `每日 ${DEFAULT_QUOTA_LIMITS.aiGenerateSection} 次`, vip: '无限次' },
+  { label: 'AI 润色文本', free: `每日 ${DEFAULT_QUOTA_LIMITS.aiPolishSection} 次`, vip: '无限次' },
+  { label: 'AI 编辑助手', free: `每日共 ${DEFAULT_QUOTA_LIMITS.aiEditorAssist} 次`, vip: '无限次' },
   { label: 'PDF 导出', free: '免费限 1 次', vip: '无水印 · 高清 · 无限' },
   { label: 'Markdown 导出', free: false, vip: true },
   { label: '图片导出', free: false, vip: true },
   { label: '精品模板', free: '部分可用', vip: '全部解锁' },
-  { label: 'AI 导入解析', free: '每日 3 次', vip: '无限次' },
+  { label: 'AI 导入解析', free: `每日 ${DEFAULT_QUOTA_LIMITS.aiImportSection} 次`, vip: '无限次' },
   { label: '一对一简历指导', free: false, vip: '修改建议' },
   { label: '求职增值功能', free: false, vip: '优先体验' },
 ];
@@ -108,11 +110,11 @@ export default function MembershipPage(): React.ReactElement {
   const isExpired = daysRemaining !== null && daysRemaining <= 0;
 
   const quotaItems = [
-    { label: 'AI 生成简历', remaining: quota.aiGenerateResume?.remaining, limit: 3, cycle: 'daily' },
-    { label: 'AI 导入解析', remaining: quota.aiImportSection?.remaining, limit: 3, cycle: 'daily' },
-    { label: 'AI 续写内容', remaining: quota.aiGenerateSection?.remaining, limit: 5, cycle: 'daily' },
-    { label: 'AI 润色文本', remaining: quota.aiPolishSection?.remaining, limit: 5, cycle: 'daily' },
-    { label: 'AI 编辑助手', remaining: quota.aiEditorAssist?.remaining, limit: 5, cycle: 'daily' },
+    { label: 'AI 生成简历', remaining: quota.aiGenerateResume?.remaining, limit: quota.aiGenerateResume?.limit ?? DEFAULT_QUOTA_LIMITS.aiGenerateResume, cycle: 'daily' },
+    { label: 'AI 导入解析', remaining: quota.aiImportSection?.remaining, limit: quota.aiImportSection?.limit ?? DEFAULT_QUOTA_LIMITS.aiImportSection, cycle: 'daily' },
+    { label: 'AI 续写内容', remaining: quota.aiGenerateSection?.remaining, limit: quota.aiGenerateSection?.limit ?? DEFAULT_QUOTA_LIMITS.aiGenerateSection, cycle: 'daily' },
+    { label: 'AI 润色文本', remaining: quota.aiPolishSection?.remaining, limit: quota.aiPolishSection?.limit ?? DEFAULT_QUOTA_LIMITS.aiPolishSection, cycle: 'daily' },
+    { label: 'AI 编辑助手', remaining: quota.aiEditorAssist?.remaining, limit: quota.aiEditorAssist?.limit ?? DEFAULT_QUOTA_LIMITS.aiEditorAssist, cycle: 'daily' },
     { label: 'PDF 导出', remaining: quota.pdfExport?.remaining, limit: 1, cycle: 'lifetime' },
   ];
 

@@ -3,8 +3,10 @@ import { useDraftStore } from './draft-store'
 import { DEFAULT_EDITOR_META } from '@/entities/editor/editor-meta'
 import { DEFAULT_PREVIEW_THEME } from '@/app/m/preview/_components/preview-settings-sheet'
 
+const { track } = vi.hoisted(() => ({ track: vi.fn() }))
+vi.mock('@/lib/analytics', () => ({ track }))
 vi.mock('idb-keyval', () => ({ get: vi.fn(), set: vi.fn(), del: vi.fn() }))
-afterEach(() => vi.unstubAllGlobals())
+afterEach(() => { vi.unstubAllGlobals(); track.mockClear() })
 
 describe('preview thumbnail persistence', () => {
   it('preserves committed editor metadata without changing the draft', async () => {
@@ -19,6 +21,7 @@ describe('preview thumbnail persistence', () => {
     expect(body.content.name).toBe('测试简历')
     expect(body.thumbnail).toBe('data:image/png;base64,fixture')
     expect(useDraftStore.getState().draft).toBe(draft)
+    expect(track).not.toHaveBeenCalled()
   })
   it('returns a failed result when thumbnail persistence fails', async () => {
     useDraftStore.getState().setFromServer('fixture', { id: 'fixture', name: '测试简历', sections: [] })
@@ -65,7 +68,16 @@ describe('main integration save guards', () => {
     useDraftStore.getState().setFromServer('new-resume', { id: 'new-resume', name: '新简历', sections: [] })
     finish({ ok: true })
     expect(await saving).toEqual({ ok: false, error: '简历已切换，请保存当前简历' })
+    expect(track).toHaveBeenCalledWith('resume_save_success', expect.objectContaining({ resumeId: 'old-resume' }))
     expect(useDraftStore.getState().draft?.id).toBe('new-resume')
     expect(useDraftStore.getState().draft?.name).toBe('新简历')
   })
+})
+
+
+it('never emits a successful save for an HTTP failure', async () => {
+  useDraftStore.getState().setFromServer('failed-save', { id: 'failed-save', name: '测试', sections: [] })
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 503, text: async () => '' }))
+  expect((await useDraftStore.getState().saveAll()).ok).toBe(false)
+  expect(track).not.toHaveBeenCalledWith('resume_save_success', expect.anything())
 })

@@ -15,6 +15,7 @@ vi.mock('@/lib/prisma', () => ({
 }));
 vi.mock('@/lib/sync-user-identity', () => ({ syncUserIdentity: mocks.sync }));
 import { consumeAssistantQuota } from './quota';
+import { quotaFeature } from './types';
 const require = createRequire(import.meta.url);
 const runtime = (() => {
   try {
@@ -61,16 +62,30 @@ beforeEach(async () => {
   }));
 });
 afterAll(async () => db.close());
-it('caps concurrent generation at the existing daily feature limit', async () => {
+it.each([
+  ['generate', 10],
+  ['polish', 15],
+  ['chat', 20],
+] as const)('caps concurrent %s requests at the new daily limit of %i', async (feature, limit) => {
   const results = await Promise.allSettled(
-    Array.from({ length: 6 }, () =>
-      consumeAssistantQuota('u', false, 'polish'),
+    Array.from({ length: limit + 1 }, () =>
+      consumeAssistantQuota('u', false, feature),
     ),
   );
-  expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(5);
+  expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(limit);
   expect(results.filter((r) => r.status === 'rejected')).toHaveLength(1);
   const result = await db.query('SELECT "quotas" FROM "UserQuota"');
-  expect(result.rows[0].quotas['ai:polish-section'].used).toBe(5);
+  expect(result.rows[0].quotas[quotaFeature(feature)].used).toBe(limit);
+});
+it('lets a user who exhausted the old quota continue without resetting usage', async () => {
+  const now = new Date();
+  const date = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  await db.query('INSERT INTO "UserQuota" ("userId","quotas") VALUES ($1,$2)', [
+    'u', JSON.stringify({ 'ai:polish-section': { used: 5, date } }),
+  ]);
+  await consumeAssistantQuota('u', false, 'polish');
+  const { rows } = await db.query('SELECT "quotas" FROM "UserQuota"');
+  expect(rows[0].quotas['ai:polish-section']).toEqual({ used: 6, date });
 });
 it('updates only the charged feature without overwriting other balances', async () => {
   await consumeAssistantQuota('u', false, 'generate');
@@ -118,7 +133,7 @@ it('keeps historical usage in the limit and charges the canonical account across
   ]);
   await db.query('INSERT INTO "UserQuota" ("userId","quotas") VALUES ($1,$2)', [
     'shadow',
-    JSON.stringify({ 'ai:polish-section': { used: 3, date } }),
+    JSON.stringify({ 'ai:polish-section': { used: 13, date } }),
   ]);
   mocks.sync.mockResolvedValue({
     id: 'canonical',
@@ -139,7 +154,7 @@ it('keeps historical usage in the limit and charges the canonical account across
   );
   expect(rows[0].userId).toBe('canonical');
   expect(rows[0].quotas['ai:polish-section'].used).toBe(2);
-  expect(rows[1].quotas['ai:polish-section'].used).toBe(3);
+  expect(rows[1].quotas['ai:polish-section'].used).toBe(13);
 });
 it('does not charge or create another identity after identity sync fails', async () => {
   mocks.sync.mockRejectedValueOnce(new Error('identity conflict'));

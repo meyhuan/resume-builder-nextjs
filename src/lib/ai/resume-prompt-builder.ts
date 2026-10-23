@@ -34,7 +34,8 @@ const IDENTITY_LABELS: Record<UserIdentity, string> = {
  */
 export function buildSystemPrompt(): string {
   return `你是一位拥有10年经验的专业简历撰写专家。你擅长根据用户的身份、意向岗位和个人经历，撰写高质量、专业的中文简历内容。
-你的输出必须是一个合法的JSON字符串，可以被JSON.parse直接解析。不得包含任何多余内容（如解释、注释、markdown标记、代码块标记等）。`;
+你的输出必须是一个合法的JSON字符串，可以被JSON.parse直接解析。不得包含任何多余内容（如解释、注释、markdown标记、代码块标记等）。
+真实性优先于篇幅与模块完整：只整理用户明确提供的经历与技能；求职岗位、专业和年限不是经历证据。不得新增公司、学校、实习、项目、证书、工具、成绩或日期。未提供的个人字段和时间留空，未提供的经历数组省略或为空。不能把一个项目拆成多个独立项目，也不能将课程项目改写为实习。用户否认的经历不得生成。`;
 }
 
 /**
@@ -128,16 +129,16 @@ function buildSectionInstructions(input: WizardInput): string {
       lines.push('请生成以下模块（按重要性排序）：');
       lines.push('1. base_info — 基本信息（姓名用"姓名"占位，手机和邮箱用占位符）');
       lines.push('2. job_intention — 求职意向');
-      lines.push('3. education — 教育经历（1条，根据专业生成合理的学校和课程）');
+      lines.push('3. education — 仅整理用户提供的学校、学历和课程，缺失字段留空');
       lines.push('4. self_evaluation — 自我评价');
       if (input.campusActivities.length > 0) {
-        lines.push('5. school_exps — 在校/校园经历（根据用户提供的校园活动关键词生成1-2条）');
+        lines.push('5. school_exps — 仅整理用户提供的校园活动，不新增活动或职责');
       }
       lines.push(`${input.campusActivities.length > 0 ? '6' : '5'}. skills — 专业技能`);
       if (input.certificates.length > 0) {
         lines.push(`${input.campusActivities.length > 0 ? '7' : '6'}. qualifications — 资质证书`);
       }
-      lines.push('注意：在校生通常无正式工作经历，不要生成experience字段，可生成intern（实习经历）如果合理。');
+      lines.push('experience 与 intern 仅在用户明确提供对应真实经历时生成，不能从求职身份推断。');
       break;
 
     case 'graduate':
@@ -147,9 +148,9 @@ function buildSectionInstructions(input: WizardInput): string {
       lines.push('3. education — 教育经历（1条）');
       lines.push('4. self_evaluation — 自我评价');
       if (input.projects.length > 0) {
-        lines.push('5. program_experience — 项目经历（根据用户提供的项目关键词生成1-2条）');
+        lines.push('5. program_experience — 仅整理用户提供的项目，项目数量不得超过输入，不新增项目');
       }
-      lines.push('6. intern — 实习经历（生成1条与意向岗位相关的实习经历）');
+      lines.push('6. intern — 仅在用户提供实际实习经历时整理，否则省略或返回空数组');
       lines.push('7. skills — 专业技能');
       if (input.certificates.length > 0) {
         lines.push('8. qualifications — 资质证书');
@@ -157,14 +158,13 @@ function buildSectionInstructions(input: WizardInput): string {
       break;
 
     case 'professional': {
-      const years: number = parseWorkYears(input.workYears);
       lines.push('请生成以下模块（按重要性排序）：');
       lines.push('1. base_info — 基本信息');
       lines.push('2. job_intention — 求职意向');
       lines.push('3. self_evaluation — 自我评价');
-      lines.push(`4. experience — 工作经历（生成${years <= 3 ? '1-2' : '2-3'}条，最近的经历在前）`);
+      lines.push('4. experience — 只整理用户提供的实际工作经历，最近的经历在前；未提供时省略');
       if (input.projects.length > 0) {
-        lines.push('5. program_experience — 项目经历（根据用户提供的项目关键词生成1-2条）');
+        lines.push('5. program_experience — 仅整理用户提供的项目，项目数量不得超过输入，不新增项目');
       }
       lines.push('6. education — 教育经历（1条）');
       lines.push('7. skills — 专业技能');
@@ -180,13 +180,13 @@ function buildSectionInstructions(input: WizardInput): string {
 
 function buildContentGuidelines(input: WizardInput, identityLabel: string): string {
   const years: number = parseWorkYears(input.workYears);
-  const lines: string[] = ['## 内容生成要求'];
+  const lines: string[] = ['## 内容生成要求（对标资深HR与猎头标准）'];
 
   lines.push(`1. 所有内容必须严格围绕【${input.targetRole}】岗位生成，禁止出现无关内容`);
-  lines.push('2. 内容必须专业、清晰、详细，可适当扩展以丰富简历');
-  lines.push('3. 尽可能使用量化数据（百分比、数量、时间等）来体现成果');
-  lines.push('4. 使用专业术语，符合简历行业规范');
-  lines.push('5. HTML内容使用<ul><li>格式罗列要点，或使用<p>标签包裹段落');
+  lines.push('2. **结构化小标题（关键）**：experience、intern、program_experience、school_exps 中的每段经历必须包含 2~4 条要点，HTML 严格使用 `<ul><li><strong>核心维度：</strong>具体内容</li></ul>` 格式，每条开头必须提炼 4~6 字专业维度小标题并加粗（例如：`<strong>核心项目协同：</strong>`、`<strong>架构设计与实现：</strong>`、`<strong>性能治理与优化：</strong>`），每条 40~70 字');
+  lines.push('3. **事实内结构化**：按「实际动作 + 用户提供的方法 + 已有结果」组织内容；缺失的部分省略。不得根据岗位常识添加工具、具体组件、业务方法或成果，不得扩大参与/协助职责。事实较少时允许少于2条或短于40字，不为凑长度补造细节。');
+  lines.push('4. **真实感量化占位符（[X]机制）**：对于用户未在输入中明确提供的具体成果数字，严禁凭空捏造具体假数字，每段最多允许 2 处 `[X]%` 或 `[X]+` 占位符留白（仅在有考核指标处使用，如“核心场景崩溃率降低 [X]%”、“覆盖 [X]+ 款机型”），引导用户后续填入真实战果');
+  lines.push('5. **专业技能分组结构化**：skills 模块的 content 使用 `<ul><li><strong>技能分类：</strong>具体技能掌握程度与应用场景描述</li></ul>` 格式分类呈现，避免杂乱罗列名词');
   lines.push('6. 时间格式统一使用"YYYY.MM"，如"2023.06"');
 
   if (input.identity === 'professional') {
@@ -217,8 +217,8 @@ function buildOutputSchema(): string {
 interface ExternalResume {
   base_info: {
     name: string;          // 使用"姓名"占位
-    gender?: string;       // "男" 或 "女" 或留空
-    age?: string;          // 如 "22"
+    gender?: string;       // 仅用户明确提供时填写，否则留空
+    age?: string;          // 仅用户明确提供时填写，否则留空
     phone?: string;        // 使用"电话号码"占位
     mail?: string;         // 使用"邮箱"占位
     hide_avatar?: boolean; // false
@@ -299,7 +299,7 @@ function buildFinalInstructions(): string {
 2. 不得包含任何多余内容（如解释、注释、markdown代码块标记\`\`\`等）
 3. 不得包含JSON之外的任何文字
 4. 返回前请自行检查JSON格式有效性
-5. 所有HTML内容字段不得留空，必须有实质性的专业内容`;
+5. 只为有事实依据的模块生成内容；信息不足时省略模块或保留空字段，不得为填满简历编造内容`;
 }
 
 function parseWorkYears(workYears: string): number {
@@ -309,7 +309,7 @@ function parseWorkYears(workYears: string): number {
 
 function generateYearsGuidance(years: number): string {
   if (years < 1) return '▶ 突出学习能力/实习项目/技术热情';
-  if (years < 3) return '▶ 强调技术深度/独立负责模块/快速成长';
-  if (years < 5) return '▶ 展示架构能力/带人经验/核心业务负责';
-  return '▶ 突出技术决策/团队管理/跨部门协作/业务影响力';
+  if (years < 3) return '▶ 展示已有实践与真实职责，不推断独立负责能力';
+  if (years < 5) return '▶ 展示已提供的业务与技术经验，不推断架构或带人经验';
+  return '▶ 整理已提供的长期经验，不从年限推断管理职责或决策权';
 }

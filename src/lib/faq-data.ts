@@ -1,3 +1,4 @@
+import { DEFAULT_QUOTA_LIMITS } from '@/lib/quota/quota-config';
 export interface FaqItem {
   readonly question: string;
   readonly answer: string;
@@ -67,7 +68,7 @@ export const FAQ_ITEMS: readonly FaqItem[] = [
   {
     question: '电脑编辑器里的 AI 助手、岗位匹配、翻译怎么用？免费吗？',
     answer:
-      '登录后可在电脑编辑器使用 AI 编辑助手：对话改写、岗位匹配、翻译、面试准备（BOSS 打招呼、自我介绍、面试题）和语法检查。免费用户每天共 5 次，会员不限次数。这些能力目前在电脑网页编辑器提供，小程序编辑页暂未接入。',
+      `登录后可在电脑编辑器使用 AI 编辑助手：对话改写、岗位匹配、翻译、面试准备（BOSS 打招呼、自我介绍、面试题）和语法检查。免费用户每天共 ${DEFAULT_QUOTA_LIMITS.aiEditorAssist} 次，会员不限次数。这些能力目前在电脑网页编辑器提供，小程序编辑页暂未接入。`,
   },
   {
     question: '什么是 ATS 友好简历？智简简历支持吗？',

@@ -10,7 +10,7 @@ describe('AI thinking policy', () => {
     expect(AI_THINKING_POLICY.default).toBe('disabled');
     expect(AI_THINKING_POLICY['jd-match']).toBe('low');
     expect(AI_THINKING_POLICY['interview-prep']).toBe('low');
-    expect(AI_THINKING_POLICY['fact-check']).toBe('low');
+    expect(AI_THINKING_POLICY['fact-check']).toBe('disabled');
   });
 
   it('raises complex chat to low thinking while leaving short chat disabled', () => {

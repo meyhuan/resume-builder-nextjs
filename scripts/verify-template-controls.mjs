@@ -212,6 +212,10 @@ async function verifyOnePage(page, id, directory) {
         await exportPage.emulateMediaType('print')
         await exportPage.setContent(html.replace('<head>', `<head><base href="${baseUrl}/">`), { waitUntil: 'load' })
         await exportPage.evaluate(() => document.fonts.ready)
+        await exportPage.evaluate(async () => {
+          const guard = window.__resumeOnePageGuardReady
+          if (guard) await guard
+        })
         const pdf = Buffer.from(await exportPage.pdf({ format: 'A4', preferCSSPageSize: true, printBackground: true }))
         fs.writeFileSync(path.join(directory, `${viewport}-${fixture}-one-page.pdf`), pdf)
         const analysis = await analyzePdf(exportPage, pdf)

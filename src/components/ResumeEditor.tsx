@@ -1,5 +1,7 @@
 "use client"
 
+import { captureTemplateJourney } from '@/lib/templates/template-journey'
+
 /**
  * ResumeEditor - Main Editor Component
  * App with Dynamic Template Loading
@@ -24,13 +26,14 @@ import { revalidateDashboard } from '@/app/actions'
 import { useResumePagination } from '@/hooks/use-resume-pagination'
 import { useEditorSidebarPreference } from '@/hooks/use-editor-sidebar-preference'
 import { usePdfPreviewPageCount } from '@/hooks/use-pdf-preview-page-count'
-import { ResumePageFeedback } from '@/components/editor/resume-page-feedback'
+import { ResumePageGuides } from '@/components/editor/resume-page-feedback'
 import { useOnePageMode } from '@/hooks/use-one-page-mode'
 import { toast } from 'sonner'
 import { DEFAULT_ONE_PAGE_STRATEGY, type AdjustableTokens, type OnePageStrategy } from '@/entities/editor/editor-meta'
 import { extractEditorMeta, embedEditorMeta } from '@/entities/editor/editor-meta'
 import AiSectionProvider from '@/components/ai-section/ai-section-provider'
 import ExportPreviewDialog from '@/components/export-preview-dialog'
+import { scanResumePlaceholders } from '@/lib/resume/placeholder-scan'
 import { useRequireAuth } from '@/hooks/use-require-auth'
 import { WxLoginDialog } from '@/components/auth/WxLoginDialog'
 import { useAuthStore } from '@/store/use-auth-store'
@@ -289,6 +292,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
   const [showPreview, setShowPreview] = useState(false)
   const [pdfBlobUrl, setPdfBlobUrl] = useState<string>('')
   const [pdfBlob, setPdfBlob] = useState<Blob | null>(null)
+  const [pdfBlobRevision, setPdfBlobRevision] = useState<string>('')
   const [isGenerating, setIsGenerating] = useState(false)
   const [isConfirmingExport, setIsConfirmingExport] = useState(false)
   const draftBackupRestored = useRef(false)
@@ -469,6 +473,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
       resumeId,
       templateId: tpl,
       entry: initialData ? 'existing_resume' : 'new_resume',
+      selectionMode: !initialData && !searchParams.has('template') ? 'default' : 'restored_or_direct',
       source: searchParams.get('source') || undefined,
       hasPersistedResume: Boolean(resumeId),
     })
@@ -697,6 +702,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
       }
       
       // 3. Save content to DB first
+      const saveJourney = captureTemplateJourney(currentTpl, currentId)
       const res = await fetchWithNetworkRetry(`/next-api/resumes/${currentId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -767,6 +773,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
       }
       
       track('resume_save_success', {
+        ...saveJourney,
         resumeId: currentId,
         templateId: currentTpl,
         entry: createCompleted ? 'pc_editor_create' : 'pc_editor_update',
@@ -1025,6 +1032,21 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
     })
   }, [tpl, setThemeForTemplate])
 
+  const handleOnePageOverflow = useCallback((): void => {
+    if (tpl === 'yiyetong') {
+      toast.warning('已达到可读性下限，建议精简内容或保留分页')
+      return
+    }
+    toast.warning('当前模板无法在保证可读性的情况下完整放入一页', {
+      description: '可以尝试「一页通」模板，它更适合信息量较多的简历。切换模板不会修改简历内容。',
+      duration: 9000,
+      action: {
+        label: '查看一页通',
+        onClick: (): void => setActivePanel('templates'),
+      },
+    })
+  }, [setActivePanel, tpl])
+
   // One-page mode hook
   const { status: onePageStatus, reset: resetOnePage } = useOnePageMode({
     contentRef: resumeBodyRef,
@@ -1034,6 +1056,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
     snapshot: onePageSnapshot,
     setSnapshot: setOnePageSnapshot,
     strategy: onePageStrategy,
+    onOverflow: handleOnePageOverflow,
   })
   const previewRevision = `${currentFingerprint}:${onePageStatus}`
   const { pdfPageCount, recordPreview } = usePdfPreviewPageCount(previewRevision)
@@ -1049,6 +1072,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
     }
     requireAuth(() => {
       try {
+        track('export_click', { resumeId, templateId: tpl, exportType: 'markdown', entry: 'pc_editor_toolbar' })
         const markdownContent = exportResumeToMarkdown(resume)
         const blob = new Blob([markdownContent], { type: 'text/markdown;charset=utf-8' })
         const url = URL.createObjectURL(blob)
@@ -1057,15 +1081,17 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
         a.download = `${sanitizeExportFileName(resume.name)}.md`
         a.click()
         URL.revokeObjectURL(url)
+        track('export_success', { resumeId, templateId: tpl, exportType: 'markdown', successKind: 'download_initiated', entry: 'pc_editor_toolbar' })
         if (!showMiniProgramExportReminder()) {
           toast.success('Markdown导出成功')
         }
       } catch (error) {
+        track('export_failed', { resumeId, templateId: tpl, exportType: 'markdown', entry: 'pc_editor_toolbar' })
         console.error('Export markdown failed:', error)
         toast.error('Markdown导出失败，请重试')
       }
     })
-  }, [resume, requireAuth, requirePdf, showMiniProgramExportReminder, trackExportPaywallBlock])
+  }, [resume, resumeId, tpl, requireAuth, requirePdf, showMiniProgramExportReminder, trackExportPaywallBlock])
 
   async function exportDocxWithAuth(): Promise<void> {
     if (isConfirmingExport) return
@@ -1179,11 +1205,14 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
       entry: 'pc_editor_toolbar',
     })
     try {
+      const exportJourney = captureTemplateJourney(tpl, resumeId)
       await exportImage<HTMLDivElement>(printRef, { fileName: 'resume', pixelRatio: 2 })
       if (!showMiniProgramExportReminder()) {
         toast.success('图片导出成功')
       }
       track('export_success', {
+        ...exportJourney,
+        successKind: 'download_initiated',
         resumeId,
         templateId: tpl,
         exportType: 'image',
@@ -1223,6 +1252,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
       const autoOptimized = response.headers.get('X-Pdf-Auto-Optimized') === '1'
       const url: string = window.URL.createObjectURL(blob)
       setPdfBlob(blob)
+      setPdfBlobRevision(generatedRevision)
       setPdfBlobUrl(url)
       setShowPreview(true)
       void recordPreview(blob, generatedRevision)
@@ -1240,12 +1270,20 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
   /** Confirm export: consume quota and download PDF. */
   async function handleConfirmExport(): Promise<void> {
     if (!pdfBlob || isConfirmingExport) return
+    if (pdfBlobRevision !== previewRevision) {
+      toast.info('简历内容已更新，请重新生成 PDF 预览')
+      return
+    }
     if (hasUnsavedRef.current) backupEditorDraft('before-export-auth-check')
     requireAuth(() => { void confirmExportWithAuth() })
   }
 
   async function confirmExportWithAuth(): Promise<void> {
     if (!pdfBlob || isConfirmingExport) return
+    if (pdfBlobRevision !== previewRevision) {
+      toast.info('简历内容已更新，请重新生成 PDF 预览')
+      return
+    }
     setIsConfirmingExport(true)
     track('export_click', {
       resumeId,
@@ -1293,6 +1331,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
       return
     }
 
+    const exportJourney = captureTemplateJourney(tpl, exportResumeId)
     let downloadUrl = ''
     let exportId = ''
     try {
@@ -1386,6 +1425,8 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
       toast.success('PDF 导出成功')
     }
     track('export_success', {
+      ...exportJourney,
+      successKind: 'file_ready',
       resumeId: exportResumeId,
       templateId: tpl,
       exportType: 'pdf',
@@ -1404,6 +1445,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
     if (pdfBlobUrl) window.URL.revokeObjectURL(pdfBlobUrl)
     setPdfBlobUrl('')
     setPdfBlob(null)
+    setPdfBlobRevision('')
     setShowPreview(false)
   }
 
@@ -1414,8 +1456,9 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
       setOnePageMode(false)
       toast.info('已切换模板，一页模式已关闭')
     }
+    if (next !== tpl) track('template_select', { resumeId, templateId: next, previousTemplateId: tpl, entry: 'pc_editor' })
     setTpl(next)
-  }, [onePageMode, resetOnePage])
+  }, [onePageMode, resetOnePage, resumeId, tpl])
 
   // 获取当前模板组件
   const templateConfig = getTemplate(tpl)
@@ -1460,14 +1503,9 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
       <AiSectionProvider requireVip={requireAi}>
       <main className="flex-1 flex overflow-hidden relative z-10">
         <ResumeActionWorkspace className={activePanel ? 'hidden md:flex print:block' : ''}>
-        <ResumePageFeedback
-          pages={pages}
-          contentRef={printRef}
-          onePage={onePageMode}
-          pdfPageCount={pdfPageCount}
-        />
         <div data-editor-canvas className="min-h-0 min-w-0 flex-1 overflow-auto p-3 sm:p-6 xl:p-8 custom-scrollbar bg-slate-50/30">
           <div className="relative mx-auto max-w-[210mm] md:w-[210mm] md:max-xl:[zoom:0.8] print:[zoom:1]">
+            <ResumePageGuides pages={pages} />
             <div
               ref={printRef}
               className="page w-full bg-white shadow-[0_0_50px_rgba(0,0,0,0.05)] rounded-xl print:shadow-none print:rounded-none"
@@ -1585,6 +1623,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
         remainingQuota={quota.pdfExport.remaining}
         isVip={isVip}
         isConfirming={isConfirmingExport}
+        placeholderCount={resume ? scanResumePlaceholders(resume).count : 0}
       />
       <JdAnalysisDialog resumeId={resumeId} />
       <TranslateDialog resumeId={resumeId} template={tpl} />

@@ -45,6 +45,10 @@ export function AvatarSlot(props: AvatarSlotProps): ReactElement | null {
   if (hidden) return null
 
   const hasImage: boolean = Boolean(baseInfo?.avatarUrl)
+  // An empty avatar means the user has not uploaded a photo. Keep the slot
+  // out of the rendered resume instead of showing a gray placeholder block.
+  if (!hasImage) return null
+
   const image: ReactElement = hasImage
     ? <img src={baseInfo?.avatarUrl} alt="avatar" className="w-full h-full object-cover" />
     : (

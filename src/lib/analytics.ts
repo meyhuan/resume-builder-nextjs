@@ -1,5 +1,6 @@
 'use client'
 
+import { templateJourneyProperties } from '@/lib/templates/template-journey'
 import { getPublicJavaApiBaseUrl } from '@/lib/java-api-base'
 
 export type AnalyticsEventName =
@@ -35,6 +36,11 @@ export type AnalyticsEventName =
   | 'ai_assist_success'
   | 'ai_assist_failed'
   | 'ai_assist_blocked_by_quota'
+  | 'ai_tool_open'
+  | 'translation_apply'
+  | 'draft_save_success'
+  | 'draft_save_failed'
+  | 'template_impression'
   | 'template_select'
   | 'resume_preview'
   | 'editor_open'
@@ -298,6 +304,10 @@ function shouldSuppressRepeatedFetchError(properties: AnalyticsProperties): bool
 }
 
 export function track(eventName: AnalyticsEventName, properties: AnalyticsProperties = {}): void {
+  try { trackUnsafe(eventName, properties) } catch { /* Analytics must not interrupt product actions. */ }
+}
+
+function trackUnsafe(eventName: AnalyticsEventName, properties: AnalyticsProperties): void {
   if (typeof window === 'undefined') return
   let baseUrl: string
   try {
@@ -313,6 +323,7 @@ export function track(eventName: AnalyticsEventName, properties: AnalyticsProper
   const clientType = getClientType(url)
   const enrichedProperties: AnalyticsProperties = {
     clientType,
+    ...templateJourneyProperties(eventName, properties),
     ...properties,
   }
   const isSelfReportedSource = eventName === 'acquisition_source_selected' || eventName === 'acquisition_source_skipped'

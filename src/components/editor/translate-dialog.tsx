@@ -28,6 +28,7 @@ import {
 import { EditorAssistQuotaHint } from '@/components/ai/editor-assist-quota-hint';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import { track } from '@/lib/analytics';
 import {
   applyTranslatedHeader,
   applyTranslatedHeaderToClone,
@@ -68,7 +69,10 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 export function TranslateDialog(props: {
   readonly resumeId?: string;
   readonly template: string;
+  /** Optional destination used by mobile/web-view callers after creating a copy. */
+  readonly successPath?: (resumeId: string) => string;
 }): ReactElement {
+  const { resumeId, template, successPath } = props;
   const open = useEditorUiStore((state) => state.activeModal === 'translate');
   const closeModal = useEditorUiStore((state) => state.closeModal);
   const { requireAiFeature } = useVipCheck();
@@ -162,6 +166,7 @@ export function TranslateDialog(props: {
           setFailedCount(Number(data.failedCount) || 0);
           setState('success');
           trackAssistSuccess('translate');
+          track('translation_apply', { mode, targetLanguage, resumeId: resumeId ?? '' });
           refreshEditorAssistQuota();
           if (mode === 'overwrite') {
             applyTranslatedHeader({ language: targetLanguage });
@@ -169,10 +174,10 @@ export function TranslateDialog(props: {
             working = applyTranslatedHeaderToClone(working, { language: targetLanguage });
           }
           if (mode === 'copy') {
-            void createCopiedResume(working, props.template, targetLanguage)
+            void createCopiedResume(working, template, targetLanguage)
               .then((id) => {
                 closeModal();
-                router.push(`/editor/${id}`);
+                router.push(successPath ? successPath(id) : `/editor/${id}`);
               })
               .catch((error: unknown) => {
                 setState('error');
@@ -188,7 +193,7 @@ export function TranslateDialog(props: {
       setState('error');
       setErrorMessage(error instanceof Error ? error.message : '翻译失败');
     }
-  }, [closeModal, mode, props.template, requireAiFeature, router, targetLanguage]);
+  }, [closeModal, mode, requireAiFeature, resumeId, router, successPath, targetLanguage, template]);
 
   const progressPercent = progress.total > 0
     ? Math.round((progress.completed / progress.total) * 100)

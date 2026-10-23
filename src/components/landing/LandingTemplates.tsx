@@ -1,10 +1,11 @@
 "use client";
 
 import React from "react";
+import { track } from "@/lib/analytics";
+import { useTemplateImpressions } from "@/components/templates/use-template-impressions";
 import Link from "next/link";
-import Image from "next/image";
 import { templateCatalog } from "@/lib/templates/template-catalog";
-import type { TemplateMetadata as TemplateConfig } from "@/lib/templates/template-metadata";
+import { TemplateCover } from "@/components/templates/template-cover";
 import { templateLabels } from "@/lib/templates/template-taxonomy";
 import {
   ArrowRight,
@@ -24,16 +25,7 @@ interface TemplatesSectionProps {
   id?: string;
 }
 
-const FEATURED_TEMPLATE_IDS = [
-  "qingsui",
-  "lifeng",
-  "xinghe",
-  "hengjian",
-  "yuanshan",
-  "yiyetong",
-  "ziji",
-  "simple",
-] as const;
+const featuredTemplates = templateCatalog.slice(0, 8);
 
 const TEMPLATE_SCENES: Record<string, string> = {
   qingsui: "校招 / 应届",
@@ -61,25 +53,10 @@ const TEMPLATE_HIGHLIGHTS = [
   },
 ];
 
-function getFeaturedTemplates(
-  templates: readonly TemplateConfig[],
-): TemplateConfig[] {
-  const templateMap = new Map(
-    templates.map((template) => [template.id, template]),
-  );
-  const featuredTemplates = FEATURED_TEMPLATE_IDS.map((id) =>
-    templateMap.get(id),
-  ).filter((template): template is TemplateConfig => Boolean(template));
-
-  return featuredTemplates.length > 0
-    ? featuredTemplates
-    : templates.slice(0, 8);
-}
-
 export const LandingTemplates = ({ id }: TemplatesSectionProps) => {
   const templates = templateCatalog;
-  const featuredTemplates = getFeaturedTemplates(templates);
   const railRef = React.useRef<HTMLDivElement>(null);
+  useTemplateImpressions(railRef, featuredTemplates.map(template => template.id).join(","), "landing_featured");
   const [scrollState, setScrollState] = React.useState({
     canScrollLeft: false,
     canScrollRight: false,
@@ -233,16 +210,16 @@ export const LandingTemplates = ({ id }: TemplatesSectionProps) => {
                       <Link
                         key={item.id}
                         href={`/editor?template=${item.id}`}
+                        data-template-id={item.id}
+                        onClick={() => track("template_select", { templateId: item.id, entry: "landing_featured" })}
                         className="group snap-start rounded-2xl border border-slate-100 bg-white p-2.5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-violet-200 hover:shadow-xl hover:shadow-violet-500/10"
                       >
                         <div className="relative aspect-[3/4] overflow-hidden rounded-xl bg-slate-100">
                           {item.preview ? (
-                            <Image
+                            <TemplateCover
                               src={item.preview}
                               alt={`${item.name}简历模板预览`}
-                              fill
-                              sizes="(max-width: 640px) 168px, 198px"
-                              className="object-cover object-top transition-transform duration-500 group-hover:scale-[1.03]"
+                              className="absolute inset-0 h-full w-full object-cover object-top transition-transform duration-500 group-hover:scale-[1.03]"
                             />
                           ) : (
                             <div className="absolute inset-0 flex items-center justify-center text-slate-300">

@@ -6,10 +6,10 @@
  * and mini-program export flows (dual-auth: cookie or HMAC sign).
  */
 import type { Page } from 'puppeteer-core'
-import { getClientPaginationScript } from '@/utils/paginate-html'
 import { mintPrintToken } from '@/lib/print-token'
 import { rasterizePdfToPngs } from '@/lib/pdf-to-png'
 import { closeSharedPuppeteerPage, newSharedPuppeteerPage } from '@/lib/puppeteer-browser'
+import { getPrintLayoutDiagnostics, preparePrintFragmentation, type PrintLayoutDiagnostics } from '@/lib/print-pagination'
 
 export interface RenderResult {
   readonly buffer: Buffer
@@ -24,6 +24,7 @@ export interface RenderDiagnostics {
   readonly printableContent?: PrintableContentSnapshot
   readonly pdfBytes?: number
   readonly previewPageCount?: number
+  readonly printLayout?: PrintLayoutDiagnostics
 }
 
 export interface PrintableContentSnapshot {
@@ -71,7 +72,7 @@ function errorMessage(error: unknown): string {
 }
 
 async function waitForDocumentAssets(page: Page): Promise<void> {
-  const failedPortfolioImages = await page.evaluate(async (timeoutMs: number): Promise<string[]> => {
+  const failedImages = await page.evaluate(async (timeoutMs: number): Promise<string[]> => {
     const wait = (ms: number): Promise<void> => new Promise((resolve) => {
       window.setTimeout(resolve, ms)
     })
@@ -84,13 +85,17 @@ async function waitForDocumentAssets(page: Page): Promise<void> {
       })
     }))
     await Promise.race([Promise.all([fontsReady, imagesReady]), wait(timeoutMs)])
-    return Array.from(document.querySelectorAll<HTMLImageElement>('.portfolio-appendix img'))
+    // An avatar is part of the resume header, so it must be validated too.
+    // Previously only portfolio images were checked; a failed avatar request
+    // therefore silently produced the gray placeholder in exported files.
+    return Array.from(document.querySelectorAll<HTMLImageElement>('[data-resume-avatar] img, .portfolio-appendix img'))
       .filter((image) => !image.complete || image.naturalWidth === 0)
       .map((image) => image.currentSrc || image.src)
   }, PRINT_PAGE_ASSET_READY_TIMEOUT_MS)
-  if (failedPortfolioImages.length > 0) {
-    throw new ExportRenderError('PRINT_NOT_READY', 'Portfolio images failed to load', {
-      failedPortfolioImageCount: failedPortfolioImages.length,
+  if (failedImages.length > 0) {
+    throw new ExportRenderError('PRINT_NOT_READY', 'Resume images failed to load', {
+      failedImageCount: failedImages.length,
+      failedImages: failedImages.slice(0, 5),
     })
   }
 }
@@ -180,12 +185,30 @@ export async function renderViaPrintPage(opts: RenderViaPrintPageOpts): Promise<
     await page.goto(printUrl, { waitUntil: ['domcontentloaded', 'load'], timeout: PRINT_PAGE_NAVIGATION_TIMEOUT_MS })
     await waitForDocumentAssets(page)
 
-    // Wait for the client renderer to flag readiness, but tolerate timeouts.
-    await page.waitForSelector('[data-print-ready="1"]', { timeout: 15_000 }).catch(() => {
-      console.warn('[render-via-print-page] print-ready timed out, continuing', { traceId: opts.traceId })
-    })
+    // The renderer marks readiness only after fonts, layout compaction and two
+    // animation frames. Capturing before that marker creates preview/export
+    // drift, so a timeout is a real render failure.
+    try {
+      await page.waitForSelector('[data-print-ready="1"]', { timeout: 15_000 })
+    } catch (error) {
+      throw new ExportRenderError('PRINT_NOT_READY', 'Print page did not signal layout readiness', {
+        traceId: opts.traceId,
+        causeMessage: errorMessage(error),
+      })
+    }
     printableContent = await waitForPrintableContent(page, opts.traceId)
     await waitForDocumentAssets(page)
+    await page.evaluate(async () => {
+      await document.fonts?.ready?.catch(() => undefined)
+      await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())))
+    })
+    const printLayout = await page.evaluate(getPrintLayoutDiagnostics)
+    if (printLayout.hiddenOverflowAncestors > 0 || printLayout.transformedRoot) {
+      throw new ExportRenderError('PRINT_NOT_READY', 'Print layout contains clipped or transformed content', {
+        traceId: opts.traceId,
+        printLayout,
+      })
+    }
 
     if (opts.requireOnePage) {
       const onePageMarker = await page.$('.resume-document-main[data-one-page="true"]')
@@ -209,17 +232,15 @@ export async function renderViaPrintPage(opts: RenderViaPrintPageOpts): Promise<
           traceId: opts.traceId,
           renderDurationMs: Date.now() - startedAt,
           printableContent,
+          printLayout,
         },
       }
     }
 
-    // Apply smart per-block pagination (skips one-page/bleed layouts internally):
-    // short blocks keep together, tall blocks stay splittable to avoid large blanks.
-    await page.evaluate(getClientPaginationScript())
-
     // Generate the PDF
+    await page.evaluate(preparePrintFragmentation)
     const pdfBuffer = Buffer.from(
-      await page.pdf({ printBackground: true, displayHeaderFooter: false, preferCSSPageSize: true })
+      await page.pdf({ printBackground: true, displayHeaderFooter: false, preferCSSPageSize: true, waitForFonts: true })
     )
     console.log('[render-via-print-page] pdf bytes', { traceId: opts.traceId, size: pdfBuffer.length })
 
@@ -252,6 +273,7 @@ export async function renderViaPrintPage(opts: RenderViaPrintPageOpts): Promise<
         traceId: opts.traceId,
         renderDurationMs: Date.now() - startedAt,
         printableContent,
+        printLayout,
         pdfBytes: pdfBuffer.length,
         previewPageCount: pageScreenshots.length,
       },

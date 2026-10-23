@@ -8,6 +8,7 @@ import { normalizeResumeContent } from '@/entities/resume/normalize-resume-conte
 import { prepareResumeForExport } from '@/lib/resume-export-visibility'
 import { TEMPLATE_REGISTRY } from '@/templates/template-loader'
 import { buildResumeFontFaceCss } from '@/entities/theme/font-stacks'
+import { PRINT_PAGINATION_CSS } from '@/lib/print-pagination'
 import PrintRenderer from './print-renderer'
 
 interface PrintPageProps {
@@ -81,7 +82,7 @@ export default async function PrintPage(props: PrintPageProps): Promise<ReactEle
           width: 210mm;
           max-width: 210mm;
           margin: 0 auto;
-          overflow: hidden;
+          overflow: visible;
           break-inside: avoid !important;
           page-break-after: avoid !important;
         }`
@@ -107,6 +108,7 @@ export default async function PrintPage(props: PrintPageProps): Promise<ReactEle
         .print-stage { width: 210mm; margin: 0 auto; background: #ffffff; }
         .print-stage .page { width: 210mm; min-height: ${printPageMinHeightCss}; background: #ffffff; box-shadow: none; border-radius: 0; }
         .print-stage * { box-shadow: none !important; filter: none !important; text-shadow: none !important; font-synthesis: style; }
+        ${PRINT_PAGINATION_CSS}
         /* Keep the first-page top owned by the template; @page handles later page margins. */
         @page { size: A4; ${pageMarginCss} }
         ${firstPageMarginCss}

@@ -18,6 +18,7 @@ import type {
 } from '@/lib/ai/unified/stream';
 const bodySchema = z.object({
   task: taskSchema,
+  reviewedBlockIds: z.array(z.string().max(100)).max(3200).default([]),
   turns: z
     .array(historyTurnSchema)
     .max(MAX_TASK_TURNS - 1)
@@ -95,9 +96,11 @@ export async function POST(request: NextRequest) {
     let chargePromise: Promise<void> | undefined;
     const messageSource =
       body.messageSource || (body.fromFollowup ? 'suggestion' : 'user');
+    let currentStage: AssistantStage = 'planning';
     const execute = (emit?: (event: AssistantStreamEvent) => void) =>
       runAssistant({
         task: body.task,
+        reviewedBlockIds: body.reviewedBlockIds,
         turns: body.turns,
         text: body.text,
         messageSource,
@@ -108,8 +111,10 @@ export async function POST(request: NextRequest) {
         run: createJsonRunner(extractAIConfig(request), signal),
         ...(emit
           ? {
-              onProgress: (stage: AssistantStage) =>
-                emit({ type: 'progress', requestId: body.requestId, stage }),
+              onProgress: (stage: AssistantStage) => {
+                currentStage = stage;
+                emit({ type: 'progress', requestId: body.requestId, stage });
+              },
               onPreview: (text: string) =>
                 emit({ type: 'preview', requestId: body.requestId, text }),
             }
@@ -133,6 +138,17 @@ export async function POST(request: NextRequest) {
             if (active)
               controller.enqueue(encoder.encode(JSON.stringify(event) + '\n'));
           };
+          // Some reverse proxies terminate an otherwise healthy streaming
+          // request when the upstream model takes a while to produce its next
+          // token. Keep the NDJSON connection active while the assistant works.
+          const heartbeat = setInterval(() => {
+            if (active)
+              emit({
+                type: 'progress',
+                requestId: body.requestId,
+                stage: currentStage,
+              });
+          }, 15000);
           try {
             const turn = await execute(emit);
             signal.throwIfAborted();
@@ -149,6 +165,7 @@ export async function POST(request: NextRequest) {
               active = false;
               controller.close();
             }
+            clearInterval(heartbeat);
           }
         },
         cancel() {

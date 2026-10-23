@@ -583,7 +583,52 @@ export default function WarmTemplate(props: WarmTemplateProps): ReactElement {
           </ColumnDroppable>
         </div>
       </TwoColumnDndProvider>
-      <style>{`@media print { .warm-column-grid { display: block !important; min-height: 0 !important; } .warm-column-grid:after { content: ''; display: block; clear: both; } .warm-left-column { float: left; } .warm-right-column { float: right; } .warm-column-panel { min-height: 0 !important; height: auto !important; padding-top: 0 !important; padding-bottom: 0 !important; } }`}</style>
+      <style>{`@media print {
+        .warm-column-grid {
+          display: block !important;
+          min-height: 0 !important;
+          background: linear-gradient(to right, #f9f9f9 0 32%, #ffffff 32% 100%);
+          -webkit-box-decoration-break: clone;
+          box-decoration-break: clone;
+        }
+        .warm-column-grid:after {
+          content: '';
+          display: block;
+          clear: both;
+        }
+        .warm-left-column { float: left; }
+        .warm-right-column { float: right; }
+        .warm-left-column .warm-column-panel,
+        .warm-right-column .warm-column-panel {
+          border-radius: 0 !important;
+        }
+        .warm-column-panel {
+          min-height: 0 !important;
+          height: auto !important;
+          padding-top: 0 !important;
+          padding-bottom: 0 !important;
+        }
+
+        /*
+         * The left column is naturally exhausted on the first fragment. A
+         * cloned background rail keeps later fragments visually anchored to
+         * the same two-column grid instead of leaving a large, accidental
+         * white gutter beside the continuation content.
+         */
+        .resume-container[data-bleed="true"] {
+          position: relative;
+          overflow: visible !important;
+          border-radius: 0 !important;
+        }
+        .warm-right-column .warm-column-panel {
+          padding-top: 7mm !important;
+        }
+        .warm-right-column main {
+          padding-top: 7mm !important;
+          -webkit-box-decoration-break: clone;
+          box-decoration-break: clone;
+        }
+      }`}</style>
     </div>
   )
 }

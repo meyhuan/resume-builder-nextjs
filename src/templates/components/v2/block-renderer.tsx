@@ -36,7 +36,7 @@ export default function BlockRenderer(props: BlockRendererProps): ReactElement {
   const spacingClassName = styles.spacing || ''
 
   return (
-    <div data-resume-block="" className={`flow-root ${containerClassName} ${spacingClassName}`.trim()}>
+    <div data-resume-block="" data-print-block="true" className={`flow-root ${containerClassName} ${spacingClassName}`.trim()}>
       {slots?.header ? slots.header(block, themeColor) : renderBlockHeader(block, styles, onEditingChange)}
       {slots?.content ? slots.content(block) : renderBlockContent(block, styles, onEditingChange)}
       {slots?.footer && slots.footer(block)}
@@ -162,7 +162,7 @@ function StructuredBlockHeader(props: {
     : ''
 
   return (
-    <div className={styles.header || 'flex justify-between items-start gap-3 mb-2'}>
+    <div data-print-block-header="true" className={styles.header || 'flex justify-between items-start gap-3 mb-2'}>
       <div className="flex-1 min-w-0">
         <h3 className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
           <span

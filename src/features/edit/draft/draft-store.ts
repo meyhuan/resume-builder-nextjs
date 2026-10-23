@@ -1,5 +1,8 @@
 'use client'
 
+import { captureTemplateJourney } from '@/lib/templates/template-journey'
+
+import { track } from '@/lib/analytics'
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import { get as idbGet, set as idbSet, del as idbDel } from 'idb-keyval'
@@ -189,6 +192,8 @@ export const useDraftStore = create<DraftState>()(
         try {
           while (draft) {
             const normalizedDraft = normalizeResume(draft, resumeId)
+            const savedTemplate = get().templateId
+            const journey = captureTemplateJourney(savedTemplate, resumeId)
             const res = await fetch(`/next-api/resumes/${resumeId}`, {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
@@ -198,6 +203,7 @@ export const useDraftStore = create<DraftState>()(
               const text = await res.text().catch(() => '')
               throw new Error(text || `保存失败 (${res.status})`)
             }
+            track('resume_save_success', { ...journey, resumeId, templateId: savedTemplate, entry: 'mobile_edit', saveKind: 'content' })
             // A slow response must not resurrect deleted modules or clear newer edits.
             const current = get()
             if (current.resumeId !== resumeId) {

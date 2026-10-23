@@ -1,5 +1,7 @@
 'use client'
 
+import { captureTemplateJourney, serializeTemplateJourney } from '@/lib/templates/template-journey'
+
 import { useEffect, useMemo, useRef, useState, useCallback, Suspense, type ReactElement } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
@@ -17,6 +19,7 @@ import { exportImage } from '@/io/export-image'
 import { useVipCheck } from '@/hooks/use-vip-check'
 import VipUpgradeDialog from '@/components/vip/vip-upgrade-dialog'
 import { useOnePageMode, type OnePageStatus } from '@/hooks/use-one-page-mode'
+import { calculateResumePages } from '@/lib/resume-page-metrics'
 import { embedEditorMeta, extractEditorMeta, type AdjustableTokens } from '@/entities/editor/editor-meta'
 import { createLogger } from '@/lib/logger'
 import { track } from '@/lib/analytics'
@@ -25,6 +28,7 @@ import { useInMiniProgram } from '../_components/use-mini-program'
 import { useMiniProgramCapabilities } from '../_components/use-mini-program-capabilities'
 import { BottomActionBar } from './_components/bottom-action-bar'
 import { PortfolioAppendix } from '@/components/portfolio/portfolio-appendix'
+import { scanResumePlaceholders } from '@/lib/resume/placeholder-scan'
 import {
   ONE_PAGE_BADGE_STYLES,
   PreviewSettingsSheet,
@@ -334,6 +338,24 @@ export default function MobilePreviewClient(): ReactElement {
     [templateId, setThemeForTemplate],
   )
 
+  const handleOnePageOverflow = useCallback((): void => {
+    if (templateId === 'yiyetong') {
+      toast.warning('已达到可读性下限，建议精简内容或保留分页')
+      return
+    }
+    toast.warning('当前模板无法在保证可读性的情况下完整放入一页', {
+      description: '可以尝试「一页通」模板，它更适合信息量较多的简历。切换模板不会修改简历内容。',
+      duration: 9000,
+      action: {
+        label: '查看一页通',
+        onClick: (): void => {
+          setTab('template')
+          setSheetOpen(true)
+        },
+      },
+    })
+  }, [templateId])
+
   // Drive the auto-fit algorithm against the unscaled template content (innerRef).
   const { status: onePageStatus } = useOnePageMode({
     contentRef: resumeBodyRef,
@@ -343,7 +365,13 @@ export default function MobilePreviewClient(): ReactElement {
     snapshot: onePageSnapshot,
     setSnapshot: setOnePageSnapshot,
     strategy: MOBILE_ONE_PAGE_STRATEGY,
+    onOverflow: handleOnePageOverflow,
   })
+  const mobilePages = calculateResumePages(
+    contentHeight,
+    theme.pagePaddingVertical ?? 22,
+    onePageFit && onePageStatus === 'fit',
+  )
 
   // When switching templates, clear the snapshot to avoid restoring one
   // template's tokens onto another. The next template starts fresh.
@@ -353,6 +381,7 @@ export default function MobilePreviewClient(): ReactElement {
       setOnePageSnapshot(null)
       setTemplateId(nextId)
       track('template_select', {
+        entry: 'mobile_preview',
         resumeId: draftResumeId || searchParams.get('id'),
         templateId: nextId,
         previousTemplateId: templateId,
@@ -431,6 +460,7 @@ export default function MobilePreviewClient(): ReactElement {
   const createExportJob = useCallback(async (
     payload: { readonly resumeId: string; readonly templateId: string; readonly type: ExportType; readonly fileName: string },
   ): Promise<ExportJobResponse> => {
+    const exportJourney = captureTemplateJourney(payload.templateId, payload.resumeId)
     const response = await fetch('/next-api/exports/mini', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -458,6 +488,8 @@ export default function MobilePreviewClient(): ReactElement {
     const job = await response.json() as ExportJobResponse
     log.info('create export job parsed', { id: job.id, type: job.type, fileName: job.fileName, previewImages: job.previewImages?.length, expiresAt: job.expiresAt })
     track('export_success', {
+      ...exportJourney,
+      successKind: 'file_ready',
       resumeId: payload.resumeId,
       templateId: payload.templateId,
       exportType: payload.type,
@@ -471,13 +503,14 @@ export default function MobilePreviewClient(): ReactElement {
    * Mini-program: native exportResult page (with share/download capabilities).
    * H5: /m/export-result page.
    */
-  const openExportResult = useCallback((job: ExportJobResponse): void => {
+  const openExportResult = useCallback((job: ExportJobResponse, resumeId: string): void => {
     const canUseNativeResult = job.type !== 'markdown' || miniMarkdownExportSupported
     if (inMiniProgram && canUseNativeResult) {
       // Try navigating to mini-program native page for better share/download UX
       const canNavigateTo = typeof window.wx?.miniProgram?.navigateTo === 'function'
       if (canNavigateTo) {
         const params = new URLSearchParams({
+          resumeId,
           id: job.id,
           type: job.type,
           fileName: job.fileName,
@@ -498,6 +531,7 @@ export default function MobilePreviewClient(): ReactElement {
     // H5 export result page
     log.info('open export result (H5)', { id: job.id, type: job.type })
     const params = new URLSearchParams({
+      resumeId,
       id: job.id,
       type: job.type,
       fileName: job.fileName,
@@ -561,6 +595,7 @@ export default function MobilePreviewClient(): ReactElement {
       )
       const contentWithMeta = embedEditorMeta(cleanContent, { ...previousMeta, ...editorMeta })
 
+      const saveJourney = captureTemplateJourney(templateId, targetId)
       const response = await fetchWithNetworkRetry(`/next-api/resumes/${targetId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -577,6 +612,7 @@ export default function MobilePreviewClient(): ReactElement {
         log.warn('failed to sync preview state before export', { status: response.status, message })
         throw new Error('保存失败，修改已保留，请重试或取消。')
       }
+      track('resume_save_success', { ...saveJourney, resumeId: targetId, templateId, entry: 'mobile_preview', saveKind: 'content_and_settings' })
     })()
 
     syncPreviewStateFlightRef.current = { key: syncKey, promise: syncPromise }
@@ -657,6 +693,13 @@ export default function MobilePreviewClient(): ReactElement {
         return
       }
 
+      if (resume) {
+        const scan = scanResumePlaceholders(resume)
+        if (scan.hasPlaceholders) {
+          toast.warning(`简历中尚有 ${scan.count} 处 [X] 待填数据，请注意核对`)
+        }
+      }
+
       await syncPreviewState(targetResumeId)
       const canUseNativeResult = type !== 'markdown' || miniMarkdownExportSupported
       if (inMiniProgram && canUseNativeResult && typeof window.wx?.miniProgram?.navigateTo === 'function') {
@@ -666,13 +709,14 @@ export default function MobilePreviewClient(): ReactElement {
           type,
           fileName,
         })
+        params.set('templateAnalytics', serializeTemplateJourney(templateId, targetResumeId))
         const page = `/pages/exportResult/exportResult?${params.toString()}`
         log.info('navigateTo native mini-program exportResult before confirm', { page })
         window.wx.miniProgram.navigateTo({ url: page })
         return
       }
       const job = await createExportJob({ resumeId: targetResumeId, templateId, type, fileName })
-      openExportResult(job)
+      openExportResult(job, targetResumeId)
     } catch (err: unknown) {
       const msg = err instanceof Error
         ? err.message
@@ -720,7 +764,6 @@ export default function MobilePreviewClient(): ReactElement {
           className="min-h-0 flex-1 overflow-auto overscroll-contain px-3 pt-4"
           style={{
             touchAction: 'pan-x pan-y',
-            // Bottom padding accounts for the fixed action bar (72px) + safe area.
             paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 88px)',
           }}
           onTouchStart={handleTouchStart}
@@ -768,6 +811,17 @@ export default function MobilePreviewClient(): ReactElement {
                   pointerEvents: 'none',
                 }}
               >
+                {mobilePages.boundaries.length > 0 && (
+                  <div data-mobile-page-guides aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 z-20">
+                    {mobilePages.boundaries.map((boundary, index) => (
+                      <div key={boundary} className="absolute inset-x-0 border-t border-dashed border-slate-300/80">
+                        <span className="absolute right-1 -top-3 rounded bg-slate-100/90 px-1.5 py-0.5 text-[9px] font-medium tracking-wide text-slate-400 shadow-sm">
+                          第 {index + 2} 页
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 <Suspense fallback={<TemplateFallback />}>
                   <div ref={resumeBodyRef} className="resume-document-main" data-one-page={onePageFit && onePageStatus === 'fit' ? 'true' : 'false'} data-one-page-mode={onePageFit ? 'true' : 'false'} data-one-page-strategy="one-page" data-one-page-status={onePageStatus}>
                     {Template ? <Template resume={renderableResume} theme={theme} /> : null}

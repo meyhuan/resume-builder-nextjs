@@ -20,7 +20,7 @@ import type { RefObject } from 'react'
 import { toast } from 'sonner'
 import type { ThemeTokens } from '@/entities/theme/theme-tokens'
 import { DEFAULT_ONE_PAGE_STRATEGY, type AdjustableTokens, type OnePageStrategy } from '@/entities/editor/editor-meta'
-import { compactOnePageLayout, measureOnePageContentHeight } from '@/lib/one-page-layout'
+import { compactOnePageLayout, measureNaturalOnePageContentHeight, ONE_PAGE_CONTENT_RESERVE_PX } from '@/lib/one-page-layout'
 
 export type OnePageStatus = 'idle' | 'fitting' | 'fit' | 'overflow'
 
@@ -39,6 +39,8 @@ export interface UseOnePageModeOptions {
   setSnapshot: (s: AdjustableTokens | null) => void
   /** User-selected goal for fitting. Defaults to the one-page-first strategy. */
   strategy?: OnePageStrategy
+  /** Called once when automatic fitting reaches its lower limits and still overflows. */
+  onOverflow?: () => void
 }
 
 export interface UseOnePageModeReturn {
@@ -84,7 +86,7 @@ function mmToPx(mm: number): number {
  * Hook that drives the one-page mode feature.
  */
 export function useOnePageMode(opts: UseOnePageModeOptions): UseOnePageModeReturn {
-  const { contentRef, theme, patchTheme, enabled, snapshot, setSnapshot, strategy = DEFAULT_ONE_PAGE_STRATEGY } = opts
+  const { contentRef, theme, patchTheme, enabled, snapshot, setSnapshot, strategy = DEFAULT_ONE_PAGE_STRATEGY, onOverflow } = opts
   const [status, setStatus] = useState<OnePageStatus>(enabled ? 'fitting' : 'idle')
 
   // Track whether we are currently running the fit algorithm to avoid re-entry.
@@ -100,7 +102,7 @@ export function useOnePageMode(opts: UseOnePageModeOptions): UseOnePageModeRetur
 
   // ── Compute A4 target height ──────────────────────────────────────────
   useEffect(() => {
-    targetHeightRef.current = mmToPx(297)
+    targetHeightRef.current = mmToPx(297) - ONE_PAGE_CONTENT_RESERVE_PX
   }, [])
 
   // ── Save snapshot on enable (only if no snapshot yet) ─────────────────
@@ -194,7 +196,7 @@ export function useOnePageMode(opts: UseOnePageModeOptions): UseOnePageModeRetur
 
     // Manual mode reports the actual fit without changing the user's values.
     if (strategy === 'manual') {
-      setStatus(measureOnePageContentHeight(el) <= targetHeightRef.current ? 'fit' : 'overflow')
+      setStatus(measureNaturalOnePageContentHeight(el) < targetHeightRef.current ? 'fit' : 'overflow')
       fittingRef.current = false
       return
     }
@@ -215,9 +217,9 @@ export function useOnePageMode(opts: UseOnePageModeOptions): UseOnePageModeRetur
     }
 
     const targetH = targetHeightRef.current
-    const contentH = measureOnePageContentHeight(el)
+    const contentH = measureNaturalOnePageContentHeight(el)
 
-    if (contentH <= targetH) {
+    if (contentH < targetH) {
       setStatus('fit')
       overflowToastShown.current = false
       fittingRef.current = false
@@ -261,13 +263,17 @@ export function useOnePageMode(opts: UseOnePageModeOptions): UseOnePageModeRetur
     } else {
       setStatus('overflow')
       if (!overflowToastShown.current) {
-        toast.warning('已达到可读性下限，建议精简内容或保留分页')
+        if (onOverflow) {
+          onOverflow()
+        } else {
+          toast.warning('已达到可读性下限，建议精简内容或保留分页')
+        }
         overflowToastShown.current = true
       }
     }
 
     fittingRef.current = false
-  }, [contentRef, enabled, strategy, theme.spacingScale, theme.lineHeight, theme.fontSize, theme.pagePaddingVertical, patchTheme])
+  }, [contentRef, enabled, onOverflow, strategy, theme.spacingScale, theme.lineHeight, theme.fontSize, theme.pagePaddingVertical, patchTheme])
 
   // ── ResizeObserver: watch content height ──────────────────────────────
   useEffect(() => {
