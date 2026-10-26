@@ -20,6 +20,7 @@ const STATIC_ROUTES: ReadonlyArray<{
   { path: '/tools/jd-resume-match', changeFrequency: 'weekly', priority: 0.85 },
   { path: '/interview-prep', changeFrequency: 'weekly', priority: 0.85 },
   { path: '/extension', changeFrequency: 'weekly', priority: 0.85 },
+  { path: '/pricing', changeFrequency: 'monthly', priority: 0.8 },
 ];
 
 function createAbsoluteUrl(path: string): string {

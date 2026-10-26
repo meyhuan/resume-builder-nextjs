@@ -101,6 +101,7 @@ export const LandingHeader = ({ forceSolid = false }: LandingHeaderProps = {}) =
       ],
     },
     { id: 'templates', label: '简历模板', href: '/#templates' },
+    { id: 'pricing', label: '价格', href: '/pricing' },
     { id: 'articles', label: '求职攻略', href: '/articles' },
     { id: 'about', label: '关于开发者', href: '/about' },
   ];

@@ -69,6 +69,7 @@ export const LandingFooter = () => {
               <li><Link href="/import" className="hover:text-violet-600 transition-colors">AI 文本转简历</Link></li>
               <li><Link href="/tools/jd-resume-match" className="hover:text-violet-600 transition-colors">JD 匹配工具</Link></li>
               <li><Link href="/extension" className="hover:text-violet-600 transition-colors">网申助手插件</Link></li>
+              <li><Link href="/pricing" className="hover:text-violet-600 transition-colors">价格与权益</Link></li>
               <li><Link href="/editor/new" className="hover:text-violet-600 transition-colors">AI 编辑助手</Link></li>
               <li>
                 <MiniProgramEntry entry="footer_product" className="text-left transition-colors hover:text-violet-600">
