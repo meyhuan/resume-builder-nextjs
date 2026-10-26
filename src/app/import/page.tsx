@@ -265,6 +265,14 @@ export default function ImportResumePage(): React.ReactElement {
 
           {/* ── LEFT: Action panel (主操作区) ── */}
           <div className="flex-1 min-w-0 bg-white rounded-3xl p-6 lg:p-8 shadow-sm border border-violet-100/60">
+            {/* Top Prompt Banner */}
+            <div className="mb-5 flex items-center gap-2 rounded-2xl bg-gradient-to-r from-violet-50 to-fuchsia-50 border border-violet-100/80 px-4 py-2.5 text-xs text-violet-800">
+              <Sparkles className="w-4 h-4 text-violet-600 shrink-0" />
+              <span>
+                <strong>大模型初稿排版神器</strong>：已用 DeepSeek / 豆包 / ChatGPT 聊出文字？直接粘贴，AI 自动排版为标准 A4 简历。
+              </span>
+            </div>
+
             {/* Mode switcher */}
             <div className="flex gap-1 border-b border-gray-200 mb-6">
               {(['text', 'file'] as const).map((m) => (
@@ -300,7 +308,7 @@ export default function ImportResumePage(): React.ReactElement {
                       ref={textareaRef}
                       value={rawText}
                       onChange={(e) => setRawText(e.target.value)}
-                      placeholder="在此粘贴来自豆包、ChatGPT 等 AI 生成的简历文本..."
+                      placeholder="在此粘贴来自 DeepSeek、豆包、ChatGPT、Kimi 等 AI 生成的简历文本，或任意零散经历草稿..."
                       className="flex-1 w-full h-[220px] resize-none rounded-2xl border border-violet-100 bg-violet-50/30 px-5 py-4 text-sm text-gray-700 placeholder:text-violet-300/60 focus:outline-none focus:ring-2 focus:ring-violet-500/25 focus:border-violet-400 focus:bg-white transition-all leading-relaxed"
                     />
                     {isTextValid && (
@@ -475,19 +483,19 @@ export default function ImportResumePage(): React.ReactElement {
                   <span className="text-xs font-semibold text-violet-700 bg-violet-100 px-2 py-0.5 rounded-full">AI 导入</span>
                 </div>
                 <h2 className="text-lg font-bold text-gray-900 leading-snug">
-                  把简历内容<br />变成专业排版
+                  AI 聊天记录与文本草稿<br />一键转标准 A4 简历
                 </h2>
-                <p className="text-xs text-violet-900/40 mt-2 leading-relaxed">
-                  粘贴文本或上传文件，AI 自动识别结构，生成可拖拽编辑的专业简历。
+                <p className="text-xs text-violet-900/60 mt-2 leading-relaxed">
+                  已用 DeepSeek、豆包或 ChatGPT 写好内容？直接粘贴，AI 自动结构化解析并套用 HR 严选模板，支持可编辑 Word 与无水印 PDF 导出。
                 </p>
               </div>
 
               <div className="flex flex-col gap-3">
                 {[
-                  { label: '专业排版模板', sub: '多套风格，一键切换', color: 'bg-violet-500' },
-                  { label: 'AI 智能解析', sub: '自动识别姓名、经历、技能', color: 'bg-fuchsia-500' },
-                  { label: '免费可投递', sub: '先制作一份可投递简历', color: 'bg-violet-400' },
-                  { label: '支持头像上传', sub: '裁剪调整，形象专业', color: 'bg-fuchsia-400' },
+                  { label: 'Word / PDF 双格式', sub: '语义化排版，支持 Word 本地二次微调', color: 'bg-violet-500' },
+                  { label: 'AI 结构化解析', sub: '自动识别经历、技能与量化成果', color: 'bg-fuchsia-500' },
+                  { label: '大模型草稿专属排版', sub: '告别丑陋排版，一键生成标准 A4', color: 'bg-violet-400' },
+                  { label: '纯净无水印', sub: '导出干干净净，直接可投递', color: 'bg-fuchsia-400' },
                 ].map((f) => (
                   <div key={f.label} className="flex items-start gap-2.5">
                     <span className={`w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 ${f.color}`} />
