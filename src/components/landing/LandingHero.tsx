@@ -78,7 +78,7 @@ export const LandingHero = ({ stats }: LandingHeroProps) => {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-violet-500"></span>
               </span>
-              👋 独立开发者作品 · 免费制作一份可投递简历
+              👋 独立开发者作品 · 无水印 Word/PDF 导出 · 你的 AI 求职助手
             </div>
           </div>
 
@@ -87,21 +87,17 @@ export const LandingHero = ({ stats }: LandingHeroProps) => {
             没经验，不知道简历怎么写？
             <br />
             <span className="bg-gradient-to-r from-violet-600 to-fuchsia-500 bg-clip-text text-transparent">
-              AI 帮你写出专业大厂范儿
+              让你的 AI 求职助手，带你从简历一路通关到 Offer
             </span>
           </h1>
 
           {/* Subheading */}
           <p className="text-base text-slate-500 max-w-2xl leading-relaxed mx-auto">
-            深知新人求职的痛苦，我作为独立开发者为你做了这款极简简历工具：
+            无需苦想措辞，AI 自动帮你挖掘经历亮点。免费制作一份专业简历，支持
             <strong className="text-slate-700 font-semibold">
-              无需苦想措辞，AI 自动帮你挖掘经历亮点。
+              可编辑 Word (.docx) 与高清无水印 PDF 导出
             </strong>
-            免费制作一份可投递简历，支持
-            <strong className="text-slate-700 font-semibold">
-              高清无水印 PDF 导出
-            </strong>
-            。电脑编辑器还能做岗位匹配、翻译、面试准备和语法检查。
+            。内置 JD 深度匹配与面试自述提词，陪你走完从简历到 Offer 的每一步。
           </p>
 
           {/* CTA Buttons */}

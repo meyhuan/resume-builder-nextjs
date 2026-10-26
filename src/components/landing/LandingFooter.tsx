@@ -13,6 +13,8 @@ type FooterLinkItem = {
 
 const LONG_TAIL_LINKS: ReadonlyArray<FooterLinkItem> = [
   { href: '/ai', label: 'AI 简历在线润色' },
+  { href: '/templates', label: 'Word 简历模板免费下载' },
+  { href: '/ai', label: '无水印简历制作' },
   { href: '/templates', label: 'ATS 友好简历模板' },
   { href: '/import', label: 'AI 文本转简历生成器' },
   { href: '/tools/jd-resume-match', label: 'JD 匹配简历优化' },
@@ -66,6 +68,7 @@ export const LandingFooter = () => {
               <li><Link href="/ai" className="hover:text-violet-600 transition-colors">AI 简历生成</Link></li>
               <li><Link href="/import" className="hover:text-violet-600 transition-colors">AI 文本转简历</Link></li>
               <li><Link href="/tools/jd-resume-match" className="hover:text-violet-600 transition-colors">JD 匹配工具</Link></li>
+              <li><Link href="/extension" className="hover:text-violet-600 transition-colors">网申助手插件</Link></li>
               <li><Link href="/editor/new" className="hover:text-violet-600 transition-colors">AI 编辑助手</Link></li>
               <li>
                 <MiniProgramEntry entry="footer_product" className="text-left transition-colors hover:text-violet-600">

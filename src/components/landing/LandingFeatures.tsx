@@ -152,7 +152,7 @@ const MatchVisual = (): React.ReactElement => (
 /** Mini visual: ATS checklist */
 const AtsVisual = (): React.ReactElement => (
   <div className="mt-3 space-y-2">
-    {["PDF 格式正确", "关键词覆盖", "结构化信息"].map((item) => (
+    {["Word (.docx) 可编辑", "高清 PDF 无水印", "ATS 关键词精准解析"].map((item) => (
       <div
         key={item}
         className="flex items-center gap-2 bg-white/60 backdrop-blur-sm rounded-lg px-3 py-1.5 border border-white shadow-sm"
@@ -263,8 +263,8 @@ const AI_FEATURES: readonly FeatureItem[] = [
     span: "md:col-span-1 md:row-span-1",
   },
   {
-    title: "ATS 格式优化",
-    description: "PDF 可被主流招聘系统完美解析。",
+    title: "Word/PDF 双格式与 ATS 优化",
+    description: "支持高清 PDF 与可编辑 Word (DOCX) 导出，ATS 友好且排版不跑样。",
     icon: <FileCheck className="w-5 h-5" />,
     color: "text-emerald-500",
     bgColor: "bg-emerald-500/10",

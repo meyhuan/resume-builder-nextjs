@@ -59,6 +59,9 @@ const SEARCH_INTENT_GROUPS: readonly SearchIntentGroup[] = [
     icon: <Search className="h-4 w-4" />,
     items: [
       { label: "免费简历模板", href: "/templates" },
+      { label: "Word简历模板下载", href: "/templates" },
+      { label: "Word简历导出", href: "/templates" },
+      { label: "无水印简历生成器", href: "/ai" },
       { label: "简历模板 PDF 下载", href: "/templates" },
       { label: "极简简历模板", href: "/templates" },
       { label: "ATS友好简历", href: "/tools/jd-resume-match" },

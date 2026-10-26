@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { LandingButton } from './LandingButton';
 import { cn } from '@/lib/utils';
-import { Menu, X, User, LogOut, ChevronDown, ClipboardList, FileText, Target, Wand2, FileUp, Smartphone } from 'lucide-react';
+import { Menu, X, User, LogOut, ChevronDown, ClipboardList, FileText, Target, Wand2, FileUp, Smartphone, Bot } from 'lucide-react';
 import { WxLoginDialog } from '../auth/WxLoginDialog';
 import { MiniProgramEntry } from './MiniProgramEntry';
 import { useAuth } from '@/hooks/use-auth';
@@ -97,6 +97,7 @@ export const LandingHeader = ({ forceSolid = false }: LandingHeaderProps = {}) =
       children: [
         { id: 'interview-prep', label: '面试准备', href: '/interview-prep', icon: <ClipboardList className="w-4 h-4 text-violet-600" />, desc: '打招呼语、自我介绍和面试题' },
         { id: 'jd-match', label: 'JD 匹配', href: '/tools/jd-resume-match', icon: <Target className="w-4 h-4 text-sky-500" />, desc: '检查岗位关键词覆盖' },
+        { id: 'extension', label: '网申助手', href: '/extension', icon: <Bot className="w-4 h-4 text-amber-500" />, desc: '招聘官网一键自动填表' },
       ],
     },
     { id: 'templates', label: '简历模板', href: '/#templates' },

@@ -14,13 +14,14 @@ import { buildResumeFontFaceCss } from "@/entities/theme/font-stacks";
 
 const SITE_URL = "https://aijianli.cn";
 const SITE_NAME = "智简简历";
+const SITE_TITLE = `${SITE_NAME} - AI简历生成器，免费在线制作，无水印导出Word/PDF`;
 const SITE_DESCRIPTION =
-  "智简简历是可免费开始使用的AI简历生成器与在线制作网站，支持电脑网页和微信小程序。提供极简简历模板、AI生成、润色、岗位匹配、翻译、面试准备和语法检查，并可在免费额度内导出高清PDF。";
+  "智简简历（aijianli.cn）是一款 AI 简历生成器：选择身份和目标岗位，AI 帮你写出简历初稿，在线编辑排版后，可免费导出可编辑的 Word 或高清 PDF，无水印。支持 JD 匹配和面试准备，电脑和微信小程序都能用。";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: `${SITE_NAME} - AI简历生成器 | 免费在线简历制作网站 · 极简简历模板导出PDF`,
+    default: SITE_TITLE,
     template: `%s | ${SITE_NAME}`,
   },
   description: SITE_DESCRIPTION,
@@ -29,6 +30,17 @@ export const metadata: Metadata = {
     "免费简历",
     "简历制作网站免费",
     "在线简历制作",
+    "无水印简历",
+    "可导出Word简历",
+    "Word简历模板",
+    "Word简历免费下载",
+    "DOCX简历模板",
+    "简历转Word",
+    "PDF简历导出",
+    "一页纸简历排版",
+    "DeepSeek写简历",
+    "DeepSeek简历",
+    "AI求职助手",
     "极简简历",
     "简历生成器",
     "免费在线简历制作",
@@ -104,7 +116,7 @@ export const metadata: Metadata = {
     locale: "zh_CN",
     url: SITE_URL,
     siteName: SITE_NAME,
-    title: `${SITE_NAME} - 免费 AI 简历制作工具`,
+    title: SITE_TITLE,
     description: SITE_DESCRIPTION,
     images: [
       {
@@ -117,7 +129,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: `${SITE_NAME} - 免费 AI 简历制作工具`,
+    title: SITE_TITLE,
     description: SITE_DESCRIPTION,
     images: ["/og-image.png"],
   },
