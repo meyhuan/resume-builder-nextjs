@@ -17,7 +17,7 @@ export function TemplateGallery({
     <TemplateBrowser
       templates={templates}
       gridClassName="grid grid-cols-2 gap-4 md:grid-cols-4"
-      renderTemplate={(template) => (
+      renderTemplate={(template, wordBadge) => (
         <Link
           href={`/editor?template=${template.id}`}
           onClick={() => track('template_select', { templateId: template.id, entry: 'template_gallery' })}
@@ -36,6 +36,7 @@ export function TemplateGallery({
             <h2 className="text-sm font-semibold text-slate-900">
               {template.name}
             </h2>
+            {wordBadge}
             <p className="mt-2 text-xs leading-5 text-slate-500">
               {template.description}
             </p>

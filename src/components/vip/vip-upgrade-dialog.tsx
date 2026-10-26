@@ -33,6 +33,7 @@ interface ComparisonFeature {
  * Source of truth: src/lib/quota/membership-benefits.ts
  */
 const COMPARISON_FEATURES: ComparisonFeature[] = [
+  { feature: 'Word 导出（指定模板）', nonVip: '与 PDF 共用次数', vip: 'infinity' },
   { feature: 'PDF 高清导出', nonVip: '1', vip: 'infinity' },
   { feature: 'Markdown 导出', nonVip: 'cross', vip: 'check' },
   { feature: '图片导出', nonVip: 'cross', vip: 'check' },
@@ -44,6 +45,10 @@ const COMPARISON_FEATURES: ComparisonFeature[] = [
 ];
 
 const CONTEXT_COPY = {
+  'docx-export': {
+    title: '导出可编辑的 Word 简历',
+    description: 'Word 与 PDF 共用导出次数。当前免费次数已用完，开通会员后可继续导出。',
+  },
   'pdf-export': {
     title: '你的简历已完成',
     description: '开通后可导出高清 PDF、Markdown 和图片，长期修改下载',

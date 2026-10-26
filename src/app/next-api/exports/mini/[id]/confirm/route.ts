@@ -57,6 +57,8 @@ export async function POST(
     return NextResponse.json({ error: '导出已过期，请重新导出', code: 'EXPIRED' }, { status: 410 })
   }
 
+  if (entry.wxId !== wxId) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
   if (entry.confirmed) {
     console.log('[exports/mini/confirm] already confirmed (idempotent)', { id })
     const next = requestedFileName ? await markConfirmed(id, requestedFileName) : null

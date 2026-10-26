@@ -7,10 +7,6 @@ export const DOCX_SUPPORTED_TEMPLATE_IDS = [
   'canva-minimal',
   'canva-columns',
   'canva-sidebar',
-  // Legacy verification renderers remain available for existing documents.
-  'simple',
-  'jingrui',
-  'chengyan',
 ] as const
 
 export type DocxTemplateId = (typeof DOCX_SUPPORTED_TEMPLATE_IDS)[number]
