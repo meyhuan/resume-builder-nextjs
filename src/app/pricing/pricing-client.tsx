@@ -12,12 +12,14 @@ import {
   Check,
   Crown,
   ShieldCheck,
+  X,
   XCircle,
   CheckCircle2,
   Smartphone,
   Zap,
   ArrowRight,
   HelpCircle,
+  Infinity as InfinityIcon,
 } from 'lucide-react';
 
 interface PricingPlan {
@@ -117,44 +119,49 @@ const PRICING_PLANS: PricingPlan[] = [
 interface FeatureRow {
   title: string;
   desc: string;
-  free: string;
-  vip: string;
-  freeIsCheck?: boolean;
-  vipIsInfinity?: boolean;
+  freeType: 'text' | 'cross';
+  freeText?: string;
+  vipType: 'infinity' | 'check';
+  vipText: string;
 }
 
 const COMPARISON_ROWS: FeatureRow[] = [
   {
     title: 'PDF 高清简历导出',
     desc: '简历随时微调修改、针对不同公司定制导出',
-    free: '仅 1 次',
-    vip: '∞ 无限次',
-    vipIsInfinity: true,
+    freeType: 'text',
+    freeText: '仅 1 次',
+    vipType: 'infinity',
+    vipText: '无限次',
   },
   {
     title: 'Word (DOCX) 原生可编辑导出',
     desc: '国企/考公/校招网申必填，支持本地自由排版',
-    free: '✕',
-    vip: '✓ 专享支持',
+    freeType: 'cross',
+    vipType: 'check',
+    vipText: '专享支持',
   },
   {
     title: 'AI 简历深度润色 & 岗位匹配',
     desc: 'STAR 法则重写经历、JD 匹配诊断、面试押题',
-    free: '每日限次',
-    vip: '∞ 无限次',
-    vipIsInfinity: true,
+    freeType: 'text',
+    freeText: '每日限次',
+    vipType: 'infinity',
+    vipText: '无限次',
   },
   {
     title: '去除水印 & 全部精品模板',
     desc: '解锁全站 HR 严选专业模板，导出纯净无水印',
-    free: '✕',
-    vip: '✓ 全部解锁',
+    freeType: 'cross',
+    vipType: 'check',
+    vipText: '全部解锁',
   },
   {
     title: '一对一简历指导 & 多格式导出',
     desc: '含高清长图、Markdown 导出及专属求职辅导',
-    free: '✕',
-    vip: '✓ 全部解锁',
+    freeType: 'cross',
+    vipType: 'check',
+    vipText: '全部解锁',
   },
 ];
 
@@ -347,22 +354,26 @@ export const PricingClient = () => {
                         </div>
                       </td>
                       <td className="py-4 px-3 sm:px-4 text-center text-slate-500 font-medium">
-                        {row.free === '✕' ? (
-                          <XCircle className="w-4 h-4 text-slate-300 mx-auto" />
+                        {row.freeType === 'cross' ? (
+                          <div className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center mx-auto text-slate-400">
+                            <X className="w-3.5 h-3.5 stroke-[2.5]" />
+                          </div>
                         ) : (
                           <span className="text-xs sm:text-sm px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 font-medium">
-                            {row.free}
+                            {row.freeText}
                           </span>
                         )}
                       </td>
                       <td className="py-4 px-3 sm:px-4 text-center">
-                        {row.vipIsInfinity ? (
-                          <span className="inline-flex items-center px-3 py-1 rounded-full bg-violet-100 text-violet-700 text-xs sm:text-sm font-bold">
-                            {row.vip}
+                        {row.vipType === 'infinity' ? (
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-violet-100 text-violet-700 text-xs sm:text-sm font-bold">
+                            <InfinityIcon className="w-4 h-4 stroke-[2.5]" />
+                            <span>{row.vipText}</span>
                           </span>
                         ) : (
-                          <span className="inline-flex items-center px-3 py-1 rounded-full bg-violet-600 text-white text-xs sm:text-sm font-medium shadow-xs">
-                            {row.vip}
+                          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-violet-600 text-white text-xs sm:text-sm font-medium shadow-xs">
+                            <Check className="w-3.5 h-3.5 stroke-[3]" />
+                            <span>{row.vipText}</span>
                           </span>
                         )}
                       </td>
@@ -406,20 +417,28 @@ export const PricingClient = () => {
                   <span>传统/劣质简历工具的常见套路</span>
                 </div>
                 <ul className="space-y-3 text-xs sm:text-sm text-slate-500">
-                  <li className="flex items-start gap-2">
-                    <span className="text-rose-400">✕</span>
+                  <li className="flex items-start gap-2.5">
+                    <div className="w-4 h-4 rounded-full bg-rose-100 flex items-center justify-center shrink-0 mt-0.5">
+                      <X className="w-2.5 h-2.5 text-rose-500 stroke-[3]" />
+                    </div>
                     <span>宣称“完全免费”，花一小时填完点击导出却被强制要求支付 99 元高昂会员。</span>
                   </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-rose-400">✕</span>
+                  <li className="flex items-start gap-2.5">
+                    <div className="w-4 h-4 rounded-full bg-rose-100 flex items-center justify-center shrink-0 mt-0.5">
+                      <X className="w-2.5 h-2.5 text-rose-500 stroke-[3]" />
+                    </div>
                     <span>免费导出的简历在正中央印有醒目刺眼的巨幅平台水印，根本无法拿来正式投递。</span>
                   </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-rose-400">✕</span>
+                  <li className="flex items-start gap-2.5">
+                    <div className="w-4 h-4 rounded-full bg-rose-100 flex items-center justify-center shrink-0 mt-0.5">
+                      <X className="w-2.5 h-2.5 text-rose-500 stroke-[3]" />
+                    </div>
                     <span>导出的 Word 是一堆乱七八糟的拼凑图片或文本框错位，WPS 打开直接乱码。</span>
                   </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-rose-400">✕</span>
+                  <li className="flex items-start gap-2.5">
+                    <div className="w-4 h-4 rounded-full bg-rose-100 flex items-center justify-center shrink-0 mt-0.5">
+                      <X className="w-2.5 h-2.5 text-rose-500 stroke-[3]" />
+                    </div>
                     <span>价格藏在登录后，悄悄勾选每月自动扣费协议，不退款投诉无门。</span>
                   </li>
                 </ul>
@@ -431,20 +450,28 @@ export const PricingClient = () => {
                   <span>智简简历的真诚原则</span>
                 </div>
                 <ul className="space-y-3 text-xs sm:text-sm text-slate-700">
-                  <li className="flex items-start gap-2">
-                    <span className="text-emerald-500 font-bold">✓</span>
+                  <li className="flex items-start gap-2.5">
+                    <div className="w-4 h-4 rounded-full bg-emerald-100 flex items-center justify-center shrink-0 mt-0.5">
+                      <Check className="w-2.5 h-2.5 text-emerald-600 stroke-[3]" />
+                    </div>
                     <span><strong>真实免费可用</strong>：赠送免费导出与每日充沛 AI 次数，绝不在最后一步强行绑架付费。</span>
                   </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-emerald-500 font-bold">✓</span>
+                  <li className="flex items-start gap-2.5">
+                    <div className="w-4 h-4 rounded-full bg-emerald-100 flex items-center justify-center shrink-0 mt-0.5">
+                      <Check className="w-2.5 h-2.5 text-emerald-600 stroke-[3]" />
+                    </div>
                     <span><strong>单次支付不自动续费</strong>：月卡、年卡、终身会员明码标价，单次付费绝无隐形自动续费扣款。</span>
                   </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-emerald-500 font-bold">✓</span>
+                  <li className="flex items-start gap-2.5">
+                    <div className="w-4 h-4 rounded-full bg-emerald-100 flex items-center justify-center shrink-0 mt-0.5">
+                      <Check className="w-2.5 h-2.5 text-emerald-600 stroke-[3]" />
+                    </div>
                     <span><strong>原生语义化 Word 导出</strong>：专为 Canva 与经典排版深度研发，在 Word/WPS 中可随意二次编辑。</span>
                   </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-emerald-500 font-bold">✓</span>
+                  <li className="flex items-start gap-2.5">
+                    <div className="w-4 h-4 rounded-full bg-emerald-100 flex items-center justify-center shrink-0 mt-0.5">
+                      <Check className="w-2.5 h-2.5 text-emerald-600 stroke-[3]" />
+                    </div>
                     <span><strong>数据绝对私密与双端互通</strong>：求职信息不进任何公共大模型训练池，电脑与微信小程序权益无缝同步。</span>
                   </li>
                 </ul>
