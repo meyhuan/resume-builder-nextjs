@@ -20,7 +20,7 @@ const SITE_DESCRIPTION =
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: `${SITE_NAME} - AI简历生成器 | 免费在线简历制作网站 · 极简简历模板导出PDF`,
+    default: `${SITE_NAME} - AI简历生成器 | 大模型写完，做成能投的简历`,
     template: `%s | ${SITE_NAME}`,
   },
   description: SITE_DESCRIPTION,
@@ -104,20 +104,20 @@ export const metadata: Metadata = {
     locale: "zh_CN",
     url: SITE_URL,
     siteName: SITE_NAME,
-    title: `${SITE_NAME} - 免费 AI 简历制作工具`,
+    title: `${SITE_NAME} - AI写完，做成能投的简历`,
     description: SITE_DESCRIPTION,
     images: [
       {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: `${SITE_NAME} - 免费 AI 简历制作工具`,
+        alt: `${SITE_NAME} - AI写完，做成能投的简历`,
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: `${SITE_NAME} - 免费 AI 简历制作工具`,
+    title: `${SITE_NAME} - AI写完，做成能投的简历`,
     description: SITE_DESCRIPTION,
     images: ["/og-image.png"],
   },
