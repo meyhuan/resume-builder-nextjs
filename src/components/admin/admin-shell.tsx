@@ -157,13 +157,17 @@ export function AdminShell(props: { children: ReactNode }): React.ReactElement {
         setPhase('ready')
         return
       }
-      if (fromStorage) clearStoredAdminPassword()
+      if (fromStorage) {
+        clearStoredAdminPassword()
+        setPhase('login')
+        setError('')
+        return
+      }
       setPhase('login')
-      setError(fromStorage ? '' : '密码错误')
+      setError('密码错误')
     } catch {
       if (fromStorage) {
-        setPhase('login')
-        setError('无法验证已保存的密码，请重新登录')
+        setPhase('ready')
         return
       }
       setError('登录失败，请检查网络')
