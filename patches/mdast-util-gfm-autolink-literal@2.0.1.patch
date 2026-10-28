@@ -1,0 +1,55 @@
+diff --git a/lib/index.js b/lib/index.js
+--- a/lib/index.js
++++ b/lib/index.js
+@@ -128,11 +128,14 @@ function exitLiteralAutolink(token) {
+ 
+ /** @type {FromMarkdownTransform} */
+ function transformGfmAutolinkLiterals(tree) {
++  // Consume and restore the boundary for Safari versions without lookbehind.
++  // Only consume BMP boundaries: previous() checks one UTF-16 code unit and
++  // findAndReplace advances one unit after rejection, which can loop on a surrogate pair.
+   findAndReplace(
+     tree,
+     [
+       [/(https?:\/\/|www(?=\.))([-.\w]+)([^ \t\r\n]*)/gi, findUrl],
+-      [/(?<=^|\s|\p{P}|\p{S})([-.\w+]+)@([-\w]+(?:\.[-\w]+)+)/gu, findEmail]
++      [/(^|(?=[\u0000-\uFFFF])[\s\p{P}\p{S}])([-.\w+]+)@([-\w]+(?:\.[-\w]+)+)/gu, findEmail]
+     ],
+     {ignore: ['link', 'linkReference']}
+   )
+@@ -189,27 +192,31 @@ function findUrl(_, protocol, domain, path, match) {
+ /**
+  * @type {ReplaceFunction}
+  * @param {string} _
++ * @param {string} prefix
+  * @param {string} atext
+  * @param {string} label
+  * @param {RegExpMatchObject} match
+- * @returns {Link | false}
++ * @returns {Array<PhrasingContent> | Link | false}
+  */
+-function findEmail(_, atext, label, match) {
++function findEmail(_, prefix, atext, label, match) {
+   if (
+     // Not an expected previous character.
+-    !previous(match, true) ||
++    !previous({...match, index: match.index + prefix.length}, true) ||
+     // Label ends in not allowed character.
+     /[-\d_]$/.test(label)
+   ) {
+     return false
+   }
+ 
+-  return {
++  /** @type {Link} */
++  const result = {
+     type: 'link',
+     title: null,
+     url: 'mailto:' + atext + '@' + label,
+     children: [{type: 'text', value: atext + '@' + label}]
+   }
++
++  return prefix ? [{type: 'text', value: prefix}, result] : result
+ }
+ 
+ /**

@@ -18,6 +18,7 @@ deploy_paths=(
   ".next"
   "public"
   "prisma"
+  "patches"
   "package.json"
   "pnpm-lock.yaml"
   "pnpm-workspace.yaml"

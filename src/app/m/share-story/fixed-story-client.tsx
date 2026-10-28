@@ -6,6 +6,7 @@ import { CORE_STORY_FEATURES, STORY_PACKS, featureForPack, packImage, packThumbn
 import { useInMiniProgram } from '../_components/use-mini-program'
 import { STORY_REASONS } from '@/lib/xhs-note/story-template'
 import { DEFAULT_PINNED_COMMENT } from '@/lib/xhs-note/fixed-story-prompt'
+import { isRequestTimeout, timeoutSignal } from '@/lib/timeout-signal'
 import type { StoryPlatform } from '@/lib/xhs-note/story-assets'
 import s from './fixed-story.module.css'
 
@@ -204,7 +205,7 @@ export default function FixedStoryClient({
           extra,
           confirmed,
         }),
-        signal: AbortSignal.timeout(70000),
+        signal: timeoutSignal(70000),
       })
       const data = await response.json().catch(() => null)
       if (!response.ok) throw new Error(data?.error || '生成失败，请稍后重试。填写内容已保留。')
@@ -227,7 +228,7 @@ export default function FixedStoryClient({
       throw new Error('服务返回异常')
     } catch (cause) {
       setNotice('')
-      setError(cause instanceof Error && cause.name !== 'TimeoutError' && cause.name !== 'TypeError' ? cause.message : '网络连接失败或请求超时，请重试。填写内容和已有正文已保留。')
+      setError(cause instanceof Error && !isRequestTimeout(cause) && cause.name !== 'TypeError' ? cause.message : '网络连接失败或请求超时，请重试。填写内容和已有正文已保留。')
     } finally {
       setBusy(false)
       setAiGenerating(false)
@@ -264,7 +265,7 @@ export default function FixedStoryClient({
 
     setBusy(true)
     try {
-      const response = await fetch(packImage(pack, index), { signal: AbortSignal.timeout(20000) })
+      const response = await fetch(packImage(pack, index), { signal: timeoutSignal(20000) })
       if (!response.ok) throw new Error('图片加载失败，请重试。')
       const blob = await response.blob()
       if (!blob.type.startsWith('image/')) throw new Error('素材文件暂时不可用。')
@@ -272,7 +273,7 @@ export default function FixedStoryClient({
       const a = document.createElement('a'); a.href = url; a.download = `智简简历-${order.indexOf(index) + 1}-${pack.id}.png`; a.click()
       setTimeout(() => URL.revokeObjectURL(url), 60000)
       setSaved(previous => [...new Set([...previous, index])]); setNotice('已发起下载。')
-    } catch (cause) { setError(cause instanceof Error ? cause.message : '保存失败，请重试。') }
+    } catch (cause) { setError(isRequestTimeout(cause) ? '图片加载超时，请重试。' : cause instanceof Error ? cause.message : '保存失败，请重试。') }
     finally { setBusy(false) }
   }
   async function copyTitle() {
@@ -307,7 +308,7 @@ export default function FixedStoryClient({
     rewardRequest.current = true
     setRewardLoading(true)
     try {
-      const res = await fetch('/next-api/xhs-note/status', { cache: 'no-store', signal: AbortSignal.timeout(15000) })
+      const res = await fetch('/next-api/xhs-note/status', { cache: 'no-store', signal: timeoutSignal(15000) })
       const json = await res.json().catch(() => null)
       if (res.ok && json?.status === 100 && json?.data) {
         setRewardStatus(json.data)
@@ -316,7 +317,7 @@ export default function FixedStoryClient({
         throw new Error(json?.error || '暂时无法获取奖励状态，请刷新重试。')
       }
     } catch (err) {
-      setRewardError(err instanceof Error && err.name !== 'TimeoutError' ? err.message : '获取奖励状态超时，请刷新重试。')
+      setRewardError(err instanceof Error && !isRequestTimeout(err) ? err.message : '获取奖励状态超时，请刷新重试。')
     } finally {
       rewardRequest.current = false
       setRewardLoading(false)
@@ -376,7 +377,7 @@ export default function FixedStoryClient({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ rawText: raw, topicKey: pack.id }),
-        signal: AbortSignal.timeout(20000),
+        signal: timeoutSignal(20000),
       })
       const json = await res.json().catch(() => null)
       if (!res.ok || json?.status !== 100) {
@@ -387,7 +388,7 @@ export default function FixedStoryClient({
       setNoteUrlInput('')
       await loadRewardStatus()
     } catch (err) {
-      setSubmitError(err instanceof Error && err.name !== 'TimeoutError' ? err.message : '提交超时，请先刷新审核状态，确认是否已提交后再重试。')
+      setSubmitError(err instanceof Error && !isRequestTimeout(err) ? err.message : '提交超时，请先刷新审核状态，确认是否已提交后再重试。')
     } finally {
       setSubmitting(false)
     }

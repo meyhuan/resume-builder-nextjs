@@ -165,6 +165,7 @@ try {
             Copy-Tree -Source ".next" -Destination (Join-Path $StageDir ".next") -ExcludeDirectories @("cache")
             Copy-Tree -Source "public" -Destination (Join-Path $StageDir "public")
             Copy-Tree -Source "prisma" -Destination (Join-Path $StageDir "prisma")
+            Copy-Tree -Source "patches" -Destination (Join-Path $StageDir "patches")
 
             foreach ($file in @("package.json", "pnpm-lock.yaml", "pnpm-workspace.yaml", "next.config.ts", "next.config.mjs", "next.config.js")) {
                 if (Test-Path -LiteralPath $file) {
