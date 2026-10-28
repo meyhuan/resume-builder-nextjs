@@ -675,8 +675,8 @@ function TemplatesSection({
     <section className="mt-6">
       <SectionHeader title="风格简历模板" />
       <div className="mt-3 px-4">
-        <TemplateBrowser analyticsEntry="mobile_home" templates={templates} gridClassName="grid grid-cols-2 gap-3" renderTemplate={(tpl): ReactElement => (
-          <TemplateCard key={tpl.id} template={tpl} onClick={(): void => onSelect(tpl.id)} />
+        <TemplateBrowser analyticsEntry="mobile_home" templates={templates} gridClassName="grid grid-cols-2 gap-3" renderTemplate={(tpl, wordBadge): ReactElement => (
+          <TemplateCard key={tpl.id} wordBadge={wordBadge} template={tpl} onClick={(): void => onSelect(tpl.id)} />
         )} />
       </div>
     </section>
@@ -684,9 +684,11 @@ function TemplatesSection({
 }
 
 function TemplateCard({
+  wordBadge,
   template,
   onClick,
 }: {
+  readonly wordBadge: import('react').ReactNode
   readonly template: TemplateConfig
   readonly onClick: () => void
 }): ReactElement {
@@ -723,6 +725,7 @@ function TemplateCard({
         <div className="text-[13px] font-semibold text-slate-900 truncate">
           {template.name}
         </div>
+        {wordBadge}
         <div className="mt-0.5 text-[11px] text-slate-500 line-clamp-1">
           {templateLabels(template).slice(0, 2).join(' · ')}
         </div>

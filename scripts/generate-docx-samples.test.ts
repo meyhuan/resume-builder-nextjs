@@ -126,15 +126,12 @@ describe('DOCX template proof of concept', () => {
     ['canva-minimal', 'canva-minimal.docx'],
     ['canva-columns', 'canva-columns.docx'],
     ['canva-sidebar', 'canva-sidebar.docx'],
-    ['simple', 'single-column.docx'],
-    ['jingrui', 'two-column.docx'],
-    ['chengyan', 'complex-decorative.docx'],
   ] as const)('generates a valid %s artifact', async (templateId, fileName) => {
     await generateArtifact(sampleResume, templateId, fileName)
   })
 
-  it('rejects unverified templates instead of silently approximating them', async () => {
-    await expect(exportResumeToDocx(sampleResume, 'modern-grid')).rejects.toThrow('verified Word templates only')
+  it.each(['simple', 'jingrui', 'chengyan', 'modern-grid'])('rejects unsupported template %s', async (id) => {
+    await expect(exportResumeToDocx(sampleResume, id)).rejects.toThrow('verified Word templates only')
   })
 
   it.each((['canva-minimal', 'canva-columns', 'canva-sidebar'] as const).flatMap(templateId =>

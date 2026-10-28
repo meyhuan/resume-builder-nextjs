@@ -10,7 +10,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { Download, Eye, AlertCircle, Crown, Loader2, Image as ImageIcon, FileText } from 'lucide-react'
+import { Download, Eye, AlertCircle, Crown, Image as ImageIcon, FileText } from 'lucide-react'
 
 interface ExportPreviewDialogProps {
   readonly open: boolean
@@ -63,14 +63,14 @@ export default function ExportPreviewDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         overlayClassName="bg-black/35"
-        className="max-w-[90vw] w-[900px] h-[90vh] flex flex-col p-0 gap-0 bg-slate-50"
+        className="max-w-[calc(100vw-1rem)] sm:max-w-[90vw] w-[900px] h-[90dvh] flex flex-col p-0 gap-0 bg-slate-50"
       >
         <DialogHeader className="px-5 pt-4 pb-3 border-b border-slate-200 shrink-0">
           <div className="flex items-center gap-2">
             <Eye className="h-4 w-4 text-violet-500" />
-            <DialogTitle className="text-base">导出效果预览</DialogTitle>
+            <DialogTitle className="text-base">PDF 预览</DialogTitle>
           </div>
-          <DialogDescription className="text-xs text-slate-400 mt-1">
+          <DialogDescription className="text-xs text-slate-500 mt-1">
             {pdfPageCount != null ? `实际 PDF 共 ${pdfPageCount} 页，确认无误后继续导出` : '以下为实际生成的 PDF，确认无误后继续导出'}
           </DialogDescription>
           {placeholderCount && placeholderCount > 0 ? (
@@ -81,7 +81,7 @@ export default function ExportPreviewDialog({
           ) : null}
         </DialogHeader>
 
-        <div className="flex-1 overflow-hidden">
+        <div className="min-h-0 flex-1 overflow-hidden">
           {pdfUrl ? (
             <iframe
               src={`${pdfUrl}#toolbar=0`}
@@ -91,8 +91,8 @@ export default function ExportPreviewDialog({
           ) : null}
         </div>
 
-        <DialogFooter className="px-5 py-3 border-t border-slate-200 shrink-0 bg-white/80 flex-row items-center">
-          <div className="mr-auto flex items-center gap-3">
+        <DialogFooter className="px-4 sm:px-5 py-3 border-t border-slate-200 shrink-0 bg-white flex-col sm:flex-col items-stretch gap-3 sm:space-x-0 max-h-[45dvh] overflow-y-auto">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
             {!isVip && (
               <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] ${showLowQuotaWarning ? 'bg-rose-50 text-rose-600 border border-rose-200' : 'bg-slate-100 text-slate-600'}`}>
                 {showLowQuotaWarning && <AlertCircle className="w-3 h-3" />}
@@ -109,30 +109,32 @@ export default function ExportPreviewDialog({
                 </span>
               </div>
             )}
-            <p className="text-[11px] text-slate-400">{helperText}</p>
+            <p className="text-xs text-slate-500">{helperText}</p>
           </div>
+          {onExportDocx && <p className="text-xs leading-5 text-slate-500">Word 为可编辑文档，排版可能与 PDF 预览不同。Word 与 PDF 共用导出额度。</p>}
+          <div className="flex flex-wrap items-center justify-end gap-2">
           <Button
             variant="ghost"
             size="sm"
-            className="h-8 px-3 text-xs"
+            className="h-11 sm:h-8 px-3 text-xs"
             onClick={() => onOpenChange(false)}
           >
             取消
           </Button>
           {onExportPng ? (
-            <Button variant="outline" size="sm" className="h-8 px-3 text-xs" onClick={onExportPng}>
+            <Button variant="outline" size="sm" className="h-11 sm:h-8 px-3 text-xs" disabled={isConfirming} onClick={onExportPng}>
               <ImageIcon className="h-3.5 w-3.5 mr-1.5" />
               PNG
             </Button>
           ) : null}
           {onExportMarkdown ? (
-            <Button variant="outline" size="sm" className="h-8 px-3 text-xs" onClick={onExportMarkdown}>
+            <Button variant="outline" size="sm" className="h-11 sm:h-8 px-3 text-xs" disabled={isConfirming} onClick={onExportMarkdown}>
               <FileText className="h-3.5 w-3.5 mr-1.5" />
               Markdown
             </Button>
           ) : null}
           {onExportDocx ? (
-            <Button variant="outline" size="sm" className="h-8 px-3 text-xs" onClick={onExportDocx}>
+            <Button variant="outline" size="sm" className="h-11 sm:h-8 px-3 text-xs" disabled={isConfirming} onClick={onExportDocx}>
               <FileText className="h-3.5 w-3.5 mr-1.5" />
               Word
             </Button>
@@ -140,20 +142,20 @@ export default function ExportPreviewDialog({
           <Button
             size="sm"
             className={isQuotaDepleted
-              ? 'h-8 px-4 text-xs font-medium bg-gradient-to-r from-amber-500 to-fuchsia-500 text-white hover:from-amber-600 hover:to-fuchsia-600 shadow-sm'
-              : 'h-8 px-4 text-xs font-medium bg-gradient-to-r from-violet-600 to-fuchsia-500 text-white hover:from-violet-700 hover:to-fuchsia-600 shadow-sm'}
+              ? 'h-11 sm:h-8 px-4 text-xs font-medium bg-gradient-to-r from-amber-500 to-fuchsia-500 text-white hover:from-amber-600 hover:to-fuchsia-600 shadow-sm'
+              : 'h-11 sm:h-8 px-4 text-xs font-medium bg-gradient-to-r from-violet-600 to-fuchsia-500 text-white hover:from-violet-700 hover:to-fuchsia-600 shadow-sm'}
             disabled={isConfirming}
             onClick={handlePrimaryAction}
           >
-            {isConfirming ? (
-              <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-            ) : isQuotaDepleted ? (
+            {isQuotaDepleted ? (
               <Crown className="h-3.5 w-3.5 mr-1.5" />
             ) : (
               <Download className="h-3.5 w-3.5 mr-1.5" />
             )}
-            {isConfirming ? '处理中...' : isQuotaDepleted ? '开通会员，导出 PDF' : '确认导出 PDF'}
+            {isQuotaDepleted ? '开通会员，导出 PDF' : '确认导出 PDF'}
           </Button>
+          </div>
+          {isConfirming && <p role="status" className="text-xs text-slate-500">正在处理导出，请稍候…</p>}
         </DialogFooter>
       </DialogContent>
     </Dialog>

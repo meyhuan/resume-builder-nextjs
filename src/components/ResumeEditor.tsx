@@ -1149,17 +1149,30 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
         }
         if (data.quotaExceeded || response.status === 402) {
           trackExportPaywallBlock({ exportType: 'docx', entry: 'pc_export_preview', stage: 'create_export_record', statusCode: response.status })
-          setShowUpgrade(true, 'pdf-export')
+          setShowUpgrade(true, 'docx-export')
           return
         }
         throw new Error(data.error || 'DOCX 导出失败')
       }
 
+      await refreshQuota()
+      const downloadResponse = await fetch(data.downloadUrl)
+      if (downloadResponse.status === 402) {
+        setShowUpgrade(true, 'docx-export')
+        return
+      }
+      if (!downloadResponse.ok) throw new Error('Word 文件下载失败，请重试')
+      const downloadBlob = await downloadResponse.blob()
+      if (!downloadBlob.size) throw new Error('Word 文件为空，请重新导出')
+      const downloadObjectUrl = URL.createObjectURL(downloadBlob)
       const anchor = document.createElement('a')
-      anchor.href = data.downloadUrl
+      anchor.href = downloadObjectUrl
       anchor.download = `${sanitizeExportFileName(fileName)}.docx`
+      document.body.appendChild(anchor)
       anchor.click()
-      toast.success('Word 导出成功')
+      anchor.remove()
+      window.setTimeout(() => URL.revokeObjectURL(downloadObjectUrl), 60_000)
+      toast.success('Word 文件已生成，已开始下载')
       track('export_success', { resumeId: exportResumeId, templateId: tpl, exportType: 'docx', entry: 'pc_export_preview' })
     } catch (error) {
       console.error('DOCX export failed:', error)

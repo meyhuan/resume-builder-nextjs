@@ -1,5 +1,6 @@
 'use client'
 
+import { isDocxTemplateSupported } from '@/lib/docx-template-support'
 import { useTemplateImpressions } from './use-template-impressions'
 import { useId, useRef, useState, type ReactNode, type ReactElement } from 'react'
 import { SlidersHorizontal } from 'lucide-react'
@@ -28,7 +29,7 @@ interface TemplateBrowserProps<T extends TemplateMetadata> {
   /** Keep more space for template cards inside the mobile preview sheet. */
   readonly compact?: boolean
   readonly gridClassName?: string
-  readonly renderTemplate: (template: T) => ReactNode
+  readonly renderTemplate: (template: T, wordBadge: ReactNode) => ReactNode
 }
 
 /** Selection/filter state is local. Only the caller's card can change a resume. */
@@ -41,10 +42,11 @@ export function TemplateBrowser<T extends TemplateMetadata>({
   renderTemplate,
 }: TemplateBrowserProps<T>): ReactElement {
   const [filters, setFilters] = useState<TemplateFilters>({})
+  const [wordOnly, setWordOnly] = useState(false)
   const [quickId, setQuickId] = useState('all')
   const [expanded, setExpanded] = useState(false)
   const filtersId = useId()
-  const filtered = filterTemplates(templates, filters)
+  const filtered = filterTemplates(templates, filters).filter(t => !wordOnly || isDocxTemplateSupported(t.id))
   const gridRef = useRef<HTMLDivElement>(null)
   useTemplateImpressions(gridRef, JSON.stringify({ filters, ids: filtered.map(t => t.id) }), analyticsEntry)
   const current = templates.find((template) => template.id === currentId)
@@ -54,6 +56,7 @@ export function TemplateBrowser<T extends TemplateMetadata>({
   )
 
   function clear(): void {
+    setWordOnly(false)
     setFilters({})
     setQuickId('all')
     setExpanded(false)
@@ -70,6 +73,13 @@ export function TemplateBrowser<T extends TemplateMetadata>({
       }
     })
   }
+
+  const wordFilter = (
+    <button type="button" aria-pressed={wordOnly} onClick={() => setWordOnly(!wordOnly)}
+        className={`${compact ? 'min-h-11' : 'py-2'} rounded-lg border px-3 text-xs transition-colors focus-visible:outline-2 focus-visible:outline-violet-600 ${wordOnly ? 'border-violet-400 bg-violet-50 text-violet-700' : 'border-slate-200 bg-white text-slate-600 hover:border-violet-300'}`}>
+        支持 Word
+      </button>
+  )
 
   return (
     <div className="min-w-0 space-y-3" data-template-browser="true">
@@ -112,7 +122,9 @@ export function TemplateBrowser<T extends TemplateMetadata>({
             {quick.label} ({filterTemplates(templates, quick.filters).length})
           </button>
         ))}
+        {wordFilter}
       </div>}
+      {compact && wordFilter}
       <details id={filtersId} open={compact ? expanded : undefined}
         className={compact && !expanded ? 'hidden' : 'rounded-lg border border-slate-200 bg-white p-3'}>
         <summary className={compact ? 'hidden' : 'cursor-pointer text-xs font-medium text-slate-700'}>
@@ -158,7 +170,7 @@ export function TemplateBrowser<T extends TemplateMetadata>({
         <span role="status" aria-live="polite" className="text-slate-500">
           已找到 {filtered.length} 款模板
         </span>
-        {activeCount > 0 && (
+        {(activeCount > 0 || wordOnly) && (
           <button
             type="button"
             onClick={clear}
@@ -192,7 +204,9 @@ export function TemplateBrowser<T extends TemplateMetadata>({
           </button>
         </div>
       ) : (
-        <div ref={gridRef} className={gridClassName}>{filtered.map(renderTemplate)}</div>
+        <div ref={gridRef} className={gridClassName}>{filtered.map(template => <div key={template.id} className="relative min-w-0 [&>a]:block [&>button]:w-full">
+          {renderTemplate(template, isDocxTemplateSupported(template.id) ? <span className="mt-1 inline-flex rounded-md border border-violet-100 bg-violet-50 px-1.5 py-0.5 text-xs font-normal text-violet-700">支持 Word</span> : null)}
+        </div>)}</div>
       )}
     </div>
   )

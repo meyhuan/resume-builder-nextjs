@@ -223,7 +223,7 @@ function BottomSheet({ open, onClose, onConfirm, confirming, saveError, selected
 function TemplatePanel({ activeId, onSelect }: { activeId: string; onSelect: (id: string) => void }): ReactElement {
   return (
     <TemplateBrowser analyticsEntry="mobile_preview" templates={TEMPLATES} currentId={activeId} compact gridClassName="grid grid-cols-2 gap-3"
-      renderTemplate={(cfg) => {
+      renderTemplate={(cfg, wordBadge) => {
         const id = cfg.id
         const isActive = id === activeId
         return (
@@ -252,6 +252,7 @@ function TemplatePanel({ activeId, onSelect }: { activeId: string; onSelect: (id
             </div>
             <div className="px-0.5 pb-0.5">
               <div className="text-sm font-semibold text-slate-900">{cfg.name}</div>
+              {wordBadge}
               <div className="mt-0.5 text-xs leading-5 text-slate-500">{isActive ? '已选' : templateLabels(cfg).slice(0, 2).join(' · ')}</div>
             </div>
           </button>

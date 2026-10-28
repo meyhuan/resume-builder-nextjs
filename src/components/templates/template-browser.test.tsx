@@ -27,9 +27,9 @@ function setup() {
     <TemplateBrowser
       templates={templateCatalog}
       currentId="simple"
-      renderTemplate={(template) => (
+      renderTemplate={(template, wordBadge) => (
         <button key={template.id} onClick={() => select(template.id)}>
-          {template.name}
+          {template.name}{wordBadge}
         </button>
       )}
     />,
@@ -37,6 +37,15 @@ function setup() {
   return select
 }
 describe('template browser', () => {
+  it('filters to the three Word templates without changing the resume', () => {
+    const select = setup()
+    fireEvent.click(screen.getByRole('button', { name: '支持 Word' }))
+    expect(screen.getByRole('status').textContent).toContain('3 款')
+    expect(screen.getAllByText('支持 Word', { selector: 'span' })).toHaveLength(3)
+    expect(select).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: '清除筛选' }))
+    expect(screen.getByRole('status').textContent).toContain(`${templateCatalog.length} 款`)
+  })
   it('mobile preview filters without updating the theme or selecting until a card is clicked', () => {
     const select = vi.fn()
     const updateTheme = vi.fn()

@@ -4,7 +4,7 @@ import type { VipPollData, VipQuotaStatus, VipFeatureQuota } from '@/lib/quota/v
 import { useAuthStore } from '@/store/use-auth-store';
 import { trackError } from '@/lib/analytics';
 
-export type UpgradeContext = 'generic' | 'pdf-export' | 'ai';
+export type UpgradeContext = 'generic' | 'pdf-export' | 'docx-export' | 'ai';
 
 interface VipStoreState {
   readonly isLoading: boolean;

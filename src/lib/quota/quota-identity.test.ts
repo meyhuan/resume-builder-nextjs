@@ -30,6 +30,16 @@ describe('quota account identity', () => {
     mocks.transaction.mockImplementation(fn => fn({ $queryRaw: mocks.query, $executeRaw: mocks.execute }))
   })
 
+  it('allows non-member shared export quota when PDF credits remain', async () => {
+    mocks.miniVip.mockResolvedValue({ isVip: false, unionid: 'openid', freeExportCount: 99 })
+    expect(await checkQuotaForUser('openid', 'pdf:export', true)).toMatchObject({ allowed: true, isVip: false, remaining: 99 })
+    expect(mocks.consume).not.toHaveBeenCalled()
+  })
+  it('allows Word export for a member without consuming PDF credits', async () => {
+    mocks.miniVip.mockResolvedValue({ isVip: true, unionid: 'openid', freeExportCount: 0 })
+    expect(await checkQuotaForUser('openid', 'pdf:export')).toMatchObject({ allowed: true, isVip: true, remaining: 'unlimited' })
+    expect(mocks.consume).not.toHaveBeenCalled()
+  })
   it('passes wxId and Java ID separately even if no local link exists yet', async () => {
     await checkQuota('ai:polish-section', true)
     expect(mocks.sync).toHaveBeenCalledWith({ wxId: 'unionid', javaUserId: '319850' })

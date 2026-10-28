@@ -188,7 +188,7 @@ function LayoutPanel(props: LayoutPanelProps): ReactElement {
           {/* Fit columns to the panel, keeping two cards even on narrow mobile screens.
               auto-fill also keeps filtered cards from stretching into empty columns. */}
           <TemplateBrowser analyticsEntry="pc_editor" templates={templates} currentId={tpl} gridClassName="grid grid-cols-[repeat(auto-fill,minmax(min(144px,calc((100%_-_16px)/2)),1fr))] gap-4 pb-4"
-            renderTemplate={(template) => (
+            renderTemplate={(template, wordBadge) => (
               <button
                 key={template.id}
                 type="button"
@@ -230,6 +230,7 @@ function LayoutPanel(props: LayoutPanelProps): ReactElement {
                 </div>
                 <div className="px-3 py-3 bg-white text-left">
                   <div className="font-semibold text-[15px] leading-5 text-slate-800 line-clamp-1">{template.name}</div>
+                  {wordBadge}
                   <div className="text-xs font-medium text-slate-500 mt-1">
                     {tpl === template.id ? '正在使用' : templateLabels(template).slice(0, 2).join(' · ')}
                   </div>
