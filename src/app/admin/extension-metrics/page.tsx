@@ -9,6 +9,7 @@ export default function ExtensionMetricsPage() {
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState("");
   const [report,setReport]=useState<Report|null>(null);
+  const [appliedDays,setAppliedDays]=useState<number|null>(null);
   async function load(event:React.FormEvent) {
     event.preventDefault(); setBusy(true); setError("");
     const credential=getStoredAdminPassword();
@@ -17,7 +18,7 @@ export default function ExtensionMetricsPage() {
       const response=await fetch("/next-api/admin/extension-metrics",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({adminPassword:credential,days})});
       const data=await response.json();
       if (!response.ok) throw new Error(data.error || "读取失败");
-      setReport(data);
+      setReport(data); setAppliedDays(days);
     } catch (cause) {setError(cause instanceof Error ? cause.message : "读取失败");setReport(null);}
     finally {setBusy(false);}
   }
@@ -28,9 +29,10 @@ export default function ExtensionMetricsPage() {
       <button disabled={busy} className="rounded-lg bg-violet-600 px-4 py-2 text-sm text-white disabled:opacity-50">{busy?"读取中…":"查询填写效果"}</button>
     </form>
     {error && <p role="alert" className="rounded-lg bg-rose-50 p-3 text-sm text-rose-700">{error}</p>}
+    {report && appliedDays !== days && <p className="text-sm text-amber-700">统计范围已更改，请重新查询；下方仍显示最近 {appliedDays} 天的结果。</p>}
     <p className="text-sm leading-6 text-slate-600">写入成功率＝新增填写÷（新增填写＋写入失败）。原本有值不算本次成功；未识别字段和资料缺项单独统计。字段成功不代表招聘网站接受保存或投递。</p>
     {report && <>
-      <p className="text-sm text-slate-600">共 {report.total} 次填写结果。{report.truncated && `当前仅展示最近${report.sampled}次，请缩短统计范围，勿当作全量统计。`}</p>
+      <p className="text-sm text-slate-600">最近 {appliedDays} 天共 {report.total} 次填写结果。{report.truncated && `当前仅展示最近${report.sampled}次，请缩短统计范围，勿当作全量统计。`}</p>
       {report.rows.length===0 ? <div className="rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center text-slate-500">该范围暂无已入库的填写结果。请完成一次插件填写后再查询。</div> : <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white"><table className="w-full whitespace-nowrap text-left text-sm">
         <caption className="sr-only">按站点及插件版本分组的填写效果</caption>
         <thead className="bg-slate-50 text-slate-600"><tr>{["站点 / 版本","填写次数","完整 / 部分 / 失败","新增填写","已有值","写入失败","未识别","资料缺项","写入成功率","缺少具体日","新增区块失败","平均耗时"].map(title=><th key={title} scope="col" className="px-4 py-3 font-medium">{title}</th>)}</tr></thead>

@@ -18,9 +18,10 @@ export async function POST(request:Request) {
   }
   const days=body.days ?? 7;
   if (typeof days !== "number" || !Number.isInteger(days) || days<1 || days>90) return NextResponse.json({error:"统计范围为1至90天"},{status:400});
-  const since=new Date(Date.now()-days*86400_000);
+  const until=new Date();
+  const since=new Date(until.getTime()-days*86400_000);
   try {
-    const where={eventName:"extension_fill_result",occurredAt:{gte:since}};
+    const where={eventName:"extension_fill_result",occurredAt:{gte:since,lt:until}};
     const [events,total]=await Promise.all([
       prisma.extensionTelemetryEvent.findMany({where,select:{properties:true},orderBy:{occurredAt:"desc"},take:10000}),
       prisma.extensionTelemetryEvent.count({where}),

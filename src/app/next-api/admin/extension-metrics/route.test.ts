@@ -29,6 +29,9 @@ it("returns bounded non-cacheable statistics and discloses truncation",async()=>
   expect(response.headers.get("cache-control")).toBe("no-store");
   expect(await response.json()).toMatchObject({total:10001,sampled:1,truncated:true,rows:[{writableSuccessRate:2/3}]});
   expect(mocks.findMany).toHaveBeenCalledWith(expect.objectContaining({take:10000,select:{properties:true},where:expect.objectContaining({eventName:"extension_fill_result"})}));
+  const range = mocks.findMany.mock.calls[0][0].where.occurredAt;
+  expect(range.lt.getTime() - range.gte.getTime()).toBe(7 * 86400_000);
+  expect(mocks.count.mock.calls[0][0].where.occurredAt).toEqual(range);
 });
 it("reports database failures without leaking internal details",async()=>{
   mocks.findMany.mockRejectedValue(new Error("private database detail"));

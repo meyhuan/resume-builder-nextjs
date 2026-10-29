@@ -20,7 +20,6 @@ interface FunnelStep {
   eventName: string;
   count: number;
   users: number;
-  conversionFromFirst: number;
 }
 
 interface FunnelData {
@@ -64,6 +63,7 @@ interface OverviewData {
   start: string;
   end: string;
   todayDau: number;
+  visitorIdentityVersion?: number;
   eventCounts: EventCount[];
   platforms: PlatformCount[];
 }
@@ -82,6 +82,9 @@ interface ErrorData {
   start: string;
   end: string;
   errors: ErrorGroup[];
+  total?: number;
+  sampled?: number;
+  truncated?: boolean;
 }
 
 interface RevenuePlan {
@@ -134,13 +137,10 @@ interface AttributionChannel {
   exportUsers: number;
   paidUsers: number;
   paidOrders: number;
-  loginRate: number;
-  resumeRate: number;
-  exportRate: number;
-  paidRate: number;
 }
 
 interface AttributionData {
+  attributionVersion?: number;
   channels: AttributionChannel[];
 }
 
@@ -173,7 +173,7 @@ type AnalyticsState = {
 };
 
 type PlatformFilter = 'all' | 'web' | 'mini_program' | 'h5_pay' | 'backend';
-type ClientTypeFilter = 'all' | 'pc_web' | 'mobile_web' | 'mini_program_webview' | 'mini_program_native' | 'browser_extension';
+type ClientTypeFilter = 'all' | 'pc_web' | 'mobile_web' | 'mini_program_webview' | 'mini_program_native';
 
 const EVENT_LABELS: Record<string, string> = {
   page_view: '页面访问',
@@ -258,6 +258,8 @@ const ACQUISITION_SOURCE_LABELS: Record<string, string> = {
   friend: '朋友推荐',
   other: '其他渠道',
   prefer_not_to_say: '暂不选择',
+  unattributed: '无法归因',
+  mini_program_unspecified: '小程序（来源未细分）',
 };
 
 const PLATFORM_OPTIONS: Array<{ value: PlatformFilter; label: string }> = [
@@ -274,7 +276,6 @@ const CLIENT_TYPE_OPTIONS: Array<{ value: ClientTypeFilter; label: string }> = [
   { value: 'mobile_web', label: '生命周期：手机 Web' },
   { value: 'mini_program_webview', label: '生命周期：小程序 WebView' },
   { value: 'mini_program_native', label: '生命周期：小程序原生' },
-  { value: 'browser_extension', label: '生命周期：浏览器插件' },
 ];
 
 function formatNumber(value: number | undefined): string {
@@ -324,6 +325,7 @@ export default function AnalyticsAdminPage(): React.ReactElement {
   const [platform, setPlatform] = useState<PlatformFilter>('all');
   const [clientType, setClientType] = useState<ClientTypeFilter>('all');
   const [loading, setLoading] = useState(false);
+  const [applied, setApplied] = useState({ days: 7, platform: 'all' as PlatformFilter, clientType: 'all' as ClientTypeFilter });
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<AnalyticsState>({
@@ -340,7 +342,7 @@ export default function AnalyticsAdminPage(): React.ReactElement {
   });
 
   const totalEvents = useMemo(() => {
-    return data.overview?.eventCounts.reduce((sum, item) => sum + item.count, 0) ?? 0;
+    return data.overview?.eventCounts.reduce((sum, item) => sum + item.count, 0);
   }, [data.overview]);
 
   useEffect(() => {
@@ -356,6 +358,7 @@ export default function AnalyticsAdminPage(): React.ReactElement {
       return;
     }
     setLoading(true);
+    setApplied({ days, platform, clientType });
     setLoaded(true);
     setError(null);
     setData({
@@ -370,26 +373,24 @@ export default function AnalyticsAdminPage(): React.ReactElement {
       channels: null,
       acquisitionSources: null,
     });
-    const requests: Array<[keyof AnalyticsState, Promise<unknown>]> = [
-      ['overview', fetchAnalytics('overview', days, platform, passwordToUse)],
-      ['lifecycle', fetchAnalytics('lifecycle', days, platform, passwordToUse, clientType)],
-      ['pay', fetchAnalytics('pay', days, platform, passwordToUse)],
-      ['export', fetchAnalytics('export', days, platform, passwordToUse)],
-      ['create', fetchAnalytics('create', days, platform, passwordToUse)],
-      ['errors', fetchAnalytics('errors', days, platform, passwordToUse)],
-      ['revenue', fetchAnalytics('revenue', days, platform, passwordToUse)],
-      ['channels', fetchAnalytics('channels', days, platform, passwordToUse)],
-      ['acquisitionSources', fetchAnalytics('acquisitionSources', days, platform, passwordToUse)],
-      ['templates', fetchAnalytics('templates', days, platform, passwordToUse).catch(() => null)],
+    const requests: Array<keyof AnalyticsState> = [
+      'overview', 'revenue', 'errors', 'pay', 'export', 'create',
+      'channels', 'acquisitionSources', 'lifecycle', 'templates',
     ];
-    const results = await Promise.all(requests.map(async ([key, request]) => {
-      try {
-        const value = await request;
-        setData((current) => ({ ...current, [key]: value as AnalyticsState[typeof key] }));
-        return true;
-      } catch (err) {
-        setError(err instanceof Error ? err.message : '加载失败');
-        return false;
+    const results: boolean[] = [];
+    let next = 0;
+    // Keep one refresh from starting ten database aggregations at the same time.
+    await Promise.all(Array.from({ length: 3 }, async () => {
+      while (next < requests.length) {
+        const key = requests[next++];
+        try {
+          const value = await fetchAnalytics(key, days, platform, passwordToUse, key === 'lifecycle' ? clientType : undefined);
+          setData((current) => ({ ...current, [key]: value as AnalyticsState[typeof key] }));
+          results.push(true);
+        } catch (err) {
+          setError(err instanceof Error ? err.message : '加载失败');
+          results.push(false);
+        }
       }
     }));
     if (results.every((ok) => !ok)) setLoaded(false);
@@ -405,7 +406,7 @@ export default function AnalyticsAdminPage(): React.ReactElement {
               <BarChart3 className="h-5 w-5 text-violet-600" />
               埋点统计
             </div>
-            <p className="mt-1 text-sm text-slate-500">轻量封装数据库事件数据，便于查看核心漏斗。</p>
+            <p className="mt-1 text-sm text-slate-500">统计按服务端自然日（含今天）；模板漏斗按最近 N×24 小时。插件请查看「插件填写效果」。</p>
           </div>
 
           <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
@@ -452,6 +453,9 @@ export default function AnalyticsAdminPage(): React.ReactElement {
           </div>
         </div>
 
+        {loaded && (days !== applied.days || platform !== applied.platform || clientType !== applied.clientType) && (
+          <p className="mt-4 text-sm text-amber-700">筛选条件已更改，请点击刷新数据；下方仍显示上次查询结果。</p>
+        )}
         {error && (
           <div className="mt-4 flex items-center gap-2 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">
             <AlertCircle className="h-4 w-4" />
@@ -467,11 +471,12 @@ export default function AnalyticsAdminPage(): React.ReactElement {
       ) : (
         <>
           <section className="grid gap-4 md:grid-cols-4">
-            <MetricCard icon={<Activity />} label="今日 DAU" value={formatNumber(data.overview?.todayDau)} />
-            <MetricCard icon={<Gauge />} label={`${days} 天事件数 · ${PLATFORM_LABELS[platform]}`} value={formatNumber(totalEvents)} />
-            <MetricCard icon={<TrendingUp />} label="支付成功数" value={formatNumber(data.revenue?.paidOrders)} />
-            <MetricCard icon={<Sparkles />} label="支付收入" value={formatCurrency(data.revenue?.totalAmount)} />
+            <MetricCard icon={<Activity />} label="今日访问 UV（估算）" value={formatNumber(data.overview?.visitorIdentityVersion === 2 ? data.overview.todayDau : undefined)} />
+            <MetricCard icon={<Gauge />} label={`${applied.days} 天事件数 · ${PLATFORM_LABELS[applied.platform]}`} value={formatNumber(totalEvents)} />
+            <MetricCard icon={<TrendingUp />} label="当前已支付订单数" value={formatNumber(data.revenue?.paidOrders)} />
+            <MetricCard icon={<Sparkles />} label="当前已支付订单金额" value={formatCurrency(data.revenue?.totalAmount)} />
           </section>
+          {data.overview && data.overview.visitorIdentityVersion !== 2 && <p className="text-sm text-amber-700">统计服务尚未更新，今日访问 UV 暂不展示。</p>}
 
           <LifecycleFunnelCard data={data.lifecycle} />
           <section className="rounded-xl border border-slate-200 bg-white p-5">
@@ -499,9 +504,9 @@ export default function AnalyticsAdminPage(): React.ReactElement {
           <RevenueCard data={data.revenue} />
 
           <section className="grid gap-5 xl:grid-cols-3">
-            <FunnelCard title="支付漏斗" icon={<Sparkles />} data={data.pay} />
-            <FunnelCard title="导出漏斗" icon={<Download />} data={data.export} />
-            <FunnelCard title="创建漏斗" icon={<BarChart3 />} data={data.create} />
+            <FunnelCard title="支付事件分布" icon={<Sparkles />} data={data.pay} />
+            <FunnelCard title="导出事件分布" icon={<Download />} data={data.export} />
+            <FunnelCard title="创建事件分布" icon={<BarChart3 />} data={data.create} />
           </section>
 
           <section className="grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
@@ -529,7 +534,7 @@ export default function AnalyticsAdminPage(): React.ReactElement {
                       <span className="text-sm font-medium text-slate-800">{PLATFORM_LABELS[item.platform] || item.platform}</span>
                       <span className="text-sm font-semibold text-slate-900">{formatNumber(item.count)}</span>
                     </div>
-                    <div className="mt-1 text-xs text-slate-500">用户数 {formatNumber(item.users)}</div>
+                    <div className="mt-1 text-xs text-slate-500">事件身份数（账号或匿名 ID） {formatNumber(item.users)}</div>
                   </div>
                 ))}
               </div>
@@ -541,6 +546,8 @@ export default function AnalyticsAdminPage(): React.ReactElement {
               <h2 className="text-sm font-semibold text-slate-900">错误排行</h2>
               <span className="text-xs text-slate-400">按平台、页面、错误信息聚合</span>
             </div>
+            {data.errors?.truncated && <p className="mt-2 text-xs text-amber-700">共 {formatNumber(data.errors.total)} 条，仅按最近 {formatNumber(data.errors.sampled)} 条聚合，排行和次数不是全量结果。</p>}
+            {data.errors && data.errors.truncated === undefined && <p className="mt-2 text-xs text-amber-700">统计服务未返回采样状态，错误排行可能不是全量结果。</p>}
             <div className="mt-4 space-y-3">
               {data.errors == null ? (
                 <div className="rounded-lg border border-dashed border-slate-200 p-6 text-center text-sm text-slate-500">加载中</div>
@@ -671,14 +678,14 @@ function AttributionCard(props: { data: AttributionData | null }): React.ReactEl
     <section className="rounded-xl border border-slate-200 bg-white p-5">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h2 className="text-sm font-semibold text-slate-900">渠道转化</h2>
-          <p className="mt-1 text-xs text-slate-400">根据推广链接来源，追踪访问到付费</p>
+          <h2 className="text-sm font-semibold text-slate-900">渠道行为与付费归因</h2>
+          <p className="mt-1 text-xs text-slate-400">各行为按账号或匿名 ID 独立计数，可能重复，不是同一批用户的漏斗。付费来自当前已支付订单，按付款前 30 天同账号同端最后一次有来源的行为估算；缺失记为无法归因。</p>
         </div>
         <span className="text-xs text-slate-400">来源 / 媒介</span>
       </div>
       <div className="mt-4 overflow-x-auto">
         {channels.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-slate-200 p-6 text-center text-sm text-slate-500">暂无渠道数据。</div>
+          <div className="rounded-lg border border-dashed border-slate-200 p-6 text-center text-sm text-slate-500">{props.data ? '暂无渠道数据。' : '渠道数据暂不可用。'}</div>
         ) : (
           <table className="w-full min-w-[620px] text-left text-xs">
             <thead className="text-slate-400">
@@ -691,22 +698,23 @@ function AttributionCard(props: { data: AttributionData | null }): React.ReactEl
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {channels.slice(0, 12).map((item) => (
+              {channels.map((item) => (
                 <tr key={`${item.source}-${item.channel}`}>
                   <td className="py-2 pr-3">
                     <div className="font-medium text-slate-800">{labelAcquisitionSource(item.source)}</div>
                     <div className="text-[11px] text-slate-400">{item.channel}</div>
                   </td>
-                  <td className="py-2 text-slate-600">{formatNumber(item.visitors)}</td>
-                  <td className="py-2 text-slate-600">{formatNumber(item.loginUsers)} <span className="text-[11px] text-slate-400">{formatPercent(item.loginRate)}</span></td>
-                  <td className="py-2 text-slate-600">{formatNumber(item.exportUsers)} <span className="text-[11px] text-slate-400">{formatPercent(item.exportRate)}</span></td>
-                  <td className="py-2 text-right font-semibold text-slate-900">{formatNumber(item.paidUsers)}</td>
+                  <td className="py-2 text-slate-600">{formatNumber(item.pageViewUsers)}</td>
+                  <td className="py-2 text-slate-600">{formatNumber(item.loginUsers)}</td>
+                  <td className="py-2 text-slate-600">{formatNumber(item.exportUsers)}</td>
+                  <td className="py-2 text-right font-semibold text-slate-900">{props.data?.attributionVersion === 2 ? `${formatNumber(item.paidUsers)} 人 / ${formatNumber(item.paidOrders)} 单` : '—'}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         )}
       </div>
+      {props.data && props.data.attributionVersion !== 2 && <p className="mt-2 text-xs text-amber-700">统计服务尚未更新，渠道付费数据暂不展示。</p>}
     </section>
   );
 }
@@ -721,17 +729,17 @@ function SelfReportedSourcesCard(props: { data: SelfReportedSourcesData | null }
       </div>
       <div className="mt-4 space-y-2">
         {sources.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-slate-200 p-6 text-center text-sm text-slate-500">暂无回答。</div>
+          <div className="rounded-lg border border-dashed border-slate-200 p-6 text-center text-sm text-slate-500">{props.data ? '暂无回答。' : '来源数据暂不可用。'}</div>
         ) : sources.map((item) => (
           <div key={`${item.source}-${item.sourceDetail || 'none'}`} className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2">
             <div>
               <div className="text-sm font-medium text-slate-800">{labelAcquisitionSource(item.source)}</div>
               {item.sourceDetail && <div className="mt-0.5 text-xs text-violet-600">具体来源：{item.sourceDetail}</div>}
-              <div className="mt-0.5 text-xs text-slate-400">回答 {formatNumber(item.users)} 人</div>
+              <div className="mt-0.5 text-xs text-slate-400">回答身份数 {formatNumber(item.users)}</div>
             </div>
             <div className="text-right">
               <div className="font-semibold text-slate-900">{formatNumber(item.selected)}</div>
-              <div className="text-[11px] text-slate-400">主动选择</div>
+              <div className="text-[11px] text-slate-400">主动选择次数</div>
             </div>
           </div>
         ))}
@@ -751,7 +759,7 @@ function RevenueCard(props: { data: RevenueData | null }): React.ReactElement {
         <div className="flex items-center justify-between gap-3">
           <div>
             <h2 className="text-sm font-semibold text-slate-900">会员收入结构</h2>
-            <p className="mt-1 text-xs text-slate-400">来自真实已支付订单，按套餐聚合</p>
+            <p className="mt-1 text-xs text-slate-400">统计当前状态为已支付的订单；支付时间缺失时使用更新或创建时间，退款状态不计入。非财务净收入，Web 与 H5 支付筛选均对应 Web 订单。</p>
           </div>
           <div className="text-right">
             <div className="text-lg font-bold text-slate-900">{formatCurrency(props.data?.totalAmount)}</div>
@@ -761,7 +769,7 @@ function RevenueCard(props: { data: RevenueData | null }): React.ReactElement {
         <div className="mt-4 space-y-3">
           {plans.length === 0 ? (
             <div className="rounded-lg border border-dashed border-slate-200 p-6 text-center text-sm text-slate-500">
-              当前范围内没有支付订单。
+              {props.data ? '当前范围内没有支付订单。' : '收入数据暂不可用。'}
             </div>
           ) : plans.map((item) => (
             <div key={item.vipType} className="rounded-lg border border-slate-100 p-3">
@@ -787,7 +795,8 @@ function RevenueCard(props: { data: RevenueData | null }): React.ReactElement {
 
       <div className="space-y-5">
         <div className="rounded-xl border border-slate-200 bg-white p-5">
-          <h2 className="text-sm font-semibold text-slate-900">支付创建转化</h2>
+          <h2 className="text-sm font-semibold text-slate-900">订单创建后支付比例</h2>
+          <p className="mt-1 text-xs text-slate-400">按创建时间选订单，查看当前已支付状态；跨期支付包含在内，退款订单不计入已支付。</p>
           <div className="mt-4 space-y-3">
             {conversion.map((item) => (
               <div key={item.vipType} className="rounded-lg bg-slate-50 px-3 py-2">
@@ -831,7 +840,8 @@ function FunnelCard(props: { title: string; icon: React.ReactNode; data: FunnelD
         <span className="text-violet-600">{props.icon}</span>
         {props.title}
       </div>
-      {!props.data && <p className="mt-4 text-sm text-slate-400">加载中</p>}
+      <p className="mt-1 text-xs text-slate-400">各事件独立计数，不代表同一批用户的转化。</p>
+      {!props.data && <p className="mt-4 text-sm text-slate-400">加载中或读取失败</p>}
       <div className="mt-4 space-y-3">
         {(props.data?.steps ?? []).map((step) => {
           const width = Math.max(5, Math.round((step.count / max) * 100));
@@ -840,13 +850,13 @@ function FunnelCard(props: { title: string; icon: React.ReactNode; data: FunnelD
               <div className="mb-1 flex items-center justify-between gap-3 text-xs">
                 <span className="truncate text-slate-600">{labelEvent(step.eventName)}</span>
                 <span className="shrink-0 font-medium text-slate-900">
-                  {formatNumber(step.count)} / {formatPercent(step.conversionFromFirst)}
+                  {formatNumber(step.count)} 次
                 </span>
               </div>
               <div className="h-2 overflow-hidden rounded-full bg-slate-100">
                 <div className="h-full rounded-full bg-violet-500" style={{ width: `${width}%` }} />
               </div>
-              <div className="mt-1 text-xs text-slate-400">用户数 {formatNumber(step.users)}</div>
+              <div className="mt-1 text-xs text-slate-400">事件身份数（账号或匿名 ID） {formatNumber(step.users)}</div>
             </div>
           );
         })}
