@@ -55,7 +55,7 @@ it.each(['greetings', 'intro', 'jd', 'translate'] as const)(
       fireEvent.click(screen.getByRole('button', { name: /一键翻译为/ }))
     } else {
       render(<Interview initialResume={initialResume} resumeOptions={[]} initialTab={tool} />)
-      fireEvent.click(screen.getByRole('button', { name: tool === 'greetings' ? '生成打招呼文案' : '生成面试准备' }))
+      fireEvent.click(screen.getByRole('button', { name: tool === 'greetings' ? '生成打招呼文案' : '生成自我介绍' }))
     }
     await waitFor(() => expect(screen.getByRole('dialog')).toBeTruthy())
     expect(fetch).toHaveBeenCalledTimes(1)

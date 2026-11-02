@@ -27,6 +27,7 @@ import {
   MAX_INTERVIEW_PREP_JD_LENGTH,
   type InterviewPrepGreeting,
   type InterviewPrepOutput,
+  type InterviewPrepPart,
   type InterviewPrepQuestion,
 } from '@/lib/ai/interview-prep-schema'
 import {
@@ -111,6 +112,8 @@ export default function MobileInterviewPrepClient({
   const quota = useCareerQuota()
   const generation = useGenerationRequest()
   const resumeSwitch = useRef(0)
+  const historyItemRef = useRef<InterviewPrepHistoryItem | null>(null)
+  const contextRef = useRef<{ resume: ResumeData; resumeId: string; resumeTitle: string; jd: string } | null>(null)
   const [selectedResumeId, setSelectedResumeId] = useState<string>(initialResume?.id || '')
   const [currentResume, setCurrentResume] = useState<{
     id: string
@@ -121,6 +124,7 @@ export default function MobileInterviewPrepClient({
   const [company, setCompany] = useState('')
   const [jobDescription, setJobDescription] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
+  const [generatingPart, setGeneratingPart] = useState<TabType>(initialTab)
   const [result, setResult] = useState<InterviewPrepOutput | null>(null)
   const [activeTab, setActiveTab] = useState<TabType>(initialTab)
   const [selfIntroVersion, setSelfIntroVersion] = useState<'30s' | '2min'>('30s')
@@ -153,6 +157,8 @@ export default function MobileInterviewPrepClient({
         const fetched = await fetchInterviewPrepResume(resumeId)
         if (switchId !== resumeSwitch.current) return
         setResult(null)
+        historyItemRef.current = null
+        contextRef.current = null
         setCurrentResume({
           id: resumeId,
           title: fetched.title,
@@ -183,81 +189,83 @@ export default function MobileInterviewPrepClient({
     }
   }
 
-  // Trigger generation
-  const handleGenerate = async (): Promise<void> => {
+  // Each part has its own quota check and retains the original resume and JD.
+  const handleGenerate = async (part: TabType = initialTab, fresh = false): Promise<void> => {
     if (!currentResume?.content?.sections) {
       toast.error('请先选择一份包含内容的简历')
       return
     }
-
     if (!quota.allow()) return
+    const started = performance.now()
+    const timings: Record<string, number> = {}
     const request = generation.begin()
+    setGeneratingPart(part)
     setIsGenerating(true)
-    track('ai_assist_start', {
-      feature: 'interview-prep',
-      resumeId: currentResume.id,
-      hasJd: Boolean(jobDescription.trim()),
-      source,
-    })
-
+    let outcome = 'failed'
     try {
+      let context = fresh || !result ? null : contextRef.current
+      if (!context && !fresh && result && historyItemRef.current) {
+        const item = historyItemRef.current
+        const loaded = item.resumeId === currentResume.id
+          ? { resume: currentResume.content, title: currentResume.title }
+          : await fetchInterviewPrepResume(item.resumeId)
+        if (request.signal.aborted) return
+        context = { resume: loaded.resume, resumeId: item.resumeId, resumeTitle: loaded.title || item.resumeTitle, jd: item.jobDescription || '' }
+      }
+      if (!context) context = { resume: currentResume.content, resumeId: currentResume.id, resumeTitle: currentResume.title, jd: jobDescription.trim().slice(0, MAX_INTERVIEW_PREP_JD_LENGTH) }
+      timings.resumeMs = Math.round(performance.now() - started)
+      track('ai_assist_start', { feature: 'interview-prep', resumeId: context.resumeId, hasJd: Boolean(context.jd), source })
+      const requestStart = performance.now()
       const response = await fetch('/next-api/ai/interview-prep', {
         signal: request.signal,
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          resumeData: currentResume.content,
-          jobDescription: jobDescription.trim().slice(0, MAX_INTERVIEW_PREP_JD_LENGTH),
-        }),
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ resumeData: context.resume, jobDescription: context.jd, part: part as InterviewPrepPart }),
       })
-
       const raw = await response.text()
+      timings.requestMs = Math.round(performance.now() - requestStart)
       let data: InterviewPrepOutput & { error?: string; quotaExceeded?: boolean }
-      try {
-        data = JSON.parse(raw)
-      } catch {
-        throw new Error('服务返回结果异常，请稍后重试')
-      }
-
+      try { data = JSON.parse(raw) } catch { throw new Error('服务返回结果异常，请稍后重试') }
       if (!response.ok) {
-        if (quota.handleError(data)) return
+        if (quota.handleError(data)) { outcome = 'quota'; return }
         throw new Error(data.error || '生成失败，请稍后重试')
       }
-
-      if (request.signal.aborted) return
-      setResult(data)
-      setActiveTab(initialTab)
-      toast.success(initialTab === 'intro' ? '面试准备已生成！' : '打招呼文案已生成！')
-
-      // Save to IndexedDB history
+      if (request.signal.aborted) { outcome = 'cancelled'; return }
+      const merged = fresh || !result ? data : {
+        ...result,
+        ...(part === 'greetings' ? { greetings: data.greetings } : part === 'intro'
+          ? { selfIntro30s: data.selfIntro30s, selfIntro2min: data.selfIntro2min }
+          : { questions: data.questions, gaps: data.gaps, summary: data.summary }),
+      }
+      contextRef.current = context
+      setResult(merged)
+      setActiveTab(part)
+      toast.success(part === 'greetings' ? '打招呼文案已生成！' : part === 'intro' ? '自我介绍已生成！' : '面试题已生成！')
       const accountId = resolveInterviewPrepAccountId()
+      const historyStart = performance.now()
       if (accountId) {
         const historyItem: InterviewPrepHistoryItem = {
-          id: createInterviewPrepHistoryId(),
-          createdAt: Date.now(),
-          result: data,
-          jobDescription: jobDescription.trim(),
-          resumeId: currentResume.id,
-          resumeTitle: currentResume.title,
+          id: fresh || !historyItemRef.current ? createInterviewPrepHistoryId() : historyItemRef.current.id,
+          createdAt: fresh || !historyItemRef.current ? Date.now() : historyItemRef.current.createdAt,
+          result: merged, jobDescription: context.jd, resumeId: context.resumeId, resumeTitle: context.resumeTitle,
         }
-        const updated = await saveInterviewPrepHistory(accountId, historyItem)
-        if (!request.signal.aborted) setHistoryList(updated)
+        historyItemRef.current = historyItem
+        try {
+          const updated = await saveInterviewPrepHistory(accountId, historyItem)
+          if (!request.signal.aborted) setHistoryList(updated)
+        } catch { toast.error('内容已生成，但历史记录保存失败') }
       }
-
-      track('ai_assist_success', {
-        feature: 'interview-prep',
-        resumeId: currentResume.id,
-        greetingsCount: data.greetings?.length || 0,
-        questionsCount: data.questions?.length || 0,
-      })
+      timings.historyMs = Math.round(performance.now() - historyStart)
+      outcome = 'success'
+      track('ai_assist_success', { feature: 'interview-prep', greetingsCount: merged.greetings.length, questionsCount: merged.questions.length })
     } catch (err: unknown) {
-      if (request.signal.aborted) return
+      if (request.signal.aborted) { outcome = 'cancelled'; return }
       const msg = err instanceof Error ? err.message : '生成失败，请重试'
       toast.error(msg)
       track('ai_assist_failed', { feature: 'interview-prep', error: msg })
     } finally {
       quota.refresh()
       if (!request.signal.aborted) setIsGenerating(false)
+      console.info('[interview-prep] mobile timing', { part, outcome, ...timings, totalMs: Math.round(performance.now() - started) })
     }
   }
 
@@ -266,6 +274,8 @@ export default function MobileInterviewPrepClient({
     generation.cancel()
     setIsGenerating(false)
     setResult(item.result)
+    historyItemRef.current = item
+    contextRef.current = null
     setJobDescription(item.jobDescription || '')
     setShowHistorySheet(false)
     setActiveTab(initialTab)
@@ -341,7 +351,7 @@ export default function MobileInterviewPrepClient({
           <button
             type="button"
             disabled={isSwitchingResume || isGenerating || !currentResume}
-            onClick={() => void handleGenerate()}
+            onClick={() => void handleGenerate(initialTab, true)}
             className="mt-3 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-violet-600 font-semibold text-sm text-white shadow-sm transition active:scale-[0.99] disabled:opacity-50"
           >
             {isGenerating ? (
@@ -352,20 +362,21 @@ export default function MobileInterviewPrepClient({
             ) : (
               <>
                 <Sparkles size={16} />
-                <span>{result ? '重新生成' : '生成'}{initialTab === 'intro' ? '面试准备' : '打招呼文案'}</span>
+                <span>{result ? '重新生成' : '生成'}{initialTab === 'intro' ? '自我介绍' : '打招呼文案'}</span>
               </>
             )}
           </button>
           {quota.ui}
+          {result ? <p className="mt-2 text-xs leading-5 text-slate-500">继续生成使用本条记录的简历和职位描述；修改后请重新生成。</p> : null}
         </div>
 
         {/* Empty State Feature Preview (Eliminates Bottom Blank Area) */}
         {!result && !isGenerating ? (
           <details className="rounded-xl border border-slate-200/80 bg-white p-3 text-xs text-slate-600">
-            <summary className="cursor-pointer leading-6">生成内容：打招呼 · 自我介绍 · 面试追问</summary>
+            <summary className="cursor-pointer leading-6">可按需生成：打招呼 · 自我介绍 · 面试追问</summary>
             <div className="mt-3 space-y-2.5">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-800">生成后你将获得 3 项定制内容</span>
+              <span className="text-xs font-bold text-slate-800">按需生成 3 项定制内容</span>
               <span className="rounded-md bg-violet-50 px-1.5 py-0.5 text-[11px] font-medium text-violet-700">
                 结合当前简历
               </span>
@@ -412,16 +423,16 @@ export default function MobileInterviewPrepClient({
           </details>
         ) : null}
 
-        {isGenerating ? <GenerationFeedback label={initialTab === 'intro' ? '正在生成面试准备内容…' : '正在生成打招呼文案…'} onCancel={() => { generation.cancel(); setIsGenerating(false) }} /> : null}
+        {isGenerating ? <GenerationFeedback label={generatingPart === 'intro' ? '正在生成自我介绍…' : generatingPart === 'questions' ? '正在生成面试题…' : '正在生成打招呼文案…'} onCancel={() => { generation.cancel(); setIsGenerating(false) }} /> : null}
 
         {/* Results Presentation */}
-        {result && !isGenerating ? (
+        {result ? (
           <div className="space-y-3">
             {/* Segmented Control Tabs */}
             <div className="grid grid-cols-3 gap-1 rounded-xl bg-slate-200/70 p-1 text-center font-medium text-xs">
               <button
                 type="button"
-                onClick={() => setActiveTab(initialTab)}
+                onClick={() => setActiveTab('greetings')}
                 className={`flex items-center justify-center gap-1 rounded-lg py-2 transition ${
                   activeTab === 'greetings'
                     ? 'bg-white text-violet-700 font-semibold shadow-xs'
@@ -457,8 +468,20 @@ export default function MobileInterviewPrepClient({
               </button>
             </div>
 
+            {((activeTab === 'greetings' && !result.greetings.length) ||
+              (activeTab === 'intro' && !result.selfIntro30s && !result.selfIntro2min) ||
+              (activeTab === 'questions' && !result.questions.length)) ? (
+              <div className="space-y-2 rounded-xl border border-slate-200 bg-white p-4 text-center">
+                <p className="text-sm text-slate-600">这部分还没有生成</p>
+                <button type="button" disabled={isGenerating || isSwitchingResume} onClick={() => void handleGenerate(activeTab)} className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">
+                  生成{activeTab === 'greetings' ? '打招呼文案' : activeTab === 'intro' ? '自我介绍' : '面试题'}
+                </button>
+                <p className="text-xs text-slate-500">非会员每次生成单独消耗 1 次 AI 额度。</p>
+              </div>
+            ) : null}
+
             {/* TAB 1: GREETINGS */}
-            {activeTab === 'greetings' ? (
+            {activeTab === 'greetings' && result.greetings.length > 0 ? (
               <div className="space-y-3">
                 {result.greetings.map((g, idx) => {
                   const meta = GREETING_META[g.style] || GREETING_META.highlight
@@ -509,7 +532,7 @@ export default function MobileInterviewPrepClient({
             ) : null}
 
             {/* TAB 2: SELF INTRO */}
-            {activeTab === 'intro' ? (
+            {activeTab === 'intro' && (result.selfIntro30s || result.selfIntro2min) ? (
               <div className="space-y-3">
                 <div className="flex items-center justify-between rounded-xl bg-white border border-slate-200 px-3 py-2">
                   <div className="flex gap-1.5">
@@ -616,7 +639,7 @@ export default function MobileInterviewPrepClient({
             ) : null}
 
             {/* TAB 3: QUESTIONS */}
-            {activeTab === 'questions' ? (
+            {activeTab === 'questions' && result.questions.length > 0 ? (
               <div className="space-y-2.5">
                 {result.questions.map((q, idx) => {
                   const isOpen = expandedQuestion === idx

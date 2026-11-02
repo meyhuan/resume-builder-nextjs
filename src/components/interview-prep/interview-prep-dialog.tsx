@@ -54,6 +54,7 @@ import {
   MAX_INTERVIEW_PREP_JD_LENGTH,
   type InterviewPrepGreeting,
   type InterviewPrepOutput,
+  type InterviewPrepPart,
   type InterviewPrepQuestion,
 } from '@/lib/ai/interview-prep-schema';
 import { useAppStore } from '@/state/store';
@@ -74,7 +75,7 @@ import { EditorAssistQuotaHint } from '@/components/ai/editor-assist-quota-hint'
 const WAITING_MESSAGES = [
   'AI 正在阅读你的简历…',
   '正在对照职位描述…',
-  '正在写打招呼语和面试题…',
+  '正在整理适合你的内容…',
 ] as const;
 
 const GREETING_LABEL: Record<InterviewPrepGreeting['style'], string> = {
@@ -392,6 +393,9 @@ export function InterviewPrepDialog(props: InterviewPrepDialogProps): ReactEleme
 
   const [jobDescription, setJobDescription] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [generatingPart, setGeneratingPart] = useState<InterviewPrepPart>('greetings');
+  const historyItemRef = useRef<InterviewPrepHistoryItem | null>(null);
+  const generationContextRef = useRef<{ resume: ResumeData; resumeId: string; resumeTitle: string; jd: string } | null>(null);
   const [result, setResult] = useState<InterviewPrepOutput | null>(null);
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
@@ -512,6 +516,8 @@ export function InterviewPrepDialog(props: InterviewPrepDialogProps): ReactEleme
 
   const resetTransientState = useCallback((): void => {
     setResult(null);
+    historyItemRef.current = null;
+    generationContextRef.current = null;
     setJobDescription('');
     setError('');
     setCopied(false);
@@ -584,87 +590,98 @@ export function InterviewPrepDialog(props: InterviewPrepDialogProps): ReactEleme
     };
   }, [loadResumeOptions, props.resumeId, props.resumeTitle, resumeOptions]);
 
-  const runGenerate = useCallback(async (forcedResumeId?: string): Promise<void> => {
+  const runGenerate = useCallback(async (forcedResumeId?: string, part: InterviewPrepPart = 'greetings'): Promise<void> => {
+    const started = performance.now();
+    const timings: Record<string, number> = {};
+    let mark = started;
+    const record = (name: string) => { const now = performance.now(); timings[name] = Math.round(now - mark); mark = now; };
     const draft = loadInterviewPrepDraft();
-    const jd = draft?.jobDescription ?? jobDescriptionRef.current;
-    if (forcedResumeId) setSelectedResumeId(forcedResumeId);
-    if (forcedResumeId) selectedResumeIdRef.current = forcedResumeId;
+    const jd = part === 'greetings' ? (draft?.jobDescription ?? jobDescriptionRef.current) : (generationContextRef.current?.jd ?? jobDescriptionRef.current);
+    if (forcedResumeId) { setSelectedResumeId(forcedResumeId); selectedResumeIdRef.current = forcedResumeId; }
     else if (draft?.resumeId && !selectedResumeIdRef.current) {
       setSelectedResumeId(draft.resumeId);
       selectedResumeIdRef.current = draft.resumeId;
     }
     setJobDescription(jd);
-
-    await refreshQuota();
-    if (!requireAiFeature('aiEditorAssist')) {
-      trackAssistBlocked('interview-prep');
-      return;
-    }
-
-    const resolved = await resolveResumeForGenerate();
-    if (resolved === 'empty') {
-      setEmptyResumeHint(true);
-      setNeedsResumePick(false);
-      setIsGenerating(false);
-      void loadHistory();
-      return;
-    }
-    if (resolved === 'pick') {
-      setNeedsResumePick(true);
-      setEmptyResumeHint(false);
-      setIsGenerating(false);
-      void loadHistory();
-      return;
-    }
-
+    setGeneratingPart(part);
+    setIsGenerating(true);
+    setError('');
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
-    setIsGenerating(true);
-    setNeedsResumePick(false);
-    setEmptyResumeHint(false);
-    setError('');
+    let outcome = 'failed';
     try {
+      await refreshQuota();
+      controller.signal.throwIfAborted();
+      record('quotaMs');
+      if (!requireAiFeature('aiEditorAssist')) {
+        trackAssistBlocked('interview-prep');
+        outcome = 'quota';
+        return;
+      }
+      const resolved = part !== 'greetings' && generationContextRef.current
+        ? generationContextRef.current : await resolveResumeForGenerate();
+      controller.signal.throwIfAborted();
+      record('resumeMs');
+      if (resolved === 'empty') {
+        setEmptyResumeHint(true); setNeedsResumePick(false); void loadHistory(); return;
+      }
+      if (resolved === 'pick') {
+        setNeedsResumePick(true); setEmptyResumeHint(false); void loadHistory(); return;
+      }
+      if (part === 'greetings') generationContextRef.current = { ...resolved, jd };
+      setNeedsResumePick(false);
+      setEmptyResumeHint(false);
       trackAssistStart('interview-prep');
       const response = await fetch('/next-api/ai/interview-prep', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ resumeData: resolved.resume, jobDescription: jd }),
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ resumeData: resolved.resume, jobDescription: jd, part }),
         signal: controller.signal,
       });
       const data = await readInterviewPrepResponse(response);
+      controller.signal.throwIfAborted();
+      record('requestMs');
       if (!response.ok) {
         const payload = parseAssistErrorPayload(data);
-        if (!handleAssistQuotaError('interview-prep', payload)) {
-          trackAssistFailed('interview-prep', data.error || '生成失败');
-        }
+        if (!handleAssistQuotaError('interview-prep', payload)) trackAssistFailed('interview-prep', data.error || '生成失败');
         throw new Error(data.error || '生成失败');
       }
-      setResult(data);
+      const merged = part === 'greetings' || !result ? data : {
+        ...result,
+        ...(part === 'intro' ? { selfIntro30s: data.selfIntro30s, selfIntro2min: data.selfIntro2min } : {
+          questions: data.questions, gaps: data.gaps, summary: data.summary,
+        }),
+      };
+      setResult(merged);
       trackAssistSuccess('interview-prep');
       refreshEditorAssistQuota();
       const wxId = resolveInterviewPrepAccountId();
       if (wxId) {
-        const saved = await saveInterviewPrepHistory(wxId, {
-          id: createInterviewPrepHistoryId(),
-          createdAt: Date.now(),
-          result: data,
-          jobDescription: jd,
-          resumeId: resolved.resumeId,
-          resumeTitle: resolved.resumeTitle,
-        });
-        setHistory(saved);
-        props.onHistoryChange?.();
+        const item: InterviewPrepHistoryItem = {
+          id: part === 'greetings' ? createInterviewPrepHistoryId() : (historyItemRef.current?.id ?? createInterviewPrepHistoryId()),
+          createdAt: part === 'greetings' ? Date.now() : (historyItemRef.current?.createdAt ?? Date.now()),
+          result: merged, jobDescription: jd, resumeId: resolved.resumeId, resumeTitle: resolved.resumeTitle,
+        };
+        historyItemRef.current = item;
+        try {
+          setHistory(await saveInterviewPrepHistory(wxId, item));
+          props.onHistoryChange?.();
+        } catch {
+          setError('内容已生成，但历史记录保存失败。');
+        }
       }
+      record('historyMs');
       clearInterviewPrepDraft();
+      outcome = 'success';
     } catch (err) {
-      if (isAbortError(err)) return;
+      if (isAbortError(err)) { outcome = 'cancelled'; return; }
       setError(err instanceof Error ? err.message : '生成失败');
     } finally {
-      if (abortRef.current === controller) abortRef.current = null;
-      setIsGenerating(false);
+      if (abortRef.current === controller) { abortRef.current = null; setIsGenerating(false); }
+      else if (!abortRef.current) setIsGenerating(false);
+      console.info('[interview-prep] client timing', { part, outcome, ...timings, totalMs: Math.round(performance.now() - started) });
     }
-  }, [loadHistory, props, refreshQuota, requireAiFeature, resolveResumeForGenerate]);
+  }, [loadHistory, props, refreshQuota, requireAiFeature, resolveResumeForGenerate, result]);
 
   const handleGenerateClick = (): void => {
     saveInterviewPrepDraft({
@@ -717,7 +734,7 @@ export function InterviewPrepDialog(props: InterviewPrepDialogProps): ReactEleme
         面试准备
       </DialogTitle>
       <DialogDescription>
-        根据当前简历生成打招呼语、自我介绍和面试题。粘贴 JD 会更针对目标岗位。
+        先生成三条打招呼语，再按需生成自我介绍和面试题。粘贴 JD 会更针对目标岗位。
       </DialogDescription>
     </DialogHeader>
   );
@@ -737,10 +754,10 @@ export function InterviewPrepDialog(props: InterviewPrepDialogProps): ReactEleme
       </div>
 
       <TabsContent value="new" className="flex min-h-0 flex-col">
-        {isGenerating ? (
+        {isGenerating && !result ? (
           <AiWaitingState
             messages={WAITING_MESSAGES}
-            hint="通常需要 15–30 秒，请稍候"
+            hint="正在生成，请稍候"
             onCancel={handleCancel}
           />
         ) : !result ? (
@@ -831,7 +848,7 @@ export function InterviewPrepDialog(props: InterviewPrepDialogProps): ReactEleme
                   className="bg-violet-600 text-white hover:bg-violet-700"
                   onClick={handleGenerateClick}
                 >
-                  生成面试准备
+                  生成打招呼语
                 </Button>
               </div>
               <EditorAssistQuotaHint />
@@ -841,11 +858,20 @@ export function InterviewPrepDialog(props: InterviewPrepDialogProps): ReactEleme
           <>
             <div className="min-h-0 flex-1 overflow-y-auto">
               <InterviewPrepResultView result={result} jobDescription={jobDescription} />
+              <div className="space-y-3 px-6 pb-4">
+                {error ? <p role="alert" className="text-sm text-red-600">{error}</p> : null}
+                {isGenerating ? <div className="flex items-center gap-3 text-sm text-slate-600"><span>正在生成{generatingPart === 'intro' ? '自我介绍' : '面试题'}…</span><Button variant="outline" size="sm" onClick={handleCancel}>取消</Button></div> : null}
+                <div className="flex flex-wrap gap-2">
+                  {!result.selfIntro30s && !result.selfIntro2min ? <Button variant="outline" disabled={isGenerating} onClick={() => void runGenerate(undefined, 'intro')}>生成自我介绍</Button> : null}
+                  {result.questions.length === 0 ? <Button variant="outline" disabled={isGenerating} onClick={() => void runGenerate(undefined, 'questions')}>生成面试题</Button> : null}
+                </div>
+                {(!result.selfIntro30s || result.questions.length === 0) ? <p className="text-xs text-slate-500">非会员每次生成单独消耗 1 次 AI 额度。</p> : null}
+              </div>
             </div>
             <div className="space-y-2 border-t border-slate-100 px-6 py-4">
               <div className="flex flex-wrap justify-end gap-2">
                 {props.embedded ? null : <Button variant="outline" onClick={handleClose}>关闭</Button>}
-                <Button variant="outline" className="gap-1.5" onClick={() => { setResult(null); setError(''); }}>
+                <Button variant="outline" className="gap-1.5" disabled={isGenerating} onClick={() => { setResult(null); historyItemRef.current = null; generationContextRef.current = null; setError(''); }}>
                   <RotateCcw className="h-3.5 w-3.5" />
                   再生成
                 </Button>
@@ -875,6 +901,21 @@ export function InterviewPrepDialog(props: InterviewPrepDialogProps): ReactEleme
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto">
               <InterviewPrepResultView result={historyDetail.result} jobDescription={historyDetail.jobDescription} />
+              {(!historyDetail.result.selfIntro30s || historyDetail.result.questions.length === 0) ? (
+                <div className="px-6 pb-4">
+                  <Button variant="outline" onClick={() => {
+                    setResult(historyDetail.result);
+                    setJobDescription(historyDetail.jobDescription ?? '');
+                    jobDescriptionRef.current = historyDetail.jobDescription ?? '';
+                    setSelectedResumeId(historyDetail.resumeId);
+                    selectedResumeIdRef.current = historyDetail.resumeId;
+                    historyItemRef.current = historyDetail;
+                    generationContextRef.current = null;
+                    setError('');
+                    setActiveTab('new');
+                  }}>继续生成其他内容</Button>
+                </div>
+              ) : null}
             </div>
           </>
         ) : history.length === 0 ? (

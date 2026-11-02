@@ -7,6 +7,7 @@ import {
 import {
   interviewPrepOutputSchema,
   type InterviewPrepOutput,
+  type InterviewPrepPart,
 } from '@/lib/ai/interview-prep-schema';
 import { extractJson } from '@/lib/ai/extract-json';
 import { serializeResumeContext } from '@/lib/ai/resume-context';
@@ -47,26 +48,49 @@ You MUST return a JSON object with exactly these fields:
 
 CRITICAL: You are a JSON API. Your entire response must be a single valid JSON object starting with { and ending with }. Do NOT use markdown syntax. Do NOT wrap in code fences. Do NOT add any text before or after the JSON.`;
 
+const PART_PROMPTS: Record<Exclude<InterviewPrepPart, 'full'>, string> = {
+  greetings: `Write exactly three distinct BOSS直聘 first messages in Simplified Chinese, 40–80 Chinese characters each. Include the target role, one matching resume fact and a request to chat. Return JSON only: {"jobTitle":"", "greetings":[{"style":"concise|polite|highlight","text":""}]}; use each style once. Do not invent facts.`,
+  intro: `Write a spoken 30-second and a 2-minute self introduction in the primary language of the resume, using only resume facts and tailoring to the JD if provided. Return JSON only: {"jobTitle":"", "selfIntro30s":"", "selfIntro2min":""}. Do not invent facts.`,
+  questions: `Prepare 8–12 interview questions tailored to the resume and JD or intended role. Use only resume facts; never invent experience. Explain missing requirements honestly. Return JSON only: {"jobTitle":"", "summary":"", "questions":[{"question":"", "category":"hr|professional|behavioral|project|weakness", "why":"", "experienceHint":"", "starAnswer":"", "followUps":[""]}], "gaps":[""]}. Use the primary language of the resume.`,
+};
+
 export async function generateInterviewPrep(params: {
   resumeData: ResumeData;
   jobDescription: string;
   aiConfig: AIConfig;
+  part?: InterviewPrepPart;
+  signal?: AbortSignal;
+  onTiming?: (stage: string, durationMs: number) => void;
 }): Promise<InterviewPrepOutput> {
-  const { resumeData, jobDescription, aiConfig } = params;
+  const { resumeData, jobDescription, aiConfig, part = 'full', signal, onTiming } = params;
+  const start = performance.now();
   const model = getModel(
     aiConfig,
     undefined,
-    resolveThinkingMode('interview-prep'),
+    part === 'greetings' || part === 'intro' ? 'disabled' : resolveThinkingMode('interview-prep'),
   );
   const resumeContext = serializeResumeContext(resumeData);
 
-  const result = await generateText({
-    model,
-    maxOutputTokens: 8192,
-    system: INTERVIEW_PREP_PROMPT,
-    prompt: `Resume:\n${resumeContext}\n\nJob Description:\n${jobDescription.trim() ? jobDescription : '(not provided — use jobIntention or infer the target role from the resume)'}\n\nRespond with JSON only.`,
-    providerOptions: getJsonProviderOptions(aiConfig),
-  });
-
-  return extractJson(result.text, interviewPrepOutputSchema);
+  onTiming?.('prepare', performance.now() - start);
+  const modelStart = performance.now();
+  let result: Awaited<ReturnType<typeof generateText>>;
+  try {
+    result = await generateText({
+      model,
+      maxOutputTokens: part === 'greetings' ? 600 : part === 'intro' ? 1600 : 8192,
+      system: part === 'full' ? INTERVIEW_PREP_PROMPT : PART_PROMPTS[part],
+      abortSignal: signal,
+      prompt: `Resume:\n${resumeContext}\n\nJob Description:\n${jobDescription.trim() ? jobDescription : '(not provided — use jobIntention or infer the target role from the resume)'}\n\nRespond with JSON only.`,
+      providerOptions: getJsonProviderOptions(aiConfig),
+    });
+  } finally {
+    onTiming?.('model', performance.now() - modelStart);
+  }
+  const parseStart = performance.now();
+  const output = extractJson(result.text, interviewPrepOutputSchema);
+  if (part === 'greetings' && (output.greetings.length !== 3 || new Set(output.greetings.map(item => item.style)).size !== 3)) throw new Error('Invalid greetings output');
+  if (part === 'intro' && (!output.selfIntro30s || !output.selfIntro2min)) throw new Error('Invalid intro output');
+  if (part === 'questions' && !output.questions.length) throw new Error('Invalid questions output');
+  onTiming?.('parse', performance.now() - parseStart);
+  return output;
 }

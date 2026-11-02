@@ -6,7 +6,10 @@ export const MAX_INTERVIEW_PREP_JD_LENGTH = 5000;
 export const interviewPrepInputSchema = z.object({
   resumeData: z.custom<ResumeData>(),
   jobDescription: z.string().optional().default(''),
+  part: z.enum(['greetings', 'intro', 'questions', 'full']).default('full'),
 });
+
+export type InterviewPrepPart = 'greetings' | 'intro' | 'questions' | 'full';
 
 export type InterviewPrepInput = z.infer<typeof interviewPrepInputSchema>;
 
