@@ -1,6 +1,7 @@
 'use client'
 
 import { usePathname } from 'next/navigation'
+import Image from 'next/image'
 import { useEditorUiStore } from '@/state/editor-ui-store'
 import { useRef, useState, type ChangeEvent, type ReactElement } from 'react'
 import { ImagePlus, MessageCircle, X } from 'lucide-react'
@@ -19,6 +20,7 @@ export function FeedbackWidget(): ReactElement {
   const activePanel = useEditorUiStore((state) => state.activePanel)
   const besideEditor = (pathname?.startsWith('/editor') && activePanel !== null) || pathname === '/dev/assistant-lab'
   const [isOpen, setIsOpen] = useState<boolean>(false)
+  const [showForm, setShowForm] = useState<boolean>(false)
   const [content, setContent] = useState<string>('')
   const [contact, setContact] = useState<string>('')
   const [attachmentFile, setAttachmentFile] = useState<File | null>(null)
@@ -116,12 +118,12 @@ export function FeedbackWidget(): ReactElement {
       </button>
       {isOpen ? (
         <div className="fixed inset-0 z-50 hidden items-end justify-end bg-slate-950/20 p-6 backdrop-blur-[1px] lg:flex">
-          <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-5 shadow-2xl shadow-slate-900/20">
+          <div className="max-h-[calc(100vh-3rem)] w-full max-w-md overflow-y-auto rounded-3xl border border-slate-200 bg-white p-5 shadow-2xl shadow-slate-900/20">
             <div className="flex items-start justify-between gap-4">
               <div className="space-y-1">
-                <h2 className="text-lg font-semibold text-slate-900">哪里不顺手？</h2>
+                <h2 className="text-lg font-semibold text-slate-900">遇到问题？直接找我就好</h2>
                 <p className="text-sm leading-6 text-slate-500">
-                  遇到 bug、看不懂、不会用、加载慢，或者只是有个建议，都可以告诉我。
+                  我是智简简历的独立开发者。遇到问题或有任何建议，都欢迎找我聊聊，不用担心打扰。
                 </p>
               </div>
               <button
@@ -133,7 +135,20 @@ export function FeedbackWidget(): ReactElement {
                 <X className="h-4 w-4" />
               </button>
             </div>
+            {!showForm ? (
+              <div className="mt-5 space-y-4">
+                <div className="rounded-2xl border border-violet-100 bg-violet-50/50 px-4 py-4 text-center">
+                  <Image src="/wx.webp" alt="开发者微信二维码，扫码添加好友" width={600} height={818} className="mx-auto h-auto w-52 max-w-full rounded-lg" />
+                  <p className="mt-2 text-sm font-medium text-slate-700">微信扫一扫，添加后直接发消息</p>
+                </div>
+                <p className="text-sm leading-6 text-slate-600">添加后，直接把问题或截图发给我就好。我会认真了解你的情况，尽力帮你解决，看到消息后尽快回复。</p>
+                <button type="button" onClick={(): void => setShowForm(true)} className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 transition hover:border-violet-200 hover:bg-violet-50 hover:text-violet-700">
+                  不方便加微信？提交反馈
+                </button>
+              </div>
+            ) : (
             <div className="mt-5 space-y-4">
+              <button type="button" onClick={(): void => setShowForm(false)} className="text-sm font-medium text-violet-700 hover:text-violet-900">← 返回微信联系</button>
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
                   <span className="font-medium text-slate-700">反馈内容 <span className="text-rose-500">*</span></span>
@@ -190,6 +205,7 @@ export function FeedbackWidget(): ReactElement {
                   </div>
                 ) : null}
               </div>
+              <p className="text-xs leading-5 text-slate-500">反馈内容和图片会公开显示在反馈广场，请勿填写隐私信息。提交时会附带问题诊断信息，帮助我排查。</p>
               <Button
                 type="button"
                 onClick={handleSubmit}
@@ -199,6 +215,7 @@ export function FeedbackWidget(): ReactElement {
                 {isSubmitting ? '发送中...' : '发给我'}
               </Button>
             </div>
+            )}
           </div>
         </div>
       ) : null}

@@ -413,11 +413,29 @@ export default function FeedbackPage() {
           产品反馈中心
         </div>
         <h1 className="text-2xl font-bold text-slate-900">用户反馈</h1>
-        <p className="text-sm leading-6 text-slate-600">提交问题或建议，我会尽快跟进处理。</p>
+        <p className="text-sm leading-6 text-slate-600">使用中遇到任何问题，或者有想法想告诉我，都欢迎随时联系。</p>
       </div>
 
       <div className="max-w-4xl space-y-8">
-        <section className="rounded-2xl border border-slate-200 bg-white px-4 py-5 shadow-sm sm:px-6 sm:py-6">
+        <section className="overflow-hidden rounded-2xl border border-violet-100 bg-gradient-to-br from-violet-50/80 via-white to-white shadow-sm">
+          <div className="flex flex-col gap-6 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-7">
+            <div className="max-w-xl space-y-4">
+              <div className="space-y-2">
+                <span className="inline-flex rounded-full bg-white px-3 py-1 text-xs font-semibold text-violet-700 ring-1 ring-violet-100">产品负责人亲自跟进</span>
+                <h2 className="text-xl font-semibold text-slate-900">遇到问题？直接找我就好</h2>
+                <p className="text-sm leading-7 text-slate-600">你好，我是智简简历的独立开发者。无论是操作不顺手、功能出了问题，还是有任何建议，都欢迎来找我聊聊，不用担心打扰。</p>
+                <p className="text-sm leading-7 text-slate-600">我会认真了解你的情况，尽力帮你解决。扫码添加微信后，直接把问题或截图发给我就好；看到消息后我会尽快回复。</p>
+              </div>
+              <a href="#feedback-form" className="inline-flex text-sm font-medium text-violet-700 underline decoration-violet-300 underline-offset-4 hover:text-violet-900">不方便加微信？提交反馈</a>
+            </div>
+            <div className="w-full shrink-0 rounded-xl border border-violet-100 bg-white p-3 text-center sm:w-48">
+              <Image src="/wx.webp" alt="开发者微信二维码，扫码添加好友" width={600} height={818} className="mx-auto h-auto w-40 max-w-full" />
+              <p className="mt-1 text-xs leading-5 text-slate-500">微信扫一扫，添加后直接发消息</p>
+            </div>
+          </div>
+        </section>
+
+        <section id="feedback-form" className="scroll-mt-6 rounded-2xl border border-slate-200 bg-white px-4 py-5 shadow-sm sm:px-6 sm:py-6">
           <div className="mb-5 space-y-1">
             <div>
               <h2 className="text-lg font-semibold text-slate-900">提交新的反馈</h2>
@@ -512,7 +530,7 @@ export default function FeedbackPage() {
 
         {/* 提交按钮 */}
         <div className="flex flex-col gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:items-center sm:justify-between">
-          <div className="text-sm text-slate-500">提交后会显示在反馈广场中。</div>
+          <div className="text-sm text-slate-500">反馈内容和截图提交后会公开显示在反馈广场中，请勿填写隐私信息。</div>
           <div className="text-center sm:text-left">
             <Button
               onClick={handleSubmit}
