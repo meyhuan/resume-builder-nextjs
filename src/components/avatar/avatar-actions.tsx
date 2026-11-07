@@ -8,7 +8,7 @@ import { useAppStore } from '@/state/store'
 import { AvatarSizeControl } from './avatar-size-control'
 
 /** Editor-only overlay. Portalling keeps controls unscaled and out of exported HTML. */
-export function AvatarActions({ baseInfo, name, onUpload, maxScale = 1.4, hovered = false }: {
+export function AvatarActions({ baseInfo, name, onUpload, maxScale = 1.4 }: {
   readonly baseInfo: BaseInfo | null
   readonly name: string
   readonly onUpload: () => void
@@ -18,16 +18,17 @@ export function AvatarActions({ baseInfo, name, onUpload, maxScale = 1.4, hovere
   const readOnly = useAppStore((state) => state.readOnly)
   const updateBaseInfo = useAppStore((state) => state.updateBaseInfo)
   const [open, setOpen] = useState(false)
+  const revealOnHover = 'opacity-0 [[data-resume-avatar]:hover_&]:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100'
   if (readOnly) return null
   return <div data-avatar-actions="true" data-export-hide="true" className="absolute inset-0 z-30 flex flex-col items-center justify-end gap-1 p-1 font-sans print:hidden pointer-events-none"
     onClick={(event) => event.stopPropagation()} onDoubleClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
     <button type="button" onClick={onUpload}
-      className={`pointer-events-auto max-w-full rounded bg-slate-900/80 px-2 py-1 text-[11px] font-medium leading-normal text-white hover:bg-slate-900 focus:opacity-100 ${hovered || !baseInfo?.avatarUrl ? '' : 'opacity-0 [@media(hover:none)]:opacity-100'}`}>
+      className={`pointer-events-auto max-w-full rounded bg-slate-900/80 px-2 py-1 text-[11px] font-medium leading-normal text-white hover:bg-slate-900 ${baseInfo?.avatarUrl ? revealOnHover : ''}`}>
       本地上传
     </button>
     {baseInfo?.avatarUrl && <Popover.Root open={open} onOpenChange={setOpen}>
       <Popover.Trigger asChild>
-        <button type="button" className={`pointer-events-auto max-w-full whitespace-nowrap rounded bg-white/95 px-2 py-1 text-[11px] font-medium leading-normal text-violet-700 shadow-sm hover:bg-violet-50 focus-visible:opacity-100 ${hovered || open ? '' : 'opacity-0 [@media(hover:none)]:opacity-100'}`} aria-label="调整照片大小">调整大小</button>
+        <button type="button" className={`pointer-events-auto max-w-full whitespace-nowrap rounded bg-white/95 px-2 py-1 text-[11px] font-medium leading-normal text-violet-700 shadow-sm hover:bg-violet-50 data-[state=open]:opacity-100 ${revealOnHover}`} aria-label="调整照片大小">调整大小</button>
       </Popover.Trigger>
       <Popover.Portal>
         <Popover.Content side="right" align="start" sideOffset={12} collisionPadding={16}
