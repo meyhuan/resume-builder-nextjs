@@ -27,7 +27,7 @@ export function AvatarActions({ baseInfo, name, onUpload, maxScale = 1.4, hovere
     </button>
     {baseInfo?.avatarUrl && <Popover.Root open={open} onOpenChange={setOpen}>
       <Popover.Trigger asChild>
-        <button type="button" className="pointer-events-auto max-w-full whitespace-nowrap rounded bg-white/95 px-2 py-1 text-[11px] font-medium leading-normal text-violet-700 shadow-sm hover:bg-violet-50" aria-label="调整照片大小">调整大小</button>
+        <button type="button" className={`pointer-events-auto max-w-full whitespace-nowrap rounded bg-white/95 px-2 py-1 text-[11px] font-medium leading-normal text-violet-700 shadow-sm hover:bg-violet-50 focus-visible:opacity-100 ${hovered || open ? '' : 'opacity-0 [@media(hover:none)]:opacity-100'}`} aria-label="调整照片大小">调整大小</button>
       </Popover.Trigger>
       <Popover.Portal>
         <Popover.Content side="right" align="start" sideOffset={12} collisionPadding={16}
