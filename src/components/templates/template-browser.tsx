@@ -28,6 +28,8 @@ interface TemplateBrowserProps<T extends TemplateMetadata> {
   readonly analyticsEntry?: string
   /** Keep more space for template cards inside the mobile preview sheet. */
   readonly compact?: boolean
+  /** Single-row categories and a shared filter/count toolbar for desktop sidebars. */
+  readonly compactHeader?: boolean
   readonly gridClassName?: string
   readonly renderTemplate: (template: T, wordBadge: ReactNode) => ReactNode
 }
@@ -38,6 +40,7 @@ export function TemplateBrowser<T extends TemplateMetadata>({
   currentId,
   analyticsEntry = 'template_gallery',
   compact = false,
+  compactHeader = false,
   gridClassName = 'grid grid-cols-2 gap-4',
   renderTemplate,
 }: TemplateBrowserProps<T>): ReactElement {
@@ -76,13 +79,17 @@ export function TemplateBrowser<T extends TemplateMetadata>({
 
   const wordFilter = (
     <button type="button" aria-pressed={wordOnly} onClick={() => setWordOnly(!wordOnly)}
-        className={`${compact ? 'min-h-11' : 'py-2'} rounded-lg border px-3 text-xs transition-colors focus-visible:outline-2 focus-visible:outline-violet-600 ${wordOnly ? 'border-violet-400 bg-violet-50 text-violet-700' : 'border-slate-200 bg-white text-slate-600 hover:border-violet-300'}`}>
+        className={`${compact ? 'min-h-11' : compactHeader ? 'py-1.5' : 'py-2'} shrink-0 whitespace-nowrap rounded-lg border px-3 text-xs transition-colors focus-visible:outline-2 focus-visible:outline-violet-600 ${wordOnly ? 'border-violet-400 bg-violet-50 text-violet-700' : 'border-slate-200 bg-white text-slate-600 hover:border-violet-300'}`}>
         支持 Word
       </button>
   )
 
+  const resultSummary = <span role="status" aria-live="polite" className="whitespace-nowrap text-slate-500">已找到 {filtered.length} 款模板</span>
+  const clearButton = (activeCount > 0 || wordOnly) && <button type="button" onClick={clear}
+    className={compact ? '-my-2.5 min-h-11 px-1 text-violet-700 underline underline-offset-2' : 'shrink-0 py-1 text-violet-700 underline underline-offset-2'}>清除筛选</button>
+
   return (
-    <div className="min-w-0 space-y-3" data-template-browser="true">
+    <div className={`min-w-0 ${compactHeader ? 'space-y-2' : 'space-y-3'}`} data-template-browser="true">
       {compact ? (
         <div className="flex min-w-0 gap-2">
           <select
@@ -104,7 +111,7 @@ export function TemplateBrowser<T extends TemplateMetadata>({
           </button>
         </div>
       ) : <div
-        className="flex flex-wrap gap-2"
+        className={compactHeader ? 'flex flex-nowrap gap-2 overflow-x-auto px-0.5 py-0.5 [scrollbar-width:thin]' : 'flex flex-wrap gap-2'}
         role="group"
         aria-label="模板快捷分类"
       >
@@ -113,7 +120,7 @@ export function TemplateBrowser<T extends TemplateMetadata>({
             key={quick.id}
             type="button"
             aria-pressed={quickId === quick.id}
-            className={`shrink-0 rounded-lg border px-2.5 py-2 text-xs transition-colors ${quickId === quick.id ? 'border-violet-400 bg-violet-50 text-violet-700' : 'border-slate-200 bg-white text-slate-600 hover:border-violet-300'}`}
+            className={`shrink-0 whitespace-nowrap rounded-lg border px-2.5 ${compactHeader ? 'py-1.5' : 'py-2'} text-xs transition-colors ${quickId === quick.id ? 'border-violet-400 bg-violet-50 text-violet-700' : 'border-slate-200 bg-white text-slate-600 hover:border-violet-300'}`}
             onClick={(): void => {
               setQuickId(quick.id)
               setFilters(quick.filters)
@@ -125,9 +132,16 @@ export function TemplateBrowser<T extends TemplateMetadata>({
         {wordFilter}
       </div>}
       {compact && wordFilter}
-      <details id={filtersId} open={compact ? expanded : undefined}
-        className={compact && !expanded ? 'hidden' : 'rounded-lg border border-slate-200 bg-white p-3'}>
-        <summary className={compact ? 'hidden' : 'cursor-pointer text-xs font-medium text-slate-700'}>
+      {compactHeader && <div className="flex min-h-7 items-center justify-between gap-2 text-xs">
+        <button type="button" aria-expanded={expanded} aria-controls={filtersId} onClick={(): void => setExpanded(!expanded)}
+          className="flex shrink-0 items-center gap-1.5 rounded py-1 font-medium text-slate-700 hover:text-violet-700 focus-visible:outline-2 focus-visible:outline-violet-600">
+          <SlidersHorizontal size={14} aria-hidden="true" />更多筛选{activeCount > 0 ? `（${activeCount}）` : ''}
+        </button>
+        <div className="flex items-center gap-2">{resultSummary}{clearButton}</div>
+      </div>}
+      <details id={filtersId} open={compact || compactHeader ? expanded : undefined}
+        className={(compact || compactHeader) && !expanded ? 'hidden' : 'rounded-lg border border-slate-200 bg-white p-3'}>
+        <summary className={compact || compactHeader ? 'hidden' : 'cursor-pointer text-xs font-medium text-slate-700'}>
           更多筛选{activeCount > 0 ? `（已选 ${activeCount} 项）` : ''}
         </summary>
         <p className="mt-2 text-xs leading-5 text-slate-500">
@@ -166,20 +180,9 @@ export function TemplateBrowser<T extends TemplateMetadata>({
         </div>
         {compact && <button type="button" onClick={(): void => setExpanded(false)} className="mt-2 min-h-11 w-full rounded-lg bg-slate-50 text-sm text-slate-700 hover:bg-slate-100">收起筛选</button>}
       </details>
-      <div className={`flex items-center justify-between gap-2 text-xs ${compact ? 'min-h-6' : ''}`}>
-        <span role="status" aria-live="polite" className="text-slate-500">
-          已找到 {filtered.length} 款模板
-        </span>
-        {(activeCount > 0 || wordOnly) && (
-          <button
-            type="button"
-            onClick={clear}
-            className={compact ? '-my-2.5 min-h-11 px-1 text-violet-700 underline underline-offset-2' : 'py-1 text-violet-700 underline underline-offset-2'}
-          >
-            清除筛选
-          </button>
-        )}
-      </div>
+      {!compactHeader && <div className={`flex items-center justify-between gap-2 text-xs ${compact ? 'min-h-6' : ''}`}>
+        {resultSummary}{clearButton}
+      </div>}
       {!compact && current && !filtered.some((template) => template.id === current.id) && (
         <p className="rounded-lg bg-violet-50 p-3 text-xs leading-5 text-slate-600">
           正在使用「{current.name}」，不在当前筛选结果内，简历保持不变。
