@@ -26,6 +26,22 @@ interface ConfirmRequestBody {
   readonly fileName?: unknown
 }
 
+function hasAllowedOrigin(req: Request): boolean {
+  const origin = req.headers.get('origin')
+  if (!origin) return true
+  try {
+    const url = new URL(req.url)
+    // Production Nginx preserves Host and overwrites X-Forwarded-Proto.
+    // Next's internal request URL can still contain localhost:3000.
+    const host = req.headers.get('host') || url.host
+    const protocol = req.headers.get('x-forwarded-proto')?.split(',')[0]?.trim() || url.protocol.slice(0, -1)
+    if (protocol !== 'http' && protocol !== 'https') return false
+    return new URL(origin).origin === new URL(`${protocol}://${host}`).origin
+  } catch {
+    return false
+  }
+}
+
 export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -48,8 +64,7 @@ export async function POST(
     const signError = verifyMiniSign({ wxId, timestamp, sign })
     if (signError) return NextResponse.json({ error: signError }, { status: 403 })
   } else {
-    const origin = req.headers.get('origin')
-    if (origin && origin !== new URL(req.url).origin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    if (!hasAllowedOrigin(req)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     wxId = (await cookies()).get('auth_uid')?.value || ''
     if (!wxId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }

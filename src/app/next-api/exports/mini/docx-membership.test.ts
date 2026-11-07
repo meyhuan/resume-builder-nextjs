@@ -229,6 +229,22 @@ it('does not charge an already confirmed file again', async () => {
   expect(response.status).toBe(200)
   expect(m.quota).not.toHaveBeenCalled()
 })
+it.each([
+  { origin: 'https://aijianli.cn', status: 200 },
+  { origin: 'https://other.example', status: 403 },
+  { origin: 'http://aijianli.cn', status: 403 },
+  { origin: 'null', status: 403 },
+])('checks cookie confirmation behind the HTTPS proxy: $origin', async ({ origin, status }) => {
+  m.read.mockResolvedValue({ type: 'docx', wxId: 'owner', confirmed: true, expiresAt: Date.now() + 60000 })
+  const response = await confirm(new Request('http://localhost:3000/confirm', {
+    method: 'POST',
+    headers: { Origin: origin, Host: 'aijianli.cn', 'X-Forwarded-Proto': 'https' },
+    body: '{}',
+  }), { params: Promise.resolve({ id: 'token' }) })
+  expect(response.status).toBe(status)
+  expect(m.quota).not.toHaveBeenCalled()
+  if (status === 403) expect(m.read).not.toHaveBeenCalled()
+})
 it('rejects confirmation by a different owner', async () => {
   m.read.mockResolvedValue({ type: 'docx', wxId: 'another', confirmed: true })
   expect(

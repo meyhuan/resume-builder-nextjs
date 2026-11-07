@@ -66,3 +66,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test-deploy.ps1
 - 未执行生产部署；生产 Linux 仍需配置 LibreOffice Writer、中文字体和 Python UNO，可通过 `LIBREOFFICE_PYTHON_PATH` 指定解释器。发布前必须在目标环境运行依赖检查和真实转换检查。
 - 浏览器回归使用模拟业务 API；微信模拟器仅核对本地页面状态和编译。真实支付到账、手机上的 Word/WPS 打开、分享及合法下载域名仍需真机验收。
 - LibreOffice 预览可能与不同版本 Word/WPS 的字体和分页有差异，界面已说明。本轮没有调整模板渲染器或模板排版。
+
+## 发布前追加检查（2026-11-07）
+
+- 对照生产 Nginx 配置补充 HTTPS 反向代理测试，发现确认接口直接比较内部 URL 会误拒绝正常来源。现按 Nginx 保留的 Host 和覆盖的 X-Forwarded-Proto 校验；同域 HTTPS 通过，异域、错误协议及 `null` 来源仍拒绝。接口测试由 18 项增加到 22 项并全部通过。
+- 生产机器原先缺少 LibreOffice / UNO。已将官方 LibreOffice 26.2.7 RPM 包校验 SHA256 后解压到独立目录 `/opt/aijianli-word-preview/runtime`，未替换系统 Python。使用随包 Python 执行三种合成模板的真实转换全部成功，转换器启动约 2.1 秒。
+- 正式运行需设置 `LIBREOFFICE_PATH=/opt/aijianli-word-preview/runtime/opt/libreoffice26.2/program/soffice` 和 `LIBREOFFICE_PYTHON_PATH=/opt/aijianli-word-preview/runtime/opt/libreoffice26.2/program/python`。该检查未使用用户简历或扣减真实账号额度。
