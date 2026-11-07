@@ -32,6 +32,7 @@ Write-Fixture (Join-Path $Fixture "package.json") '{"name":"deploy-fixture","pri
 Write-Fixture (Join-Path $Fixture "pnpm-lock.yaml") 'lockfileVersion: 9'
 Write-Fixture (Join-Path $Fixture "public/libs/pdfjs/pdf.js") 'PDF asset'
 Write-Fixture (Join-Path $Fixture "prisma/schema.prisma") 'fixture'
+Write-Fixture (Join-Path $Fixture "scripts/word-preview-worker.py") '# runtime worker fixture'
 Write-Fixture (Join-Path $Fixture ".env") 'SECRET=fixture-only'
 & git -C $Fixture init -q
 & git -C $Fixture add package.json
@@ -92,6 +93,7 @@ try {
         $names = @($zip.Entries | ForEach-Object { $_.FullName.Replace('\', '/') })
         Assert-Deploy ($names -contains ".next/BUILD_ID" -and $names -contains ".next/static/app.js") "ZIP includes dot directory build output"
         Assert-Deploy ($names -contains "public/libs/pdfjs/pdf.js" -and $names -contains "RELEASE") "ZIP includes runtime assets and version metadata"
+        Assert-Deploy ($names -contains "scripts/word-preview-worker.py") "ZIP includes Word preview runtime worker"
         Assert-Deploy (-not ($names | Where-Object { $_ -match '^\.next/cache/|(^|/)\.env' })) "ZIP excludes compiler cache and environment files"
         $entry = $zip.Entries | Where-Object { $_.FullName.Replace('\', '/') -eq ".next/static/app.js" }
         $reader = [IO.StreamReader]::new($entry.Open())

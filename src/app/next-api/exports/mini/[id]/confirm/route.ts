@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { cookies } from 'next/headers'
 import { prisma } from '@/lib/prisma'
 import { verifyMiniSign } from '@/lib/verify-mini-sign'
 import { markConfirmed, readExportTemp, type ExportTempEntry } from '@/lib/export-temp-store'
@@ -10,12 +11,12 @@ import { sanitizeExportFileName } from '@/lib/export-file-name'
  * POST /next-api/exports/mini/[id]/confirm
  *
  * Final step in the preview→confirm export flow:
- *   1. Verifies signed body.
+ *   1. Verifies signed body or same-origin cookie authentication.
  *   2. If asset already confirmed, returns success (idempotent).
  *   3. Peeks quota; if insufficient, returns 402 QUOTA_EXCEEDED.
- *   4. Consumes quota and flips the asset's `confirmed` flag.
+ *   4. Consumes quota (except free Markdown) and flips `confirmed`.
  *
- * Body: { wxId, timestamp, sign }
+ * Body: { wxId?, timestamp?, sign?, fileName? }
  */
 
 interface ConfirmRequestBody {
@@ -37,16 +38,20 @@ export async function POST(
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
   }
 
-  const wxId: string = String(body.wxId ?? '')
+  let wxId: string = String(body.wxId ?? '')
   const timestamp: number = Number(body.timestamp)
   const sign: string = String(body.sign ?? '')
   const requestedFileName: string | undefined = typeof body.fileName === 'string' && body.fileName.trim()
     ? sanitizeExportFileName(body.fileName)
     : undefined
-  const signError = verifyMiniSign({ wxId, timestamp, sign })
-  if (signError) {
-    console.warn('[exports/mini/confirm] sign error', { id, wxId, signError })
-    return NextResponse.json({ error: signError }, { status: 403 })
+  if (body.wxId || body.sign || body.timestamp) {
+    const signError = verifyMiniSign({ wxId, timestamp, sign })
+    if (signError) return NextResponse.json({ error: signError }, { status: 403 })
+  } else {
+    const origin = req.headers.get('origin')
+    if (origin && origin !== new URL(req.url).origin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    wxId = (await cookies()).get('auth_uid')?.value || ''
+    if (!wxId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
   console.log('[exports/mini/confirm] requested', { id, wxId })
@@ -73,7 +78,8 @@ export async function POST(
     })
   }
 
-  const peek = await peekQuotaForUser(wxId, 'pdf:export')
+  const free = { allowed: true, remaining: 'unlimited' as const, isVip: false, message: '' }
+  const peek = entry.type === 'markdown' ? free : await peekQuotaForUser(wxId, 'pdf:export')
   console.log('[exports/mini/confirm] quota peek', { id, wxId, ...peek })
   if (!peek.allowed) {
     return NextResponse.json({
@@ -91,7 +97,7 @@ export async function POST(
     extension: entry.extension,
   })
 
-  const consumed = await checkQuotaForUser(wxId, 'pdf:export')
+  const consumed = entry.type === 'markdown' ? free : await checkQuotaForUser(wxId, 'pdf:export')
   console.log('[exports/mini/confirm] quota consumed', { id, wxId, ...consumed })
   if (!consumed.allowed) {
     return NextResponse.json({

@@ -28,6 +28,7 @@ interface EditHomeSearchParams {
   readonly mini?: string
   readonly debug?: string
   readonly miniVersion?: string
+  readonly miniDocx?: string
   readonly mpVersion?: string
 }
 
@@ -45,6 +46,7 @@ function buildCanonicalEditRedirect(id: string, params: EditHomeSearchParams): s
     'mini',
     'debug',
     'miniVersion',
+    'miniDocx',
     'mpVersion',
   ]
   for (const key of preservedKeys) {
