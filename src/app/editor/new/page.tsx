@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import ResumeEditor from '@/components/ResumeEditor';
+import { ResumeLoading } from '@/components/resume-loading';
 
 export const metadata: Metadata = {
   title: '创建新简历 - 空白简历编辑器',
@@ -15,7 +16,7 @@ export const metadata: Metadata = {
  */
 export default function NewEditorPage(): React.ReactElement {
   return (
-    <Suspense fallback={<div className="flex h-screen items-center justify-center bg-slate-50 text-slate-400">加载编辑器中...</div>}>
+    <Suspense fallback={<ResumeLoading fullPage title="正在准备你的新简历" />}>
       <ResumeEditor />
     </Suspense>
   );

@@ -29,6 +29,7 @@ import { useResumePagination } from '@/hooks/use-resume-pagination'
 import { useEditorSidebarPreference } from '@/hooks/use-editor-sidebar-preference'
 import { usePdfPreviewPageCount } from '@/hooks/use-pdf-preview-page-count'
 import { ResumePageGuides } from '@/components/editor/resume-page-feedback'
+import { ResumeLoading } from '@/components/resume-loading'
 import { useOnePageMode } from '@/hooks/use-one-page-mode'
 import { toast } from 'sonner'
 import { DEFAULT_ONE_PAGE_STRATEGY, type AdjustableTokens, type OnePageStrategy } from '@/entities/editor/editor-meta'
@@ -1509,13 +1510,11 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
               {/* Suspense 包裹动态加载的模板 */}
               <Suspense
                 fallback={
-                  <div className="flex items-center justify-center h-[297mm] bg-white">
-                    <div className="text-center">
-                      <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4" />
-                      <p className="text-gray-600">正在加载模板...</p>
-                      <p className="text-xs text-gray-400 mt-2">{templateConfig?.name}</p>
-                    </div>
-                  </div>
+                  <ResumeLoading
+                    className="min-h-[297mm] bg-white"
+                    title="正在加载简历模板"
+                    description={templateConfig?.name ? `正在准备「${templateConfig.name}」的排版` : '正在准备简历排版，请稍候'}
+                  />
                 }
               >
                 <div

@@ -12,6 +12,8 @@ import { Button } from '@/components/ui/button'
 import { Download, FileText, Loader2 } from 'lucide-react'
 import { useExportPreview } from '@/hooks/use-export-preview'
 import { ExportAssetPreview } from '@/components/export-asset-preview'
+import { PdfIframePreview } from '@/components/pdf-iframe-preview'
+import { ResumeLoading } from '@/components/resume-loading'
 import type { ExportPreviewAsset } from '@/lib/export-preview'
 import type { ExportProgressListener } from '@/lib/export-progress'
 import {
@@ -168,23 +170,16 @@ export default function ExportPreviewDialog(
                       ? ' · 共 ' + pdfPageCount + ' 页'
                       : ''}
                   </p>
-                  <iframe
+                  {open && <PdfIframePreview
                     key={pdfUrl}
-                    src={pdfUrl + '#toolbar=0'}
-                    className="min-h-64 w-full flex-1 border-0"
-                    title="PDF 预览"
-                  />
-                  <p className="mt-2 text-xs text-slate-500">
-                    若预览空白，可直接确认下载 PDF 后查看，或切换图片预览。
-                  </p>
+                    pdfUrl={pdfUrl}
+                    onPreviewImage={onPreviewImage ? () => selectFormat('image') : undefined}
+                  />}
                 </div>
               ) : (
-                <div className="flex h-full min-h-48 flex-col items-center justify-center gap-3 text-sm text-slate-500">
+                <div className="flex min-h-full flex-col items-center justify-center gap-3 text-sm text-slate-500">
                   {isGenerating ? (
-                    <>
-                      <Loader2 className="h-6 w-6 animate-spin" />
-                      正在生成 PDF 预览，可先选择其他格式
-                    </>
+                    <ResumeLoading compact title="正在生成 PDF 预览" description="正在准备导出文件，你也可以先选择其他格式" className="w-full" />
                   ) : (
                     <>
                       <span>PDF 预览尚未生成</span>
@@ -209,9 +204,9 @@ export default function ExportPreviewDialog(
                   className="w-full"
                 />
               ) : (
-                <div className="flex h-full min-h-48 flex-col items-center justify-center gap-3 text-sm text-slate-500">
+                <div className="flex min-h-full flex-col items-center justify-center gap-3 text-sm text-slate-500">
                   {imageLoading
-                    ? '正在生成图片预览…'
+                    ? <ResumeLoading compact title="正在生成图片预览" description="正在将简历排版转换为图片，请稍候" className="w-full" />
                     : imageError
                       ? '图片预览生成失败'
                       : '可将当前简历保存为 PNG 图片'}
