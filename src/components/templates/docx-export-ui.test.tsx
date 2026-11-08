@@ -42,6 +42,27 @@ afterEach(() => {
   vi.unstubAllGlobals()
   vi.mocked(toast.info).mockClear()
 })
+it('downloads a generated PDF without an iframe load event', () => {
+  const confirm = vi.fn()
+  render(<ExportPreviewDialog open onOpenChange={vi.fn()} pdfUrl="blob:ready-pdf"
+    pdfPageCount={1} isVip onConfirmExport={confirm} />)
+  expect(screen.getByTitle('PDF 预览')).toBeTruthy()
+  // Tablet webviews may never emit load for the native PDF viewer.
+  const button = screen.getByRole('button', { name: '确认下载 PDF' }) as HTMLButtonElement
+  expect(button.disabled).toBe(false)
+  fireEvent.click(button)
+  expect(confirm).toHaveBeenCalledOnce()
+})
+
+it('keeps PDF download disabled until a file exists and while confirming', () => {
+  const props = { open: true, onOpenChange: vi.fn(), onConfirmExport: vi.fn(), isVip: true }
+  const view = render(<ExportPreviewDialog {...props} pdfUrl="" isGenerating />)
+  expect((screen.getByRole('button', { name: '确认下载 PDF' }) as HTMLButtonElement).disabled).toBe(true)
+  view.rerender(<ExportPreviewDialog {...props} pdfUrl="blob:ready-pdf" isConfirming />)
+  expect((screen.getByRole('button', { name: '正在导出…' }) as HTMLButtonElement).disabled).toBe(true)
+  expect(props.onConfirmExport).not.toHaveBeenCalled()
+})
+
 it('shows server Word progress before the preview is ready and keeps download disabled', async () => {
   render(<ExportPreviewDialog open onOpenChange={vi.fn()} pdfUrl="" isGenerating={false}
     onConfirmExport={vi.fn()} onExportDocx={vi.fn()}

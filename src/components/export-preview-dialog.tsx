@@ -75,7 +75,6 @@ export default function ExportPreviewDialog(
   const [imageError, setImageError] = useState(false)
   const [imageReady, setImageReady] = useState(false)
   const [wordReady, setWordReady] = useState(false)
-  const [loadedPdf, setLoadedPdf] = useState('')
   useEffect(() => {
     imageRequestRef.current += 1
     setImageUrl('')
@@ -172,10 +171,12 @@ export default function ExportPreviewDialog(
                   <iframe
                     key={pdfUrl}
                     src={pdfUrl + '#toolbar=0'}
-                    onLoad={() => setLoadedPdf(pdfUrl)}
                     className="min-h-64 w-full flex-1 border-0"
                     title="PDF 预览"
                   />
+                  <p className="mt-2 text-xs text-slate-500">
+                    若预览空白，可直接确认下载 PDF 后查看，或切换图片预览。
+                  </p>
                 </div>
               ) : (
                 <div className="flex h-full min-h-48 flex-col items-center justify-center gap-3 text-sm text-slate-500">
@@ -288,7 +289,9 @@ export default function ExportPreviewDialog(
                 needsTemplate ||
                 (!needsTemplate &&
                   !quotaDepleted &&
-                  ((format === 'pdf' && (!pdfUrl || loadedPdf !== pdfUrl)) ||
+                  // Embedded PDF support varies by browser; the generated file
+                  // remains downloadable even when the iframe never loads.
+                  ((format === 'pdf' && !pdfUrl) ||
                     (format === 'image' && !imageReady) ||
                     (format === 'docx' && (!word.asset || !wordReady))))
               }
