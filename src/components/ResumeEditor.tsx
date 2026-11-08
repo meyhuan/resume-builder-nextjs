@@ -799,7 +799,16 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
       
       // Only revalidate dashboard for manual saves
       if (!isAutoSave && options.revalidateDashboard !== false) {
-        await revalidateDashboard()
+        try {
+          await revalidateDashboard()
+        } catch (error) {
+          // Content is already persisted. A stale Server Action or a network
+          // failure refreshing the dashboard must not fail saving or exporting.
+          console.warn('[ResumeEditor] dashboard revalidation failed after save', {
+            resumeId: currentId,
+            error: describeUnknownError(error),
+          })
+        }
       }
       if (options.showSuccessToast !== false) {
         toast.success('保存成功')
