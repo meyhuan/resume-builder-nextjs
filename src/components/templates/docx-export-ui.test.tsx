@@ -262,7 +262,10 @@ it('downloads the exact PNG preview only after it loads', async () => {
     (screen.getByRole('button', { name: '确认下载 图片' }) as HTMLButtonElement)
       .disabled,
   ).toBe(true)
-  fireEvent.load(await screen.findByAltText('实际 PNG 导出预览'))
+  const preview = await screen.findByAltText('实际 PNG 导出预览')
+  expect(screen.getByRole('status', { name: '正在加载图片预览' })).toBeTruthy()
+  fireEvent.load(preview)
+  expect(screen.queryByRole('status', { name: '正在加载图片预览' })).toBeNull()
   fireEvent.click(screen.getByRole('button', { name: '确认下载 图片' }))
   expect(download).toHaveBeenCalledWith('data:image/png;base64,cHJldmlldw==')
   expect(prepare).toHaveBeenCalledOnce()

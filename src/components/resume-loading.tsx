@@ -8,7 +8,7 @@ interface ResumeLoadingProps {
   description?: string
   className?: string
   fullPage?: boolean
-  compact?: boolean
+  variant?: 'document' | 'progress'
 }
 
 /** A neutral document silhouette, not a prediction of the selected template. */
@@ -17,16 +17,32 @@ export function ResumeLoading({
   description = '正在准备内容与排版，请稍候',
   className,
   fullPage = false,
-  compact = false,
+  variant = 'document',
 }: ResumeLoadingProps) {
+  if (fullPage || variant === 'progress') {
+    return (
+      <div role="status" aria-live="polite" aria-label={title}
+        className={cn('flex min-w-0 flex-col items-center justify-center gap-4 p-6 text-center', fullPage && 'min-h-dvh bg-slate-50', className)}>
+        <div aria-hidden="true" className="flex h-8 items-center gap-1.5 text-violet-300 motion-safe:animate-pulse">
+          <span className="h-3 w-1.5 rounded-full bg-current" />
+          <span className="h-7 w-1.5 rounded-full bg-current" />
+          <span className="h-5 w-1.5 rounded-full bg-current" />
+          <span className="h-3 w-1.5 rounded-full bg-current" />
+        </div>
+        <div><p className="text-sm font-medium text-slate-700">{title}</p>
+          <p className="mt-1.5 text-xs leading-5 text-slate-500">{description}</p></div>
+      </div>
+    )
+  }
   return (
     <div
       role="status"
       aria-live="polite"
       aria-label={title}
-      className={cn('flex min-w-0 flex-col items-center justify-center gap-5 p-5 sm:p-7', compact && 'gap-3 p-3 sm:p-3 md:gap-5 md:p-7', fullPage && 'min-h-dvh bg-slate-50', className)}
+      data-resume-loading-paper
+      className={cn('relative aspect-[210/297] w-full min-w-0 overflow-hidden bg-white', className)}
     >
-      <div aria-hidden="true" className={cn('relative w-full max-w-[340px] shrink-0 overflow-hidden rounded-sm border border-slate-200 bg-white shadow-sm', compact && 'max-w-[140px] md:max-w-[340px]')}>
+      <div aria-hidden="true" className="w-full">
         <svg viewBox="0 0 420 594" fill="currentColor" className="block aspect-[210/297] w-full text-slate-100 motion-safe:animate-pulse">
           <rect x="36" y="42" width="110" height="16" rx="3" className="text-slate-300" />
           <rect x="36" y="70" width="164" height="7" rx="2" className="text-violet-200" />
@@ -50,7 +66,7 @@ export function ResumeLoading({
           <rect x="172" y="528" width="44" height="17" rx="3" />
         </svg>
       </div>
-      <div className="max-w-sm text-center">
+      <div className="absolute inset-x-3 top-3 mx-auto max-w-sm rounded-lg border border-slate-200 bg-white/95 px-3 py-2 text-center shadow-sm">
         <p className="text-sm font-medium text-slate-700">{title}</p>
         <p className="mt-1.5 text-xs leading-5 text-slate-500">{description}</p>
       </div>

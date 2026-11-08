@@ -1464,7 +1464,9 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
   const renderableResume = useMemo(() => getRenderableResume(resume, editingBlockIds), [resume, editingBlockIds])
 
   return (
-    <div className="h-dvh bg-slate-50/50 text-slate-900 flex flex-col overflow-hidden relative">
+    <div data-editor-ready={sidebarReady && isHydrated ? 'true' : 'false'} className="h-dvh bg-slate-50/50 text-slate-900 flex flex-col overflow-hidden relative">
+      {/* Keep measurement refs mounted while restoring the tool panel. */}
+      {(!sidebarReady || !isHydrated) && <ResumeLoading fullPage className="absolute inset-0 z-50" />}
       {/* Background Decorative Orbs */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] bg-violet-500/5 rounded-full blur-[100px]" />
@@ -1511,7 +1513,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
               <Suspense
                 fallback={
                   <ResumeLoading
-                    className="min-h-[297mm] bg-white"
+                    className="rounded-xl"
                     title="正在加载简历模板"
                     description={templateConfig?.name ? `正在准备「${templateConfig.name}」的排版` : '正在准备简历排版，请稍候'}
                   />

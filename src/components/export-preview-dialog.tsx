@@ -179,7 +179,7 @@ export default function ExportPreviewDialog(
               ) : (
                 <div className="flex min-h-full flex-col items-center justify-center gap-3 text-sm text-slate-500">
                   {isGenerating ? (
-                    <ResumeLoading compact title="正在生成 PDF 预览" description="正在准备导出文件，你也可以先选择其他格式" className="w-full" />
+                    <ResumeLoading variant="progress" title="正在生成 PDF 预览" description="正在准备导出文件，你也可以先选择其他格式" className="w-full" />
                   ) : (
                     <>
                       <span>PDF 预览尚未生成</span>
@@ -192,22 +192,25 @@ export default function ExportPreviewDialog(
               )
             ) : format === 'image' ? (
               imageUrl ? (
-                <img
-                  src={imageUrl}
-                  onLoad={() => setImageReady(true)}
-                  onError={() => {
-                    setImageReady(false)
-                    setImageUrl('')
-                    setImageError(true)
-                  }}
-                  alt="实际 PNG 导出预览"
-                  className="w-full"
-                />
+                <div className="relative w-full">
+                  {!imageReady && <ResumeLoading title="正在加载图片预览" description="正在显示生成的简历图片，请稍候" />}
+                  <img
+                    src={imageUrl}
+                    onLoad={() => setImageReady(true)}
+                    onError={() => {
+                      setImageReady(false)
+                      setImageUrl('')
+                      setImageError(true)
+                    }}
+                    alt="实际 PNG 导出预览"
+                    className={imageReady ? 'block w-full' : 'absolute inset-x-0 top-0 block w-full opacity-0'}
+                  />
+                </div>
+              ) : imageLoading ? (
+                <ResumeLoading title="正在生成图片预览" description="正在将简历排版转换为图片，请稍候" />
               ) : (
                 <div className="flex min-h-full flex-col items-center justify-center gap-3 text-sm text-slate-500">
-                  {imageLoading
-                    ? <ResumeLoading compact title="正在生成图片预览" description="正在将简历排版转换为图片，请稍候" className="w-full" />
-                    : imageError
+                  {imageError
                       ? '图片预览生成失败'
                       : '可将当前简历保存为 PNG 图片'}
                   {!imageLoading && (
