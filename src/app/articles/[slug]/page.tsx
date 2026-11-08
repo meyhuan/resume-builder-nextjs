@@ -6,13 +6,12 @@ import { ChevronLeft, ChevronRight, BookOpen, Calendar, Tag } from 'lucide-react
 import { LandingHeader } from '@/components/landing/LandingHeader';
 import { LandingFooter } from '@/components/landing/LandingFooter';
 import {
-  getAllArticles,
-  getArticleBySlug,
-  getAdjacentArticles,
   extractHeadings,
   injectHeadingIds,
   getCategoryMeta,
 } from '@/lib/articles/article-data';
+import { getPublishedArticle, getPublishedAdjacentArticles } from '@/lib/articles/article-repository';
+import { ArticleMarkdown } from '@/components/articles/article-markdown';
 import type { Article, TocHeading } from '@/lib/articles/article-types';
 import { getAllResumeExamples, type ResumeExample } from '@/lib/examples/resume-examples';
 import { templateRoleData } from '@/lib/templates/template-role-data';
@@ -74,11 +73,14 @@ function getRelatedExamplesForArticle(article: Article): ResumeExample[] {
 }
 
 // ---------------------------------------------------------------------------
-// Static params — enables SSG for all 140 articles (SEO-critical)
+// Generate new URLs on first visit; no build-time database snapshot required.
 // ---------------------------------------------------------------------------
 
+export const revalidate = 60;
+export const dynamicParams = true;
+
 export async function generateStaticParams(): Promise<{ slug: string }[]> {
-  return getAllArticles().map((a) => ({ slug: a.slug }));
+  return [];
 }
 
 // ---------------------------------------------------------------------------
@@ -91,7 +93,7 @@ interface SlugPageProps {
 
 export async function generateMetadata({ params }: SlugPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const article = getArticleBySlug(slug);
+  const article = await getPublishedArticle(slug);
   if (!article) return { title: '文章未找到' };
   const catMeta = getCategoryMeta(article.category);
   return {
@@ -118,10 +120,10 @@ export async function generateMetadata({ params }: SlugPageProps): Promise<Metad
 
 export default async function ArticleDetailPage({ params }: SlugPageProps): Promise<React.ReactElement> {
   const { slug } = await params;
-  const article = getArticleBySlug(slug);
+  const article = await getPublishedArticle(slug);
   if (!article) notFound();
 
-  const { prev, next } = getAdjacentArticles(slug);
+  const { prev, next } = await getPublishedAdjacentArticles(slug);
   const headings: TocHeading[] = extractHeadings(article.htmlContent);
   const htmlWithIds: string = injectHeadingIds(article.htmlContent);
   const catMeta = getCategoryMeta(article.category);
@@ -156,11 +158,11 @@ export default async function ArticleDetailPage({ params }: SlugPageProps): Prom
     <div className="min-h-screen flex flex-col bg-[#F8FAFC] selection:bg-fuchsia-200">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd).replace(/</g, '\\u003c') }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd).replace(/</g, '\\u003c') }}
       />
       <LandingHeader forceSolid />
 
@@ -222,10 +224,9 @@ export default async function ArticleDetailPage({ params }: SlugPageProps): Prom
 
               {/* Article body */}
               <div className="bg-white/70 backdrop-blur-md rounded-2xl border border-white shadow-sm p-6 md:p-10">
-                <div
-                  className="article-prose"
-                  dangerouslySetInnerHTML={{ __html: htmlWithIds }}
-                />
+                {article.markdownContent !== undefined ? (
+                  <div className="article-prose"><ArticleMarkdown content={article.markdownContent} /></div>
+                ) : <div className="article-prose" dangerouslySetInnerHTML={{ __html: htmlWithIds }} />}
               </div>
 
               <section className="rounded-2xl bg-white/70 backdrop-blur-md border border-white shadow-sm p-6 md:p-8 mt-8">

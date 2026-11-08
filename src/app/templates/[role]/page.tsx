@@ -7,11 +7,14 @@ import { notFound } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { LandingFooter } from '@/components/landing/LandingFooter';
 import { LandingHeader } from '@/components/landing/LandingHeader';
-import { getAllArticles } from '@/lib/articles/article-data';
+import { getPublishedArticles } from '@/lib/articles/article-repository';
+
 import type { Article } from '@/lib/articles/article-types';
 import { getAllResumeExamples, type ResumeExample } from '@/lib/examples/resume-examples';
 import { templateCatalog } from '@/lib/templates/template-catalog';
 import { templateRoleData } from '@/lib/templates/template-role-data';
+
+export const revalidate = 60;
 
 const SITE_URL: string = 'https://aijianli.cn';
 
@@ -113,13 +116,13 @@ function countKeywordMatches(content: string, keywords: readonly string[]): numb
   }, 0);
 }
 
-function getRecommendedArticlesForRole(
+async function getRecommendedArticlesForRole(
   roleName: string,
   industry: string,
   category: string,
   searchKeywords: readonly string[],
-): Article[] {
-  const allArticles: Article[] = getAllArticles();
+): Promise<Article[]> {
+  const allArticles: Article[] = await getPublishedArticles();
   const relevanceKeywords: string[] = [roleName, industry, category, ...searchKeywords];
   return allArticles
     .map((article: Article) => {
@@ -632,7 +635,7 @@ export default async function TemplateRolePage({ params }: RolePageParams): Prom
       ...template,
       fitReason: createTemplateReason(template.id, roleRecord.category),
     }));
-  const recommendedArticles: Article[] = getRecommendedArticlesForRole(
+  const recommendedArticles: Article[] = await getRecommendedArticlesForRole(
     roleRecord.role,
     roleRecord.industry,
     roleRecord.category,

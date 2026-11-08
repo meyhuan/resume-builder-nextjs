@@ -33,6 +33,7 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
     items: [
       { href: '/admin', label: '会员管理', shortLabel: '会员', icon: Crown },
       { href: '/admin/codes', label: '兑换码', shortLabel: '兑换码', icon: Gift },
+      { href: '/admin/articles', label: '文章管理', shortLabel: '文章', icon: NotebookPen },
       { href: '/admin/xhs-notes', label: '笔记奖励', shortLabel: '笔记奖励', icon: NotebookPen },
     ],
   },

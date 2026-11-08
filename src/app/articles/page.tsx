@@ -5,13 +5,14 @@ import { Calendar, Tag } from 'lucide-react';
 import { LandingHeader } from '@/components/landing/LandingHeader';
 import { LandingFooter } from '@/components/landing/LandingFooter';
 import {
-  getAllArticles,
-  getArticlesByCategory,
   ARTICLE_CATEGORIES,
-  getCategoryCounts,
   getCategoryMeta,
 } from '@/lib/articles/article-data';
 import type { ArticleCategoryId } from '@/lib/articles/article-types';
+
+import { getPublishedArticles } from '@/lib/articles/article-repository';
+
+export const revalidate = 60;
 
 export const metadata: Metadata = {
   title: '求职攻略 - 简历写作·面试技巧·职场指南',
@@ -42,8 +43,9 @@ interface ArticlesPageProps {
 export default async function ArticlesPage({ searchParams }: ArticlesPageProps): Promise<React.ReactElement> {
   const params = await searchParams;
   const activeCat = (params.category as ArticleCategoryId) || 'all';
-  const articles = activeCat === 'all' ? getAllArticles() : getArticlesByCategory(activeCat);
-  const counts = getCategoryCounts();
+  const allArticles = await getPublishedArticles();
+  const articles = activeCat === 'all' ? allArticles : allArticles.filter((article) => article.category === activeCat);
+  const counts = Object.fromEntries(ARTICLE_CATEGORIES.map((cat) => [cat.id, cat.id === 'all' ? allArticles.length : allArticles.filter((article) => article.category === cat.id).length]));
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F8FAFC]">

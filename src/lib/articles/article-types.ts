@@ -26,6 +26,7 @@ export interface Article {
   title: string;
   abstract: string;
   htmlContent: string;
+  markdownContent?: string;
   textContent: string;
   tags: string[];
   category: ArticleCategoryId;

@@ -1,8 +1,11 @@
 import type { MetadataRoute } from 'next';
-import { getAllArticles } from '@/lib/articles/article-data';
+import { getPublishedArticles } from '@/lib/articles/article-repository';
+
 import { getAllResumeExamples } from '@/lib/examples/resume-examples';
 import { aeoPages } from '@/lib/seo/aeo-pages';
 import { templateRoleData } from '@/lib/templates/template-role-data';
+
+export const revalidate = 60;
 
 const SITE_URL = 'https://aijianli.cn';
 const STATIC_ROUTES: ReadonlyArray<{
@@ -27,9 +30,9 @@ function createAbsoluteUrl(path: string): string {
   return path ? `${SITE_URL}${path}` : SITE_URL;
 }
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now: Date = new Date();
-  const allArticles = getAllArticles();
+  const allArticles = await getPublishedArticles();
   const allExamples = getAllResumeExamples();
   const allTemplateRoles = templateRoleData.getAllTemplateRoles();
   const allTemplateCategories = templateRoleData.getAllTemplateRoleCategories();
@@ -39,7 +42,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       const articleDate: Date = new Date(article.updatedAt || article.createdAt);
       return articleDate.getTime() > latest.getTime() ? articleDate : latest;
     },
-    now,
+    new Date(0),
   );
   const staticPages: MetadataRoute.Sitemap = STATIC_ROUTES.map((route) => ({
     url: createAbsoluteUrl(route.path),

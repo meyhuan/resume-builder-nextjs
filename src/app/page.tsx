@@ -14,8 +14,10 @@ import { LandingFooter } from "@/components/landing/LandingFooter";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { getPublicSiteStats } from "@/lib/public-site-stats";
 
+import { getPublishedArticles } from '@/lib/articles/article-repository';
+
 const SITE_URL = "https://aijianli.cn";
-export const revalidate = 3600;
+export const revalidate = 60;
 
 export const metadata: Metadata = {
   alternates: {
@@ -24,6 +26,10 @@ export const metadata: Metadata = {
 };
 
 export default async function Home() {
+  const articles = (await getPublishedArticles()).map((article) => ({
+    slug: article.slug, title: article.title, abstract: article.abstract,
+    category: article.category, createdAt: article.createdAt, tags: article.tags,
+  }));
   const publicSiteStats = await getPublicSiteStats();
 
   return (
@@ -37,7 +43,7 @@ export default async function Home() {
         <LandingUseCases id="use-cases" />
         <LandingTemplates id="templates" />
         <LandingTestimonials id="testimonials" />
-        <LandingArticles id="articles" />
+        <LandingArticles id="articles" articles={articles} />
         <LandingWhyFree id="why-free" />
         <LandingSearchIntents id="search-intents" />
         <LandingFAQ id="faq" />

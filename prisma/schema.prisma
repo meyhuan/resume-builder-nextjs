@@ -8,6 +8,26 @@ generator client {
   binaryTargets = ["native", "debian-openssl-3.0.x"]
 }
 
+enum ArticleStatus {
+  DRAFT
+  PUBLISHED
+}
+
+model Article {
+  id        String        @id @default(dbgenerated("gen_random_uuid()::text"))
+  slug      String        @unique
+  title     String
+  content   String        @db.Text
+  summary   String
+  category  String        @default("career-guide")
+  tags      String[]      @default([])
+  status    ArticleStatus @default(DRAFT)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @default(now()) @updatedAt
+
+  @@index([status, createdAt])
+}
+
 model User {
   id         String     @id @default(cuid())
   clerkId    String?    @unique

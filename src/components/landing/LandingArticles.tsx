@@ -5,28 +5,27 @@ import Link from "next/link";
 import { BookOpen, ChevronRight, Calendar, ArrowRight } from "lucide-react";
 import { LandingButton } from "./LandingButton";
 import {
-  getAllArticles,
-  getArticlesByCategory,
   ARTICLE_CATEGORIES,
   getCategoryMeta,
 } from "@/lib/articles/article-data";
-import type { ArticleCategoryId } from "@/lib/articles/article-types";
+import type { Article, ArticleCategoryId } from "@/lib/articles/article-types";
 
 interface ArticlesSectionProps {
   id?: string;
+  articles: Pick<Article, 'slug' | 'title' | 'abstract' | 'category' | 'createdAt' | 'tags'>[];
 }
 
 const DISPLAY_COUNT = 3;
 
 export const LandingArticles = ({
-  id,
+  id, articles: allArticles,
 }: ArticlesSectionProps): React.ReactElement => {
   const [activeCat, setActiveCat] = useState<ArticleCategoryId>("all");
 
   const articles =
     activeCat === "all"
-      ? getAllArticles().slice(0, DISPLAY_COUNT)
-      : getArticlesByCategory(activeCat).slice(0, DISPLAY_COUNT);
+      ? allArticles.slice(0, DISPLAY_COUNT)
+      : allArticles.filter((article) => article.category === activeCat).slice(0, DISPLAY_COUNT);
 
   return (
     <section

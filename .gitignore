@@ -34,6 +34,7 @@ artifacts/
 !/prisma/migrations/202609060001_extension_telemetry/
 !/prisma/migrations/202610130001_xhs_note_draft/
 !/prisma/migrations/202610130001_xhs_note_draft/migration.sql
+!/prisma/migrations/202611080001_articles/
 /prisma/*.db
 /prisma/*.db-journal
 
