@@ -62,6 +62,9 @@ it('places mobile page labels at successive boundaries and removes them when con
     { target: observed, contentRect: { height } } as ResizeObserverEntry,
   ], {} as ResizeObserver))
   resizeContent(2500)
+  const guides = screen.getByText('第 2 页').closest('[data-mobile-page-guides]')!
+  expect(guides.getAttribute('data-export-hide')).toBe('true')
+  expect(guides.classList.contains('print:hidden')).toBe(true)
   // The mobile store's default theme has 19 mm vertical margins.
   expect(parseFloat(screen.getByText('第 2 页').parentElement!.style.top)).toBeCloseTo(278 * CSS_PX_PER_MM)
   expect(parseFloat(screen.getByText('第 3 页').parentElement!.style.top)).toBeCloseTo(537 * CSS_PX_PER_MM)
