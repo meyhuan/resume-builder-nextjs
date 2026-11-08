@@ -43,7 +43,7 @@ export function ResumePageGuides({ pages }: { readonly pages: ResumePagination }
   return (
     <div data-resume-page-guides data-export-hide="true" aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 z-20 print:hidden">
       {pages.boundaries.map((boundary, index) => (
-        <div key={boundary} className="absolute inset-x-0 border-t border-dashed border-slate-300/80">
+        <div key={boundary} style={{ top: boundary }} className="absolute inset-x-0 border-t border-dashed border-slate-300/80">
           <span className="absolute right-1 -top-3 rounded bg-slate-100/90 px-1.5 py-0.5 text-[9px] font-medium tracking-wide text-slate-400 shadow-sm">
             第 {index + 2} 页
           </span>

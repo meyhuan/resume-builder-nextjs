@@ -5,7 +5,7 @@ import { calculateResumePages, CSS_PX_PER_MM, readPagePaddingVertical } from '@/
 import { measureResumePagination, useResumePagination } from '@/hooks/use-resume-pagination'
 import { getOnePageAdjustments } from '@/components/editor/one-page-adjustments'
 import { buildResumeHtml } from '@/io/html-export'
-import { ResumePageFeedback } from '@/components/editor/resume-page-feedback'
+import { ResumePageFeedback, ResumePageGuides } from '@/components/editor/resume-page-feedback'
 
 beforeEach(() => {
   vi.stubGlobal('ResizeObserver', class { observe() {} disconnect() {} })
@@ -35,6 +35,16 @@ function fixture(scale = 1) {
 }
 
 describe('live pagination feedback', () => {
+  it('positions successive page labels at their A4 boundaries instead of stacking at the document top', () => {
+    const pages = { ...measureResumePagination(fixture()), ...calculateResumePages(2500, 22, false) }
+    const { container, rerender } = render(<ResumePageGuides pages={pages} />)
+    expect(screen.getByText('第 2 页').parentElement!.style.top).toBe(`${275 * CSS_PX_PER_MM}px`)
+    expect(screen.getByText('第 3 页').parentElement!.style.top).toBe(`${528 * CSS_PX_PER_MM}px`)
+    rerender(<ResumePageGuides pages={{ ...pages, ...calculateResumePages(500, 22, false) }} />)
+    expect(container.querySelector('[data-resume-page-guides]')).toBeNull()
+    rerender(<ResumePageGuides pages={{ ...pages, ready: false }} />)
+    expect(container.querySelector('[data-resume-page-guides]')).toBeNull()
+  })
   it('keeps measuring PDF content when a modal aria-hides the surrounding editor', () => {
     const root = fixture(0.45)
     const before = measureResumePagination(root)

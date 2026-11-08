@@ -7,6 +7,7 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     include: [
+      'src/lib/automation-login-mode.test.ts',
       'src/components/ui/autocomplete-input.test.tsx',
       'src/editor/field-suggestions.test.tsx',
       'src/editor/editable-date-field.test.tsx',

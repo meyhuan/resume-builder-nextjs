@@ -4,6 +4,12 @@
 
 For release commands, cache behavior, timing reports, and deployment optimization status, read `docs/nextjs-deployment-optimization.md` and the workspace-level `../RELEASE_GUIDE.md`. Do not upload or restart production without an explicit deployment request. Preserve user changes and deploy an approved commit from an isolated worktree.
 
+## Browser Test Login (Use Before Asking for a QR Scan)
+
+For authorized PC web testing, reuse an existing authenticated browser session. If login is needed, use the dedicated test login at `https://aijianli.cn/login?automation=1` (or `/login?automation=1` on the local test origin). Read `docs/automation-test-login.md` before logging in. Do not default to asking the user to scan a WeChat QR code.
+
+Credentials are supplied through `AUTOMATION_LOGIN_USERNAME` and `AUTOMATION_LOGIN_PASSWORD`, or the private local file `~/.codex/secrets/aijianli-automation.env` (on this workstation: `C:/Users/62765/.codex/secrets/aijianli-automation.env`). Load them without printing their values. Never put credentials, auth cookies, or session storage into committed files, screenshots, logs, or test reports. These credentials also work from isolated worktrees because the private file is outside the repository. If unavailable or rejected, explain the specific failure; do not repeatedly retry or request a QR scan before checking this documented route.
+
 ## Project Overview
 
 **AI简历构建器（aijianli.cn）** — An AI-powered online resume builder targeting Chinese job seekers.

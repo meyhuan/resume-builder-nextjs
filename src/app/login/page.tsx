@@ -13,7 +13,7 @@ import { logger } from '@/utils/logger';
 import { LegalDialog } from '@/components/legal/LegalDialog';
 import { track } from '@/lib/analytics';
 import { AutomationLoginForm } from '@/components/auth/AutomationLoginForm';
-import { useAutomationLoginMode } from '@/lib/automation-login-mode';
+import { useAutomationLoginMode, useLocalTestLogin } from '@/lib/automation-login-mode';
 
 type WxStatus = 'pending' | 'scanned' | 'confirming' | 'expired';
 type LegalTab = 'privacy' | 'terms';
@@ -29,6 +29,7 @@ function LoginForm(): React.ReactElement {
   const redirectPath: string = searchParams.get('redirect') || '/dashboard';
   const { setToken, setUserInfo } = useAuthStore();
   const automationEnabled = useAutomationLoginMode();
+  const localTest = useLocalTestLogin();
   const [loginMethodOverride, setLoginMethodOverride] = useState<LoginMethod | null>(null);
   const loginMethod: LoginMethod = loginMethodOverride || (automationEnabled ? 'automation' : 'wechat');
 
@@ -250,7 +251,7 @@ function LoginForm(): React.ReactElement {
               </svg>
             </div>
             <h1 className="text-2xl font-bold text-slate-900">
-              {loginMethod === 'automation' ? '自动化账号登录' : '微信扫码登录'}
+              {loginMethod === 'automation' ? '测试账号密码登录' : '微信扫码登录'}
             </h1>
             <p className="text-sm text-slate-500 mt-1.5">
               {loginMethod === 'automation'
@@ -340,13 +341,13 @@ function LoginForm(): React.ReactElement {
                   </span>
                 )}
               </div>
-              {automationEnabled && (
+              {(automationEnabled || localTest) && (
                 <button
                   type="button"
                   onClick={() => setLoginMethodOverride('automation')}
-                  className="mt-4 text-xs font-medium text-slate-500 transition hover:text-violet-600"
+                  className="mt-4 w-full rounded-xl border border-violet-200 bg-violet-50 px-4 py-3 text-sm font-semibold text-violet-700 transition hover:bg-violet-100"
                 >
-                  使用自动化账号登录
+                  使用测试账号密码登录
                 </button>
               )}
             </div>

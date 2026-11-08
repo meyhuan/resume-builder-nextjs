@@ -4,6 +4,7 @@ import { FormEvent, useState } from 'react'
 import { AlertCircle, Loader2, LockKeyhole } from 'lucide-react'
 import { useAuthStore } from '@/store/use-auth-store'
 import { track } from '@/lib/analytics'
+import { useLocalTestLogin } from '@/lib/automation-login-mode'
 
 interface AutomationUser {
   readonly id: string
@@ -27,6 +28,7 @@ export function AutomationLoginForm({
   onUseWechat,
 }: AutomationLoginFormProps): React.ReactElement {
   const { setToken, setUserInfo } = useAuthStore()
+  const localTest = useLocalTestLogin()
   const [username, setUsername] = useState<string>('')
   const [password, setPassword] = useState<string>('')
   const [submitting, setSubmitting] = useState<boolean>(false)
@@ -75,9 +77,17 @@ export function AutomationLoginForm({
         <span className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-violet-100 text-violet-600">
           <LockKeyhole size={24} />
         </span>
-        <p className="text-sm font-semibold text-slate-800">仅限授权自动化测试账号</p>
-        <p className="mt-1 text-xs text-slate-500">普通用户请使用微信扫码登录</p>
+        <p className="text-sm font-semibold text-slate-800">{localTest ? '本地测试 · 无需微信扫码' : '仅限授权自动化测试账号'}</p>
+        <p className="mt-1 text-xs text-slate-500">{localTest ? '使用已配置的测试账号和密码登录' : '普通用户请使用微信扫码登录'}</p>
       </div>
+
+      {localTest && (
+        <div className="mb-5 rounded-xl border border-violet-200 bg-violet-50 px-3 py-3 text-xs leading-5 text-violet-800">
+          <p className="font-semibold">AI 测试登录说明</p>
+          <p>请先阅读项目 AGENTS.md 中的测试登录说明，使用环境变量或本地凭据文件中的账号密码。</p>
+          <code className="mt-1 block break-all">~/.codex/secrets/aijianli-automation.env</code>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>

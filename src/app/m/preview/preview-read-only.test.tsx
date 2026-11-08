@@ -6,6 +6,7 @@ import { useAppStore } from '@/state/store'
 import { useDraftStore } from '@/features/edit/draft/draft-store'
 import { AvatarActions } from '@/components/avatar/avatar-actions'
 import MobilePreviewClient from './preview-client'
+import { CSS_PX_PER_MM } from '@/lib/resume-page-metrics'
 
 const navigation = vi.hoisted(() => ({ params: new URLSearchParams('tpl=simple'), router: { push: vi.fn() } }))
 vi.mock('next/navigation', () => ({ useSearchParams: () => navigation.params, useRouter: () => navigation.router }))
@@ -46,6 +47,26 @@ afterEach(() => {
   cleanup()
   vi.useRealTimers()
   vi.unstubAllGlobals()
+})
+
+it('places mobile page labels at successive boundaries and removes them when content fits one page', () => {
+  let resize: ResizeObserverCallback
+  let observed: Element
+  vi.stubGlobal('ResizeObserver', class {
+    constructor(callback: ResizeObserverCallback) { resize = callback }
+    observe(node: Element) { observed = node }
+    disconnect() {}
+  })
+  render(<MobilePreviewClient />)
+  const resizeContent = (height: number) => act(() => resize([
+    { target: observed, contentRect: { height } } as ResizeObserverEntry,
+  ], {} as ResizeObserver))
+  resizeContent(2500)
+  // The mobile store's default theme has 19 mm vertical margins.
+  expect(parseFloat(screen.getByText('第 2 页').parentElement!.style.top)).toBeCloseTo(278 * CSS_PX_PER_MM)
+  expect(parseFloat(screen.getByText('第 3 页').parentElement!.style.top)).toBeCloseTo(537 * CSS_PX_PER_MM)
+  resizeContent(500)
+  expect(screen.queryByText('第 2 页')).toBeNull()
 })
 
 it('keeps avatar controls hidden throughout draft reordering and restores editing on exit', () => {

@@ -12,7 +12,7 @@ import { setCookie } from 'cookies-next';
 import { LegalDialog } from '@/components/legal/LegalDialog';
 import { track } from '@/lib/analytics';
 import { AutomationLoginForm } from '@/components/auth/AutomationLoginForm';
-import { useAutomationLoginMode } from '@/lib/automation-login-mode';
+import { useAutomationLoginMode, useLocalTestLogin } from '@/lib/automation-login-mode';
 
 type LegalTab = 'privacy' | 'terms';
 
@@ -29,6 +29,7 @@ type LoginMethod = 'wechat' | 'automation';
 
 export const WxLoginDialog: React.FC<WxLoginDialogProps> = ({ isOpen, onClose, onSuccess, closeable = true, subtitle }) => {
   const automationEnabled = useAutomationLoginMode();
+  const localTest = useLocalTestLogin();
   const [loginMethodOverride, setLoginMethodOverride] = useState<LoginMethod | null>(null);
   const loginMethod: LoginMethod = loginMethodOverride || (automationEnabled ? 'automation' : 'wechat');
   const [loading, setLoading] = useState(false);
@@ -296,7 +297,7 @@ export const WxLoginDialog: React.FC<WxLoginDialogProps> = ({ isOpen, onClose, o
               <span className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center text-white">
                 <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>
               </span>
-              {loginMethod === 'automation' ? '自动化账号登录' : '微信扫码登录'}
+              {loginMethod === 'automation' ? '测试账号密码登录' : '微信扫码登录'}
             </DialogTitle>
             <p className="text-slate-500 mt-2 text-sm font-medium">
               {loginMethod === 'automation' ? '授权测试入口' : (subtitle || '即刻解锁 AI 简历超能力')}
@@ -383,13 +384,13 @@ export const WxLoginDialog: React.FC<WxLoginDialogProps> = ({ isOpen, onClose, o
                 <div className="h-[20px]" />
               )}
             </div>
-            {automationEnabled && (
+            {(automationEnabled || localTest) && (
               <button
                 type="button"
                 onClick={() => setLoginMethodOverride('automation')}
-                className="mt-3 text-xs font-medium text-slate-500 transition hover:text-violet-600"
+                className="mt-3 w-full rounded-xl border border-violet-200 bg-violet-50 px-4 py-3 text-sm font-semibold text-violet-700 transition hover:bg-violet-100"
               >
-                使用自动化账号登录
+                使用测试账号密码登录
               </button>
             )}
           </div>
