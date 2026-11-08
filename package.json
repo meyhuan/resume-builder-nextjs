@@ -10,6 +10,7 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
+    "test:editor-save": "node --test scripts/test-editor-save-revalidation.mjs",
     "docx:check": "node scripts/check-docx-runtime.mjs",
     "docx:smoke": "vitest run --config scripts/vitest.docx.config.ts --testTimeout=15000",
     "story:capture": "node scripts/capture-story-materials.mjs",
