@@ -41,6 +41,7 @@ interface ExportPreviewDialogProps {
   readonly onPreviewPdf?: () => void
   readonly onPreviewImage?: () => Promise<string | void>
   readonly isGenerating?: boolean
+  readonly pdfGenerationFailed?: boolean
   readonly markdownContent?: string
   readonly remainingQuota?: number | 'unlimited'
   readonly isVip?: boolean
@@ -64,6 +65,7 @@ export default function ExportPreviewDialog(
     onPreviewPdf,
     onPreviewImage,
     isGenerating,
+    pdfGenerationFailed,
     markdownContent,
     remainingQuota,
     isVip,
@@ -182,9 +184,11 @@ export default function ExportPreviewDialog(
                     <ResumeLoading variant="progress" title="正在生成 PDF 预览" description="正在准备导出文件，你也可以先选择其他格式" className="w-full" />
                   ) : (
                     <>
-                      <span>PDF 预览尚未生成</span>
+                      {pdfGenerationFailed ? (
+                        <p role="alert" className="px-4 text-center text-amber-800">PDF 预览生成失败，请检查网络后重试，也可以切换图片预览。</p>
+                      ) : <span>PDF 预览尚未生成</span>}
                       <Button variant="outline" onClick={onPreviewPdf}>
-                        生成 PDF 预览
+                        {pdfGenerationFailed ? '重试 PDF 预览' : '生成 PDF 预览'}
                       </Button>
                     </>
                   )}
@@ -210,9 +214,9 @@ export default function ExportPreviewDialog(
                 <ResumeLoading title="正在生成图片预览" description="正在将简历排版转换为图片，请稍候" />
               ) : (
                 <div className="flex min-h-full flex-col items-center justify-center gap-3 text-sm text-slate-500">
-                  {imageError
-                      ? '图片预览生成失败'
-                      : '可将当前简历保存为 PNG 图片'}
+                  {imageError ? (
+                    <p role="alert" className="px-4 text-center text-amber-800">图片预览加载失败，请检查网络后重试，也可以切换 PDF 预览。</p>
+                  ) : '可将当前简历保存为 PNG 图片'}
                   {!imageLoading && (
                     <Button
                       variant="outline"
@@ -220,7 +224,7 @@ export default function ExportPreviewDialog(
                         void loadImage()
                       }}
                     >
-                      生成图片预览
+                      {imageError ? '重试图片预览' : '生成图片预览'}
                     </Button>
                   )}
                 </div>

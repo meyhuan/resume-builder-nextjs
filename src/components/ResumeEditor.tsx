@@ -300,6 +300,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
   const [pdfBlob, setPdfBlob] = useState<Blob | null>(null)
   const [pdfBlobRevision, setPdfBlobRevision] = useState<string>('')
   const [isGenerating, setIsGenerating] = useState(false)
+  const [pdfPreviewFailedRevision, setPdfPreviewFailedRevision] = useState<string | null>(null)
   const [isConfirmingExport, setIsConfirmingExport] = useState(false)
   const draftBackupRestored = useRef(false)
   const editorOpenTracked = useRef(false)
@@ -1228,6 +1229,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
     const generatedRevision = previewRevision
     // Preview is unlimited - no quota check
     setIsGenerating(true)
+    setPdfPreviewFailedRevision(null)
     try {
       const html: string = buildResumeHtml(printRef.current, { title: resume.name || 'Resume' })
       const response = await fetch('/next-api/generate-pdf', {
@@ -1256,6 +1258,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
     } catch (e) {
       if (requestId !== previewRequestRef.current) return
       console.error('PDF generation failed:', e)
+      setPdfPreviewFailedRevision(generatedRevision)
       toast.error(e instanceof Error ? `PDF 生成失败: ${e.message}` : 'PDF 生成失败，请重试')
     } finally {
       if (requestId === previewRequestRef.current) setIsGenerating(false)
@@ -1605,6 +1608,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
         onOpenChange={(next: boolean) => { if (!next) handleClosePreview() }}
         pdfUrl={pdfBlobRevision === previewRevision ? pdfBlobUrl : ''}
         isGenerating={isGenerating}
+        pdfGenerationFailed={pdfPreviewFailedRevision === previewRevision}
         onPreviewPdf={() => { void handlePreviewPdf() }}
         onPreviewImage={() => exportImage(printRef, { pixelRatio: 2, returnBase64: true })}
         markdownContent={exportResumeToMarkdown(resume)}
