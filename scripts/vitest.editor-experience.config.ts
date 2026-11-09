@@ -7,6 +7,10 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     include: [
+      'src/hooks/use-export-retention.test.tsx',
+      'src/lib/mini-membership-plans.test.ts',
+      'src/hooks/use-preload-mini-membership-plans.test.tsx',
+      'src/store/use-vip-store-refresh.test.ts',
       'src/lib/automation-login-mode.test.ts',
       'src/components/ui/autocomplete-input.test.tsx',
       'src/editor/field-suggestions.test.tsx',

@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { DEFAULT_QUOTA_LIMITS } from '@/lib/quota/quota-config';
 import type { VipPollData, VipQuotaStatus, VipFeatureQuota } from '@/lib/quota/vip-types';
 import { useAuthStore } from '@/store/use-auth-store';
+import { clientAccountKey } from '@/lib/client-account-key';
 import { trackError } from '@/lib/analytics';
 
 export type UpgradeContext = 'generic' | 'pdf-export' | 'docx-export' | 'ai';
@@ -14,9 +15,10 @@ interface VipStoreState {
   readonly upgradeContext: UpgradeContext;
   readonly initializedToken: string | null;
   readonly quotaRequestPromise: Promise<VipQuotaStatus | null> | null;
+  readonly quotaRequestAccount: string | null;
   readonly vipRequestPromise: Promise<VipPollData | null> | null;
   setShowUpgrade: (showUpgrade: boolean, context?: UpgradeContext) => void;
-  refreshQuota: (token: string | null) => Promise<void>;
+  refreshQuota: (token: string | null) => Promise<VipQuotaStatus | null>;
   refreshVip: (token: string | null) => Promise<void>;
   initialize: (token: string | null) => Promise<void>;
   reset: () => void;
@@ -64,7 +66,7 @@ function normalizeQuotaSnapshot(data: Record<string, VipFeatureQuota | undefined
 }
 
 function getQuotaCacheKey(): string | null {
-  const userId = useAuthStore.getState().userInfo?.id;
+  const userId = clientAccountKey(useAuthStore.getState().userInfo?.id);
   return userId ? `${QUOTA_CACHE_KEY_PREFIX}:${userId}` : null;
 }
 
@@ -83,10 +85,9 @@ function readCachedQuotaSnapshot(): VipQuotaStatus | null {
   }
 }
 
-function writeCachedQuotaSnapshot(quota: VipQuotaStatus): void {
+function writeCachedQuotaSnapshot(quota: VipQuotaStatus, cacheKey: string | null): void {
   if (typeof window === 'undefined') return;
   try {
-    const cacheKey = getQuotaCacheKey();
     if (!cacheKey) return;
     window.localStorage.setItem(cacheKey, JSON.stringify({ savedAt: Date.now(), quota }));
   } catch {
@@ -126,7 +127,7 @@ async function fetchQuotaOnce(): Promise<Response> {
   }
 }
 
-async function fetchQuotaSnapshot(): Promise<VipQuotaStatus | null> {
+async function fetchQuotaSnapshot(cacheKey: string | null): Promise<VipQuotaStatus | null> {
   const maxAttempts = 3;
   let lastFailureReason = 'unknown';
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
@@ -142,8 +143,10 @@ async function fetchQuotaSnapshot(): Promise<VipQuotaStatus | null> {
         break;
       }
       const data: Record<string, VipFeatureQuota | undefined> = await response.json();
+      const exportQuota = data.pdfExport;
+      if (!exportQuota || typeof exportQuota.isVip !== 'boolean' || typeof exportQuota.allowed !== 'boolean' || !(exportQuota.remaining === 'unlimited' || (typeof exportQuota.remaining === 'number' && Number.isFinite(exportQuota.remaining) && exportQuota.remaining >= 0))) throw new Error('Invalid quota response');
       const quota = normalizeQuotaSnapshot(data);
-      writeCachedQuotaSnapshot(quota);
+      if (cacheKey === getQuotaCacheKey()) writeCachedQuotaSnapshot(quota, cacheKey);
       return quota;
     } catch (error) {
       lastFailureReason = describeQuotaFetchError(error);
@@ -152,9 +155,6 @@ async function fetchQuotaSnapshot(): Promise<VipQuotaStatus | null> {
       }
     }
   }
-
-  const cachedQuota = readCachedQuotaSnapshot();
-  if (cachedQuota) return cachedQuota;
 
   if (shouldTrackQuotaFailure()) {
     trackError(new Error('quota_refresh_failed'), {
@@ -177,28 +177,36 @@ export const useVipStore = create<VipStoreState>()((set, get) => ({
   upgradeContext: 'generic',
   initializedToken: null,
   quotaRequestPromise: null,
+  quotaRequestAccount: null,
   vipRequestPromise: null,
   setShowUpgrade: (showUpgrade: boolean, context?: UpgradeContext): void => set({
     showUpgrade,
     ...(context ? { upgradeContext: context } : {}),
     ...(!showUpgrade ? { upgradeContext: 'generic' as UpgradeContext } : {}),
   }),
-  refreshQuota: async (token: string | null): Promise<void> => {
-    if (!token) return;
-    let requestPromise: Promise<VipQuotaStatus | null> | null = get().quotaRequestPromise;
+  refreshQuota: async (token: string | null): Promise<VipQuotaStatus | null> => {
+    if (!token) return null;
+    const account = getQuotaCacheKey();
+    let requestPromise = get().quotaRequestAccount === account ? get().quotaRequestPromise : null;
     if (!requestPromise) {
-      requestPromise = fetchQuotaSnapshot();
-      set({ quotaRequestPromise: requestPromise });
+      requestPromise = fetchQuotaSnapshot(account);
+      set({ quotaRequestPromise: requestPromise, quotaRequestAccount: account });
     }
     try {
       const nextQuota: VipQuotaStatus | null = await requestPromise;
-      if (!nextQuota) return;
+      if (account !== getQuotaCacheKey()) return null;
+      if (!nextQuota) {
+        const cached = readCachedQuotaSnapshot();
+        if (cached) set({ quota: cached, quotaLoaded: true });
+        return null; // Cached display state is never proof of a successful refresh.
+      }
       set({ quota: nextQuota, quotaLoaded: true });
+      return nextQuota;
     } catch {
-      return;
+      return null;
     } finally {
       if (get().quotaRequestPromise === requestPromise) {
-        set({ quotaRequestPromise: null });
+        set({ quotaRequestPromise: null, quotaRequestAccount: null });
       }
     }
   },
@@ -255,6 +263,7 @@ export const useVipStore = create<VipStoreState>()((set, get) => ({
       upgradeContext: 'generic',
       initializedToken: null,
       quotaRequestPromise: null,
+      quotaRequestAccount: null,
       vipRequestPromise: null,
     });
   },

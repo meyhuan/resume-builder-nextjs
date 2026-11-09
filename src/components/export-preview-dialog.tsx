@@ -1,5 +1,8 @@
 'use client'
 
+import type { ExportRetention } from '@/hooks/use-export-retention'
+import { ExportRetentionCard } from '@/components/vip/export-retention-card'
+
 import { useEffect, useRef, useState, type ReactElement } from 'react'
 import {
   Dialog,
@@ -12,6 +15,7 @@ import { Button } from '@/components/ui/button'
 import { Download, FileText, Loader2 } from 'lucide-react'
 import { useExportPreview } from '@/hooks/use-export-preview'
 import { ExportAssetPreview } from '@/components/export-asset-preview'
+import { MarkdownExportPreview } from '@/components/markdown-export-preview'
 import { PdfIframePreview } from '@/components/pdf-iframe-preview'
 import { ResumeLoading } from '@/components/resume-loading'
 import type { ExportPreviewAsset } from '@/lib/export-preview'
@@ -24,6 +28,7 @@ import {
 } from './export-format-options'
 
 interface ExportPreviewDialogProps {
+  readonly retention?: ExportRetention
   readonly open: boolean
   readonly onOpenChange: (open: boolean) => void
   readonly pdfUrl: string
@@ -99,6 +104,11 @@ export default function ExportPreviewDialog(
   const wordConfirmed = word.asset && (word.asset.confirmed || props.confirmedWordIds?.has(word.asset.id))
   const quotaDepleted = format !== 'markdown' && !isVip && remainingQuota === 0 && !(format === 'docx' && wordConfirmed)
   const needsTemplate = format === 'docx' && !onExportDocx
+  const retention = props.retention
+  const retentionEligible = quotaDepleted && !needsTemplate
+  useEffect(() => { retention?.setPreviewContext(open, retentionEligible, format) }, [open, retentionEligible, format, retention?.setPreviewContext])
+  useEffect(() => () => { retention?.setPreviewContext(false, false, '') }, [retention?.setPreviewContext])
+  const showRetention = retention?.enabled && retention.status === 'visible' && retentionEligible
   const loadImage = async (): Promise<void> => {
     if (!onPreviewImage || imageLoading) return
     const requestId = ++imageRequestRef.current
@@ -230,9 +240,7 @@ export default function ExportPreviewDialog(
                 </div>
               )
             ) : format === 'markdown' ? (
-              <pre className="whitespace-pre-wrap break-words rounded-xl bg-white p-4 text-sm leading-6 text-slate-700">
-                {markdownContent || '导出简历的文本内容，不包含模板视觉排版。'}
-              </pre>
+              <MarkdownExportPreview content={markdownContent || '导出简历的文本内容，不包含模板视觉排版。'} />
             ) : !needsTemplate ? (
               <ExportAssetPreview
                 progress={word.progress}
@@ -268,7 +276,7 @@ export default function ExportPreviewDialog(
               <p className="text-sm leading-6 text-slate-600">
                 想保留当前排版？请选择 PDF 或图片。
               </p>
-            ) : (
+            ) : showRetention && retention ? <ExportRetentionCard retention={retention} /> : (
               <p className="text-xs leading-5 text-slate-500">
                 {format === 'markdown'
                   ? 'Markdown 免费导出，不消耗导出次数。'

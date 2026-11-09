@@ -447,7 +447,7 @@ export default function AiPolishSheet(props: AiPolishSheetProps): ReactElement {
 
       {/* VIP Upgrade Dialog for quota exceeded */}
       <VipUpgradeDialog
-        open={showUpgrade}
+        open={showUpgrade && open}
         onOpenChange={setShowUpgrade}
       />
     </Sheet>

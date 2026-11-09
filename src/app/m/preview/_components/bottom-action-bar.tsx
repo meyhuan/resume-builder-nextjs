@@ -1,6 +1,9 @@
 'use client'
 
-import { useState, type ReactElement } from 'react'
+import type { ExportRetention } from '@/hooks/use-export-retention'
+import { ExportRetentionCard } from '@/components/vip/export-retention-card'
+
+import { useEffect, useRef, useState, type ReactElement, type ReactNode } from 'react'
 import { ArrowLeft, FileDown, Loader2, Settings2 } from 'lucide-react'
 import {
   Dialog,
@@ -22,12 +25,15 @@ import {
 } from '@/components/export-format-options'
 
 interface BottomActionBarProps {
+  readonly retention?: ExportRetention
+  readonly loadingContent?: ReactNode
   readonly onOpenSettings: () => void
   readonly onPrepareExport: (
     format: ExportFormat,
     progress?: ExportProgressListener,
   ) => Promise<ExportPreviewAsset>
   readonly onConfirmExport: (asset: ExportPreviewAsset) => Promise<void>
+  readonly onRequestMembership?: () => void
   readonly previewRevision: string
   readonly wordSupported: boolean
   readonly wordClientSupported: boolean
@@ -52,6 +58,7 @@ export function BottomActionBar(props: BottomActionBarProps): ReactElement {
     inMiniProgram = false,
   } = props
   const { open, openPreview, closePreview } = useExportPreviewNavigation()
+  const dialogRef = useRef<HTMLDivElement>(null)
   const [format, setFormat] = useState<ExportFormat>('pdf')
   const unsupportedClient =
     (format === 'docx' && !wordClientSupported) ||
@@ -69,9 +76,19 @@ export function BottomActionBar(props: BottomActionBarProps): ReactElement {
   const exportQuota = props.exportQuota ?? preview.asset
   const confirmed = preview.asset && (preview.asset.confirmed || props.confirmedExportIds?.has(preview.asset.id))
   const quotaDepleted = format !== 'markdown' && !exportQuota?.isVip && exportQuota?.remaining === 0 && !confirmed
+  const canOpenMembership = quotaDepleted && Boolean(props.onRequestMembership)
+  const retention = props.retention
+  const retentionEligible = quotaDepleted && !needsTemplate && !unsupportedClient
+  useEffect(() => { retention?.setPreviewContext(open, retentionEligible, format) }, [open, retentionEligible, format, retention?.setPreviewContext])
+  useEffect(() => () => { retention?.setPreviewContext(false, false, '') }, [retention?.setPreviewContext])
+  const showRetention = retention?.enabled && retention.status === 'visible' && retentionEligible
   const submit = async (): Promise<void> => {
     if (unsupportedClient) return
     if (needsTemplate) {
+      return
+    }
+    if (quotaDepleted && props.onRequestMembership) {
+      props.onRequestMembership()
       return
     }
     if (preview.asset && ready) await onConfirmExport(preview.asset)
@@ -122,6 +139,12 @@ export function BottomActionBar(props: BottomActionBarProps): ReactElement {
         }}
       >
         <DialogContent
+          ref={dialogRef}
+          tabIndex={-1}
+          onOpenAutoFocus={event => {
+            event.preventDefault()
+            dialogRef.current?.focus()
+          }}
           hideCloseButton
           className="left-0 top-0 flex h-dvh max-h-dvh w-full max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-none border-0 p-0 outline-none"
           style={{
@@ -131,7 +154,10 @@ export function BottomActionBar(props: BottomActionBarProps): ReactElement {
             if (isExporting) e.preventDefault()
           }}
           onPointerDownOutside={(e) => {
-            if (isExporting) e.preventDefault()
+            // This dialog is a full-screen page. A touch on the sibling payment
+            // sheet must not dismiss it when Radix defers outside-touch handling
+            // until the click (after that sheet may already have closed).
+            e.preventDefault()
           }}
         >
           <div
@@ -167,6 +193,8 @@ export function BottomActionBar(props: BottomActionBarProps): ReactElement {
               >
                 <ExportAssetPreview
                   fillHeight
+                  loadingContent={props.loadingContent}
+                  canOpenMembership={canOpenMembership}
                   progress={preview.progress}
                   key={preview.asset?.id || 'loading'}
                   asset={preview.asset}
@@ -191,14 +219,7 @@ export function BottomActionBar(props: BottomActionBarProps): ReactElement {
                 paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom, 0px))',
               }}
             >
-              {!unsupportedClient && !needsTemplate && (
-                <p className="shrink-0 text-xs leading-5 text-slate-500">
-                  <span className="font-medium text-slate-700">{label}：</span>
-                  {selectedFormat.description}
-                  {format === 'markdown' && '，免费导出，不消耗次数。'}
-                </p>
-              )}
-              {preview.asset &&
+              {showRetention && retention ? <ExportRetentionCard retention={retention} /> : preview.asset &&
                 !unsupportedClient &&
                 !needsTemplate &&
                 format !== 'markdown' && (
@@ -234,7 +255,7 @@ export function BottomActionBar(props: BottomActionBarProps): ReactElement {
                   isExporting ||
                   needsTemplate ||
                   unsupportedClient ||
-                  (!needsTemplate && (!preview.asset || !ready))
+                  (!canOpenMembership && (!preview.asset || !ready))
                 }
                 onClick={() => {
                   void submit()

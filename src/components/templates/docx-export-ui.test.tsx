@@ -103,7 +103,7 @@ it('renders the Word-specific membership prompt and benefits', async () => {
       .fn()
       .mockResolvedValue({
         ok: true,
-        json: async () => ({ data: { userId: 1, isVip: false, plans: [] } }),
+        json: async () => ({ data: { userId: 1, isVip: false, plans: [{ id: 1, vipType: 1, price: 29.9, duration: 30, vipName: '月会员' }] } }),
       }),
   )
   render(<VipUpgradeDialog open onOpenChange={vi.fn()} />)
@@ -209,7 +209,7 @@ it('requires the actual Word preview to load before confirming the same file, an
     <ExportPreviewDialog {...props} isVip={false} remainingQuota={0} />,
   )
   fireEvent.click(screen.getByRole('button', { name: /^Markdown/ }))
-  expect(screen.getByText('# 简历')).toBeTruthy()
+  expect(screen.getByRole('heading', { name: '简历' })).toBeTruthy()
   fireEvent.click(screen.getByRole('button', { name: '确认下载 Markdown' }))
   expect(markdown).toHaveBeenCalledOnce()
 })

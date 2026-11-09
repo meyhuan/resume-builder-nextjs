@@ -9,6 +9,8 @@ import {
   waitFor,
 } from '@testing-library/react'
 import { BottomActionBar } from '@/app/m/preview/_components/bottom-action-bar'
+import { ExportLoadingContent } from '@/app/m/preview/_components/export-loading-content'
+import { EXPORT_JOB_TIPS, pickExportJobTips } from '@/lib/export-job-tips'
 import { miniProgramRuntime } from '@/app/m/_components/mini-program-runtime'
 import { HomeActionBar } from '@/app/m/edit/_components/home-action-bar'
 import type { ExportPreviewAsset } from '@/lib/export-preview'
@@ -32,6 +34,8 @@ const asset = (type: ExportFormat): ExportPreviewAsset => ({
 
 afterEach(() => {
   cleanup()
+  vi.useRealTimers()
+  vi.restoreAllMocks()
   sessionStorage.clear()
   history.replaceState({}, '', '/')
   navigation.push.mockClear()
@@ -123,7 +127,7 @@ it('defaults to PDF, previews all four formats and caches completed previews', a
     ).toBe(false)
   }
   fireEvent.click(screen.getByRole('button', { name: /^Markdown/ }))
-  expect(await screen.findByText('# 本次 Markdown 内容')).toBeTruthy()
+  expect(await screen.findByRole('heading', { name: '本次 Markdown 内容' })).toBeTruthy()
   fireEvent.click(screen.getByRole('button', { name: /^Word/ }))
   await screen.findByAltText('Word 预览第 1 页')
   expect(p.onPrepareExport.mock.calls.map(([type]) => type)).toEqual([
@@ -150,7 +154,7 @@ it.each([['pdf', 'PDF'], ['docx', 'Word'], ['image', '图片']] as const)(
     // Confirmation rechecks current entitlement, allowing a user who has since subscribed.
     expect(p.onConfirmExport).toHaveBeenCalledWith(expect.objectContaining({ type: format, remaining: 0 }))
     fireEvent.click(screen.getByRole('button', { name: /^Markdown/ }))
-    await screen.findByText('# 本次 Markdown 内容')
+    await screen.findByRole('heading', { name: '本次 Markdown 内容' })
     fireEvent.click(screen.getByRole('button', { name: '确认导出 Markdown' }))
     expect(p.onConfirmExport).toHaveBeenLastCalledWith(expect.objectContaining({ type: 'markdown' }))
     expect(screen.queryByText(/免费导出次数已用完/)).toBeNull()
@@ -173,7 +177,7 @@ it('ignores a late Word response after switching to Markdown', async () => {
   fireEvent.click(screen.getByRole('button', { name: /^Word/ }))
   await waitFor(() => expect(resolveWord).toBeTypeOf('function'))
   fireEvent.click(screen.getByRole('button', { name: /^Markdown/ }))
-  await screen.findByText('# 本次 Markdown 内容')
+  await screen.findByRole('heading', { name: '本次 Markdown 内容' })
   await act(async () => resolveWord(asset('docx')))
   expect(screen.queryByAltText('Word 预览第 1 页')).toBeNull()
   fireEvent.click(screen.getByRole('button', { name: '确认导出 Markdown' }))
@@ -252,6 +256,125 @@ it('uses only an accessible title inside the native shell without duplicate navi
   expect(screen.queryByRole('button', { name: '返回简历' })).toBeNull()
 })
 
+it('opens membership directly for known exhausted quota without attempting an export', async () => {
+  const p = props()
+  const openMembership = vi.fn()
+  render(<BottomActionBar {...p} inMiniProgram onRequestMembership={openMembership} exportQuota={{ isVip: false, remaining: 0 }} />)
+  fireEvent.click(screen.getByRole('button', { name: '导出简历' }))
+  const image = await screen.findByAltText('PDF 预览第 1 页')
+  fireEvent.load(image)
+  const button = screen.getByRole('button', { name: '开通会员，导出 PDF' })
+  await waitFor(() => expect((button as HTMLButtonElement).disabled).toBe(false))
+  fireEvent.click(button)
+  expect(openMembership).toHaveBeenCalledTimes(1)
+  expect(p.onConfirmExport).not.toHaveBeenCalled()
+})
+
+it('allows membership during generation, but waits for the real preview before downloading after rights recover', async () => {
+  const p = props()
+  const openMembership = vi.fn()
+  let finish!: (asset: ExportPreviewAsset) => void
+  const prepare = vi.fn(() => new Promise<ExportPreviewAsset>(resolve => { finish = resolve }))
+  const shared = { ...p, onPrepareExport: prepare, inMiniProgram: true, onRequestMembership: openMembership, loadingContent: <ExportLoadingContent /> }
+  const h = render(<BottomActionBar {...shared} exportQuota={{ isVip: false, remaining: 0 }} />)
+  fireEvent.click(screen.getByRole('button', { name: '导出简历' }))
+  await screen.findByRole('region', { name: '求职小提示' })
+  expect(screen.queryByText('先检查一下简历内容')).toBeNull()
+  const membership = screen.getByRole('button', { name: '开通会员，导出 PDF' }) as HTMLButtonElement
+  expect(membership.disabled).toBe(false)
+  fireEvent.click(membership)
+  expect(openMembership).toHaveBeenCalledTimes(1)
+  expect(p.onConfirmExport).not.toHaveBeenCalled()
+  expect(prepare).toHaveBeenCalledTimes(1)
+  h.rerender(<BottomActionBar {...shared} exportQuota={{ isVip: true, remaining: 'unlimited' }} />)
+  expect((screen.getByRole('button', { name: '确认导出 PDF' }) as HTMLButtonElement).disabled).toBe(true)
+  await act(async () => finish(asset('pdf')))
+  const image = await screen.findByAltText('PDF 预览第 1 页')
+  expect(screen.queryByRole('region', { name: '求职小提示' })).toBeNull()
+  expect((screen.getByRole('button', { name: '确认导出 PDF' }) as HTMLButtonElement).disabled).toBe(true)
+  fireEvent.load(image)
+  await waitFor(() => expect((screen.getByRole('button', { name: '确认导出 PDF' }) as HTMLButtonElement).disabled).toBe(false))
+  expect(p.onConfirmExport).not.toHaveBeenCalled()
+  fireEvent.click(screen.getByRole('button', { name: '确认导出 PDF' }))
+  expect(p.onConfirmExport).toHaveBeenCalledTimes(1)
+})
+
+it('changes waiting tips with horizontal swipes and buttons without confusing vertical gestures', () => {
+  render(<ExportLoadingContent />)
+  const tips = screen.getByRole('region', { name: '求职小提示' })
+  const first = tips.dataset.tipId
+  fireEvent.touchStart(tips, { touches: [{ clientX: 250, clientY: 100 }] })
+  fireEvent.touchEnd(tips, { changedTouches: [{ clientX: 50, clientY: 110 }] })
+  const second = tips.dataset.tipId
+  expect(second).not.toBe(first)
+  fireEvent.touchStart(tips, { touches: [{ clientX: 250, clientY: 100 }] })
+  fireEvent.touchEnd(tips, { changedTouches: [{ clientX: 200, clientY: 250 }] })
+  expect(tips.dataset.tipId).toBe(second)
+  fireEvent.click(screen.getByRole('button', { name: '上一条求职提示' }))
+  expect(tips.dataset.tipId).toBe(first)
+  const seen = new Set([first])
+  for (let i = 0; i < 4; i++) { fireEvent.click(screen.getByRole('button', { name: '下一条求职提示' })); seen.add(tips.dataset.tipId) }
+  expect(seen.size).toBe(5)
+  fireEvent.click(screen.getByRole('button', { name: '下一条求职提示' }))
+  expect(tips.dataset.tipId).toBe(first)
+})
+
+it('samples five unique tips from twenty without mutating the library', () => {
+  expect(EXPORT_JOB_TIPS).toHaveLength(20)
+  const original = EXPORT_JOB_TIPS.map(tip => tip.id)
+  const first = pickExportJobTips(() => 0), second = pickExportJobTips(() => 0.99)
+  expect(first).toHaveLength(5)
+  expect(new Set(first.map(tip => tip.id)).size).toBe(5)
+  expect(first).not.toEqual(second)
+  expect(EXPORT_JOB_TIPS.map(tip => tip.id)).toEqual(original)
+})
+
+it('rotates the chosen five every ten seconds, pauses for interaction and visibility, and clears its timer', () => {
+  vi.useFakeTimers()
+  const h = render(<ExportLoadingContent />)
+  const tips = screen.getByRole('region', { name: '求职小提示' })
+  const first = tips.dataset.tipId
+  h.rerender(<ExportLoadingContent />)
+  expect(tips.dataset.tipId).toBe(first)
+  act(() => vi.advanceTimersByTime(9999))
+  expect(tips.dataset.tipId).toBe(first)
+  act(() => vi.advanceTimersByTime(1))
+  expect(tips.dataset.tipId).not.toBe(first)
+  act(() => vi.advanceTimersByTime(40_000))
+  expect(tips.dataset.tipId).toBe(first)
+  fireEvent.click(screen.getByRole('button', { name: '暂停自动轮播' }))
+  act(() => vi.advanceTimersByTime(20_000))
+  expect(tips.dataset.tipId).toBe(first)
+  fireEvent.click(screen.getByRole('button', { name: '继续自动轮播' }))
+  const hidden = vi.spyOn(document, 'hidden', 'get').mockReturnValue(true)
+  fireEvent(document, new Event('visibilitychange'))
+  act(() => vi.advanceTimersByTime(20_000))
+  expect(tips.dataset.tipId).toBe(first)
+  hidden.mockReturnValue(false)
+  fireEvent(document, new Event('visibilitychange'))
+  act(() => vi.advanceTimersByTime(10_000))
+  expect(tips.dataset.tipId).not.toBe(first)
+  fireEvent.focus(screen.getByRole('button', { name: '下一条求职提示' }))
+  const focused = tips.dataset.tipId
+  act(() => vi.advanceTimersByTime(20_000))
+  expect(tips.dataset.tipId).toBe(focused)
+  h.unmount()
+  expect(vi.getTimerCount()).toBe(0)
+})
+
+it('does not unlock a pending export with unknown quota or a free format', async () => {
+  const p = props()
+  const openMembership = vi.fn()
+  const prepare = vi.fn(() => new Promise<ExportPreviewAsset>(() => {}))
+  const h = render(<BottomActionBar {...p} onPrepareExport={prepare} onRequestMembership={openMembership} />)
+  fireEvent.click(screen.getByRole('button', { name: '导出简历' }))
+  expect((screen.getByRole('button', { name: '确认导出 PDF' }) as HTMLButtonElement).disabled).toBe(true)
+  h.rerender(<BottomActionBar {...p} onPrepareExport={prepare} onRequestMembership={openMembership} exportQuota={{ isVip: false, remaining: 0 }} />)
+  fireEvent.click(screen.getByRole('button', { name: /^Markdown/ }))
+  expect((screen.getByRole('button', { name: '确认导出 Markdown' }) as HTMLButtonElement).disabled).toBe(true)
+  expect(openMembership).not.toHaveBeenCalled()
+})
+
 it('backs out of export first, keeps format switches in one entry, and restores on forward', async () => {
   history.replaceState({ preserved: 'editor' }, '', '/m/edit?id=sample')
   const previewUrl = '/m/preview?id=sample&tpl=canva-minimal&miniDocx=1#resume'
@@ -263,7 +386,7 @@ it('backs out of export first, keeps format switches in one entry, and restores 
   expect(history.state.preserved).toBe('preview')
   expect(location.hash).toBe('#resume')
   fireEvent.click(screen.getByRole('button', { name: /^Markdown/ }))
-  await screen.findByText('# 本次 Markdown 内容')
+  await screen.findByRole('heading', { name: '本次 Markdown 内容' })
   expect(history.length).toBe(length + 1)
   await act(async () => { history.back() })
   await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())

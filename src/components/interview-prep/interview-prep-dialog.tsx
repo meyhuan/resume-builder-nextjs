@@ -996,7 +996,7 @@ export function InterviewPrepDialog(props: InterviewPrepDialogProps): ReactEleme
         }}
         subtitle={LOGIN_SUBTITLE}
       />
-      <VipUpgradeDialog open={showUpgrade} onOpenChange={setShowUpgrade} />
+      <VipUpgradeDialog open={showUpgrade && (open || Boolean(props.embedded))} onOpenChange={setShowUpgrade} />
       <ConfirmDialog
         open={Boolean(deleteId)}
         onOpenChange={(next) => { if (!next) setDeleteId(null); }}

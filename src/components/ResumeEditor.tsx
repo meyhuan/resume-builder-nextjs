@@ -1,5 +1,7 @@
 "use client"
 
+import { useExportRetention } from '@/hooks/use-export-retention'
+
 import { captureTemplateJourney } from '@/lib/templates/template-journey'
 import { fetchExportPreview } from '@/lib/fetch-export-preview'
 import type { ExportProgressListener } from '@/lib/export-progress'
@@ -295,6 +297,8 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
   const hasUnsavedRef = useRef(false)
   const previewRequestRef = useRef(0)
   const [showPreview, setShowPreview] = useState(false)
+  const openMonthlyMembership = useCallback((format: string) => setShowUpgrade(true, format === 'docx' ? 'docx-export' : 'pdf-export'), [setShowUpgrade])
+  const exportRetention = useExportRetention({ platform: 'pc_web', refreshQuota, openMembership: openMonthlyMembership })
   const [confirmedWordIds, setConfirmedWordIds] = useState<ReadonlySet<string>>(() => new Set())
   const [pdfBlobUrl, setPdfBlobUrl] = useState<string>('')
   const [pdfBlob, setPdfBlob] = useState<Blob | null>(null)
@@ -1604,6 +1608,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
       />
       {/* Format selection is available before PDF preview generation completes. */}
       {showPreview && <ExportPreviewDialog
+        retention={exportRetention}
         open={showPreview}
         onOpenChange={(next: boolean) => { if (!next) handleClosePreview() }}
         pdfUrl={pdfBlobRevision === previewRevision ? pdfBlobUrl : ''}
@@ -1657,6 +1662,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
       />
       {/* VIP upgrade dialog */}
       <VipUpgradeDialog
+        retention={showPreview ? exportRetention : undefined}
         open={showUpgrade}
         onOpenChange={setShowUpgrade}
         overlayClassName={showPreview ? 'bg-transparent' : 'bg-black/35'}

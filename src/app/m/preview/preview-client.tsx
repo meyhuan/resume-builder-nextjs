@@ -20,6 +20,8 @@ import { ResumeSvgPlaceholder } from '@/features/m/resume-list/shared'
 import { exportImage } from '@/io/export-image'
 import { useVipCheck } from '@/hooks/use-vip-check'
 import VipUpgradeDialog from '@/components/vip/vip-upgrade-dialog'
+import { useExportRetention } from '@/hooks/use-export-retention'
+import { ExportMembershipSheet } from './_components/export-membership-sheet'
 import { useOnePageMode, type OnePageStatus } from '@/hooks/use-one-page-mode'
 import { calculateResumePages } from '@/lib/resume-page-metrics'
 import { embedEditorMeta, extractEditorMeta, type AdjustableTokens } from '@/entities/editor/editor-meta'
@@ -31,6 +33,7 @@ import { useMiniProgramCapabilities } from '../_components/use-mini-program-capa
 import { confirmExportPreview, type ExportPreviewAsset } from '@/lib/export-preview'
 import { isDocxTemplateSupported } from '@/lib/docx-template-support'
 import { BottomActionBar } from './_components/bottom-action-bar'
+import { ExportLoadingContent } from './_components/export-loading-content'
 import { PortfolioAppendix } from '@/components/portfolio/portfolio-appendix'
 import { scanResumePlaceholders } from '@/lib/resume/placeholder-scan'
 import {
@@ -433,6 +436,8 @@ export default function MobilePreviewClient(): ReactElement {
 
   // --- Export handlers ---
   const { showUpgrade, setShowUpgrade, quota, quotaLoaded, refreshQuota } = useVipCheck()
+  const [showExportMembership, setShowExportMembership] = useState(false)
+  const closeExportMembership = useCallback(() => setShowExportMembership(false), [])
   useEffect(() => {
     const refresh = () => { if (!document.hidden) void refreshQuota() }
     window.addEventListener('focus', refresh)
@@ -448,6 +453,8 @@ export default function MobilePreviewClient(): ReactElement {
   const [confirmedExportIds, setConfirmedExportIds] = useState<ReadonlySet<string>>(() => new Set())
 
   const inMiniProgram = useInMiniProgram()
+  const openMonthlyMembership = useCallback(() => setShowExportMembership(true), [])
+  const exportRetention = useExportRetention({ platform: 'mini_program', refreshQuota, openMembership: openMonthlyMembership, enabled: inMiniProgram })
   const miniProgramCapabilities = useMiniProgramCapabilities()
   const miniDocxExportSupported = miniProgramCapabilities.docxExportSupported
   const miniMarkdownExportSupported = miniProgramCapabilities.markdownExportSupported
@@ -481,13 +488,8 @@ export default function MobilePreviewClient(): ReactElement {
     if (!response.ok) {
       const errorData = await response.json().catch(() => null)
       if (response.status === 402) {
-        // In mini-program: navigate to native payment page for better UX
-        // In H5/PC: show the upgrade dialog
-        if (inMiniProgram && typeof window.wx?.miniProgram?.navigateTo === 'function') {
-          log.info('quota exceeded in mini-program, navigating to native payment page')
-          window.wx.miniProgram.navigateTo({
-            url: '/pages/payment/payment?from=export'
-          })
+        if (inMiniProgram) {
+          setShowExportMembership(true)
         } else {
           setShowUpgrade(true, payload.type === 'docx' ? 'docx-export' : 'pdf-export')
         }
@@ -702,7 +704,7 @@ export default function MobilePreviewClient(): ReactElement {
     } catch (error) {
       if ((error as { status?: number }).status === 402) {
         void refreshQuota()
-        if (inMiniProgram && window.wx?.miniProgram?.navigateTo) window.wx.miniProgram.navigateTo({ url: '/pages/payment/payment?from=export' })
+        if (inMiniProgram) setShowExportMembership(true)
         else setShowUpgrade(true, asset.type === 'docx' ? 'docx-export' : 'pdf-export')
         return
       }
@@ -810,10 +812,13 @@ export default function MobilePreviewClient(): ReactElement {
         )}
 
         <BottomActionBar
+          loadingContent={<ExportLoadingContent />}
+          retention={exportRetention}
           inMiniProgram={inMiniProgram}
           onOpenSettings={handleOpenSettings}
           onPrepareExport={prepareExport}
           onConfirmExport={confirmPreview}
+          onRequestMembership={inMiniProgram ? openMonthlyMembership : undefined}
           exportQuota={quotaLoaded ? quota.pdfExport : undefined}
           confirmedExportIds={confirmedExportIds}
           onRefreshQuota={() => { void refreshQuota() }}
@@ -843,6 +848,7 @@ export default function MobilePreviewClient(): ReactElement {
         />
 
         <VipUpgradeDialog open={showUpgrade} onOpenChange={setShowUpgrade} />
+        <ExportMembershipSheet preload={inMiniProgram} retention={exportRetention} open={showExportMembership} onClose={closeExportMembership} onRefreshQuota={refreshQuota} />
       </div>
     </AiSectionProvider>
   )
