@@ -371,7 +371,7 @@ try {
       await depleted.$eval('[data-export-membership-sheet]', el => el.addEventListener('animationstart', () => {
         if (el.dataset.state === 'closed') window.__membershipExitDuration = getComputedStyle(el).animationDuration
       }))
-      assert.match(await depleted.$eval('[aria-label="会员套餐"] button', b => b.textContent), /推荐开通.*终身会员/)
+      assert.match(await depleted.$eval('[aria-label="会员套餐"] button', b => b.textContent), /超值买断.*终身会员/)
       assert.deepEqual(await depleted.$$eval('[aria-label="会员套餐"] button', buttons => buttons.map(b => b.textContent.match(/终身会员|1 年会员|1 个月会员/)[0])), ['终身会员', '1 年会员', '1 个月会员'])
       assert.equal(await depleted.$eval('[aria-label="会员套餐"] button', b => b.getAttribute('aria-pressed')), 'true')
       await depleted.screenshot({ path: path.join(out, 'mobile-membership-sheet.png') })
@@ -434,7 +434,7 @@ try {
   await click(depleted, '开通会员，导出 PDF')
   await depleted.waitForSelector('[aria-label="会员套餐"] button')
   await depleted.evaluate(() => [...document.querySelectorAll('[aria-label="会员套餐"] button')].find(b => b.textContent.includes('1 个月')).click())
-  await click(depleted, '确认开通 · ¥19.9')
+  await click(depleted, '¥19.9 立即开通')
   await depleted.waitForFunction(() => window.__nativeRoutes.length === 1)
   assert.match(await depleted.evaluate(() => window.__nativeRoutes[0]), /from=export&checkout=1&vipType=1&price=19.9/)
   await depleted.evaluate(() => window.dispatchEvent(new Event('focus')))

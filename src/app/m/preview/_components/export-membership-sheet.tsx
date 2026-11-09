@@ -2,7 +2,8 @@
 
 import { useEffect, useLayoutEffect, useRef, useState, useCallback } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
-import { Check, Crown, Loader2, X } from 'lucide-react'
+import { Loader2, X } from 'lucide-react'
+import Image from 'next/image'
 
 import type { ExportRetention } from '@/hooks/use-export-retention'
 import { usePreloadMiniMembershipPlans } from '@/hooks/use-preload-mini-membership-plans'
@@ -132,33 +133,41 @@ export function ExportMembershipSheet({ open, onClose, onRefreshQuota, retention
 
   return <Dialog.Root open={open} onOpenChange={next => { if (!next) close() }}>
     <Dialog.Portal>
-      <Dialog.Overlay className={`${styles.overlay} fixed inset-0 z-[70] bg-black/35`} />
-      <Dialog.Content ref={sheetRef} tabIndex={-1} onOpenAutoFocus={event => { event.preventDefault(); sheetRef.current?.focus() }} data-export-membership-sheet className={`${styles.sheet} fixed inset-x-0 bottom-0 z-[71] flex max-h-[80dvh] flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl outline-none`} style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
-        <div className="mx-auto mb-1 mt-3 h-1 w-10 rounded-full bg-slate-200" />
-        <div className="relative px-5 pb-3 pt-3">
-          <Dialog.Title className="flex items-center gap-2 pr-8 text-xl font-semibold text-slate-900"><Crown className="size-5 text-violet-600" />开通会员，继续导出</Dialog.Title>
-          <Dialog.Description className="mt-2 text-sm leading-6 text-slate-500">免费次数已用完。开通后可导出 PDF、Word 和图片。</Dialog.Description>
-          <Dialog.Close aria-label="关闭会员弹窗" className="absolute right-2 top-0 flex size-11 items-center justify-center rounded-lg text-slate-400 outline-none hover:text-slate-600 focus-visible:ring-2 focus-visible:ring-slate-400"><X className="size-4" /></Dialog.Close>
-        </div>
-        <div className="min-h-0 overflow-y-auto px-5 pb-4">
-          <div className="mb-4 flex flex-wrap gap-x-4 gap-y-2 text-xs text-slate-600">
-            <span className="flex items-center gap-1"><Check className="size-3.5 text-violet-600" />会员期内不限次导出</span>
-            <span className="flex items-center gap-1"><Check className="size-3.5 text-violet-600" />保留当前简历和预览</span>
+      <Dialog.Overlay className={styles.overlay} />
+      <Dialog.Content ref={sheetRef} tabIndex={-1} onOpenAutoFocus={event => { event.preventDefault(); sheetRef.current?.focus() }} data-export-membership-sheet className={styles.sheet}>
+        <Dialog.Close aria-label="关闭会员弹窗" className={styles.close}><X size={16} /></Dialog.Close>
+        <div className={styles.body}>
+          <div className={styles['export-paywall']}>
+            <Dialog.Title className={styles['export-hero-title']}>导出<span className={styles['export-hero-highlight']}>高清无水印</span>简历</Dialog.Title>
+            <Dialog.Description className={styles['export-hero-desc']}>开通会员后，返回预览确认导出</Dialog.Description>
+            <div className={styles['export-benefits']}>
+              {([['shield', '无损原画质'], ['file', 'PDF / 图片双格式'], ['flash', '支持相册/发好友']] as const).map(([icon, label]) => <span key={icon} className={styles['export-benefit']}><Image src={`/images/paywall/${icon}.svg`} width={14} height={14} alt="" />{label}</span>)}
+            </div>
           </div>
-          {loading && !plans.length ? <div className="flex h-28 items-center justify-center gap-2 text-sm text-slate-500"><Loader2 className="size-5 animate-spin" />正在加载套餐…</div> : <div role="group" aria-label="会员套餐" aria-busy={loading} className="grid grid-cols-3 gap-2">
-            {plans.map(item => <button key={item.vipType} type="button" aria-pressed={selected === item.vipType} onClick={() => { selectionRef.current.selected = item.vipType; setSelected(item.vipType); track('pay_plan_click', { entry: 'mini_export_membership_sheet', exportType: retention?.exportType, strategyVersion: retention?.enabled ? EXPORT_RETENTION_VERSION : undefined, vipType: item.vipType, amount: item.price }) }} disabled={paying} className={`rounded-xl border-2 px-1 py-4 text-center ${selected === item.vipType ? 'border-violet-500 bg-violet-50' : 'border-slate-100 bg-white'}`}>
-              {retention?.enabled && item.vipType === 3 && <span className="mb-1 block text-[10px] font-medium text-violet-600">推荐开通</span>}
-              <span className="block text-sm font-medium text-slate-900">{(item.name || item.vipName || '会员套餐').replace(/（永久）|\(永久\)/g, '')}</span>
-              <span className="mt-2 block text-xl font-semibold text-violet-700"><span className="text-xs">¥</span>{item.price}</span>
-              <span className="mt-1 block text-xs text-slate-500">{item.lifetime || item.vipType === 3 ? '长期有效' : `${item.duration} 天`}</span>
-            </button>)}
-          </div>}
+          <div className={styles['export-plan-area']}>
+            <div className={styles['export-mode-tabs']}><div className={`${styles['export-mode-tab']} ${styles.active}`}><span className={styles['export-mode-title-row']}>会员不限次导出<span className={styles['export-mode-badge']}>推荐</span></span></div></div>
+            <div className={styles['export-plan-panel']}>
+              <div className={styles['plan-benefits-compact']}>
+                {['多份简历多次修改', '全场模板免费商用', '含 AI 诊断精修'].map(label => <span key={label} className={styles['plan-benefit-chip']}><Image src="/images/paywall/check-pink.svg" width={12} height={12} alt="" />{label}</span>)}
+              </div>
+              {loading && !plans.length ? <div className={styles.loading}><Loader2 className="size-5 animate-spin" />正在加载套餐…</div> : <div role="group" aria-label="会员套餐" aria-busy={loading} className={styles['membership-options']}>
+                {plans.map(item => <button key={item.vipType} type="button" aria-pressed={selected === item.vipType} onClick={() => { selectionRef.current.selected = item.vipType; setSelected(item.vipType); track('pay_plan_click', { entry: 'mini_export_membership_sheet', exportType: retention?.exportType, strategyVersion: retention?.enabled ? EXPORT_RETENTION_VERSION : undefined, vipType: item.vipType, amount: item.price }) }} disabled={paying} className={`${styles['membership-card']} ${selected === item.vipType ? styles.selected : ''}`}>
+                  <span className={`${styles['card-tag']} ${styles[item.vipType === 3 ? 'card-tag-amber' : item.vipType === 2 ? 'card-tag-purple' : 'card-tag-gray']}`}>{item.vipType === 3 ? '超值买断' : item.vipType === 2 ? '应届首选' : '短期突击'}</span>
+                  <span className={styles['card-header-group']}>
+                    <span className={styles['card-title']}>{(item.name || item.vipName || '会员套餐').replace(/（永久）|\(永久\)/g, '')}</span>
+                    <span className={styles['card-subtitle']}>{item.lifetime || item.vipType === 3 ? '长期有效' : `${item.duration}天有效`}</span>
+                  </span>
+                  <span className={styles['card-price']}><span className={styles['price-symbol']}>¥</span><span className={styles['price-value']}>{item.price}</span></span>
+                  <span className={`${styles['price-period']} ${item.vipType === 3 ? styles['price-period-pill'] : ''}`}>{item.vipType === 3 ? '永久免费重导' : item.vipType === 2 ? `约 ¥${(item.price / item.duration).toFixed(2)}/天` : '无限次修改'}</span>
+                </button>)}
+              </div>}
+            </div>
+          </div>
           {error && <div role="alert" className="mt-3 text-sm text-rose-600">{error}<button className="ml-2 underline" onClick={() => setAttempt(value => value + 1)}>重试</button></div>}
-          <p className="mt-3 text-xs leading-5 text-slate-400">Word 导出需使用支持 Word 的模板。支付完成后，返回当前预览确认导出。</p>
         </div>
-        <div className="border-t border-slate-100 px-5 pb-4 pt-3">
-          <button type="button" onClick={purchase} disabled={loading || !plan || paying || !!error} className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-violet-600 text-base font-semibold text-white disabled:opacity-50">{paying ? <><Loader2 className="size-4 animate-spin" />正在打开微信支付…</> : plan ? `确认开通 · ¥${plan.price}` : '请选择套餐'}</button>
-          <p className="mt-2 text-center text-xs text-slate-400">微信支付 · 单次购买，不自动续费</p>
+        <div className={styles['bottom-section']}>
+          <button type="button" onClick={purchase} disabled={loading || !plan || paying || !!error} className={styles['pay-button']}>{paying ? <><Loader2 className="size-4 animate-spin" />正在打开微信支付…</> : plan ? `¥${plan.price} ${plan.vipType === 3 ? '立即永久开通' : '立即开通'}` : '请选择套餐'}</button>
+          <div className={styles['pay-safe-row']}><span className={styles['pay-safe-primary']}><Image src="/images/paywall/shield.svg" width={11} height={11} alt="" />微信安全支付</span><span>单次付费不自动续费</span><span>支付后生效</span></div>
           {paying && <button className="mt-3 w-full text-center text-sm text-slate-500" onClick={() => { void onRefreshQuota(); close('payment_return') }}>已完成或取消支付，返回预览</button>}
         </div>
       </Dialog.Content>
