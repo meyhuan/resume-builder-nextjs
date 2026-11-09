@@ -16,6 +16,33 @@ function exchange(target = '/m/resumes') {
   }))
 }
 
+async function landing(visibilityState = 'visible', request = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ redirect: '/m/edit' }) })) {
+  const response = await GET(new NextRequest('https://aijianli.cn/m/sso?token=test&r=/m/edit'))
+  const script = (await response.text()).match(/<script>([\s\S]*?)<\/script>/)![1]
+  const listeners: Record<string, (event?: unknown) => Promise<void>> = {}
+  const buttonListeners: Record<string, () => void> = {}
+  const button = { hidden: true, addEventListener: (name: string, fn: () => void) => { buttonListeners[name] = fn } }
+  const message = { textContent: '' }
+  const spinner = { hidden: false }
+  const timers = new Map<number, { fn: () => void; delay: number }>()
+  let timerId = 0
+  const doc = {
+    forms: [{}], visibilityState, title: '',
+    addEventListener: (name: string, fn: () => Promise<void>) => { listeners[name] = fn },
+    getElementById: () => button,
+    querySelector: (selector: string) => selector === '.spinner' ? spinner : message,
+  }
+  const replace = vi.fn()
+  runInNewContext(script, {
+    history: { replaceState: vi.fn() },
+    window: { location: { replace }, addEventListener: (name: string, fn: () => Promise<void>) => { listeners[name] = fn } },
+    document: doc, FormData: class {}, AbortController, fetch: request,
+    setTimeout: (fn: () => void, delay: number) => { timers.set(++timerId, { fn, delay }); return timerId },
+    clearTimeout: (id: number) => timers.delete(id),
+  })
+  return { doc, listeners, button, buttonListeners, message, spinner, timers, replace, fetch: request }
+}
+
 describe('SSO account identity', () => {
   beforeEach(() => {
     vi.resetAllMocks()
@@ -124,26 +151,14 @@ describe('SSO account identity', () => {
     expect(html).toContain('prefers-reduced-motion')
     expect(html).toContain('window.location.replace(result.redirect)')
     expect(html).not.toContain('document.forms[0].submit()')
-    expect(html).not.toContain('setTimeout')
+    expect(html).toContain('void exchangeWhenVisible();')
+    expect(html).toContain('button[hidden]{display:none}')
     expect(html).not.toContain('正在安全登录')
     expect(mocks.fetch).not.toHaveBeenCalled()
   })
 
   it('exchanges in the background and replaces the SSO history entry', async () => {
-    const response = await GET(new NextRequest('http://localhost:3001/m/sso?token=test&r=/m/edit'))
-    const html = await response.text()
-    const script = html.match(/<script>([\s\S]*?)<\/script>/)![1]
-    const replace = vi.fn()
-    const fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ redirect: '/m/edit' }) })
-    const listeners: Record<string, () => Promise<void>> = {}
-    const doc = { forms: [{}], visibilityState: 'hidden', addEventListener: (name: string, fn: () => Promise<void>) => { listeners[name] = fn } }
-    runInNewContext(script, {
-      history: { replaceState: vi.fn() },
-      window: { location: { replace }, addEventListener: (name: string, fn: () => Promise<void>) => { listeners[name] = fn } },
-      document: doc,
-      FormData: class {},
-      fetch,
-    })
+    const { doc, listeners, fetch, replace } = await landing('hidden')
     await listeners.pageshow()
     expect(fetch).not.toHaveBeenCalled()
     doc.visibilityState = 'visible'
@@ -154,6 +169,44 @@ describe('SSO account identity', () => {
       method: 'POST', credentials: 'same-origin', headers: { Accept: 'application/json' },
     }))
     expect(replace).toHaveBeenCalledWith('/m/edit')
+  })
+
+  it('starts a visible page immediately even when pageshow never arrives', async () => {
+    const view = await landing()
+    await vi.waitFor(() => expect(view.replace).toHaveBeenCalledWith('/m/edit'))
+    await view.listeners.DOMContentLoaded()
+    await view.listeners.pageshow()
+    await view.listeners.focus()
+    expect(view.fetch).toHaveBeenCalledTimes(1)
+    expect(view.button.hidden).toBe(true)
+    expect(view.timers.size).toBe(0)
+  })
+
+  it('never consumes a token in a hidden probe, but offers an explicit fallback', async () => {
+    const view = await landing('hidden')
+    await view.listeners.pageshow({ type: 'pageshow' })
+    await view.listeners.focus({ type: 'focus' })
+    Array.from(view.timers.values()).find(timer => timer.delay === 2000)!.fn()
+    expect(view.fetch).not.toHaveBeenCalled()
+    expect(view.button.hidden).toBe(false)
+    view.buttonListeners.click()
+    view.buttonListeners.click()
+    await vi.waitFor(() => expect(view.replace).toHaveBeenCalledWith('/m/edit'))
+    expect(view.fetch).toHaveBeenCalledTimes(1)
+    expect(view.button.hidden).toBe(true)
+  })
+
+  it('ends a stalled request with a fresh-entry message instead of spinning forever', async () => {
+    const request = vi.fn().mockImplementation((_url, options) => new Promise((_resolve, reject) => {
+      options.signal.addEventListener('abort', () => reject(new Error('aborted')))
+    }))
+    const view = await landing('visible', request)
+    Array.from(view.timers.values()).find(timer => timer.delay === 15000)!.fn()
+    await vi.waitFor(() => expect(view.spinner.hidden).toBe(true))
+    expect(view.message.textContent).toContain('返回小程序后重新进入')
+    expect(view.replace).not.toHaveBeenCalled()
+    await view.listeners.pageshow()
+    expect(request).toHaveBeenCalledTimes(1)
   })
 
   it('returns the target as JSON after authentication without a navigation redirect', async () => {

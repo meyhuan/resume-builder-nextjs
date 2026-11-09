@@ -66,6 +66,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Micr
 .spinner{width:32px;height:32px;border:3px solid #ede9fe;border-top-color:#7c3aed;border-radius:50%;animation:spin .8s linear infinite}
 .loading p{margin:16px 0 0;color:#64748b;font-size:14px;line-height:1.6}
 form{margin:0}button{display:block;margin:16px auto;padding:12px 24px;border:0;border-radius:12px;background:#7c3aed;color:white;font:inherit}
+button[hidden]{display:none}
 @keyframes spin{to{transform:rotate(360deg)}}@keyframes reveal{to{opacity:1}}
 @media(prefers-reduced-motion:reduce){.loading{opacity:1;animation:none}.spinner{animation:none}}
 </style></head><body>
@@ -75,18 +76,34 @@ form{margin:0}button{display:block;margin:16px auto;padding:12px 24px;border:0;b
 <form method="post" action="/m/sso">
 <input type="hidden" name="token" value="${escapeHtml(token)}">
 <input type="hidden" name="r" value="${escapeHtml(target)}">
+<button id="continue-login" type="button" hidden>继续打开简历</button>
 <noscript><button type="submit">继续登录</button></noscript>
 </form></main><script>
 try{history.replaceState(null,'','/m/sso')}catch(e){}
 let exchangeStarted = false;
-async function exchangeWhenVisible(){
+const continueButton = document.getElementById('continue-login');
+const fallbackTimer = setTimeout(function(){
+  if (exchangeStarted) return;
+  document.querySelector('.loading p').textContent = '请点击下方按钮继续打开简历';
+  document.querySelector('.spinner').hidden = true;
+  continueButton.hidden = false;
+}, 2000);
+async function exchangeWhenVisible(force){
   // DevTools can preload a hidden document before the actual WebView is shown.
-  if (exchangeStarted || document.visibilityState === 'hidden') return;
+  // Only an explicit button click may override an unreliable visibility signal.
+  if (exchangeStarted || (force !== true && document.visibilityState === 'hidden')) return;
   exchangeStarted = true;
+  clearTimeout(fallbackTimer);
+  continueButton.hidden = true;
+  document.querySelector('.spinner').hidden = false;
+  document.querySelector('.loading p').textContent = '正在打开页面…';
+  const controller = new AbortController();
+  const timeout = setTimeout(function(){ controller.abort(); }, 15000);
   try {
     const response = await fetch('/m/sso', {
       method: 'POST',
       credentials: 'same-origin',
+      signal: controller.signal,
       keepalive: true,
       headers: { 'Accept': 'application/json' },
       body: new FormData(document.forms[0])
@@ -104,10 +121,17 @@ async function exchangeWhenVisible(){
     document.title = '暂时无法打开页面';
     document.querySelector('.spinner').hidden = true;
     document.querySelector('.loading p').textContent = '暂时无法完成登录，请点击左上角返回小程序后重新进入。';
+  } finally {
+    clearTimeout(timeout);
   }
 }
+continueButton.addEventListener('click', function(){ void exchangeWhenVisible(true); });
 window.addEventListener('pageshow', exchangeWhenVisible);
+window.addEventListener('focus', exchangeWhenVisible);
+document.addEventListener('DOMContentLoaded', exchangeWhenVisible);
 document.addEventListener('visibilitychange', exchangeWhenVisible);
+// Some embedded browsers do not deliver pageshow to an already mounted page.
+void exchangeWhenVisible();
 </script>
 </body></html>`, { headers: {
     'Content-Type': 'text/html; charset=utf-8',
