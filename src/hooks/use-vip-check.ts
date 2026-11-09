@@ -36,9 +36,9 @@ export const useVipCheck = () => {
     await refreshVipStore(effectiveToken);
   }, [refreshVipStore, effectiveToken, token, cookieToken]);
 
-  const refreshQuota = useCallback(async (): Promise<VipQuotaStatus | null> => {
+  const refreshQuota = useCallback(async (): Promise<void> => {
     log.info('refresh quota requested', { hasStoreToken: Boolean(token), hasCookieToken: Boolean(cookieToken) });
-    return refreshQuotaStore(effectiveToken);
+    await refreshQuotaStore(effectiveToken);
   }, [refreshQuotaStore, effectiveToken, token, cookieToken]);
 
   useEffect(() => {

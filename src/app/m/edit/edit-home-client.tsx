@@ -14,7 +14,6 @@ import { htmlToPlainText } from '@/features/edit/form-fields/html-text'
 import { computeProgress } from '@/features/edit/progress/module-completeness'
 import { isMeaningfulText } from '@/features/edit/progress/meaningful-field'
 import { useInMiniProgram } from '../_components/use-mini-program'
-import { usePreloadMiniMembershipPlans } from '@/hooks/use-preload-mini-membership-plans'
 import { MobileAiAssistantDrawer } from '../_components/mobile-ai-assistant-drawer'
 import { AddMoreModules } from './_components/add-more-modules'
 import { DeveloperNote } from './_components/developer-note'
@@ -85,8 +84,7 @@ function scrollAnchorIntoContainer(scroller: HTMLElement, anchorEl: HTMLElement)
 
 /**
  * Mobile edit home page. Data is loaded server-side in page.tsx and injected
- * via the `initial` prop, so no resume fetch is needed on mount. Mini-program
- * membership plans are prefetched separately without blocking editing. The local
+ * via the `initial` prop, so this component never fetches on mount. The local
  * draft store is hydrated once on first render; subsequent user edits stay
  * client-side until the user hits Save.
  */
@@ -96,7 +94,6 @@ export default function MobileEditHomeClient(
   log.info('mount', { hasInitial: !!initial, initialId: initial?.id })
   const router = useRouter()
   const inMiniProgram = useInMiniProgram(initialInMiniProgram)
-  usePreloadMiniMembershipPlans(inMiniProgram)
   const setFromServer = useDraftStore((s): typeof s.setFromServer => s.setFromServer)
   const draft = useDraftStore((s): ResumeData | null => s.draft)
   const resumeId = useDraftStore((s): string | null => s.resumeId)

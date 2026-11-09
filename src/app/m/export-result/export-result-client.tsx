@@ -10,7 +10,7 @@ import { getExportFileExtension, sanitizeExportFileName } from '@/lib/export-fil
 
 const log = createLogger('m/export-result')
 
-type ExportType = 'pdf' | 'image' | 'markdown' | 'docx'
+type ExportType = 'pdf' | 'image' | 'markdown'
 
 interface ExportResultState {
   readonly id: string
@@ -28,7 +28,6 @@ function getAbsoluteUrl(path: string): string {
 }
 
 function getResultTitle(type: ExportType): string {
-  if (type === 'docx') return 'Word 简历已生成'
   if (type === 'pdf') return 'PDF 简历已生成'
   if (type === 'image') return '图片简历已生成'
   return 'Markdown 简历已生成'
@@ -42,7 +41,7 @@ export default function ExportResultClient(): ReactElement {
   const state = useMemo<ExportResultState | null>(() => {
     const type = searchParams.get('type')
     const downloadUrl = searchParams.get('url')
-    if ((type !== 'pdf' && type !== 'image' && type !== 'markdown' && type !== 'docx') || !downloadUrl) return null
+    if ((type !== 'pdf' && type !== 'image' && type !== 'markdown') || !downloadUrl) return null
     let previewImages: string[] = []
     try {
       const raw = searchParams.get('previewImages')
@@ -129,9 +128,9 @@ export default function ExportResultClient(): ReactElement {
               <img src={absoluteUrl} alt="导出图片预览" className="w-full rounded-2xl bg-white border border-slate-200" />
             ) : (
               <div className="flex h-[42vh] flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white px-6 text-center">
-                <div className="text-base font-semibold text-slate-900">{state.type === 'docx' ? 'Word 文件已准备好' : 'Markdown 文件已准备好'}</div>
+                <div className="text-base font-semibold text-slate-900">Markdown 文件已准备好</div>
                 <div className="mt-2 text-sm leading-6 text-slate-500">
-                  {state.type === 'docx' ? '下载 .docx 文件后可用 Word / WPS 继续修改。排版以实际文档为准。' : '可直接下载 .md 文件，或复制链接到浏览器保存。'}
+                  可直接下载 .md 文件，或复制链接到浏览器保存。
                 </div>
               </div>
             )}

@@ -423,7 +423,7 @@ export default function AiGenerateSheet(props: AiGenerateSheetProps): ReactEleme
 
       {/* VIP Upgrade Dialog for quota exceeded */}
       <VipUpgradeDialog
-        open={showUpgrade && open}
+        open={showUpgrade}
         onOpenChange={setShowUpgrade}
       />
     </Sheet>

@@ -32,9 +32,7 @@ export function HomeActionBar(props: HomeActionBarProps): ReactElement {
     const currentTemplate = draftTemplateId || template
     const tpl = currentTemplate ? `&tpl=${encodeURIComponent(currentTemplate)}` : ''
     const miniVersion = miniProgramRuntime.readMiniVersion()
-    const miniVersionParam = miniVersion
-      ? `&miniVersion=${encodeURIComponent(miniVersion)}&miniDocx=${miniProgramRuntime.supportsDocxExport() ? '1' : '0'}`
-      : ''
+    const miniVersionParam = miniVersion ? `&miniVersion=${encodeURIComponent(miniVersion)}` : ''
     router.push(`/m/preview?id=${resumeId ?? ''}${tpl}${miniVersionParam}`)
   }
 

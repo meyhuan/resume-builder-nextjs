@@ -7,11 +7,6 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     include: [
-      'src/hooks/use-export-retention.test.tsx',
-      'src/lib/mini-membership-plans.test.ts',
-      'src/lib/mini-single-export.test.ts',
-      'src/hooks/use-preload-mini-membership-plans.test.tsx',
-      'src/store/use-vip-store-refresh.test.ts',
       'src/lib/automation-login-mode.test.ts',
       'src/components/ui/autocomplete-input.test.tsx',
       'src/editor/field-suggestions.test.tsx',
@@ -25,6 +20,8 @@ export default defineConfig({
       'src/components/modals/base-info-month.test.tsx',
       'src/components/modals/job-intention-choices.test.tsx',
       'src/components/templates/one-page-readability.test.tsx',
+      'src/components/templates/docx-export-ui.test.tsx',
+      'src/components/templates/preview-failure-ui.test.tsx',
       'src/components/templates/pagination-feedback.test.tsx',
       'src/hooks/use-pdf-preview-page-count.test.tsx',
       'src/io/pdf-page-count.test.ts',

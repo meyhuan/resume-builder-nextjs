@@ -167,14 +167,6 @@ try {
             Copy-Tree -Source "prisma" -Destination (Join-Path $StageDir "prisma")
             Copy-Tree -Source "patches" -Destination (Join-Path $StageDir "patches")
 
-            # This runtime worker is spawned by Node, so Next.js does not bundle it.
-            $worker = "scripts/word-preview-worker.py"
-            if (-not (Test-Path -LiteralPath $worker -PathType Leaf)) {
-                throw "Missing Word preview runtime worker: $worker"
-            }
-            New-Item -ItemType Directory -Path (Join-Path $StageDir "scripts") -Force | Out-Null
-            Copy-Item -LiteralPath $worker -Destination (Join-Path $StageDir $worker)
-
             foreach ($file in @("package.json", "pnpm-lock.yaml", "pnpm-workspace.yaml", "next.config.ts", "next.config.mjs", "next.config.js")) {
                 if (Test-Path -LiteralPath $file) {
                     Copy-Item -LiteralPath $file -Destination (Join-Path $StageDir $file) -Force

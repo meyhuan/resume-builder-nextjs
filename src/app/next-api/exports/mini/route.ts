@@ -18,7 +18,7 @@
  *
  * 子路由：
  *   - POST /next-api/exports/mini              创建导出任务
- *   - POST /next-api/exports/mini/[id]/confirm  确认已预览文件（PC / H5 / 小程序）
+ *   - POST /next-api/exports/mini/[id]/confirm  确认导出（小程序 preview 流程用）
  */
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
@@ -43,10 +43,6 @@ import type { ResumeData } from '@/entities/resume/resume-data'
 import { exportResumeToMarkdown } from '@/io/export-markdown'
 import { DOCX_CONTENT_TYPE, exportResumeToDocx, UnsupportedDocxTemplateError } from '@/io/export-docx'
 import { DOCX_SUPPORTED_TEMPLATE_IDS, isDocxTemplateSupported } from '@/lib/docx-template-support'
-import { renderDocxPreview, DocxPreviewError } from '@/lib/docx-preview'
-import { cachedWordPreview, wordPreviewKey } from '@/lib/word-preview-cache'
-import { exportProgressResponse } from '@/lib/export-progress-stream'
-import type { ExportProgressListener } from '@/lib/export-progress'
 import { trackServerAnalyticsEvent } from '@/lib/server-analytics'
 
 export const runtime = 'nodejs'
@@ -65,7 +61,7 @@ export const runtime = 'nodejs'
  *     wxId?, timestamp?, sign?,           // auth option 1 (HMAC-MD5)
  *     resumeId,
  *     templateId?,                        // override resume.template
- *     type: 'pdf' | 'image' | 'markdown' | 'docx',
+ *     type: 'pdf' | 'image' | 'markdown',
  *     mode: 'preview' | 'final',          // preview = no quota; final consumes except Markdown
  *     fileName?
  *   }
@@ -74,9 +70,9 @@ export const runtime = 'nodejs'
  *   downloadUrl: relative path to /next-api/export-file/{token}
  *
  * Quota:
- *   - mode=preview: peek only; asset confirmed=false, never consumes quota.
+ *   - mode=preview: skip both peek and consume; asset confirmed=false.
  *   - mode=final: peek before render, consume after save; asset confirmed=true.
- *   - type=markdown: skip quota entirely; preview includes the actual UTF-8 text.
+ *   - type=markdown: generate confirmed UTF-8 Markdown, skip quota entirely.
  */
 
 interface CreateMiniExportRequest {
@@ -245,7 +241,7 @@ async function reportExportFailure(
   })
 }
 
-export async function POST(req: Request): Promise<Response> {
+export async function POST(req: Request): Promise<NextResponse> {
   const traceId = randomUUID()
   let body: CreateMiniExportRequest
   try {
@@ -344,21 +340,13 @@ export async function POST(req: Request): Promise<Response> {
       contentType,
       extension,
       type,
-      confirmed: mode === 'final',
+      confirmed: true,
       wxId,
       userId: resume.userId,
       resumeId: resume.id,
       resumeTitle: resume.title,
       templateId,
     })
-
-    if (mode === 'preview') {
-      return NextResponse.json({
-        id: saved.token, type, fileName, downloadUrl: `/next-api/export-file/${saved.token}`,
-        expiresAt: new Date(saved.expiresAt).toISOString(), confirmed: false,
-        previewImages: [], markdownContent: markdown,
-      })
-    }
 
     const ossAsset = await uploadExportAsset({
       token: saved.token,
@@ -449,34 +437,15 @@ export async function POST(req: Request): Promise<Response> {
       }, { status: 400 })
     }
 
-    const createWord = async (progress: ExportProgressListener = () => {}): Promise<NextResponse> => {
     try {
       const rawContent = resume.content && typeof resume.content === 'object' && !Array.isArray(resume.content)
         ? resume.content as Record<string, unknown>
         : {}
       const { content, meta: editorMeta } = extractEditorMeta(rawContent)
       const normalizedResume: ResumeData = normalizeResumeContent(content as Partial<ResumeData>, { fallbackId: resume.id })
-      const theme = editorMeta.themes[templateId]
-      const prepared = mode === 'preview' ? await cachedWordPreview(
-        wordPreviewKey(wxId, resume.id, templateId, normalizedResume, theme),
-        async update => {
-          update('generating')
-          const buffer = await exportResumeToDocx(normalizedResume, templateId, theme)
-          return { buffer, images: await renderDocxPreview(buffer, update) }
-        }, progress,
-      ) : { buffer: await exportResumeToDocx(normalizedResume, templateId, theme), images: [] }
-      const { buffer } = prepared
+      const buffer = await exportResumeToDocx(normalizedResume, templateId, editorMeta.themes[templateId])
       const contentType = DOCX_CONTENT_TYPE
       const extension = 'docx'
-      const previewTokens: string[] = []
-      progress('storing')
-      if (mode === 'preview') {
-        for (const image of prepared.images) {
-          const preview = await saveExportTemp({ buffer: image, fileName: `${fileName}-preview`,
-            contentType: 'image/jpeg', extension: 'jpg', type: 'image', confirmed: true })
-          previewTokens.push(preview.token)
-        }
-      }
       const saved = await saveExportTemp({
         buffer,
         fileName,
@@ -489,7 +458,6 @@ export async function POST(req: Request): Promise<Response> {
         resumeId: resume.id,
         resumeTitle: resume.title,
         templateId,
-        previewTokens,
       })
 
       if (mode === 'final') {
@@ -545,22 +513,15 @@ export async function POST(req: Request): Promise<Response> {
         confirmed: mode === 'final',
         remaining: quotaPeek.remaining,
         isVip: quotaPeek.isVip,
-        previewImages: previewTokens.map(token => `/next-api/export-file/${token}?inline=1`),
+        previewImages: [],
       })
     } catch (error: unknown) {
-      if (error instanceof DocxPreviewError) {
-        return NextResponse.json({ error: error.message, code: 'DOCX_PREVIEW_FAILED' }, { status: 503 })
-      }
       if (error instanceof UnsupportedDocxTemplateError) {
         return NextResponse.json({ error: error.message, code: 'DOCX_TEMPLATE_UNSUPPORTED' }, { status: 400 })
       }
       console.error('[exports/mini] DOCX render failed', { traceId, resumeId, templateId, error: normalizeErrorMessage(error) })
       return NextResponse.json({ error: 'DOCX 生成失败，请稍后重试', code: 'DOCX_RENDER_FAILED', traceId }, { status: 500 })
     }
-    }
-    return mode === 'preview' && req.headers.get('accept')?.includes('application/x-ndjson')
-      ? exportProgressResponse(createWord)
-      : createWord()
   }
 
   // Render via internal SSR print page (shared helper)

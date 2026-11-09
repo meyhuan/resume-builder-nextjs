@@ -1,8 +1,5 @@
 import { createRequire } from 'node:module'
 import { platform, arch } from 'node:os'
-import { execFile } from 'node:child_process'
-import { promisify } from 'node:util'
-import { dirname, join } from 'node:path'
 
 const require = createRequire(import.meta.url)
 const results = []
@@ -44,22 +41,6 @@ await check('DOCX generation in memory', async () => {
   }
   return { bytes: buffer.length }
 })
-
-if (process.argv.includes('--with-preview')) {
-  await check('LibreOffice Python UNO bridge', async () => {
-    const binary = process.env.LIBREOFFICE_PATH || (platform() === 'win32' ? 'C:/Program Files/LibreOffice/program/soffice.com' : 'soffice')
-    const python = process.env.LIBREOFFICE_PYTHON_PATH || (platform() === 'win32' ? join(dirname(binary), 'python.exe') : 'python3')
-    const { stdout } = await promisify(execFile)(python, ['-c', 'import uno; print("UNO_READY")'], { timeout: 15000, windowsHide: true })
-    if (!stdout.includes('UNO_READY')) throw new Error('Python UNO bridge unavailable')
-    return { python, ready: true }
-  })
-  await check('LibreOffice Word preview converter', async () => {
-    const binary = process.env.LIBREOFFICE_PATH || (platform() === 'win32' ? 'C:/Program Files/LibreOffice/program/soffice.com' : 'soffice')
-    const { stdout } = await promisify(execFile)(binary, ['--headless', '--version'], { timeout: 60000, windowsHide: true })
-    if (!stdout.includes('LibreOffice')) throw new Error('LibreOffice version check failed')
-    return { binary, version: stdout.trim() }
-  })
-}
 
 console.log(JSON.stringify({
   passed: results.every(result => result.passed),

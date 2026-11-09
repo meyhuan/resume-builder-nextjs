@@ -1,4 +1,4 @@
-import { act, cleanup, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import type { ReactNode } from 'react'
 import type { ResumeData } from '@/entities/resume/resume-data'
@@ -9,6 +9,7 @@ import MobilePreviewClient from './preview-client'
 import { CSS_PX_PER_MM } from '@/lib/resume-page-metrics'
 
 const navigation = vi.hoisted(() => ({ params: new URLSearchParams('tpl=simple'), router: { push: vi.fn() } }))
+const mini = vi.hoisted(() => ({ enabled: false }))
 vi.mock('next/navigation', () => ({ useSearchParams: () => navigation.params, useRouter: () => navigation.router }))
 vi.mock('idb-keyval', () => ({ get: vi.fn(), set: vi.fn(), del: vi.fn() }))
 vi.mock('@/lib/analytics', () => ({ track: vi.fn() }))
@@ -26,11 +27,12 @@ vi.mock('@/components/vip/vip-upgrade-dialog', () => ({ default: () => null }))
 vi.mock('@/hooks/use-vip-check', () => ({ useVipCheck: () => ({ showUpgrade: false, setShowUpgrade: vi.fn() }) }))
 vi.mock('@/hooks/use-one-page-mode', () => ({ useOnePageMode: () => ({ status: 'idle' }) }))
 vi.mock('@/hooks/use-resume-pagination', () => ({ useResumePagination: () => [] }))
-vi.mock('../_components/use-mini-program', () => ({ useInMiniProgram: () => false }))
+vi.mock('../_components/use-mini-program', () => ({ useInMiniProgram: () => mini.enabled }))
 vi.mock('../_components/use-mini-program-capabilities', () => ({ useMiniProgramCapabilities: () => ({ markdownExportSupported: true }) }))
 vi.mock('./_components/preview-settings-sheet', () => ({ PreviewSettingsSheet: () => null, ONE_PAGE_BADGE_STYLES: {} }))
 
 beforeEach(() => {
+  mini.enabled = false
   vi.useFakeTimers()
   vi.stubGlobal('ResizeObserver', class { observe() {} disconnect() {} })
   useAppStore.setState({ readOnly: false, themes: {} })
@@ -47,7 +49,31 @@ afterEach(() => {
   cleanup()
   vi.useRealTimers()
   vi.unstubAllGlobals()
+  delete window.wx
 })
+
+it.each([['导出 PDF', 'pdf'], ['导出图片', 'image'], ['导出 Markdown', 'markdown']])(
+  'hands %s to the original native preview before creating or confirming an export',
+  async (label, type) => {
+    mini.enabled = true
+    const navigateTo = vi.fn()
+    window.wx = { miniProgram: { navigateTo } } as unknown as NonNullable<typeof window.wx>
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true })
+    vi.stubGlobal('fetch', fetchMock)
+    render(<MobilePreviewClient />)
+    fireEvent.click(screen.getByRole('button', { name: '导出' }))
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: label })) })
+    expect(navigateTo).toHaveBeenCalledOnce()
+    const destination = new URL(navigateTo.mock.calls[0][0].url, 'https://mini.invalid')
+    expect(destination.pathname).toBe('/pages/exportResult/exportResult')
+    expect(destination.searchParams.get('resumeId')).toBe('preview-fixture')
+    expect(destination.searchParams.get('type')).toBe(type)
+    expect(destination.searchParams.has('id')).toBe(false)
+    expect(destination.searchParams.has('url')).toBe(false)
+    // Native preview owns quota checking and its existing single/member paywall.
+    expect(fetchMock.mock.calls.every(([url]) => url === '/next-api/resumes/preview-fixture')).toBe(true)
+  },
+)
 
 it('places mobile page labels at successive boundaries and removes them when content fits one page', () => {
   let resize: ResizeObserverCallback

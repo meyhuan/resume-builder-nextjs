@@ -1,8 +1,6 @@
 'use client'
 
 import { captureTemplateJourney, serializeTemplateJourney } from '@/lib/templates/template-journey'
-import { fetchExportPreview } from '@/lib/fetch-export-preview'
-import type { ExportProgressListener } from '@/lib/export-progress'
 
 import { useEffect, useMemo, useRef, useState, useCallback, Suspense, type ReactElement } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -20,8 +18,6 @@ import { ResumeSvgPlaceholder } from '@/features/m/resume-list/shared'
 import { exportImage } from '@/io/export-image'
 import { useVipCheck } from '@/hooks/use-vip-check'
 import VipUpgradeDialog from '@/components/vip/vip-upgrade-dialog'
-import { useExportRetention } from '@/hooks/use-export-retention'
-import { ExportMembershipSheet } from './_components/export-membership-sheet'
 import { useOnePageMode, type OnePageStatus } from '@/hooks/use-one-page-mode'
 import { calculateResumePages } from '@/lib/resume-page-metrics'
 import { embedEditorMeta, extractEditorMeta, type AdjustableTokens } from '@/entities/editor/editor-meta'
@@ -30,10 +26,7 @@ import { track } from '@/lib/analytics'
 import { joinExportFileNameParts } from '@/lib/export-file-name'
 import { useInMiniProgram } from '../_components/use-mini-program'
 import { useMiniProgramCapabilities } from '../_components/use-mini-program-capabilities'
-import { confirmExportPreview, type ExportPreviewAsset } from '@/lib/export-preview'
-import { isDocxTemplateSupported } from '@/lib/docx-template-support'
 import { BottomActionBar } from './_components/bottom-action-bar'
-import { ExportLoadingContent } from './_components/export-loading-content'
 import { PortfolioAppendix } from '@/components/portfolio/portfolio-appendix'
 import { scanResumePlaceholders } from '@/lib/resume/placeholder-scan'
 import {
@@ -46,9 +39,17 @@ const MOBILE_PAGE_MAX_WIDTH_PX = 390
 const A4_RATIO = 297 / 210
 const MOBILE_ONE_PAGE_STRATEGY = 'one-page' as const
 
-type ExportType = 'pdf' | 'image' | 'markdown' | 'docx'
+type ExportType = 'pdf' | 'image' | 'markdown'
 
-type ExportJobResponse = ExportPreviewAsset
+interface ExportJobResponse {
+  readonly id: string
+  readonly type: ExportType
+  readonly fileName: string
+  readonly downloadUrl: string
+  readonly expiresAt: string
+  readonly confirmed?: boolean
+  readonly previewImages?: readonly string[]
+}
 
 interface SyncPreviewStateFlight {
   readonly key: string
@@ -435,28 +436,11 @@ export default function MobilePreviewClient(): ReactElement {
   }
 
   // --- Export handlers ---
-  const { showUpgrade, setShowUpgrade, quota, quotaLoaded, refreshQuota } = useVipCheck()
-  const [showExportMembership, setShowExportMembership] = useState(false)
-  const closeExportMembership = useCallback(() => setShowExportMembership(false), [])
-  useEffect(() => {
-    const refresh = () => { if (!document.hidden) void refreshQuota() }
-    window.addEventListener('focus', refresh)
-    window.addEventListener('pageshow', refresh)
-    document.addEventListener('visibilitychange', refresh)
-    return () => {
-      window.removeEventListener('focus', refresh)
-      window.removeEventListener('pageshow', refresh)
-      document.removeEventListener('visibilitychange', refresh)
-    }
-  }, [refreshQuota])
+  const { showUpgrade, setShowUpgrade } = useVipCheck()
   const [isExporting, setIsExporting] = useState<boolean>(false)
-  const [confirmedExportIds, setConfirmedExportIds] = useState<ReadonlySet<string>>(() => new Set())
 
   const inMiniProgram = useInMiniProgram()
-  const openMonthlyMembership = useCallback(() => setShowExportMembership(true), [])
-  const exportRetention = useExportRetention({ platform: 'mini_program', refreshQuota, openMembership: openMonthlyMembership, enabled: inMiniProgram })
   const miniProgramCapabilities = useMiniProgramCapabilities()
-  const miniDocxExportSupported = miniProgramCapabilities.docxExportSupported
   const miniMarkdownExportSupported = miniProgramCapabilities.markdownExportSupported
   const showMarkdownExport = !inMiniProgram || miniMarkdownExportSupported
 
@@ -475,23 +459,27 @@ export default function MobilePreviewClient(): ReactElement {
    */
   const createExportJob = useCallback(async (
     payload: { readonly resumeId: string; readonly templateId: string; readonly type: ExportType; readonly fileName: string },
-    progress?: ExportProgressListener,
   ): Promise<ExportJobResponse> => {
     const exportJourney = captureTemplateJourney(payload.templateId, payload.resumeId)
-      const response = await fetchExportPreview('/next-api/exports/mini', {
+    const response = await fetch('/next-api/exports/mini', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-        body: JSON.stringify({ ...payload, mode: 'preview' }),
-      }, progress)
+      body: JSON.stringify({ ...payload, mode: 'final' }),
+    })
     log.info('create export job HTTP', { type: payload.type, resumeId: payload.resumeId, status: response.status })
     if (!response.ok) {
       const errorData = await response.json().catch(() => null)
       if (response.status === 402) {
-        if (inMiniProgram) {
-          setShowExportMembership(true)
+        // In mini-program: navigate to native payment page for better UX
+        // In H5/PC: show the upgrade dialog
+        if (inMiniProgram && typeof window.wx?.miniProgram?.navigateTo === 'function') {
+          log.info('quota exceeded in mini-program, navigating to native payment page')
+          window.wx.miniProgram.navigateTo({
+            url: '/pages/payment/payment?from=export'
+          })
         } else {
-          setShowUpgrade(true, payload.type === 'docx' ? 'docx-export' : 'pdf-export')
+          setShowUpgrade(true, 'pdf-export')
         }
         throw new Error(errorData?.error ?? '导出次数已用完')
       }
@@ -499,9 +487,9 @@ export default function MobilePreviewClient(): ReactElement {
     }
     const job = await response.json() as ExportJobResponse
     log.info('create export job parsed', { id: job.id, type: job.type, fileName: job.fileName, previewImages: job.previewImages?.length, expiresAt: job.expiresAt })
-    track('resume_preview', {
+    track('export_success', {
       ...exportJourney,
-      successKind: 'preview_ready',
+      successKind: 'file_ready',
       resumeId: payload.resumeId,
       templateId: payload.templateId,
       exportType: payload.type,
@@ -516,14 +504,13 @@ export default function MobilePreviewClient(): ReactElement {
    * H5: /m/export-result page.
    */
   const openExportResult = useCallback((job: ExportJobResponse, resumeId: string): void => {
-    const canUseNativeResult = (job.type !== 'markdown' || miniMarkdownExportSupported) && (job.type !== 'docx' || miniDocxExportSupported)
+    const canUseNativeResult = job.type !== 'markdown' || miniMarkdownExportSupported
     if (inMiniProgram && canUseNativeResult) {
       // Try navigating to mini-program native page for better share/download UX
       const canNavigateTo = typeof window.wx?.miniProgram?.navigateTo === 'function'
       if (canNavigateTo) {
         const params = new URLSearchParams({
           resumeId,
-          templateId,
           id: job.id,
           type: job.type,
           fileName: job.fileName,
@@ -535,8 +522,7 @@ export default function MobilePreviewClient(): ReactElement {
         }
         const page = `/pages/exportResult/exportResult?${params.toString()}`
         log.info('navigateTo mini-program exportResult', { page })
-        params.set('templateAnalytics', serializeTemplateJourney(templateId, resumeId))
-        window.wx?.miniProgram?.navigateTo({ url: `/pages/exportResult/exportResult?${params.toString()}` })
+        window.wx?.miniProgram?.navigateTo({ url: page })
         return
       }
       log.warn('mini program navigateTo unavailable, falling back to H5 result page')
@@ -546,7 +532,6 @@ export default function MobilePreviewClient(): ReactElement {
     log.info('open export result (H5)', { id: job.id, type: job.type })
     const params = new URLSearchParams({
       resumeId,
-      templateId,
       id: job.id,
       type: job.type,
       fileName: job.fileName,
@@ -557,7 +542,7 @@ export default function MobilePreviewClient(): ReactElement {
       params.set('previewImages', JSON.stringify(job.previewImages))
     }
     router.push(`/m/export-result?${params.toString()}`)
-  }, [router, inMiniProgram, miniMarkdownExportSupported, miniDocxExportSupported, templateId])
+  }, [router, inMiniProgram, miniMarkdownExportSupported])
 
   /**
    * Sync the local theme overrides and template choice back to the DB before
@@ -577,7 +562,6 @@ export default function MobilePreviewClient(): ReactElement {
     }
 
     const syncPromise = (async (): Promise<void> => {
-      await existingSync?.promise.catch(() => undefined)
       await thumbnailFlightRef.current
       const sourceResume: ResumeData = draft ?? resume
       const latestStore = useAppStore.getState()
@@ -670,48 +654,102 @@ export default function MobilePreviewClient(): ReactElement {
   }, [draftResumeId, searchParams, syncPreviewState, setDraftTemplateId, templateId])
 
   /**
-   * Prepare an uncharged file for the selected format. Confirmation later
-   * unlocks this exact asset before opening the native or H5 result page.
+   * Unified export handler for PDF, image, and Markdown.
+   * Both mini-program and H5 use the same flow:
+   *   1. syncPreviewState (save theme/one-page to DB)
+   *   2. call /next-api/exports/mini with mode='final'
+   *   3. navigate to result page (native or H5)
    */
-  const prepareExport = useCallback(async (type: ExportType, progress?: ExportProgressListener): Promise<ExportPreviewAsset> => {
-    if (type === 'docx' && !isDocxTemplateSupported(templateId)) throw new Error('请选择支持 Word 的模板')
-    const targetId = draftResumeId || searchParams.get('id')
-    if (!targetId) throw new Error('无法获取简历 ID，请返回重试')
-    if ((type === 'pdf' || type === 'image') && onePageFit && onePageStatus === 'fitting') throw new Error('单页正在适配，请稍候重试')
-    if ((type === 'pdf' || type === 'image') && onePageFit && onePageStatus === 'overflow') throw new Error('内容无法完整放入一页，请精简内容或关闭单页模式')
-    progress?.('saving')
-    await syncPreviewState(targetId)
-    progress?.('preparing')
-    return createExportJob({ resumeId: targetId, templateId, type, fileName: buildDefaultExportFileName(resume) }, progress)
-  }, [templateId, draftResumeId, searchParams, onePageFit, onePageStatus, syncPreviewState, createExportJob, resume])
-
-  const confirmPreview = useCallback(async (asset: ExportPreviewAsset): Promise<void> => {
+  const handleExport = useCallback(async (type: ExportType): Promise<void> => {
+    if (!innerRef.current) return
+    if (type === 'markdown' && inMiniProgram && !miniMarkdownExportSupported) {
+      toast.info('当前小程序版本暂不支持 Markdown 导出，请更新后再试')
+      return
+    }
     if (exportInFlightRef.current) return
     exportInFlightRef.current = true
     setIsExporting(true)
-    const targetId = draftResumeId || searchParams.get('id') || ''
-    const journey = captureTemplateJourney(templateId, targetId)
-    track('export_click', { ...journey, resumeId: targetId, templateId, exportType: asset.type, entry: 'mobile_preview_bottom_bar' })
+    const fileName: string = buildDefaultExportFileName(resume)
+    const targetResumeIdForTrack: string | null = draftResumeId || searchParams.get('id')
+    track('export_click', {
+      resumeId: targetResumeIdForTrack,
+      templateId,
+      exportType: type,
+      entry: 'mobile_preview_bottom_bar',
+    })
     try {
-      if (Date.parse(asset.expiresAt) <= Date.now()) throw new Error('预览已过期，请重新生成')
-      const scan = scanResumePlaceholders(resume)
-      if (scan.hasPlaceholders) toast.warning(`简历中尚有 ${scan.count} 处 [X] 待填数据，请注意核对`)
-      const job = await confirmExportPreview(asset)
-      setConfirmedExportIds(previous => new Set(previous).add(job.id))
-      void refreshQuota()
-      track('export_success', { ...journey, resumeId: targetId, templateId, exportType: asset.type, exportId: job.id, successKind: 'file_ready' })
-      openExportResult(job, targetId)
-    } catch (error) {
-      if ((error as { status?: number }).status === 402) {
-        void refreshQuota()
-        if (inMiniProgram) setShowExportMembership(true)
-        else setShowUpgrade(true, asset.type === 'docx' ? 'docx-export' : 'pdf-export')
+      const targetResumeId: string | null = draftResumeId || searchParams.get('id')
+      if (!targetResumeId) {
+        toast.error('无法获取简历 ID，请返回重试')
         return
       }
-      track('export_failed', { ...journey, resumeId: targetId, templateId, exportType: asset.type, stage: 'confirm_export', failureReason: error instanceof Error ? error.message : String(error) })
-      toast.error(error instanceof Error ? error.message : '导出失败，请重试')
-    } finally { exportInFlightRef.current = false; setIsExporting(false) }
-  }, [openExportResult, draftResumeId, searchParams, inMiniProgram, setShowUpgrade, templateId, resume, refreshQuota])
+
+      if (type !== 'markdown' && onePageFit && onePageStatus === 'fitting') {
+        toast.info('单页正在适配，请稍候再导出')
+        return
+      }
+      if (type !== 'markdown' && onePageFit && onePageStatus === 'overflow') {
+        toast.error('当前内容无法完整放入一页，请精简内容或关闭单页模式')
+        return
+      }
+
+      if (resume) {
+        const scan = scanResumePlaceholders(resume)
+        if (scan.hasPlaceholders) {
+          toast.warning(`简历中尚有 ${scan.count} 处 [X] 待填数据，请注意核对`)
+        }
+      }
+
+      await syncPreviewState(targetResumeId)
+      const canUseNativeResult = type !== 'markdown' || miniMarkdownExportSupported
+      if (inMiniProgram && canUseNativeResult && typeof window.wx?.miniProgram?.navigateTo === 'function') {
+        const params = new URLSearchParams({
+          resumeId: targetResumeId,
+          templateId,
+          type,
+          fileName,
+        })
+        params.set('templateAnalytics', serializeTemplateJourney(templateId, targetResumeId))
+        const page = `/pages/exportResult/exportResult?${params.toString()}`
+        log.info('navigateTo native mini-program exportResult before confirm', { page })
+        window.wx.miniProgram.navigateTo({ url: page })
+        return
+      }
+      const job = await createExportJob({ resumeId: targetResumeId, templateId, type, fileName })
+      openExportResult(job, targetResumeId)
+    } catch (err: unknown) {
+      const msg = err instanceof Error
+        ? err.message
+        : type === 'pdf'
+          ? 'PDF 导出失败'
+          : type === 'image'
+            ? '图片导出失败'
+            : 'Markdown 导出失败'
+      track('export_failed', {
+        resumeId: targetResumeIdForTrack,
+        templateId,
+        exportType: type,
+        stage: 'create_export_job',
+        failureReason: msg,
+      })
+      toast.error(msg)
+    } finally {
+      exportInFlightRef.current = false
+      setIsExporting(false)
+    }
+  }, [resume, createExportJob, openExportResult, draftResumeId, searchParams, templateId, syncPreviewState, inMiniProgram, miniMarkdownExportSupported, onePageFit, onePageStatus])
+
+  const handleExportPdf = useCallback(async (): Promise<void> => {
+    await handleExport('pdf')
+  }, [handleExport])
+
+  const handleExportImage = useCallback(async (): Promise<void> => {
+    await handleExport('image')
+  }, [handleExport])
+
+  const handleExportMarkdown = useCallback(async (): Promise<void> => {
+    await handleExport('markdown')
+  }, [handleExport])
 
   const scopedStyleId = `m-preview-scope-${templateId}`
 
@@ -812,19 +850,10 @@ export default function MobilePreviewClient(): ReactElement {
         )}
 
         <BottomActionBar
-          loadingContent={<ExportLoadingContent />}
-          retention={exportRetention}
-          inMiniProgram={inMiniProgram}
           onOpenSettings={handleOpenSettings}
-          onPrepareExport={prepareExport}
-          onConfirmExport={confirmPreview}
-          onRequestMembership={inMiniProgram ? openMonthlyMembership : undefined}
-          exportQuota={quotaLoaded ? quota.pdfExport : undefined}
-          confirmedExportIds={confirmedExportIds}
-          onRefreshQuota={() => { void refreshQuota() }}
-          previewRevision={JSON.stringify({ resume, templateId, theme, onePageFit, onePageStatus })}
-          wordSupported={isDocxTemplateSupported(templateId)}
-          wordClientSupported={!inMiniProgram || miniDocxExportSupported}
+          onExportPdf={handleExportPdf}
+          onExportImage={handleExportImage}
+          onExportMarkdown={handleExportMarkdown}
           showMarkdownExport={showMarkdownExport}
           isExporting={isExporting}
         />
@@ -848,7 +877,6 @@ export default function MobilePreviewClient(): ReactElement {
         />
 
         <VipUpgradeDialog open={showUpgrade} onOpenChange={setShowUpgrade} />
-        <ExportMembershipSheet preload={inMiniProgram} retention={exportRetention} open={showExportMembership} onClose={closeExportMembership} onRefreshQuota={refreshQuota} />
       </div>
     </AiSectionProvider>
   )

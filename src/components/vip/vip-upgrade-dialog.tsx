@@ -1,7 +1,5 @@
 'use client';
 
-import type { ExportRetention } from '@/hooks/use-export-retention';
-import { recommendExportMembership, EXPORT_RETENTION_VERSION } from '@/lib/export-retention';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Crown, Loader2, CheckCircle, RefreshCw, Check, X, Infinity as InfinityIcon, ShieldCheck, Zap } from 'lucide-react';
@@ -194,14 +192,13 @@ type DialogStep = 'loading' | 'qrcode' | 'success' | 'error';
 type DialogMode = 'pay' | 'invite';
 
 interface VipUpgradeDialogProps {
-  retention?: ExportRetention;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   hidePlanOptions?: boolean;
   overlayClassName?: string;
 }
 
-export default function VipUpgradeDialog({ open, onOpenChange, hidePlanOptions = false, overlayClassName = 'bg-black/35', retention }: VipUpgradeDialogProps): React.ReactElement {
+export default function VipUpgradeDialog({ open, onOpenChange, hidePlanOptions = false, overlayClassName = 'bg-black/35' }: VipUpgradeDialogProps): React.ReactElement {
   const { updateVipStatus, token } = useAuthStore();
   const upgradeContext = useVipStore((state) => state.upgradeContext);
   const quota = useVipStore((state) => state.quota);
@@ -221,10 +218,6 @@ export default function VipUpgradeDialog({ open, onOpenChange, hidePlanOptions =
   const invitePollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const wasVipRef = useRef<boolean>(false);
   const paySessionIdRef = useRef<string>('');
-  const retentionRef = useRef(retention);
-  retentionRef.current = retention;
-  const selectionRef = useRef({ session: -1, request: 0, selected: null as number | null });
-  const fetchGeneration = useRef(0);
 
   const stopPolling = useCallback((): void => {
     if (pollRef.current) {
@@ -250,7 +243,6 @@ export default function VipUpgradeDialog({ open, onOpenChange, hidePlanOptions =
   }, [stopInvitePolling]);
 
   const fetchVipInfo = useCallback(async (): Promise<void> => {
-    const generation = ++fetchGeneration.current;
     setStep('loading');
     setErrorMsg('');
     try {
@@ -259,20 +251,11 @@ export default function VipUpgradeDialog({ open, onOpenChange, hidePlanOptions =
       const json: VipInfoResponse = await res.json();
       const data = json.data;
       if (!data) throw new Error('Invalid response');
-      if (generation !== fetchGeneration.current) return;
       wasVipRef.current = data.isVip;
       setUserId(data.userId);
-      const originalPlans = [...(data.plans || [])].sort((a: VipPlan, b: VipPlan) => (b.sort || 0) - (a.sort || 0));
-      const policy = retentionRef.current;
-      const sortedPlans = policy?.enabled ? recommendExportMembership(originalPlans) : originalPlans;
-      if (!sortedPlans.length) throw new Error('暂无可购买套餐，请稍后再试');
-      const previous = selectionRef.current;
-      const forcedMonthly = policy?.enabled && policy.monthlyRequest !== previous.request;
-      const remembered = policy?.enabled && previous.session === policy.previewSession && sortedPlans.some(p => p.vipType === previous.selected);
-      const chosen = forcedMonthly && sortedPlans.some(p => p.vipType === 1) ? 1 : remembered ? previous.selected : sortedPlans[0].vipType;
-      selectionRef.current = { session: policy?.previewSession ?? -1, request: policy?.monthlyRequest ?? 0, selected: chosen };
+      const sortedPlans = (data.plans || []).sort((a: VipPlan, b: VipPlan) => (b.sort || 0) - (a.sort || 0));
       setPlans(sortedPlans);
-      setSelectedVipType(chosen);
+      setSelectedVipType(sortedPlans[0]?.vipType ?? null);
       if (data.isVip) {
         updateVipStatus({
           vipStatus: data.vipStatus,
@@ -287,23 +270,18 @@ export default function VipUpgradeDialog({ open, onOpenChange, hidePlanOptions =
         source: 'web',
         planCount: sortedPlans.length,
         recommendedVipType: sortedPlans[0]?.vipType,
-        strategyVersion: retentionRef.current?.enabled ? EXPORT_RETENTION_VERSION : undefined,
-        exportType: retentionRef.current?.exportType,
       });
-      if (upgradeContext === 'pdf-export' || upgradeContext === 'docx-export') {
+      if (upgradeContext === 'pdf-export') {
         track('export_paywall_view', {
           entry: 'vip_upgrade_dialog',
           upgradeContext,
           source: 'web',
           planCount: sortedPlans.length,
           recommendedVipType: sortedPlans[0]?.vipType,
-          strategyVersion: retentionRef.current?.enabled ? EXPORT_RETENTION_VERSION : undefined,
-          exportType: retentionRef.current?.exportType,
         });
       }
       setStep('qrcode');
     } catch (err: unknown) {
-      if (generation !== fetchGeneration.current) return;
       setErrorMsg(err instanceof Error ? err.message : 'Unknown error');
       setStep('error');
     }
@@ -311,13 +289,11 @@ export default function VipUpgradeDialog({ open, onOpenChange, hidePlanOptions =
 
   const startPolling = useCallback((): void => {
     stopPolling();
-    const session = paySessionIdRef.current;
     pollRef.current = setInterval(async () => {
       try {
         const res = await fetch('/next-api/vip/poll');
         if (!res.ok) return;
         const json: VipPollResponse = await res.json();
-        if (session !== paySessionIdRef.current) return;
         const data = json.data;
         if (data?.isVip && !wasVipRef.current) {
           stopPolling();
@@ -327,16 +303,13 @@ export default function VipUpgradeDialog({ open, onOpenChange, hidePlanOptions =
             vipExpireTime: data.vipExpireTime,
             isVip: true,
           });
-          retentionRef.current?.end();
-          await refreshQuotaStore(token || 'cookie-auth');
-          if (session !== paySessionIdRef.current) return;
           setStep('success');
         }
       } catch {
         // continue polling
       }
     }, POLL_INTERVAL_MS);
-  }, [stopPolling, updateVipStatus, refreshQuotaStore, token]);
+  }, [stopPolling, updateVipStatus]);
 
   const pollInviteStatus = useCallback(async (ticket: string): Promise<void> => {
     const res = await fetch(`/next-api/invitation/status?ticket=${encodeURIComponent(ticket)}`);
@@ -397,20 +370,17 @@ export default function VipUpgradeDialog({ open, onOpenChange, hidePlanOptions =
 
   useEffect(() => {
     if (open) {
-      if (retentionRef.current?.status === 'visible') retentionRef.current.end();
       paySessionIdRef.current = createPaySessionId();
       setMode('pay');
       resetInviteState();
       fetchVipInfo();
     } else {
-      fetchGeneration.current += 1;
       paySessionIdRef.current = '';
       stopPolling();
       resetInviteState();
       setStep('loading');
     }
     return () => {
-      fetchGeneration.current += 1;
       stopPolling();
       stopInvitePolling();
     };
@@ -464,7 +434,6 @@ export default function VipUpgradeDialog({ open, onOpenChange, hidePlanOptions =
 
   const dialogCopy = CONTEXT_COPY[upgradeContext] || CONTEXT_COPY.generic;
   const handleSelectVipType = (plan: VipPlan): void => {
-    selectionRef.current.selected = plan.vipType;
     setSelectedVipType(plan.vipType);
     track('paywall_cta_click', {
       entry: 'vip_upgrade_dialog',
@@ -474,8 +443,6 @@ export default function VipUpgradeDialog({ open, onOpenChange, hidePlanOptions =
       planId: plan.id,
       vipType: plan.vipType,
       amount: plan.price,
-      exportType: retentionRef.current?.exportType,
-      strategyVersion: retentionRef.current?.enabled ? EXPORT_RETENTION_VERSION : undefined,
       payChannel: 'wechat',
     });
     track('pay_plan_click', {
@@ -485,8 +452,6 @@ export default function VipUpgradeDialog({ open, onOpenChange, hidePlanOptions =
       planId: plan.id,
       vipType: plan.vipType,
       amount: plan.price,
-      exportType: retentionRef.current?.exportType,
-      strategyVersion: retentionRef.current?.enabled ? EXPORT_RETENTION_VERSION : undefined,
       payChannel: 'wechat',
     });
   };
@@ -498,17 +463,10 @@ export default function VipUpgradeDialog({ open, onOpenChange, hidePlanOptions =
         source: 'web',
         mode,
         step,
-        reason: step === 'success' || inviteSuccess ? 'success' : step === 'qrcode' && mode === 'pay' ? 'dismiss' : 'error',
-        exportType: retentionRef.current?.exportType,
-        strategyVersion: retentionRef.current?.enabled ? EXPORT_RETENTION_VERSION : undefined,
       });
     }
-    if (!nextOpen && open) {
-      const reason = step === 'success' || inviteSuccess ? 'success' : step === 'qrcode' && mode === 'pay' ? 'dismiss' : 'error';
-      void retentionRef.current?.onClose(reason, plans.find(plan => plan.vipType === 1));
-    }
     onOpenChange(nextOpen);
-  }, [mode, onOpenChange, open, step, upgradeContext, plans, inviteSuccess]);
+  }, [mode, onOpenChange, open, step, upgradeContext]);
   const canShowInviteOption = !hidePlanOptions
     && upgradeContext === 'pdf-export'
     && !quota.pdfExport.isVip
@@ -525,7 +483,6 @@ export default function VipUpgradeDialog({ open, onOpenChange, hidePlanOptions =
   return (
     <Dialog open={open} onOpenChange={handleDialogOpenChange}>
       <DialogContent
-        data-vip-upgrade-dialog
         overlayClassName={overlayClassName}
         className="max-w-[880px] w-[92vw] gap-0 overflow-hidden rounded-2xl border border-violet-200/80 bg-white p-0 shadow-2xl"
       >
@@ -751,24 +708,10 @@ export default function VipUpgradeDialog({ open, onOpenChange, hidePlanOptions =
                     {plans.map((plan) => {
                       const isSelected = selectedVipType === plan.vipType;
                       const meta = getPlanDisplayMeta(plan);
-                      if (retention?.enabled) {
-                        meta.badge = plan.vipType === 3 ? '推荐开通' : null;
-                        meta.badgeStyle = { background: '#7c3aed' };
-                      }
 
                       return (
                         <div
                           key={plan.id}
-                          role="button"
-                          tabIndex={0}
-                          aria-label={plan.vipName}
-                          aria-pressed={isSelected}
-                          onKeyDown={(event) => {
-                            if (event.key === 'Enter' || event.key === ' ') {
-                              event.preventDefault();
-                              handleSelectVipType(plan);
-                            }
-                          }}
                           onClick={(): void => handleSelectVipType(plan)}
                           style={isSelected ? {
                             background: 'linear-gradient(180deg, #faf5ff 0%, #ffffff 100%)',

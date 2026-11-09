@@ -6,14 +6,10 @@ interface MiniProgramRuntime {
   readonly rememberMiniProgram: () => void
   readonly rememberCurrentUrl: () => void
   readonly readMiniVersion: () => string
-  readonly supportsDocxExport: () => boolean
-  readonly supportsSingleExportCheckout: () => boolean
 }
 
 const MINI_PROGRAM_SESSION_KEY = 'aijianli_in_mini_program'
 const MINI_VERSION_STORAGE_KEY = 'aijianli_mini_version'
-const MINI_DOCX_STORAGE_KEY = 'aijianli_mini_docx'
-const MINI_SINGLE_EXPORT_STORAGE_KEY = 'aijianli_mini_single_export'
 
 function getSearchParams(): URLSearchParams | null {
   if (typeof window === 'undefined') return null
@@ -108,18 +104,8 @@ function rememberCurrentUrl(): void {
   }
 
   const miniVersion = readMiniVersionFromParams(params)
-  // Read before replacing the stored version: internal H5 navigation may carry
-  // only miniVersion, which is not an explicit capability revocation.
-  const docxSupported = supportsDocxExport()
-  const singleExportSupported = supportsSingleExportCheckout()
   if (miniVersion) {
     writeStoredValue(MINI_VERSION_STORAGE_KEY, miniVersion)
-  }
-  if (miniVersion || params?.has('miniDocx')) {
-    writeStoredValue(MINI_DOCX_STORAGE_KEY, docxSupported ? '1' : '0')
-  }
-  if (miniVersion || params?.has('miniSingleExport')) {
-    writeStoredValue(MINI_SINGLE_EXPORT_STORAGE_KEY, singleExportSupported ? '1' : '0')
   }
 }
 
@@ -131,34 +117,10 @@ function readMiniVersion(): string {
   return normalizeMiniVersion(readStoredValue(MINI_VERSION_STORAGE_KEY))
 }
 
-function supportsDocxExport(): boolean {
-  const params = getSearchParams()
-  if (params?.has('miniDocx')) return params.get('miniDocx') === '1'
-  const version = readMiniVersionFromParams(params)
-  // A fresh native handoff without the flag is an older client. Internal H5
-  // pages may reuse a version without repeating all capability flags.
-  const isNativeEntry = params?.get('source') === 'mini'
-    || (typeof window !== 'undefined' && /^\/m\/?$/.test(window.location.pathname))
-  if (version && (isNativeEntry || version !== readStoredValue(MINI_VERSION_STORAGE_KEY))) return false
-  return readStoredValue(MINI_DOCX_STORAGE_KEY) === '1'
-}
-
-function supportsSingleExportCheckout(): boolean {
-  const params = getSearchParams()
-  if (params?.has('miniSingleExport')) return params.get('miniSingleExport') === '1'
-  const version = readMiniVersionFromParams(params)
-  const isNativeEntry = params?.get('source') === 'mini'
-    || (typeof window !== 'undefined' && /^\/m\/?$/.test(window.location.pathname))
-  if (version && (isNativeEntry || version !== readStoredValue(MINI_VERSION_STORAGE_KEY))) return false
-  return readStoredValue(MINI_SINGLE_EXPORT_STORAGE_KEY) === '1'
-}
-
 export const miniProgramRuntime: MiniProgramRuntime = {
   hasMiniProgramHint,
   hasStandaloneHint,
   rememberMiniProgram,
   rememberCurrentUrl,
   readMiniVersion,
-  supportsDocxExport,
-  supportsSingleExportCheckout,
 }

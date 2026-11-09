@@ -1,10 +1,6 @@
 "use client"
 
-import { useExportRetention } from '@/hooks/use-export-retention'
-
 import { captureTemplateJourney } from '@/lib/templates/template-journey'
-import { fetchExportPreview } from '@/lib/fetch-export-preview'
-import type { ExportProgressListener } from '@/lib/export-progress'
 
 /**
  * ResumeEditor - Main Editor Component
@@ -39,7 +35,6 @@ import { extractEditorMeta, embedEditorMeta } from '@/entities/editor/editor-met
 import AiSectionProvider from '@/components/ai-section/ai-section-provider'
 import ExportPreviewDialog from '@/components/export-preview-dialog'
 import { scanResumePlaceholders } from '@/lib/resume/placeholder-scan'
-import { confirmExportPreview, type ExportPreviewAsset } from '@/lib/export-preview'
 import { useRequireAuth } from '@/hooks/use-require-auth'
 import { WxLoginDialog } from '@/components/auth/WxLoginDialog'
 import { useAuthStore } from '@/store/use-auth-store'
@@ -224,7 +219,7 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
   const resume = useAppStore((s) => s.resume)
   // Mutable resumeId — starts undefined in guest mode, set after first save
   const [resumeId, setResumeId] = useState<string | undefined>(initialResumeId)
-  const { isLoginOpen, requireAuth, handleLoginSuccess, handleLoginClose, isLoggedIn } = useRequireAuth()
+  const { isLoginOpen, requireAuth, handleLoginSuccess, handleLoginClose } = useRequireAuth()
   const { token, logout } = useAuthStore()
   const { isVip, quota, refreshQuota, requirePdf, requireAi, showUpgrade, setShowUpgrade } = useVipCheck()
   
@@ -295,16 +290,11 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
   const [onePageStrategy, setOnePageStrategy] = useState<OnePageStrategy>(DEFAULT_ONE_PAGE_STRATEGY)
   const [sidebarSectionIds, setSidebarSectionIds] = useState<readonly string[] | undefined>(undefined)
   const hasUnsavedRef = useRef(false)
-  const previewRequestRef = useRef(0)
   const [showPreview, setShowPreview] = useState(false)
-  const openMonthlyMembership = useCallback((format: string) => setShowUpgrade(true, format === 'docx' ? 'docx-export' : 'pdf-export'), [setShowUpgrade])
-  const exportRetention = useExportRetention({ platform: 'pc_web', refreshQuota, openMembership: openMonthlyMembership })
-  const [confirmedWordIds, setConfirmedWordIds] = useState<ReadonlySet<string>>(() => new Set())
   const [pdfBlobUrl, setPdfBlobUrl] = useState<string>('')
   const [pdfBlob, setPdfBlob] = useState<Blob | null>(null)
   const [pdfBlobRevision, setPdfBlobRevision] = useState<string>('')
   const [isGenerating, setIsGenerating] = useState(false)
-  const [pdfPreviewFailedRevision, setPdfPreviewFailedRevision] = useState<string | null>(null)
   const [isConfirmingExport, setIsConfirmingExport] = useState(false)
   const draftBackupRestored = useRef(false)
   const editorOpenTracked = useRef(false)
@@ -1073,6 +1063,14 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
   const { pdfPageCount, recordPreview } = usePdfPreviewPageCount(previewRevision)
 
   const handleExportMarkdown = useCallback(() => {
+    if (!requirePdf()) {
+      trackExportPaywallBlock({
+        exportType: 'markdown',
+        entry: 'pc_editor_toolbar',
+        stage: 'preflight_quota_check',
+      })
+      return
+    }
     requireAuth(() => {
       try {
         track('export_click', { resumeId, templateId: tpl, exportType: 'markdown', entry: 'pc_editor_toolbar' })
@@ -1094,78 +1092,118 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
         toast.error('Markdown导出失败，请重试')
       }
     })
-  }, [resume, resumeId, tpl, requireAuth, showMiniProgramExportReminder])
+  }, [resume, resumeId, tpl, requireAuth, requirePdf, showMiniProgramExportReminder, trackExportPaywallBlock])
 
-  async function prepareDocxPreview(progress?: ExportProgressListener): Promise<ExportPreviewAsset> {
-    if (!isLoggedIn()) {
-      requireAuth(() => {})
-      throw new Error('请先登录，再点击重新生成预览')
-    }
-    progress?.('saving')
-    const savedId = await doSave({ showSuccessToast: false, generateThumbnail: false, revalidateDashboard: false })
-    if (!savedId) throw new Error('保存最新简历失败，请重试')
-    const baseInfo = resume.baseInfo as Record<string, string> | undefined
-    const name = baseInfo?.fullName?.trim() || baseInfo?.name?.trim() || resume.name || '简历'
-    const position = baseInfo?.title?.trim() || baseInfo?.position?.trim() || resume.jobIntention?.position || ''
-    const phone = baseInfo?.phone?.trim() || ''
-    const fileName = joinExportFileNameParts([name, position, phone], { separator: '-', fallback: resume.name || 'export' })
-    progress?.('preparing')
-    const response = await fetchExportPreview('/next-api/exports/mini', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ resumeId: savedId, templateId: tpl, type: 'docx', mode: 'preview', fileName }),
-    }, progress)
-    if (response.status === 401) {
-      backupEditorDraft('stale-auth-before-docx-preview')
-      logout()
-      requireAuth(() => {})
-      throw new Error('登录已失效，请重新登录后重试预览')
-    }
-    const data = await response.json()
-    if (!response.ok) throw new Error(data.error || 'Word 预览生成失败，请重试')
-    return data as ExportPreviewAsset
-  }
-
-  async function handleExportDocx(asset: ExportPreviewAsset): Promise<void> {
+  async function exportDocxWithAuth(): Promise<void> {
     if (isConfirmingExport) return
     setIsConfirmingExport(true)
-    track('export_click', { resumeId, templateId: tpl, exportType: 'docx', entry: 'pc_export_preview' })
+    track('export_click', {
+      resumeId,
+      templateId: tpl,
+      exportType: 'docx',
+      entry: 'pc_export_preview',
+    })
     try {
-      if (Date.parse(asset.expiresAt) <= Date.now()) throw new Error('预览已过期，请重新生成后再下载')
-      const confirmed = await confirmExportPreview(asset)
-      // A download can fail after the allowance was consumed. Keep this file
-      // eligible for an idempotent retry even when the remaining quota is zero.
-      setConfirmedWordIds(previous => new Set(previous).add(confirmed.id))
-      await refreshQuota()
-      const response = await fetch(confirmed.downloadUrl)
-      if (!response.ok) throw new Error('Word 文件下载失败，请重试')
-      const blob = await response.blob()
-      if (!blob.size) throw new Error('Word 文件为空，请重试')
-      const url = URL.createObjectURL(blob)
-      const anchor = document.createElement('a')
-      anchor.href = url
-      anchor.download = `${sanitizeExportFileName(confirmed.fileName)}.docx`
-      anchor.click()
-      window.setTimeout(() => URL.revokeObjectURL(url), 60_000)
-      toast.success('Word 文件已生成，已开始下载')
-      track('export_success', { resumeId, templateId: tpl, exportType: 'docx', entry: 'pc_export_preview' })
-    } catch (error) {
-      if ((error as { status?: number }).status === 402) {
-        setShowUpgrade(true, 'docx-export')
-        void refreshQuota()
+      const baseInfo = resume.baseInfo as Record<string, string> | undefined
+      const name = baseInfo?.fullName?.trim() || baseInfo?.name?.trim() || resume.name || '简历'
+      const position = baseInfo?.title?.trim() || baseInfo?.position?.trim() || resume.jobIntention?.position || ''
+      const phone = baseInfo?.phone?.trim() || ''
+      const fileName = joinExportFileNameParts([name, position, phone], { separator: '-', fallback: resume.name || 'export' })
+
+      let exportResumeId = resumeId
+      if (!exportResumeId || hasUnsavedChanges) {
+        const savedId = await doSave({ showSuccessToast: false, generateThumbnail: true })
+        if (!savedId) {
+          toast.error(exportResumeId ? '保存最新简历失败，请重试后再导出' : '请先保存简历，再导出 Word')
+          return
+        }
+        exportResumeId = savedId
+      }
+      if (!exportResumeId) {
+        toast.error('请先保存简历，再导出 Word')
         return
       }
-      if ((error as { status?: number }).status === 401) {
-        backupEditorDraft('stale-auth-before-docx-confirm')
-        logout()
-        requireAuth(() => {})
+
+      const response = await fetch('/next-api/exports/mini', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          resumeId: exportResumeId,
+          templateId: tpl,
+          type: 'docx',
+          mode: 'final',
+          fileName,
+        }),
+      })
+      const data = await response.json().catch(() => ({})) as {
+        downloadUrl?: string
+        error?: string
+        quotaExceeded?: boolean
       }
-      track('export_failed', { resumeId, templateId: tpl, exportType: 'docx', entry: 'pc_export_preview', failureReason: error instanceof Error ? error.message : String(error) })
+      if (!response.ok || !data.downloadUrl) {
+        if (response.status === 401) {
+          backupEditorDraft('stale-auth-before-docx-export')
+          logout()
+          toast.error('登录已失效，请重新登录后导出')
+          requireAuth(() => { void exportDocxWithAuth() })
+          return
+        }
+        if (data.quotaExceeded || response.status === 402) {
+          trackExportPaywallBlock({ exportType: 'docx', entry: 'pc_export_preview', stage: 'create_export_record', statusCode: response.status })
+          setShowUpgrade(true, 'docx-export')
+          return
+        }
+        throw new Error(data.error || 'DOCX 导出失败')
+      }
+
+      await refreshQuota()
+      const downloadResponse = await fetch(data.downloadUrl)
+      if (downloadResponse.status === 402) {
+        setShowUpgrade(true, 'docx-export')
+        return
+      }
+      if (!downloadResponse.ok) throw new Error('Word 文件下载失败，请重试')
+      const downloadBlob = await downloadResponse.blob()
+      if (!downloadBlob.size) throw new Error('Word 文件为空，请重新导出')
+      const downloadObjectUrl = URL.createObjectURL(downloadBlob)
+      const anchor = document.createElement('a')
+      anchor.href = downloadObjectUrl
+      anchor.download = `${sanitizeExportFileName(fileName)}.docx`
+      document.body.appendChild(anchor)
+      anchor.click()
+      anchor.remove()
+      window.setTimeout(() => URL.revokeObjectURL(downloadObjectUrl), 60_000)
+      toast.success('Word 文件已生成，已开始下载')
+      track('export_success', { resumeId: exportResumeId, templateId: tpl, exportType: 'docx', entry: 'pc_export_preview' })
+    } catch (error) {
+      console.error('DOCX export failed:', error)
       toast.error(error instanceof Error ? error.message : 'Word 导出失败，请重试')
-    } finally { setIsConfirmingExport(false) }
+      track('export_failed', {
+        resumeId,
+        templateId: tpl,
+        exportType: 'docx',
+        entry: 'pc_export_preview',
+        stage: 'create_export_record',
+        failureReason: error instanceof Error ? error.message : String(error),
+      })
+    } finally {
+      setIsConfirmingExport(false)
+    }
   }
 
-  async function handleExportPng(previewUrl: string): Promise<void> {
-    if (isConfirmingExport) return
+  function handleExportDocx(): void {
+    if (!isDocxTemplateSupported(tpl)) {
+      toast.info('当前模板暂不支持 Word 导出，请切换到支持 Word 导出的模板')
+      return
+    }
+    if (!requirePdf()) {
+      trackExportPaywallBlock({ exportType: 'docx', entry: 'pc_editor_toolbar', stage: 'preflight_quota_check' })
+      return
+    }
+    requireAuth(() => { void exportDocxWithAuth() })
+  }
+
+  async function handleExportPng(): Promise<void> {
     if (!requirePdf()) {
       trackExportPaywallBlock({
         exportType: 'image',
@@ -1181,25 +1219,8 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
       entry: 'pc_editor_toolbar',
     })
     try {
-      setIsConfirmingExport(true)
       const exportJourney = captureTemplateJourney(tpl, resumeId)
-      // PNG uses the same export allowance as PDF/Word. Recheck and consume
-      // server-side before starting the download; the local quota may be stale.
-      const response = await fetch('/next-api/consume-pdf-quota', { method: 'POST' })
-      if (!response.ok) {
-        const data = await response.json().catch(() => ({}))
-        if (data.quotaExceeded) {
-          setShowUpgrade(true, 'pdf-export')
-          void refreshQuota()
-          return
-        }
-        throw new Error(data.error || '图片导出失败，请重试')
-      }
-      void refreshQuota()
-      const anchor = document.createElement('a')
-      anchor.href = previewUrl
-      anchor.download = `${sanitizeExportFileName(resume.name || 'resume')}.png`
-      anchor.click()
+      await exportImage<HTMLDivElement>(printRef, { fileName: 'resume', pixelRatio: 2 })
       if (!showMiniProgramExportReminder()) {
         toast.success('图片导出成功')
       }
@@ -1221,19 +1242,15 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
         failureReason: err instanceof Error ? err.message : String(err),
       })
       toast.error('图片导出失败，请重试')
-    } finally {
-      setIsConfirmingExport(false)
     }
   }
 
   /** Generate PDF preview WITHOUT consuming quota. */
   async function handlePreviewPdf(): Promise<void> {
     if (!printRef.current || isGenerating) return
-    const requestId = ++previewRequestRef.current
     const generatedRevision = previewRevision
     // Preview is unlimited - no quota check
     setIsGenerating(true)
-    setPdfPreviewFailedRevision(null)
     try {
       const html: string = buildResumeHtml(printRef.current, { title: resume.name || 'Resume' })
       const response = await fetch('/next-api/generate-pdf', {
@@ -1246,26 +1263,21 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
         throw new Error(errorData.details || 'PDF generation failed')
       }
       const blob: Blob = await response.blob()
-      if (requestId !== previewRequestRef.current) return
       const autoOptimized = response.headers.get('X-Pdf-Auto-Optimized') === '1'
       const url: string = window.URL.createObjectURL(blob)
       setPdfBlob(blob)
       setPdfBlobRevision(generatedRevision)
-      setPdfBlobUrl(previous => {
-        if (previous) window.URL.revokeObjectURL(previous)
-        return url
-      })
+      setPdfBlobUrl(url)
+      setShowPreview(true)
       void recordPreview(blob, generatedRevision)
       if (autoOptimized) {
         toast.message('作品集图片已自动优化，正在保持导出清晰度与文件大小平衡')
       }
     } catch (e) {
-      if (requestId !== previewRequestRef.current) return
       console.error('PDF generation failed:', e)
-      setPdfPreviewFailedRevision(generatedRevision)
       toast.error(e instanceof Error ? `PDF 生成失败: ${e.message}` : 'PDF 生成失败，请重试')
     } finally {
-      if (requestId === previewRequestRef.current) setIsGenerating(false)
+      setIsGenerating(false)
     }
   }
 
@@ -1444,8 +1456,6 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
 
   /** Clean up blob URL and close preview dialog. */
   function handleClosePreview(): void {
-    previewRequestRef.current += 1
-    setIsGenerating(false)
     if (pdfBlobUrl) window.URL.revokeObjectURL(pdfBlobUrl)
     setPdfBlobUrl('')
     setPdfBlob(null)
@@ -1493,8 +1503,8 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
         canRedo={canRedo}
         onUndo={undo}
         onRedo={redo}
-        onExport={() => { setShowPreview(true); void handlePreviewPdf() }}
-        isExporting={isConfirmingExport}
+        onExport={() => { void handlePreviewPdf() }}
+        isExporting={isGenerating}
         exportQuotaLabel={
           !isVip && quota.pdfExport.remaining !== 'unlimited'
             ? `(${quota.pdfExport.remaining}次)`
@@ -1606,38 +1616,29 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
           confirmLeave()
         }}
       />
-      {/* Format selection is available before PDF preview generation completes. */}
-      {showPreview && <ExportPreviewDialog
-        retention={exportRetention}
+      {/* PDF export preview dialog */}
+      <ExportPreviewDialog
         open={showPreview}
         onOpenChange={(next: boolean) => { if (!next) handleClosePreview() }}
-        pdfUrl={pdfBlobRevision === previewRevision ? pdfBlobUrl : ''}
-        isGenerating={isGenerating}
-        pdfGenerationFailed={pdfPreviewFailedRevision === previewRevision}
-        onPreviewPdf={() => { void handlePreviewPdf() }}
-        onPreviewImage={() => exportImage(printRef, { pixelRatio: 2, returnBase64: true })}
-        markdownContent={exportResumeToMarkdown(resume)}
+        pdfUrl={pdfBlobUrl}
         pdfPageCount={pdfPageCount}
         onConfirmExport={handleConfirmExport}
-        onExportPng={(url) => { void handleExportPng(url) }}
+        onExportPng={() => { void handleExportPng() }}
         onExportMarkdown={handleExportMarkdown}
         onExportDocx={isDocxTemplateSupported(tpl) ? handleExportDocx : undefined}
-        confirmedWordIds={confirmedWordIds}
-        onPreviewDocx={prepareDocxPreview}
-        previewRevision={previewRevision}
-        onUpgradeClick={(format) => {
+        onUpgradeClick={() => {
           trackExportPaywallBlock({
-            exportType: format,
+            exportType: 'pdf',
             entry: 'pc_export_preview',
             stage: 'preview_quota_depleted',
           })
-          setShowUpgrade(true, format === 'docx' ? 'docx-export' : 'pdf-export')
+          setShowUpgrade(true, 'pdf-export')
         }}
         remainingQuota={quota.pdfExport.remaining}
         isVip={isVip}
         isConfirming={isConfirmingExport}
         placeholderCount={resume ? scanResumePlaceholders(resume).count : 0}
-      />}
+      />
       <JdAnalysisDialog resumeId={resumeId} />
       <TranslateDialog resumeId={resumeId} template={tpl} />
       <CoverLetterDialog />
@@ -1662,7 +1663,6 @@ export default function ResumeEditor({ resumeId: initialResumeId, initialData }:
       />
       {/* VIP upgrade dialog */}
       <VipUpgradeDialog
-        retention={showPreview ? exportRetention : undefined}
         open={showUpgrade}
         onOpenChange={setShowUpgrade}
         overlayClassName={showPreview ? 'bg-transparent' : 'bg-black/35'}
