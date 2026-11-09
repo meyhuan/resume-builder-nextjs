@@ -5,7 +5,7 @@ import { createDefaultResume } from '@/lib/default-resume'
 
 vi.mock('./_components/career-quota', () => ({ useCareerQuota: () => ({ allow: () => true, handleError: () => false, refresh: vi.fn(), ui: null }) }))
 vi.mock('@/lib/analytics', () => ({ track: vi.fn() }))
-const history = vi.hoisted(() => ({ enabled: false, items: [] as any[], loaded: [] as any[], fetchResume: vi.fn() }))
+const history = vi.hoisted(() => ({ enabled: false, items: [] as unknown[], loaded: [] as unknown[], fetchResume: vi.fn() }))
 vi.mock('@/lib/ai/interview-prep-history', () => ({
   resolveInterviewPrepAccountId: () => history.enabled ? 'account' : null,
   listInterviewPrepHistory: async () => history.loaded,
@@ -89,7 +89,7 @@ it('continues a restored record using its original resume and job description', 
   const base = { jobTitle: '产品', summary: '', greetings: [{ style: 'concise', text: '历史文案' }], selfIntro30s: '', selfIntro2min: '', questions: [], gaps: [], coverLetter: { title: '', content: '' } }
   history.loaded.push({ id: 'previous', createdAt: 100, result: base, jobDescription: '历史岗位', resumeId: 'other-resume', resumeTitle: '原简历' })
   history.fetchResume.mockResolvedValue({ resume: savedResume, title: '原简历' })
-  const fetchMock = vi.fn(async (_url: string, _options: { body: string }) => new Response(JSON.stringify({ ...base, greetings: [], selfIntro30s: '历史简历生成', selfIntro2min: '历史完整介绍' })))
+  const fetchMock = vi.fn<(url: string, options: { body: string }) => Promise<Response>>(async () => new Response(JSON.stringify({ ...base, greetings: [], selfIntro30s: '历史简历生成', selfIntro2min: '历史完整介绍' })))
   vi.stubGlobal('fetch', fetchMock)
   renderClient()
   fireEvent.click(await screen.findByRole('button', { name: /历史 \(1\)/ }))
