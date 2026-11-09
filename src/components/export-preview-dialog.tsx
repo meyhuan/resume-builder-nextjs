@@ -106,8 +106,9 @@ export default function ExportPreviewDialog(
   const needsTemplate = format === 'docx' && !onExportDocx
   const retention = props.retention
   const retentionEligible = quotaDepleted && !needsTemplate
-  useEffect(() => { retention?.setPreviewContext(open, retentionEligible, format) }, [open, retentionEligible, format, retention?.setPreviewContext])
-  useEffect(() => () => { retention?.setPreviewContext(false, false, '') }, [retention?.setPreviewContext])
+  const setPreviewContext = retention?.setPreviewContext
+  useEffect(() => { setPreviewContext?.(open, retentionEligible, format) }, [open, retentionEligible, format, setPreviewContext])
+  useEffect(() => () => { setPreviewContext?.(false, false, '') }, [setPreviewContext])
   const showRetention = retention?.enabled && retention.status === 'visible' && retentionEligible
   const loadImage = async (): Promise<void> => {
     if (!onPreviewImage || imageLoading) return

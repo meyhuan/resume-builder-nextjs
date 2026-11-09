@@ -79,8 +79,9 @@ export function BottomActionBar(props: BottomActionBarProps): ReactElement {
   const canOpenMembership = quotaDepleted && Boolean(props.onRequestMembership)
   const retention = props.retention
   const retentionEligible = quotaDepleted && !needsTemplate && !unsupportedClient
-  useEffect(() => { retention?.setPreviewContext(open, retentionEligible, format) }, [open, retentionEligible, format, retention?.setPreviewContext])
-  useEffect(() => () => { retention?.setPreviewContext(false, false, '') }, [retention?.setPreviewContext])
+  const setPreviewContext = retention?.setPreviewContext
+  useEffect(() => { setPreviewContext?.(open, retentionEligible, format) }, [open, retentionEligible, format, setPreviewContext])
+  useEffect(() => () => { setPreviewContext?.(false, false, '') }, [setPreviewContext])
   const showRetention = retention?.enabled && retention.status === 'visible' && retentionEligible
   const submit = async (): Promise<void> => {
     if (unsupportedClient) return

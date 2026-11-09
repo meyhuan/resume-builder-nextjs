@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, useCallback } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { Check, Crown, Loader2, X } from 'lucide-react'
 
@@ -29,7 +29,9 @@ export function ExportMembershipSheet({ open, onClose, onRefreshQuota, retention
   const sheetRef = useRef<HTMLDivElement>(null)
   const selectionRef = useRef({ session: -1, request: 0, selected: undefined as number | undefined })
   const closeRef = useRef({ onClose, retention, plans, loading, error })
-  closeRef.current = { onClose, retention, plans, loading, error }
+  useLayoutEffect(() => {
+    closeRef.current = { onClose, retention, plans, loading, error }
+  }, [onClose, retention, plans, loading, error])
   const close = useCallback((reason: MembershipCloseReason = 'dismiss') => {
     const state = closeRef.current
     const actualReason = handedOff.current ? 'payment_return' : reason === 'dismiss' && (state.loading || state.error) ? 'error' : reason
@@ -59,6 +61,8 @@ export function ExportMembershipSheet({ open, onClose, onRefreshQuota, retention
     if (!open) return
     if (closeRef.current.retention?.status === 'visible') closeRef.current.retention.end()
     let cancelled = false
+    // Synchronize a newly opened sheet with the external catalogue cache.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(!cachedMiniMembershipPlans())
     setError('')
     setPaying(false)

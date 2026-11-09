@@ -18,8 +18,8 @@ export function MarkdownExportPreview({ content }: { content: string }) {
       <TabsContent value="preview" className="m-0 min-h-0 flex-1 overflow-auto overscroll-contain p-4" aria-label="Markdown 预览">
         <div className={styles.content}>
           <ReactMarkdown remarkPlugins={[remarkGfm]} skipHtml components={{
-            a: ({ node: _node, ...props }) => <a {...props} target="_blank" rel="noopener noreferrer" />,
-            table: ({ node: _node, ...props }) => <div className={styles.tableScroll}><table {...props} /></div>,
+            a: ({ children, href, title }) => <a href={href} title={title} target="_blank" rel="noopener noreferrer">{children}</a>,
+            table: ({ children }) => <div className={styles.tableScroll}><table>{children}</table></div>,
           }}>{content}</ReactMarkdown>
         </div>
       </TabsContent>

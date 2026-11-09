@@ -8,7 +8,7 @@ afterEach(() => { cleanup(); vi.unstubAllGlobals(); history.replaceState({}, '',
 
 it('shares the editing prefetch with the first sheet, even while pending, and reuses prices after reopening', async () => {
   let finish!: (value: unknown) => void
-  const fetcher = vi.fn((_url: RequestInfo | URL) => new Promise(resolve => { finish = resolve }))
+  const fetcher = vi.fn<(url: RequestInfo | URL) => Promise<unknown>>(() => new Promise(resolve => { finish = resolve }))
   vi.stubGlobal('fetch', fetcher)
   function EditorEntry({ mini }: { mini: boolean }) {
     usePreloadMiniMembershipPlans(mini)

@@ -26,8 +26,8 @@ export function PdfIframePreview(props: Props) {
 function PdfPreviewAttempt({ pdfUrl, onPreviewImage, onRetry }: Props & { onRetry: () => void }) {
   const [issue, setIssue] = useState<PreviewIssue | null>(null)
   const [reportedBlank, setReportedBlank] = useState(false)
-  const startedAt = useRef(Date.now())
-  const attemptId = useRef(`pdf_${Date.now().toString(36)}_${Math.random().toString(36).slice(2)}`)
+  const startedAt = useRef(0)
+  const attemptId = useRef('')
   const reported = useRef(new Set<PreviewIssue>())
   const loaded = useRef(false)
   const frame = useRef<HTMLIFrameElement>(null)
@@ -58,6 +58,8 @@ function PdfPreviewAttempt({ pdfUrl, onPreviewImage, onRetry }: Props & { onRetr
   }, [])
 
   useEffect(() => {
+    startedAt.current = Date.now()
+    attemptId.current = `pdf_${startedAt.current.toString(36)}_${Math.random().toString(36).slice(2)}`
     const element = frame.current
     const handleError = () => {
       clearTimeout(timer.current)
@@ -65,6 +67,8 @@ function PdfPreviewAttempt({ pdfUrl, onPreviewImage, onRetry }: Props & { onRetr
     }
     // iframe error events do not bubble; listen directly on the element.
     element?.addEventListener('error', handleError)
+    // Browser viewer capability is unavailable during SSR; sync after mounting.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (navigator.pdfViewerEnabled === false) reportIssue('viewer_unsupported')
     else if (!loaded.current) {
       timer.current = setTimeout(() => reportIssue('load_timeout'), 15000)
