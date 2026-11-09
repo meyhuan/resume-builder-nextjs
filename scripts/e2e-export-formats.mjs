@@ -116,7 +116,7 @@ async function makePage(mobile = false, failPdf = true, entitlement = { isVip: t
       return
     }
     if (url.pathname.startsWith('/next-api/') || url.pathname.startsWith('/api/')) {
-      requests.push({ path: url.pathname, method: request.method(), body: request.postData() })
+      requests.push({ page, path: url.pathname, method: request.method(), body: request.postData() })
       const json = data => request.respond({ status: 200, contentType: 'application/json', body: JSON.stringify(data) })
       if (url.pathname === '/next-api/generate-pdf') {
         if (!failPdf) { void request.respond({ status: 200, contentType: 'application/pdf', body: pdfBytes }); return }
@@ -427,7 +427,7 @@ try {
     }
 
   }
-  assert.equal(requests.filter(r => r.path === '/next-api/vip/mini-plans').length, 1, 'Prefetch and repeated open must reuse the fresh catalogue')
+  assert.equal(requests.filter(r => r.page === depleted && r.path === '/next-api/vip/mini-plans').length, 1, 'Prefetch and repeated open in the same page must reuse the fresh catalogue')
   await fs.writeFile(path.join(out, 'mobile-membership-performance.json'), JSON.stringify({ businessApisMocked: true, openingPlansMs, openAnimationMs: 300, closeAnimationMs: 240, catalogueRequests: 1, rejectedExportRequestsBeforePaywall: 0 }, null, 2))
   await select(depleted, 'PDF')
   await depleted.screenshot({ path: path.join(out, 'mobile-quota-depleted.png') })
