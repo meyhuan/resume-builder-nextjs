@@ -45,6 +45,14 @@
 
 ## 本地验证命令
 
+### 单次导出入口恢复（2026-11-09，本地待发布）
+
+恢复导出支付弹窗原有的“单次导出（仅限 1 次）”，会员仍按终身、年、月排序。单次商品读取已有 `/pay/virtual/products?scene=export`；核验时商品为 `goods_export_once`、9.9 元、1 次额度。界面不写死商品 ID 或价格，月卡升级差价由实际套餐计算。编辑页同时预加载会员和单次商品，H5 与原生各自复用 5 分钟缓存。
+
+此修复必须配套更新 Next.js 和小程序：原生 SSO 增加 `miniSingleExport=1`，支付页接收 `productType=single_export`、`goodsId` 和展示价格，沿用已有签名、订单查询、权益发放与返回预览流程。旧客户端缺少能力标记时不会进入不兼容的支付交接，而是提示更新。服务端商品、价格和扣费规则未修改。支付返回刷新额度，用户仍需手动确认导出。
+
+本地验证：33 项 H5 套餐/预加载/挽留测试、38 项原生支付/缓存测试通过；类型检查、定向 ESLint 和支付页 WXML 编译通过；浏览器模拟支付验证购买 1 次、手动导出消耗 1 次、关闭返回、会员顺序与免费 Markdown。375×560 小屏按钮可见，截图 `test-artifacts/export-formats/mobile-single-export-small.png`。未真实扣款；浏览器截图不是原生模拟器完整支付验收，尚未发布此补丁。
+
 ```powershell
 pnpm exec tsc --noEmit --pretty false
 pnpm exec vitest run --config scripts/vitest.editor-experience.config.ts

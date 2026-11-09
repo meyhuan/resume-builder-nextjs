@@ -135,6 +135,9 @@ async function makePage(mobile = false, failPdf = true, entitlement = { isVip: t
         { vipType: 2, vipName: '1 年会员', price: 39.9, duration: 365, sort: 2 },
         { vipType: 1, vipName: '1 个月会员', price: 19.9, duration: 30, sort: 1 },
       ] } }); return }
+      if (url.pathname === '/next-api/vip/mini-export-product') { void json({ data: { products: [
+        { productType: 'single_export', goodsId: 'goods_export_once', vipType: 0, price: 9.9, grantExportCount: 1, name: '单次导出' },
+      ] } }); return }
       if (url.pathname === '/next-api/consume-pdf-quota') {
         if (entitlement.denyConsume || (!entitlement.isVip && entitlement.remaining === 0)) {
           void request.respond({ status: 429, contentType: 'application/json', body: JSON.stringify({ quotaExceeded: true, error: '免费导出次数已用完' }) }); return
@@ -330,7 +333,7 @@ try {
   let releasePreview
   depletedQuota.previewGate = new Promise(resolve => { releasePreview = resolve })
   const depleted = await makePage(true, false, depletedQuota)
-  await depleted.goto(base + '/m/preview?id=local-fixture&tpl=canva-minimal&miniVersion=2.0.1&miniDocx=1', { waitUntil: 'domcontentloaded', timeout: 180_000 })
+  await depleted.goto(base + '/m/preview?id=local-fixture&tpl=canva-minimal&miniVersion=2.0.1&miniDocx=1&miniSingleExport=1', { waitUntil: 'domcontentloaded', timeout: 180_000 })
   await click(depleted, '导出简历')
   await depleted.waitForSelector('[data-export-waiting]')
   await depleted.waitForFunction(() => {
@@ -439,6 +442,35 @@ try {
   assert.match(await depleted.evaluate(() => window.__nativeRoutes[0]), /from=export&checkout=1&vipType=1&price=19.9/)
   await depleted.evaluate(() => window.dispatchEvent(new Event('focus')))
   await depleted.waitForFunction(() => !document.querySelector('[data-export-membership-sheet]') && !history.state?.exportMembershipSheet)
+  await click(depleted, '开通会员，导出 PDF')
+  await click(depleted, '单次导出 (仅限1次)')
+  await depleted.waitForFunction(() => [...document.querySelectorAll('button')].some(b => b.textContent.includes('¥9.9 立即单次导出') && !b.disabled))
+  await settledMembership(depleted)
+  await depleted.screenshot({ path: path.join(out, 'mobile-single-export-restored.png') })
+  await depleted.setViewport({ width: 375, height: 560, deviceScaleFactor: 1, hasTouch: true, isMobile: true })
+  assert.ok(await depleted.$eval('[data-export-membership-sheet]', el => {
+    const button = [...el.querySelectorAll('button')].find(b => b.textContent.includes('立即单次导出'))
+    const box = button.getBoundingClientRect()
+    return box.top >= 0 && box.bottom <= innerHeight && el.scrollWidth <= el.clientWidth
+  }), 'Single-export CTA must remain visible on a short screen')
+  await depleted.screenshot({ path: path.join(out, 'mobile-single-export-small.png') })
+  await depleted.setViewport({ width: 390, height: 844, deviceScaleFactor: 1, hasTouch: true, isMobile: true })
+  assert.equal(await depleted.evaluate(() => window.__nativeRoutes.length), 1, 'Selecting single export never starts payment')
+  const beforeSingleConfirm = requests.filter(r => r.page === depleted && r.path.endsWith('/confirm')).length
+  await click(depleted, '¥9.9 立即单次导出')
+  await depleted.waitForFunction(() => window.__nativeRoutes.length === 2)
+  const singleCheckout = new URL(await depleted.evaluate(() => window.__nativeRoutes[1]), 'https://mini.test')
+  assert.equal(singleCheckout.searchParams.get('productType'), 'single_export')
+  assert.equal(singleCheckout.searchParams.get('goodsId'), 'goods_export_once')
+  assert.equal(singleCheckout.searchParams.get('price'), '9.9')
+  depletedQuota.remaining = 1 // Simulated server-confirmed single-export grant; no real charge.
+  await depleted.evaluate(() => window.dispatchEvent(new Event('focus')))
+  await depleted.waitForFunction(() => !document.querySelector('[data-export-membership-sheet]'))
+  await depleted.waitForFunction(() => [...document.querySelectorAll('button')].some(b => b.textContent.trim() === '确认导出 PDF' && !b.disabled))
+  assert.equal(requests.filter(r => r.page === depleted && r.path.endsWith('/confirm')).length, beforeSingleConfirm, 'Single-export payment must still require explicit export confirmation')
+  await click(depleted, '确认导出 PDF')
+  await depleted.waitForFunction(() => window.__nativeRoutes.some(url => url.includes('type=pdf')))
+  assert.equal(depletedQuota.remaining, 0, 'Single-export consumes exactly one allowance')
   await select(depleted, 'Markdown')
   await depleted.waitForSelector('[aria-label="Markdown 预览"] h1')
   const markdownTabsTop = await depleted.$eval('[aria-label="Markdown 查看方式"]', el => el.getBoundingClientRect().top)
