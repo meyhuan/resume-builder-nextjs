@@ -27,6 +27,9 @@ export const metadata: Metadata = {
   description: SITE_DESCRIPTION,
   keywords: [
     "AI简历",
+    "A4简历点哪改哪",
+    "简历点哪改哪",
+    "去AI味简历",
     "免费简历",
     "简历制作网站免费",
     "在线简历制作",
@@ -40,6 +43,8 @@ export const metadata: Metadata = {
     "一页纸简历排版",
     "DeepSeek写简历",
     "DeepSeek简历",
+    "网申自动填表",
+    "网申助手",
     "AI求职助手",
     "极简简历",
     "简历生成器",

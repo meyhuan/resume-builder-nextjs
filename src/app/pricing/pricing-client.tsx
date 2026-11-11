@@ -47,7 +47,7 @@ const PRICING_PLANS: PricingPlan[] = [
     ctaText: '免费开始制作',
     features: [
       '基础版面在线编辑排版',
-      '赠送 1 次高清 PDF 简历导出',
+      '赠送 1 次高清无水印导出（支持 PDF / 可编辑 Word 共用）',
       `AI 简历生成每日 ${DEFAULT_QUOTA_LIMITS.aiGenerateResume} 次`,
       `AI 单条润色每日 ${DEFAULT_QUOTA_LIMITS.aiPolishSection} 次`,
       `AI 编辑助手每日 ${DEFAULT_QUOTA_LIMITS.aiEditorAssist} 次`,
@@ -136,10 +136,11 @@ const COMPARISON_ROWS: FeatureRow[] = [
   },
   {
     title: 'Word (DOCX) 原生可编辑导出',
-    desc: '国企/考公/校招网申必填，支持本地自由排版',
-    freeType: 'cross',
-    vipType: 'check',
-    vipText: '专享支持',
+    desc: '国企/考公/校招网申必填，支持在 Word/WPS 中自由二次微调',
+    freeType: 'text',
+    freeText: '共用 1 次',
+    vipType: 'infinity',
+    vipText: '无限次',
   },
   {
     title: 'AI 简历深度润色 & 岗位匹配',
