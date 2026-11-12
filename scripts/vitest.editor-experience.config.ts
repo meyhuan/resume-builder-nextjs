@@ -21,6 +21,8 @@ export default defineConfig({
       'src/components/modals/job-intention-choices.test.tsx',
       'src/components/templates/one-page-readability.test.tsx',
       'src/components/templates/docx-export-ui.test.tsx',
+      'src/components/vip/vip-upgrade-dialog.paywall.test.tsx',
+      'src/lib/vip/vip-paywall-info.test.ts',
       'src/components/templates/preview-failure-ui.test.tsx',
       'src/components/templates/pagination-feedback.test.tsx',
       'src/hooks/use-pdf-preview-page-count.test.tsx',

@@ -2,11 +2,12 @@ import { afterEach, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import ExportPreviewDialog from '@/components/export-preview-dialog'
 import VipUpgradeDialog from '@/components/vip/vip-upgrade-dialog'
+import { clearVipPaywallCache } from '@/lib/vip/vip-paywall-info'
 const state = vi.hoisted(() => ({ upgradeContext: 'docx-export', quota: { pdfExport: { isVip: false, remaining: 0 } }, refreshQuota: vi.fn(), updateVipStatus: vi.fn() }))
 vi.mock('@/store/use-vip-store', () => ({ useVipStore: (selector: (s: typeof state) => unknown) => selector(state) }))
 vi.mock('@/store/use-auth-store', () => ({ useAuthStore: () => ({ updateVipStatus: state.updateVipStatus, token: 'mock-token' }) }))
 vi.mock('@/lib/analytics', () => ({ track: vi.fn() }))
-afterEach(() => { cleanup(); vi.unstubAllGlobals() })
+afterEach(() => { cleanup(); clearVipPaywallCache(); vi.unstubAllGlobals() })
 it('keeps Word action clickable for a non-member with no PDF balance', () => {
   const word = vi.fn()
   render(<ExportPreviewDialog open onOpenChange={vi.fn()} pdfUrl="" onConfirmExport={vi.fn()} onExportDocx={word} isVip={false} remainingQuota={0} />)

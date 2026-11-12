@@ -13,9 +13,18 @@ import {
 import { useAuthStore } from '@/store/use-auth-store';
 import { useVipStore } from '@/store/use-vip-store';
 import { track } from '@/lib/analytics';
+import {
+  getCachedVipPaywall,
+  isPaywallStale,
+  loadVipPaywallInfo,
+  type VipPaywallPlan,
+  type VipPaywallSnapshot,
+} from '@/lib/vip/vip-paywall-info';
 
 const H5_PAY_BASE_URL = 'https://aijianli.cn/static/pay/dist/index.html';
 const POLL_INTERVAL_MS = 3000;
+/** Keep loading / ready / error panels consistent in height to avoid layout shift. */
+const DIALOG_BODY_MIN_HEIGHT_CLASS = 'min-h-[530px]';
 
 function createPaySessionId(): string {
   const random = Math.random().toString(36).slice(2);
@@ -85,14 +94,7 @@ const CONTEXT_COPY = {
   },
 };
 
-interface VipPlan {
-  id: number;
-  vipType: number;
-  vipName: string;
-  price: number;
-  duration: number;
-  sort: number;
-}
+type VipPlan = VipPaywallPlan;
 
 interface PlanDisplayMeta {
   badge: string | null;
@@ -128,18 +130,6 @@ function getPlanDisplayMeta(plan: VipPlan): PlanDisplayMeta {
     badge: null,
     originalPrice: plan.price > 25 ? Math.round(plan.price * 1.5) : 29.9,
     bottomTag: '短期突击投递',
-  };
-}
-
-interface VipInfoResponse {
-  status: number;
-  data: {
-    userId: number;
-    vipStatus: number;
-    vipType: number;
-    vipExpireTime: string | null;
-    isVip: boolean;
-    plans: VipPlan[];
   };
 }
 
@@ -203,11 +193,12 @@ export default function VipUpgradeDialog({ open, onOpenChange, hidePlanOptions =
   const upgradeContext = useVipStore((state) => state.upgradeContext);
   const quota = useVipStore((state) => state.quota);
   const refreshQuotaStore = useVipStore((state) => state.refreshQuota);
-  const [step, setStep] = useState<DialogStep>('loading');
+  const [step, setStep] = useState<DialogStep>(() => (getCachedVipPaywall() ? 'qrcode' : 'loading'));
   const [mode, setMode] = useState<DialogMode>('pay');
-  const [userId, setUserId] = useState<number | null>(null);
-  const [plans, setPlans] = useState<VipPlan[]>([]);
-  const [selectedVipType, setSelectedVipType] = useState<number | null>(null);
+  const [userId, setUserId] = useState<number | null>(() => getCachedVipPaywall()?.userId ?? null);
+  const [plans, setPlans] = useState<VipPlan[]>(() => getCachedVipPaywall()?.plans ?? []);
+  const [selectedVipType, setSelectedVipType] = useState<number | null>(() => getCachedVipPaywall()?.plans[0]?.vipType ?? null);
+  const [paySessionId, setPaySessionId] = useState<string>('');
   const [errorMsg, setErrorMsg] = useState<string>('');
   const [inviteData, setInviteData] = useState<InviteMiniCodeResponse | null>(null);
   const [inviteStatus, setInviteStatus] = useState<InviteStatusResponse | null>(null);
@@ -216,8 +207,8 @@ export default function VipUpgradeDialog({ open, onOpenChange, hidePlanOptions =
   const [inviteSuccess, setInviteSuccess] = useState<boolean>(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const invitePollRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const wasVipRef = useRef<boolean>(false);
-  const paySessionIdRef = useRef<string>('');
+  const wasVipRef = useRef<boolean>(getCachedVipPaywall()?.isVip ?? false);
+  const trackedOpenKeyRef = useRef<string>('');
 
   const stopPolling = useCallback((): void => {
     if (pollRef.current) {
@@ -242,50 +233,68 @@ export default function VipUpgradeDialog({ open, onOpenChange, hidePlanOptions =
     setInviteSuccess(false);
   }, [stopInvitePolling]);
 
-  const fetchVipInfo = useCallback(async (): Promise<void> => {
-    setStep('loading');
-    setErrorMsg('');
-    try {
-      const res = await fetch('/next-api/vip/info');
-      if (!res.ok) throw new Error('Failed to fetch VIP info');
-      const json: VipInfoResponse = await res.json();
-      const data = json.data;
-      if (!data) throw new Error('Invalid response');
-      wasVipRef.current = data.isVip;
-      setUserId(data.userId);
-      const sortedPlans = (data.plans || []).sort((a: VipPlan, b: VipPlan) => (b.sort || 0) - (a.sort || 0));
-      setPlans(sortedPlans);
-      setSelectedVipType(sortedPlans[0]?.vipType ?? null);
-      if (data.isVip) {
-        updateVipStatus({
-          vipStatus: data.vipStatus,
-          vipType: data.vipType,
-          vipExpireTime: data.vipExpireTime,
-          isVip: true,
-        });
+  const applyVipSnapshot = useCallback((snapshot: VipPaywallSnapshot): void => {
+    wasVipRef.current = snapshot.isVip;
+    setUserId(snapshot.userId);
+    setPlans(snapshot.plans);
+    setSelectedVipType((current) => {
+      if (current !== null && snapshot.plans.some((plan) => plan.vipType === current)) {
+        return current;
       }
-      track('pay_page_view', {
+      return snapshot.plans[0]?.vipType ?? null;
+    });
+    if (snapshot.isVip) {
+      updateVipStatus({
+        vipStatus: snapshot.vipStatus,
+        vipType: snapshot.vipType,
+        vipExpireTime: snapshot.vipExpireTime,
+        isVip: true,
+      });
+    }
+    setErrorMsg('');
+    setStep('qrcode');
+  }, [updateVipStatus]);
+
+  const trackPaywallView = useCallback((snapshot: VipPaywallSnapshot, openKey: string): void => {
+    if (trackedOpenKeyRef.current === openKey) return;
+    trackedOpenKeyRef.current = openKey;
+    track('pay_page_view', {
+      entry: 'vip_upgrade_dialog',
+      upgradeContext,
+      source: 'web',
+      planCount: snapshot.plans.length,
+      recommendedVipType: snapshot.plans[0]?.vipType,
+    });
+    if (upgradeContext === 'pdf-export') {
+      track('export_paywall_view', {
         entry: 'vip_upgrade_dialog',
         upgradeContext,
         source: 'web',
-        planCount: sortedPlans.length,
-        recommendedVipType: sortedPlans[0]?.vipType,
+        planCount: snapshot.plans.length,
+        recommendedVipType: snapshot.plans[0]?.vipType,
       });
-      if (upgradeContext === 'pdf-export') {
-        track('export_paywall_view', {
-          entry: 'vip_upgrade_dialog',
-          upgradeContext,
-          source: 'web',
-          planCount: sortedPlans.length,
-          recommendedVipType: sortedPlans[0]?.vipType,
-        });
-      }
-      setStep('qrcode');
-    } catch (err: unknown) {
-      setErrorMsg(err instanceof Error ? err.message : 'Unknown error');
-      setStep('error');
     }
-  }, [updateVipStatus, upgradeContext]);
+  }, [upgradeContext]);
+
+  const fetchVipInfo = useCallback(async (options?: { force?: boolean; showLoading?: boolean; openKey?: string }): Promise<void> => {
+    const showLoading = options?.showLoading === true;
+    if (showLoading) {
+      setStep('loading');
+      setErrorMsg('');
+    }
+    try {
+      const snapshot = await loadVipPaywallInfo({ force: options?.force });
+      applyVipSnapshot(snapshot);
+      if (options?.openKey) {
+        trackPaywallView(snapshot, options.openKey);
+      }
+    } catch (err: unknown) {
+      if (!getCachedVipPaywall()) {
+        setErrorMsg(err instanceof Error ? err.message : 'Unknown error');
+        setStep('error');
+      }
+    }
+  }, [applyVipSnapshot, trackPaywallView]);
 
   const startPolling = useCallback((): void => {
     stopPolling();
@@ -368,37 +377,55 @@ export default function VipUpgradeDialog({ open, onOpenChange, hidePlanOptions =
     }
   }, [startInvitePolling, stopPolling, upgradeContext]);
 
+  // Warm plans while the dialog stays mounted so the first open can skip loading.
+  useEffect(() => {
+    void loadVipPaywallInfo().then((snapshot) => {
+      applyVipSnapshot(snapshot);
+    }).catch(() => {
+      // Prefetch is best-effort; opening the dialog will surface errors if needed.
+    });
+  }, [applyVipSnapshot]);
+
   useEffect(() => {
     if (open) {
-      paySessionIdRef.current = createPaySessionId();
+      const openKey = createPaySessionId();
+      setPaySessionId(openKey);
       setMode('pay');
       resetInviteState();
-      fetchVipInfo();
+      const cached = getCachedVipPaywall();
+      if (cached) {
+        applyVipSnapshot(cached);
+        trackPaywallView(cached, openKey);
+        if (isPaywallStale(cached)) {
+          void fetchVipInfo({ force: true, showLoading: false, openKey });
+        }
+      } else {
+        void fetchVipInfo({ force: true, showLoading: true, openKey });
+      }
     } else {
-      paySessionIdRef.current = '';
+      setPaySessionId('');
+      trackedOpenKeyRef.current = '';
       stopPolling();
       resetInviteState();
-      setStep('loading');
     }
     return () => {
       stopPolling();
       stopInvitePolling();
     };
-  }, [open, fetchVipInfo, resetInviteState, stopInvitePolling, stopPolling]);
+  }, [open, applyVipSnapshot, fetchVipInfo, resetInviteState, stopInvitePolling, stopPolling, trackPaywallView]);
 
   const selectedPlan = plans.find((plan) => plan.vipType === selectedVipType) || plans[0];
   const selectedPlanMeta = selectedPlan ? getPlanDisplayMeta(selectedPlan) : null;
   const savedAmount = selectedPlan && selectedPlanMeta
     ? Math.max(0, Number((selectedPlanMeta.originalPrice - selectedPlan.price).toFixed(1)))
     : 0;
-  const pcPaySessionId = paySessionIdRef.current;
-  const payUrl = userId && pcPaySessionId
+  const payUrl = userId && paySessionId
     ? `${H5_PAY_BASE_URL}?${new URLSearchParams({
         userId: String(userId),
         source: 'web',
         vipType: selectedVipType === null ? '' : String(selectedVipType),
         autoPay: '1',
-        pcPaySessionId,
+        pcPaySessionId: paySessionId,
         entry: 'vip_upgrade_dialog',
         upgradeContext,
       }).toString()}`
@@ -424,13 +451,13 @@ export default function VipUpgradeDialog({ open, onOpenChange, hidePlanOptions =
       upgradeContext,
       source: 'web',
       payChannel: 'wechat',
-      pcPaySessionId,
+      pcPaySessionId: paySessionId,
       autoPay: true,
       planId: selectedPlan?.id,
       vipType: selectedVipType,
       amount: selectedPlan?.price,
     });
-  }, [hidePlanOptions, mode, payUrl, pcPaySessionId, selectedPlan?.id, selectedPlan?.price, selectedVipType, step, upgradeContext]);
+  }, [hidePlanOptions, mode, payUrl, paySessionId, selectedPlan?.id, selectedPlan?.price, selectedVipType, step, upgradeContext]);
 
   const dialogCopy = CONTEXT_COPY[upgradeContext] || CONTEXT_COPY.generic;
   const handleSelectVipType = (plan: VipPlan): void => {
@@ -502,9 +529,9 @@ export default function VipUpgradeDialog({ open, onOpenChange, hidePlanOptions =
           </DialogHeader>
         </div>
 
-        <div className="bg-gradient-to-b from-slate-50/50 via-white to-white p-6 min-h-[430px]">
+        <div className={`bg-gradient-to-b from-slate-50/50 via-white to-white p-6 ${DIALOG_BODY_MIN_HEIGHT_CLASS}`}>
           {step === 'loading' && (
-            <div className="flex h-[380px] flex-col items-center justify-center gap-3">
+            <div className={`flex ${DIALOG_BODY_MIN_HEIGHT_CLASS} flex-col items-center justify-center gap-3`}>
               <Loader2 className="h-8 w-8 animate-spin text-violet-500" />
               <span className="text-sm text-slate-500">正在加载...</span>
             </div>
@@ -809,7 +836,7 @@ export default function VipUpgradeDialog({ open, onOpenChange, hidePlanOptions =
           )}
 
           {step === 'success' && (
-            <div className="flex h-[380px] flex-col items-center justify-center gap-4">
+            <div className={`flex ${DIALOG_BODY_MIN_HEIGHT_CLASS} flex-col items-center justify-center gap-4`}>
               <div className="w-16 h-16 bg-violet-100 rounded-full flex items-center justify-center">
                 <CheckCircle className="w-8 h-8 text-violet-600" />
               </div>
@@ -827,10 +854,12 @@ export default function VipUpgradeDialog({ open, onOpenChange, hidePlanOptions =
           )}
 
           {step === 'error' && (
-            <div className="flex h-[380px] flex-col items-center justify-center gap-4">
+            <div className={`flex ${DIALOG_BODY_MIN_HEIGHT_CLASS} flex-col items-center justify-center gap-4`}>
               <div className="text-sm text-slate-600 text-center">{errorMsg}</div>
               <button
-                onClick={fetchVipInfo}
+                onClick={(): void => {
+                  void fetchVipInfo({ force: true, showLoading: true });
+                }}
                 className="flex items-center gap-1.5 px-4 py-2 border border-slate-300 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
