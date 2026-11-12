@@ -1,5 +1,7 @@
 # Project Context for AI Assistant
 
+Read [AGENTS.md](AGENTS.md) for shared project rules. For AI-written website/SEO articles, read [docs/ai-article-workflow.md](docs/ai-article-workflow.md): save as draft first, show the saved article/version to the user, and publish only after explicit approval of that version. Never treat code deployment approval as article publication approval.
+
 ## Project Overview
 
 **AI简历构建器（aijianli.cn）** — An AI-powered online resume builder targeting Chinese job seekers.

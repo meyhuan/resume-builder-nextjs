@@ -1,0 +1,6 @@
+---
+description: Shared project rules and draft-first AI article publishing
+alwaysApply: true
+---
+
+Follow AGENTS.md. When writing website/SEO articles or saving article drafts, first read docs/ai-article-workflow.md. Save as DRAFT, present the full article and saved version for review, and wait for explicit approval before publishing that version. Do not infer permission from a code deployment request.

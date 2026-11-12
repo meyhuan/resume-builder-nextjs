@@ -1,5 +1,16 @@
 # Project Context for AI Assistant
 
+## AI Article Writing — Draft First, Human Approval Before Publishing
+
+When asked to write a website article, SEO article, or save an article draft, **read [docs/ai-article-workflow.md](docs/ai-article-workflow.md) first**. This is the canonical workflow for all AI tools.
+
+- Write and validate the article, then use `pnpm article:draft --file <article.json> --receipt <receipt.json>` to save it as `DRAFT`. Never put credentials in the article file or chat.
+- For article images, read the image section in `docs/ai-article-workflow.md` and use `pnpm article:image`. Only insert the verified public URL/Markdown from its receipt; uploading an image does not authorize publishing the article.
+- Show the user the full reviewable article (or a local file link), title, slug, article ID and saved version, and ask them to confirm publication. A completed draft is not permission to publish.
+- Only after explicit user approval of that specific article/version may you send `status: PUBLISHED`. If the content or saved version changes, present the revised version for approval again. Do not infer article approval from a previous code deployment approval.
+- Do not overwrite a published article, reuse an existing public slug, or save a published article as a draft: this can overwrite or unpublish live content. Follow the documented separate-draft procedure.
+- Article writes use the existing authenticated API, not JSON source edits, direct database writes, rebuilds, or deployments. If credentials are unavailable, retain the local draft and clearly report that it was not saved remotely.
+
 ## Deployment Operations
 
 For release commands, cache behavior, timing reports, and deployment optimization status, read `docs/nextjs-deployment-optimization.md` and the workspace-level `../RELEASE_GUIDE.md`. Do not upload or restart production without an explicit deployment request. Preserve user changes and deploy an approved commit from an isolated worktree.
