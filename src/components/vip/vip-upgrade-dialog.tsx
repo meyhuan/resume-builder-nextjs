@@ -13,9 +13,10 @@ import {
 import { useAuthStore } from '@/store/use-auth-store';
 import { useVipStore } from '@/store/use-vip-store';
 import { track } from '@/lib/analytics';
+import { startVipStatusPolling } from './vip-status-poller';
 
 const H5_PAY_BASE_URL = 'https://aijianli.cn/static/pay/dist/index.html';
-const POLL_INTERVAL_MS = 3000;
+const INVITE_POLL_INTERVAL_MS = 3000;
 
 function createPaySessionId(): string {
   const random = Math.random().toString(36).slice(2);
@@ -143,16 +144,6 @@ interface VipInfoResponse {
   };
 }
 
-interface VipPollResponse {
-  status: number;
-  data: {
-    vipStatus: number;
-    vipType: number;
-    vipExpireTime: string | null;
-    isVip: boolean;
-  };
-}
-
 interface InvitationRewardInfo {
   invitationsRequired: number;
   description?: string;
@@ -209,19 +200,20 @@ export default function VipUpgradeDialog({ open, onOpenChange, hidePlanOptions =
   const [plans, setPlans] = useState<VipPlan[]>([]);
   const [selectedVipType, setSelectedVipType] = useState<number | null>(null);
   const [errorMsg, setErrorMsg] = useState<string>('');
+  const [pollUnavailable, setPollUnavailable] = useState<boolean>(false);
   const [inviteData, setInviteData] = useState<InviteMiniCodeResponse | null>(null);
   const [inviteStatus, setInviteStatus] = useState<InviteStatusResponse | null>(null);
   const [inviteLoading, setInviteLoading] = useState<boolean>(false);
   const [inviteError, setInviteError] = useState<string>('');
   const [inviteSuccess, setInviteSuccess] = useState<boolean>(false);
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pollRef = useRef<(() => void) | null>(null);
   const invitePollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const wasVipRef = useRef<boolean>(false);
   const paySessionIdRef = useRef<string>('');
 
   const stopPolling = useCallback((): void => {
     if (pollRef.current) {
-      clearInterval(pollRef.current);
+      pollRef.current();
       pollRef.current = null;
     }
   }, []);
@@ -289,14 +281,10 @@ export default function VipUpgradeDialog({ open, onOpenChange, hidePlanOptions =
 
   const startPolling = useCallback((): void => {
     stopPolling();
-    pollRef.current = setInterval(async () => {
-      try {
-        const res = await fetch('/next-api/vip/poll');
-        if (!res.ok) return;
-        const json: VipPollResponse = await res.json();
-        const data = json.data;
+    setPollUnavailable(false);
+    pollRef.current = startVipStatusPolling({
+      onStatus: (data): boolean => {
         if (data?.isVip && !wasVipRef.current) {
-          stopPolling();
           updateVipStatus({
             vipStatus: data.vipStatus,
             vipType: data.vipType,
@@ -304,11 +292,12 @@ export default function VipUpgradeDialog({ open, onOpenChange, hidePlanOptions =
             isVip: true,
           });
           setStep('success');
+          return true;
         }
-      } catch {
-        // continue polling
-      }
-    }, POLL_INTERVAL_MS);
+        return false;
+      },
+      onUnavailable: setPollUnavailable,
+    });
   }, [stopPolling, updateVipStatus]);
 
   const pollInviteStatus = useCallback(async (ticket: string): Promise<void> => {
@@ -337,7 +326,7 @@ export default function VipUpgradeDialog({ open, onOpenChange, hidePlanOptions =
     void pollInviteStatus(ticket);
     invitePollRef.current = setInterval(() => {
       void pollInviteStatus(ticket);
-    }, POLL_INTERVAL_MS);
+    }, INVITE_POLL_INTERVAL_MS);
   }, [pollInviteStatus, stopInvitePolling]);
 
   const loadInviteCode = useCallback(async (): Promise<void> => {
@@ -405,15 +394,11 @@ export default function VipUpgradeDialog({ open, onOpenChange, hidePlanOptions =
     : '';
 
   useEffect(() => {
-    if (step === 'qrcode' && mode === 'pay') {
+    if (open && step === 'qrcode' && mode === 'pay') {
       startPolling();
     }
-    return () => {
-      if (step !== 'qrcode' || mode !== 'pay') {
-        stopPolling();
-      }
-    };
-  }, [mode, step, startPolling, stopPolling]);
+    return stopPolling;
+  }, [open, mode, step, startPolling, stopPolling]);
 
   useEffect(() => {
     if (step !== 'qrcode' || mode !== 'pay' || !payUrl || hidePlanOptions) {
@@ -457,6 +442,7 @@ export default function VipUpgradeDialog({ open, onOpenChange, hidePlanOptions =
   };
   const handleDialogOpenChange = useCallback((nextOpen: boolean): void => {
     if (!nextOpen && open) {
+      stopPolling();
       track('paywall_close', {
         entry: 'vip_upgrade_dialog',
         upgradeContext,
@@ -466,7 +452,7 @@ export default function VipUpgradeDialog({ open, onOpenChange, hidePlanOptions =
       });
     }
     onOpenChange(nextOpen);
-  }, [mode, onOpenChange, open, step, upgradeContext]);
+  }, [mode, onOpenChange, open, step, upgradeContext, stopPolling]);
   const canShowInviteOption = !hidePlanOptions
     && upgradeContext === 'pdf-export'
     && !quota.pdfExport.isVip
@@ -794,13 +780,19 @@ export default function VipUpgradeDialog({ open, onOpenChange, hidePlanOptions =
                         </svg>
                         微信扫一扫，立即开通权益
                       </p>
-                      <div className="mt-1.5 flex items-center justify-center gap-1.5 text-xs text-slate-400">
-                        <span className="relative flex h-2 w-2">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                          <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-                        </span>
-                        <span>扫码支付后自动刷新，无需手动点击</span>
-                      </div>
+                      {pollUnavailable ? (
+                        <p role="status" className="mt-2 text-xs leading-5 text-amber-700">
+                          会员状态暂时无法确认，正在重试。若已支付，请勿重复付款。
+                        </p>
+                      ) : (
+                        <div className="mt-1.5 flex items-center justify-center gap-1.5 text-xs text-slate-400">
+                          <span className="relative flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                          </span>
+                          <span>扫码支付后自动刷新，无需手动点击</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
