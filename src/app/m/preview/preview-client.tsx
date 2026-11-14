@@ -146,7 +146,14 @@ export default function MobilePreviewClient(): ReactElement {
   const settingsSavingRef = useRef<boolean>(false)
   const settingsSnapshotRef = useRef<SettingsSnapshot | null>(null)
   const [undoSnapshot, setUndoSnapshot] = useState<SettingsSnapshot | null>(null)
+  const [settingsNoticeVisible, setSettingsNoticeVisible] = useState(false)
   const [saveRequested, setSaveRequested] = useState(false)
+
+  useEffect(() => {
+    if (!settingsNoticeVisible || sheetOpen || settingsSaving || settingsError || saveRequested) return
+    const timer = setTimeout(() => setSettingsNoticeVisible(false), 3000)
+    return () => clearTimeout(timer)
+  }, [settingsNoticeVisible, sheetOpen, settingsSaving, settingsError, saveRequested])
   const thumbnailFlightRef = useRef<Promise<unknown> | null>(null)
   const exportInFlightRef = useRef<boolean>(false)
   const syncPreviewStateFlightRef = useRef<SyncPreviewStateFlight | null>(null)
@@ -315,6 +322,7 @@ export default function MobilePreviewClient(): ReactElement {
     if (snapshot && (snapshot.templateId !== templateId ||
       JSON.stringify(snapshot.themes) !== JSON.stringify(useAppStore.getState().themes))) {
       setUndoSnapshot(snapshot)
+      setSettingsNoticeVisible(true)
     }
     settingsSnapshotRef.current = null
     setSheetOpen(false)
@@ -869,7 +877,7 @@ export default function MobilePreviewClient(): ReactElement {
           </button>
         )}
 
-        {!sheetOpen && (undoSnapshot || settingsError || settingsSaving) && (
+        {!sheetOpen && ((undoSnapshot && settingsNoticeVisible) || settingsError || settingsSaving) && (
           <div className="fixed inset-x-3 z-30 mx-auto flex max-w-xl items-center justify-between gap-3 rounded-xl border border-violet-100 bg-white px-4 py-2 text-sm shadow-lg"
             style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 112px)' }}>
             <p role={settingsError ? 'alert' : 'status'} className="min-w-0 text-slate-700">

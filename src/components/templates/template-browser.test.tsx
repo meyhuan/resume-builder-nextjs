@@ -19,6 +19,7 @@ beforeEach(() => {
     takeRecords(): IntersectionObserverEntry[] { return [] }
   }
   vi.stubGlobal('IntersectionObserver', Observer)
+  vi.stubGlobal('ResizeObserver', Observer)
 })
 const englishCount = filterTemplates(templateCatalog, { languages: ['en'] }).length
 function setup() {
@@ -81,8 +82,8 @@ describe('template browser', () => {
     const { rerender } = render(<PreviewSettingsSheet {...props} tab="template" />)
     expect(screen.queryByRole('button', { name: /重置/ })).toBeNull()
     expect(screen.getByText('已选模板：').textContent).toContain('青柠')
-    fireEvent.click(screen.getByRole('button', { name: '关闭样式面板' }))
-    expect(props.onClose).toHaveBeenCalledOnce()
+    fireEvent.click(screen.getByRole('button', { name: '完成' }))
+    expect(props.onConfirm).toHaveBeenCalledOnce()
     rerender(<PreviewSettingsSheet {...props} tab="appearance" />)
     fireEvent.click(screen.getByRole('button', { name: '重置当前模板全部样式' }))
     expect(props.onReset).toHaveBeenCalledOnce()
@@ -94,12 +95,12 @@ describe('template browser', () => {
     expect(screen.queryByRole('dialog')).toBeNull()
     rerender(<PreviewSettingsSheet {...props} open saveError="保存失败，请重试或取消。" />)
     expect(screen.getByRole('alert').textContent).toContain('保存失败')
-    fireEvent.click(screen.getByRole('button', { name: '查看整体效果' }))
+    fireEvent.click(screen.getByRole('button', { name: '完成' }))
     expect(props.onConfirm).toHaveBeenCalledOnce()
     rerender(<PreviewSettingsSheet {...props} open confirming />)
     expect(screen.getByRole('dialog').getAttribute('aria-busy')).toBe('true')
     expect((screen.getByRole('button', { name: '保存中…' }) as HTMLButtonElement).disabled).toBe(true)
-    expect((screen.getByRole('button', { name: '关闭样式面板' }) as HTMLButtonElement).disabled).toBe(true)
+    expect((screen.getByRole('button', { name: '展开调整面板' }) as HTMLButtonElement).disabled).toBe(true)
     expect(document.querySelector('[inert]')).not.toBeNull()
   }, 15000)
   it('filters without selecting a template; preserves current indication and permits explicit selection', () => {
@@ -129,11 +130,27 @@ describe('template browser', () => {
 })
 
 
-it('uses a fixed nonmodal panel and keeps template filtering available', () => {
+it('resizes the nonmodal panel and keeps template filtering available', () => {
   render(<PreviewSettingsSheet open tab="template" templateId="simple" theme={DEFAULT_PREVIEW_THEME} defaultPrimaryColor="#111827" locksPrimaryColor={false}
     onePageStatus="idle" onClose={vi.fn()} onConfirm={vi.fn()} confirming={false} onReset={vi.fn()} onTabChange={vi.fn()} onSelectTemplate={vi.fn()} onUpdateTheme={vi.fn()} />)
   expect(screen.getByRole('dialog').getAttribute('aria-modal')).toBe('false')
-  expect(screen.queryByRole('button', { name: '展开调整面板' })).toBeNull()
+  expect(screen.getByRole('slider', { name: '调整面板高度' }).getAttribute('aria-valuenow')).toBe('50')
+  fireEvent.click(screen.getByRole('button', { name: '展开调整面板' }))
+  expect(screen.getByRole('slider', { name: '调整面板高度' }).getAttribute('aria-valuenow')).toBe('75')
+  fireEvent.click(screen.getByRole('button', { name: '收起调整面板' }))
+  const handle = screen.getByRole('slider', { name: '调整面板高度' })
+  expect(handle.getAttribute('aria-valuenow')).toBe('30')
+  fireEvent.keyDown(handle, { key: 'ArrowUp' })
+  expect(handle.getAttribute('aria-valuenow')).toBe('35')
   fireEvent.change(screen.getByRole('combobox', { name: '模板分类' }), { target: { value: 'english' } })
   expect((screen.getByRole('combobox', { name: '模板分类' }) as HTMLSelectElement).value).toBe('english')
+})
+
+
+it('shows every layout slider without category switching', () => {
+  render(<PreviewSettingsSheet open tab="layout" templateId="simple" theme={DEFAULT_PREVIEW_THEME} defaultPrimaryColor="#111827" locksPrimaryColor={false}
+    onePageStatus="idle" onClose={vi.fn()} onConfirm={vi.fn()} confirming={false} onReset={vi.fn()} onTabChange={vi.fn()} onSelectTemplate={vi.fn()} onUpdateTheme={vi.fn()} />)
+  expect(screen.getAllByRole('slider')).toHaveLength(6)
+  expect(screen.queryByRole('button', { name: '字号' })).toBeNull()
+  expect(screen.getByText('左右边距')).toBeTruthy()
 })

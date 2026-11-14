@@ -7,8 +7,8 @@
 
 import { TemplateBrowser } from '@/components/templates/template-browser'
 import { TemplateCover } from '@/components/templates/template-cover'
-import { Children, useRef, useState, useEffect, type ReactElement, type ReactNode } from 'react'
-import { Check, LoaderCircle, RotateCcw, X } from 'lucide-react'
+import { useRef, useState, useEffect, type ComponentProps, type ReactElement, type ReactNode } from 'react'
+import { Check, ChevronDown, ChevronUp, LoaderCircle, Palette, RotateCcw } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Slider } from '@/components/ui/slider'
 import type { ThemeTokens } from '@/entities/theme/theme-tokens'
@@ -96,23 +96,22 @@ export function PreviewSettingsSheet(props: PreviewSettingsSheetProps): ReactEle
   return (
     <BottomSheet open={open} confirming={confirming} saveError={saveError} selectedName={TEMPLATES.find((item) => item.id === templateId)?.name ?? templateId} onClose={onClose} onConfirm={onConfirm}>
       <Tabs value={tab} onValueChange={(v): void => onTabChange(v as SettingsTab)} className="flex h-full min-h-0 flex-col">
-        <div className="shrink-0 bg-white px-3 py-1">
-          <TabsList className="grid h-11 w-full grid-cols-4 rounded-xl bg-slate-100 p-0.5 [&>button]:min-h-11">
-          <TabsTrigger value="template" className="transition-colors">模板</TabsTrigger>
-          <TabsTrigger value="appearance" className="transition-colors">外观</TabsTrigger>
-          <TabsTrigger value="layout" className="transition-colors">版式</TabsTrigger>
-          <TabsTrigger value="one-page" className="transition-colors">单页</TabsTrigger>
+        <div className="shrink-0 bg-white px-4 py-1.5">
+          <TabsList className="grid h-10 w-full grid-cols-4 rounded-xl bg-slate-100/90 p-1">
+            <TabsTrigger value="template" className="h-full rounded-lg text-[13px] font-medium text-slate-500 transition-all data-[state=active]:bg-white data-[state=active]:font-semibold data-[state=active]:text-violet-700 data-[state=active]:shadow-sm">模板</TabsTrigger>
+            <TabsTrigger value="appearance" className="h-full rounded-lg text-[13px] font-medium text-slate-500 transition-all data-[state=active]:bg-white data-[state=active]:font-semibold data-[state=active]:text-violet-700 data-[state=active]:shadow-sm">外观</TabsTrigger>
+            <TabsTrigger value="layout" className="h-full rounded-lg text-[13px] font-medium text-slate-500 transition-all data-[state=active]:bg-white data-[state=active]:font-semibold data-[state=active]:text-violet-700 data-[state=active]:shadow-sm">版式</TabsTrigger>
+            <TabsTrigger value="one-page" className="h-full rounded-lg text-[13px] font-medium text-slate-500 transition-all data-[state=active]:bg-white data-[state=active]:font-semibold data-[state=active]:text-violet-700 data-[state=active]:shadow-sm">单页</TabsTrigger>
           </TabsList>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-white px-3 pb-2" data-settings-scroll>
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-white px-4 pb-4 pt-1" data-settings-scroll>
           <TabsContent value="template" className="mt-0">
             <TemplatePanel activeId={templateId} onSelect={onSelectTemplate} />
           </TabsContent>
 
           <TabsContent value="appearance" className="mt-0">
             <AppearancePanel
-              compact
               key={templateId}
               theme={theme}
               defaultPrimaryColor={defaultPrimaryColor}
@@ -122,18 +121,21 @@ export function PreviewSettingsSheet(props: PreviewSettingsSheetProps): ReactEle
           </TabsContent>
 
           <TabsContent value="layout" className="mt-0">
-            <LayoutPanel compact theme={theme} onUpdate={onUpdateTheme} />
+            <LayoutPanel theme={theme} onUpdate={onUpdateTheme} />
           </TabsContent>
 
           <TabsContent value="one-page" className="mt-0">
             <OnePagePanel theme={theme} status={onePageStatus} onUpdate={onUpdateTheme} />
           </TabsContent>
           {tab !== 'template' && (
-            <div className="mt-3 border-t border-slate-100 pt-3">
-              <button type="button" onClick={onReset} className="flex min-h-11 items-center gap-2 rounded-lg px-2 text-sm text-slate-600 focus-visible:outline-2 focus-visible:outline-violet-600">
-                <RotateCcw size={16} aria-hidden="true" />重置当前模板全部样式
+            <div className="mt-3 pt-1">
+              <button
+                type="button"
+                onClick={onReset}
+                className="flex min-h-11 w-full items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium text-slate-600 transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-violet-600"
+              >
+                <RotateCcw size={14} aria-hidden="true" />重置当前模板全部样式
               </button>
-              <p className="px-2 text-xs leading-5 text-slate-500">恢复外观、版式及单页设置，不修改简历内容。</p>
             </div>
           )}
         </div>
@@ -153,6 +155,12 @@ interface BottomSheetProps {
 }
 
 function BottomSheet({ open, onClose, onConfirm, confirming, saveError, selectedName, children }: BottomSheetProps): ReactElement {
+  const [heightPercent, setHeightPercent] = useState(50)
+  const dragRef = useRef<{ y: number; height: number; parentHeight: number } | null>(null)
+  const clampHeight = (height: number): number => Math.max(30, Math.min(75, height))
+  useEffect(() => {
+    if (!open) { setHeightPercent(50); dragRef.current = null }
+  }, [open])
   const previousFocus = useRef<HTMLElement | null>(null)
   const contentRef = useRef<HTMLElement>(null)
   useEffect(() => {
@@ -162,6 +170,7 @@ function BottomSheet({ open, onClose, onConfirm, confirming, saveError, selected
     return () => { previousFocus.current?.focus({ preventScroll: true }) }
   }, [open])
   if (!open) return <></>
+  const isExpanded = heightPercent > 50
   return (
     <section ref={contentRef} role="dialog" aria-modal="false" aria-label="调整样式" aria-busy={confirming}
       data-settings-panel
@@ -171,16 +180,57 @@ function BottomSheet({ open, onClose, onConfirm, confirming, saveError, selected
           onClose()
         }
       }}
-      className="relative z-40 flex h-[40%] min-h-0 w-full shrink-0 flex-col rounded-t-xl border-t border-slate-200 bg-white shadow-xl [&_button]:focus-visible:outline-2 [&_button]:focus-visible:outline-violet-600 [&_button]:disabled:opacity-50"
-      style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
-      <div className="flex shrink-0 items-center justify-between gap-1 border-b border-slate-100 px-3">
-        <span className="min-w-0 truncate text-xs text-slate-600">已选模板：<span className="font-medium text-slate-900">{selectedName}</span></span>
-        <button type="button" onClick={() => { void onConfirm() }} disabled={confirming} className="min-h-11 shrink-0 whitespace-nowrap rounded px-2 text-xs font-medium text-violet-700 hover:bg-violet-50 active:bg-violet-100">
-          {confirming ? <LoaderCircle size={16} className="animate-spin" aria-label="保存中…" /> : '查看整体效果'}
-        </button>
-        <button type="button" onClick={onClose} disabled={confirming} aria-label="关闭样式面板" className="flex h-11 w-11 shrink-0 items-center justify-center rounded text-slate-500 hover:bg-slate-100"><X size={18} /></button>
+      className="relative z-40 flex min-h-0 w-full shrink-0 flex-col rounded-t-2xl border-t border-slate-200/80 bg-white shadow-[0_-8px_30px_rgba(15,23,42,0.12)] [&_button]:focus-visible:outline-2 [&_button]:focus-visible:outline-violet-600 [&_button]:disabled:opacity-50"
+      style={{ height: `${heightPercent}%`, paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+      <div className="relative flex shrink-0 items-center justify-between gap-2 border-b border-slate-100 px-4 pt-3 pb-1">
+        <span aria-hidden="true" className="pointer-events-none absolute left-1/2 top-2 h-1 w-9 -translate-x-1/2 rounded-full bg-slate-300/90" />
+        <div role="slider" tabIndex={confirming ? -1 : 0} aria-label="调整面板高度" aria-orientation="vertical"
+          aria-valuemin={30} aria-valuemax={75} aria-valuenow={Math.round(heightPercent)} aria-valuetext={`${Math.round(heightPercent)}%`} aria-disabled={confirming}
+          className="flex min-h-11 min-w-0 flex-1 touch-none cursor-ns-resize select-none items-center gap-2 rounded-lg text-xs text-slate-500 focus-visible:outline-2 focus-visible:outline-violet-600"
+          onPointerDown={(event) => {
+            if (confirming || (event.pointerType === 'mouse' && event.button !== 0)) return
+            const parentHeight = contentRef.current?.parentElement?.clientHeight
+            if (!parentHeight) return
+            dragRef.current = { y: event.clientY, height: heightPercent, parentHeight }
+            event.currentTarget.setPointerCapture(event.pointerId)
+          }}
+          onPointerMove={(event) => {
+            const drag = dragRef.current
+            if (drag && !confirming) setHeightPercent(clampHeight(drag.height + (drag.y - event.clientY) / drag.parentHeight * 100))
+          }}
+          onPointerUp={(event) => {
+            dragRef.current = null
+            if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId)
+          }}
+          onPointerCancel={() => { dragRef.current = null }}
+          onLostPointerCapture={() => { dragRef.current = null }}
+          onKeyDown={(event) => {
+            if (confirming) return
+            const next = event.key === 'ArrowUp' ? heightPercent + 5 : event.key === 'ArrowDown' ? heightPercent - 5 : event.key === 'Home' ? 30 : event.key === 'End' ? 75 : null
+            if (next !== null) { event.preventDefault(); setHeightPercent(clampHeight(next)) }
+          }}>
+          <span className="text-[15px] font-semibold tracking-tight text-slate-900">调整样式</span>
+          <span className="sr-only">上下拖动调整高度</span>
+        </div>
+        <div className="flex shrink-0 items-center gap-1.5">
+          <button type="button" disabled={confirming} onClick={() => setHeightPercent(isExpanded ? 30 : 75)}
+            aria-label={isExpanded ? '收起调整面板' : '展开调整面板'} aria-expanded={isExpanded}
+            className="group inline-flex min-h-11 shrink-0 items-center justify-center rounded-full">
+            <span className="inline-flex h-8 items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2.5 text-xs font-medium text-slate-600 transition-colors group-hover:bg-slate-100 group-active:scale-95">
+              {isExpanded ? <ChevronDown size={14} aria-hidden="true" /> : <ChevronUp size={14} aria-hidden="true" />}
+              {isExpanded ? '收起' : '展开'}
+            </span>
+          </button>
+          <span className="sr-only">已选模板：<span className="font-medium text-slate-900">{selectedName}</span></span>
+          <button type="button" onClick={() => { void onConfirm() }} disabled={confirming}
+            className="group inline-flex min-h-11 shrink-0 items-center justify-center rounded-full">
+            <span className="inline-flex h-8 items-center justify-center rounded-full bg-violet-600 px-3.5 text-xs font-semibold text-white shadow-sm shadow-violet-600/25 transition-all group-hover:bg-violet-700 group-active:scale-95">
+              {confirming ? <LoaderCircle size={15} className="animate-spin" aria-label="保存中…" /> : '完成'}
+            </span>
+          </button>
+        </div>
       </div>
-      {saveError && <p role="alert" className="px-4 py-1 text-xs text-red-700">{saveError}</p>}
+      {saveError && <p role="alert" className="bg-red-50 px-4 py-1.5 text-xs text-red-700">{saveError}</p>}
       <div className="min-h-0 flex-1" inert={confirming || undefined}>{children}</div>
     </section>
   )
@@ -188,7 +238,7 @@ function BottomSheet({ open, onClose, onConfirm, confirming, saveError, selected
 
 function TemplatePanel({ activeId, onSelect }: { activeId: string; onSelect: (id: string) => void }): ReactElement {
   return (
-    <TemplateBrowser analyticsEntry="mobile_preview" templates={TEMPLATES} currentId={activeId} compact gridClassName="grid grid-cols-3 gap-2"
+    <TemplateBrowser analyticsEntry="mobile_preview" templates={TEMPLATES} currentId={activeId} compact gridClassName="grid grid-cols-3 gap-2.5"
       renderTemplate={(cfg, wordBadge) => {
         const id = cfg.id
         const isActive = id === activeId
@@ -200,16 +250,18 @@ function TemplatePanel({ activeId, onSelect }: { activeId: string; onSelect: (id
             type="button"
             onClick={(): void => onSelect(id)}
             className={cn(
-              'relative min-w-0 flex flex-col items-stretch gap-1 rounded-lg border bg-white p-1 text-left transition-colors',
-              isActive ? 'border-violet-500 bg-violet-50/30' : 'border-slate-200',
+              'relative min-w-0 flex flex-col items-stretch gap-1.5 rounded-xl border bg-white p-1.5 text-left transition-all active:scale-[0.98]',
+              isActive
+                ? 'border-violet-600 bg-violet-50/35 ring-1 ring-violet-600/20 shadow-xs'
+                : 'border-slate-200 hover:border-slate-300',
             )}
           >
             {isActive ? (
-              <span className="absolute right-1 top-1 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-violet-600 text-white shadow-sm">
-                <Check size={15} />
+              <span className="absolute right-2 top-2 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-violet-600 text-white shadow-sm">
+                <Check size={13} strokeWidth={2.5} />
               </span>
             ) : null}
-            <div className="h-24 bg-slate-100 rounded-lg overflow-hidden flex items-center justify-center">
+            <div className="flex h-28 items-center justify-center overflow-hidden rounded-lg bg-slate-50 p-1">
               {cfg.preview ? (
                 <TemplateCover src={cfg.preview} alt={cfg.name} className="h-full w-full object-contain" />
               ) : (
@@ -217,9 +269,8 @@ function TemplatePanel({ activeId, onSelect }: { activeId: string; onSelect: (id
               )}
             </div>
             <div className="px-0.5 pb-0.5">
-              <div className="text-xs font-semibold text-slate-900">{cfg.name}</div>
+              <div className="truncate text-xs font-semibold text-slate-900">{cfg.name}</div>
               {wordBadge}
-
             </div>
           </button>
         )
@@ -231,104 +282,146 @@ function AppearancePanel({
   theme,
   defaultPrimaryColor,
   locked,
-  compact,
   onUpdate,
 }: {
   readonly theme: ThemeTokens
   readonly defaultPrimaryColor: string
-  readonly compact: boolean
   readonly locked: boolean
   readonly onUpdate: ThemePatcher
 }): ReactElement {
   const activeFamilyId = resolveResumeFontFamilyId(theme.fontFamilyId, theme.fontFamily)
+  const isCustomColor = !PRESET_COLORS.some((c) => c.toLowerCase() === theme.primaryColor.toLowerCase())
+  const isDefaultColor = theme.primaryColor.toLowerCase() === defaultPrimaryColor.toLowerCase()
 
   return (
-    <ControlGroups compact={compact} labels={['主题色', '字体']}>
-      <Row label="主题色">
-        <div className="space-y-3">
-          {locked ? (
-            <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-800">
-              当前模板使用固定品牌色，切换其他模板后可自定义颜色。
-            </div>
+    <div className="space-y-4">
+      <div className="space-y-2.5">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-slate-700">主题色</span>
+            <span className="rounded-md bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] uppercase text-slate-500">
+              {theme.primaryColor}
+            </span>
+          </div>
+          {!locked ? (
+            isDefaultColor ? (
+              <span className="text-[11px] text-slate-400">当前为模板默认色</span>
+            ) : (
+              <button
+                type="button"
+                onClick={(): void => onUpdate({ primaryColor: defaultPrimaryColor })}
+                className="inline-flex min-h-8 items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600 transition-colors hover:border-slate-300 hover:bg-slate-50"
+              >
+                <span
+                  aria-hidden="true"
+                  className="h-2.5 w-2.5 rounded-full border border-black/10"
+                  style={{ backgroundColor: defaultPrimaryColor }}
+                />
+                恢复默认
+              </button>
+            )
           ) : null}
-          <div className="grid grid-cols-[repeat(auto-fit,minmax(44px,1fr))] gap-2">
-            {PRESET_COLORS.map((c) => (
+        </div>
+
+        {locked ? (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-800">
+            当前模板使用固定品牌色，切换其他模板后可自定义颜色。
+          </div>
+        ) : null}
+
+        <div className="grid grid-cols-5 justify-items-center gap-y-2 rounded-2xl border border-slate-100 bg-slate-50/70 p-2.5">
+          {PRESET_COLORS.map((c) => {
+            const active = c.toLowerCase() === theme.primaryColor.toLowerCase()
+            return (
               <button
                 key={c}
                 type="button"
                 disabled={locked}
                 onClick={(): void => onUpdate({ primaryColor: c })}
-                className={cn(
-                  'relative h-11 w-11 rounded-full border-2 transition-transform active:scale-95',
-                  c === theme.primaryColor ? 'border-slate-900 scale-110' : 'border-white',
-                  'shadow ring-1 ring-slate-200',
-                  locked ? 'opacity-40 cursor-not-allowed' : '',
-                )}
-                style={{ backgroundColor: c }}
                 aria-label={`选择颜色 ${c}`}
+                aria-pressed={active}
+                className={cn(
+                  'relative flex h-11 w-11 items-center justify-center rounded-full transition-transform active:scale-95',
+                  locked ? 'cursor-not-allowed opacity-40' : '',
+                )}
               >
-                {c === theme.primaryColor ? (
-                  <span className="absolute inset-0 flex items-center justify-center text-white drop-shadow">
-                    <Check size={14} />
-                  </span>
-                ) : null}
+                <span
+                  className={cn(
+                    'flex h-8 w-8 items-center justify-center rounded-full border border-black/10 shadow-xs transition-all',
+                    active ? 'scale-105 ring-2 ring-violet-600 ring-offset-2 ring-offset-slate-50' : '',
+                  )}
+                  style={{ backgroundColor: c }}
+                >
+                  {active ? <Check size={14} strokeWidth={2.5} className="text-white drop-shadow" /> : null}
+                </span>
               </button>
-            ))}
-          </div>
-          <div className="flex items-center justify-between rounded-xl border border-slate-200 px-3 py-2">
-            <div>
-              <div className="text-sm font-medium text-slate-800">自定义颜色</div>
-              <div className="text-xs font-mono text-slate-400">{theme.primaryColor}</div>
-            </div>
+            )
+          })}
+
+          <label
+            className={cn(
+              'relative flex h-11 w-11 cursor-pointer items-center justify-center rounded-full transition-transform active:scale-95',
+              locked ? 'cursor-not-allowed opacity-40' : '',
+            )}
+            title="自定义颜色"
+          >
+            <span
+              className={cn(
+                'flex h-8 w-8 items-center justify-center rounded-full shadow-xs transition-all',
+                isCustomColor
+                  ? 'border border-black/10 ring-2 ring-violet-600 ring-offset-2 ring-offset-slate-50'
+                  : 'border border-slate-200 bg-white text-slate-600',
+              )}
+              style={isCustomColor ? { backgroundColor: theme.primaryColor } : undefined}
+            >
+              <Palette size={14} className={isCustomColor ? 'text-white drop-shadow' : 'text-slate-600'} aria-hidden="true" />
+            </span>
             <input
               type="color"
               aria-label="自定义主题色"
               value={theme.primaryColor}
               disabled={locked}
               onChange={(e): void => onUpdate({ primaryColor: e.target.value })}
-              className="h-11 w-12 rounded border border-slate-200 bg-transparent p-0"
+              className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
             />
-          </div>
-          <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
-            <div>
-              <div className="text-sm font-medium text-slate-800">模板默认色</div>
-              <div className="text-xs font-mono text-slate-400">{defaultPrimaryColor}</div>
-            </div>
-            <span
-              className="h-8 w-12 rounded border border-slate-200"
-              style={{ backgroundColor: defaultPrimaryColor }}
-            />
-          </div>
+          </label>
         </div>
-      </Row>
+      </div>
 
-      <Row label="字体">
-        <div className="grid grid-cols-2 gap-2">
+      <div className="space-y-2">
+        <div className="text-xs font-semibold text-slate-700">字体风格</div>
+        <div className="grid grid-cols-2 gap-2.5">
           {RESUME_FONT_OPTIONS.map((f) => {
             const selected = f.id === activeFamilyId
             return (
               <button
                 key={f.id}
                 type="button"
+                aria-pressed={selected}
                 onClick={(): void => onUpdate({ fontFamilyId: f.id, fontFamily: f.stack })}
                 className={cn(
-                  'rounded-xl border px-3 py-2 text-left transition-colors',
-                  selected ? 'border-violet-500 bg-violet-50 text-violet-700' : 'border-slate-200 text-slate-700',
+                  'relative rounded-xl border px-3 py-2.5 text-left transition-all active:scale-[0.98]',
+                  selected
+                    ? 'border-violet-600 bg-violet-50/70 text-violet-950 ring-1 ring-violet-600/15'
+                    : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300',
                 )}
-                style={{ fontFamily: f.stack }}
+                style={f.id === 'serif' ? { fontFamily: '"Songti SC", "STSong", "SimSun", Georgia, serif' } : undefined}
               >
-                <span className="block text-sm font-semibold">{f.label}</span>
-                <span className="mt-0.5 block text-[11px] text-slate-500">{f.description}</span>
+                <span className="flex items-center justify-between gap-1 text-sm font-semibold">
+                  <span>{f.label}</span>
+                  {selected ? <Check size={14} strokeWidth={2.5} className="shrink-0 text-violet-600" aria-hidden="true" /> : null}
+                </span>
+                <span className="mt-0.5 block text-[11px] leading-4 tracking-tight text-slate-500">{f.description}</span>
               </button>
             )
           })}
         </div>
-      </Row>
-    </ControlGroups>
+      </div>
+    </div>
   )
 }
 
-function LayoutPanel({ theme, onUpdate, compact }: { readonly compact: boolean; readonly theme: ThemeTokens; readonly onUpdate: ThemePatcher }): ReactElement {
+function LayoutPanel({ theme, onUpdate }: { readonly theme: ThemeTokens; readonly onUpdate: ThemePatcher }): ReactElement {
   const densityPresets: ReadonlyArray<{
     id: string
     label: string
@@ -338,93 +431,117 @@ function LayoutPanel({ theme, onUpdate, compact }: { readonly compact: boolean; 
     {
       id: 'compact',
       label: '紧凑',
-      desc: '内容较多',
+      desc: '适合内容较多',
       patch: { fontSize: 14, lineHeight: 1.35, spacingScale: 0.82, pagePaddingVertical: 14, pagePaddingHorizontal: 12 },
     },
     {
       id: 'standard',
       label: '标准',
-      desc: '通用投递',
+      desc: '通用投递推荐',
       patch: { fontSize: 15, lineHeight: 1.5, spacingScale: 1, pagePaddingVertical: 19, pagePaddingHorizontal: 15 },
     },
     {
       id: 'relaxed',
       label: '舒展',
-      desc: '内容精简',
+      desc: '适合内容精简',
       patch: { fontSize: 16, lineHeight: 1.7, spacingScale: 1.22, pagePaddingVertical: 24, pagePaddingHorizontal: 18 },
     },
   ]
 
+  const matchedPreset = densityPresets.find((preset) =>
+    Object.entries(preset.patch).every(([key, value]) => theme[key as keyof ThemeTokens] === value),
+  )
+
   return (
-    <ControlGroups compact={compact} labels={['内容密度', '字号', '行距', '模块间距', '页边距']}>
-      <Row label="内容密度">
-        <div className="grid grid-cols-3 gap-2">
-          {densityPresets.map((preset) => (
-            <button
-              key={preset.id}
-              type="button"
-              onClick={(): void => onUpdate(preset.patch)}
-              className="rounded-xl border border-slate-200 px-2 py-3 text-center active:scale-[0.98] transition-transform"
-            >
-              <div className="text-sm font-semibold text-slate-900">{preset.label}</div>
-              <div className="mt-1 text-[11px] text-slate-500">{preset.desc}</div>
-            </button>
-          ))}
+    <div className="space-y-2.5" data-layout-controls>
+      <div className="space-y-1">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-semibold text-slate-700">内容密度</span>
+          {matchedPreset ? (
+            <span className="text-[11px] text-slate-400">{matchedPreset.desc}</span>
+          ) : (
+            <span className="rounded-full bg-violet-50 px-2 py-0.5 text-[11px] font-medium text-violet-700">
+              已自定义微调
+            </span>
+          )}
         </div>
-      </Row>
+        <div className="grid grid-cols-3 gap-1 rounded-xl bg-slate-100/90 p-1">
+          {densityPresets.map((preset) => {
+            const active = matchedPreset?.id === preset.id
+            return (
+              <button
+                key={preset.id}
+                type="button"
+                onClick={(): void => onUpdate(preset.patch)}
+                aria-pressed={active}
+                className={cn(
+                  'min-h-9 rounded-lg px-2 py-1.5 text-center text-xs transition-all active:scale-[0.98]',
+                  active
+                    ? 'bg-white font-semibold text-violet-700 shadow-sm'
+                    : 'font-medium text-slate-600 hover:text-slate-900',
+                )}
+              >
+                {preset.label}
+              </button>
+            )
+          })}
+        </div>
+      </div>
 
-      <Row label={`字号基准 · ${theme.fontSize}px`}>
-        <Slider
-          min={12}
-          max={18}
-          step={1}
-          value={[theme.fontSize]}
-          onValueChange={([v]): void => onUpdate({ fontSize: v })}
-        />
-      </Row>
+      <div className="rounded-2xl border border-slate-100 bg-slate-50/75 px-3.5 py-0.5">
+        <LayoutRow label="字号" value={`${theme.fontSize}px`}>
+          <TouchSlider
+            min={12}
+            max={18}
+            step={1}
+            value={[theme.fontSize]}
+            onValueChange={([v]): void => onUpdate({ fontSize: v })}
+          />
+        </LayoutRow>
 
-      <Row label={`行距 · ${theme.lineHeight.toFixed(2)}`}>
-        <Slider
-          min={1.2}
-          max={2}
-          step={0.05}
-          value={[theme.lineHeight]}
-          onValueChange={([v]): void => onUpdate({ lineHeight: Number(v.toFixed(2)) })}
-        />
-      </Row>
+        <LayoutRow label="行距" value={`${theme.lineHeight.toFixed(2)}`}>
+          <TouchSlider
+            min={1.2}
+            max={2}
+            step={0.05}
+            value={[theme.lineHeight]}
+            onValueChange={([v]): void => onUpdate({ lineHeight: Number(v.toFixed(2)) })}
+          />
+        </LayoutRow>
 
-      <Row label={`模块间距 · ${theme.spacingScale.toFixed(2)}×`}>
-        <Slider
-          min={0}
-          max={3}
-          step={0.1}
-          value={[theme.spacingScale]}
-          onValueChange={([v]): void => onUpdate({ spacingScale: Number(v.toFixed(2)) })}
-        />
-      </Row>
+        <LayoutRow label="模块间距" value={`${theme.spacingScale.toFixed(2)}×`}>
+          <TouchSlider
+            min={0}
+            max={3}
+            step={0.1}
+            value={[theme.spacingScale]}
+            onValueChange={([v]): void => onUpdate({ spacingScale: Number(v.toFixed(2)) })}
+          />
+        </LayoutRow>
+      </div>
 
-      <div className="rounded-2xl border border-slate-200 p-3 space-y-5">
-        <Row label={`页边距上下 · ${theme.pagePaddingVertical}mm`}>
-          <Slider
+      <div className="rounded-2xl border border-slate-100 bg-slate-50/75 px-3.5 py-0.5">
+        <LayoutRow label="上下边距" value={`${theme.pagePaddingVertical}mm`}>
+          <TouchSlider
             min={10}
             max={35}
             step={1}
             value={[theme.pagePaddingVertical]}
             onValueChange={([v]): void => onUpdate({ pagePaddingVertical: v })}
           />
-        </Row>
+        </LayoutRow>
 
-        <Row label={`页边距左右 · ${theme.pagePaddingHorizontal}mm`}>
-          <Slider
+        <LayoutRow label="左右边距" value={`${theme.pagePaddingHorizontal}mm`}>
+          <TouchSlider
             min={8}
             max={30}
             step={1}
             value={[theme.pagePaddingHorizontal]}
             onValueChange={([v]): void => onUpdate({ pagePaddingHorizontal: v })}
           />
-        </Row>
+        </LayoutRow>
       </div>
-    </ControlGroups>
+    </div>
   )
 }
 
@@ -443,11 +560,11 @@ function OnePagePanel({
   const statusMeta = ONE_PAGE_BADGE_STYLES[status]
 
   return (
-    <div className="space-y-6">
-      <div className="rounded-2xl border border-violet-100 bg-violet-50/70 p-4">
-        <div className="flex items-start justify-between gap-4">
+    <div className="space-y-3">
+      <div className="rounded-2xl border border-violet-100 bg-violet-50/70 p-3.5">
+        <div className="flex items-start justify-between gap-3">
           <div>
-            <div className="text-base font-semibold text-slate-900">单页模式</div>
+            <div className="text-sm font-semibold text-slate-900">单页模式</div>
             <p className="mt-1 text-xs leading-5 text-slate-600">
               自动压缩字号、行距和间距，完整适配一页 A4；内容过多时会阻止一页导出。
             </p>
@@ -455,31 +572,33 @@ function OnePagePanel({
           <Switch checked={onePageFit} onChange={(): void => onUpdate({ onePageFit: !onePageFit })} />
         </div>
         {onePageFit ? (
-          <div className={cn('mt-3 inline-flex rounded-full px-2.5 py-1 text-xs font-medium text-white', statusMeta.bg)}>
+          <div className={cn('mt-2.5 inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium text-white', statusMeta.bg)}>
             {statusMeta.label}
           </div>
         ) : null}
       </div>
 
-      <Row label={`标题放大倍率 · ${titleScale.toFixed(2)}×`}>
-        <Slider
-          min={0.9}
-          max={1.6}
-          step={0.05}
-          value={[titleScale]}
-          onValueChange={([v]): void => onUpdate({ titleScale: Number(v.toFixed(2)) })}
-        />
-      </Row>
+      <div className="rounded-2xl border border-slate-100 bg-slate-50/75 px-3.5 py-1">
+        <LayoutRow label="标题倍率" value={`${titleScale.toFixed(2)}×`}>
+          <TouchSlider
+            min={0.9}
+            max={1.6}
+            step={0.05}
+            value={[titleScale]}
+            onValueChange={([v]): void => onUpdate({ titleScale: Number(v.toFixed(2)) })}
+          />
+        </LayoutRow>
 
-      <Row label={`段落首行缩进 · ${paragraphIndent}em`}>
-        <Slider
-          min={0}
-          max={2}
-          step={1}
-          value={[paragraphIndent]}
-          onValueChange={([v]): void => onUpdate({ paragraphIndent: v })}
-        />
-      </Row>
+        <LayoutRow label="首行缩进" value={`${paragraphIndent}em`}>
+          <TouchSlider
+            min={0}
+            max={2}
+            step={1}
+            value={[paragraphIndent]}
+            onValueChange={([v]): void => onUpdate({ paragraphIndent: v })}
+          />
+        </LayoutRow>
+      </div>
     </div>
   )
 }
@@ -502,23 +621,24 @@ function Switch({ checked, onChange }: { readonly checked: boolean; readonly onC
   )
 }
 
-function Row({ label, children }: { readonly label: string; readonly children: ReactNode }): ReactElement {
+function TouchSlider({ className, ...props }: ComponentProps<typeof Slider>): ReactElement {
   return (
-    <div>
-      <div className="text-xs font-medium text-slate-700 mb-2">{label}</div>
-      {children}
-    </div>
+    <Slider
+      {...props}
+      className={cn(
+        'py-2.5 [&>span:first-child]:h-1.5 [&>span:first-child]:bg-slate-200/90 [&_[role=slider]]:h-[18px] [&_[role=slider]]:w-[18px] [&_[role=slider]]:border-2 [&_[role=slider]]:border-violet-600 [&_[role=slider]]:bg-white [&_[role=slider]]:shadow-[0_1px_4px_rgba(124,58,237,0.28)]',
+        className,
+      )}
+    />
   )
 }
 
-
-function ControlGroups({ compact, labels, children }: { compact: boolean; labels: string[]; children: ReactNode }): ReactElement {
-  const [selected, setSelected] = useState(0)
-  return <div className="space-y-4">
-    {compact && <div className="flex gap-2 overflow-x-auto" aria-label="选择调整项">
-      {labels.map((label, index) => <button key={label} type="button" aria-pressed={selected === index} onClick={() => setSelected(index)}
-        className={cn('min-h-11 shrink-0 whitespace-nowrap rounded-lg px-3 text-xs', selected === index ? 'bg-violet-50 text-violet-700' : 'bg-slate-50 text-slate-600')}>{label}</button>)}
-    </div>}
-    {Children.toArray(children).map((child, index) => <div key={index} hidden={compact && selected !== index}>{child}</div>)}
-  </div>
+function LayoutRow({ label, value, children }: { label: string; value?: string; children: ReactNode }): ReactElement {
+  return (
+    <div className={cn('grid min-h-10 items-center gap-3', value ? 'grid-cols-[4.25rem_minmax(0,1fr)_3.25rem]' : 'grid-cols-[4.25rem_minmax(0,1fr)]')}>
+      <div className="whitespace-nowrap text-[13px] font-medium text-slate-600">{label}</div>
+      <div className="min-w-0">{children}</div>
+      {value && <output className="text-right text-[13px] font-semibold tabular-nums text-slate-800">{value}</output>}
+    </div>
+  )
 }
