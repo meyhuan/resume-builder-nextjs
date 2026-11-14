@@ -94,7 +94,7 @@ export function PreviewSettingsSheet(props: PreviewSettingsSheetProps): ReactEle
   } = props
 
   return (
-    <BottomSheet open={open} confirming={confirming} saveError={saveError} selectedName={TEMPLATES.find((item) => item.id === templateId)?.name ?? templateId} onClose={onClose} onConfirm={onConfirm}>
+    <BottomSheet key={open ? 'open' : 'closed'} open={open} confirming={confirming} saveError={saveError} selectedName={TEMPLATES.find((item) => item.id === templateId)?.name ?? templateId} onClose={onClose} onConfirm={onConfirm}>
       <Tabs value={tab} onValueChange={(v): void => onTabChange(v as SettingsTab)} className="flex h-full min-h-0 flex-col">
         <div className="shrink-0 bg-white px-4 py-1.5">
           <TabsList className="grid h-10 w-full grid-cols-4 rounded-xl bg-slate-100/90 p-1">
@@ -158,9 +158,6 @@ function BottomSheet({ open, onClose, onConfirm, confirming, saveError, selected
   const [heightPercent, setHeightPercent] = useState(50)
   const dragRef = useRef<{ y: number; height: number; parentHeight: number } | null>(null)
   const clampHeight = (height: number): number => Math.max(30, Math.min(75, height))
-  useEffect(() => {
-    if (!open) { setHeightPercent(50); dragRef.current = null }
-  }, [open])
   const previousFocus = useRef<HTMLElement | null>(null)
   const contentRef = useRef<HTMLElement>(null)
   useEffect(() => {
