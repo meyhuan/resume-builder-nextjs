@@ -51,6 +51,12 @@ interface ExportJobResponse {
   readonly previewImages?: readonly string[]
 }
 
+interface SettingsSnapshot {
+  templateId: string
+  themes: Record<string, ThemeTokens>
+  onePageSnapshot: AdjustableTokens | null
+}
+
 interface SyncPreviewStateFlight {
   readonly key: string
   readonly promise: Promise<void>
@@ -138,11 +144,9 @@ export default function MobilePreviewClient(): ReactElement {
   const pinchStateRef = useRef<{ startDist: number; startZoom: number } | null>(null)
   const lastTapRef = useRef<number>(0)
   const settingsSavingRef = useRef<boolean>(false)
-  const settingsSnapshotRef = useRef<{
-    templateId: string
-    themes: Record<string, ThemeTokens>
-    onePageSnapshot: AdjustableTokens | null
-  } | null>(null)
+  const settingsSnapshotRef = useRef<SettingsSnapshot | null>(null)
+  const [undoSnapshot, setUndoSnapshot] = useState<SettingsSnapshot | null>(null)
+  const [saveRequested, setSaveRequested] = useState(false)
   const thumbnailFlightRef = useRef<Promise<unknown> | null>(null)
   const exportInFlightRef = useRef<boolean>(false)
   const syncPreviewStateFlightRef = useRef<SyncPreviewStateFlight | null>(null)
@@ -218,8 +222,10 @@ export default function MobilePreviewClient(): ReactElement {
       setContainerWidth(w)
     }
     update()
+    const observer = new ResizeObserver(update)
+    if (stageRef.current) observer.observe(stageRef.current)
     window.addEventListener('resize', update)
-    return (): void => window.removeEventListener('resize', update)
+    return (): void => { observer.disconnect(); window.removeEventListener('resize', update) }
   }, [])
 
   // Observe the unscaled template content height so we can size the outer
@@ -240,7 +246,7 @@ export default function MobilePreviewClient(): ReactElement {
   // Capture only committed previews, never settings being tried in the sheet.
   // Pending uploads finish before an explicit save to avoid stale overwrites.
   useEffect(() => {
-    if (!draftResumeId || sheetOpen) return
+    if (!draftResumeId || sheetOpen || settingsSaving || settingsError || saveRequested) return
     if (!resume || !resume.sections || resume.sections.length === 0) return
 
     const controller: AbortController = new AbortController()
@@ -280,7 +286,7 @@ export default function MobilePreviewClient(): ReactElement {
       clearTimeout(timer)
       controller.abort()
     }
-  }, [draftResumeId, resume, templateId, themesMap, onePageSnapshot, sheetOpen, saveThumbnail])
+  }, [draftResumeId, resume, templateId, themesMap, onePageSnapshot, sheetOpen, settingsSaving, settingsError, saveRequested, saveThumbnail])
 
   const theme: ThemeTokens = getThemeForTemplate(templateId)
   const defaultTheme: ThemeTokens = getDefaultThemeForTemplate(templateId)
@@ -303,18 +309,27 @@ export default function MobilePreviewClient(): ReactElement {
     setSheetOpen(true)
   }, [templateId, onePageSnapshot])
 
-  const handleCancelSettings = useCallback((): void => {
+  const handleCloseSettings = useCallback((): void => {
     if (settingsSavingRef.current) return
     const snapshot = settingsSnapshotRef.current
-    if (snapshot) {
-      useAppStore.setState({ themes: snapshot.themes })
-      setTemplateId(snapshot.templateId)
-      setOnePageSnapshot(snapshot.onePageSnapshot)
+    if (snapshot && (snapshot.templateId !== templateId ||
+      JSON.stringify(snapshot.themes) !== JSON.stringify(useAppStore.getState().themes))) {
+      setUndoSnapshot(snapshot)
     }
     settingsSnapshotRef.current = null
-    setSettingsError(null)
     setSheetOpen(false)
-  }, [])
+    setSaveRequested(true)
+  }, [templateId])
+
+  const handleUndoSettings = useCallback((): void => {
+    if (settingsSavingRef.current || !undoSnapshot) return
+    useAppStore.setState({ themes: undoSnapshot.themes })
+    setTemplateId(undoSnapshot.templateId)
+    setDraftTemplateId(undoSnapshot.templateId)
+    setOnePageSnapshot(undoSnapshot.onePageSnapshot)
+    setUndoSnapshot(null)
+    setSaveRequested(true)
+  }, [undoSnapshot, setDraftTemplateId])
 
   // A4 at 210mm ≈ 794px @ 96dpi. Scale to fit mobile viewport, then multiply
   // by the user-controlled pinch zoom factor.
@@ -326,7 +341,7 @@ export default function MobilePreviewClient(): ReactElement {
   const scaledHeight: number = A4_WIDTH_PX * A4_RATIO * scale
   const scaledWidth: number = A4_WIDTH_PX * scale
   const previewHeight: number = contentHeight > 0 ? contentHeight * scale : scaledHeight
-  const previewViewportWidth: number = Math.max(containerWidth * userZoom, scaledWidth)
+  const previewViewportWidth: number = scaledWidth
 
   const updateTheme = useCallback(
     (patch: Partial<ThemeTokens>): void => {
@@ -350,11 +365,11 @@ export default function MobilePreviewClient(): ReactElement {
         label: '查看一页通',
         onClick: (): void => {
           setTab('template')
-          setSheetOpen(true)
+          handleOpenSettings()
         },
       },
     })
-  }, [templateId])
+  }, [templateId, handleOpenSettings])
 
   // Drive the auto-fit algorithm against the unscaled template content (innerRef).
   const { status: onePageStatus } = useOnePageMode({
@@ -380,6 +395,7 @@ export default function MobilePreviewClient(): ReactElement {
       if (settingsSavingRef.current || nextId === templateId) return
       setOnePageSnapshot(null)
       setTemplateId(nextId)
+      setDraftTemplateId(nextId)
       track('template_select', {
         entry: 'mobile_preview',
         resumeId: draftResumeId || searchParams.get('id'),
@@ -387,14 +403,14 @@ export default function MobilePreviewClient(): ReactElement {
         previousTemplateId: templateId,
       })
     },
-    [draftResumeId, searchParams, templateId],
+    [draftResumeId, searchParams, templateId, setDraftTemplateId],
   )
 
   const handleResetStyle = useCallback((): void => {
     if (settingsSavingRef.current) return
     setOnePageSnapshot(null)
     resetThemeForTemplate(templateId)
-    toast.success('已恢复默认样式，保存后生效')
+    toast.success('已恢复默认样式')
   }, [resetThemeForTemplate, templateId])
 
   const clampZoom = (z: number): number => Math.min(MAX_USER_ZOOM, Math.max(MIN_USER_ZOOM, z))
@@ -610,7 +626,7 @@ export default function MobilePreviewClient(): ReactElement {
         const text = await response.text().catch(() => '')
         const message = text || `HTTP ${response.status}`
         log.warn('failed to sync preview state before export', { status: response.status, message })
-        throw new Error('保存失败，修改已保留，请重试或取消。')
+        throw new Error('保存失败，当前效果已保留，请重试。')
       }
       track('resume_save_success', { ...saveJourney, resumeId: targetId, templateId, entry: 'mobile_preview', saveKind: 'content_and_settings' })
     })()
@@ -629,7 +645,7 @@ export default function MobilePreviewClient(): ReactElement {
     if (settingsSavingRef.current) return
     const targetId: string | null = draftResumeId || searchParams.get('id')
     if (!targetId) {
-      setSettingsError('无法获取简历 ID，请取消后返回重试。')
+      setSettingsError('无法获取简历 ID，当前效果已保留，请返回后重试。')
       return
     }
     settingsSavingRef.current = true
@@ -638,20 +654,24 @@ export default function MobilePreviewClient(): ReactElement {
     try {
       await syncPreviewState(targetId)
       setDraftTemplateId(templateId)
-      settingsSnapshotRef.current = null
-      setSheetOpen(false)
-      toast.success('样式已保存')
     } catch (err: unknown) {
       log.warn('failed to save preview settings', {
         templateId,
         error: err instanceof Error ? err.message : String(err),
       })
-      setSettingsError('保存失败，修改已保留，请重试或取消。')
+      setSettingsError('保存失败，当前效果已保留，请重试。')
     } finally {
       settingsSavingRef.current = false
       setSettingsSaving(false)
     }
   }, [draftResumeId, searchParams, syncPreviewState, setDraftTemplateId, templateId])
+
+  // Save after closing or undoing, using the state from the latest render.
+  useEffect(() => {
+    if (!saveRequested) return
+    setSaveRequested(false)
+    void handleConfirmSettings()
+  }, [saveRequested, handleConfirmSettings])
 
   /**
    * Unified export handler for PDF, image, and Markdown.
@@ -755,7 +775,7 @@ export default function MobilePreviewClient(): ReactElement {
 
   return (
     <AiSectionProvider>
-      <div className="h-[100dvh] overflow-hidden bg-slate-100 flex flex-col">
+      <div className="relative h-[100dvh] overflow-hidden bg-slate-100 flex flex-col">
         <TopBar />
 
         <div
@@ -764,7 +784,7 @@ export default function MobilePreviewClient(): ReactElement {
           className="min-h-0 flex-1 overflow-auto overscroll-contain px-3 pt-4"
           style={{
             touchAction: 'pan-x pan-y',
-            paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 88px)',
+            paddingBottom: sheetOpen ? '16px' : 'calc(env(safe-area-inset-bottom, 0px) + 88px)',
           }}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
@@ -837,7 +857,7 @@ export default function MobilePreviewClient(): ReactElement {
 
         {/* Zoom indicator — shows when user zoomed in/out, tap to reset.
             Positioned above the bottom action bar with safe-area awareness. */}
-        {userZoom !== 1 && (
+        {userZoom !== 1 && !sheetOpen && (
           <button
             type="button"
             onClick={(): void => setUserZoom(1)}
@@ -849,14 +869,27 @@ export default function MobilePreviewClient(): ReactElement {
           </button>
         )}
 
-        <BottomActionBar
+        {!sheetOpen && (undoSnapshot || settingsError || settingsSaving) && (
+          <div className="fixed inset-x-3 z-30 mx-auto flex max-w-xl items-center justify-between gap-3 rounded-xl border border-violet-100 bg-white px-4 py-2 text-sm shadow-lg"
+            style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 112px)' }}>
+            <p role={settingsError ? 'alert' : 'status'} className="min-w-0 text-slate-700">
+              {settingsError || (settingsSaving ? '正在保存样式…' : `已切换为 ${templateConfig?.name ?? templateId}`)}
+            </p>
+            <div className="flex shrink-0 gap-2">
+              {settingsError && <button type="button" onClick={() => setSaveRequested(true)} disabled={settingsSaving} className="min-h-11 px-2 text-violet-700 disabled:opacity-50">重试保存</button>}
+              {undoSnapshot && <button type="button" onClick={handleUndoSettings} disabled={settingsSaving} className="min-h-11 px-2 text-violet-700 disabled:opacity-50" aria-label="撤销本次调整">撤销</button>}
+            </div>
+          </div>
+        )}
+
+        {!sheetOpen && <BottomActionBar
           onOpenSettings={handleOpenSettings}
           onExportPdf={handleExportPdf}
           onExportImage={handleExportImage}
           onExportMarkdown={handleExportMarkdown}
           showMarkdownExport={showMarkdownExport}
           isExporting={isExporting}
-        />
+        />}
 
         <PreviewSettingsSheet
           open={sheetOpen}
@@ -866,8 +899,8 @@ export default function MobilePreviewClient(): ReactElement {
           defaultPrimaryColor={defaultTheme.primaryColor}
           locksPrimaryColor={Boolean(templateConfig?.locksPrimaryColor)}
           onePageStatus={onePageStatus}
-          onClose={handleCancelSettings}
-          onConfirm={handleConfirmSettings}
+          onClose={handleCloseSettings}
+          onConfirm={handleCloseSettings}
           confirming={settingsSaving}
           saveError={settingsError}
           onReset={handleResetStyle}

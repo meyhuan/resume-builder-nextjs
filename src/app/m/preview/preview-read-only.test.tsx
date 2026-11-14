@@ -29,7 +29,13 @@ vi.mock('@/hooks/use-one-page-mode', () => ({ useOnePageMode: () => ({ status: '
 vi.mock('@/hooks/use-resume-pagination', () => ({ useResumePagination: () => [] }))
 vi.mock('../_components/use-mini-program', () => ({ useInMiniProgram: () => mini.enabled }))
 vi.mock('../_components/use-mini-program-capabilities', () => ({ useMiniProgramCapabilities: () => ({ markdownExportSupported: true }) }))
-vi.mock('./_components/preview-settings-sheet', () => ({ PreviewSettingsSheet: () => null, ONE_PAGE_BADGE_STYLES: {} }))
+vi.mock('./_components/preview-settings-sheet', () => ({ PreviewSettingsSheet: (props: { open: boolean; templateId: string; onClose: () => void; onConfirm: () => void; onSelectTemplate: (id: string) => void }) => props.open ? <div role="dialog">
+  <span data-testid="selected-template">{props.templateId}</span>
+  <button onClick={() => props.onSelectTemplate('qingning')}>选择青柠</button>
+  <button onClick={() => props.onSelectTemplate('moxu')}>选择墨序</button>
+  <button onClick={props.onClose}>关闭样式面板</button>
+  <button onClick={props.onConfirm}>查看整体效果</button>
+</div> : null, ONE_PAGE_BADGE_STYLES: {} }))
 
 beforeEach(() => {
   mini.enabled = false
@@ -121,4 +127,39 @@ it('keeps avatar controls hidden throughout draft reordering and restores editin
   render(<AvatarActions baseInfo={{ avatarUrl: '/avatar.jpg' }} name="测试用户" onUpload={vi.fn()} />)
   expect(screen.getByText('本地上传')).toBeTruthy()
   expect(screen.getByText('调整大小')).toBeTruthy()
+})
+
+
+it.each(['关闭样式面板', '查看整体效果'])('keeps the latest selection after %s and undoes the whole selection session', async (closeLabel) => {
+  const fetchMock = vi.fn().mockResolvedValue({ ok: true })
+  vi.stubGlobal('fetch', fetchMock)
+  render(<MobilePreviewClient />)
+  fireEvent.click(screen.getByRole('button', { name: '样式' }))
+  fireEvent.click(screen.getByRole('button', { name: '选择青柠' }))
+  expect(useDraftStore.getState().templateId).toBe('qingning')
+  expect(screen.getByRole('dialog')).toBeTruthy()
+  fireEvent.click(screen.getByRole('button', { name: '选择墨序' }))
+  await act(async () => { fireEvent.click(screen.getByRole('button', { name: closeLabel })) })
+  expect(screen.queryByRole('dialog')).toBeNull()
+  expect(useDraftStore.getState().templateId).toBe('moxu')
+  expect(JSON.parse(fetchMock.mock.calls.at(-1)![1].body).template).toBe('moxu')
+  await act(async () => { fireEvent.click(screen.getByRole('button', { name: '撤销本次调整' })) })
+  expect(useDraftStore.getState().templateId).toBe('simple')
+  expect(JSON.parse(fetchMock.mock.calls.at(-1)![1].body).template).toBe('simple')
+  expect(screen.queryByRole('button', { name: '撤销本次调整' })).toBeNull()
+})
+
+it('keeps the selected template on save failure and retries without reopening the sheet', async () => {
+  const fetchMock = vi.fn().mockResolvedValueOnce({ ok: false, status: 500, text: async () => 'failed' }).mockResolvedValue({ ok: true })
+  vi.stubGlobal('fetch', fetchMock)
+  render(<MobilePreviewClient />)
+  fireEvent.click(screen.getByRole('button', { name: '样式' }))
+  fireEvent.click(screen.getByRole('button', { name: '选择青柠' }))
+  await act(async () => { fireEvent.click(screen.getByRole('button', { name: '关闭样式面板' })) })
+  expect(screen.queryByRole('dialog')).toBeNull()
+  expect(useDraftStore.getState().templateId).toBe('qingning')
+  expect(screen.getByRole('alert').textContent).toContain('当前效果已保留')
+  await act(async () => { fireEvent.click(screen.getByRole('button', { name: '重试保存' })) })
+  expect(screen.queryByRole('alert')).toBeNull()
+  expect(JSON.parse(fetchMock.mock.calls.at(-1)![1].body).template).toBe('qingning')
 })

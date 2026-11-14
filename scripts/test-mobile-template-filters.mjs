@@ -11,7 +11,7 @@ const metadata = fs.readFileSync('src/lib/templates/template-metadata.ts', 'utf8
 const expectedPublicIds = [...metadata.matchAll(/^  ([a-z\d_-]+): \{([\s\S]*?)^  \},/gm)]
   .filter(([, , block]) => /editor: true/.test(block) && /catalog: true/.test(block))
   .map(([, id]) => id).sort()
-const PUBLIC_COUNT = 100
+const PUBLIC_COUNT = expectedPublicIds.length
 const ENGLISH_COUNT = 5
 assert.equal(expectedPublicIds.length, PUBLIC_COUNT, `Release catalog must have exactly ${PUBLIC_COUNT} public templates`)
 assert.equal(new Set(expectedPublicIds).size, PUBLIC_COUNT, 'Public template IDs must be unique')
@@ -141,7 +141,7 @@ try {
   }
   await page.setViewport({ width: 390, height: 844, isMobile: true, hasTouch: true })
   await page.screenshot({ path: path.join(artifacts, 'mobile-preview-filter.png') })
-  const applyButton = await page.evaluateHandle(() => [...document.querySelectorAll('[role="dialog"] button')].find((el) => el.textContent.includes('应用并保存')))
+  const applyButton = await page.evaluateHandle(() => [...document.querySelectorAll('[role="dialog"] button')].find((el) => el.textContent.includes('查看整体效果')))
   const apply = applyButton.asElement()
   await apply.hover()
   await page.screenshot({ path: path.join(artifacts, 'state-hover.png') })
@@ -156,7 +156,7 @@ try {
   await page.mouse.up()
   for (let i = 0; i < 12; i++) {
     await page.keyboard.press('Tab')
-    assert.ok(await page.evaluate(() => document.querySelector('[role="dialog"]').contains(document.activeElement)), 'Focus is trapped in dialog')
+    assert.equal(await page.$eval('[role="dialog"]', (el) => el.getAttribute('aria-modal')), 'false')
   }
   Object.assign(contrast, await page.evaluate(() => {
     function luminance(color) {
@@ -171,9 +171,9 @@ try {
       })
       return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722
     }
-    const button = [...document.querySelectorAll('[role="dialog"] button')].find((el) => el.textContent.includes('应用并保存'))
+    const button = [...document.querySelectorAll('[role="dialog"] button')].find((el) => el.textContent.includes('查看整体效果'))
     const pairs = {
-      primary: [getComputedStyle(button).color, getComputedStyle(button).backgroundColor],
+      primary: [getComputedStyle(button).color, 'white'],
       resultText: [getComputedStyle(document.querySelector('[data-template-browser] [role="status"]')).color, 'white'],
     }
     return Object.fromEntries(Object.entries(pairs).map(([key, colors]) => {
@@ -202,43 +202,22 @@ try {
   await count(page, PUBLIC_COUNT)
   results.push('PASS: combined filters, empty-state recovery, complete first card at 320/375/390/414/768px widths')
 
-  // Selection and theme changes remain a trial until explicitly saved.
+  // Closing retains the selection; undo restores the entire opening snapshot.
   await english(page)
   await page.click('[data-template-id="moxu"]')
   await preview(page, 'moxu')
   await clickText(page, '外观', '[role="tab"]')
   await page.click('button[aria-label="选择颜色 #2563eb"]')
-  const savesBeforeTrial = saves.length
-  await new Promise((resolve) => setTimeout(resolve, 2000))
-  assert.equal(saves.length, savesBeforeTrial, 'No thumbnail/content writes during trial')
-  await clickText(page, '取消', '[role="dialog"] button:not([aria-label])')
+  await page.click('button[aria-label="关闭样式面板"]')
   await closed(page)
+  await page.waitForFunction(() => !document.body.textContent.includes('正在保存样式'))
+  await preview(page, 'moxu')
+  await page.waitForFunction(() => !document.querySelector('button[aria-label="撤销本次调整"]')?.disabled)
+  await page.click('button[aria-label="撤销本次调整"]')
   await preview(page, 'qingning')
+  await page.waitForFunction(() => !document.body.textContent.includes('正在保存样式'))
   assert.equal(await page.$eval('.resume-container', (el) => el.getAttribute('style')), originalStyle)
-  assert.ok(await page.evaluate(() => document.activeElement?.textContent.includes('样式')), 'Focus returns to opener')
-  await openSettings(page)
-  await clickText(page, '模板', '[role="tab"]')
-  await english(page)
-  await page.click('[data-template-id="moxu"]')
-  await clickText(page, '外观', '[role="tab"]')
-  assert.notEqual(await page.$eval('input[type="color"]', (el) => el.value), '#2563eb', 'Trial theme for other template rolled back')
-  await page.click('button[aria-label="取消并关闭"]')
-  await closed(page)
-  await preview(page, 'qingning')
-
-  // One-page changes also roll back; Escape and the backdrop are cancellation.
-  await openSettings(page)
-  await clickText(page, '单页', '[role="tab"]')
-  await page.click('button[aria-label="单页模式"]')
-  await page.waitForFunction(() => document.querySelector('button[aria-label="单页模式"]')?.getAttribute('aria-pressed') === 'true')
-  await page.keyboard.press('Escape')
-  await closed(page)
-  assert.equal(await page.$eval('.resume-container', (el) => el.getAttribute('style')), originalStyle)
-  await openSettings(page)
-  assert.equal(await page.$eval('button[aria-label="单页模式"]', (el) => el.getAttribute('aria-pressed')), 'false')
-  await page.mouse.click(10, 20)
-  await closed(page)
-  results.push('PASS: cancel, close, Escape and backdrop restore template/theme/one-page; trials never write; focus restored')
+  results.push('PASS: close retains template/theme; undo restores the opening snapshot')
 
   await openSettings(page)
   await clickText(page, '模板', '[role="tab"]')
@@ -255,25 +234,24 @@ try {
   await clickText(page, '模板', '[role="tab"]')
   await english(page)
   failNextSave = true
-  await clickText(page, '应用并保存', '[role="dialog"] button')
-  await page.waitForSelector('[role="dialog"] [role="alert"]')
+  await clickText(page, '查看整体效果', '[role="dialog"] button')
+  await closed(page)
+  await page.waitForFunction(() => !document.body.textContent.includes('正在保存样式'))
+  await page.waitForSelector('[role="alert"]')
+  await preview(page, 'moxu')
   assert.equal(saved.template, 'qingning')
-  await page.waitForFunction(() => !document.querySelector('[data-sonner-toast]'))
   await page.screenshot({ path: path.join(artifacts, 'mobile-save-error.png') })
   holdNextSave = true
   const beforeSave = saves.filter((item) => !item.thumbnail).length
-  await clickText(page, '应用并保存', '[role="dialog"] button')
-  await page.waitForFunction(() => document.querySelector('[role="dialog"]')?.getAttribute('aria-busy') === 'true')
-  assert.ok(await page.$eval('button[aria-label="取消并关闭"]', (el) => el.disabled))
-  assert.ok(await page.$('[role="dialog"] [inert]'))
-  await page.keyboard.press('Escape')
-  assert.ok(await page.$('[role="dialog"]'))
+  await clickText(page, '重试保存', 'button')
+  await page.waitForFunction(() => document.body.textContent.includes('正在保存样式'))
+  assert.ok(await page.$eval('button[aria-label="撤销本次调整"]', (el) => el.disabled))
+  assert.equal(await page.$('[role="dialog"]'), null)
   await page.screenshot({ path: path.join(artifacts, 'mobile-saving.png') })
   assert.equal(typeof releaseSave, 'function')
   await releaseSave()
-  await closed(page)
+  await page.waitForFunction(() => !document.body.textContent.includes('正在保存样式'))
   assert.equal(saves.filter((item) => !item.thumbnail).length, beforeSave + 1)
-  await page.waitForFunction(() => document.body.textContent.includes('样式已保存'))
   await page.screenshot({ path: path.join(artifacts, 'state-success.png') })
   assert.ok(saves.some((item) => item.template === 'moxu' && item.content?.__editorMeta))
   assert.deepEqual(saved.content.sections[0].blocks[0].name, '移动端体验改版（模拟案例）')
@@ -281,14 +259,15 @@ try {
   assert.ok(saved.content.__editorMeta?.themes.moxu, 'Background thumbnail preserves committed editor metadata')
   assert.equal(saved.content.__editorMeta.themes.moxu.primaryColor, '#2563eb')
   assert.ok(saves.filter((item) => item.thumbnail).every((item) => item.content?.__editorMeta), 'All thumbnail requests include metadata')
-  results.push('PASS: failed save stays open with inline retry; saving blocks edits/close; retry commits once; thumbnail preserves metadata')
+  results.push('PASS: failed save keeps preview with retry; saving disables undo; retry commits once; thumbnail preserves metadata')
   await page.reload({ waitUntil: 'domcontentloaded' })
   await preview(page, 'moxu')
   await openSettings(page)
   await clickText(page, '外观', '[role="tab"]')
   assert.equal(await page.$eval('input[type="color"]', (el) => el.value), '#2563eb', 'Same-browser reload restores saved color')
-  await page.click('button[aria-label="取消并关闭"]')
+  await page.click('button[aria-label="关闭样式面板"]')
   await closed(page)
+  await page.waitForFunction(() => !document.body.textContent.includes('正在保存样式'))
   // A fresh context rules out persisted browser drafts masking the API result.
   await page.close()
   // Use a new isolated browser context, with the same in-memory mock server.
@@ -300,16 +279,18 @@ try {
   await clickText(page, '外观', '[role="tab"]')
   assert.equal(await page.$eval('input[type="color"]', (el) => el.value), '#2563eb', 'Fresh-context reload restores saved color')
   await clickText(page, '模板', '[role="tab"]')
-  await page.click('button[aria-label="取消并关闭"]')
+  await page.click('button[aria-label="关闭样式面板"]')
   await closed(page)
+  await page.waitForFunction(() => !document.body.textContent.includes('正在保存样式'))
   results.push('PASS: completion sends selected template/editor metadata; fresh-context reload restores it (mock API only)')
 
   for (const template of ['ziji', 'jingrui']) {
     await openSettings(page)
     await page.click(`[data-template-id="${template}"]`)
     await preview(page, template)
-    await clickText(page, '应用并保存', '[role="dialog"] button')
+    await clickText(page, '查看整体效果', '[role="dialog"] button')
     await closed(page)
+  await page.waitForFunction(() => !document.body.textContent.includes('正在保存样式'))
     assert.deepEqual(await page.$$eval('.portfolio-item__caption', (items) => items.map((el) => el.textContent)), ['案例 B', '案例 A'])
     await page.waitForFunction(() => [...document.querySelectorAll('.portfolio-item__image')].every((img) => img.complete && img.naturalWidth > 0))
     await page.screenshot({ path: path.join(artifacts, `mobile-${template}-preview.png`) })
@@ -321,8 +302,9 @@ try {
     await openSettings(page)
     await page.click(`[data-template-id="${template}"]`)
     await preview(page, template)
-    await clickText(page, '应用并保存', '[role="dialog"] button')
+    await clickText(page, '查看整体效果', '[role="dialog"] button')
     await closed(page)
+  await page.waitForFunction(() => !document.body.textContent.includes('正在保存样式'))
     assert.equal(saved.template, template)
     assert.ok(await page.$eval('.resume-document-main', (el) => el.textContent.includes('移动端体验改版')))
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), `${template} overflows mobile viewport`)

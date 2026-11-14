@@ -81,7 +81,7 @@ describe('template browser', () => {
     const { rerender } = render(<PreviewSettingsSheet {...props} tab="template" />)
     expect(screen.queryByRole('button', { name: /重置/ })).toBeNull()
     expect(screen.getByText('已选模板：').textContent).toContain('青柠')
-    fireEvent.click(screen.getByRole('button', { name: '取消' }))
+    fireEvent.click(screen.getByRole('button', { name: '关闭样式面板' }))
     expect(props.onClose).toHaveBeenCalledOnce()
     rerender(<PreviewSettingsSheet {...props} tab="appearance" />)
     fireEvent.click(screen.getByRole('button', { name: '重置当前模板全部样式' }))
@@ -94,12 +94,12 @@ describe('template browser', () => {
     expect(screen.queryByRole('dialog')).toBeNull()
     rerender(<PreviewSettingsSheet {...props} open saveError="保存失败，请重试或取消。" />)
     expect(screen.getByRole('alert').textContent).toContain('保存失败')
-    fireEvent.click(screen.getByRole('button', { name: '应用并保存' }))
+    fireEvent.click(screen.getByRole('button', { name: '查看整体效果' }))
     expect(props.onConfirm).toHaveBeenCalledOnce()
     rerender(<PreviewSettingsSheet {...props} open confirming />)
     expect(screen.getByRole('dialog').getAttribute('aria-busy')).toBe('true')
     expect((screen.getByRole('button', { name: '保存中…' }) as HTMLButtonElement).disabled).toBe(true)
-    expect((screen.getByRole('button', { name: '取消并关闭' }) as HTMLButtonElement).disabled).toBe(true)
+    expect((screen.getByRole('button', { name: '关闭样式面板' }) as HTMLButtonElement).disabled).toBe(true)
     expect(document.querySelector('[inert]')).not.toBeNull()
   }, 15000)
   it('filters without selecting a template; preserves current indication and permits explicit selection', () => {
@@ -126,4 +126,14 @@ describe('template browser', () => {
         .checked,
     ).toBe(false)
   })
+})
+
+
+it('uses a fixed nonmodal panel and keeps template filtering available', () => {
+  render(<PreviewSettingsSheet open tab="template" templateId="simple" theme={DEFAULT_PREVIEW_THEME} defaultPrimaryColor="#111827" locksPrimaryColor={false}
+    onePageStatus="idle" onClose={vi.fn()} onConfirm={vi.fn()} confirming={false} onReset={vi.fn()} onTabChange={vi.fn()} onSelectTemplate={vi.fn()} onUpdateTheme={vi.fn()} />)
+  expect(screen.getByRole('dialog').getAttribute('aria-modal')).toBe('false')
+  expect(screen.queryByRole('button', { name: '展开调整面板' })).toBeNull()
+  fireEvent.change(screen.getByRole('combobox', { name: '模板分类' }), { target: { value: 'english' } })
+  expect((screen.getByRole('combobox', { name: '模板分类' }) as HTMLSelectElement).value).toBe('english')
 })

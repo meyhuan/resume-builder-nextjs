@@ -7,10 +7,8 @@
 
 import { TemplateBrowser } from '@/components/templates/template-browser'
 import { TemplateCover } from '@/components/templates/template-cover'
-import { templateLabels } from '@/lib/templates/template-taxonomy'
-import { useRef, type ReactElement, type ReactNode } from 'react'
+import { Children, useRef, useState, useEffect, type ReactElement, type ReactNode } from 'react'
 import { Check, LoaderCircle, RotateCcw, X } from 'lucide-react'
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Slider } from '@/components/ui/slider'
 import type { ThemeTokens } from '@/entities/theme/theme-tokens'
@@ -98,8 +96,8 @@ export function PreviewSettingsSheet(props: PreviewSettingsSheetProps): ReactEle
   return (
     <BottomSheet open={open} confirming={confirming} saveError={saveError} selectedName={TEMPLATES.find((item) => item.id === templateId)?.name ?? templateId} onClose={onClose} onConfirm={onConfirm}>
       <Tabs value={tab} onValueChange={(v): void => onTabChange(v as SettingsTab)} className="flex h-full min-h-0 flex-col">
-        <div className="shrink-0 bg-white px-4 pb-3 pt-3">
-          <TabsList className="grid h-12 w-full grid-cols-4 rounded-xl bg-slate-100 p-0.5 [&>button]:min-h-11">
+        <div className="shrink-0 bg-white px-3 py-1">
+          <TabsList className="grid h-11 w-full grid-cols-4 rounded-xl bg-slate-100 p-0.5 [&>button]:min-h-11">
           <TabsTrigger value="template" className="transition-colors">模板</TabsTrigger>
           <TabsTrigger value="appearance" className="transition-colors">外观</TabsTrigger>
           <TabsTrigger value="layout" className="transition-colors">版式</TabsTrigger>
@@ -107,13 +105,14 @@ export function PreviewSettingsSheet(props: PreviewSettingsSheetProps): ReactEle
           </TabsList>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-white px-4 pb-4" data-settings-scroll>
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-white px-3 pb-2" data-settings-scroll>
           <TabsContent value="template" className="mt-0">
             <TemplatePanel activeId={templateId} onSelect={onSelectTemplate} />
           </TabsContent>
 
           <TabsContent value="appearance" className="mt-0">
             <AppearancePanel
+              compact
               key={templateId}
               theme={theme}
               defaultPrimaryColor={defaultPrimaryColor}
@@ -123,14 +122,14 @@ export function PreviewSettingsSheet(props: PreviewSettingsSheetProps): ReactEle
           </TabsContent>
 
           <TabsContent value="layout" className="mt-0">
-            <LayoutPanel theme={theme} onUpdate={onUpdateTheme} />
+            <LayoutPanel compact theme={theme} onUpdate={onUpdateTheme} />
           </TabsContent>
 
           <TabsContent value="one-page" className="mt-0">
             <OnePagePanel theme={theme} status={onePageStatus} onUpdate={onUpdateTheme} />
           </TabsContent>
           {tab !== 'template' && (
-            <div className="mt-6 border-t border-slate-100 pt-3">
+            <div className="mt-3 border-t border-slate-100 pt-3">
               <button type="button" onClick={onReset} className="flex min-h-11 items-center gap-2 rounded-lg px-2 text-sm text-slate-600 focus-visible:outline-2 focus-visible:outline-violet-600">
                 <RotateCcw size={16} aria-hidden="true" />重置当前模板全部样式
               </button>
@@ -155,74 +154,41 @@ interface BottomSheetProps {
 
 function BottomSheet({ open, onClose, onConfirm, confirming, saveError, selectedName, children }: BottomSheetProps): ReactElement {
   const previousFocus = useRef<HTMLElement | null>(null)
-  const contentRef = useRef<HTMLDivElement>(null)
+  const contentRef = useRef<HTMLElement>(null)
+  useEffect(() => {
+    if (!open) return
+    previousFocus.current = document.activeElement instanceof HTMLElement ? document.activeElement : null
+    contentRef.current?.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]')?.focus({ preventScroll: true })
+    return () => { previousFocus.current?.focus({ preventScroll: true }) }
+  }, [open])
+  if (!open) return <></>
   return (
-    <Dialog open={open} onOpenChange={(next): void => { if (!next && !confirming) onClose() }}>
-      <DialogContent
-        ref={contentRef}
-        hideCloseButton
-        overlayClassName="bg-slate-900/20"
-        className="bottom-0 left-0 top-auto flex h-[88dvh] max-h-[900px] w-full max-w-none translate-x-0 translate-y-0 flex-col gap-0 rounded-b-none rounded-t-2xl border-0 bg-white p-0 shadow-2xl sm:left-1/2 sm:max-w-xl sm:-translate-x-1/2 [&_button]:focus-visible:outline-2 [&_button]:focus-visible:outline-violet-600 [&_button]:disabled:cursor-not-allowed [&_button]:disabled:opacity-50 motion-reduce:[&_*]:transition-none motion-reduce:[&_button]:transform-none"
-        onOpenAutoFocus={(event): void => {
-          event.preventDefault()
-          previousFocus.current = document.activeElement instanceof HTMLElement ? document.activeElement : null
-          contentRef.current?.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]')?.focus({ preventScroll: true })
-        }}
-        onCloseAutoFocus={(event): void => { event.preventDefault(); previousFocus.current?.focus({ preventScroll: true }) }}
-        onEscapeKeyDown={(event): void => { if (confirming) event.preventDefault() }}
-        onPointerDownOutside={(event): void => { if (confirming) event.preventDefault() }}
-        aria-busy={confirming}
-      >
-        <div className="flex shrink-0 items-center justify-between border-b border-slate-100 py-2 pl-4 pr-2">
-          <div>
-            <DialogTitle className="text-base text-slate-900">调整样式</DialogTitle>
-            <DialogDescription className="mt-1 text-xs text-slate-500">试选后保存，取消将恢复原样</DialogDescription>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={confirming}
-            className="flex h-11 w-11 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 disabled:opacity-50"
-            aria-label="取消并关闭"
-          >
-            <X size={18} />
-          </button>
-        </div>
-        <div className="min-h-0 flex-1 bg-white" inert={confirming || undefined}>{children}</div>
-        <div
-          className="shrink-0 border-t border-slate-100 bg-white px-4 py-2.5"
-          style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 10px)' }}
-        >
-          <p className="mb-2 text-xs text-slate-600">已选模板：<span className="font-medium text-slate-900">{selectedName}</span></p>
-          {saveError && <p role="alert" className="mb-2 text-sm leading-5 text-red-700">{saveError}</p>}
-          <div className="grid grid-cols-[1fr_1.5fr] gap-3">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={confirming}
-              className="flex h-11 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border border-slate-200 bg-white text-sm font-medium text-slate-600 hover:bg-slate-50 active:bg-slate-100"
-            >
-              取消
-            </button>
-            <button
-              type="button"
-              onClick={(): void => { void onConfirm() }}
-              disabled={confirming}
-              className="flex h-11 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl bg-violet-600 text-sm font-medium text-white shadow-sm hover:bg-violet-700 active:bg-violet-800"
-            >
-              {confirming ? <LoaderCircle size={17} className="animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <Check size={17} aria-hidden="true" />}
-              {confirming ? '保存中…' : '应用并保存'}
-            </button>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+    <section ref={contentRef} role="dialog" aria-modal="false" aria-label="调整样式" aria-busy={confirming}
+      data-settings-panel
+      onKeyDown={(event) => {
+        if (event.key === 'Escape' && !confirming) {
+          event.stopPropagation()
+          onClose()
+        }
+      }}
+      className="relative z-40 flex h-[40%] min-h-0 w-full shrink-0 flex-col rounded-t-xl border-t border-slate-200 bg-white shadow-xl [&_button]:focus-visible:outline-2 [&_button]:focus-visible:outline-violet-600 [&_button]:disabled:opacity-50"
+      style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+      <div className="flex shrink-0 items-center justify-between gap-1 border-b border-slate-100 px-3">
+        <span className="min-w-0 truncate text-xs text-slate-600">已选模板：<span className="font-medium text-slate-900">{selectedName}</span></span>
+        <button type="button" onClick={() => { void onConfirm() }} disabled={confirming} className="min-h-11 shrink-0 whitespace-nowrap rounded px-2 text-xs font-medium text-violet-700 hover:bg-violet-50 active:bg-violet-100">
+          {confirming ? <LoaderCircle size={16} className="animate-spin" aria-label="保存中…" /> : '查看整体效果'}
+        </button>
+        <button type="button" onClick={onClose} disabled={confirming} aria-label="关闭样式面板" className="flex h-11 w-11 shrink-0 items-center justify-center rounded text-slate-500 hover:bg-slate-100"><X size={18} /></button>
+      </div>
+      {saveError && <p role="alert" className="px-4 py-1 text-xs text-red-700">{saveError}</p>}
+      <div className="min-h-0 flex-1" inert={confirming || undefined}>{children}</div>
+    </section>
   )
 }
 
 function TemplatePanel({ activeId, onSelect }: { activeId: string; onSelect: (id: string) => void }): ReactElement {
   return (
-    <TemplateBrowser analyticsEntry="mobile_preview" templates={TEMPLATES} currentId={activeId} compact gridClassName="grid grid-cols-2 gap-3"
+    <TemplateBrowser analyticsEntry="mobile_preview" templates={TEMPLATES} currentId={activeId} compact gridClassName="grid grid-cols-3 gap-2"
       renderTemplate={(cfg, wordBadge) => {
         const id = cfg.id
         const isActive = id === activeId
@@ -234,26 +200,26 @@ function TemplatePanel({ activeId, onSelect }: { activeId: string; onSelect: (id
             type="button"
             onClick={(): void => onSelect(id)}
             className={cn(
-              'relative min-w-0 flex flex-col items-stretch gap-2 rounded-xl border bg-white p-2 text-left transition-colors',
+              'relative min-w-0 flex flex-col items-stretch gap-1 rounded-lg border bg-white p-1 text-left transition-colors',
               isActive ? 'border-violet-500 bg-violet-50/30' : 'border-slate-200',
             )}
           >
             {isActive ? (
-              <span className="absolute right-3 top-3 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-violet-600 text-white shadow-sm">
+              <span className="absolute right-1 top-1 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-violet-600 text-white shadow-sm">
                 <Check size={15} />
               </span>
             ) : null}
-            <div className="aspect-[210/297] bg-slate-100 rounded-lg overflow-hidden flex items-center justify-center">
+            <div className="h-24 bg-slate-100 rounded-lg overflow-hidden flex items-center justify-center">
               {cfg.preview ? (
-                <TemplateCover src={cfg.preview} alt={cfg.name} className="h-full w-full object-cover" />
+                <TemplateCover src={cfg.preview} alt={cfg.name} className="h-full w-full object-contain" />
               ) : (
                 <span className="text-xs text-slate-400">{cfg.name}</span>
               )}
             </div>
             <div className="px-0.5 pb-0.5">
-              <div className="text-sm font-semibold text-slate-900">{cfg.name}</div>
+              <div className="text-xs font-semibold text-slate-900">{cfg.name}</div>
               {wordBadge}
-              <div className="mt-0.5 text-xs leading-5 text-slate-500">{isActive ? '已选' : templateLabels(cfg).slice(0, 2).join(' · ')}</div>
+
             </div>
           </button>
         )
@@ -265,17 +231,19 @@ function AppearancePanel({
   theme,
   defaultPrimaryColor,
   locked,
+  compact,
   onUpdate,
 }: {
   readonly theme: ThemeTokens
   readonly defaultPrimaryColor: string
+  readonly compact: boolean
   readonly locked: boolean
   readonly onUpdate: ThemePatcher
 }): ReactElement {
   const activeFamilyId = resolveResumeFontFamilyId(theme.fontFamilyId, theme.fontFamily)
 
   return (
-    <div className="space-y-6">
+    <ControlGroups compact={compact} labels={['主题色', '字体']}>
       <Row label="主题色">
         <div className="space-y-3">
           {locked ? (
@@ -356,11 +324,11 @@ function AppearancePanel({
           })}
         </div>
       </Row>
-    </div>
+    </ControlGroups>
   )
 }
 
-function LayoutPanel({ theme, onUpdate }: { readonly theme: ThemeTokens; readonly onUpdate: ThemePatcher }): ReactElement {
+function LayoutPanel({ theme, onUpdate, compact }: { readonly compact: boolean; readonly theme: ThemeTokens; readonly onUpdate: ThemePatcher }): ReactElement {
   const densityPresets: ReadonlyArray<{
     id: string
     label: string
@@ -388,7 +356,7 @@ function LayoutPanel({ theme, onUpdate }: { readonly theme: ThemeTokens; readonl
   ]
 
   return (
-    <div className="space-y-6">
+    <ControlGroups compact={compact} labels={['内容密度', '字号', '行距', '模块间距', '页边距']}>
       <Row label="内容密度">
         <div className="grid grid-cols-3 gap-2">
           {densityPresets.map((preset) => (
@@ -456,7 +424,7 @@ function LayoutPanel({ theme, onUpdate }: { readonly theme: ThemeTokens; readonl
           />
         </Row>
       </div>
-    </div>
+    </ControlGroups>
   )
 }
 
@@ -541,4 +509,16 @@ function Row({ label, children }: { readonly label: string; readonly children: R
       {children}
     </div>
   )
+}
+
+
+function ControlGroups({ compact, labels, children }: { compact: boolean; labels: string[]; children: ReactNode }): ReactElement {
+  const [selected, setSelected] = useState(0)
+  return <div className="space-y-4">
+    {compact && <div className="flex gap-2 overflow-x-auto" aria-label="选择调整项">
+      {labels.map((label, index) => <button key={label} type="button" aria-pressed={selected === index} onClick={() => setSelected(index)}
+        className={cn('min-h-11 shrink-0 whitespace-nowrap rounded-lg px-3 text-xs', selected === index ? 'bg-violet-50 text-violet-700' : 'bg-slate-50 text-slate-600')}>{label}</button>)}
+    </div>}
+    {Children.toArray(children).map((child, index) => <div key={index} hidden={compact && selected !== index}>{child}</div>)}
+  </div>
 }

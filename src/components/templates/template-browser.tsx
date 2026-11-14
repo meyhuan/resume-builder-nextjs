@@ -89,7 +89,7 @@ export function TemplateBrowser<T extends TemplateMetadata>({
     className={compact ? '-my-2.5 min-h-11 px-1 text-violet-700 underline underline-offset-2' : 'shrink-0 py-1 text-violet-700 underline underline-offset-2'}>清除筛选</button>
 
   return (
-    <div className={`min-w-0 ${compactHeader ? 'space-y-2' : 'space-y-3'}`} data-template-browser="true">
+    <div className={`min-w-0 ${compact || compactHeader ? 'space-y-2' : 'space-y-3'}`} data-template-browser="true">
       {compact ? (
         <div className="flex min-w-0 gap-2">
           <select
@@ -109,6 +109,7 @@ export function TemplateBrowser<T extends TemplateMetadata>({
             className={`flex h-11 shrink-0 items-center gap-1.5 rounded-lg border px-3 text-sm focus-visible:outline-2 focus-visible:outline-violet-600 ${expanded || quickId === 'custom' ? 'border-violet-400 bg-violet-50 text-violet-700' : 'border-slate-200 text-slate-700'}`}>
             <SlidersHorizontal size={16} aria-hidden="true" />筛选{quickId === 'custom' && activeCount > 0 ? ` · ${activeCount}` : ''}
           </button>
+          {wordFilter}
         </div>
       ) : <div
         className={compactHeader ? 'flex flex-nowrap gap-2 overflow-x-auto px-0.5 py-0.5 [scrollbar-width:thin]' : 'flex flex-wrap gap-2'}
@@ -131,7 +132,6 @@ export function TemplateBrowser<T extends TemplateMetadata>({
         ))}
         {wordFilter}
       </div>}
-      {compact && wordFilter}
       {compactHeader && <div className="flex min-h-7 items-center justify-between gap-2 text-xs">
         <button type="button" aria-expanded={expanded} aria-controls={filtersId} onClick={(): void => setExpanded(!expanded)}
           className="flex shrink-0 items-center gap-1.5 rounded py-1 font-medium text-slate-700 hover:text-violet-700 focus-visible:outline-2 focus-visible:outline-violet-600">
