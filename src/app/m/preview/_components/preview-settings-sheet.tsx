@@ -7,7 +7,9 @@
 
 import { TemplateBrowser } from '@/components/templates/template-browser'
 import { TemplateCover } from '@/components/templates/template-cover'
-import { useRef, useState, useEffect, type ComponentProps, type ReactElement, type ReactNode } from 'react'
+import { useRef, useEffect, type ComponentProps, type ReactElement, type ReactNode } from 'react'
+import { Sheet } from 'react-modal-sheet'
+import { motion, useMotionValue, useMotionValueEvent, type MotionValue } from 'motion/react'
 import { Check, ChevronDown, ChevronUp, LoaderCircle, Palette, RotateCcw } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Slider } from '@/components/ui/slider'
@@ -154,10 +156,40 @@ interface BottomSheetProps {
   readonly children: ReactNode
 }
 
-function BottomSheet({ open, onClose, onConfirm, confirming, saveError, selectedName, children }: BottomSheetProps): ReactElement {
-  const [heightPercent, setHeightPercent] = useState(50)
-  const dragRef = useRef<{ y: number; height: number; parentHeight: number } | null>(null)
-  const clampHeight = (height: number): number => Math.max(30, Math.min(75, height))
+// Fractions are relative to the maximum sheet height (75dvh).
+// The library requires a closed point at 0; disableDismiss keeps dragging at 30% or above.
+const PANEL_SNAPS = [0, 30 / 75, 50 / 75, 1]
+const PANEL_PERCENTAGES = [0, 30, 50, 75]
+
+function BottomSheet(props: BottomSheetProps): ReactElement {
+  const visibleHeight = useMotionValue(0)
+  if (!props.open) return <></>
+  return <>
+    <motion.div aria-hidden="true" className="shrink-0" style={{ height: visibleHeight }} />
+    <Sheet isOpen onClose={props.onClose} initialSnap={2} snapPoints={PANEL_SNAPS}
+      detent="full" disableDismiss disableScrollLocking disableDrag={props.confirming} avoidKeyboard={false}
+      unstyled style={{ top: 'auto', height: '75dvh', zIndex: 40 }}>
+      <Sheet.Container>
+        <SettingsSheetBody {...props} visibleHeight={visibleHeight} />
+      </Sheet.Container>
+    </Sheet>
+  </>
+}
+
+function SettingsSheetBody({ open, onClose, onConfirm, confirming, saveError, selectedName, children, visibleHeight }: BottomSheetProps & { visibleHeight: MotionValue<number> }): ReactElement {
+  const { currentSnap = 2, height, snapTo, yInverted } = Sheet.useContext()
+  const measuredHeight = useRef(height)
+  useEffect(() => {
+    if (measuredHeight.current > 0 && height > 0 && measuredHeight.current !== height) {
+      snapTo(currentSnap)
+    }
+    measuredHeight.current = height
+  }, [height, currentSnap, snapTo])
+  // Reserve the actual visible sheet height in the preview's flex layout on every
+  // animation frame. The preview and controls retain independent scroll areas.
+  useMotionValueEvent(yInverted, 'change', value => visibleHeight.set(value))
+  useEffect(() => { visibleHeight.set(yInverted.get()) }, [visibleHeight, yInverted])
+  const heightPercent = PANEL_PERCENTAGES[currentSnap]
   const previousFocus = useRef<HTMLElement | null>(null)
   const contentRef = useRef<HTMLElement>(null)
   useEffect(() => {
@@ -169,7 +201,7 @@ function BottomSheet({ open, onClose, onConfirm, confirming, saveError, selected
   if (!open) return <></>
   const isExpanded = heightPercent > 50
   return (
-    <section ref={contentRef} role="dialog" aria-modal="false" aria-label="调整样式" aria-busy={confirming}
+    <motion.section ref={contentRef} role="dialog" aria-modal="false" aria-label="调整样式" aria-busy={confirming}
       data-settings-panel
       onKeyDown={(event) => {
         if (event.key === 'Escape' && !confirming) {
@@ -178,39 +210,22 @@ function BottomSheet({ open, onClose, onConfirm, confirming, saveError, selected
         }
       }}
       className="relative z-40 flex min-h-0 w-full shrink-0 flex-col rounded-t-2xl border-t border-slate-200/80 bg-white shadow-[0_-8px_30px_rgba(15,23,42,0.12)] [&_button]:focus-visible:outline-2 [&_button]:focus-visible:outline-violet-600 [&_button]:disabled:opacity-50"
-      style={{ height: `${heightPercent}%`, paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
-      <div className="relative flex shrink-0 items-center justify-between gap-2 border-b border-slate-100 px-4 pt-3 pb-1">
+      style={{ height: yInverted, overflow: 'clip', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+      <Sheet.Header className="relative flex shrink-0 touch-none items-center justify-between gap-2 border-b border-slate-100 px-4 pt-3 pb-1">
         <span aria-hidden="true" className="pointer-events-none absolute left-1/2 top-2 h-1 w-9 -translate-x-1/2 rounded-full bg-slate-300/90" />
         <div role="slider" tabIndex={confirming ? -1 : 0} aria-label="调整面板高度" aria-orientation="vertical"
           aria-valuemin={30} aria-valuemax={75} aria-valuenow={Math.round(heightPercent)} aria-valuetext={`${Math.round(heightPercent)}%`} aria-disabled={confirming}
           className="flex min-h-11 min-w-0 flex-1 touch-none cursor-ns-resize select-none items-center gap-2 rounded-lg text-xs text-slate-500 focus-visible:outline-2 focus-visible:outline-violet-600"
-          onPointerDown={(event) => {
-            if (confirming || (event.pointerType === 'mouse' && event.button !== 0)) return
-            const parentHeight = contentRef.current?.parentElement?.clientHeight
-            if (!parentHeight) return
-            dragRef.current = { y: event.clientY, height: heightPercent, parentHeight }
-            event.currentTarget.setPointerCapture(event.pointerId)
-          }}
-          onPointerMove={(event) => {
-            const drag = dragRef.current
-            if (drag && !confirming) setHeightPercent(clampHeight(drag.height + (drag.y - event.clientY) / drag.parentHeight * 100))
-          }}
-          onPointerUp={(event) => {
-            dragRef.current = null
-            if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId)
-          }}
-          onPointerCancel={() => { dragRef.current = null }}
-          onLostPointerCapture={() => { dragRef.current = null }}
           onKeyDown={(event) => {
             if (confirming) return
-            const next = event.key === 'ArrowUp' ? heightPercent + 5 : event.key === 'ArrowDown' ? heightPercent - 5 : event.key === 'Home' ? 30 : event.key === 'End' ? 75 : null
-            if (next !== null) { event.preventDefault(); setHeightPercent(clampHeight(next)) }
+            const next = event.key === 'ArrowUp' ? Math.min(3, currentSnap + 1) : event.key === 'ArrowDown' ? Math.max(1, currentSnap - 1) : event.key === 'Home' ? 1 : event.key === 'End' ? 3 : null
+            if (next !== null) { event.preventDefault(); snapTo(next) }
           }}>
           <span className="text-[15px] font-semibold tracking-tight text-slate-900">调整样式</span>
           <span className="sr-only">上下拖动调整高度</span>
         </div>
-        <div className="flex shrink-0 items-center gap-1.5">
-          <button type="button" disabled={confirming} onClick={() => setHeightPercent(isExpanded ? 30 : 75)}
+        <div className="flex shrink-0 items-center gap-1.5" onPointerDown={event => event.stopPropagation()}>
+          <button type="button" disabled={confirming} onClick={() => snapTo(isExpanded ? 1 : 3)}
             aria-label={isExpanded ? '收起调整面板' : '展开调整面板'} aria-expanded={isExpanded}
             className="group inline-flex min-h-11 shrink-0 items-center justify-center rounded-full">
             <span className="inline-flex h-8 items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2.5 text-xs font-medium text-slate-600 transition-colors group-hover:bg-slate-100 group-active:scale-95">
@@ -226,10 +241,10 @@ function BottomSheet({ open, onClose, onConfirm, confirming, saveError, selected
             </span>
           </button>
         </div>
-      </div>
+      </Sheet.Header>
       {saveError && <p role="alert" className="bg-red-50 px-4 py-1.5 text-xs text-red-700">{saveError}</p>}
       <div className="min-h-0 flex-1" inert={confirming || undefined}>{children}</div>
-    </section>
+    </motion.section>
   )
 }
 

@@ -15,7 +15,7 @@ const PUBLIC_COUNT = expectedPublicIds.length
 const ENGLISH_COUNT = 5
 assert.equal(expectedPublicIds.length, PUBLIC_COUNT, `Release catalog must have exactly ${PUBLIC_COUNT} public templates`)
 assert.equal(new Set(expectedPublicIds).size, PUBLIC_COUNT, 'Public template IDs must be unique')
-const artifacts = path.resolve('test-artifacts/mobile-settings-panel')
+const artifacts = path.resolve('test-artifacts/mobile-modal-sheet')
 fs.mkdirSync(artifacts, { recursive: true })
 const id = 'local-template-filter-fixture'
 const image = (label, color) => 'data:image/svg+xml;base64,' + Buffer.from(
@@ -98,6 +98,31 @@ async function preview(page, template) {
 async function closed(page) {
   await page.waitForFunction(() => !document.querySelector('[role="dialog"]'))
 }
+async function waitSnap(page, percentage) {
+  await page.waitForFunction(value => {
+    const panel = document.querySelector('[data-settings-panel]')?.getBoundingClientRect()
+    const handle = document.querySelector('[aria-label="调整面板高度"]')
+    const stage = document.querySelector('[data-mobile-preview-stage]')?.getBoundingClientRect()
+    return panel && stage && Number(handle?.getAttribute('aria-valuenow')) === value &&
+      Math.abs(panel.height / innerHeight * 100 - value) < 0.3 && Math.abs(stage.bottom - panel.top) < 2
+  }, {}, percentage)
+}
+async function dragTo(page, percentage) {
+  const touch = await page.createCDPSession()
+  const geometry = await page.$eval('[data-settings-panel]', el => ({ top: el.getBoundingClientRect().top, viewport: innerHeight }))
+  const x = 70
+  const start = geometry.top + 30
+  const end = geometry.viewport * (1 - percentage / 100) + 30
+  await touch.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y: start }] })
+  for (let i = 1; i <= 15; i++) {
+    await touch.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x, y: start + (end - start) * i / 15 }] })
+    await new Promise(resolve => setTimeout(resolve, 20))
+  }
+  await new Promise(resolve => setTimeout(resolve, 180))
+  await touch.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+  await touch.detach()
+  await waitSnap(page, percentage)
+}
 try {
   const page = await newPage()
   await page.goto(`${baseUrl}/m/preview?id=${id}`, { waitUntil: 'domcontentloaded', timeout: 120000 })
@@ -105,6 +130,7 @@ try {
   await page.addStyleTag({ content: 'nextjs-portal { display: none !important; }' })
   await clickText(page, '样式')
   await page.waitForSelector('[data-settings-panel]')
+  await waitSnap(page, 50)
   const touch = await page.createCDPSession()
   await touch.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: 180, y: 400 }] })
   for (const y of [360, 300, 240, 180, 120]) {
@@ -136,7 +162,10 @@ try {
     await page.screenshot({ path: path.join(artifacts, `preview-bottom-${width}.png`) })
     await page.$eval('[data-mobile-preview-stage]', el => { el.scrollTop = 0 })
   }
-  await page.setViewport({ width: 375, height: 844, isMobile: true, hasTouch: true })
+  for (const height of [740, 844]) {
+    await page.setViewport({ width: 375, height, isMobile: true, hasTouch: true })
+    await waitSnap(page, 50)
+  }
   await page.click('[data-template-id="simple"]')
   await preview(page, 'simple')
   assert.ok(await page.$('[data-settings-panel]'))
@@ -156,22 +185,28 @@ try {
   await page.waitForFunction(() => [...document.querySelectorAll('[data-layout-controls] output')].some(el => el.textContent === '16px'))
   await page.$eval('[data-mobile-preview-stage]', el => { el.scrollTop = 0 })
   await page.screenshot({ path: path.join(artifacts, 'layout-live.png') })
-  const handle = await page.$('[aria-label="调整面板高度"]')
-  const rect = await handle.boundingBox()
-  await page.mouse.move(rect.x + 20, rect.y + 20)
-  await page.mouse.down()
-  await page.mouse.move(rect.x + 20, rect.y - 80, { steps: 8 })
-  await page.mouse.up()
-  const dragged = await handle.evaluate(el => Number(el.getAttribute('aria-valuenow')))
-  assert.ok(dragged > 55 && dragged < 70, 'Dragging continuously adjusts the height')
-  await page.click('[aria-label="收起调整面板"]')
-  assert.equal(await handle.evaluate(el => el.getAttribute('aria-valuenow')), '30')
+  // Exercise real touch gestures, with screenshots and reachable last content at all stops.
+  for (const percentage of [75, 50, 30]) {
+    await dragTo(page, percentage)
+    await page.$eval('[data-mobile-preview-stage]', el => { el.scrollTop = el.scrollHeight })
+    assert.ok(await page.$eval('[data-mobile-preview-stage]', el => Math.abs(el.scrollHeight - el.clientHeight - el.scrollTop) < 2))
+    await page.screenshot({ path: path.join(artifacts, `bottom-${percentage}.png`) })
+    await page.$eval('[data-mobile-preview-stage]', el => { el.scrollTop = 0 })
+    await page.screenshot({ path: path.join(artifacts, `snap-${percentage}.png`) })
+  }
+  // Panel scrolling must not change its snap point.
+  await clickText(page, '模板', '[role="tab"]')
+  await page.$eval('[data-settings-scroll]', el => { el.scrollTop = el.scrollHeight })
+  assert.ok(await page.$eval('[data-settings-scroll]', el => el.scrollTop > 0))
+  await waitSnap(page, 30)
   await page.click('[aria-label="展开调整面板"]')
-  assert.equal(await handle.evaluate(el => el.getAttribute('aria-valuenow')), '75')
-  await page.$eval('[data-mobile-preview-stage]', el => { el.scrollTop = el.scrollHeight })
-  assert.ok(await page.$eval('[data-mobile-preview-stage]', el => Math.abs(el.scrollHeight - el.clientHeight - el.scrollTop) < 2))
-  await page.$eval('[data-mobile-preview-stage]', el => { el.scrollTop = 0 })
-  await page.screenshot({ path: path.join(artifacts, 'resized-layout.png') })
+  await waitSnap(page, 75)
+  await page.click('[aria-label="收起调整面板"]')
+  await waitSnap(page, 30)
+  const handle = await page.$('[aria-label="调整面板高度"]')
+  await handle.focus()
+  await page.keyboard.press('ArrowUp')
+  await waitSnap(page, 50)
   await clickText(page, '完成')
   await closed(page)
   await page.waitForFunction(() => !document.querySelector('[aria-label="撤销本次调整"]')?.disabled)
@@ -181,6 +216,7 @@ try {
   await page.waitForFunction(() => !document.body.textContent.includes('正在保存样式'))
   assert.equal(saved.template, 'qingning')
   await clickText(page, '样式')
+  await waitSnap(page, 50)
   await clickText(page, '模板', '[role="tab"]')
   await page.click('[data-template-id="simple"]')
   await clickText(page, '完成')
@@ -191,7 +227,7 @@ try {
   assert.ok(Date.now() - noticeStarted >= 2500, 'Success notice remains visible for about three seconds')
   assert.equal(saved.template, 'simple', 'Hiding the notice preserves the selected template')
   assert.deepEqual(errors, [])
-  console.log('PASS: 4 widths; no overlap; default 50%; continuous drag; expand/collapse; preview scrolls to bottom; live template/color; all layout controls visible; close/save/undo')
+  console.log('PASS: 4 widths; no overlap; default 50%; touch snapping at 30/50/75; expand/collapse; preview scrolls to bottom; live template/color; all layout controls visible; close/save/undo')
 } finally {
   await browser.close()
 }

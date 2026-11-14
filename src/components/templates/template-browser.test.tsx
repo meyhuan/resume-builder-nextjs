@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { TemplateBrowser } from './template-browser'
 import { templateCatalog } from '@/lib/templates/template-catalog'
 import { filterTemplates } from '@/lib/templates/template-taxonomy'
@@ -9,6 +9,7 @@ import type { ThemeTokens } from '@/entities/theme/theme-tokens'
 afterEach(() => {
   cleanup()
   vi.unstubAllGlobals()
+  vi.restoreAllMocks()
 })
 
 beforeEach(() => {
@@ -19,7 +20,27 @@ beforeEach(() => {
     takeRecords(): IntersectionObserverEntry[] { return [] }
   }
   vi.stubGlobal('IntersectionObserver', Observer)
-  vi.stubGlobal('ResizeObserver', Observer)
+  // JSDOM has no layout; provide the sheet's measured bounds while keeping
+  // React Modal Sheet and its animation/snap logic real.
+  vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+    const height = this.classList.contains('react-modal-sheet-container') ? 633 : 44
+    return { x: 0, y: 0, top: 0, left: 0, width: 375, height, right: 375, bottom: height, toJSON: () => ({}) }
+  })
+  vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockImplementation(function (this: HTMLElement) {
+    return this.classList.contains('react-modal-sheet-container') ? 633 : 44
+  })
+  vi.stubGlobal('ResizeObserver', class {
+    constructor(private callback: ResizeObserverCallback) {}
+    observe(target: Element): void {
+      if (target.classList.contains('react-modal-sheet-container')) {
+        queueMicrotask(() => {
+          if (target.isConnected) this.callback([{ target } as ResizeObserverEntry], this as unknown as ResizeObserver)
+        })
+      }
+    }
+    disconnect(): void {}
+    unobserve(): void {}
+  })
 })
 const englishCount = filterTemplates(templateCatalog, { languages: ['en'] }).length
 function setup() {
@@ -47,13 +68,14 @@ describe('template browser', () => {
     fireEvent.click(screen.getByRole('button', { name: '清除筛选' }))
     expect(screen.getByRole('status').textContent).toContain(`${templateCatalog.length} 款`)
   })
-  it('mobile preview filters without updating the theme or selecting until a card is clicked', () => {
+  it('mobile preview filters without updating the theme or selecting until a card is clicked', async () => {
     const select = vi.fn()
     const updateTheme = vi.fn()
     render(<PreviewSettingsSheet open tab="template" templateId="qingning"
       theme={{} as ThemeTokens} defaultPrimaryColor="#c6e1d2" locksPrimaryColor={false}
       onePageStatus="idle" onClose={vi.fn()} onConfirm={vi.fn()} confirming={false}
       onReset={vi.fn()} onTabChange={vi.fn()} onSelectTemplate={select} onUpdateTheme={updateTheme} />)
+    await screen.findByRole('dialog')
     expect(screen.getByRole('status').textContent).toContain(`${templateCatalog.length} 款`)
     fireEvent.change(screen.getByRole('combobox', { name: '模板分类' }), { target: { value: 'english' } })
     expect(screen.getByRole('status').textContent).toContain(`${englishCount} 款`)
@@ -76,10 +98,11 @@ describe('template browser', () => {
     expect(toggle.getAttribute('aria-expanded')).toBe('false')
     expect(screen.getByRole('status').textContent).toContain(`${templateCatalog.length} 款`)
   })
-  it('hides reset on template tab; names its full scope on appearance tab', () => {
+  it('hides reset on template tab; names its full scope on appearance tab', async () => {
     const props = { open: true, templateId: 'qingning', theme: DEFAULT_PREVIEW_THEME, defaultPrimaryColor: '#c6e1d2', locksPrimaryColor: false,
       onePageStatus: 'idle' as const, onClose: vi.fn(), onConfirm: vi.fn(), confirming: false, onReset: vi.fn(), onTabChange: vi.fn(), onSelectTemplate: vi.fn(), onUpdateTheme: vi.fn() }
     const { rerender } = render(<PreviewSettingsSheet {...props} tab="template" />)
+    await screen.findByRole('dialog')
     expect(screen.queryByRole('button', { name: /重置/ })).toBeNull()
     expect(screen.getByText('已选模板：').textContent).toContain('青柠')
     fireEvent.click(screen.getByRole('button', { name: '完成' }))
@@ -88,12 +111,13 @@ describe('template browser', () => {
     fireEvent.click(screen.getByRole('button', { name: '重置当前模板全部样式' }))
     expect(props.onReset).toHaveBeenCalledOnce()
   })
-  it('unmounts closed dialog and exposes recoverable save errors; locks controls while saving', () => {
+  it('unmounts closed dialog and exposes recoverable save errors; locks controls while saving', async () => {
     const props = { tab: 'template' as const, templateId: 'qingning', theme: DEFAULT_PREVIEW_THEME, defaultPrimaryColor: '#c6e1d2', locksPrimaryColor: false,
       onePageStatus: 'idle' as const, onClose: vi.fn(), onConfirm: vi.fn(), confirming: false, onReset: vi.fn(), onTabChange: vi.fn(), onSelectTemplate: vi.fn(), onUpdateTheme: vi.fn() }
     const { rerender } = render(<PreviewSettingsSheet {...props} open={false} />)
     expect(screen.queryByRole('dialog')).toBeNull()
     rerender(<PreviewSettingsSheet {...props} open saveError="保存失败，请重试或取消。" />)
+    await screen.findByRole('dialog')
     expect(screen.getByRole('alert').textContent).toContain('保存失败')
     fireEvent.click(screen.getByRole('button', { name: '完成' }))
     expect(props.onConfirm).toHaveBeenCalledOnce()
@@ -130,26 +154,28 @@ describe('template browser', () => {
 })
 
 
-it('resizes the nonmodal panel and keeps template filtering available', () => {
+it('resizes the nonmodal panel and keeps template filtering available', async () => {
   render(<PreviewSettingsSheet open tab="template" templateId="simple" theme={DEFAULT_PREVIEW_THEME} defaultPrimaryColor="#111827" locksPrimaryColor={false}
     onePageStatus="idle" onClose={vi.fn()} onConfirm={vi.fn()} confirming={false} onReset={vi.fn()} onTabChange={vi.fn()} onSelectTemplate={vi.fn()} onUpdateTheme={vi.fn()} />)
+  await screen.findByRole('dialog')
   expect(screen.getByRole('dialog').getAttribute('aria-modal')).toBe('false')
   expect(screen.getByRole('slider', { name: '调整面板高度' }).getAttribute('aria-valuenow')).toBe('50')
   fireEvent.click(screen.getByRole('button', { name: '展开调整面板' }))
-  expect(screen.getByRole('slider', { name: '调整面板高度' }).getAttribute('aria-valuenow')).toBe('75')
+  await waitFor(() => expect(screen.getByRole('slider', { name: '调整面板高度' }).getAttribute('aria-valuenow')).toBe('75'))
   fireEvent.click(screen.getByRole('button', { name: '收起调整面板' }))
   const handle = screen.getByRole('slider', { name: '调整面板高度' })
-  expect(handle.getAttribute('aria-valuenow')).toBe('30')
+  await waitFor(() => expect(handle.getAttribute('aria-valuenow')).toBe('30'))
   fireEvent.keyDown(handle, { key: 'ArrowUp' })
-  expect(handle.getAttribute('aria-valuenow')).toBe('35')
+  await waitFor(() => expect(handle.getAttribute('aria-valuenow')).toBe('50'))
   fireEvent.change(screen.getByRole('combobox', { name: '模板分类' }), { target: { value: 'english' } })
   expect((screen.getByRole('combobox', { name: '模板分类' }) as HTMLSelectElement).value).toBe('english')
 })
 
 
-it('shows every layout slider without category switching', () => {
+it('shows every layout slider without category switching', async () => {
   render(<PreviewSettingsSheet open tab="layout" templateId="simple" theme={DEFAULT_PREVIEW_THEME} defaultPrimaryColor="#111827" locksPrimaryColor={false}
     onePageStatus="idle" onClose={vi.fn()} onConfirm={vi.fn()} confirming={false} onReset={vi.fn()} onTabChange={vi.fn()} onSelectTemplate={vi.fn()} onUpdateTheme={vi.fn()} />)
+  await screen.findByRole('dialog')
   expect(screen.getAllByRole('slider')).toHaveLength(6)
   expect(screen.queryByRole('button', { name: '字号' })).toBeNull()
   expect(screen.getByText('左右边距')).toBeTruthy()
