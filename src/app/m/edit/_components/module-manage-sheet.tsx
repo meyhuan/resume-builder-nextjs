@@ -35,7 +35,7 @@ import {
   Trash2,
 } from 'lucide-react'
 import { toast } from 'sonner'
-import { BottomSheet } from '@/components/ui/bottom-sheet'
+import { ResizableMobileSheet } from '@/components/ui/resizable-mobile-sheet'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import type { Section } from '@/entities/resume/section'
 import { createEmptyPortfolio } from '@/entities/resume/portfolio'
@@ -70,6 +70,7 @@ export function ModuleManageSheet({ open, onClose }: ModuleManageSheetProps): Re
   const portfolioImageCount: number = draft?.portfolio?.images.length ?? 0
 
   const [pendingRemove, setPendingRemove] = useState<Section | null>(null)
+  const [sorting, setSorting] = useState(false)
   
   // Custom auto-scroll refs
   const scrollContainerRef = useRef<HTMLDivElement | null>(null)
@@ -116,6 +117,7 @@ export function ModuleManageSheet({ open, onClose }: ModuleManageSheetProps): Re
     }
     
     isDraggingRef.current = true
+    setSorting(true)
     
     // Capture initial pointer position
     const activatorEvent = event.activatorEvent
@@ -202,6 +204,7 @@ export function ModuleManageSheet({ open, onClose }: ModuleManageSheetProps): Re
 
   const stopAutoScroll = useCallback((): void => {
     isDraggingRef.current = false
+    setSorting(false)
     edgeDwellStartRef.current = 0
     lastPointerYRef.current = 0
     if (scrollAnimationRef.current) {
@@ -301,41 +304,18 @@ export function ModuleManageSheet({ open, onClose }: ModuleManageSheetProps): Re
 
   return (
     <>
-      <BottomSheet
+      <ResizableMobileSheet
         open={open}
         onClose={onClose}
         title="模块管理"
-        height="75dvh"
-        contentClassName="pb-safe"
+        scrollRef={scrollContainerRef}
+        sorting={sorting}
       >
         <p className="mb-3 text-[12px] text-slate-400">
-          控制基础展示项；按住 ≡ 拖动排序，点击红色按钮移除模块。
+          按住 ≡ 拖动排序，点击红色按钮移除模块。
         </p>
 
-        <div className="mb-3 flex flex-col gap-2">
-          <VisibilityControlRow
-            icon={<ImageIcon size={17} />}
-            label="证件照"
-            description="控制简历顶部头像是否显示"
-            visible={showAvatar}
-            onToggle={handleToggleAvatar}
-          />
-          <VisibilityControlRow
-            icon={<Target size={17} />}
-            label="求职意向"
-            description="控制求职意向模块是否显示"
-            visible={showJobIntention}
-            onToggle={handleToggleJobIntention}
-          />
-          <VisibilityControlRow
-            icon={<Target size={17} />}
-            label="头部求职意向"
-            description="只控制简历头部的岗位文字"
-            visible={showHeaderJobIntention}
-            disabled={!showJobIntention}
-            onToggle={handleToggleHeaderJobIntention}
-          />
-        </div>
+
 
         {sections.length === 0 ? (
           <div className="py-10 text-center text-[13px] text-slate-400">
@@ -352,14 +332,7 @@ export function ModuleManageSheet({ open, onClose }: ModuleManageSheetProps): Re
             autoScroll={false}
           >
             <SortableContext items={items} strategy={verticalListSortingStrategy}>
-              <div 
-                className="flex flex-col gap-2"
-                ref={(el) => {
-                  if (el?.parentElement) {
-                    scrollContainerRef.current = el.parentElement as HTMLDivElement
-                  }
-                }}
-              >
+              <div className="flex flex-col gap-2">
                 {sections.map((section) => (
                   <SortableManageRow
                     key={section.id}
@@ -435,7 +408,32 @@ export function ModuleManageSheet({ open, onClose }: ModuleManageSheetProps): Re
             </button>
           )}
         </div>
-      </BottomSheet>
+        <div className="mt-5 flex flex-col gap-2">
+          <div className="text-[12px] font-semibold text-slate-500">基础显示设置</div>
+          <VisibilityControlRow
+            icon={<ImageIcon size={17} />}
+            label="证件照"
+            description="控制简历顶部头像是否显示"
+            visible={showAvatar}
+            onToggle={handleToggleAvatar}
+          />
+          <VisibilityControlRow
+            icon={<Target size={17} />}
+            label="求职意向"
+            description="控制求职意向模块是否显示"
+            visible={showJobIntention}
+            onToggle={handleToggleJobIntention}
+          />
+          <VisibilityControlRow
+            icon={<Target size={17} />}
+            label="头部求职意向"
+            description="只控制简历头部的岗位文字"
+            visible={showHeaderJobIntention}
+            disabled={!showJobIntention}
+            onToggle={handleToggleHeaderJobIntention}
+          />
+        </div>
+      </ResizableMobileSheet>
 
       <ConfirmDialog
         open={!!pendingRemove}

@@ -105,7 +105,10 @@ async function waitSnap(page, percentage) {
     const stage = document.querySelector('[data-mobile-preview-stage]')?.getBoundingClientRect()
     return panel && stage && Number(handle?.getAttribute('aria-valuenow')) === value &&
       Math.abs(panel.height / innerHeight * 100 - value) < 0.3 && Math.abs(stage.bottom - panel.top) < 2
-  }, {}, percentage)
+  }, {}, percentage).catch(async error => {
+    console.log('Failed snap', percentage, await page.$eval('[data-settings-panel]', el => ({height: el.getBoundingClientRect().height, viewport: innerHeight, snap: document.querySelector('[aria-label="调整面板高度"]').getAttribute('aria-valuenow'), stage: document.querySelector('[data-mobile-preview-stage]').getBoundingClientRect().bottom})))
+    throw error
+  })
 }
 async function dragTo(page, percentage) {
   const touch = await page.createCDPSession()
@@ -122,6 +125,24 @@ async function dragTo(page, percentage) {
   await touch.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
   await touch.detach()
   await waitSnap(page, percentage)
+}
+async function swipeContent(page, delta) {
+  const { top, bottom } = await page.$eval('.react-modal-sheet-content-scroller', el => {
+    const rect = el.getBoundingClientRect()
+    return { top: rect.top, bottom: rect.bottom }
+  })
+  // The content's left padding is outside sliders and clickable cards.
+  const x = 8
+  const start = delta < 0 ? bottom - 20 : top + 12
+  const session = await page.createCDPSession()
+  await session.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y: start }] })
+  for (let i = 1; i <= 20; i++) {
+    await session.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x, y: start + delta * i / 20 }] })
+    await new Promise(resolve => setTimeout(resolve, 20))
+  }
+  await new Promise(resolve => setTimeout(resolve, 180))
+  await session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+  await session.detach()
 }
 try {
   const page = await newPage()
@@ -194,13 +215,57 @@ try {
     await page.$eval('[data-mobile-preview-stage]', el => { el.scrollTop = 0 })
     await page.screenshot({ path: path.join(artifacts, `snap-${percentage}.png`) })
   }
-  // Panel scrolling must not change its snap point.
-  await clickText(page, '模板', '[role="tab"]')
-  await page.$eval('[data-settings-scroll]', el => { el.scrollTop = el.scrollHeight })
-  assert.ok(await page.$eval('[data-settings-scroll]', el => el.scrollTop > 0))
-  await waitSnap(page, 30)
+  // All tabs expand before scrolling, and collapse when pulled from the top.
+  for (const [tab, name] of [['模板', 'template'], ['外观', 'appearance'], ['版式', 'layout'], ['单页', 'one-page']]) {
+    await clickText(page, tab, '[role="tab"]')
+    await waitSnap(page, 30)
+    assert.equal(await page.$eval('.react-modal-sheet-content-scroller', el => el.scrollTop), 0)
+    await swipeContent(page, -169)
+    await waitSnap(page, 50)
+    if (name === 'layout' || name === 'one-page') {
+      const thumb = await page.$('[role="tabpanel"][data-state="active"] [role="slider"]')
+      const box = await thumb.boundingBox()
+      const before = await thumb.evaluate(el => el.getAttribute('aria-valuenow'))
+      const session = await page.createCDPSession()
+      const x = box.x + box.width / 2
+      const y = box.y + box.height / 2
+      await session.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] })
+      for (let i = 1; i <= 8; i++) {
+        await session.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: x + i * 5, y: y + i * 3 }] })
+      }
+      await session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+      await session.detach()
+      assert.notEqual(await thumb.evaluate(el => el.getAttribute('aria-valuenow')), before, `${tab} slider accepts touch`)
+      await waitSnap(page, 50)
+    }
+    await page.screenshot({ path: path.join(artifacts, `tab-${name}-50.png`) })
+    await swipeContent(page, -211)
+    await waitSnap(page, 75)
+    await page.screenshot({ path: path.join(artifacts, `tab-${name}-75.png`) })
+    const overflow = await page.$eval('.react-modal-sheet-content-scroller', el => el.scrollHeight > el.clientHeight + 2)
+    if (overflow) {
+      await swipeContent(page, -160)
+      await page.waitForFunction(() => document.querySelector('.react-modal-sheet-content-scroller').scrollTop > 20)
+      await waitSnap(page, 75)
+      await page.$eval('.react-modal-sheet-content-scroller', el => { el.scrollTop = el.scrollHeight })
+      await swipeContent(page, -80)
+      await waitSnap(page, 75)
+    }
+    await page.$eval('.react-modal-sheet-content-scroller', el => { el.scrollTop = 0 })
+    await new Promise(resolve => setTimeout(resolve, 100))
+    await swipeContent(page, 211)
+    await waitSnap(page, 50)
+    await swipeContent(page, 169)
+    await waitSnap(page, 30)
+    console.log(`PASS: ${tab} content gestures, overflow=${overflow}`)
+  }
   await page.click('[aria-label="展开调整面板"]')
   await waitSnap(page, 75)
+  await clickText(page, '模板', '[role="tab"]')
+  await page.$eval('.react-modal-sheet-content-scroller', el => { el.scrollTop = el.scrollHeight })
+  await clickText(page, '外观', '[role="tab"]')
+  await waitSnap(page, 75)
+  assert.equal(await page.$eval('.react-modal-sheet-content-scroller', el => el.scrollTop), 0, 'Tab change resets scrolling and keeps the current height')
   await page.click('[aria-label="收起调整面板"]')
   await waitSnap(page, 30)
   const handle = await page.$('[aria-label="调整面板高度"]')

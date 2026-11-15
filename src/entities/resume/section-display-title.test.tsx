@@ -159,8 +159,9 @@ describe('title editors and exports', () => {
     expect(useAppStore.getState().resume.sections[0]).toEqual(makeResume().sections[0])
   })
 
-  it('mobile manager updates the draft and preview keeps the work form route', () => {
+  it('mobile manager updates the draft and preview keeps the work form route', async () => {
     const { unmount } = render(<ModuleManageSheet open onClose={vi.fn()} />)
+    await screen.findByRole('dialog', { name: '模块管理' })
     fireEvent.click(screen.getByRole('button', { name: '修改工作经历名称' }))
     fireEvent.change(screen.getByRole('textbox'), { target: { value: '职业履历' } })
     fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Enter' })
@@ -173,8 +174,9 @@ describe('title editors and exports', () => {
     expect(navigate).toHaveBeenCalledWith(module.route)
   })
 
-  it('mobile manager has handle-only drag activation while rows remain scrollable', () => {
+  it('mobile manager has handle-only drag activation while rows remain scrollable', async () => {
     render(<ModuleManageSheet open onClose={vi.fn()} />)
+    await screen.findByRole('dialog', { name: '模块管理' })
     const handles = screen.getAllByRole('button', { name: /拖动排序/ })
     expect(handles).toHaveLength(3)
     const handle = handles[0]
@@ -184,8 +186,9 @@ describe('title editors and exports', () => {
     expect(row?.classList.contains('select-none')).toBe(true)
   })
 
-  it('drag handle has dnd-kit attributes and aria label for accessibility', () => {
+  it('drag handle has dnd-kit attributes and aria label for accessibility', async () => {
     render(<ModuleManageSheet open onClose={vi.fn()} />)
+    await screen.findByRole('dialog', { name: '模块管理' })
     const handle = screen.getByRole('button', { name: '拖动排序工作经历' })
     expect(handle.getAttribute('aria-label')).toBe('拖动排序工作经历')
     expect(handle.classList.contains('cursor-grab')).toBe(true)

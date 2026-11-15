@@ -222,8 +222,9 @@ describe('deletion, saving and re-adding', () => {
     expect(useAppStore.getState().resume).toEqual(before)
   })
 
-  it('mobile module manager can explicitly delete a legacy empty module', () => {
+  it('mobile module manager can explicitly delete a legacy empty module', async () => {
     render(<ModuleManageSheet open onClose={vi.fn()} />)
+    await screen.findByRole('dialog', { name: '模块管理' })
     fireEvent.click(screen.getByRole('button', { name: '删除项目经历' }))
     fireEvent.click(screen.getByRole('button', { name: /^删除$/ }))
     expect(useDraftStore.getState().draft!.sections.map(s => s.id)).toEqual(['edu', 'skills'])

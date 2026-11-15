@@ -8,7 +8,7 @@
 import { TemplateBrowser } from '@/components/templates/template-browser'
 import { TemplateCover } from '@/components/templates/template-cover'
 import { useRef, useEffect, type ComponentProps, type ReactElement, type ReactNode } from 'react'
-import { Sheet } from 'react-modal-sheet'
+import { Sheet, type SheetRef } from 'react-modal-sheet'
 import { motion, useMotionValue, useMotionValueEvent, type MotionValue } from 'motion/react'
 import { Check, ChevronDown, ChevronUp, LoaderCircle, Palette, RotateCcw } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -107,7 +107,14 @@ export function PreviewSettingsSheet(props: PreviewSettingsSheetProps): ReactEle
           </TabsList>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-white px-4 pb-4 pt-1" data-settings-scroll>
+        {/* Explicit styled mode prevents v5.7's shared scroller styles retaining overflow:clip.
+            Content has no decorative library styles; our existing UI stays intact. */}
+        <Sheet.Content key={tab} unstyled={false} disableScroll={({ currentSnap }) => currentSnap !== 3}
+          className="min-h-0 flex-1 bg-white" scrollClassName="px-4 pb-4 pt-1">
+          <div onPointerDown={event => {
+            // Let native controls and Radix sliders own their pointer gesture.
+            if ((event.target as HTMLElement).closest('input, select, textarea, [data-settings-slider]')) event.stopPropagation()
+          }}>
           <TabsContent value="template" className="mt-0">
             <TemplatePanel activeId={templateId} onSelect={onSelectTemplate} />
           </TabsContent>
@@ -140,7 +147,8 @@ export function PreviewSettingsSheet(props: PreviewSettingsSheetProps): ReactEle
               </button>
             </div>
           )}
-        </div>
+          </div>
+        </Sheet.Content>
       </Tabs>
     </BottomSheet>
   )
@@ -163,10 +171,13 @@ const PANEL_PERCENTAGES = [0, 30, 50, 75]
 
 function BottomSheet(props: BottomSheetProps): ReactElement {
   const visibleHeight = useMotionValue(0)
+  const sheetRef = useRef<SheetRef>(null)
   if (!props.open) return <></>
   return <>
     <motion.div aria-hidden="true" className="shrink-0" style={{ height: visibleHeight }} />
-    <Sheet isOpen onClose={props.onClose} initialSnap={2} snapPoints={PANEL_SNAPS}
+    <Sheet ref={sheetRef} isOpen onClose={props.onClose} initialSnap={2} snapPoints={PANEL_SNAPS}
+      // Opening can precede the first size measurement; enforce the measured initial stop.
+      onOpenEnd={() => sheetRef.current?.snapTo(2)}
       detent="full" disableDismiss disableScrollLocking disableDrag={props.confirming} avoidKeyboard={false}
       unstyled style={{ top: 'auto', height: '75dvh', zIndex: 40 }}>
       <Sheet.Container>
@@ -637,6 +648,7 @@ function TouchSlider({ className, ...props }: ComponentProps<typeof Slider>): Re
   return (
     <Slider
       {...props}
+      data-settings-slider
       className={cn(
         'py-2.5 [&>span:first-child]:h-1.5 [&>span:first-child]:bg-slate-200/90 [&_[role=slider]]:h-[18px] [&_[role=slider]]:w-[18px] [&_[role=slider]]:border-2 [&_[role=slider]]:border-violet-600 [&_[role=slider]]:bg-white [&_[role=slider]]:shadow-[0_1px_4px_rgba(124,58,237,0.28)]',
         className,
