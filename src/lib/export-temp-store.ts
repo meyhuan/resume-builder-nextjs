@@ -1,11 +1,13 @@
 import { randomBytes } from 'crypto'
-import { mkdir, readFile, readdir, stat, unlink, writeFile } from 'fs/promises'
+import { mkdir, readFile, readdir, rename, stat, unlink, writeFile } from 'fs/promises'
 import { tmpdir } from 'os'
 import { join } from 'path'
 import { sanitizeExportFileName } from '@/lib/export-file-name'
 
 export const EXPORT_TEMP_TTL_MS = 24 * 60 * 60 * 1000
 const STORE_DIR = join(tmpdir(), 'aijianli-export-temp')
+const STAGING_DIR_NAME = '.staging'
+const STAGING_DIR = join(STORE_DIR, STAGING_DIR_NAME)
 
 export type ExportAssetType = 'pdf' | 'image' | 'markdown' | 'docx'
 
@@ -75,6 +77,22 @@ async function safeUnlink(path: string): Promise<void> {
   await unlink(path).catch(() => undefined)
 }
 
+async function createStagingPath(token: string): Promise<string> {
+  await mkdir(STAGING_DIR, { recursive: true })
+  return join(STAGING_DIR, `${token}.${randomBytes(8).toString('hex')}.tmp`)
+}
+
+async function writeMetadata(token: string, meta: ExportTempMeta): Promise<void> {
+  const stagedPath = await createStagingPath(token)
+  try {
+    await writeFile(stagedPath, JSON.stringify(meta), 'utf8')
+    // Readers and cleanup must see either the old complete JSON or the new one.
+    await rename(stagedPath, getMetaPath(token))
+  } finally {
+    await safeUnlink(stagedPath)
+  }
+}
+
 async function purgeExpired(): Promise<void> {
   const now = Date.now()
   await ensureStoreDir()
@@ -93,10 +111,18 @@ async function purgeExpired(): Promise<void> {
       await safeUnlink(getMetaPath(token))
     }
   }))
-  await Promise.all(files.filter((file) => !file.endsWith('.json')).map(async (file): Promise<void> => {
+  await Promise.all(files.filter((file) => file !== STAGING_DIR_NAME && !file.endsWith('.json')).map(async (file): Promise<void> => {
     const token = file.replace(/\.[^.]+$/, '')
     const metaExists = await stat(getMetaPath(token)).then(() => true).catch(() => false)
     if (!metaExists) await safeUnlink(join(STORE_DIR, file))
+  }))
+  // Staging files are not published assets. Keep active writers safe across
+  // processes, but reclaim abandoned writes after the normal asset lifetime.
+  const stagedFiles = await readdir(STAGING_DIR).catch(() => [])
+  await Promise.all(stagedFiles.filter((file) => /^[a-f0-9]{32}\.[a-f0-9]{16}\.tmp$/.test(file)).map(async (file): Promise<void> => {
+    const path = join(STAGING_DIR, file)
+    const info = await stat(path).catch(() => null)
+    if (info && info.mtimeMs < now - EXPORT_TEMP_TTL_MS) await safeUnlink(path)
   }))
 }
 
@@ -127,8 +153,20 @@ export async function saveExportTemp(input: SaveExportTempInput): Promise<{ toke
     ...(input.resumeTitle ? { resumeTitle: input.resumeTitle } : {}),
     ...(input.templateId ? { templateId: input.templateId } : {}),
   }
-  await writeFile(getFilePath(token, input.extension), input.buffer)
-  await writeFile(getMetaPath(token), JSON.stringify(meta), 'utf8')
+  const stagedPath = await createStagingPath(token)
+  try {
+    await writeFile(stagedPath, input.buffer)
+    // Publish complete metadata first so no cleaner can mistake the final
+    // binary for an orphan. The token is returned only after both are ready.
+    await writeMetadata(token, meta)
+    await rename(stagedPath, getFilePath(token, input.extension))
+  } catch (error) {
+    await safeUnlink(getMetaPath(token))
+    await safeUnlink(getFilePath(token, input.extension))
+    throw error
+  } finally {
+    await safeUnlink(stagedPath)
+  }
   console.log('[export-temp-store] saved asset', { token, type: input.type, confirmed: meta.confirmed, bytes: input.buffer.length, fileName: input.fileName })
   return { token, expiresAt }
 }
@@ -161,7 +199,7 @@ export async function markConfirmed(token: string, fileName?: string): Promise<E
       confirmed: true,
       ...(sanitizedFileName ? { fileName: sanitizedFileName } : {}),
     }
-    await writeFile(getMetaPath(token), JSON.stringify(next), 'utf8')
+    await writeMetadata(token, next)
     console.log('[export-temp-store] markConfirmed flipped', { token })
     return next
   } catch (error: unknown) {
